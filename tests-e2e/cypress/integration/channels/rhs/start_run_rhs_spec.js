@@ -10,6 +10,7 @@ describe('channels rhs > start a run', () => {
     let testTeam;
     let testUser;
     let testChannel;
+    let emptyTestChannel;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -24,6 +25,10 @@ describe('channels rhs > start a run', () => {
 
         cy.apiCreateChannel(testTeam.id, 'existing-channel', 'Existing Channel').then(({channel}) => {
             testChannel = channel;
+        });
+
+        cy.apiCreateChannel(testTeam.id, 'empty-channel', 'Empty Channel').then(({channel}) => {
+            emptyTestChannel = channel;
         });
     });
 
@@ -47,6 +52,30 @@ describe('channels rhs > start a run', () => {
         });
     };
 
+    const startRuns = (playbookId, amount) => {
+        for (let i = 0; i < amount; i++) {
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId,
+                ownerUserId: testUser.id,
+                channelId: testChannel.id,
+                playbookRunName: 'Test run ' + i,
+            });
+        }
+    };
+
+    const openStartRunModal = () => {
+        // # Click create new button
+        cy.findByText('Create new').click();
+
+        // * Verify displayed options
+        cy.get('[data-testid="dropdownmenu"] > :nth-child(1) > span').should('have.text', 'Checklist');
+        cy.get('[data-testid="dropdownmenu"] > :nth-child(2) > span').should('have.text', 'Run from Playbook');
+
+        // # Click the run option
+        cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
+    };
+
     describe('From RHS run list  > ', () => {
         beforeEach(() => {
             // # intercepts telemetry
@@ -60,16 +89,19 @@ describe('channels rhs > start a run', () => {
                     title: 'Playbook title' + Date.now(),
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
-                    channelMode: 'create_new_channel'
+                    channelMode: 'create_new_channel',
                 }).then((playbook) => {
-                    // # Visit the selected playbook
-                    cy.visit(`/${testTeam.name}/channels/town-square`);
+                    // # Start two runs to not show blank state and not select only run
+                    startRuns(playbook.id, 2);
+
+                    // # Visit the channel
+                    cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // # Click start a run button
-                    cy.findByTestId('rhs-runlist-start-run').click();
+                    // # Open start run modal
+                    openStartRunModal();
 
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
@@ -134,14 +166,17 @@ describe('channels rhs > start a run', () => {
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'create_new_channel'
                 }).then((playbook) => {
-                    // # Visit the selected playbook
-                    cy.visit(`/${testTeam.name}/channels/town-square`);
+                    // # Start two runs to not show blank state and not select only run
+                    startRuns(playbook.id, 2);
+
+                    // # Visit the channel
+                    cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // # Click start a run button
-                    cy.findByTestId('rhs-runlist-start-run').click();
+                    // # Open start run modal
+                    openStartRunModal();
 
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
@@ -212,14 +247,17 @@ describe('channels rhs > start a run', () => {
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'create_new_channel'
                 }).then((playbook) => {
-                    // # Visit the selected playbook
-                    cy.visit(`/${testTeam.name}/channels/town-square`);
+                    // # Start two runs to not show blank state and not select only run
+                    startRuns(playbook.id, 2);
+
+                    // # Visit the channel
+                    cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // # Click start a run button
-                    cy.findByTestId('rhs-runlist-start-run').click();
+                    // # Open start run modal
+                    openStartRunModal();
 
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
@@ -241,7 +279,7 @@ describe('channels rhs > start a run', () => {
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
                         // # Fill Town square as the channel to be linked
-                        cy.findByText('Select a channel').click().type(`${testChannel.display_name}{enter}`);
+                        cy.findByText('Select a channel').click().type(`${emptyTestChannel.display_name}{enter}`);
 
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
@@ -265,10 +303,10 @@ describe('channels rhs > start a run', () => {
                     ]);
 
                     // * Verify we are on the existing channel
-                    cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
+                    cy.url().should('include', `/${testTeam.name}/channels/${emptyTestChannel.name}`);
 
                     // * Verify channel name
-                    cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
+                    cy.get('h2').contains(`Beginning of ${emptyTestChannel.display_name}`);
 
                     // * Verify run RHS
                     cy.get('#rhsContainer').should('exist').within(() => {
@@ -287,16 +325,19 @@ describe('channels rhs > start a run', () => {
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'link_existing_channel',
-                    channelId: testChannel.id,
+                    channelId: emptyTestChannel.id,
                 }).then((playbook) => {
-                    // # Visit the selected playbook
-                    cy.visit(`/${testTeam.name}/channels/town-square`);
+                    // # Start two runs to not show blank state and not select only run
+                    startRuns(playbook.id, 2);
+
+                    // # Visit the channel
+                    cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // # Click start a run button
-                    cy.findByTestId('rhs-runlist-start-run').click();
+                    // # Open start run modal
+                    openStartRunModal();
 
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
@@ -342,10 +383,10 @@ describe('channels rhs > start a run', () => {
                     ]);
 
                     // * Verify we are on the existing channel
-                    cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
+                    cy.url().should('include', `/${testTeam.name}/channels/${emptyTestChannel.name}`);
 
                     // * Verify channel name
-                    cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
+                    cy.get('h2').contains(`Beginning of ${emptyTestChannel.display_name}`);
 
                     cy.get('#rhsContainer').should('exist').within(() => {
                         // * Verify run RHS
@@ -363,14 +404,17 @@ describe('channels rhs > start a run', () => {
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'link_existing_channel',
                 }).then((playbook) => {
-                    // # Visit the selected playbook
-                    cy.visit(`/${testTeam.name}/channels/town-square`);
+                    // # Start two runs to not show blank state and not select only run
+                    startRuns(playbook.id, 2);
+
+                    // # Visit the channel
+                    cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // # Click start a run button
-                    cy.findByTestId('rhs-runlist-start-run').click();
+                    // # Open the start run modal
+                    openStartRunModal();
 
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
@@ -395,7 +439,7 @@ describe('channels rhs > start a run', () => {
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
                         // # Fill Town square as the channel to be linked
-                        cy.findByText('Select a channel').click().type(`${testChannel.display_name}{enter}`);
+                        cy.findByText('Select a channel').click().type(`${emptyTestChannel.display_name}{enter}`);
 
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
@@ -419,10 +463,10 @@ describe('channels rhs > start a run', () => {
                     ]);
 
                     // * Verify we are on the existing channel
-                    cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
+                    cy.url().should('include', `/${testTeam.name}/channels/${emptyTestChannel.name}`);
 
                     // * Verify channel name
-                    cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
+                    cy.get('h2').contains(`Beginning of ${emptyTestChannel.display_name}`);
 
                     cy.get('#rhsContainer').should('exist').within(() => {
                         // * Verify run RHS
@@ -441,14 +485,17 @@ describe('channels rhs > start a run', () => {
                     channelMode: 'link_existing_channel',
                     channelId: testChannel.id,
                 }).then((playbook) => {
-                    // # Visit the selected playbook
-                    cy.visit(`/${testTeam.name}/channels/town-square`);
+                    // # Start two runs to not show blank state and not select only run
+                    startRuns(playbook.id, 2);
+
+                    // # Visit the channel
+                    cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                    // # Click start a run button
-                    cy.findByTestId('rhs-runlist-start-run').click();
+                    // # Open the start run modal
+                    openStartRunModal();
 
                     cy.get('#root-portal.modal-open').within(() => {
                         // # Wait the modal to render
