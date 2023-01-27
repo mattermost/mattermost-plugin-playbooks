@@ -7,27 +7,19 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
-    BookOutlineIcon,
     CheckAllIcon,
     CheckIcon,
-    LinkVariantIcon,
-    PencilOutlineIcon,
     PlayOutlineIcon,
     PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
-import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
-import {useUpdateRun} from 'src/graphql/hooks';
 import {useViewTelemetry} from 'src/hooks';
-import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
-import Profile from 'src/components/profile/profile';
+import {openPlaybookRunModal} from 'src/actions';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
@@ -38,31 +30,12 @@ import {pluginId} from 'src/manifest';
 import {getSiteUrl} from 'src/client';
 import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {useToaster} from 'src/components/backstage/toast_banner';
-import {ToastStyle} from 'src/components/backstage/toast';
 
 import {GeneralViewTarget} from 'src/types/telemetry';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
-import {UserList} from './rhs_participants';
-import {RHSTitleText} from './rhs_title_common';
-
-interface PlaybookToDisplay {
-    title: string
-}
-
-interface RunToDisplay {
-    id: string
-    name: string
-    participantIDs: string[]
-    ownerUserID: string
-    playbookID: string
-    playbook?: Maybe<PlaybookToDisplay>
-    numTasksClosed: number
-    numTasks: number
-    lastUpdatedAt: number
-    type: string
-}
+import {RHSTitleText} from 'src/components/rhs/rhs_title_common';
+import {RHSRunListCard, RunToDisplay} from 'src/components/rhs/rhs_run_list_card';
+import {IconWrapper, Spacer, StyledDropdownMenuItem} from 'src/components/rhs/styles';
 
 export enum FilterType {
     InProgress,
@@ -312,10 +285,6 @@ const FilterMenuTitle = styled.div`
     line-height: 24px;
 `;
 
-const Spacer = styled.div`
-    flex-grow: 1;
-`;
-
 const StyledLoadingSpinner = styled(LoadingSpinner)`
     margin-top: 12px;
     width: 20px;
@@ -464,302 +433,6 @@ const BlueCheckmark = styled(CheckIcon)`
     color: var(--button-bg);
     width: 18px;
     height: 18px;
-`;
-
-interface RHSRunListCardProps extends RunToDisplay {
-    onClick: () => void;
-    onLinkRunToChannel: () => void;
-}
-
-const RHSRunListCard = (props: RHSRunListCardProps) => {
-    const {formatMessage} = useIntl();
-    const [removed, setRemoved] = useState(false);
-    const {add: addToastMessage} = useToaster();
-    const teamId = useSelector(getCurrentTeamId);
-    const currentUserId = useSelector(getCurrentUserId);
-    const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
-    const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
-    const [movedChannel, setMovedChannel] = useState({channelId: '', channelName: ''});
-    const updateRun = useUpdateRun(props.id);
-    const isPlaybookRun = props.type === PlaybookRunType.Playbook;
-    const icon = isPlaybookRun ? <PlayOutlineIcon size={22}/> : <CheckAllIcon size={22}/>;
-
-    return (
-        <CardWrapper
-            progress={(props.numTasksClosed / props.numTasks) * 100}
-            className={removed ? 'removed' : ''}
-            onAnimationEnd={() => {
-                if (!movedChannel.channelId) {
-                    return;
-                }
-                updateRun({channelID: movedChannel.channelId});
-                addToastMessage({
-                    content: isPlaybookRun ? formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: movedChannel.channelName}) : formatMessage({defaultMessage: 'Checklist moved to {channel}'}, {channel: movedChannel.channelName}),
-                    toastStyle: ToastStyle.Success,
-                });
-                props.onLinkRunToChannel();
-            }}
-        >
-            <CardContainer
-                onClick={props.onClick}
-                data-testid='run-list-card'
-            >
-                <CardTitleContainer>
-                    <IconWrapper margin='6px'>
-                        {icon}
-                    </IconWrapper>
-                    <TitleRow>{props.name}</TitleRow>
-                    <Spacer/>
-                    {isPlaybookRun &&
-                        <ContextMenu
-                            playbookID={props.playbookID}
-                            playbookTitle={props.playbook?.title || ''}
-                            playbookRunID={props.id}
-                            teamID={teamId}
-                            canSeePlaybook={Boolean(props.playbook?.title)}
-                            canEditRun={canEditRun}
-                            onUpdateName={(newName) => {
-                                updateRun({name: newName});
-                            }}
-                            onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                                setRemoved(true);
-                                setMovedChannel({
-                                    channelId: newChannelId,
-                                    channelName: newChannelName,
-                                });
-                            }}
-                        />
-                    }
-                    {!isPlaybookRun &&
-                        <ChannelChecklistContextMenu
-                            playbookRunID={props.id}
-                            teamID={teamId}
-                            canEditRun={canEditRun}
-                            onUpdateName={(newName) => {
-                                updateRun({name: newName});
-                            }}
-                            onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                                setRemoved(true);
-                                setMovedChannel({
-                                    channelId: newChannelId,
-                                    channelName: newChannelName,
-                                });
-                            }}
-                        />
-                    }
-                </CardTitleContainer>
-                {isPlaybookRun &&
-                    <PeopleRow>
-                        <OwnerProfileChip userId={props.ownerUserID}/>
-                        <ParticipantsProfiles>
-                            <UserList
-                                userIds={participatIDsWithoutOwner}
-                                sizeInPx={20}
-                            />
-                        </ParticipantsProfiles>
-                    </PeopleRow>
-                }
-                {!isPlaybookRun && props.numTasks > 0 &&
-                    <TasksDone>
-                        <TasksDoneNumbers>
-                            {/* eslint-disable formatjs/no-literal-string-in-jsx */}
-                            {props.numTasksClosed + '/' + props.numTasks}
-                        </TasksDoneNumbers>
-                        <TasksDoneText>
-                            {formatMessage({defaultMessage: 'tasks done'})}
-                        </TasksDoneText>
-                    </TasksDone>
-                }
-                <InfoRow>
-                    <LastUpdatedText>
-                        {formatMessage(
-                            {defaultMessage: 'Last updated {time}'},
-                            {time: DateTime.fromMillis(props.lastUpdatedAt).toRelative()}
-                        )}
-                    </LastUpdatedText>
-                    {props.playbook && isPlaybookRun &&
-                        <PlaybookChip>
-                            <StyledBookOutlineIcon
-                                size={11}
-                            />
-                            <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
-                        </PlaybookChip>
-                    }
-                </InfoRow>
-            </CardContainer>
-        </CardWrapper>
-    );
-};
-const CardWrapper = styled.div<{ progress: number }>`
-    margin: 0;
-    padding:0;
-    border-radius: 4px;
-    position: relative;
-
-    &:after {
-        content: '';
-        display: block;
-        position: absolute;
-        right: calc(${({progress}) => 100 - progress}% + 1px);
-        bottom: 1px;
-        left: 1px;
-        border-bottom: 2px solid var(--online-indicator);
-        border-bottom-left-radius: inherit;
-        border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
-    }
-
-    &.removed {
-        -webkit-animation: disapear 0.7s;
-        -webkit-animation-fill-mode: forwards;
-        animation: disapear 0.7s;
-        animation-fill-mode: forwards;
-    }
-
-    @-webkit-keyframes disapear{
-        35% {
-            -webkit-transform: translateY(5%);
-            transform: translateY(5%);
-        }
-        100% {
-            -webkit-transform: translateY(-1000%);
-            transform: translateY(-1000%);
-        }
-    }
-
-    @keyframes disapear{
-        35% {
-            -webkit-transform: translateY(5%);
-            transform: translateY(5%);
-        }
-        100% {
-            -webkit-transform: translateY(-1000%);
-            transform: translateY(-1000%);
-        }
-    }
-`;
-
-const CardContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    padding: 16px 20px 20px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.08);
-    border-radius: 4px;
-    gap: 8px;
-
-    cursor: pointer;
-
-    &:hover {
-        box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.12);
-    }
-
-    &:active {
-        box-shadow: inset 0px 2px 3px rgba(0, 0, 0, 0.08);
-    }
-`;
-const CardTitleContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-
-`;
-const TitleRow = styled.div`
-    font-size: 14px;
-    font-weight: 600;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-`;
-const PeopleRow = styled.div`
-    display: flex;
-    flex-direction: row;
-    gap: 4px;
-`;
-const InfoRow = styled.div`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-`;
-const LastUpdatedText = styled.div`
-    font-size: 11px;
-    font-weight: 400;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-`;
-const PlaybookChip = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 0px 4px;
-    gap: 4px;
-    max-width: 40%;
-
-    background: rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 4px;
-`;
-const PlaybookChipText = styled.span`
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const OwnerProfileChip = styled(Profile)`
-    flex-grow: 0;
-
-    font-weight: 400;
-    font-size: 11px;
-    line-height: 15px;
-    padding: 2px 10px 2px 2px;
-    background: rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 12px;
-
-    > .image {
-        width: 16px;
-        height: 16px;
-    }
-`;
-const ParticipantsProfiles = styled.div`
-    display: flex;
-    flex-direction: row;
-`;
-
-const ThreeDotsIcon = styled(HamburgerButton)`
-    font-size: 18px;
-    margin-left: 1px;
-`;
-
-const StyledBookOutlineIcon = styled(BookOutlineIcon)`
-    flex-shrink: 0;
-`;
-
-const StyledDotMenuButton = styled(DotMenuButton)`
-    width: 28px;
-    height: 28px;
-`;
-
-const StyledDropdownMenuItem = styled(DropdownMenuItem)`
-    display: flex;
-    align-items: center;
-    align-content: center;
-`;
-
-const Separator = styled.hr`
-    display: flex;
-    align-content: center;
-    border-top: 1px solid var(--center-channel-color-08);
-    margin: 5px auto;
-    width: 100%;
-`;
-
-const IconWrapper = styled.div<{ margin?: string }>`
-    display: inline-flex;
-    margin-right: ${({margin}) => (margin || '11px')};
-    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const BrightIconWrapper = styled(IconWrapper)`
@@ -914,150 +587,6 @@ const StyledFooter = styled.div`
             margin: 0;
         }
     }
-`;
-
-interface ContextMenuProps {
-    playbookID: string;
-    teamID: string;
-    playbookRunID: string;
-    playbookTitle: string;
-    canSeePlaybook: boolean;
-    canEditRun: boolean;
-    onUpdateChannel: (channelId: string, channelName: string) => void;
-    onUpdateName: (name: string) => void;
-}
-const ContextMenu = (props: ContextMenuProps) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-    const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
-    const playbookURL = `/playbooks/${props.playbookID}`;
-
-    return (
-        <DotMenu
-            dotMenuButton={StyledDotMenuButton}
-            placement='bottom-start'
-            icon={<ThreeDotsIcon/>}
-        >
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.Playbook, props.onUpdateChannel))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
-            >
-                <IconWrapper>
-                    <LinkVariantIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Link run to a different channel'/>
-            </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.teamID, PlaybookRunType.Playbook, props.onUpdateName))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
-            >
-                <IconWrapper>
-                    <PencilOutlineIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Rename run'/>
-            </StyledDropdownMenuItem>
-            <Separator/>
-            <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
-                <IconWrapper>
-                    <PlayOutlineIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Go to run overview'/>
-            </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                disabled={!props.canSeePlaybook}
-                onClick={() => navigateToPluginUrl(playbookURL)}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to see this playbook'})}
-            >
-                <RowContainer>
-                    <ColContainer>
-                        <IconWrapper>
-                            <BookOutlineIcon size={22}/>
-                        </IconWrapper>
-                        <FormattedMessage defaultMessage='Go to playbook'/>
-                    </ColContainer>
-                    <MenuItemSubTitle>{props.playbookTitle}</MenuItemSubTitle>
-                </RowContainer>
-            </StyledDropdownMenuItem>
-        </DotMenu>
-    );
-};
-
-interface ChannelChecklistContextMenuProps {
-    teamID: string;
-    playbookRunID: string;
-    canEditRun: boolean;
-    onUpdateChannel: (channelId: string, channelName: string) => void;
-    onUpdateName: (name: string) => void;
-}
-const ChannelChecklistContextMenu = (props: ChannelChecklistContextMenuProps) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-
-    return (
-        <DotMenu
-            dotMenuButton={StyledDotMenuButton}
-            placement='bottom-start'
-            icon={<ThreeDotsIcon/>}
-        >
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.ChannelChecklist, props.onUpdateChannel))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this checklist'})}
-            >
-                <IconWrapper>
-                    <LinkVariantIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Link checklist to a different channel'/>
-            </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.teamID, PlaybookRunType.ChannelChecklist, props.onUpdateName))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this checklist'})}
-            >
-                <IconWrapper>
-                    <PencilOutlineIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Rename checklist'/>
-            </StyledDropdownMenuItem>
-        </DotMenu>
-    );
-};
-
-const ColContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-`;
-
-const RowContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
-
-const MenuItemSubTitle = styled.div`
-    margin-left: 33px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    // don't let the playbook title make context menu grow too wide
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-`;
-
-const TasksDone = styled.div`
-    display: flex;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    font-size: 11px;
-`;
-
-const TasksDoneNumbers = styled.div`
-    margin-right: 6px;
-    font-weight: 600;
-`;
-
-const TasksDoneText = styled.div`
-    font-weight: 400;
 `;
 
 export default RHSRunList;
