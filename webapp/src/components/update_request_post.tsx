@@ -19,7 +19,7 @@ import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import PostText from 'src/components/post_text';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
-import {resetReminder} from 'src/client';
+import {fetchPlaybookRunsForChannelByUser, resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
 import {
     Mode,
@@ -39,17 +39,14 @@ interface Props {
 const playbookRunReminderDocument = graphql(/* GraphQL */`
     query PlaybookRunReminder($runID: String!) {
         run (id: $runID){
-            id
             name
-            reminderPostId
-            reminderMessageTemplate
             previousReminder
             reminderTimerDefaultSeconds
         }
     }
 `);
 
-const UpdateRequestPost = (props: Props) => {
+const UpdateRequestPost = async (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
@@ -64,7 +61,7 @@ const UpdateRequestPost = (props: Props) => {
         fetchPolicy: 'network-only',
         skip: playbookRunId === undefined,
     });
-    const run = data?.run;
+    let run = data?.run;
 
     // Decide whether to open the snooze menu above or below
     const [snoozeMenuPos, setSnoozeMenuPos] = useState('top');
@@ -76,6 +73,24 @@ const UpdateRequestPost = (props: Props) => {
 
         setSnoozeMenuPos((rect.top < 250) ? 'bottom' : 'top');
     }, [rect]);
+
+    // If playbookRunId is undefined (could be in old existent reminders), we need this fallback
+    // to get all runs for the channel and take the first one (will be enough for
+    // old one-run-per-channel cases but without post props)
+    //
+    // Since posts are removed after post-update or snooze, this fallback will be unused with the
+    // pass of time. However, the only way the to check that the fallback is not needed is executing
+    // an SQL query.
+    if (!playbookRunId) {
+        const runsFromChannel = await fetchPlaybookRunsForChannelByUser(props.post.channel_id);
+        if (runsFromChannel.length > 0) {
+            run = {
+                name: runsFromChannel[0].name,
+                previousReminder: runsFromChannel[0].previous_reminder,
+                reminderTimerDefaultSeconds: runsFromChannel[0].reminder_timer_default_seconds,
+            };
+        }
+    }
 
     const makeOption = useMakeOption(Mode.DurationValue);
 
