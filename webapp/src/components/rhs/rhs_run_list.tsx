@@ -560,11 +560,12 @@ const Footer = () => {
     return (
         <StyledFooter>
             <FormattedMessage
-                defaultMessage={'Powered by {icon} playbooks'}
-                values={{
-                    icon: <PlaybooksProductIcon/>,
-                }}
+                defaultMessage={'Powered by'}
             />
+            <PlaybooksProductIcon/>
+            {/* product name; don't translate */}
+            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+            {'Playbooks'}
         </StyledFooter>
     );
 };
