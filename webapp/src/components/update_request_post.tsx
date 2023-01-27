@@ -19,7 +19,7 @@ import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import PostText from 'src/components/post_text';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
-import {fetchPlaybookRunsForChannelByUser, resetReminder} from 'src/client';
+import {resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
 import {
     Mode,
@@ -37,12 +37,32 @@ interface Props {
     post: Post;
 }
 
-const playbookRunReminderDocument = graphql(/* GraphQL */`
+const playbookRunReminderQuery = graphql(/* GraphQL */`
     query PlaybookRunReminder($runID: String!) {
         run (id: $runID){
+            id
             name
             previousReminder
             reminderTimerDefaultSeconds
+        }
+    }
+`);
+
+const firstActiveRunInChannelQuery = graphql(/* GraphQL */`
+    query FirstActiveRunInChannel($channelID: String!) {
+        runs(
+            channelID: $channelID,
+            statuses: ["InProgress"],
+            first: 1,
+        ) {
+            edges {
+                node {
+                    id
+                    name
+                    previousReminder
+                    reminderTimerDefaultSeconds
+                }
+            }
         }
     }
 `);
@@ -56,7 +76,7 @@ const UpdateRequestPost = (props: Props) => {
     const playbookRunId = props.post.props.playbookRunId;
 
     const [run, setRun] = useState<PlaybookRunReminderQuery['run']>(null);
-    const {data, loading} = useQuery(playbookRunReminderDocument, {
+    const {data, loading} = useQuery(playbookRunReminderQuery, {
         variables: {
             runID: playbookRunId,
         },
@@ -64,8 +84,18 @@ const UpdateRequestPost = (props: Props) => {
         skip: playbookRunId === undefined,
     });
 
+    const {data: firstRunInChannelData} = useQuery(firstActiveRunInChannelQuery, {
+        variables: {
+            channelID: props.post.channel_id,
+        },
+        fetchPolicy: 'network-only',
+        skip: playbookRunId !== undefined,
+    });
+
     useEffect(() => {
-        setRun(data?.run);
+        if (data && !loading) {
+            setRun(data?.run);
+        }
 
         // If playbookRunId is undefined (could be in old existent reminders), we need this fallback
         // to get all runs for the channel and take the first one (will be enough for
@@ -74,20 +104,10 @@ const UpdateRequestPost = (props: Props) => {
         // Since posts are removed after post-update or snooze, this fallback will be unused with the
         // pass of time. However, the only way the to check that the fallback is not needed is executing
         // an SQL query.
-        const doFetchRuns = async () => {
-            const runsFromChannel = await fetchPlaybookRunsForChannelByUser(props.post.channel_id);
-            if (runsFromChannel.length > 0) {
-                setRun({
-                    name: runsFromChannel[0].name,
-                    previousReminder: runsFromChannel[0].previous_reminder,
-                    reminderTimerDefaultSeconds: runsFromChannel[0].reminder_timer_default_seconds,
-                });
-            }
-        };
-        if (!data?.run && !loading) {
-            doFetchRuns();
+        if (!data && !loading && firstRunInChannelData && firstRunInChannelData.runs.edges.length > 0) {
+            setRun(firstRunInChannelData.runs.edges[0]?.node);
         }
-    }, [data, loading, props.post.channel_id]);
+    }, [data, loading, firstRunInChannelData, props.post.channel_id]);
 
     // Decide whether to open the snooze menu above or below
     const [snoozeMenuPos, setSnoozeMenuPos] = useState('top');
@@ -131,7 +151,7 @@ const UpdateRequestPost = (props: Props) => {
     options.sort((a, b) => ms(a.value) - ms(b.value));
 
     const snoozeFor = (option: Option) => {
-        resetReminder(playbookRunId, ms(option.value) / 1000);
+        resetReminder(run.id, ms(option.value) / 1000);
     };
 
     const SelectContainer = ({children, ...ownProps}: ContainerProps<Option, boolean>) => {
@@ -147,7 +167,7 @@ const UpdateRequestPost = (props: Props) => {
         );
     };
 
-    const playbookRunURL = `/playbooks/runs/${playbookRunId}`;
+    const playbookRunURL = `/playbooks/runs/${run.id}`;
 
     return (
         <>
