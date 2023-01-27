@@ -24,6 +24,7 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
     finishRun,
     playbookRunUpdated,
+    setChecklistCollapsedState,
     setAllChecklistsCollapsedState,
 } from 'src/actions';
 import {
@@ -85,7 +86,7 @@ const ChecklistList = ({
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
-    const [isCollapsedBefore, setIsCollapsedBefore] = useState(false);
+    const [checklistsDragState, setChecklistsDragState] = useState([]);
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
@@ -179,13 +180,13 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
-    const onBeforeCapture = (beforeCapture: BeforeCapture) => {
+    const onBeforeCapture = () => {
         if (stateKey !== undefined && Boolean(stateKey)) {
-            const selectedIndex = checklists.findIndex((item, index) => beforeCapture.draggableId === `${item.title}${index}`);
-            if (selectedIndex >= 0) {
-                setIsCollapsedBefore(Boolean(checklistsCollapseState[selectedIndex]));
-                dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
-            }
+            setChecklistsDragState(checklists.map((item: any, i: number) => ({
+                key: item.id,
+                value: Boolean(checklistsCollapseState[i]),
+            })));
+            dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
         }
     };
 
@@ -193,8 +194,19 @@ const ChecklistList = ({
         setIsDragging(true);
     };
 
-    const restoreCollapseState = (dstIdx: number) => {
-        onChecklistCollapsedStateChange(dstIdx, isCollapsedBefore);
+    const restoreCollapseState = (newChecklists = null) => {
+        if (stateKey !== undefined && Boolean(stateKey)) {
+            if (newChecklists === null) {
+                newChecklists = checklists;
+            }
+            for (const [_, item] of Object.entries(checklistsDragState)) {
+                const index = newChecklists.findIndex((checklistItem: any) => item.key === checklistItem.id);
+                if (index !== -1) {
+                    dispatch(setChecklistCollapsedState(stateKey, index, Boolean(item.value)));
+                }
+            }
+            setChecklistsDragState([]);
+        }
     };
 
     const onDragEnd = (result: DropResult) => {
@@ -209,7 +221,7 @@ const ChecklistList = ({
 
         // If the source and desination are the same, do nothing
         if (result.destination.droppableId === result.source.droppableId && srcIdx === dstIdx) {
-            restoreCollapseState(dstIdx);
+            restoreCollapseState();
             return;
         }
 
@@ -288,7 +300,7 @@ const ChecklistList = ({
                 clientMoveChecklist(playbookRun.id, srcIdx, dstIdx);
             }
 
-            restoreCollapseState(dstIdx);
+            restoreCollapseState(newChecklists);
         }
 
         // Update the store with the new checklists
