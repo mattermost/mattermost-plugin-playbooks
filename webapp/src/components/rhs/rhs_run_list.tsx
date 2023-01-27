@@ -585,7 +585,7 @@ const StyledFooter = styled.div`
         display: inline-block;
 
         &::before{
-            margin: 0;
+            margin: 0 2px;
         }
     }
 `;
