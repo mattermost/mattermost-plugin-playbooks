@@ -5,6 +5,7 @@
     "node": ">=16.4.0"
   },
   "dependencies": {
+    "@mattermost/client": "*",
     "@apollo/client": "3.7.1",
     "@floating-ui/react-dom-interactions": "0.6.3",
     "@mattermost/compass-icons": "0.1.32",
@@ -135,7 +136,9 @@
     "check-types": "tsc",
     "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json",
     "graphql": "graphql-codegen --config graphql_gen.yml",
-    "report-unused-exports": "ts-prune"
+    "report-unused-exports": "ts-prune",
+    "build:product": "webpack --mode=production",
+    "start:product": "webpack serve --mode=development"    
   },
   "jest": {
     "testPathIgnorePatterns": [

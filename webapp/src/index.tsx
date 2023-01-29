@@ -341,6 +341,3 @@ export default class Plugin {
         }
     }
 }
-
-// @ts-ignore
-window.registerPlugin(pluginId, new Plugin());

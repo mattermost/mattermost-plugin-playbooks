@@ -185,6 +185,14 @@ else
 	cd webapp && $(NPM) run debug:watch
 endif
 
+.PHONY: build-product
+build-product: apply
+	cd webapp && npm run build:product
+
+.PHONY: watch-product
+watch-product: apply
+	cd webapp && npm run start:product
+
 ## Builds and installs the plugin to a server, then starts the webpack dev server on 9005
 .PHONY: dev
 dev: apply server bundle webapp/node_modules
