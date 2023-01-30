@@ -13,6 +13,7 @@ import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {
     ParticipantsChangedDetails,
+    TaskStateModifiedDetails,
     TimelineEvent,
     TimelineEventType,
     UserJoinedLeftDetails,
@@ -217,8 +218,23 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: '{name} requested a status update'}, {name: event.subject_display_name});
         case TimelineEventType.OwnerChanged:
             return formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: event.summary});
-        case TimelineEventType.TaskStateModified:
-            return (event.subject_display_name + ' ' + event.summary).replace(/\*\*/g, '"');
+        case TimelineEventType.TaskStateModified: {
+            const details = parsedDetails as TaskStateModifiedDetails;
+
+            const data = {user: event.subject_display_name, name: details.task};
+            switch (details.action) {
+            case 'check':
+                return formatMessage({defaultMessage: '{user} checked off checklist item "{name}"'}, data);
+            case 'uncheck':
+                return formatMessage({defaultMessage: '{user} unchecked checklist item "{name}"'}, data);
+            case 'skip':
+                return formatMessage({defaultMessage: '{user} skipped checklist item "{name}"'}, data);
+            case 'restore':
+                return formatMessage({defaultMessage: '{user} restored checklist item "{name}"'}, data);
+            default:
+                return (event.subject_display_name + ' ' + event.summary).replace(/\*\*/g, '"');
+            }
+        }
         case TimelineEventType.AssigneeChanged:
             return formatMessage({defaultMessage: 'Assignee Changed'});
         case TimelineEventType.RanSlashCommand:
