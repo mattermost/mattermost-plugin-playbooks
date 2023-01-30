@@ -1667,4 +1667,37 @@ describe('playbooks > edit', () => {
             cy.findByText('playbook updated desc').should('exist');
         });
     });
+
+    describe('Duplicate', () => {
+        let testPlaybook;
+        beforeEach(() => {
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (' + Date.now() + ')',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+                cy.log(playbook.title);
+            });
+        });
+
+        it('can be duplicated', () => {
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            // # Open the title dropdown and Duplicate
+            cy.findByTestId('playbook-editor-title').click();
+            cy.findByText('Duplicate').click();
+
+            // * Verify that playbook got duplicated
+            cy.findByTestId('playbook-editor-header').within(() => {
+                cy.findByText('Copy of ' + testPlaybook.title).should('exist');
+            });
+
+            // * Verify that the duplicated playbook is shown in the LHS
+            cy.findByTestId('Playbooks').within(() => {
+                cy.findByText('Copy of ' + testPlaybook.title).should('be.visible');
+            });
+        });
+    });
 });

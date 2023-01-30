@@ -105,6 +105,11 @@ describe('playbooks > list', () => {
             cy.findByTestId('run-playbook').should('exist');
             cy.findByTestId('join-playbook').should('not.exist');
         });
+
+        // * Verify that the duplicated playbook is shown in the LHS
+        cy.findByTestId('Playbooks').within(() => {
+            cy.findByText('Copy of ' + playbookTitle).should('be.visible');
+        });
     });
 
     context('archived playbooks', () => {
