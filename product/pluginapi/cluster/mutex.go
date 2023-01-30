@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -26,7 +27,6 @@ const (
 // MutexPluginAPI is the plugin API interface required to manage mutexes.
 type MutexPluginAPI interface {
 	KVSetWithOptions(key string, value []byte, options model.PluginKVSetOptions) (bool, error)
-	LogError(msg string, keyValuePairs ...interface{})
 }
 
 // Mutex is similar to sync.Mutex, except usable by multiple plugin instances across a cluster.
@@ -126,7 +126,7 @@ func (m *Mutex) LockWithContext(ctx context.Context) error {
 
 		locked, err := m.tryLock()
 		if err != nil {
-			m.pluginAPI.LogError("failed to lock mutex", "err", err, "lock_key", m.key)
+			logrus.WithError(err).WithField("lock_key", m.key).Error("failed to lock mutex")
 			waitInterval = nextWaitInterval(waitInterval, err)
 			continue
 		} else if !locked {
@@ -144,7 +144,7 @@ func (m *Mutex) LockWithContext(ctx context.Context) error {
 				case <-t.C:
 					err := m.refreshLock()
 					if err != nil {
-						m.pluginAPI.LogError("failed to refresh mutex", "err", err, "lock_key", m.key)
+						logrus.WithError(err).WithField("lock_key", m.key).Error("failed to refresh mutex")
 						return
 					}
 				case <-stop:

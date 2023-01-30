@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 
 	mm_model "github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
 
 const (
@@ -95,10 +94,6 @@ type ServicesAPI interface {
 	GetConfig() *mm_model.Config
 	LoadPluginConfiguration(dest any) error
 	SavePluginConfig(pluginConfig map[string]any) error
-
-	// Logger service
-	GetLogger() mlog.LoggerIFace
-	LogError(msg string, keyValuePairs ...interface{})
 
 	// KVStore service
 	KVSetWithOptions(key string, value []byte, options mm_model.PluginKVSetOptions) (bool, error)

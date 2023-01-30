@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -189,7 +190,7 @@ func (j *Job) run() {
 
 			metadata, err := j.readMetadata()
 			if err != nil {
-				j.pluginAPI.LogError("failed to read job metadata", "err", err, "key", j.key)
+				logrus.WithError(err).WithField("key", j.key).Error("failed to read job metadata")
 				waitInterval = nextWaitInterval(waitInterval, err)
 				return
 			}
@@ -207,7 +208,7 @@ func (j *Job) run() {
 
 			err = j.saveMetadata(metadata)
 			if err != nil {
-				j.pluginAPI.LogError("failed to write job data", "err", err, "key", j.key)
+				logrus.WithError(err).WithField("key", j.key).Error("failed to write job data")
 			}
 
 			waitInterval = j.nextWaitInterval(time.Now(), metadata)

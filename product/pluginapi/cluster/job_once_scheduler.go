@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // syncedCallback uses the mutex to make things predictable for the client: the callback will be
@@ -98,7 +99,7 @@ func (s *JobOnceScheduler) ListScheduledJobs() ([]JobOnceMetadata, error) {
 			if strings.HasPrefix(k, oncePrefix) {
 				metadata, err := readMetadata(s.pluginAPI, k[len(oncePrefix):])
 				if err != nil {
-					s.pluginAPI.LogError(errors.Wrap(err, "could not retrieve data from plugin kvstore for key: "+k).Error())
+					logrus.WithError(err).WithField("key", k).Error("could not retrieve data from plugin kvstore")
 					continue
 				}
 				if metadata == nil {
@@ -160,7 +161,7 @@ func (s *JobOnceScheduler) Cancel(key string) {
 		// the current server hasn't polled for it yet. To solve that case, delete it from the db.
 		mutex, err := NewMutex(s.pluginAPI, key)
 		if err != nil {
-			s.pluginAPI.LogError(errors.Wrap(err, "failed to create job mutex in Cancel for key: "+key).Error())
+			logrus.WithError(err).WithField("key", key).Error("failed to create job mutex in Cancel")
 		}
 		mutex.Lock()
 		defer mutex.Unlock()
@@ -184,7 +185,7 @@ func (s *JobOnceScheduler) scheduleNewJobsFromDB() error {
 	for _, m := range scheduled {
 		job, err := newJobOnce(s.pluginAPI, m.Key, m.RunAt, s.storedCallback, s.activeJobs)
 		if err != nil {
-			s.pluginAPI.LogError(errors.Wrap(err, "could not create new job for key: "+m.Key).Error())
+			logrus.WithError(err).WithField("key", m.Key).Error("could not create new job")
 			continue
 		}
 
@@ -214,7 +215,7 @@ func (s *JobOnceScheduler) pollForNewScheduledJobs() {
 		<-time.After(pollNewJobsInterval + addJitter())
 
 		if err := s.scheduleNewJobsFromDB(); err != nil {
-			s.pluginAPI.LogError("pluginAPI scheduleOnce poller encountered an error but is still polling", "error", err)
+			logrus.WithError(err).Error("scheduleOnce poller encountered an error but is still polling")
 		}
 	}
 }

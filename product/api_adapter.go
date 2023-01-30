@@ -311,7 +311,6 @@ func (a *serviceAPIAdapter) GetConfig() *mm_model.Config {
 	return cfg
 }
 
-// TODO: should we add this to product api?
 func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 	finalConfig := make(map[string]any)
 
@@ -339,25 +338,12 @@ func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 	return nil
 }
 
-// TODO: should we add this to product api?
 func (a *serviceAPIAdapter) SavePluginConfig(pluginConfig map[string]any) error {
 	cfg := a.GetConfig()
 	cfg.PluginSettings.Plugins[a.manifest.Id] = pluginConfig
 	_, _, err := a.api.configService.SaveConfig(cfg, true)
 
 	return normalizeAppErr(err)
-}
-
-//
-// Logger service.
-//
-
-func (a *serviceAPIAdapter) GetLogger() mlog.LoggerIFace {
-	return a.api.logger
-}
-
-func (a *serviceAPIAdapter) LogError(msg string, keyValuePairs ...interface{}) {
-	// TODO: Do we need this method? We can instead use logrus
 }
 
 //
@@ -432,7 +418,6 @@ func (a *serviceAPIAdapter) GetDiagnosticID() string {
 	return a.api.systemService.GetDiagnosticId()
 }
 
-// TODO: should we add this to product api?
 func (a *serviceAPIAdapter) GetServerVersion() string {
 	return model.CurrentVersion
 }
