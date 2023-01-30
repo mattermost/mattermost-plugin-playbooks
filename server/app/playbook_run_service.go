@@ -1423,7 +1423,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 // any action if the checklist item is already in the given checked state
 func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
 	type Details struct {
-		Action string `json:"action,omitEmpty"`
+		Action string `json:"action,omitempty"`
 		Task   string `json:"task,omitempty"`
 	}
 
