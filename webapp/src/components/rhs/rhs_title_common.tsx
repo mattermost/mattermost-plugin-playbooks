@@ -64,8 +64,9 @@ export const RHSTitleStyledButtonIcon = styled.i`
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 
-    margin-left: 4px;
+    margin-left: 7px;
 
     width: 18px;
     height: 18px;

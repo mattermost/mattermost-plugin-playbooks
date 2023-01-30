@@ -77,6 +77,7 @@ const FollowingWrapper = styled.div`
     display: flex;
     justify-content: flex-end;
     flex: 1;
+    margin-left: 10px;
 
     // override default styles
     .unfollowButton {

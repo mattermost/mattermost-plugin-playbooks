@@ -5,7 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 export const RHSContainer = styled.div`
-    height: calc(100vh - 119px);
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     position: relative;
