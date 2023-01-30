@@ -43,8 +43,8 @@ import {
     archivePlaybook,
     autoFollowPlaybook,
     autoUnfollowPlaybook,
-    clientFetchPlaybookFollowers,
     duplicatePlaybook as clientDuplicatePlaybook,
+    clientFetchPlaybookFollowers,
     getSiteUrl,
     playbookExportProps,
     restorePlaybook,
@@ -56,11 +56,7 @@ import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-import DotMenu, {
-    DropdownMenuItem as DropdownMenuItemBase,
-    DropdownMenuItemStyled,
-    iconSplitStyling
-} from 'src/components/dot_menu';
+import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from 'src/components/backstage/restore_playbook_modal';
