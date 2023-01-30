@@ -214,7 +214,7 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.StatusUpdateSnoozed:
             return formatMessage({defaultMessage: '{name} snoozed a status update'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdateRequested:
-            return event.summary;
+            return formatMessage({defaultMessage: '{name} requested a status update'}, {name: event.subject_display_name});
         case TimelineEventType.OwnerChanged:
             return formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: event.summary});
         case TimelineEventType.TaskStateModified:
