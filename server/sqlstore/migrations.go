@@ -2447,7 +2447,7 @@ var migrations = []Migration{
 						UPDATE IR_UserInfo
 						SET DigestNotificationSettingsJSON = (DigestNotificationSettingsJSON::jsonb ||
 							jsonb_build_object('disable_weekly_digest', (DigestNotificationSettingsJSON::jsonb->>'disable_daily_digest')::boolean))::json;
-						
+
 					`); err != nil {
 					return errors.Wrapf(err, "failed adding disable_weekly_digest field to IR_UserInfo DigestNotificationSettingsJSON")
 				}

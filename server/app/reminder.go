@@ -93,8 +93,9 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 		Message:   fmt.Sprintf("@%s, please provide a status update for [%s](%s).", owner.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID)),
 		ChannelId: playbookRunToModify.ChannelID,
 		Type:      "custom_update_status",
-		Props: map[string]interface{}{
+		Props: map[string]any{
 			"targetUsername": owner.Username,
+			"playbookRunId":  playbookRunToModify.ID,
 		},
 	}
 	model.ParseSlackAttachment(post, attachments)
@@ -237,7 +238,7 @@ func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminde
 func (s *PlaybookRunServiceImpl) removePost(postID string) error {
 	post, err := s.pluginAPI.Post.GetPost(postID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve reminder post")
+		return errors.Wrapf(err, "failed to retrieve reminder post %s", postID)
 	}
 
 	if post.DeleteAt != 0 {
@@ -245,7 +246,7 @@ func (s *PlaybookRunServiceImpl) removePost(postID string) error {
 	}
 
 	if err = s.pluginAPI.Post.DeletePost(postID); err != nil {
-		return errors.Wrapf(err, "failed to delete reminder post")
+		return errors.Wrapf(err, "failed to delete reminder post %s", postID)
 	}
 
 	return nil

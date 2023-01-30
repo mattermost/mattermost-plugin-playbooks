@@ -13,6 +13,7 @@ describe('channels > update request post', () => {
     let testParticipant;
     let testChannelMemberOnly;
     let testPlaybookRun;
+    let testPlaybookRun2;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -38,7 +39,7 @@ describe('channels > update request post', () => {
             // # Enable threads view
             cy.apiSaveCRTPreference(testParticipant.id, 'on');
 
-            // # Create a public playbook
+            // # Create a public playbook with 2 runs in the same channel
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Playbook',
@@ -55,6 +56,15 @@ describe('channels > update request post', () => {
 
                     // # Add testChannelMemberOnly to the channel, but not the run.
                     cy.apiAddUserToChannel(playbookRun.channel_id, testChannelMemberOnly.id);
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: playbook.id,
+                        playbookRunName: 'Test Run 2',
+                        ownerUserId: testParticipant.id,
+                        channelId: testPlaybookRun.channel_id,
+                    }).then((playbookRun2) => {
+                        testPlaybookRun2 = playbookRun2;
+                    });
                 });
             });
         });
@@ -64,6 +74,13 @@ describe('channels > update request post', () => {
         beforeEach(() => {
             // # Login as testUser
             cy.apiLogin(testParticipant);
+
+            // # Post a status update, with a reminder in 1 second.
+            cy.apiUpdateStatus({
+                playbookRunId: testPlaybookRun2.id,
+                message: 'status update 2',
+                reminder: 1,
+            });
 
             // # Post a status update, with a reminder in 1 second.
             cy.apiUpdateStatus({
@@ -89,6 +106,16 @@ describe('channels > update request post', () => {
 
                     // # Verify interactive message button to post an update
                     cy.get(element).find('button').contains('Post update');
+                });
+            });
+
+            it('reset reminder', () => {
+                cy.getLastPost().within(() => {
+                    // * Snooze reminder
+                    cy.getStyledComponent('StyledSelect').click().type('{downArrow}{downArrow}{enter}');
+
+                    // # Verify interactive message button to post an update has dissapeared
+                    cy.findByText('(message deleted)').should('be.visible');
                 });
             });
 
