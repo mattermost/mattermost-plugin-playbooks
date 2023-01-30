@@ -59,12 +59,6 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	isMobile, err := getBoolField("isMobile", req.Context, w)
-	if err != nil {
-		h.returnError(publicErrorMessage, err, c.logger, w)
-		return
-	}
-
 	postID, err := getStringField("postID", req.Context, w)
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
@@ -83,7 +77,7 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile, post.Id); err != nil {
+	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, post.Id); err != nil {
 		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), c.logger, w)
 		return
 	}
@@ -140,18 +134,6 @@ func getStringField(field string, context map[string]interface{}, w http.Respons
 	fieldValue, ok := fieldInt.(string)
 	if !ok {
 		return "", errors.Errorf("%s field is not a string", field)
-	}
-	return fieldValue, nil
-}
-
-func getBoolField(field string, context map[string]interface{}, w http.ResponseWriter) (bool, error) {
-	fieldInt, ok := context[field]
-	if !ok {
-		return false, errors.Errorf("no %s field in the request context", field)
-	}
-	fieldValue, ok := fieldInt.(bool)
-	if !ok {
-		return false, errors.Errorf("%s field is not a string", field)
 	}
 	return fieldValue, nil
 }

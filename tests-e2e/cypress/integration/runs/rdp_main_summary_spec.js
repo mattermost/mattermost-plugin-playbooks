@@ -121,6 +121,17 @@ describe('runs > run details page > summary', () => {
             // * Assert last edition date is not visible
             cy.findByTestId('run-summary-section').should('not.contain', 'Last edited');
         });
+
+        it('can not be edited once run is finished', () => {
+            // # Finish the run
+            cy.apiFinishRun(testRun.id);
+
+            // # Mouseover the summary
+            cy.findByTestId('run-summary-section').trigger('mouseover');
+
+            // * Verify that the edit button is not rendered
+            cy.findByTestId('run-summary-section').findByTestId('hover-menu-edit-button').should('not.exist');
+        });
     });
 
     describe('as viewer', () => {

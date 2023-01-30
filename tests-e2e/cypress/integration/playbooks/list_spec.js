@@ -136,4 +136,73 @@ describe('playbooks > list', () => {
             });
         });
     });
+
+    describe('can import playbook', () => {
+        let validPlaybookExport;
+        let invalidTypePlaybookExport;
+
+        const bufferToCypressFile = (fileName, fileData, fileType) => ({
+            fileName,
+            contents: fileData,
+            mimeType: fileType,
+        });
+
+        before(() => {
+            // # Load fixtures and convert to File
+            cy.fixture('playbook-export.json', null).then((buffer) => {
+                validPlaybookExport = bufferToCypressFile('export.json', buffer, 'application/json');
+            });
+            cy.fixture('mp3-audio-file.mp3', null).then((buffer) => {
+                invalidTypePlaybookExport = bufferToCypressFile('audio.mp3', buffer, 'audio/mpeg');
+            });
+        });
+
+        it('triggered by drag and drop', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            // # Drop loaded fixture onto playbook list
+            cy.findByTestId('playbook-list-scroll-container').selectFile(validPlaybookExport, {
+                action: 'drag-drop'
+            });
+
+            // * Verify that a new playbook was created.
+            cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
+        });
+
+        it('triggered by using button/input', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            cy.findByTestId('titlePlaybook').within(() => {
+                // # Select loaded fixture for upload
+                cy.findByTestId('playbook-import-input').selectFile(validPlaybookExport, {force: true});
+            });
+
+            // * Verify that a new playbook was created.
+            cy.findByTestId('playbook-editor-title').should('contain', 'Example Playbook');
+        });
+
+        it('fails to import invalid file type', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            cy.findByTestId('titlePlaybook').within(() => {
+                // # Select loaded fixture for upload
+                cy.findByTestId('playbook-import-input').selectFile(invalidTypePlaybookExport, {force: true});
+            });
+
+            // * Verify that an error message is displayed.
+            cy.findByText('The file must be a valid JSON playbook template.').should('be.visible');
+        });
+    });
 });

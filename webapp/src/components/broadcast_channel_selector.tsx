@@ -73,7 +73,7 @@ const MultiValueRemove = (props: MultiValueRemoveProps) => (
 
 const StyledClearIcon = styled(ClearIcon)`
     color: rgba(var(--center-channel-color-rgb), 0.32);
-    font-size: 15px;
+    font-size: 14px;
     cursor: pointer;
 
     :hover {

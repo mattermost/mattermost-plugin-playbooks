@@ -68,11 +68,9 @@ export interface PlaybookWithChecklist extends Playbook {
     webhook_on_creation_enabled: boolean;
 }
 
-export enum MetricType {
-    Duration = 'metric_duration',
-    Currency = 'metric_currency',
-    Integer = 'metric_integer',
-}
+import {MetricType} from 'src/graphql/generated/graphql';
+
+export {MetricType};
 
 export interface Metric {
     id: string;
@@ -99,10 +97,6 @@ export interface FetchPlaybooksReturn {
     items: Playbook[];
 }
 
-export interface FetchPlaybooksCountReturn {
-    count: number;
-}
-
 export interface Checklist {
     title: string;
     items: ChecklistItem[];
@@ -120,9 +114,9 @@ export interface ChecklistItem {
     title: string;
     description: string;
     state: ChecklistItemState | string;
-    state_modified?: number;
-    assignee_id?: string;
-    assignee_modified?: number;
+    state_modified: number;
+    assignee_id: string;
+    assignee_modified: number;
     command: string;
     command_last_run: number;
     due_date: number;
@@ -230,6 +224,9 @@ export function emptyChecklistItem(): ChecklistItem {
         command_last_run: 0,
         due_date: 0,
         task_actions: [] as TaskAction[],
+        state_modified: 0,
+        assignee_modified: 0,
+        assignee_id: '',
     };
 }
 
@@ -241,6 +238,9 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state,
     due_date: 0,
     task_actions: [] as TaskAction[],
+    state_modified: 0,
+    assignee_modified: 0,
+    assignee_id: '',
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {
@@ -271,11 +271,11 @@ export const newMetric = (type: MetricType, title = '', description = '', target
     target,
 });
 
-export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
+export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/guides/playbooks.html). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
 
 Here are some resources that you may find helpful:
-[Mattermost community channel](https://community.mattermost.com/core/channels/ee-incident-response)
-[User guide and documentation](https://docs.mattermost.com/administration/devops-command-center.html)`;
+[Mattermost community channel](https://community.mattermost.com/core/channels/developers-playbooks)
+[User guide and documentation](https://docs.mattermost.com/guides/playbooks.html)`;
 
 export const defaultRetrospectiveTemplate = `### Summary
 This should contain 2-3 sentences that give a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.

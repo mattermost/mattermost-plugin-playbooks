@@ -12,26 +12,32 @@ type RunResolver struct {
 	app.PlaybookRun
 }
 
-// Progress is a computed atrtibute (not stored in database) which
-// returns the % of tasks that are closed (checked or skipped) from the total:
-// - 0 -> no tasks closed
-// - 0.3 -> 30% of tasks closed
-// - 1 -> all tasks closed
-func (r *RunResolver) Progress() float64 {
-	var closed float64
-	var total int
+// NumTasks is a computed attribute (not stored in database) which
+// returns the number of total tasks in a playbook run:
+func (r *RunResolver) NumTasks() int32 {
+	total := 0
 	for _, checklist := range r.PlaybookRun.Checklists {
 		total += len(checklist.Items)
+	}
+	return int32(total)
+}
+
+// NumTasksClosed is a computed attribute (not stored in database) which
+// returns the number of tasks closed in a playbook run:
+func (r *RunResolver) NumTasksClosed() int32 {
+	closed := 0
+	for _, checklist := range r.PlaybookRun.Checklists {
 		for _, item := range checklist.Items {
 			if item.State == app.ChecklistItemStateClosed || item.State == app.ChecklistItemStateSkipped {
 				closed++
 			}
 		}
 	}
-	if total == 0 {
-		return 1
-	}
-	return closed / float64(total)
+	return int32(closed)
+}
+
+func (r *RunResolver) Type() string {
+	return r.PlaybookRun.Type
 }
 
 func (r *RunResolver) CreateAt() float64 {
@@ -142,7 +148,7 @@ func (r *TimelineEventResolver) DeleteAt() float64 {
 	return float64(r.TimelineEvent.DeleteAt)
 }
 
-func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
+func (r *RunResolver) Followers(ctx context.Context) ([]string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
 		return nil, err
@@ -153,7 +159,7 @@ func (r *RunResolver) Metadata(ctx context.Context) (*MetadataResolver, error) {
 		return nil, errors.Wrap(err, "can't get metadata")
 	}
 
-	return &MetadataResolver{*metadata}, nil
+	return metadata.Followers, nil
 }
 
 func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
@@ -178,10 +184,6 @@ func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {
 		return float64(r.PlaybookRun.CreateAt)
 	}
 	return float64(r.PlaybookRun.TimelineEvents[len(r.PlaybookRun.TimelineEvents)-1].EventAt)
-}
-
-type MetadataResolver struct {
-	app.Metadata
 }
 
 type RunConnectionResolver struct {

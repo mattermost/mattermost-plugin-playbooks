@@ -132,6 +132,13 @@ export const StyledSelect = styled(Select).attrs((props) => {
     };
 })`
     ${commonSelectStyle}
+
+    ${({classNamePrefix}) => css`
+        .${classNamePrefix}__multi-value {
+            padding-left: 6px;
+        }
+    `}
+
 `;
 
 export const StyledCreatable = styled(Creatable)`
@@ -153,6 +160,10 @@ export const StyledCreatable = styled(Creatable)`
 
         .${classNamePrefix}__single-value {
             color: var(--center-channel-color);
+        }
+
+        .${classNamePrefix}__multi-value {
+            padding-left: 6px;
         }
 
         .${classNamePrefix}__menu-list {

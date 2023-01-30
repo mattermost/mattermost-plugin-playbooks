@@ -34,8 +34,6 @@ func NewCategoryHandler(router *mux.Router, api playbooks.ServicesAPI, categoryS
 	categoriesRouter := router.PathPrefix("/my_categories").Subrouter()
 	categoriesRouter.HandleFunc("", withContext(handler.getMyCategories)).Methods(http.MethodGet)
 	categoriesRouter.HandleFunc("", withContext(handler.createMyCategory)).Methods(http.MethodPost)
-	categoriesRouter.HandleFunc("/favorites", withContext(handler.addFavorite)).Methods(http.MethodPost)
-	categoriesRouter.HandleFunc("/favorites", withContext(handler.deleteFavorite)).Methods(http.MethodDelete)
 	categoriesRouter.HandleFunc("/favorites", withContext(handler.isFavorite)).Methods(http.MethodGet)
 
 	categoryRouter := categoriesRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
@@ -227,42 +225,6 @@ func (h *CategoryHandler) deleteMyCategory(c *Context, w http.ResponseWriter, r 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *CategoryHandler) addFavorite(c *Context, w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
-	params := r.URL.Query()
-	teamID := params.Get("team_id")
-
-	var item app.CategoryItem
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode category item", err)
-		return
-	}
-
-	if err := h.categoryService.AddFavorite(item, teamID, userID); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-}
-
-func (h *CategoryHandler) deleteFavorite(c *Context, w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
-	params := r.URL.Query()
-	teamID := params.Get("team_id")
-
-	var item app.CategoryItem
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode category item", err)
-		return
-	}
-
-	if err := h.categoryService.DeleteFavorite(item, teamID, userID); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func (h *CategoryHandler) isFavorite(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	params := r.URL.Query()
@@ -293,6 +255,7 @@ func (h *CategoryHandler) getRunsCategory(teamID, userID string) (app.Category, 
 			TeamID:                  teamID,
 			ParticipantOrFollowerID: userID,
 			Statuses:                []string{app.StatusInProgress},
+			Types:                   []string{app.RunTypePlaybook}, // only playbook runs can be viewed in Playbook product
 			Page:                    0,
 			PerPage:                 maxItemsInRunsAndPlaybooksCategory,
 		},

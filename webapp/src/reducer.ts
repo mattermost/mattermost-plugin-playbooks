@@ -7,7 +7,6 @@ import {Team} from '@mattermost/types/teams';
 import {Channel} from '@mattermost/types/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {RHSState} from 'src/types/rhs';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     CLOSE_BACKSTAGE_RHS,
@@ -43,7 +42,6 @@ import {
     SET_HAS_VIEWED_CHANNEL,
     SET_RHS_ABOUT_COLLAPSED_STATE,
     SET_RHS_OPEN,
-    SET_RHS_STATE,
     SHOW_CHANNEL_ACTIONS_MODAL,
     SHOW_PLAYBOOK_ACTIONS_MODAL,
     SHOW_POST_MENU_MODAL,
@@ -56,7 +54,6 @@ import {
     SetHasViewedChannel,
     SetRHSAboutCollapsedState,
     SetRHSOpen,
-    SetRHSState,
     ShowChannelActionsModal,
     ShowPlaybookActionsModal,
     ShowPostMenuModal,
@@ -87,15 +84,6 @@ function clientId(state = '', action: SetClientId) {
     switch (action.type) {
     case SET_CLIENT_ID:
         return action.clientId || '';
-    default:
-        return state;
-    }
-}
-
-function rhsState(state = RHSState.ViewingPlaybookRun, action: SetRHSState) {
-    switch (action.type) {
-    case SET_RHS_STATE:
-        return action.nextState;
     default:
         return state;
     }
@@ -167,22 +155,6 @@ const myPlaybookRuns = (
 
         return newState;
     }
-
-    // TODO: REMOVED_FROM_CHANNEL
-    // case REMOVED_FROM_CHANNEL: {
-    //     const removedFromChannelAction = action as RemovedFromChannel;
-    //     const channelId = removedFromChannelAction.channelId;
-
-    //     const newState = {
-    //         ...state,
-    //         [teamId]: {...state[teamId]},
-    //     };
-    //     const runMap = newState[teamId];
-    //     if (runMap) {
-    //         delete runMap[channelId];
-    //     }
-    //     return newState;
-    // }
 
     default:
         return state;
@@ -436,7 +408,6 @@ const reducer = combineReducers({
     clientId,
     myPlaybookRuns,
     myPlaybookRunsByTeam,
-    rhsState,
     globalSettings,
     postMenuModalVisibility,
     channelActionsModalVisibility,

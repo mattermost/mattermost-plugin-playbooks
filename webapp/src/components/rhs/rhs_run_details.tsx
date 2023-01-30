@@ -140,6 +140,12 @@ const RHSRunDetails = (props: Props) => {
         );
     }
 
+    const readOnly = !isParticipant || playbookRun.current_status === PlaybookRunStatus.Finished;
+    let onReadOnlyInteract;
+    if (playbookRun.current_status !== PlaybookRunStatus.Finished) {
+        onReadOnlyInteract = displayReadOnlyToast;
+    }
+
     return (
         <>
             <RHSTitleRemoteRender>
@@ -162,15 +168,15 @@ const RHSRunDetails = (props: Props) => {
                     >
                         <RHSAbout
                             playbookRun={playbookRun}
-                            readOnly={!isParticipant}
-                            onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
+                            readOnly={readOnly}
+                            onReadOnlyInteract={onReadOnlyInteract}
                             setShowParticipants={setShowParticipants}
                         />
                         <RHSChecklistList
                             playbookRun={playbookRun}
                             parentContainer={ChecklistParent.RHS}
-                            viewerMode={!isParticipant}
-                            onViewerModeInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
+                            readOnly={readOnly}
+                            onReadOnlyInteract={onReadOnlyInteract}
                         />
                     </Scrollbars>
                 </RHSContent>

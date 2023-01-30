@@ -28,6 +28,11 @@ const (
 	RunSourceDialog = "dialog"
 )
 
+const (
+	RunTypePlaybook         = "playbook"
+	RunTypeChannelChecklist = "channelChecklist"
+)
+
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
@@ -186,6 +191,10 @@ type PlaybookRun struct {
 	// RemoveChannelMemberOnRemovedParticipant is the Run action flag that defines if an existent channel member will be removed
 	// from the run's channel when a new participant is added to the run (by themselve or by other members).
 	RemoveChannelMemberOnRemovedParticipant bool `json:"remove_channel_member_on_removed_participant" export:"create_channel_member_on_removed_participant"`
+
+	// Type determines a type of a run.
+	// It can be RunTypePlaybook ("playbook") or RunTypeChannelChecklist ("channel")
+	Type string `json:"type"`
 }
 
 func (r *PlaybookRun) Clone() *PlaybookRun {
@@ -313,6 +322,8 @@ func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source str
 
 	r.CreateChannelMemberOnNewParticipant = playbook.CreateChannelMemberOnNewParticipant
 	r.RemoveChannelMemberOnRemovedParticipant = playbook.RemoveChannelMemberOnRemovedParticipant
+
+	r.Type = RunTypePlaybook
 }
 
 type StatusPost struct {
@@ -581,7 +592,7 @@ type PlaybookRunService interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
-	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error
+	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, promptPostID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
 	OpenUpdateStatusDialog(playbookRunID, userID, triggerID string) error
@@ -795,7 +806,7 @@ type PlaybookRunService interface {
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
-	MessageHasBeenPosted(sessionID string, post *model.Post)
+	MessageHasBeenPosted(post *model.Post)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -1081,6 +1092,9 @@ type PlaybookRunFilterOptions struct {
 
 	// ChannelID filters to playbook runs that are associated with the given channel ID
 	ChannelID string `url:"channel_id,omitempty"`
+
+	// Types filters by all run types in the list (inclusive)
+	Types []string
 }
 
 // Clone duplicates the given options.
@@ -1088,6 +1102,9 @@ func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	newPlaybookRunFilterOptions := *o
 	if len(o.Statuses) > 0 {
 		newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	}
+	if len(o.Types) > 0 {
+		newPlaybookRunFilterOptions.Types = append([]string{}, o.Types...)
 	}
 
 	return newPlaybookRunFilterOptions
@@ -1171,9 +1188,19 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 		}
 	}
 
+	for _, t := range options.Types {
+		if !validType(t) {
+			return PlaybookRunFilterOptions{}, errors.New("bad parameter in 'types': must be playbook or channel")
+		}
+	}
+
 	return options, nil
 }
 
 func validStatus(status string) bool {
 	return status == "" || status == StatusInProgress || status == StatusFinished
+}
+
+func validType(runType string) bool {
+	return runType == RunTypePlaybook || runType == RunTypeChannelChecklist
 }

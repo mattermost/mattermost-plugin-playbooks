@@ -502,7 +502,7 @@ func TestRunRetrieval(t *testing.T) {
 	})
 }
 
-func TestRunStatus(t *testing.T) {
+func TestRunPostStatusUpdate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
@@ -537,9 +537,9 @@ func TestRunStatus(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run)
 
-		// Update should fail because no access to private broadcast channel
+		// Update should work even when we don't have access to private broadcast channel
 		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update", 600)
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.NoError(t, err)
 	})
 }
 
@@ -1538,6 +1538,107 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+	})
+}
+
+func TestChecklisItem_SetCommand(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 0)
+
+	checklist := client.Checklist{
+		Title: "Test Checklist",
+		Items: []client.ChecklistItem{
+			{
+				Title: "Test Item",
+			},
+		},
+	}
+
+	err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, checklist)
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 1)
+	require.Len(t, run.Checklists[0].Items, 1)
+
+	t.Run("set command", func(t *testing.T) {
+		// command and commandlastrun are not set (before)
+		require.Empty(t, run.Checklists[0].Items[0].CommandLastRun)
+		require.Empty(t, run.Checklists[0].Items[0].Command)
+
+		// set command
+		err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook todo")
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook todo", run.Checklists[0].Items[0].Command)
+		require.Equal(t, int64(0), run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("run command", func(t *testing.T) {
+		// command and commandlastrun are not set (before)
+		require.Empty(t, run.Checklists[0].Items[0].CommandLastRun)
+
+		// run command
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook todo", run.Checklists[0].Items[0].Command)
+		require.NotZero(t, run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("rerun command", func(t *testing.T) {
+		lastRun := run.Checklists[0].Items[0].CommandLastRun
+
+		// rerun command
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Less(t, lastRun, run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("set a the same command", func(t *testing.T) {
+		lastRun := run.Checklists[0].Items[0].CommandLastRun
+
+		// set command
+		err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook todo")
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook todo", run.Checklists[0].Items[0].Command)
+		require.Equal(t, lastRun, run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("set a different command", func(t *testing.T) {
+		// set command
+		err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook finish")
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook finish", run.Checklists[0].Items[0].Command)
+		require.Zero(t, run.Checklists[0].Items[0].CommandLastRun)
 	})
 }
 

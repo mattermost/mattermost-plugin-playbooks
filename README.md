@@ -4,7 +4,7 @@
 [![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-playbooks/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-playbooks)
 [![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-playbooks)](https://github.com/mattermost/mattermost-plugin-playbooks/releases/latest)
 
-Mattermost Playbooks allows your team to create and run playbooks from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html).
+Mattermost Playbooks allows your team to create and run playbooks from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/guides/playbooks.html).
 
 ![Mattermost Playbooks](assets/incident_response.png)
 

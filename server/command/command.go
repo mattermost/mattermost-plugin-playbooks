@@ -269,13 +269,7 @@ func (r *Runner) actionRun(args []string) {
 		return
 	}
 
-	session, err := r.api.GetSession(r.context.SessionId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
-		return
-	}
-
-	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, session.IsMobileApp(), ""); err != nil {
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, ""); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
@@ -324,13 +318,7 @@ func (r *Runner) actionRunPlaybook(args []string) {
 		return
 	}
 
-	session, err := r.api.GetSession(r.context.SessionId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
-		return
-	}
-
-	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, session.IsMobileApp(), ""); err != nil {
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, ""); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
@@ -1205,6 +1193,7 @@ And... yes, of course, we have emojis
 		PlaybookID:          gotplaybook.ID,
 		Checklists:          gotplaybook.Checklists,
 		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
+		Type:                app.RunTypePlaybook,
 	}, &gotplaybook, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())
@@ -1382,6 +1371,7 @@ func (r *Runner) actionTestCreate(params []string) {
 			TeamID:      r.args.TeamId,
 			PlaybookID:  playbookID,
 			Checklists:  playbook.Checklists,
+			Type:        app.RunTypePlaybook,
 		},
 		&playbook,
 		r.args.UserId,
@@ -1919,6 +1909,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 				Checklists:           playbook.Checklists,
 				RetrospectiveEnabled: playbook.RetrospectiveEnabled,
 				StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
+				Type:                 app.RunTypePlaybook,
 			},
 			&playbook,
 			r.args.UserId,

@@ -2,137 +2,318 @@ import React, {ComponentProps, useEffect, useState} from 'react';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useSelector} from 'react-redux';
-import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
+import {useDispatch, useSelector} from 'react-redux';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
+import {ApolloProvider} from '@apollo/client';
 
-import {Client4} from 'mattermost-redux/client';
-
-import {AccountOutlineIcon, NotebookOutlineIcon} from '@mattermost/compass-icons/components';
-import {GlobalState} from '@mattermost/types/store';
-
-import {displayUsername, getFullName} from 'mattermost-redux/utils/user_utils';
-import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
-
-import {UserProfile} from '@mattermost/types/users';
-
-import {usePlaybook} from 'src/hooks';
-import {BaseInput} from 'src/components/assets/inputs';
-import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
+import {usePlaybook} from 'src/graphql/hooks';
+import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
+import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
-import {navigateToPluginUrl} from 'src/browser_routing';
-
-import {AutomationLabel, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 import {ButtonLabel, StyledChannelSelector, VerticalSplit} from 'src/components/backstage/playbook_edit/automation/channel_access';
-
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
-
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
+import {displayPlaybookCreateModal} from 'src/actions';
+import PlaybooksSelector from 'src/components/playbooks_selector';
+import {SecondaryButton} from 'src/components/assets/buttons';
+import SearchInput from 'src/components/backstage/search_input';
+import {useCanCreatePlaybooksInTeam} from 'src/hooks';
+import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 
 const ID = 'playbooks_run_playbook_dialog';
 
 export const makeModalDefinition = (
-    playbookId: string,
-    defaultOwnerId: string | null,
-    description: string,
+    playbookId: string | undefined,
+    triggerChannelId: string | undefined,
     teamId: string,
-    teamName: string,
-    refreshLHS?: () => void
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 ) => ({
     modalId: ID,
-    dialogType: RunPlaybookModal,
-    dialogProps: {playbookId, defaultOwnerId, description, teamId, teamName, refreshLHS},
+    dialogType: ApolloWrappedModal,
+    dialogProps: {playbookId, triggerChannelId, teamId, onRunCreated},
 });
 
 type Props = {
-    playbookId: string,
-    defaultOwnerId: string | null,
-    description: string,
+    playbookId?: string,
+    triggerChannelId?: string,
     teamId: string,
-    teamName: string
-    refreshLHS?: () => void
+    onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const RunPlaybookModal = ({
     playbookId,
-    defaultOwnerId,
-    description,
+    triggerChannelId,
     teamId,
-    refreshLHS,
+    onRunCreated,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
 
+    const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
+    const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
+    const [playbook] = usePlaybook(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
-    let userId = useSelector(getCurrentUserId);
-    if (defaultOwnerId) {
-        userId = defaultOwnerId;
-    }
-    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
-    const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const playbookOwner = getFullName(user) || displayUsername(user, teammateNameDisplaySetting);
-    const profileUri = Client4.getProfilePictureUrl(user.id, user.last_picture_update);
-
-    const playbook = usePlaybook(playbookId)[0];
+    const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
     const [channelId, setChannelId] = useState('');
     const [createPublicRun, setCreatePublicRun] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showsearch, setShowsearch] = useState(true);
+    const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
+
+    let userId = useSelector(getCurrentUserId);
+    if (playbook?.default_owner_enabled && playbook.default_owner_id) {
+        userId = playbook.default_owner_id;
+    }
+
+    useEffect(() => {
+        if (playbook && playbook.channel_mode === 'create_new_channel') {
+            setRunName(playbook.channel_name_template);
+        }
+    }, [playbook, playbook?.channel_name_template, playbook?.channel_mode]);
+
+    useEffect(() => {
+        if (playbook && playbook?.run_summary_template_enabled) {
+            setRunSummary(playbook.run_summary_template);
+        }
+    }, [playbook, playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
 
     useEffect(() => {
         if (playbook) {
-            setRunName(playbook.channel_name_template);
             setChannelMode(playbook.channel_mode);
+        }
+    }, [playbook, playbook?.channel_mode]);
+
+    useEffect(() => {
+        if (playbook) {
             setChannelId(playbook.channel_id);
+        }
+    }, [playbook, playbook?.channel_id]);
+
+    useEffect(() => {
+        if (playbook) {
             setCreatePublicRun(playbook.create_public_playbook_run);
         }
-    }, [playbook, playbook?.id]);
+    }, [playbook, playbook?.create_public_playbook_run]);
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
-    const isFormValid = runName !== '' && (createNewChannel || channelId !== '');
+    const isFormValid = runName !== '' && runName.length <= RUN_NAME_MAX_LENGTH && (createNewChannel || channelId !== '');
 
+    const onCreatePlaybook = () => {
+        dispatch(displayPlaybookCreateModal({}));
+        modalProps.onHide?.();
+    };
     const onSubmit = () => {
-        if (!isFormValid) {
+        if (!playbook || !selectedPlaybookId) {
             return;
         }
+
         createPlaybookRun(
-            playbookId,
-            user.id,
-            teamId,
+            selectedPlaybookId,
+            userId,
+            playbook.team_id,
             runName,
-            description,
+            runSummary,
             linkExistingChannel ? channelId : undefined,
             createNewChannel ? createPublicRun : undefined,
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
-                navigateToPluginUrl(`/runs/${newPlaybookRun.id}?from=run_modal`);
-                refreshLHS?.();
+                const statsData = {
+                    playbookId: selectedPlaybookId,
+                    channelMode,
+                    public: createNewChannel ? createPublicRun : undefined,
+                    hasPlaybookChanged: playbookId !== selectedPlaybookId,
+                    hasNameChanged: runName !== playbook.channel_name_template,
+                    hasSummaryChanged: runSummary !== playbook.run_summary_template,
+                    hasChannelModeChanged: channelMode !== playbook.channel_mode,
+                    hasChannelIdChanged: channelId !== playbook.channel_id,
+                    hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
+                };
+                onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
             }).catch(() => {
             // show error
             });
     };
 
-    const channelConfigSection = (
-        <Container>
-            <AutomationTitle
-                css={{alignSelf: 'flex-start'}}
+    // Start a run tab
+    if (step === 'run-details') {
+        return (
+            <StyledGenericModal
+                cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+                showCancel={true}
+                isConfirmDisabled={!isFormValid}
+                handleConfirm={onSubmit}
+                autoCloseOnConfirmButton={false}
+                id={ID}
+                modalHeaderText={(
+                    <ColContainer>
+                        <IconWrapper
+                            onClick={() => {
+                                setSearchTerm('');
+                                setStep('select-playbook');
+                            }}
+                        >
+                            <ArrowLeftIcon
+                                size={24}
+                                color={'rgba(var(--center-channel-color-rgb), 0.56)'}
+                            />
+                        </IconWrapper>
+                        <HeaderTitle>
+                            <FormattedMessage defaultMessage='Start a run'/>
+                            <ModalSideheading>{playbook?.title}</ModalSideheading>
+                        </HeaderTitle>
+                    </ColContainer>
+                )}
+                {...modalProps}
             >
-                <AutomationLabel>
-                    <StyledRadioInput
-                        data-testid={'link-existing-channel-radio'}
-                        type='radio'
-                        checked={linkExistingChannel}
-                        onChange={() => setChannelMode('link_existing_channel')}
+                <Body>
+                    <RunNameSection
+                        runName={runName}
+                        onSetRunName={setRunName}
                     />
-                    <FormattedMessage defaultMessage='Link to an existing channel'/>
-                </AutomationLabel>
-            </AutomationTitle>
+
+                    <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
+                    <BaseTextArea
+                        data-testid={'run-summary-input'}
+                        rows={5}
+                        value={runSummary}
+                        onChange={(e) => setRunSummary(e.target.value)}
+                    />
+                    <ConfigChannelSection
+                        teamId={teamId}
+                        channelId={channelId}
+                        channelMode={channelMode}
+                        createPublicRun={createPublicRun}
+                        onSetCreatePublicRun={setCreatePublicRun}
+                        onSetChannelMode={setChannelMode}
+                        onSetChannelId={setChannelId}
+                    />
+                </Body>
+            </StyledGenericModal>
+        );
+    }
+
+    // Select a playbook tab
+    return (
+        <StyledGenericModal
+            showCancel={false}
+            isConfirmDisabled={!isFormValid}
+            id={ID}
+            modalHeaderText={(
+                <RowContainer>
+                    <ColContainer>
+                        <HeaderTitle>
+                            <FormattedMessage defaultMessage='Select a playbook'/>
+                        </HeaderTitle>
+                        <HeaderButtonWrapper>
+                            {canCreatePlaybooks && <CreatePlaybookButton onClick={onCreatePlaybook}>
+                                <FormattedMessage defaultMessage='Create new playbook'/>
+                            </CreatePlaybookButton>}
+                        </HeaderButtonWrapper>
+                    </ColContainer>
+                    {showsearch && <SearchWrapper>
+                        <SearchInput
+                            testId={'search-filter'}
+                            default={''}
+                            onSearch={(term) => setSearchTerm(term)}
+                            placeholder={formatMessage({defaultMessage: 'Search playbooks'})}
+                            width={'100%'}
+                        />
+                    </SearchWrapper>}
+                </RowContainer>
+            )}
+            {...modalProps}
+        >
+            <Body>
+                <PlaybooksSelector
+                    onCreatePlaybook={onCreatePlaybook}
+                    teamID={teamId}
+                    channelID={triggerChannelId || ''}
+                    onZeroCaseNoPlaybooks={(isZeroNoShow: boolean) => setShowsearch(!isZeroNoShow)}
+                    searchTerm={searchTerm}
+                    onSelectPlaybook={(id) => {
+                        setSelectedPlaybookId(id);
+                        setStep('run-details');
+                    }}
+                />
+            </Body>
+        </StyledGenericModal>
+    );
+};
+
+type runNameProps = {
+    runName: string;
+    onSetRunName: (name: string) => void;
+};
+
+const RunNameSection = ({runName, onSetRunName}: runNameProps) => {
+    const {formatMessage} = useIntl();
+    const [error, setError] = useState('');
+
+    const onRunNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        if (error && value.length <= RUN_NAME_MAX_LENGTH) {
+            setError('');
+        } else if (!error && value.length > RUN_NAME_MAX_LENGTH) {
+            setError(formatMessage({defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
+        }
+
+        onSetRunName(value);
+    };
+
+    return (<>
+        <RunNameLabel invalid={Boolean(error)}>
+            {formatMessage({defaultMessage: 'Run name'})}{error ? ' *' : ''}
+        </RunNameLabel>
+        <BaseInput
+            invalid={Boolean(error)}
+            data-testid={'run-name-input'}
+            autoFocus={true}
+            type={'text'}
+            value={runName}
+            onChange={onRunNameChange}
+        />
+        {error && <ErrorMessage data-testid={'run-name-error'}>{error}</ErrorMessage>}
+    </>);
+};
+
+type channelProps = {
+    teamId: string;
+    channelMode: string;
+    channelId: string;
+    createPublicRun: boolean;
+    onSetCreatePublicRun: (val: boolean) => void;
+    onSetChannelMode: (mode: 'link_existing_channel' | 'create_new_channel') => void;
+    onSetChannelId: (channelId: string) => void;
+};
+
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
+    const {formatMessage} = useIntl();
+    const createNewChannel = channelMode === 'create_new_channel';
+    const linkExistingChannel = channelMode === 'link_existing_channel';
+    return (
+        <ChannelContainer>
+            <ChannelBlock>
+                <StyledRadioInput
+                    data-testid={'link-existing-channel-radio'}
+                    type='radio'
+                    checked={linkExistingChannel}
+                    onChange={() => onSetChannelMode('link_existing_channel')}
+                />
+                <FormattedMessage defaultMessage='Link to an existing channel'/>
+            </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
                     <StyledChannelSelector
                         id={'link-existing-channel-selector'}
-                        onChannelSelected={(channel_id: string) => setChannelId(channel_id)}
+                        onChannelSelected={(channel_id: string) => onSetChannelId(channel_id)}
                         channelIds={channelId ? [channelId] : []}
                         isClearable={true}
                         selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
@@ -145,17 +326,15 @@ const RunPlaybookModal = ({
                 </SelectorWrapper>
             )}
 
-            <AutomationTitle css={{alignSelf: 'flex-start'}} >
-                <AutomationLabel>
-                    <StyledRadioInput
-                        data-testid={'create-channel-radio'}
-                        type='radio'
-                        checked={createNewChannel}
-                        onChange={() => setChannelMode('create_new_channel')}
-                    />
-                    <FormattedMessage defaultMessage='Create a run channel'/>
-                </AutomationLabel>
-            </AutomationTitle>
+            <ChannelBlock >
+                <StyledRadioInput
+                    data-testid={'create-channel-radio'}
+                    type='radio'
+                    checked={createNewChannel}
+                    onChange={() => onSetChannelMode('create_new_channel')}
+                />
+                <FormattedMessage defaultMessage='Create a run channel'/>
+            </ChannelBlock>
 
             {createNewChannel && (
                 <HorizontalSplit>
@@ -165,7 +344,7 @@ const RunPlaybookModal = ({
                                 data-testid={'create-public-channel-radio'}
                                 type='radio'
                                 checked={createPublicRun}
-                                onChange={() => setCreatePublicRun(true)}
+                                onChange={() => onSetCreatePublicRun(true)}
                             />
                             <Icon
                                 disabled={false}
@@ -180,7 +359,7 @@ const RunPlaybookModal = ({
                                 data-testid={'create-private-channel-radio'}
                                 type='radio'
                                 checked={!createPublicRun}
-                                onChange={() => setCreatePublicRun(false)}
+                                onChange={() => onSetCreatePublicRun(false)}
                             />
                             <Icon
                                 disabled={false}
@@ -192,84 +371,59 @@ const RunPlaybookModal = ({
                     </VerticalSplit>
                 </HorizontalSplit>
             )}
-        </Container>
-    );
-
-    return (
-        <StyledGenericModal
-            modalHeaderText={formatMessage({defaultMessage: 'Run Playbook'})}
-            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
-            isConfirmDisabled={!isFormValid}
-            handleConfirm={onSubmit}
-            id={ID}
-            handleCancel={() => true}
-            {...modalProps}
-        >
-            <Body>
-                <PlaybookDetail>
-                    <PlaybookNameAndTitle>
-                        <PlaybookNameTitle>
-                            <NotebookOutlineIcon size={14}/>
-                            <div>{formatMessage({defaultMessage: 'Playbook'})}</div>
-                        </PlaybookNameTitle>
-                        <PlaybookName>
-                            {playbook?.title}
-                        </PlaybookName>
-                    </PlaybookNameAndTitle>
-                    <PlaybookOwnerAndTitle>
-                        <PlaybookOwnerTitle>
-                            <AccountOutlineIcon size={14}/>
-                            <div>
-                                {formatMessage({defaultMessage: 'Owner'})}
-                            </div>
-                        </PlaybookOwnerTitle>
-                        <PlaybookOwnerDetail>
-                            <OwnerImage
-                                className='image'
-                                src={profileUri || ''}
-                            />
-                            <PlaybookOwner>
-                                {playbookOwner}
-                            </PlaybookOwner>
-                        </PlaybookOwnerDetail>
-                    </PlaybookOwnerAndTitle>
-                </PlaybookDetail>
-                <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
-                <BaseInput
-                    data-testid={'run-name-input'}
-                    autoFocus={true}
-                    type={'text'}
-                    value={runName}
-                    onChange={(e) => setRunName(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            onSubmit();
-                        }
-                    }}
-                />
-                {channelConfigSection}
-            </Body>
-        </StyledGenericModal>
+        </ChannelContainer>
     );
 };
 
 const StyledGenericModal = styled(GenericModal)`
     &&& {
+        h1 {
+            width:100%;
+        }
+
         .modal-header {
-            padding: 28px 31px;
+            padding: 24px 31px;
+            margin-bottom: 0;
             box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
         }
         .modal-content {
             padding: 0px;
         }
         .modal-body {
-            padding: 28px 31px;
+            padding: 24px 31px;
         }
         .modal-footer {
+           box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
            padding: 0 31px 28px 31px;
         }
     }
+`;
+
+const ColContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
+
+const RowContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+`;
+
+const HeaderTitle = styled.div`
+    display: flex;
+    flex-direction: row;
+    height: 28px;
+    align-items: center;
+`;
+
+const IconWrapper = styled.div`
+    display: flex;
+    cursor: pointer;
+    flex-direction: column;
+    height: 28px;
+    justify-content: center;
+    margin-right: 8px;
 `;
 
 const Body = styled.div`
@@ -280,72 +434,11 @@ const Body = styled.div`
     }
 `;
 
-const PlaybookDetail = styled.div`
-    display: flex;
-    justify-content: space-between;
-`;
-
-const PlaybookNameAndTitle = styled.div`
-    display: flex;
-    flex-direction: column;
-    width: 50%;
-`;
-
-const PlaybookNameTitle = styled.div`
-    display: flex;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    font-weight: bolder;
-    padding-bottom: 5px;
-    align-items: center;
-    > div {
-        padding-left: 5px;
-    }
-`;
-
-const PlaybookName = styled.div``;
-
-const PlaybookOwnerAndTitle = styled.div`
-    display: flex;
-    flex-direction: column;
-    width: 50%;
-`;
-
-const PlaybookOwnerTitle = styled.div`
-    display: flex;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    font-weight: bolder;
-    padding-bottom: 5px;
-    align-items: center;
-    > div {
-        padding-left: 5px;
-    }
-`;
-
-const OwnerImage = styled.img`
-    margin: 0 4px 0 0;
-    width: 24px;
-    height: 24px;
-    background-color: #bbb;
-    border-radius: 50%;
-    display: inline-block;
-    .image-sm {
-        width: 24px;
-        height: 24px;
-    }
-`;
-
-const PlaybookOwnerDetail = styled.div`
-   display: flex;
-   align-items: center;
-`;
-
-const PlaybookOwner = styled.div``;
-
-const Container = styled.div`
+const ChannelContainer = styled.div`
+    margin-top: 39px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin-top: 12px;
 `;
 
 const StyledRadioInput = styled(RadioInput)`
@@ -354,7 +447,19 @@ const StyledRadioInput = styled(RadioInput)`
     }
 `;
 
-export const SelectorWrapper = styled.div`
+const ChannelBlock = styled.label`
+    display: flex;
+    flex-direction: row;
+    width: 350px;
+    align-items: center;
+    column-gap: 12px;
+    align-self: 'flex-start';
+    font-weight: inherit;
+    margin-bottom: 0;
+    cursor: pointer;
+`;
+
+const SelectorWrapper = styled.div`
     margin-left: 28px;
     min-height: 40px;
 `;
@@ -377,4 +482,34 @@ const HorizontalSplit = styled.div`
     margin-left: 28px;
 `;
 
-export default RunPlaybookModal;
+const HeaderButtonWrapper = styled.div`
+    margin-left: auto;
+    margin-right: 30px;
+`;
+const CreatePlaybookButton = styled(SecondaryButton)`
+    font-family: 'Open Sans';
+    height: 32px;
+    padding: 0 10px;
+`;
+
+const SearchWrapper = styled.div`
+`;
+
+const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
+    color: ${(props) => (props.invalid ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};
+`;
+
+const ErrorMessage = styled.div`
+    color: var(--error-text);
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: -8px;
+    font-weight: 400;
+    margin-bottom: 20px !important;
+`;
+
+const ApolloWrappedModal = (props: Props) => {
+    const client = getPlaybooksGraphQLClient();
+    return <ApolloProvider client={client}><RunPlaybookModal {...props}/></ApolloProvider>;
+};
+

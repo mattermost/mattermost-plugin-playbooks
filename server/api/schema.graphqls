@@ -19,10 +19,12 @@ type Query {
 		channelID: String = "",
 		first: Int,
 		after: String,
+		types: [PlaybookRunType!] = [],
 	): RunConnection!
 }
 
 type Mutation {
+	updatePlaybookFavorite(id: String!, favorite: Boolean!): String!
 	updatePlaybook(id: String!, updates: PlaybookUpdates!): String!
 
 	addMetric(playbookID: String!, title: String!, description: String!, type: String!, target: Int): String!
@@ -78,7 +80,6 @@ input PlaybookUpdates {
 	runSummaryTemplate: String
 	channelNameTemplate: String
 	checklists: [ChecklistUpdates!]
-	isFavorite: Boolean
 	createChannelMemberOnNewParticipant: Boolean
 	removeChannelMemberOnRemovedParticipant: Boolean
 	channelId: String
@@ -224,6 +225,11 @@ type PlaybookMetricConfig {
 	target: Int
 }
 
+enum PlaybookRunType {
+	playbook
+	channelChecklist
+}
+
 type Run {
 	id: String!
 	playbookID: String!
@@ -268,9 +274,12 @@ type Run {
 	lastUpdatedAt: Float!
 
 	timelineEvents: [TimelineEvent!]!
-	metadata: Metadata!
+	followers: [String!]!
 
-	progress: Float!
+	numTasks: Int!
+	numTasksClosed: Int!
+
+	type: PlaybookRunType!
 }
 
 type RunConnection {
@@ -312,8 +321,4 @@ input RunUpdates {
 	broadcastChannelIDs: [String!]
 	webhookOnStatusUpdateURLs: [String!]
 	channelID: String
-}
-
-type Metadata {
-	followers: [String!]!
 }

@@ -43,6 +43,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	ChannelID               string
 	First                   *int32
 	After                   *string
+	Types                   []string
 }) (*RunConnectionResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -81,6 +82,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		ParticipantOrFollowerID: args.ParticipantOrFollowerID,
 		ChannelID:               args.ChannelID,
 		IncludeFavorites:        true,
+		Types:                   args.Types,
 		Page:                    page,
 		PerPage:                 perPage,
 	}

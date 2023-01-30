@@ -154,18 +154,6 @@ const FooterExtraInfoContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
-export const TriggersContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    row-gap: 16px;
-`;
-
-export const ActionsContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    row-gap: 20px;
-`;
-
 const StyledCheckboxInput = styled(CheckboxInput)`
     padding: 10px 16px 10px 0;
     margin-right: auto;

@@ -47,8 +47,8 @@ interface Props {
     playbookRun: PlaybookRun;
     parentContainer: ChecklistParent;
     id?: string;
-    viewerMode: boolean;
-    onViewerModeInteract?: () => void
+    readOnly: boolean;
+    onReadOnlyInteract?: () => void
 }
 
 export enum ChecklistParent {
@@ -93,7 +93,7 @@ const notFinishedTasks = (checklists: Checklist[]) => {
     return count;
 };
 
-const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewerModeInteract}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
@@ -200,7 +200,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
             return ItemButtonsFormat.Short;
         }
 
-        if (viewerMode) {
+        if (readOnly) {
             return ItemButtonsFormat.Mixed;
         }
 
@@ -264,20 +264,20 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
             </MainTitleBG>
             <ChecklistList
                 playbookRun={playbookRun}
-                isReadOnly={viewerMode}
+                isReadOnly={readOnly}
                 checklistsCollapseState={checklistsState}
                 onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
                 onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
                 showItem={showItem}
                 itemButtonsFormat={itemButtonsFormat()}
-                onViewerModeInteract={onViewerModeInteract}
+                onReadOnlyInteract={onReadOnlyInteract}
             />
             {
                 active && parentContainer === ChecklistParent.RHS && playbookRun &&
                 <FinishButton
                     onClick={() => {
-                        if (viewerMode && onViewerModeInteract) {
-                            onViewerModeInteract();
+                        if (readOnly && onReadOnlyInteract) {
+                            onReadOnlyInteract();
                         } else {
                             dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
                         }

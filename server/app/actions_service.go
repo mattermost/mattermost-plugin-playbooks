@@ -382,7 +382,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 	return true
 }
 
-func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *model.Post) {
+func (a *channelActionServiceImpl) MessageHasBeenPosted(post *model.Post) {
 	if post.IsSystemMessage() || a.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) || a.poster.IsFromPoster(post) {
 		return
 	}
@@ -401,12 +401,6 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 
 	// Finish early if there are no actions to prompt running a playbook
 	if len(actions) == 0 {
-		return
-	}
-
-	session, err := a.api.GetSession(sessionID)
-	if err != nil {
-		logrus.WithError(err).WithField("session_id", sessionID).Error("can't get session")
 		return
 	}
 
@@ -448,7 +442,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		}
 
 		if actionExecuted {
-			a.telemetry.RunChannelAction(action, session.UserId)
+			a.telemetry.RunChannelAction(action, post.UserId)
 		}
 	}
 
@@ -462,7 +456,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 	}
 
 	message := getPlaybookSuggestionsMessage(triggeredPlaybooks, presentTriggers)
-	attachment := getPlaybookSuggestionsSlackAttachment(triggeredPlaybooks, post.Id, session.IsMobileApp(), a.configService.GetManifest().Id)
+	attachment := getPlaybookSuggestionsSlackAttachment(triggeredPlaybooks, post.Id, a.configService.GetManifest().Id)
 
 	rootID := post.RootId
 	if rootID == "" {
@@ -498,7 +492,7 @@ func getPlaybookSuggestionsMessage(suggestedPlaybooks []Playbook, triggers []str
 	return message
 }
 
-func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, isMobile bool, pluginID string) *model.SlackAttachment {
+func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, pluginID string) *model.SlackAttachment {
 	ignoreButton := &model.PostAction{
 		Id:   "ignoreKeywordsButton",
 		Name: "No, ignore thread",
@@ -521,7 +515,6 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 				Context: map[string]interface{}{
 					"postID":          postID,
 					"selected_option": playbooks[0].ID,
-					"isMobile":        isMobile,
 				},
 			},
 			Style: "primary",
@@ -549,8 +542,7 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 		Integration: &model.PostActionIntegration{
 			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/run-playbook", pluginID),
 			Context: map[string]interface{}{
-				"isMobile": isMobile,
-				"postID":   postID,
+				"postID": postID,
 			},
 		},
 		Options: options,

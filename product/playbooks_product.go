@@ -697,8 +697,8 @@ func (pp *playbooksProduct) UserHasJoinedChannel(c *plugin.Context, channelMembe
 }
 
 func (pp *playbooksProduct) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
-	pp.channelActionService.MessageHasBeenPosted(c.SessionId, post)
-	pp.playbookRunService.MessageHasBeenPosted(c.SessionId, post)
+	pp.channelActionService.MessageHasBeenPosted(post)
+	pp.playbookRunService.MessageHasBeenPosted(post)
 }
 
 func (pp *playbooksProduct) UserHasPermissionToCollection(c *plugin.Context, userID string, collectionType, collectionID string, permission *model.Permission) (bool, error) {

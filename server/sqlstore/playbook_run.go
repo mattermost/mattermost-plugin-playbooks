@@ -187,7 +187,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
-			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt").
+			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type").
 		Column(participantsCol).
 		From("IR_Incident AS i")
 
@@ -266,6 +266,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	if len(options.Statuses) != 0 {
 		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
+	}
+
+	if len(options.Types) != 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"i.RunType": options.Types})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.RunType": options.Types})
 	}
 
 	if options.OwnerID != "" {
@@ -443,6 +448,10 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, err
 	}
 
+	if rawPlaybookRun.Type != app.RunTypeChannelChecklist && rawPlaybookRun.Type != app.RunTypePlaybook {
+		rawPlaybookRun.Type = app.RunTypePlaybook
+	}
+
 	// When adding a PlaybookRun column #2: add to the SetMap
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
@@ -484,6 +493,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateBroadcastWebhooksEnabled":    rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
+			"RunType":                                 rawPlaybookRun.Type,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -548,6 +558,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
+			"RunType": rawPlaybookRun.Type,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 

@@ -54,13 +54,13 @@ import {
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
-import {displayEditPlaybookAccessModal, openPlaybookRunNewModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import useConfirmPlaybookRestoreModal from 'src/components/backstage/restore_playbook_modal';
-import {usePlaybookMembership, useUpdatePlaybook} from 'src/graphql/hooks';
+import {usePlaybookMembership, useUpdatePlaybookFavorite} from 'src/graphql/hooks';
 import {StyledDropdownMenuItem} from 'src/components/backstage/shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
@@ -258,7 +258,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     return (
         <PrimaryButtonLarger
             onClick={() => {
-                dispatch(openPlaybookRunNewModal({
+                dispatch(openPlaybookRunModal({
                     onRunCreated: (runId, channelId, statsData) => {
                         navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                         refreshLHS();
@@ -305,12 +305,10 @@ export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps
 
 export const FavoritePlaybookMenuItem = (props: {playbookId: string, isFavorite: boolean}) => {
     const {formatMessage} = useIntl();
-    const refreshLHS = useLHSRefresh();
-    const updatePlaybook = useUpdatePlaybook(props.playbookId);
+    const updatePlaybookFavorite = useUpdatePlaybookFavorite(props.playbookId);
 
     const toggleFavorite = async () => {
-        await updatePlaybook({isFavorite: !props.isFavorite});
-        refreshLHS();
+        await updatePlaybookFavorite(!props.isFavorite);
     };
     return (
         <StyledDropdownMenuItem onClick={toggleFavorite}>

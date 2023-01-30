@@ -8,10 +8,11 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import styled from 'styled-components';
 
+import {useQuery} from '@apollo/client';
+
 import {setRHSOpen} from 'src/actions';
 import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 import {ToastProvider} from 'src/components/backstage/toast_banner';
-import {useRhsActiveRunsQuery, useRhsFinishedRunsQuery} from 'src/graphql/generated_types';
 import {navigateToChannel} from 'src/browser_routing';
 import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
@@ -20,16 +21,61 @@ import {telemetryEvent} from 'src/client';
 
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
+import {graphql} from 'src/graphql/generated/gql';
+
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
 import RHSHome from './rhs_home';
 
+const RHSRunsQuery = graphql(/* GraphQL */`
+    query RHSRuns(
+        $channelID: String!,
+        $sort: String!,
+        $direction: String!,
+        $status: String!,
+        $first: Int,
+        $after: String,
+    ) {
+        runs(
+            channelID: $channelID,
+            sort: $sort,
+            direction: $direction,
+            statuses: [$status],
+            first: $first,
+            after: $after,
+        ) {
+            totalCount
+            edges {
+                node {
+                    id
+                    name
+                    participantIDs
+                    ownerUserID
+                    playbookID
+                    playbook {
+                        title
+                    }
+                    numTasksClosed
+                    numTasks
+                    lastUpdatedAt
+                    type
+                }
+            }
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+        }
+    }
+`);
+
 const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) => {
-    const inProgressResult = useRhsActiveRunsQuery({
+    const inProgressResult = useQuery(RHSRunsQuery, {
         variables: {
             channelID,
             sort: listOptions.sort,
             direction: listOptions.direction,
             first: 8,
+            status: 'InProgress',
         },
         fetchPolicy: 'cache-and-network',
     });
@@ -37,12 +83,13 @@ const useFilteredSortedRuns = (channelID: string, listOptions: RunListOptions) =
     const numRunsInProgress = inProgressResult.data?.runs.totalCount ?? 0;
     const hasMoreInProgress = inProgressResult.data?.runs.pageInfo.hasNextPage ?? false;
 
-    const finishedResult = useRhsFinishedRunsQuery({
+    const finishedResult = useQuery(RHSRunsQuery, {
         variables: {
             channelID,
             sort: listOptions.sort,
             direction: listOptions.direction,
             first: 8,
+            status: 'Finished',
         },
         fetchPolicy: 'cache-and-network',
     });

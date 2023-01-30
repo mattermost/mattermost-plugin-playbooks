@@ -170,6 +170,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
+			Type:        playbookRunCreateOptions.Type,
 		},
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
@@ -266,6 +267,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
+			Type:        app.RunTypePlaybook,
 		},
 		request.UserId,
 		nil,
@@ -612,6 +614,7 @@ func (h *PlaybookRunHandler) getPlaybookRunMetadata(c *Context, w http.ResponseW
 }
 
 // getPlaybookRunByChannel handles the /runs/channel/{channel_id} endpoint.
+// Notice that it returns both playbook runs as well as channel checklists
 func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
@@ -695,7 +698,7 @@ func (h *PlaybookRunHandler) getChannels(c *Context, w http.ResponseWriter, r *h
 
 	playbookRuns, err := h.playbookRunService.GetPlaybookRuns(requesterInfo, *filterOptions)
 	if err != nil {
-		h.HandleError(w, c.logger, errors.Wrapf(err, "failed to get owners"))
+		h.HandleError(w, c.logger, errors.Wrapf(err, "failed to get playbookRuns"))
 		return
 	}
 
@@ -754,12 +757,9 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
-	playbookRunToModify, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return "", err
-	}
 
-	if err := h.permissions.RunUpdateStatus(userID, playbookRunToModify); err != nil {
+	// user must be a participant to be able to post an update
+	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 		return "Not authorized", err
 	}
 
@@ -1887,6 +1887,9 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	}
 	startedLT, _ := strconv.ParseInt(startedLTParam, 10, 64)
 
+	// Parse types= query string parameters as an array.
+	types := u.Query()["types"]
+
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
 		Page:                    page,
@@ -1903,6 +1906,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		ActiveLT:                activeLT,
 		StartedGTE:              startedGTE,
 		StartedLT:               startedLT,
+		Types:                   types,
 	}
 
 	options, err = options.Validate()
