@@ -192,6 +192,11 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
         importPlaybookFile(e.dataTransfer.files[0]);
     };
 
+    const handleDuplicatePlaybook = async (playbook: Playbook) => {
+        await duplicatePlaybook(playbook.id);
+        refreshLHS();
+    };
+
     let listBody: JSX.Element | JSX.Element[] | null = null;
     if (!hasPlaybooks && isFiltering) {
         listBody = (
@@ -208,7 +213,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                 onEdit={() => edit(p.id)}
                 onRestore={() => openConfirmRestoreModal({id: p.id, title: p.title})}
                 onArchive={() => openConfirmArchiveModal(p)}
-                onDuplicate={() => duplicatePlaybook(p.id)}
+                onDuplicate={() => handleDuplicatePlaybook(p)}
                 onMembershipChanged={() => fetchPlaybooks()}
             />
         ));
