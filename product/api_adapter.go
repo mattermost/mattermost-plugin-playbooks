@@ -327,12 +327,12 @@ func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 		finalConfig[strings.ToLower(setting)] = value
 	}
 
-	pluginSettingsJsonBytes, err := json.Marshal(finalConfig)
+	pluginSettingsJSONBytes, err := json.Marshal(finalConfig)
 	if err != nil {
 		logrus.WithError(err).Error("Error marshaling config for plugin", mlog.Err(err))
 		return nil
 	}
-	err = json.Unmarshal(pluginSettingsJsonBytes, dest)
+	err = json.Unmarshal(pluginSettingsJSONBytes, dest)
 	if err != nil {
 		logrus.WithError(err).Error("Error unmarshaling config for plugin", mlog.Err(err))
 	}
@@ -505,8 +505,8 @@ func (a *serviceAPIAdapter) IsEnterpriseReady() bool {
 	return result
 }
 
-func (api *serviceAPIAdapter) GetBundlePath() (string, error) {
-	bundlePath, err := filepath.Abs(filepath.Join(*api.GetConfig().PluginSettings.Directory, api.manifest.Id))
+func (a *serviceAPIAdapter) GetBundlePath() (string, error) {
+	bundlePath, err := filepath.Abs(filepath.Join(*a.GetConfig().PluginSettings.Directory, a.manifest.Id))
 	if err != nil {
 		return "", err
 	}
@@ -518,8 +518,8 @@ func (api *serviceAPIAdapter) GetBundlePath() (string, error) {
 // Threads service
 //
 
-func (api *serviceAPIAdapter) RegisterCollectionAndTopic(collectionType, topicType string) error {
-	return api.api.threadsService.RegisterCollectionAndTopic(playbooksProductID, collectionType, topicType)
+func (a *serviceAPIAdapter) RegisterCollectionAndTopic(collectionType, topicType string) error {
+	return a.api.threadsService.RegisterCollectionAndTopic(playbooksProductID, collectionType, topicType)
 }
 
 // Ensure the adapter implements ServicesAPI.

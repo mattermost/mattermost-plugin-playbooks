@@ -10,7 +10,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
-const npsPluginID = "com.mattermost.nps"
+// const npsPluginID = "com.mattermost.nps"
 
 // ServiceImpl holds access to the plugin's Configuration.
 type ServiceImpl struct {

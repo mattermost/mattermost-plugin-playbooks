@@ -18,14 +18,14 @@ const (
 	botUsername    = "playbooks"
 	botDisplayname = "Playbooks"
 	botDescription = "Playbooks bot."
-	ownerId        = "playbooks"
+	ownerID        = "playbooks"
 )
 
 var PlaybooksBot = &mm_model.Bot{
 	Username:    botUsername,
 	DisplayName: botDisplayname,
 	Description: botDescription,
-	OwnerId:     ownerId,
+	OwnerId:     ownerID,
 }
 
 type ServicesAPI interface {
@@ -42,8 +42,8 @@ type ServicesAPI interface {
 	AddMemberToChannel(channelID, userID string) (*mm_model.ChannelMember, error)
 	AddUserToChannel(channelID, userID, asUserID string) (*mm_model.ChannelMember, error)
 	UpdateChannelMemberRoles(channelID, userID, newRoles string) (*mm_model.ChannelMember, error)
-	DeleteChannelMember(channelId, userID string) error
-	AddChannelMember(channelId, userID string) (*mm_model.ChannelMember, error)
+	DeleteChannelMember(channelID, userID string) error
+	AddChannelMember(channelID, userID string) (*mm_model.ChannelMember, error)
 	GetDirectChannelOrCreate(userID1, userID2 string) (*mm_model.Channel, error)
 
 	// Post service
@@ -51,7 +51,7 @@ type ServicesAPI interface {
 	GetPostsByIds(postIDs []string) ([]*mm_model.Post, error)
 	SendEphemeralPost(userID string, post *mm_model.Post)
 	GetPost(postID string) (*mm_model.Post, error)
-	DeletePost(postId string) (*mm_model.Post, error)
+	DeletePost(postID string) (*mm_model.Post, error)
 	UpdatePost(post *mm_model.Post) (*mm_model.Post, error)
 
 	// User service
@@ -64,7 +64,7 @@ type ServicesAPI interface {
 	// Team service
 	GetTeamMember(teamID string, userID string) (*mm_model.TeamMember, error)
 	CreateMember(teamID string, userID string) (*mm_model.TeamMember, error)
-	GetGroup(groupId string) (*mm_model.Group, error)
+	GetGroup(groupID string) (*mm_model.Group, error)
 	GetTeam(teamID string) (*mm_model.Team, error)
 	GetGroupMemberUsers(groupID string, page, perPage int) ([]*mm_model.User, error)
 
@@ -72,7 +72,7 @@ type ServicesAPI interface {
 	HasPermissionTo(userID string, permission *mm_model.Permission) bool
 	HasPermissionToTeam(userID, teamID string, permission *mm_model.Permission) bool
 	HasPermissionToChannel(askingUserID string, channelID string, permission *mm_model.Permission) bool
-	RolesGrantPermission(roleNames []string, permissionId string) bool
+	RolesGrantPermission(roleNames []string, permissionID string) bool
 
 	// Bot service
 	EnsureBot(bot *mm_model.Bot) (string, error)
