@@ -1677,7 +1677,6 @@ describe('playbooks > edit', () => {
                 userId: testUser.id,
             }).then((playbook) => {
                 testPlaybook = playbook;
-                cy.log(playbook.title);
             });
         });
 
