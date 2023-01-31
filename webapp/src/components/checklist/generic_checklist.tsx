@@ -28,7 +28,7 @@ interface Props {
     onUpdateChecklist: (newChecklist: Checklist) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean
     itemButtonsFormat?: ItemButtonsFormat;
-    onViewerModeInteract?: () => void;
+    onReadOnlyInteract?: () => void;
     isEmptyChannelChecklist: boolean;
 }
 
@@ -112,7 +112,7 @@ const GenericChecklist = (props: Props) => {
                                     onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
                                     onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
                                     itemButtonsFormat={props.itemButtonsFormat}
-                                    onViewerModeInteract={props.onViewerModeInteract}
+                                    onReadOnlyInteract={props.onReadOnlyInteract}
                                     isEmptyChannelChecklist={props.isEmptyChannelChecklist}
                                 />
                             );
@@ -132,7 +132,7 @@ const GenericChecklist = (props: Props) => {
                                 }}
                                 onAddChecklistItem={onAddChecklistItem}
                                 itemButtonsFormat={props.itemButtonsFormat}
-                                onViewerModeInteract={props.onViewerModeInteract}
+                                onReadOnlyInteract={props.onReadOnlyInteract}
                                 isEmptyChannelChecklist={props.isEmptyChannelChecklist}
                             />
                         }

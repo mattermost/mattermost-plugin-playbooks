@@ -315,6 +315,33 @@ func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID 
 	return err
 }
 
+func (s *PlaybookRunService) SetItemCommand(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, newCommand string) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/command", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		Command string `json:"command"`
+	}{newCommand}
+
+	req, err := s.client.newRequest(http.MethodPut, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) RunItemCommand(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/run", playbookRunID, checklistIdx, itemIdx)
+
+	req, err := s.client.newRequest(http.MethodPost, createURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
 func (s *PlaybookRunService) SetItemDueDate(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, duedate int64) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/duedate", playbookRunID, checklistIdx, itemIdx)
 	body := struct {

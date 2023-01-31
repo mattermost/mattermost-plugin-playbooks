@@ -40,6 +40,7 @@ const Summary = ({
     );
 
     const placeholder = role === Role.Participant ? formatMessage({defaultMessage: 'Add a run summary'}) : formatMessage({defaultMessage: 'There\'s no summary'});
+    const disabled = (Role.Viewer === role || playbookRun.end_at > 0);
 
     return (
         <Container
@@ -54,7 +55,7 @@ const Summary = ({
                 {playbookRun.summary_modified_at > 0 && modifiedAtMessage}
             </Header>
             <MarkdownEdit
-                disabled={Role.Viewer === role}
+                disabled={disabled}
                 placeholder={placeholder}
                 value={playbookRun.summary}
                 onSave={(value) => {

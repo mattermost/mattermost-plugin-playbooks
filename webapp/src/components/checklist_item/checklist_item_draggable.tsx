@@ -23,7 +23,7 @@ interface Props {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     itemButtonsFormat?: ItemButtonsFormat;
-    onViewerModeInteract?: () => void;
+    onReadOnlyInteract?: () => void
     isEmptyChannelChecklist?: boolean;
 }
 
@@ -53,7 +53,7 @@ const DraggableChecklistItem = (props: Props) => {
                     onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                     onDeleteChecklistItem={props.onDeleteChecklistItem}
                     buttonsFormat={props.itemButtonsFormat}
-                    onViewerModeInteract={props.onViewerModeInteract}
+                    onReadOnlyInteract={props.onReadOnlyInteract}
                     isEmptyChannelChecklist={props.isEmptyChannelChecklist}
                 />
             )}

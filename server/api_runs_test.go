@@ -502,16 +502,35 @@ func TestRunRetrieval(t *testing.T) {
 	})
 }
 
-func TestRunStatus(t *testing.T) {
+func TestRunPostStatusUpdate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("update", func(t *testing.T) {
+	t.Run("post an update", func(t *testing.T) {
 		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
 		assert.NoError(t, err)
 	})
 
-	t.Run("update empty message", func(t *testing.T) {
+	t.Run("creates a reminder post", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 1)
+		assert.NoError(t, err)
+
+		// wait for the scheduler to run the job
+		time.Sleep(2 * time.Second)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.Equal(t, 1*time.Second, run.PreviousReminder)
+		assert.NotEmpty(t, run.ReminderPostID)
+		assert.NoError(t, err)
+
+		// post created with expected props
+		post, _, err := e.ServerClient.GetPost(run.ReminderPostID, "")
+		assert.NoError(t, err)
+		assert.Equal(t, run.ID, post.GetProp("playbookRunId"))
+		assert.Equal(t, e.RegularUser.Username, post.GetProp("targetUsername"))
+	})
+
+	t.Run("poar an update with empty message", func(t *testing.T) {
 		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "  \t  \r ", 600)
 		assert.Error(t, err)
 	})
@@ -537,9 +556,9 @@ func TestRunStatus(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run)
 
-		// Update should fail because no access to private broadcast channel
+		// Update should work even when we don't have access to private broadcast channel
 		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update", 600)
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.NoError(t, err)
 	})
 }
 
@@ -1409,24 +1428,46 @@ func TestReminderReset(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("reminder reset - event created", func(t *testing.T) {
+	t.Run("reminder reset - timeline event created", func(t *testing.T) {
 		payload := client.ReminderResetPayload{
 			NewReminderSeconds: 100,
 		}
 		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
 		assert.NoError(t, err)
 
-		pb, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.Equal(t, 100*time.Second, run.PreviousReminder)
 		assert.NoError(t, err)
 
 		statusSnoozed := make([]client.TimelineEvent, 0)
-		for _, te := range pb.TimelineEvents {
+		for _, te := range run.TimelineEvents {
 			if te.EventType == "status_update_snoozed" {
 				statusSnoozed = append(statusSnoozed, te)
 			}
 		}
-
 		require.Len(t, statusSnoozed, 1)
+	})
+
+	t.Run("reminder reset - reminder post created", func(t *testing.T) {
+		payload := client.ReminderResetPayload{
+			NewReminderSeconds: 1,
+		}
+		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
+		assert.NoError(t, err)
+
+		// wait for scheduler to run the job
+		time.Sleep(2 * time.Second)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.Equal(t, 1*time.Second, run.PreviousReminder)
+		assert.NotEmpty(t, run.ReminderPostID)
+		assert.NoError(t, err)
+
+		// post created with expected props
+		post, _, err := e.ServerClient.GetPost(run.ReminderPostID, "")
+		assert.NoError(t, err)
+		assert.Equal(t, run.ID, post.GetProp("playbookRunId"))
+		assert.Equal(t, e.RegularUser.Username, post.GetProp("targetUsername"))
 	})
 }
 
@@ -1538,6 +1579,107 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
+	})
+}
+
+func TestChecklisItem_SetCommand(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run name",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 0)
+
+	checklist := client.Checklist{
+		Title: "Test Checklist",
+		Items: []client.ChecklistItem{
+			{
+				Title: "Test Item",
+			},
+		},
+	}
+
+	err = e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, checklist)
+	require.NoError(t, err)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(t, err)
+	require.Len(t, run.Checklists, 1)
+	require.Len(t, run.Checklists[0].Items, 1)
+
+	t.Run("set command", func(t *testing.T) {
+		// command and commandlastrun are not set (before)
+		require.Empty(t, run.Checklists[0].Items[0].CommandLastRun)
+		require.Empty(t, run.Checklists[0].Items[0].Command)
+
+		// set command
+		err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook todo")
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook todo", run.Checklists[0].Items[0].Command)
+		require.Equal(t, int64(0), run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("run command", func(t *testing.T) {
+		// command and commandlastrun are not set (before)
+		require.Empty(t, run.Checklists[0].Items[0].CommandLastRun)
+
+		// run command
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook todo", run.Checklists[0].Items[0].Command)
+		require.NotZero(t, run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("rerun command", func(t *testing.T) {
+		lastRun := run.Checklists[0].Items[0].CommandLastRun
+
+		// rerun command
+		err = e.PlaybooksClient.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Less(t, lastRun, run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("set a the same command", func(t *testing.T) {
+		lastRun := run.Checklists[0].Items[0].CommandLastRun
+
+		// set command
+		err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook todo")
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook todo", run.Checklists[0].Items[0].Command)
+		require.Equal(t, lastRun, run.Checklists[0].Items[0].CommandLastRun)
+	})
+
+	t.Run("set a different command", func(t *testing.T) {
+		// set command
+		err = e.PlaybooksClient.PlaybookRuns.SetItemCommand(context.Background(), run.ID, 0, 0, "/playbook finish")
+		require.NoError(t, err)
+
+		// command and commandlastrun are set (after)
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, "/playbook finish", run.Checklists[0].Items[0].Command)
+		require.Zero(t, run.Checklists[0].Items[0].CommandLastRun)
 	})
 }
 

@@ -48,7 +48,7 @@ interface Props {
     onEveryChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
     itemButtonsFormat?: ItemButtonsFormat;
-    onViewerModeInteract?: () => void;
+    onReadOnlyInteract?: () => void;
     isEmptyChannelChecklist?: boolean;
 }
 
@@ -61,7 +61,7 @@ const ChecklistList = ({
     onEveryChecklistCollapsedStateChange,
     showItem,
     itemButtonsFormat,
-    onViewerModeInteract,
+    onReadOnlyInteract,
     isEmptyChannelChecklist,
 }: Props) => {
     const dispatch = useDispatch();
@@ -370,7 +370,7 @@ const ChecklistList = ({
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
                                                     showItem={showItem}
                                                     itemButtonsFormat={itemButtonsFormat}
-                                                    onViewerModeInteract={onViewerModeInteract}
+                                                    onReadOnlyInteract={onReadOnlyInteract}
                                                     isEmptyChannelChecklist={isEmptyChannelChecklist || false}
                                                 />
                                             </CollapsibleChecklist>

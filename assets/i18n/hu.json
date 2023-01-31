@@ -116,5 +116,9 @@
     {
         "id": "app.user.run.status_disable",
         "translation": "@{{.Username}} letiltotta az állapot frissítést ehhez a futáshoz"
+    },
+    {
+        "id": "app.user.new_run.intro",
+        "translation": "**Tulajdonos** {{.Username}}"
     }
 ]

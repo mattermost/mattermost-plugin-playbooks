@@ -93,16 +93,6 @@ describe('channels > run dialog', () => {
         });
     });
 
-    it('shows create playbook link', () => {
-        cy.get('#interactiveDialogModal').within(() => {
-            // # Follow link
-            cy.findByText('Click here').click();
-
-            // * Verify it's the new playbook page
-            cy.url().should('include', 'playbooks/new');
-        });
-    });
-
     it('shows expected metadata', () => {
         cy.get('#interactiveDialogModal').within(() => {
             // * Shows current user as owner.

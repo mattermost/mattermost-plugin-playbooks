@@ -501,7 +501,7 @@ func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error {
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, promptPostID string) error {
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {
@@ -510,7 +510,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 		}
 	}
 
-	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp, promptPostID)
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, promptPostID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -1608,6 +1608,11 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.New("invalid checklist item indices")
 	}
 
+	// CommandLastRun is reset to avoid misunderstandings when the command is changed but the date
+	// of the previous run is set (and show rerun in the UI)
+	if playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command != newCommand {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = 0
+	}
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2450,7 +2455,7 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *Playboo
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, promptPostID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(requesterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
@@ -2475,18 +2480,10 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 		})
 	}
 
-	newPlaybookMarkdown := ""
-	if !isMobileApp {
-		data := map[string]interface{}{
-			"RunURL": getPlaybooksNewRelativeURL(),
-		}
-		newPlaybookMarkdown = T("app.user.new_run.new_playbook", data)
-	}
-
 	data := map[string]interface{}{
 		"Username": getUserDisplayName(user),
 	}
-	introText := T("app.user.new_run.intro", data) + "\n\n" + newPlaybookMarkdown
+	introText := T("app.user.new_run.intro", data)
 
 	defaultPlaybookID := ""
 	defaultChannelNameTemplate := ""
@@ -3551,7 +3548,7 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 	}
 }
 
-func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *model.Post) {
+func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(post *model.Post) {
 	runIDs, err := s.store.GetPlaybookRunIDsForChannel(post.ChannelId)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
