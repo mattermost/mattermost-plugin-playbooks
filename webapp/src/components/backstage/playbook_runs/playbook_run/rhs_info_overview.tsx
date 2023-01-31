@@ -31,11 +31,12 @@ import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/pla
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {setOwner as clientSetOwner, requestJoinChannel} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
-import {Metadata, PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
 
 import {FollowState} from './rhs_info';
 
@@ -76,9 +77,17 @@ const useRequestJoinChannel = (playbookRunId: string) => {
     };
 };
 
+const RHSInfoOverviewRun = graphql(/* GraphQL */`
+    fragment RHSInfoOverview on Run {
+        id
+        playbookID
+        ownerUserID
+        participantIDs
+    }
+`);
+
 interface Props {
-    run: PlaybookRun;
-    runMetadata?: Metadata;
+    runFragment: FragmentType<typeof RHSInfoOverviewRun>;
     editable: boolean;
     channel: Channel | undefined | null;
     followState: FollowState;
@@ -91,10 +100,11 @@ const StyledArrowIcon = styled(ArrowForwardIosIcon)`
     margin-left: 7px;
 `;
 
-const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
+const RHSInfoOverview = ({runFragment, role, channel, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
     const refreshLHS = useLHSRefresh();
+    const run = getFragmentData(RHSInfoOverviewRun, runFragment);
     const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
 
     const setOwner = async (userID: string) => {
@@ -141,7 +151,7 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                 icon={BookOutlineIcon}
                 name={formatMessage({defaultMessage: 'Playbook'})}
             >
-                {playbook ? <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink> : <ItemDisabledContent><LockOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Private'})}</ItemDisabledContent>}
+                {playbook ? <ItemLink to={pluginUrl(`/playbooks/${run.playbookID}`)}>{playbook.title}</ItemLink> : <ItemDisabledContent><LockOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Private'})}</ItemDisabledContent>}
             </Item>
             <Item
                 id='runinfo-owner'
@@ -149,10 +159,10 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                 name={formatMessage({defaultMessage: 'Owner'})}
             >
                 <AssignTo
-                    assignee_id={run.owner_user_id}
+                    assignee_id={run.ownerUserID}
                     editable={editable}
                     onSelectedChange={onOwnerChange}
-                    participantUserIds={run.participant_ids}
+                    participantUserIds={run.participantIDs}
                     placement={'bottom-end'}
                 />
             </Item>
@@ -165,7 +175,7 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                 <ParticipantsContainer>
                     <Participants>
                         <UserList
-                            userIds={run.participant_ids}
+                            userIds={run.participantIDs}
                             sizeInPx={20}
                         />
                     </Participants>

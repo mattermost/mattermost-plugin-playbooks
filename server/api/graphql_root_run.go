@@ -7,6 +7,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 )
 
 // RunRootResolver hold all queries and mutations for a playbookRun
@@ -317,6 +318,44 @@ func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct 
 	}
 
 	if err := c.playbookRunService.SetTaskActionsToChecklistItem(args.RunID, userID, int(args.ChecklistNum), int(args.ItemNum), *args.TaskActions); err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
+func (r *RunRootResolver) UpdateRetrospective(ctx context.Context, args struct {
+	RunID       string
+	UpdatedText string
+	metrics     []struct {
+		metricConfigID string
+		value          int32
+	}
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	requesterID := c.r.Header.Get("Mattermost-User-ID")
+
+	if err := c.permissions.RunManageProperties(requesterID, args.RunID); err != nil {
+		return "", errors.Wrap(err, "attempted to update retorspective without permissions")
+	}
+
+	metricsFormat := make([]app.RunMetricData, 0, len(args.metrics))
+	for _, metric := range args.metrics {
+		metricsFormat = append(metricsFormat, app.RunMetricData{
+			MetricConfigID: metric.metricConfigID,
+			Value:          null.IntFrom(int64(metric.value)),
+		})
+	}
+
+	retroUpdate := app.RetrospectiveUpdate{
+		Text:    args.UpdatedText,
+		Metrics: metricsFormat,
+	}
+
+	if err := c.playbookRunService.UpdateRetrospective(args.RunID, requesterID, retroUpdate); err != nil {
 		return "", err
 	}
 

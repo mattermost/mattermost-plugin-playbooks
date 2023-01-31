@@ -31,11 +31,28 @@ import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import {useUpdateRun} from 'src/graphql/hooks';
 import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {PlaybookRun, Metadata as PlaybookRunMetadata, PlaybookRunStatus} from 'src/types/playbook_run';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+import {RunStatus} from 'src/graphql/generated/graphql';
+
+const RunHeaderRun = graphql(/* GraphQL */`
+    fragment RunHeaderRun on Run {
+        id
+        teamID
+        currentStatus
+        name
+        ownerUserID
+        channelID
+        statusUpdateEnabled
+        checklists {
+            items {
+                state
+            }
+        }
+    }
+`);
 
 interface Props {
-    playbookRunMetadata: PlaybookRunMetadata | null;
-    playbookRun: PlaybookRun;
+    runFragment: FragmentType<typeof RunHeaderRun>;
     role: Role;
     hasPermanentViewerAccess: boolean;
     onInfoClick: () => void;
@@ -44,13 +61,14 @@ interface Props {
     isFollowing: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({runFragment, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
     const dispatch = useDispatch();
+    const playbookRun = getFragmentData(RunHeaderRun, runFragment);
     const {formatMessage} = useIntl();
     const updateRun = useUpdateRun(playbookRun.id);
-    const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);
+    const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.teamID, playbookRun.id);
 
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun, 'run_details');
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun.id, 'run_details');
 
     // Favorite Button State
     const FavoriteIcon = isFavoriteRun ? StarIcon : StarOutlineIcon;
@@ -65,7 +83,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
             </StarButton>
 
             <TextEdit
-                disabled={playbookRun.current_status !== PlaybookRunStatus.InProgress}
+                disabled={playbookRun.currentStatus !== RunStatus.InProgress}
                 placeholder={formatMessage({defaultMessage: 'Run name'})}
                 value={playbookRun.name}
                 onSave={(name) => updateRun({name})}
@@ -94,7 +112,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                             toggleFavorite={toggleFavorite}
                             hasPermanentViewerAccess={hasPermanentViewerAccess}
                         />
-                        <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                        <StyledBadge status={BadgeType[playbookRun.currentStatus]}/>
                         <HeaderButton
                             tooltipId={'run-actions-button-tooltip'}
                             tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
@@ -131,9 +149,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
             {role === Role.Viewer &&
                 <GetInvolved
                     onClick={() => {
-                        if (!playbookRunMetadata) {
-                            return;
-                        }
                         showParticipateConfirm();
                     }}
                 >
@@ -142,7 +157,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                 </GetInvolved>
             }
             <RunActionsModal
-                playbookRun={playbookRun}
+                runID={playbookRun.id}
                 readOnly={role === Role.Viewer}
             />
             {ParticipateConfirmModal}

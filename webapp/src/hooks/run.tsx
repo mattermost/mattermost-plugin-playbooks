@@ -10,7 +10,6 @@ import {isFavoriteItem} from 'src/client';
 import {useSetRunFavorite} from 'src/graphql/hooks';
 import {CategoryItemType} from 'src/types/category';
 import BecomeParticipantsModal from 'src/components/backstage/playbook_runs/playbook_run/become_participant_modal';
-import {PlaybookRun} from 'src/types/playbook_run';
 
 export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => void] => {
     const [isFavoriteRun, setIsFavoriteRun] = useState(false);
@@ -29,12 +28,12 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     return [isFavoriteRun, toggleFavorite];
 };
 
-export const useParticipateInRun = (playbookRun: PlaybookRun | undefined, from: 'channel_rhs'|'run_details') => {
+export const useParticipateInRun = (runID: string, from: 'channel_rhs'|'run_details') => {
     const [showParticipateConfirm, setShowParticipateConfirm] = useState(false);
 
     const ParticipateConfirmModal = (
         <BecomeParticipantsModal
-            playbookRun={playbookRun}
+            runID={runID}
             show={showParticipateConfirm}
             hideModal={() => setShowParticipateConfirm(false)}
             from={from}

@@ -14,27 +14,41 @@ import Scrollbars from 'react-custom-scrollbars';
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {clientRemoveTimelineEvent} from 'src/client';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {useTimelineEvents} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
+import {UseTimelineEventsRun, useTimelineEvents} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 import {TimelineEventsFilter} from 'src/types/rhs';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+
+const RHSTimelineRun = graphql(/* GraphQL */`
+    fragment RHSTimelineRun on Run {
+        id
+        createAt
+        teamID
+        timelineEvents {
+            id
+        }
+        ...UseTimelineEventsRun
+    }
+`);
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRunFragment: FragmentType<typeof RHSTimelineRun>;
     role: Role;
     options: CheckboxOption[];
     selectOption: (value: string, checked: boolean) => void;
     eventsFilter: TimelineEventsFilter;
 }
 
-const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: Props) => {
+const RHSTimeline = ({playbookRunFragment, role, options, selectOption, eventsFilter}: Props) => {
     const {formatMessage} = useIntl();
+    const playbookRun = getFragmentData(RHSTimelineRun, playbookRunFragment);
+    const timelineEventsFragment = getFragmentData(UseTimelineEventsRun, playbookRun);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
-    const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.team_id));
+    const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.teamID));
 
-    const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
+    const [filteredEvents] = useTimelineEvents(timelineEventsFragment, eventsFilter);
 
     return (
         <Container data-testid='timeline-view'>
@@ -42,7 +56,7 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                 <FilterText>
                     {formatMessage(
                         {defaultMessage: 'Showing {filteredNum} of {totalNum} events'},
-                        {filteredNum: filteredEvents.length, totalNum: playbookRun.timeline_events.length}
+                        {filteredNum: filteredEvents.length, totalNum: playbookRun.timelineEvents.length}
                     )}
                 </FilterText>
                 <FilterButton>
@@ -82,7 +96,7 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                                     event={event}
                                     prevEventAt={prevEventAt}
                                     parent={'rhs'}
-                                    runCreateAt={DateTime.fromMillis(playbookRun.create_at)}
+                                    runCreateAt={DateTime.fromMillis(playbookRun.createAt)}
                                     channelNames={channelNamesMap}
                                     team={team}
                                     deleteEvent={() => clientRemoveTimelineEvent(playbookRun.id, event.id)}

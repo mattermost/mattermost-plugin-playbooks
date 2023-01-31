@@ -20,12 +20,14 @@ import {useDispatch} from 'react-redux';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
 import {ShowRunActionsModal} from 'src/types/actions';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {runStatusIsActive} from 'src/types/playbook_run';
 import {copyToClipboard} from 'src/utils';
 
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
+
+import {RunHeaderRunFragment, RunStatus} from 'src/graphql/generated/graphql';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
@@ -67,8 +69,8 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
     );
 };
 
-export const RenameRunItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
-    if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+export const RenameRunItem = (props: {onClick: () => void, runStatus: RunStatus, role: Role}) => {
+    if (runStatusIsActive(props.runStatus) && props.role === Role.Participant) {
         return (
             <StyledDropdownMenuItem
                 onClick={props.onClick}
@@ -141,10 +143,10 @@ export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportCli
     );
 };
 
-export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const onFinishRun = useOnFinishRun(props.playbookRun);
+export const FinishRunMenuItem = (props: {playbookRun: RunHeaderRunFragment, role: Role}) => {
+    const onFinishRun = useOnFinishRun(props.playbookRun.checklists, props.playbookRun.name, props.playbookRun.id);
 
-    if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+    if (runStatusIsActive(props.playbookRun.currentStatus) && props.role === Role.Participant) {
         return (
             <>
                 <Separator/>
@@ -182,10 +184,10 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
     );
 };
 
-export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const onRestoreRun = useOnRestoreRun(props.playbookRun);
+export const RestoreRunMenuItem = (props: {runID: string, runIsActive: boolean, role: Role}) => {
+    const onRestoreRun = useOnRestoreRun(props.runID);
 
-    if (!playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+    if (!props.runIsActive && props.role === Role.Participant) {
         return (
             <>
                 <Separator/>
@@ -203,10 +205,8 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
     return null;
 };
 
-export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const toggleRunStatusUpdates = useToggleRunStatusUpdate(props.playbookRun);
-
-    const statusUpdateEnabled = props.playbookRun.status_update_enabled;
+export const ToggleRunStatusUpdateMenuItem = (props: {runID: string, statusUpdateEnabled: boolean, role: Role}) => {
+    const toggleRunStatusUpdates = useToggleRunStatusUpdate(props.runID);
 
     return (
         <>
@@ -214,11 +214,11 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                 <>
                     <Separator/>
                     <StyledDropdownMenuItem
-                        onClick={() => toggleRunStatusUpdates(!statusUpdateEnabled)}
+                        onClick={() => toggleRunStatusUpdates(!props.statusUpdateEnabled)}
                     >
                         <UpdateIcon size={18}/>
                         {
-                            statusUpdateEnabled ? <FormattedMessage defaultMessage={'Disable status updates'}/> : <FormattedMessage defaultMessage={'Enable status updates'}/>
+                            props.statusUpdateEnabled ? <FormattedMessage defaultMessage={'Disable status updates'}/> : <FormattedMessage defaultMessage={'Enable status updates'}/>
                         }
                     </StyledDropdownMenuItem>
                 </>

@@ -9,11 +9,12 @@ import {useSelector} from 'react-redux';
 import {General} from 'mattermost-webapp/packages/mattermost-redux/src/constants';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import {useQuery} from '@apollo/client';
+
 import GenericModal from 'src/components/widgets/generic_modal';
 
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 
-import {PlaybookRun} from 'src/types/playbook_run';
 import {useChannel} from 'src/hooks';
 import {isCurrentUserChannelMember} from 'src/selectors';
 import {useManageRunMembership} from 'src/graphql/hooks';
@@ -23,23 +24,38 @@ import {ToastStyle} from 'src/components/backstage/toast';
 
 import {requestJoinChannel, telemetryEvent} from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {graphql} from 'src/graphql/generated';
 
 interface Props {
-    playbookRun: PlaybookRun | undefined;
+    runID: string;
     show: boolean;
     hideModal: () => void;
     from: string;
 }
 
-const BecomeParticipantsModal = ({playbookRun, show, hideModal, from}: Props) => {
+const becomeParticipantsQuery = graphql(/* GraphQL */`
+    query BecomeParticipantsModal($runID: String!) {
+        run(id: $runID) {
+            channelID
+            createChannelMemberOnNewParticipant
+        }
+    }
+`);
+
+const BecomeParticipantsModal = ({runID, show, hideModal, from}: Props) => {
     const {formatMessage} = useIntl();
+    const {data} = useQuery(becomeParticipantsQuery, {
+        variables: {
+            runID,
+        },
+    });
+    const playbookRun = data?.run;
 
     const currentUserId = useSelector(getCurrentUserId);
     const [checkboxState, setCheckboxState] = useState(false);
-    const {addToRun} = useManageRunMembership(playbookRun?.id);
+    const {addToRun} = useManageRunMembership(runID);
     const addToast = useToaster().add;
-    const channelId = playbookRun?.channel_id ?? '';
-    const playbookRunId = playbookRun?.id || '';
+    const channelId = playbookRun?.channelID ?? '';
     const [channel, meta] = useChannel(channelId);
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
     const isChannelMember = useSelector(isCurrentUserChannelMember(channelId)) || isPrivateChannelWithAccess;
@@ -51,7 +67,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, from}: Props) =>
             return null;
         }
 
-        if (playbookRun?.create_channel_member_on_new_participant) {
+        if (playbookRun?.createChannelMemberOnNewParticipant) {
             return (
                 <ExtraInfoContainer>
                     <LightningBoltOutlineIcon
@@ -92,14 +108,14 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, from}: Props) =>
 
                 // if no permissions to join the channel and checkbox is selected send a join request
                 if (noAccessToJoinTheChannel && checkboxState) {
-                    requestJoinChannel(playbookRunId);
+                    requestJoinChannel(runID);
                 }
             })
             .catch(() => addToast({
                 content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
                 toastStyle: ToastStyle.Failure,
             }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from, trigger: 'participate', count: '1'});
+        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: runID, from, trigger: 'participate', count: '1'});
 
         hideModal();
     };

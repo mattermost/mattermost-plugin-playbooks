@@ -13,7 +13,6 @@ import {OptionTypeBase, StylesConfig} from 'react-select';
 import {General} from 'mattermost-webapp/packages/mattermost-redux/src/constants';
 
 import GenericModal from 'src/components/widgets/generic_modal';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {useManageRunMembership} from 'src/graphql/hooks';
 
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
@@ -25,27 +24,38 @@ import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
 import {useChannel} from 'src/hooks';
 import {telemetryEvent} from 'src/client';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+
+const AddParticipantsModalRun = graphql(/* GraphQL */`
+    fragment AddParticipantsModalRun on Run {
+        id
+        channelID
+        teamID
+        createChannelMemberOnNewParticipant
+    }
+`);
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRunFragment: FragmentType<typeof AddParticipantsModalRun>;
     id: string;
     title: React.ReactNode;
     show: boolean;
     hideModal: () => void;
 }
 
-const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) => {
+const AddParticipantsModal = ({playbookRunFragment, id, title, show, hideModal}: Props) => {
     const {formatMessage} = useIntl();
+    const playbookRun = getFragmentData(AddParticipantsModalRun, playbookRunFragment);
     const dispatch = useDispatch();
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
     const [forceAddToChannel, setForceAddToChannel] = useState(false);
-    const [channel, meta] = useChannel(playbookRun.channel_id);
-    const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
+    const [channel, meta] = useChannel(playbookRun.channelID);
+    const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channelID));
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
+        return dispatch(searchProfiles(term, {team_id: playbookRun.teamID}));
     };
 
     const header = (
@@ -55,7 +65,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     );
 
     const renderFooter = () => {
-        if (playbookRun.create_channel_member_on_new_participant) {
+        if (playbookRun.createChannelMemberOnNewParticipant) {
             return (
                 <FooterExtraInfoContainer>
                     <LightningBoltOutlineIcon

@@ -7,10 +7,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	dataloader "github.com/graph-gophers/dataloader/v7"
 	graphql "github.com/graph-gophers/graphql-go"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -94,6 +96,7 @@ type GraphQLContext struct {
 	config             config.Service
 	permissions        *app.PermissionsService
 	licenceChecker     app.LicenseChecker
+	postsLoader        *dataloader.Loader[string, *model.Post]
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
@@ -118,6 +121,10 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	const batchCapacity = 200
+
+	postsLoader := dataloader.NewBatchedLoader(postsBatchLoader, dataloader.WithBatchCapacity[string, *model.Post](batchCapacity))
+
 	graphQLContext := &GraphQLContext{
 		r:                  r,
 		playbookService:    h.playbookService,
@@ -129,6 +136,7 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		permissions:        h.permissions,
 		playbookStore:      h.playbookStore,
 		licenceChecker:     h.licenceChecker,
+		postsLoader:        postsLoader,
 	}
 
 	// Populate the context with required info.

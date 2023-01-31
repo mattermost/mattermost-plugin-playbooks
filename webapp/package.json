@@ -130,6 +130,7 @@
     "check-types": "tsc",
     "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json",
     "graphql": "graphql-codegen --config graphql_gen.ts",
+    "graphql-watch": "graphql-codegen --watch --config graphql_gen.ts",
     "report-unused-exports": "ts-prune"
   },
   "jest": {

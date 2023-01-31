@@ -8,27 +8,27 @@ import {useIntl} from 'react-intl';
 
 import {useUpdateRun} from 'src/graphql/hooks';
 import MarkdownEdit from 'src/components/markdown_edit';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {Timestamp} from 'src/webapp_globals';
 import {AnchorLinkTitle, Role} from 'src/components/backstage/playbook_runs/shared';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
 
 interface Props {
     id: string;
-    playbookRun: PlaybookRun;
-    role: Role,
+    role: Role
+    runID: string
+    summaryModifiedAt: number
+    endAt: number
+    summary: string
 }
 
-const Summary = ({
-    id, playbookRun, role,
-}: Props) => {
+const Summary = (props: Props) => {
     const {formatMessage} = useIntl();
-    const updateRun = useUpdateRun(playbookRun.id);
+    const updateRun = useUpdateRun(props.runID);
 
     const title = formatMessage({defaultMessage: 'Summary'});
     const modifiedAt = (
         <Timestamp
-            value={playbookRun.summary_modified_at}
+            value={props.summaryModifiedAt}
             units={PAST_TIME_SPEC}
         />
     );
@@ -39,25 +39,25 @@ const Summary = ({
         </TimestampContainer>
     );
 
-    const placeholder = role === Role.Participant ? formatMessage({defaultMessage: 'Add a run summary'}) : formatMessage({defaultMessage: 'There\'s no summary'});
-    const disabled = (Role.Viewer === role || playbookRun.end_at > 0);
+    const placeholder = props.role === Role.Participant ? formatMessage({defaultMessage: 'Add a run summary'}) : formatMessage({defaultMessage: 'There\'s no summary'});
+    const disabled = (Role.Viewer === props.role || props.endAt > 0);
 
     return (
         <Container
-            id={id}
+            id={props.id}
             data-testid={'run-summary-section'}
         >
             <Header>
                 <AnchorLinkTitle
                     title={title}
-                    id={id}
+                    id={props.id}
                 />
-                {playbookRun.summary_modified_at > 0 && modifiedAtMessage}
+                {props.summaryModifiedAt > 0 && modifiedAtMessage}
             </Header>
             <MarkdownEdit
                 disabled={disabled}
                 placeholder={placeholder}
-                value={playbookRun.summary}
+                value={props.summary}
                 onSave={(value) => {
                     updateRun({summary: value});
                 }}

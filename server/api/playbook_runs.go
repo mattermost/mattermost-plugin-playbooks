@@ -121,7 +121,6 @@ func NewPlaybookRunHandler(
 	checklistItem.HandleFunc("/duedate", withContext(handler.itemSetDueDate)).Methods(http.MethodPut)
 
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
-	retrospectiveRouter.HandleFunc("", withContext(handler.updateRetrospective)).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", withContext(handler.publishRetrospective)).Methods(http.MethodPost)
 
 	followersRouter := playbookRunRouter.PathPrefix("/followers").Subrouter()
@@ -1729,26 +1728,6 @@ func (h *PlaybookRunHandler) postPlaybookRunCreatedMessage(playbookRun *app.Play
 	h.poster.EphemeralPost(playbookRun.OwnerUserID, channelID, post)
 
 	return nil
-}
-
-func (h *PlaybookRunHandler) updateRetrospective(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookRunID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var retroUpdate app.RetrospectiveUpdate
-
-	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
-		return
-	}
-
-	if err := h.playbookRunService.UpdateRetrospective(playbookRunID, userID, retroUpdate); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to update retrospective", err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) publishRetrospective(c *Context, w http.ResponseWriter, r *http.Request) {

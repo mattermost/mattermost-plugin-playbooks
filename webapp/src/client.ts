@@ -534,15 +534,6 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
-export async function updateRetrospective(playbookRunID: string, updatedText: string, metrics: RunMetricData[]) {
-    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective`,
-        JSON.stringify({
-            retrospective: updatedText,
-            metrics,
-        }));
-    return data;
-}
-
 export async function publishRetrospective(playbookRunID: string, currentText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective/publish`,
         JSON.stringify({

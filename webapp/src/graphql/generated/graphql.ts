@@ -76,6 +76,17 @@ export enum MetricType {
   MetricInteger = 'metric_integer'
 }
 
+export type MetricValue = {
+  __typename?: 'MetricValue';
+  metricConfigID: Scalars['String'];
+  value?: Maybe<Scalars['Int']>;
+};
+
+export type MetricValueUpdate = {
+  metricConfigID: Scalars['String'];
+  value?: InputMaybe<Scalars['Int']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addMetric: Scalars['String'];
@@ -89,6 +100,7 @@ export type Mutation = {
   updateMetric: Scalars['String'];
   updatePlaybook: Scalars['String'];
   updatePlaybookFavorite: Scalars['String'];
+  updateRetrospective: Scalars['String'];
   updateRun: Scalars['String'];
   updateRunTaskActions: Scalars['String'];
 };
@@ -162,6 +174,13 @@ export type MutationUpdatePlaybookArgs = {
 export type MutationUpdatePlaybookFavoriteArgs = {
   favorite: Scalars['Boolean'];
   id: Scalars['String'];
+};
+
+
+export type MutationUpdateRetrospectiveArgs = {
+  metrics: Array<MetricValueUpdate>;
+  runID: Scalars['String'];
+  updatedText: Scalars['String'];
 };
 
 
@@ -337,13 +356,14 @@ export type Run = {
   checklists: Array<Checklist>;
   createAt: Scalars['Float'];
   createChannelMemberOnNewParticipant: Scalars['Boolean'];
-  currentStatus: Scalars['String'];
+  currentStatus: RunStatus;
   endAt: Scalars['Float'];
   followers: Array<Scalars['String']>;
   id: Scalars['String'];
   isFavorite: Scalars['Boolean'];
   lastStatusUpdateAt: Scalars['Float'];
   lastUpdatedAt: Scalars['Float'];
+  metrics: Array<MetricValue>;
   name: Scalars['String'];
   numTasks: Scalars['Int'];
   numTasksClosed: Scalars['Int'];
@@ -353,6 +373,7 @@ export type Run = {
   playbookID: Scalars['String'];
   postID: Scalars['String'];
   previousReminder: Scalars['Float'];
+  progress: Scalars['Float'];
   reminderMessageTemplate: Scalars['String'];
   reminderPostId: Scalars['String'];
   reminderTimerDefaultSeconds: Scalars['Float'];
@@ -387,6 +408,11 @@ export type RunEdge = {
   node: Run;
 };
 
+export enum RunStatus {
+  Finished = 'Finished',
+  InProgress = 'InProgress'
+}
+
 export type RunUpdates = {
   broadcastChannelIDs?: InputMaybe<Array<Scalars['String']>>;
   channelID?: InputMaybe<Scalars['String']>;
@@ -401,9 +427,11 @@ export type RunUpdates = {
 
 export type StatusPost = {
   __typename?: 'StatusPost';
+  authorUserName: Scalars['String'];
   createAt: Scalars['Float'];
   deleteAt: Scalars['Float'];
   id: Scalars['String'];
+  message: Scalars['String'];
 };
 
 export type TaskAction = {
@@ -423,6 +451,7 @@ export type TimelineEvent = {
   creatorUserID: Scalars['String'];
   deleteAt: Scalars['Float'];
   details: Scalars['String'];
+  eventAt: Scalars['Float'];
   eventType: Scalars['String'];
   id: Scalars['String'];
   postID: Scalars['String'];
@@ -440,6 +469,66 @@ export type TriggerUpdates = {
   payload: Scalars['String'];
   type: Scalars['String'];
 };
+
+export type AddParticipantsModalRunFragment = { __typename?: 'Run', id: string, channelID: string, teamID: string, createChannelMemberOnNewParticipant: boolean } & { ' $fragmentName'?: 'AddParticipantsModalRunFragment' };
+
+export type BecomeParticipantsModalQueryVariables = Exact<{
+  runID: Scalars['String'];
+}>;
+
+
+export type BecomeParticipantsModalQuery = { __typename?: 'Query', run?: { __typename?: 'Run', channelID: string, createChannelMemberOnNewParticipant: boolean } | null };
+
+export type RunHeaderRunFragment = { __typename?: 'Run', id: string, teamID: string, currentStatus: RunStatus, name: string, ownerUserID: string, channelID: string, statusUpdateEnabled: boolean, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', state: string }> }> } & { ' $fragmentName'?: 'RunHeaderRunFragment' };
+
+export type RunDetailsPageQueryVariables = Exact<{
+  runID: Scalars['String'];
+}>;
+
+
+export type RunDetailsPageQuery = { __typename?: 'Query', run?: (
+    { __typename?: 'Run', id: string, participantIDs: Array<string>, ownerUserID: string, channelID: string, playbookID: string, teamID: string, name: string, statusUpdateEnabled: boolean, summaryModifiedAt: number, endAt: number, summary: string, currentStatus: RunStatus, followers: Array<string>, statusPosts: Array<{ __typename?: 'StatusPost', id: string, authorUserName: string, createAt: number, message: string }>, checklists: Array<{ __typename?: 'Checklist', items: Array<{ __typename?: 'ChecklistItem', state: string }> }> }
+    & { ' $fragmentRefs'?: { 'RhsInfoFragment': RhsInfoFragment;'ParticipantsRunFragment': ParticipantsRunFragment;'RhsTimelineRunFragment': RhsTimelineRunFragment;'RunHeaderRunFragment': RunHeaderRunFragment } }
+  ) | null };
+
+export type RetrospectiveRunFragment = { __typename?: 'Run', id: string, teamID: string, retrospective: string, retrospectiveEnabled: boolean, retrospectivePublishedAt: number, retrospectiveWasCanceled: boolean, metrics: Array<{ __typename?: 'MetricValue', metricConfigID: string, value?: number | null }> } & { ' $fragmentName'?: 'RetrospectiveRunFragment' };
+
+export type UpdateRetrospectiveMutationVariables = Exact<{
+  runID: Scalars['String'];
+  updatedText: Scalars['String'];
+  metrics: Array<MetricValueUpdate> | MetricValueUpdate;
+}>;
+
+
+export type UpdateRetrospectiveMutation = { __typename?: 'Mutation', updateRetrospective: string };
+
+export type RhsInfoFragment = (
+  { __typename?: 'Run', id: string, retrospectiveEnabled: boolean, currentStatus: RunStatus }
+  & { ' $fragmentRefs'?: { 'RhsInfoOverviewFragment': RhsInfoOverviewFragment;'RhsInfoMetricsRunFragment': RhsInfoMetricsRunFragment;'RhsInfoActivityFragment': RhsInfoActivityFragment } }
+) & { ' $fragmentName'?: 'RhsInfoFragment' };
+
+export type RhsInfoActivityFragment = (
+  { __typename?: 'Run', id: string, createAt: number, teamID: string }
+  & { ' $fragmentRefs'?: { 'UseTimelineEventsRunFragment': UseTimelineEventsRunFragment } }
+) & { ' $fragmentName'?: 'RhsInfoActivityFragment' };
+
+export type RhsInfoMetricsRunFragment = { __typename?: 'Run', id: string, metrics: Array<{ __typename?: 'MetricValue', metricConfigID: string, value?: number | null }> } & { ' $fragmentName'?: 'RhsInfoMetricsRunFragment' };
+
+export type RhsInfoMetricsPlaybookFragment = { __typename?: 'Playbook', metrics: Array<{ __typename?: 'PlaybookMetricConfig', id: string, type: MetricType, title: string, description: string, target?: number | null }> } & { ' $fragmentName'?: 'RhsInfoMetricsPlaybookFragment' };
+
+export type RhsInfoOverviewFragment = { __typename?: 'Run', id: string, playbookID: string, ownerUserID: string, participantIDs: Array<string> } & { ' $fragmentName'?: 'RhsInfoOverviewFragment' };
+
+export type ParticipantsRunFragment = (
+  { __typename?: 'Run', id: string, participantIDs: Array<string>, name: string, ownerUserID: string }
+  & { ' $fragmentRefs'?: { 'AddParticipantsModalRunFragment': AddParticipantsModalRunFragment } }
+) & { ' $fragmentName'?: 'ParticipantsRunFragment' };
+
+export type RhsTimelineRunFragment = (
+  { __typename?: 'Run', id: string, createAt: number, teamID: string, timelineEvents: Array<{ __typename?: 'TimelineEvent', id: string }> }
+  & { ' $fragmentRefs'?: { 'UseTimelineEventsRunFragment': UseTimelineEventsRunFragment } }
+) & { ' $fragmentName'?: 'RhsTimelineRunFragment' };
+
+export type UseTimelineEventsRunFragment = { __typename?: 'Run', timelineEvents: Array<{ __typename?: 'TimelineEvent', createAt: number, creatorUserID: string, details: string, deleteAt: number, eventType: string, eventAt: number, id: string, postID: string, summary: string, subjectUserID: string }>, statusPosts: Array<{ __typename?: 'StatusPost', id: string, deleteAt: number }> } & { ' $fragmentName'?: 'UseTimelineEventsRunFragment' };
 
 export type RunStatusModalQueryVariables = Exact<{
   runID: Scalars['String'];
@@ -483,6 +572,23 @@ export type RhsRunsQueryVariables = Exact<{
 
 
 export type RhsRunsQuery = { __typename?: 'Query', runs: { __typename?: 'RunConnection', totalCount: number, edges: Array<{ __typename?: 'RunEdge', node: { __typename?: 'Run', id: string, name: string, participantIDs: Array<string>, ownerUserID: string, playbookID: string, numTasksClosed: number, numTasks: number, lastUpdatedAt: number, type: PlaybookRunType, playbook?: { __typename?: 'Playbook', title: string } | null } }>, pageInfo: { __typename?: 'PageInfo', endCursor: string, hasNextPage: boolean } } };
+
+export type RhsRunParticipantsQueryVariables = Exact<{
+  runID: Scalars['String'];
+}>;
+
+
+export type RhsRunParticipantsQuery = { __typename?: 'Query', run?: (
+    { __typename?: 'Run', participantIDs: Array<string>, ownerUserID: string }
+    & { ' $fragmentRefs'?: { 'ParticipantsRunFragment': ParticipantsRunFragment } }
+  ) | null };
+
+export type RunActionsModalQueryVariables = Exact<{
+  runID: Scalars['String'];
+}>;
+
+
+export type RunActionsModalQuery = { __typename?: 'Query', run?: { __typename?: 'Run', id: string, teamID: string, playbookID: string, statusUpdateBroadcastChannelsEnabled: boolean, statusUpdateBroadcastWebhooksEnabled: boolean, createChannelMemberOnNewParticipant: boolean, removeChannelMemberOnRemovedParticipant: boolean, broadcastChannelIDs: Array<string>, webhookOnStatusUpdateURLs: Array<string> } | null };
 
 export type PlaybookLhsQueryVariables = Exact<{
   userID: Scalars['String'];
@@ -597,12 +703,28 @@ export type UpdateRunTaskActionsMutationVariables = Exact<{
 
 export type UpdateRunTaskActionsMutation = { __typename?: 'Mutation', updateRunTaskActions: string };
 
+export const RunHeaderRunFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RunHeaderRun"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"currentStatus"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserID"}},{"kind":"Field","name":{"kind":"Name","value":"channelID"}},{"kind":"Field","name":{"kind":"Name","value":"statusUpdateEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"checklists"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]}}]} as unknown as DocumentNode<RunHeaderRunFragment, unknown>;
+export const RetrospectiveRunFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RetrospectiveRun"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"retrospective"}},{"kind":"Field","name":{"kind":"Name","value":"retrospectiveEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"retrospectivePublishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"retrospectiveWasCanceled"}},{"kind":"Field","name":{"kind":"Name","value":"metrics"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"metricConfigID"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]} as unknown as DocumentNode<RetrospectiveRunFragment, unknown>;
+export const RhsInfoOverviewFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RHSInfoOverview"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"playbookID"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserID"}},{"kind":"Field","name":{"kind":"Name","value":"participantIDs"}}]}}]} as unknown as DocumentNode<RhsInfoOverviewFragment, unknown>;
+export const RhsInfoMetricsRunFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RHSInfoMetricsRun"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"metrics"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"metricConfigID"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]} as unknown as DocumentNode<RhsInfoMetricsRunFragment, unknown>;
+export const UseTimelineEventsRunFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UseTimelineEventsRun"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"timelineEvents"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createAt"}},{"kind":"Field","name":{"kind":"Name","value":"creatorUserID"}},{"kind":"Field","name":{"kind":"Name","value":"details"}},{"kind":"Field","name":{"kind":"Name","value":"deleteAt"}},{"kind":"Field","name":{"kind":"Name","value":"eventType"}},{"kind":"Field","name":{"kind":"Name","value":"eventAt"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"postID"}},{"kind":"Field","name":{"kind":"Name","value":"summary"}},{"kind":"Field","name":{"kind":"Name","value":"subjectUserID"}}]}},{"kind":"Field","name":{"kind":"Name","value":"statusPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"deleteAt"}}]}}]}}]} as unknown as DocumentNode<UseTimelineEventsRunFragment, unknown>;
+export const RhsInfoActivityFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RHSInfoActivity"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"createAt"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"UseTimelineEventsRun"}}]}},...UseTimelineEventsRunFragmentDoc.definitions]} as unknown as DocumentNode<RhsInfoActivityFragment, unknown>;
+export const RhsInfoFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RHSInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"retrospectiveEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"currentStatus"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RHSInfoOverview"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RHSInfoMetricsRun"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RHSInfoActivity"}}]}},...RhsInfoOverviewFragmentDoc.definitions,...RhsInfoMetricsRunFragmentDoc.definitions,...RhsInfoActivityFragmentDoc.definitions]} as unknown as DocumentNode<RhsInfoFragment, unknown>;
+export const RhsInfoMetricsPlaybookFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RHSInfoMetricsPlaybook"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Playbook"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"metrics"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"target"}}]}}]}}]} as unknown as DocumentNode<RhsInfoMetricsPlaybookFragment, unknown>;
+export const AddParticipantsModalRunFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AddParticipantsModalRun"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"channelID"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"createChannelMemberOnNewParticipant"}}]}}]} as unknown as DocumentNode<AddParticipantsModalRunFragment, unknown>;
+export const ParticipantsRunFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ParticipantsRun"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"participantIDs"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserID"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"AddParticipantsModalRun"}}]}},...AddParticipantsModalRunFragmentDoc.definitions]} as unknown as DocumentNode<ParticipantsRunFragment, unknown>;
+export const RhsTimelineRunFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RHSTimelineRun"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"createAt"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"timelineEvents"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"UseTimelineEventsRun"}}]}},...UseTimelineEventsRunFragmentDoc.definitions]} as unknown as DocumentNode<RhsTimelineRunFragment, unknown>;
 export const DefaultMessageFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"DefaultMessage"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reminderMessageTemplate"}},{"kind":"Field","name":{"kind":"Name","value":"statusPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"deleteAt"}}]}}]}}]} as unknown as DocumentNode<DefaultMessageFragment, unknown>;
 export const ReminderTimerFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ReminderTimer"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"previousReminder"}},{"kind":"Field","name":{"kind":"Name","value":"reminderTimerDefaultSeconds"}},{"kind":"Field","name":{"kind":"Name","value":"statusPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteAt"}}]}}]}}]} as unknown as DocumentNode<ReminderTimerFragment, unknown>;
 export const PlaybookModalFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PlaybookModalFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Playbook"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","alias":{"kind":"Name","value":"is_favorite"},"name":{"kind":"Name","value":"isFavorite"}},{"kind":"Field","name":{"kind":"Name","value":"public"}},{"kind":"Field","alias":{"kind":"Name","value":"team_id"},"name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"members"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"user_id"},"name":{"kind":"Name","value":"userID"}},{"kind":"Field","alias":{"kind":"Name","value":"scheme_roles"},"name":{"kind":"Name","value":"schemeRoles"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"default_playbook_member_role"},"name":{"kind":"Name","value":"defaultPlaybookMemberRole"}},{"kind":"Field","alias":{"kind":"Name","value":"last_run_at"},"name":{"kind":"Name","value":"lastRunAt"}},{"kind":"Field","alias":{"kind":"Name","value":"active_runs"},"name":{"kind":"Name","value":"activeRuns"}}]}}]} as unknown as DocumentNode<PlaybookModalFieldsFragment, unknown>;
+export const BecomeParticipantsModalDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"BecomeParticipantsModal"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"channelID"}},{"kind":"Field","name":{"kind":"Name","value":"createChannelMemberOnNewParticipant"}}]}}]}}]} as unknown as DocumentNode<BecomeParticipantsModalQuery, BecomeParticipantsModalQueryVariables>;
+export const RunDetailsPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RunDetailsPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"participantIDs"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserID"}},{"kind":"Field","name":{"kind":"Name","value":"channelID"}},{"kind":"Field","name":{"kind":"Name","value":"playbookID"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"statusPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserName"}},{"kind":"Field","name":{"kind":"Name","value":"createAt"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"Field","name":{"kind":"Name","value":"statusUpdateEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"summaryModifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"endAt"}},{"kind":"Field","name":{"kind":"Name","value":"summary"}},{"kind":"Field","name":{"kind":"Name","value":"checklists"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"currentStatus"}},{"kind":"Field","name":{"kind":"Name","value":"followers"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RHSInfo"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"ParticipantsRun"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RHSTimelineRun"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RunHeaderRun"}}]}}]}},...RhsInfoFragmentDoc.definitions,...ParticipantsRunFragmentDoc.definitions,...RhsTimelineRunFragmentDoc.definitions,...RunHeaderRunFragmentDoc.definitions]} as unknown as DocumentNode<RunDetailsPageQuery, RunDetailsPageQueryVariables>;
+export const UpdateRetrospectiveDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRetrospective"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"updatedText"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"metrics"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MetricValueUpdate"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRetrospective"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"runID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}},{"kind":"Argument","name":{"kind":"Name","value":"updatedText"},"value":{"kind":"Variable","name":{"kind":"Name","value":"updatedText"}}},{"kind":"Argument","name":{"kind":"Name","value":"metrics"},"value":{"kind":"Variable","name":{"kind":"Name","value":"metrics"}}}]}]}}]} as unknown as DocumentNode<UpdateRetrospectiveMutation, UpdateRetrospectiveMutationVariables>;
 export const RunStatusModalDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RunStatusModal"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"DefaultMessage"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"ReminderTimer"}},{"kind":"Field","name":{"kind":"Name","value":"broadcastChannelIDs"}},{"kind":"Field","name":{"kind":"Name","value":"statusUpdateBroadcastChannelsEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"checklists"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"followers"}}]}}]}},...DefaultMessageFragmentDoc.definitions,...ReminderTimerFragmentDoc.definitions]} as unknown as DocumentNode<RunStatusModalQuery, RunStatusModalQueryVariables>;
 export const PlaybooksModalDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PlaybooksModal"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"channelID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"teamID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"searchTerm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"channelPlaybooks"},"name":{"kind":"Name","value":"runs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"channelID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"channelID"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1000"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"playbookID"}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"yourPlaybooks"},"name":{"kind":"Name","value":"playbooks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"teamID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"teamID"}}},{"kind":"Argument","name":{"kind":"Name","value":"withMembershipOnly"},"value":{"kind":"BooleanValue","value":true}},{"kind":"Argument","name":{"kind":"Name","value":"searchTerm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"searchTerm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"PlaybookModalFields"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"allPlaybooks"},"name":{"kind":"Name","value":"playbooks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"teamID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"teamID"}}},{"kind":"Argument","name":{"kind":"Name","value":"withMembershipOnly"},"value":{"kind":"BooleanValue","value":false}},{"kind":"Argument","name":{"kind":"Name","value":"searchTerm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"searchTerm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"PlaybookModalFields"}}]}}]}},...PlaybookModalFieldsFragmentDoc.definitions]} as unknown as DocumentNode<PlaybooksModalQuery, PlaybooksModalQueryVariables>;
 export const RhsRunsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RHSRuns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"channelID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"direction"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"runs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"channelID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"channelID"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}},{"kind":"Argument","name":{"kind":"Name","value":"direction"},"value":{"kind":"Variable","name":{"kind":"Name","value":"direction"}}},{"kind":"Argument","name":{"kind":"Name","value":"statuses"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"status"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"participantIDs"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserID"}},{"kind":"Field","name":{"kind":"Name","value":"playbookID"}},{"kind":"Field","name":{"kind":"Name","value":"playbook"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"numTasksClosed"}},{"kind":"Field","name":{"kind":"Name","value":"numTasks"}},{"kind":"Field","name":{"kind":"Name","value":"lastUpdatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"endCursor"}},{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}}]}}]}}]}}]} as unknown as DocumentNode<RhsRunsQuery, RhsRunsQueryVariables>;
+export const RhsRunParticipantsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RhsRunParticipants"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"participantIDs"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserID"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"ParticipantsRun"}}]}}]}},...ParticipantsRunFragmentDoc.definitions]} as unknown as DocumentNode<RhsRunParticipantsQuery, RhsRunParticipantsQueryVariables>;
+export const RunActionsModalDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RunActionsModal"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"playbookID"}},{"kind":"Field","name":{"kind":"Name","value":"statusUpdateBroadcastChannelsEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"statusUpdateBroadcastWebhooksEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"createChannelMemberOnNewParticipant"}},{"kind":"Field","name":{"kind":"Name","value":"removeChannelMemberOnRemovedParticipant"}},{"kind":"Field","name":{"kind":"Name","value":"broadcastChannelIDs"}},{"kind":"Field","name":{"kind":"Name","value":"webhookOnStatusUpdateURLs"}}]}}]}}]} as unknown as DocumentNode<RunActionsModalQuery, RunActionsModalQueryVariables>;
 export const PlaybookLhsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PlaybookLHS"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"teamID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"types"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PlaybookRunType"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"runs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"participantOrFollowerID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userID"}}},{"kind":"Argument","name":{"kind":"Name","value":"teamID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"teamID"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"StringValue","value":"name","block":false}},{"kind":"Argument","name":{"kind":"Name","value":"statuses"},"value":{"kind":"ListValue","values":[{"kind":"StringValue","value":"InProgress","block":false}]}},{"kind":"Argument","name":{"kind":"Name","value":"types"},"value":{"kind":"Variable","name":{"kind":"Name","value":"types"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"isFavorite"}},{"kind":"Field","name":{"kind":"Name","value":"playbookID"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserID"}},{"kind":"Field","name":{"kind":"Name","value":"participantIDs"}},{"kind":"Field","name":{"kind":"Name","value":"followers"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"playbooks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"teamID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"teamID"}}},{"kind":"Argument","name":{"kind":"Name","value":"withMembershipOnly"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"isFavorite"}},{"kind":"Field","name":{"kind":"Name","value":"public"}}]}}]}}]} as unknown as DocumentNode<PlaybookLhsQuery, PlaybookLhsQueryVariables>;
 export const PlaybookRunReminderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PlaybookRunReminder"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"previousReminder"}},{"kind":"Field","name":{"kind":"Name","value":"reminderTimerDefaultSeconds"}}]}}]}}]} as unknown as DocumentNode<PlaybookRunReminderQuery, PlaybookRunReminderQueryVariables>;
 export const FirstActiveRunInChannelDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"FirstActiveRunInChannel"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"channelID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"runs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"channelID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"channelID"}}},{"kind":"Argument","name":{"kind":"Name","value":"statuses"},"value":{"kind":"ListValue","values":[{"kind":"StringValue","value":"InProgress","block":false}]}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"previousReminder"}},{"kind":"Field","name":{"kind":"Name","value":"reminderTimerDefaultSeconds"}}]}}]}}]}}]}}]} as unknown as DocumentNode<FirstActiveRunInChannelQuery, FirstActiveRunInChannelQueryVariables>;

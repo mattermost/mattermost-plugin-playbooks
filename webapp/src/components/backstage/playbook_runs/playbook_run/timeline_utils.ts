@@ -19,10 +19,32 @@ import {
     TimelineEventsFilter,
     TimelineEventsFilterDefault,
 } from 'src/types/rhs';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
+import {graphql} from 'src/graphql/generated';
+import {UseTimelineEventsRunFragment} from 'src/graphql/generated/graphql';
 
-export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
+export const UseTimelineEventsRun = graphql(/* GraphQL */`
+   fragment UseTimelineEventsRun on Run {
+       timelineEvents {
+           createAt
+           creatorUserID
+           details
+           deleteAt
+           eventType
+           eventAt
+           id
+           postID
+           summary
+           subjectUserID
+       }
+       statusPosts {
+           id
+           deleteAt
+       }
+   }
+`);
+
+export const useTimelineEvents = (run: UseTimelineEventsRunFragment, eventsFilter: TimelineEventsFilter) => {
     const dispatch = useDispatch();
     const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
@@ -36,23 +58,18 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
     }, [eventsFilter, allEvents]);
 
     useEffect(() => {
-        const {
-            status_posts: statuses,
-            timeline_events: events,
-        } = playbookRun;
-
-        const statusDeleteAtByPostId = statuses.reduce<{[id: string]: number}>((map, post) => {
-            if (post.delete_at !== 0) {
-                map[post.id] = post.delete_at;
+        const statusDeleteAtByPostId = run.statusPosts.reduce<{[id: string]: number}>((map, post) => {
+            if (post.deleteAt !== 0) {
+                map[post.id] = post.deleteAt;
             }
             return map;
         }, {});
 
-        Promise.all(events.map(async (event) => {
-            let user = selectUser(event.subject_user_id) as UserProfile | undefined;
+        Promise.all(run.timelineEvents.map(async (event) => {
+            let user = selectUser(event.subjectUserID) as UserProfile | undefined;
 
             if (!user) {
-                const ret = await getUserFn(event.subject_user_id) as { data?: UserProfile, error?: any };
+                const ret = await getUserFn(event.subjectUserID) as { data?: UserProfile, error?: any };
                 if (!ret.data) {
                     return null;
                 }
@@ -60,14 +77,21 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
             }
             return {
                 ...event,
-                status_delete_at: statusDeleteAtByPostId[event.post_id] ?? 0,
+                event_at: event.eventAt,
+                create_at: event.createAt,
+                creator_user_id: event.creatorUserID,
+                delete_at: event.deleteAt,
+                event_type: event.eventType,
+                post_id: event.postID,
+                subject_user_id: event.subjectUserID,
+                status_delete_at: statusDeleteAtByPostId[event.postID] ?? 0,
                 subject_display_name: displayUsername(user, displayPreference),
             } as TimelineEvent;
         })).then((eventArray) => {
             eventArray.reverse();
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
-    }, [playbookRun.timeline_events, displayPreference, playbookRun.status_posts]);
+    }, [run.timelineEvents, displayPreference, run.statusPosts]);
 
     return [filteredEvents];
 };

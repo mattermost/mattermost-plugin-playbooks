@@ -3,9 +3,10 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import debounce from 'debounce';
 
-import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
+import {useMutation} from '@apollo/client';
+
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {publishRetrospective, updateRetrospective} from 'src/client';
+import {publishRetrospective} from 'src/client';
 import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
@@ -16,10 +17,33 @@ import Report from 'src/components/backstage/playbook_runs/playbook_run/retrospe
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {PAST_TIME_SPEC} from 'src/components/time_spec';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+import {MetricValue} from 'src/graphql/generated/graphql';
+
+const RetrospectiveRun = graphql(/* GraphQL */`
+    fragment RetrospectiveRun on Run {
+        id
+        teamID
+        retrospective
+        retrospectiveEnabled
+        retrospectivePublishedAt
+        retrospectiveWasCanceled
+        metrics {
+            metricConfigID
+            value
+        }
+    }
+`);
+
+const UpdateRetrospective = graphql(/* GraphQL */`
+    mutation UpdateRetrospective($runID: String!, $updatedText: String!, $metrics: [MetricValueUpdate!]!) {
+        updateRetrospective(runID: $runID, updatedText: $updatedText, metrics: $metrics)
+    }
+`);
 
 interface Props {
     id: string;
-    playbookRun: PlaybookRun;
+    runFragment: FragmentType<typeof RetrospectiveRun>;
     playbook: PlaybookWithChecklist | null;
     role: Role;
     focusMetricId?: string;
@@ -29,31 +53,41 @@ const DEBOUNCE_2_SECS = 2000;
 
 const Retrospective = ({
     id,
-    playbookRun,
+    runFragment,
     playbook,
     role,
     focusMetricId,
 }: Props) => {
+    const playbookRun = getFragmentData(RetrospectiveRun, runFragment);
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const childRef = useRef<any>();
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
+    const [updateRetrospective] = useMutation(UpdateRetrospective);
 
     const onMetricsChange = useMemo(
-        () => debounce((metrics_data: RunMetricData[]) => {
-            updateRetrospective(playbookRun.id, playbookRun.retrospective, metrics_data);
+        () => debounce((metrics_data: MetricValue[]) => {
+            updateRetrospective({variables: {
+                runID: playbookRun.id,
+                updatedText: playbookRun.retrospective,
+                metrics: metrics_data,
+            }});
         }, DEBOUNCE_2_SECS),
         [playbookRun.id, playbookRun.retrospective],
     );
     const onReportChange = useMemo(
         () => debounce((retrospective: string) => {
-            updateRetrospective(playbookRun.id, retrospective, playbookRun.metrics_data);
+            updateRetrospective({variables: {
+                runID: playbookRun.id,
+                updatedText: retrospective,
+                metrics: playbookRun.metrics,
+            }});
         }, DEBOUNCE_2_SECS),
-        [playbookRun.id, playbookRun.metrics_data],
+        [playbookRun.id, playbookRun.metrics],
     );
 
-    if (!playbookRun.retrospective_enabled) {
+    if (!playbookRun.retrospectiveEnabled) {
         return null;
     }
 
@@ -82,7 +116,7 @@ const Retrospective = ({
     }
 
     const onConfirmPublish = () => {
-        publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics_data);
+        publishRetrospective(playbookRun.id, playbookRun.retrospective, playbookRun.metrics);
         setShowConfirmation(false);
     };
 
@@ -96,13 +130,13 @@ const Retrospective = ({
         setShowConfirmation(true);
     };
 
-    const isPublished = playbookRun.retrospective_published_at > 0 && !playbookRun.retrospective_was_canceled;
+    const isPublished = playbookRun.retrospectivePublishedAt > 0 && !playbookRun.retrospectiveWasCanceled;
     const notEditable = isPublished || role === Role.Viewer;
 
     const renderPublishComponent = () => {
         const publishedAt = (
             <Timestamp
-                value={playbookRun.retrospective_published_at}
+                value={playbookRun.retrospectivePublishedAt}
                 {...PAST_TIME_SPEC}
             />
         );
@@ -148,7 +182,7 @@ const Retrospective = ({
                         <MetricsData
                             idPrefix={id}
                             ref={childRef}
-                            metricsData={playbookRun.metrics_data}
+                            metricsData={playbookRun.metrics}
                             metricsConfigs={playbook.metrics}
                             notEditable={notEditable}
                             onEdit={onMetricsChange}
@@ -156,7 +190,8 @@ const Retrospective = ({
                             focusMetricId={focusMetricId}
                         />}
                     <Report
-                        playbookRun={playbookRun}
+                        teamID={playbookRun.teamID}
+                        retrospective={playbookRun.retrospective}
                         onEdit={onReportChange}
                         flushChanges={() => onReportChange.flush()}
                         notEditable={notEditable}

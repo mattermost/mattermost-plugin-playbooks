@@ -4,25 +4,31 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {PlaybookRun, StatusPostComplete} from 'src/types/playbook_run';
-
 import StatusUpdateCard from './update_card';
 
 interface Props {
-    playbookRun: PlaybookRun;
-    statusUpdates: StatusPostComplete[] | null;
+    statusUpdates?: {
+        id: string
+        authorUserName: string
+        createAt: number
+        message: string
+    }[]
 }
 
-const RHSStatusUpdates = ({playbookRun, statusUpdates}: Props) => {
-    if (playbookRun.status_posts.length === 0 || statusUpdates === null) {
+const RHSStatusUpdates = (props: Props) => {
+    if (!props.statusUpdates || props.statusUpdates.length === 0) {
         return null;
     }
 
     return (
         <Container data-testid={'run-rhs-statusupdates'}>
-            {statusUpdates.map((post) => (
+            {props.statusUpdates.map((post) => (
                 <Wrapper key={post.id}>
-                    <StatusUpdateCard post={post}/>
+                    <StatusUpdateCard
+                        authorUserName={post.authorUserName}
+                        createAt={post.createAt}
+                        message={post.message}
+                    />
                 </Wrapper>
             ))}
         </Container>

@@ -12,27 +12,39 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {PlaybookRun} from 'src/types/playbook_run';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
 import {ItemList} from 'src/components/backstage/playbook_runs/playbook_run/rhs_timeline';
 import {TimelineEventsFilterDefault} from 'src/types/rhs';
 import {clientRemoveTimelineEvent} from 'src/client';
 
-import {useTimelineEvents} from './timeline_utils';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+
+import {UseTimelineEventsRun, useTimelineEvents} from './timeline_utils';
 
 const SHOWED_EVENTS = 5;
 
+const RHSInfoActivityRun = graphql(/* GraphQL */`
+    fragment RHSInfoActivity on Run {
+        id
+        createAt
+        teamID
+        ...UseTimelineEventsRun
+    }
+`);
+
 interface Props {
-    run: PlaybookRun;
+    runFragment: FragmentType<typeof RHSInfoActivityRun>;
     role: Role;
     onViewTimeline: () => void;
 }
 
-const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
+const RHSInfoActivity = ({runFragment, role, onViewTimeline}: Props) => {
     const {formatMessage} = useIntl();
-    const [filteredEvents] = useTimelineEvents(run, TimelineEventsFilterDefault);
+    const run = getFragmentData(RHSInfoActivityRun, runFragment);
+    const timelineEventsFragment = getFragmentData(UseTimelineEventsRun, run);
+    const [filteredEvents] = useTimelineEvents(timelineEventsFragment, TimelineEventsFilterDefault);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
-    const team = useSelector((state: GlobalState) => getTeam(state, run.team_id));
+    const team = useSelector((state: GlobalState) => getTeam(state, run.teamID));
 
     return (
         <Section>
@@ -55,7 +67,7 @@ const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
                             event={event}
                             prevEventAt={prevEventAt}
                             parent={'rhs'}
-                            runCreateAt={DateTime.fromMillis(run.create_at)}
+                            runCreateAt={DateTime.fromMillis(run.createAt)}
                             channelNames={channelNamesMap}
                             team={team}
                             deleteEvent={() => clientRemoveTimelineEvent(run.id, event.id)}

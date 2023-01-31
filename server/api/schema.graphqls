@@ -40,6 +40,7 @@ type Mutation {
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 	changeRunOwner(runID: String!, ownerID: String!): String!
 	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String!
+	updateRetrospective(runID: String!, updatedText: String!, metrics: [MetricValueUpdate!]!): String!
 }
 
 type PageInfo {
@@ -230,6 +231,11 @@ enum PlaybookRunType {
 	channelChecklist
 }
 
+enum RunStatus {
+	InProgress
+	Finished
+}
+
 type Run {
 	id: String!
 	playbookID: String!
@@ -240,7 +246,7 @@ type Run {
 	postID: String!
 	teamID: String!
 	isFavorite: Boolean!
-	currentStatus: String!
+	currentStatus: RunStatus!
 	createAt: Float!
 	endAt: Float!
 	participantIDs: [String!]!
@@ -280,7 +286,21 @@ type Run {
 	numTasksClosed: Int!
 
 	type: PlaybookRunType!
+	metrics: [MetricValue!]!
+
+	progress: Float!
 }
+
+type MetricValue {
+	metricConfigID: String!
+	value: Int
+}
+
+input MetricValueUpdate {
+	metricConfigID: String!
+	value: Int
+}
+
 
 type RunConnection {
 	totalCount: Int!
@@ -297,12 +317,15 @@ type StatusPost {
 	id: String!
 	createAt: Float!
 	deleteAt: Float!
+	message: String!
+	authorUserName: String!
 }
 
 type TimelineEvent {
 	id: String!
 	createAt: Float!
 	deleteAt: Float!
+	eventAt: Float!
 	eventType: String!
 	details: String!
 	postID: String!

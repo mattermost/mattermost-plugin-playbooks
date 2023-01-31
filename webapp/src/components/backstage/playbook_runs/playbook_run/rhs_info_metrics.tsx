@@ -10,32 +10,56 @@ import {Duration} from 'luxon';
 
 import {PlaybookRunIDs} from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
-import {RunMetricData} from 'src/types/playbook_run';
-import {Metric, MetricType} from 'src/types/playbook';
+import {MetricType} from 'src/types/playbook';
 import {formatDuration} from 'src/components/formatted_duration';
 import {useAllowPlaybookAndRunMetrics} from 'src/hooks';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+import {MetricValue, PlaybookMetricConfig} from 'src/graphql/generated/graphql';
+
+const RHSInfoMetricsRun = graphql(/* GraphQL */`
+    fragment RHSInfoMetricsRun on Run {
+        id
+        metrics {
+            metricConfigID
+            value
+        }
+    }
+`);
+
+const RHSInfoMetricsPlaybook = graphql(/* GraphQL */`
+    fragment RHSInfoMetricsPlaybook on Playbook {
+        metrics {
+          id
+          type
+          title
+          description
+          target
+        }
+    }
+`);
 
 interface Props {
-    runID: string;
-    metricsData: RunMetricData[];
-    metricsConfig?: Metric[];
+    run: FragmentType<typeof RHSInfoMetricsRun>
+    playbook: FragmentType<typeof RHSInfoMetricsPlaybook>
     editable: boolean;
 }
 
-const RHSInfoMetrics = ({runID, metricsData, metricsConfig, editable}: Props) => {
+const RHSInfoMetrics = (props: Props) => {
     const {formatMessage} = useIntl();
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
+    const run = getFragmentData(RHSInfoMetricsRun, props.run);
+    const metrics = getFragmentData(RHSInfoMetricsPlaybook, props.playbook).metrics;
 
-    const metricDataByID = {} as Record<string, RunMetricData>;
-    metricsData.forEach((mc) => {
-        metricDataByID[mc.metric_config_id] = mc;
+    const metricDataByID = {} as Record<string, MetricValue>;
+    run.metrics.forEach((mc) => {
+        metricDataByID[mc.metricConfigID] = mc;
     });
 
-    if (!metricsAvailable || !metricsConfig || metricsConfig.length === 0) {
+    if (!metricsAvailable || !metrics || metrics.length === 0) {
         return null;
     }
 
-    const retroURL = `/playbooks/runs/${runID}#${PlaybookRunIDs.SectionRetrospective}`;
+    const retroURL = `/playbooks/runs/${run.id}#${PlaybookRunIDs.SectionRetrospective}`;
 
     return (
         <Section>
@@ -47,13 +71,13 @@ const RHSInfoMetrics = ({runID, metricsData, metricsConfig, editable}: Props) =>
                 }}
             />
             <Wrapper>
-                {metricsConfig.map((metricInfo) => (
+                {metrics.map((metricInfo) => (
                     <Item
                         key={metricInfo.id}
                         to={retroURL + metricInfo.id}
                         data={metricDataByID[metricInfo.id]}
                         info={metricInfo}
-                        editable={editable}
+                        editable={props.editable}
                     />
                 ))}
             </Wrapper>
@@ -67,8 +91,8 @@ const Wrapper = styled.div`
 `;
 
 interface ItemProps {
-    data: RunMetricData | null;
-    info: Metric;
+    data: MetricValue;
+    info: PlaybookMetricConfig;
     editable: boolean;
     to: string;
 }

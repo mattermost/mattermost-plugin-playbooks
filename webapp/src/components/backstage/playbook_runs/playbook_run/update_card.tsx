@@ -16,7 +16,6 @@ import {Client4} from 'mattermost-redux/client';
 import {Timestamp, formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
 import {useEnsureProfile} from 'src/hooks';
-import {StatusPostComplete} from 'src/types/playbook_run';
 
 function useAuthorInfo(userName: string) : [string, string] {
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
@@ -33,8 +32,10 @@ function useAuthorInfo(userName: string) : [string, string] {
     return [profileUrl, preferredName];
 }
 
-interface Props {
-    post: StatusPostComplete;
+export interface UpdateCardProps {
+    authorUserName: string
+    createAt: number
+    message: string
 }
 
 const REL_UNITS = [
@@ -42,8 +43,8 @@ const REL_UNITS = [
     'Yesterday',
 ];
 
-const StatusUpdateCard = ({post}: Props) => {
-    const [authorProfileUrl, authorUserName] = useAuthorInfo(post.author_user_name);
+const StatusUpdateCard = (props: UpdateCardProps) => {
+    const [authorProfileUrl, authorUserName] = useAuthorInfo(props.authorUserName);
     const markdownOptions = {
         singleline: false,
         mentionHighlight: true,
@@ -61,13 +62,13 @@ const StatusUpdateCard = ({post}: Props) => {
                 <Author>{authorUserName}</Author>
                 <Date>
                     <Timestamp
-                        value={post.create_at}
+                        value={props.createAt}
                         units={REL_UNITS}
                     />
                 </Date>
             </Header>
             <Body>
-                {messageHtmlToComponent(formatText(post.message, markdownOptions), true, messageHtmlToComponentOptions)}
+                {messageHtmlToComponent(formatText(props.message, markdownOptions), true, messageHtmlToComponentOptions)}
             </Body>
         </Container>
     );

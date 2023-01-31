@@ -9,12 +9,24 @@ import RHSInfoOverview from 'src/components/backstage/playbook_runs/playbook_run
 import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_metrics';
 import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_activity';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
-import {Metadata, PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+import {RunStatus} from 'src/graphql/generated/graphql';
+
+const RHSInfoRun = graphql(/* GraphQL */`
+    fragment RHSInfo on Run {
+        id
+        retrospectiveEnabled
+        currentStatus
+        ...RHSInfoOverview
+        ...RHSInfoMetricsRun
+        ...RHSInfoActivity
+    }
+`);
+
 interface Props {
-    run: PlaybookRun;
+    run: FragmentType<typeof RHSInfoRun>
     playbook?: PlaybookWithChecklist;
-    runMetadata?: Metadata;
     role: Role;
     channel: Channel | undefined | null;
     followState: FollowState;
@@ -29,32 +41,31 @@ export interface FollowState {
 }
 
 const RHSInfo = (props: Props) => {
+    const run = getFragmentData(RHSInfoRun, props.run);
     const isParticipant = props.role === Role.Participant;
-    const isFinished = props.run.current_status === PlaybookRunStatus.Finished;
+    const isFinished = run.currentStatus === RunStatus.Finished;
     const editable = isParticipant && !isFinished;
 
     return (
         <Container>
             <RHSInfoOverview
                 role={props.role}
-                run={props.run}
-                runMetadata={props.runMetadata}
+                runFragment={run}
                 onViewParticipants={props.onViewParticipants}
                 editable={editable}
                 channel={props.channel}
                 followState={props.followState}
                 playbook={props.playbook}
             />
-            {props.run.retrospective_enabled ? (
+            {run.retrospectiveEnabled ? (
                 <RHSInfoMetrics
-                    runID={props.run.id}
-                    metricsData={props.run.metrics_data}
-                    metricsConfig={props.playbook?.metrics}
+                    run={run}
+                    playbook={props.playbook}
                     editable={editable}
                 />
             ) : null}
             <RHSInfoActivity
-                run={props.run}
+                runFragment={run}
                 role={props.role}
                 onViewTimeline={props.onViewTimeline}
             />

@@ -319,6 +319,11 @@ enable:
 graphql:
 	cd webapp && npm run graphql
 
+## Generate derived types from schema files
+.PHONY: graphql-watch
+graphql-watch:
+	cd webapp && npm run graphql-watch
+
 
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
 .PHONY: reset

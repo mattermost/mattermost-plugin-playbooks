@@ -23,7 +23,6 @@ export enum TimelineEventType {
 
 export interface TimelineEvent {
     id: string;
-    playbook_run_id: string;
     create_at: number;
     delete_at: number;
     event_at: number;

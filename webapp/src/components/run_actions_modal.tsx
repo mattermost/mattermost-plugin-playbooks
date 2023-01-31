@@ -7,9 +7,10 @@ import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
+import {useQuery} from '@apollo/client';
+
 import {hideRunActionsModal} from 'src/actions';
 import {isRunActionsModalVisible} from 'src/selectors';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {useUpdateRun} from 'src/graphql/hooks';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
@@ -18,71 +19,96 @@ import BroadcastChannelSelector from 'src/components/broadcast_channel_selector'
 import PatternedTextArea from 'src/components/patterned_text_area';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {telemetryEvent} from 'src/client';
+import {graphql} from 'src/graphql/generated';
+
+const runActionsModalQuery = graphql(/* GraphQL */`
+    query RunActionsModal($runID: String!) {
+        run(id: $runID) {
+            id
+            teamID
+            playbookID
+            statusUpdateBroadcastChannelsEnabled
+            statusUpdateBroadcastWebhooksEnabled
+            createChannelMemberOnNewParticipant
+            removeChannelMemberOnRemovedParticipant
+            broadcastChannelIDs
+            webhookOnStatusUpdateURLs
+        }
+    }
+`);
 
 interface Props {
-    playbookRun: PlaybookRun;
+    runID: string;
     readOnly: boolean;
 }
 
-const RunActionsModal = ({playbookRun, readOnly}: Props) => {
+const RunActionsModal = ({runID, readOnly}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const show = useSelector(isRunActionsModalVisible);
-    const teamId = playbookRun.team_id || '';
 
-    const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
-    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled);
+    const {data} = useQuery(runActionsModalQuery, {
+        variables: {
+            runID,
+        },
+    });
+    const playbookRun = data?.run;
 
-    const [createChannelMemberEnabled, setCreateChannelMemberEnabled] = useState(playbookRun.create_channel_member_on_new_participant);
-    const [removeChannelMemberEnabled, setRemoveChannelMemberEnabled] = useState(playbookRun.remove_channel_member_on_removed_participant);
+    const teamId = playbookRun?.teamID || '';
 
-    const [channelIds, setChannelIds] = useState(playbookRun.broadcast_channel_ids);
-    const [webhooks, setWebhooks] = useState(playbookRun.webhook_on_status_update_urls);
+    const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun?.statusUpdateBroadcastChannelsEnabled ?? false);
+    const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun?.statusUpdateBroadcastWebhooksEnabled ?? false);
+
+    const [createChannelMemberEnabled, setCreateChannelMemberEnabled] = useState(playbookRun?.createChannelMemberOnNewParticipant ?? false);
+    const [removeChannelMemberEnabled, setRemoveChannelMemberEnabled] = useState(playbookRun?.removeChannelMemberOnRemovedParticipant ?? false);
+
+    const [channelIds, setChannelIds] = useState(playbookRun?.broadcastChannelIDs ?? []);
+    const [webhooks, setWebhooks] = useState(playbookRun?.webhookOnStatusUpdateURLs ?? []);
     const [isValid, setIsValid] = useState<boolean>(true);
-    const updateRun = useUpdateRun(playbookRun.id);
+    const updateRun = useUpdateRun(runID);
 
     useUpdateEffect(() => {
-        setBroadcastToChannelsEnabled(playbookRun.status_update_broadcast_channels_enabled);
-    }, [playbookRun.status_update_broadcast_channels_enabled]);
+        setBroadcastToChannelsEnabled(playbookRun?.statusUpdateBroadcastChannelsEnabled ?? false);
+    }, [playbookRun?.statusUpdateBroadcastChannelsEnabled]);
 
     useUpdateEffect(() => {
-        setSendOutgoingWebhookEnabled(playbookRun.status_update_broadcast_webhooks_enabled);
-    }, [playbookRun.status_update_broadcast_webhooks_enabled]);
+        setSendOutgoingWebhookEnabled(playbookRun?.statusUpdateBroadcastWebhooksEnabled ?? false);
+    }, [playbookRun?.statusUpdateBroadcastWebhooksEnabled]);
 
     useUpdateEffect(() => {
-        setCreateChannelMemberEnabled(playbookRun.create_channel_member_on_new_participant);
-    }, [playbookRun.create_channel_member_on_new_participant]);
+        setCreateChannelMemberEnabled(playbookRun?.createChannelMemberOnNewParticipant ?? false);
+    }, [playbookRun?.createChannelMemberOnNewParticipant]);
 
     useUpdateEffect(() => {
-        setRemoveChannelMemberEnabled(playbookRun.remove_channel_member_on_removed_participant);
-    }, [playbookRun.remove_channel_member_on_removed_participant]);
+        setRemoveChannelMemberEnabled(playbookRun?.removeChannelMemberOnRemovedParticipant ?? false);
+    }, [playbookRun?.removeChannelMemberOnRemovedParticipant]);
 
     useUpdateEffect(() => {
-        setChannelIds(playbookRun.broadcast_channel_ids);
-    }, [playbookRun.broadcast_channel_ids]);
+        setChannelIds(playbookRun.broadcastChannelIDs);
+    }, [playbookRun?.broadcastChannelIDs]);
 
     useUpdateEffect(() => {
-        setWebhooks(playbookRun.webhook_on_status_update_urls);
-    }, [playbookRun.webhook_on_status_update_urls]);
+        setWebhooks(playbookRun.webhookOnStatusUpdateURLs);
+    }, [playbookRun?.webhookOnStatusUpdateURLs]);
 
     const onHide = () => {
         dispatch(hideRunActionsModal());
 
-        setBroadcastToChannelsEnabled(playbookRun.status_update_broadcast_channels_enabled);
-        setChannelIds(playbookRun.broadcast_channel_ids);
+        setBroadcastToChannelsEnabled(playbookRun?.statusUpdateBroadcastChannelsEnabled ?? false);
+        setChannelIds(playbookRun?.broadcastChannelIDs ?? []);
 
-        setSendOutgoingWebhookEnabled(playbookRun.status_update_broadcast_webhooks_enabled);
-        setWebhooks(playbookRun.webhook_on_status_update_urls);
+        setSendOutgoingWebhookEnabled(playbookRun?.statusUpdateBroadcastChannelsEnabled ?? false);
+        setWebhooks(playbookRun?.webhookOnStatusUpdateURLs ?? []);
 
-        setCreateChannelMemberEnabled(playbookRun.create_channel_member_on_new_participant);
-        setRemoveChannelMemberEnabled(playbookRun.remove_channel_member_on_removed_participant);
+        setCreateChannelMemberEnabled(playbookRun?.createChannelMemberOnNewParticipant ?? false);
+        setRemoveChannelMemberEnabled(playbookRun?.removeChannelMemberOnRemovedParticipant ?? false);
     };
 
     const onSave = () => {
         dispatch(hideRunActionsModal());
         telemetryEvent(PlaybookRunEventTarget.UpdateActions, {
-            playbookrun_id: playbookRun.id,
-            playbook_id: playbookRun.playbook_id,
+            playbookrun_id: runID,
+            playbook_id: playbookRun?.playbookID || '',
         });
         updateRun({
             statusUpdateBroadcastChannelsEnabled: broadcastToChannelsEnabled,

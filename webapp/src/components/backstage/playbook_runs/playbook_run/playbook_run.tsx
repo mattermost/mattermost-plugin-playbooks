@@ -9,25 +9,28 @@ import styled from 'styled-components';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import qs from 'qs';
+
+import {useQuery} from '@apollo/client';
+
+import {GlobalState} from '@mattermost/types/store';
 
 import {
     useChannel,
     useEnsureProfiles,
     usePlaybook,
-    useRun,
     useRunFollowers,
-    useRunMetadata,
-    useRunStatusUpdates,
 } from 'src/hooks';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useViewTelemetry} from 'src/hooks/telemetry';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
+
+import {graphql} from 'src/graphql/generated';
 
 import Summary from './summary';
 import {ParticipantStatusUpdate, ViewerStatusUpdate} from './status_update';
@@ -43,17 +46,17 @@ import RHSTimeline from './rhs_timeline';
 
 const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
 const RHSParticipantsTitle = <FormattedMessage defaultMessage={'Participants'}/>;
-const useRHS = (playbookRun?: PlaybookRun|null) => {
+const useRHS = (runName?: string) => {
     const [isOpen, setIsOpen] = useState(true);
     const [scrollable, setScrollable] = useState(true);
     const [section, setSection] = useState<RHSContent>(RHSContent.RunInfo);
     const [title, setTitle] = useState<React.ReactNode>(RHSRunInfoTitle);
-    const [subtitle, setSubtitle] = useState<React.ReactNode>(playbookRun?.name);
+    const [subtitle, setSubtitle] = useState<React.ReactNode>(runName);
     const [onBack, setOnBack] = useState<() => void>();
 
     useUpdateEffect(() => {
-        setSubtitle(playbookRun?.name);
-    }, [playbookRun?.name]);
+        setSubtitle(runName);
+    }, [runName]);
 
     const open = (_section: RHSContent, _title: React.ReactNode, _subtitle?: React.ReactNode, _onBack?: () => void, _scrollable = true) => {
         setIsOpen(true);
@@ -77,45 +80,105 @@ export enum PlaybookRunIDs {
     SectionRetrospective = 'playbook-run-retrospective',
 }
 
+/*
+            id
+            name
+            teamID
+            participantIDs
+            statusPosts {
+                id
+                createAt
+                message
+                authorUserName
+            }
+            channelID
+            ownerUserID
+            statusUpdateEnabled
+            playbookID
+            playbook {
+                id
+            }
+ */
+
+const runDetailsPageQuery = graphql(/* GraphQL */`
+    query RunDetailsPage($runID: String!) {
+        run(id: $runID) {
+            id
+            participantIDs
+            ownerUserID
+            channelID
+            playbookID
+            teamID
+            name
+            statusPosts {
+                id
+                authorUserName
+                createAt
+                message
+            }
+            statusUpdateEnabled
+            summaryModifiedAt
+            endAt
+            summary
+            checklists {
+                items {
+                    state
+                }
+            }
+            currentStatus
+            followers
+            ...RHSInfo
+            ...ParticipantsRun
+            ...RHSTimelineRun
+            ...RunHeaderRun
+        }
+    }
+`);
+
+const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).name;
+
 const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
-    const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
     const retrospectiveMetricId = urlHash.startsWith('#' + PlaybookRunIDs.SectionRetrospective) ? urlHash.substring(1 + PlaybookRunIDs.SectionRetrospective.length) : '';
-    const [playbookRun, playbookRunResult] = useRun(playbookRunId);
-    const [playbook] = usePlaybook(playbookRun?.playbook_id);
 
-    // we must force metadata refetch when participants change (leave&unfollow)
-    const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
-    const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
-    const [channel] = useChannel(playbookRun?.channel_id ?? '');
+    const {data, loading, error} = useQuery(runDetailsPageQuery, {
+        variables: {
+            runID: match.params.playbookRunId,
+        },
+    });
+    const playbookRun = data?.run;
+    const [playbook] = usePlaybook(playbookRun?.playbookID);
+
+    const [channel] = useChannel(playbookRun?.channelID ?? '');
+    const teamName = useSelector(teamNameSelector(playbookRun?.teamID ?? ''));
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
-    const followState = useRunFollowers(metadata?.followers || []);
+    const followState = useRunFollowers(playbookRun?.followers || []);
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;
 
     const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
-    const role = playbookRun?.participant_ids.includes(myUser.id) || playbookRun?.owner_user_id === myUser.id ? Role.Participant : Role.Viewer;
+    const role = playbookRun?.participantIDs.includes(myUser.id) || playbookRun?.ownerUserID === myUser.id ? Role.Participant : Role.Viewer;
 
-    useEnsureProfiles(playbookRun?.participant_ids ?? []);
+    useEnsureProfiles(playbookRun?.participantIDs ?? []);
     useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
         from: queryParams.from ?? '',
-        playbook_id: playbookRun?.playbook_id,
+        playbook_id: playbookRun?.playbookID,
         playbookrun_id: playbookRun?.id,
         role,
     });
 
-    const RHS = useRHS(playbookRun);
+    const RHS = useRHS(playbookRun?.name);
 
     useUpdateEffect(() => {
         resetFilters();
-    }, [playbookRunId]);
+    }, [match.params.playbookRunId]);
 
     useEffect(() => {
         const RHSUpdatesOpened = RHS.isOpen && RHS.section === RHSContent.RunStatusUpdates;
-        const emptyUpdates = !playbookRun?.status_update_enabled || playbookRun.status_posts.length === 0;
+        const emptyUpdates = !playbookRun?.statusUpdateEnabled || playbookRun.statusPosts.length === 0;
         if (queryParams.from === 'channel_rhs_participants') {
             RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun?.name);
         } else if (RHSUpdatesOpened && emptyUpdates) {
@@ -124,14 +187,14 @@ const PlaybookRunDetails = () => {
     }, [playbookRun, RHS.section, RHS.isOpen]);
 
     useEffect(() => {
-        const teamId = playbookRun?.team_id;
+        const teamId = playbookRun?.teamID;
         if (!teamId) {
             return;
         }
         dispatch(selectTeam(teamId));
-    }, [dispatch, playbookRun?.team_id]);
+    }, [dispatch, playbookRun?.teamID]);
 
-    useDefaultRedirectOnTeamChange(playbookRun?.team_id);
+    useDefaultRedirectOnTeamChange(playbookRun?.teamID);
 
     // When first loading the page, the element with the ID corresponding to the URL
     // hash is not mounted, so the browser fails to automatically scroll to such section.
@@ -145,7 +208,7 @@ const PlaybookRunDetails = () => {
     }, [urlHash]);
 
     // not found or error
-    if (playbookRunResult.error !== null || metadataResult.error !== null) {
+    if (error) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
@@ -162,8 +225,7 @@ const PlaybookRunDetails = () => {
     case RHSContent.RunStatusUpdates:
         rhsComponent = (
             <RHSStatusUpdates
-                playbookRun={playbookRun}
-                statusUpdates={statusUpdates ?? null}
+                statusUpdates={playbookRun.statusPosts}
             />
         );
         break;
@@ -172,7 +234,6 @@ const PlaybookRunDetails = () => {
             <RHSInfo
                 run={playbookRun}
                 playbook={playbook ?? undefined}
-                runMetadata={metadata ?? undefined}
                 role={role}
                 followState={followState}
                 channel={channel}
@@ -186,14 +247,14 @@ const PlaybookRunDetails = () => {
             <Participants
                 playbookRun={playbookRun}
                 role={role}
-                teamName={metadata?.team_name}
+                teamName={teamName}
             />
         );
         break;
     case RHSContent.RunTimeline:
         rhsComponent = (
             <RHSTimeline
-                playbookRun={playbookRun}
+                playbookRunFragment={playbookRun}
                 role={role}
                 options={options}
                 selectOption={selectOption}
@@ -213,8 +274,7 @@ const PlaybookRunDetails = () => {
             <MainWrapper>
                 <Header>
                     <RunHeader
-                        playbookRunMetadata={metadata ?? null}
-                        playbookRun={playbookRun}
+                        runFragment={playbookRun}
                         onInfoClick={onInfoClick}
                         onTimelineClick={onTimelineClick}
                         role={role}
@@ -227,8 +287,11 @@ const PlaybookRunDetails = () => {
                     <Body>
                         <Summary
                             id={PlaybookRunIDs.SectionSummary}
-                            playbookRun={playbookRun}
                             role={role}
+                            runID={playbookRun.id}
+                            summaryModifiedAt={playbookRun.summaryModifiedAt}
+                            endAt={playbookRun.endAt}
+                            summary={playbookRun.summary}
                         />
                         {role === Role.Participant ? (
                             <ParticipantStatusUpdate
@@ -240,7 +303,7 @@ const PlaybookRunDetails = () => {
                             <ViewerStatusUpdate
                                 id={PlaybookRunIDs.SectionStatusUpdate}
                                 openRHS={RHS.open}
-                                lastStatusUpdate={statusUpdates?.length ? statusUpdates[0] : undefined}
+                                lastStatusUpdate={playbookRun.statusPosts[0] ?? undefined}
                                 playbookRun={playbookRun}
                             />
                         )}
@@ -256,7 +319,15 @@ const PlaybookRunDetails = () => {
                             role={role}
                             focusMetricId={retrospectiveMetricId}
                         />
-                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
+                        {role === Role.Participant ? (
+                            <FinishRun
+                                checklists={playbookRun.checklists}
+                                runName={playbookRun.name}
+                                runID={playbookRun.id}
+                                currentStatus={playbookRun.currentStatus}
+                            />
+                        ) : null
+                        }
                     </Body>
                 </Main>
             </MainWrapper>

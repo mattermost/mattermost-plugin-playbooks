@@ -14,7 +14,7 @@ import {getTimestamp} from 'src/components/rhs/rhs_post_update';
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
 import {Timestamp} from 'src/webapp_globals';
 import {openUpdateRunStatusModal} from 'src/actions';
-import {PlaybookRun, PlaybookRunStatus, StatusPostComplete} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {useAllowRequestUpdate, useNow} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
 import {TertiaryButton, UpgradeTertiaryButton} from 'src/components/assets/buttons';
@@ -30,7 +30,7 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 
 import {ToastStyle} from 'src/components/backstage/toast';
 
-import StatusUpdateCard from './update_card';
+import StatusUpdateCard, {UpdateCardProps} from './update_card';
 import {RHSContent} from './rhs';
 
 enum dueType {
@@ -78,7 +78,7 @@ const openRHSText = <FormattedMessage defaultMessage={'View all updates'}/>;
 interface ViewerProps {
     id: string;
     playbookRun: PlaybookRun;
-    lastStatusUpdate?: StatusPostComplete;
+    lastStatusUpdate?: UpdateCardProps;
     openRHS: (section: RHSContent, title: React.ReactNode, subtitle?: React.ReactNode) => void;
 }
 
@@ -147,7 +147,11 @@ export const ViewerStatusUpdate = ({id, playbookRun, openRHS, lastStatusUpdate}:
         if (playbookRun.status_posts.length === 0 || !lastStatusUpdate) {
             return null;
         }
-        return <StatusUpdateCard post={lastStatusUpdate}/>;
+        return (
+            <StatusUpdateCard
+                {...lastStatusUpdate}
+            />
+        );
     };
 
     return (

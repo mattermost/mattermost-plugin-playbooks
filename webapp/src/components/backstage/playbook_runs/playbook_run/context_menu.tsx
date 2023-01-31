@@ -11,7 +11,7 @@ import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {showRunActionsModal} from 'src/actions';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {runStatusIsActive} from 'src/types/playbook_run';
 import DotMenu, {TitleButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
@@ -23,6 +23,8 @@ import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {telemetryEvent} from 'src/client';
+
+import {RunHeaderRunFragment} from 'src/graphql/generated/graphql';
 
 import {
     CopyRunLinkMenuItem,
@@ -37,7 +39,7 @@ import {
 } from './controls';
 
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: RunHeaderRunFragment;
     role: Role;
     isFavoriteRun: boolean;
     isFollowing: boolean;
@@ -47,7 +49,7 @@ interface Props {
 }
 
 export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick}: Props) => {
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing, 'run_details');
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.ownerUserID, isFollowing, 'run_details');
     const [showModal, setShowModal] = useState(false);
 
     return (
@@ -74,7 +76,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     playbookRunId={playbookRun.id}
                 />
                 <RenameRunItem
-                    playbookRun={playbookRun}
+                    runStatus={playbookRun.currentStatus}
                     role={role}
                     onClick={onRenameClick}
                 />
@@ -83,7 +85,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     showRunActionsModal={showRunActionsModal}
                 />
                 <ExportChannelLogsMenuItem
-                    channelId={playbookRun.channel_id}
+                    channelId={playbookRun.channelID}
                     setShowModal={setShowModal}
                 />
                 <FinishRunMenuItem
@@ -91,11 +93,13 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     role={role}
                 />
                 <RestoreRunMenuItem
-                    playbookRun={playbookRun}
+                    runID={playbookRun.id}
+                    runIsActive={runStatusIsActive(playbookRun.currentStatus)}
                     role={role}
                 />
                 <ToggleRunStatusUpdateMenuItem
-                    playbookRun={playbookRun}
+                    runID={playbookRun.id}
+                    statusUpdateEnabled={playbookRun.statusUpdateEnabled}
                     role={role}
                 />
                 <LeaveRunMenuItem

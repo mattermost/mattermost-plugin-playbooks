@@ -120,6 +120,34 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 	return isFavorite, nil
 }
 
+func (r *RunResolver) MetricValue(ctx context.Context) ([]*MetricValueResolver, error) {
+	metricValueResolvers := make([]*MetricValueResolver, 0, len(r.PlaybookRun.MetricsData))
+	for _, metric := range r.PlaybookRun.MetricsData {
+		metricValueResolvers = append(
+			metricValueResolvers,
+			&MetricValueResolver{
+				MetricConfigID: metric.MetricConfigID,
+				Value64:        metric.Value.Ptr(),
+			},
+		)
+	}
+
+	return metricValueResolvers, nil
+}
+
+type MetricValueResolver struct {
+	MetricConfigID string
+	Value64        *int64
+}
+
+func (r *MetricValueResolver) Value() *int {
+	if r.Value64 == nil {
+		return nil
+	}
+	convert := int(*r.Value64)
+	return &convert
+}
+
 type StatusPostResolver struct {
 	app.StatusPost
 }
@@ -130,6 +158,42 @@ func (r *StatusPostResolver) CreateAt() float64 {
 
 func (r *StatusPostResolver) DeleteAt() float64 {
 	return float64(r.StatusPost.DeleteAt)
+}
+
+func (r *StatusPostResolver) Message(ctx context.Context) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	post, err := c.postsLoader.Load(ctx, r.ID)()
+	if err != nil {
+		return "", err
+	}
+
+	if post.Type != "custom_run_update" {
+		return "", errors.New("post was not a run update")
+	}
+
+	return post.Message, nil
+}
+
+func (r *StatusPostResolver) AuthorUsername(ctx context.Context) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	post, err := c.postsLoader.Load(ctx, r.ID)()
+	if err != nil {
+		return "", err
+	}
+
+	if post.Type != "custom_run_update" {
+		return "", errors.New("post was not a run update")
+	}
+
+	return post.GetProp("authorUsername").(string), nil
 }
 
 type TimelineEventResolver struct {
@@ -146,6 +210,10 @@ func (r *TimelineEventResolver) EventType() string {
 
 func (r *TimelineEventResolver) DeleteAt() float64 {
 	return float64(r.TimelineEvent.DeleteAt)
+}
+
+func (r *TimelineEventResolver) EventAt() float64 {
+	return float64(r.TimelineEvent.EventAt)
 }
 
 func (r *RunResolver) Followers(ctx context.Context) ([]string, error) {

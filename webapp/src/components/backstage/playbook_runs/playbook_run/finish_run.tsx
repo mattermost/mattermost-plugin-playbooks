@@ -7,7 +7,6 @@ import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import {FlagOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
 import {finishRun} from 'src/client';
 import {modals} from 'src/webapp_globals';
@@ -15,6 +14,7 @@ import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/con
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {ChecklistItemState} from 'src/types/playbook';
+import {RunStatus} from 'src/graphql/generated/graphql';
 
 interface ChecklistsSubset {
     items: {
@@ -34,12 +34,12 @@ const outstandingTasks = (checklists: ChecklistsSubset[]) => {
     return count;
 };
 
-export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: ChecklistsSubset[], name: string}>) => {
+export const useFinishRunConfirmationMessage = (checklists?: ChecklistsSubset[], name?: string) => {
     const {formatMessage} = useIntl();
-    const outstanding = outstandingTasks(run?.checklists || []);
+    const outstanding = outstandingTasks(checklists || []);
     const values = {
         i: (x: React.ReactNode) => <i>{x}</i>,
-        runName: run?.name || '',
+        runName: name || '',
     };
     let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run <i>{runName}</i> for all participants?'}, values);
     if (outstanding > 0) {
@@ -51,15 +51,15 @@ export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: Checklis
     return confirmationMessage;
 };
 
-export const useOnFinishRun = (playbookRun: PlaybookRun) => {
+export const useOnFinishRun = (checklists: ChecklistsSubset[], runName: string, runID: string) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
-    const confirmationMessage = useFinishRunConfirmationMessage(playbookRun);
+    const confirmationMessage = useFinishRunConfirmationMessage(checklists, runName);
 
     return () => {
         const onConfirm = async () => {
-            await finishRun(playbookRun.id);
+            await finishRun(runID);
             refreshLHS();
         };
 
@@ -76,15 +76,18 @@ export const useOnFinishRun = (playbookRun: PlaybookRun) => {
 };
 
 interface Props {
-    playbookRun: PlaybookRun;
+    checklists: ChecklistsSubset[]
+    runName: string
+    runID: string
+    currentStatus: RunStatus
 }
 
-const FinishRun = ({playbookRun}: Props) => {
+const FinishRun = (props: Props) => {
     const {formatMessage} = useIntl();
 
-    const onFinishRun = useOnFinishRun(playbookRun);
+    const onFinishRun = useOnFinishRun(props.checklists, props.runName, props.runID);
 
-    if (playbookRun.current_status === PlaybookRunStatus.Finished) {
+    if (props.currentStatus === RunStatus.Finished) {
         return null;
     }
 

@@ -23,22 +23,32 @@ import {useManageRunMembership} from 'src/graphql/hooks';
 
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 
-import {PlaybookRun} from 'src/types/playbook_run';
-
 import {telemetryEvent} from 'src/client';
 
 import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
+import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
+
 import {SendMessageButton} from './send_message_button';
 import AddParticipantsModal from './add_participant_modal';
 
+const ParticipantsRun = graphql(/* GraphQL */`
+    fragment ParticipantsRun on Run {
+        id
+        participantIDs
+        name
+        ownerUserID
+        ...AddParticipantsModalRun
+    }
+`);
+
 interface Props {
-    playbookRun: PlaybookRun;
+    playbookRun: FragmentType<typeof ParticipantsRun>;
     role: Role;
     teamName?: string;
 }
 
-export const Participants = ({playbookRun, role, teamName}: Props) => {
+export const Participants = (props: Props) => {
     const dispatch = useDispatch();
 
     const {formatMessage} = useIntl();
@@ -47,6 +57,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
     const myUser = useSelector(getCurrentUser);
     const [participantsProfiles, setParticipantsProfiles] = useState<UserProfile[]>([]);
     const [showAddParticipantsModal, setShowAddParticipantsModal] = useState(false);
+    const playbookRun = getFragmentData(ParticipantsRun, props.playbookRun);
 
     const {removeFromRun, changeRunOwner} = useManageRunMembership(playbookRun.id);
 
@@ -56,18 +67,18 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
     };
 
     useEffect(() => {
-        const profiles = dispatch(getProfilesByIds(playbookRun.participant_ids));
+        const profiles = dispatch(getProfilesByIds(playbookRun.participantIDs));
 
         //@ts-ignore
         profiles.then(({data}: { data: UserProfile[] }) => {
             // getProfilesByIds doesn't return current user profile, so add it when a user is participant
-            if (role === Role.Participant) {
+            if (props.role === Role.Participant) {
                 data.push(myUser);
             }
             data.sort(sortByUsername);
             setParticipantsProfiles(data || []);
         });
-    }, [dispatch, myUser, playbookRun.participant_ids, role]);
+    }, [dispatch, myUser, playbookRun.participantIDs, props.role]);
 
     const includesTerm = (user: UserProfile) => {
         const userInfo = user.first_name + ';' + user.last_name + ';' + user.nickname + ';' + user.username;
@@ -101,7 +112,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                 </StyledPrimaryButton>
 
                 <AddParticipantsModal
-                    playbookRun={playbookRun}
+                    playbookRunFragment={playbookRun}
                     id={'add-participants-rdp'}
                     show={showAddParticipantsModal}
                     title={formatMessage({defaultMessage: 'Add people to {runName}'}, {runName: playbookRun.name})}
@@ -117,11 +128,11 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                 <ParticipantsNumber>
                     {formatMessage(
                         {defaultMessage: '{num} {num, plural, one {Participant} other {Participants}}'},
-                        {num: playbookRun.participant_ids.length}
+                        {num: playbookRun.participantIDs.length}
                     )}
                 </ParticipantsNumber>
 
-                {role === Role.Participant && manageParticipantsSection()}
+                {props.role === Role.Participant && manageParticipantsSection()}
 
             </HeaderSection>
 
@@ -140,22 +151,22 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
 
             <ParticipantRow
                 testId={'run-owner'}
-                id={playbookRun.owner_user_id}
-                teamName={teamName}
+                id={playbookRun.ownerUserID}
+                teamName={props.teamName}
                 isRunOwner={true}
                 manageMode={manageMode}
                 removeFromRun={remove}
                 changeRunOwner={changeRunOwner}
             />
 
-            {participantsProfiles.filter((user) => user.id !== playbookRun.owner_user_id).length ? <SectionTitle>
+            {participantsProfiles.filter((user) => user.id !== playbookRun.ownerUserID).length ? <SectionTitle>
                 {formatMessage({defaultMessage: 'Participants'})}
             </SectionTitle> : null}
             <ListSection>
                 {
                     participantsProfiles.filter((user) => (includesTerm(user))).map((user: UserProfile) => {
                         // skip the owner
-                        if (user.id === playbookRun.owner_user_id) {
+                        if (user.id === playbookRun.ownerUserID) {
                             return null;
                         }
                         return (
@@ -163,7 +174,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
                                 testId={user.id}
                                 key={user.id}
                                 id={user.id}
-                                teamName={teamName}
+                                teamName={props.teamName}
                                 isRunOwner={false}
                                 manageMode={manageMode}
                                 removeFromRun={remove}
