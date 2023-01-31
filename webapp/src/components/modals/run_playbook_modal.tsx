@@ -22,6 +22,7 @@ import {SecondaryButton} from 'src/components/assets/buttons';
 import SearchInput from 'src/components/backstage/search_input';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -134,6 +135,7 @@ const RunPlaybookModal = ({
                     hasChannelModeChanged: channelMode !== playbook.channel_mode,
                     hasChannelIdChanged: channelId !== playbook.channel_id,
                     hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
+                    type: PlaybookRunType.Playbook,
                 };
                 onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
             }).catch(() => {

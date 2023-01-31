@@ -28,7 +28,7 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
-import {PlaybookUpdates} from 'src/graphql/generated/graphql';
+import {PlaybookRunType, PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {getDistinctAssignees} from 'src/utils';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
@@ -49,6 +49,7 @@ interface Props {
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
     itemButtonsFormat?: ItemButtonsFormat;
     onViewerModeInteract?: () => void;
+    isEmptyChannelChecklist?: boolean;
 }
 
 const ChecklistList = ({
@@ -61,6 +62,7 @@ const ChecklistList = ({
     showItem,
     itemButtonsFormat,
     onViewerModeInteract,
+    isEmptyChannelChecklist,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -273,12 +275,12 @@ const ChecklistList = ({
                 e.stopPropagation();
                 setAddingChecklist(true);
             }}
-            data-testid={'add-a-checklist-button'}
+            data-testid={'add-a-section-button'}
         >
             <IconWrapper>
                 <i className='icon icon-plus'/>
             </IconWrapper>
-            {formatMessage({defaultMessage: 'Add a checklist'})}
+            {formatMessage({defaultMessage: 'Add a section'})}
         </AddChecklistLink>
     );
 
@@ -355,6 +357,8 @@ const ChecklistList = ({
                                                         )}
                                                     </TitleHelpTextWrapper>
                                                 ) : undefined}
+                                                type={playbookRun?.type || PlaybookRunType.Playbook}
+                                                withSectionHeader={!(isEmptyChannelChecklist || (playbookRun?.type === PlaybookRunType.ChannelChecklist && checklists.length === 1))}
                                             >
                                                 <GenericChecklist
                                                     id={playbookRun?.id || ''}
@@ -367,6 +371,7 @@ const ChecklistList = ({
                                                     showItem={showItem}
                                                     itemButtonsFormat={itemButtonsFormat}
                                                     onViewerModeInteract={onViewerModeInteract}
+                                                    isEmptyChannelChecklist={isEmptyChannelChecklist || false}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -383,7 +388,7 @@ const ChecklistList = ({
                         </ChecklistsContainer>
                     )}
                 </Droppable>
-                {!readOnly && addChecklist}
+                {!readOnly && !isEmptyChannelChecklist && addChecklist}
             </DragDropContext>
         </>
     );

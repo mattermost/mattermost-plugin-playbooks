@@ -45,6 +45,7 @@ import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
+import {PlaybookRunType} from './graphql/generated/graphql';
 
 let siteURL = '';
 let basePath = '';
@@ -98,7 +99,8 @@ export async function createPlaybookRun(
     name: string,
     description: string,
     channel_id?: string,
-    create_public_run?: boolean
+    create_public_run?: boolean,
+    type?: PlaybookRunType,
 ) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
@@ -108,6 +110,7 @@ export async function createPlaybookRun(
         playbook_id,
         channel_id,
         create_public_run,
+        type,
     }));
     return run as PlaybookRun;
 }

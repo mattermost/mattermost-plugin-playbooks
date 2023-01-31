@@ -280,9 +280,9 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('creates a new checklist', () => {
-            // # Click on the button to add a checklist
+            // # Click on the button to add a section
             cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('add-a-checklist-button').click();
+                cy.findByTestId('add-a-section-button').click();
             });
 
             // # Type a title and click on the Add button
@@ -290,7 +290,7 @@ describe('channels > rhs > checklist', () => {
             cy.findByTestId('checklist-title-input').type(title);
             cy.findByTestId('checklist-item-save-button').click();
 
-            // # Click on the button to add a checklist
+            // # Click on the button to add a section
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(title).should('exist');
             });

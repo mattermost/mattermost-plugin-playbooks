@@ -42,6 +42,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import GiveFeedbackButton from 'src/components/give_feedback_button';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -109,6 +110,8 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
     const checklists = playbookRun.checklists || [];
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
     const overdueTasksNum = overdueTasks(checklists);
+    const isEmptyChannelChecklist = playbookRun?.type === PlaybookRunType.ChannelChecklist && playbookRun.checklists.length === 1 &&
+        playbookRun.checklists[0].title === 'Section 1' && playbookRun.checklists[0].items.length === 0;
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         dispatch(setChecklistCollapsedState(stateKey, checklistIndex, state));
@@ -225,43 +228,46 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
             parentContainer={parentContainer}
+            isEmptyChannelChecklist={isEmptyChannelChecklist}
         >
-            <MainTitleBG numChecklists={checklists.length}>
-                <MainTitle parentContainer={parentContainer}>
-                    {title}
-                    {
-                        overdueTasksNum > 0 &&
-                        <OverdueTasksToggle
-                            data-testid='overdue-tasks-filter'
-                            toggled={checklistItemsFilter.overdueOnly}
-                            onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
-                        >
-                            {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
-                        </OverdueTasksToggle>
-                    }
-                    {
-                        showMenu &&
-                        <HoverRow>
-                            <ExpandHoverButton
-                                title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
-                                className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                                onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
-                            />
-                            <MultiCheckbox
-                                options={filterOptions}
-                                onselect={selectOption}
-                                placement='bottom-end'
-                                dotMenuButton={StyledDotMenuButton}
-                                icon={
-                                    <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
-                                        <i className='icon icon-filter-variant'/>
-                                    </IconWrapper>
-                                }
-                            />
-                        </HoverRow>
-                    }
-                </MainTitle>
-            </MainTitleBG>
+            {playbookRun.type === PlaybookRunType.Playbook &&
+                <MainTitleBG numChecklists={checklists.length}>
+                    <MainTitle parentContainer={parentContainer}>
+                        {title}
+                        {
+                            overdueTasksNum > 0 &&
+                            <OverdueTasksToggle
+                                data-testid='overdue-tasks-filter'
+                                toggled={checklistItemsFilter.overdueOnly}
+                                onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
+                            >
+                                {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
+                            </OverdueTasksToggle>
+                        }
+                        {
+                            showMenu &&
+                            <HoverRow>
+                                <ExpandHoverButton
+                                    title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
+                                    className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                                    onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
+                                />
+                                <MultiCheckbox
+                                    options={filterOptions}
+                                    onselect={selectOption}
+                                    placement='bottom-end'
+                                    dotMenuButton={StyledDotMenuButton}
+                                    icon={
+                                        <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
+                                            <i className='icon icon-filter-variant'/>
+                                        </IconWrapper>
+                                    }
+                                />
+                            </HoverRow>
+                        }
+                    </MainTitle>
+                </MainTitleBG>
+            }
             <ChecklistList
                 playbookRun={playbookRun}
                 isReadOnly={viewerMode}
@@ -271,9 +277,10 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
                 showItem={showItem}
                 itemButtonsFormat={itemButtonsFormat()}
                 onViewerModeInteract={onViewerModeInteract}
+                isEmptyChannelChecklist={isEmptyChannelChecklist}
             />
             {
-                active && parentContainer === ChecklistParent.RHS && playbookRun &&
+                active && parentContainer === ChecklistParent.RHS && playbookRun && !isEmptyChannelChecklist &&
                 <FinishButton
                     onClick={() => {
                         if (viewerMode && onViewerModeInteract) {
@@ -283,10 +290,10 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
                         }
                     }}
                 >
-                    {formatMessage({defaultMessage: 'Finish run'})}
+                    {playbookRun.type === PlaybookRunType.Playbook ? formatMessage({defaultMessage: 'Finish run'}) : formatMessage({defaultMessage: 'Finish checklist'})}
                 </FinishButton>
             }
-            <RHSGiveFeedbackButton/>
+            {!isEmptyChannelChecklist && <RHSGiveFeedbackButton/>}
             {showRunDetailsChecklistsStep && (
                 <TutorialTourTip
                     title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
@@ -307,14 +314,14 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, viewerMode, onViewe
     );
 };
 
-const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
+const InnerContainer = styled.div<{parentContainer?: ChecklistParent, isEmptyChannelChecklist: boolean}>`
     position: relative;
     z-index: 1;
 
     display: flex;
     flex-direction: column;
 
-    ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && `
+    ${({parentContainer, isEmptyChannelChecklist}) => parentContainer !== ChecklistParent.RunDetails && !isEmptyChannelChecklist && `
         padding: 0 12px 24px 12px;
 
         &:hover {

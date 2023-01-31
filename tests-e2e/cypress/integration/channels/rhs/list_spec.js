@@ -74,7 +74,7 @@ describe('channels > rhs > runlist', () => {
         cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
         // # Wait the RHS to load
-        cy.findByText('Runs in progress').should('be.visible');
+        cy.findByText('In progress').should('be.visible');
     });
 
     it('track page view', () => {

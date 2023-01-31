@@ -23,6 +23,9 @@ export const RHSTitleText = styled.div`
     text-overflow: ellipsis;
 `;
 
+export const RHSTitle = styled.div`
+`;
+
 export const RHSTitleLink = styled(Link)`
     display: flex;
     flex-direction: row;

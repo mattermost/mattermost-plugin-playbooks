@@ -35,7 +35,7 @@ import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {pluginId} from 'src/manifest';
-import {getSiteUrl} from 'src/client';
+import {createPlaybookRun, getSiteUrl} from 'src/client';
 import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -107,6 +107,7 @@ const RHSRunList = (props: Props) => {
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
     useViewTelemetry(GeneralViewTarget.ChannelsRHSRunList, currentChannelId);
+    const userId = useSelector(getCurrentUserId);
 
     const handleStartRun = () => {
         dispatch(openPlaybookRunModal({
@@ -114,6 +115,27 @@ const RHSRunList = (props: Props) => {
             triggerChannelId: currentChannelId,
             teamId: currentTeamId,
         }));
+    };
+
+    const handleStartChecklist = () => {
+        createPlaybookRun(
+            '',
+            userId,
+            currentTeamId,
+            'Untitled checklist',
+            '',
+            currentChannelId,
+            undefined,
+            PlaybookRunType.ChannelChecklist,
+        )
+            .then((newPlaybookRun) => {
+                const statsData = {
+                    type: PlaybookRunType.ChannelChecklist,
+                };
+                props.onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
+            }).catch(() => {
+            // show error
+            });
     };
 
     return (
@@ -176,7 +198,7 @@ const RHSRunList = (props: Props) => {
                         }
                     >
                         <CreateNewMenuItem
-                            onClick={handleStartRun}
+                            onClick={handleStartChecklist}
                         >
                             <CreateNewIcon>
                                 <CheckAllIcon size={18}/>

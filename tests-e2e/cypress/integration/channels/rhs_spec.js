@@ -211,7 +211,7 @@ describe('channels > rhs', () => {
 
                 // # Click create new button
                 cy.findByTestId('rhs-runs-create-new').click();
-                
+
                 // # open start run dialog
                 cy.findByTestId('rhs-runlist-start-run').click();
 
@@ -404,7 +404,7 @@ describe('channels > rhs', () => {
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Playbooks').should('exist');
+                cy.findByText('Checklists').should('exist');
             });
 
             // # Click the icon

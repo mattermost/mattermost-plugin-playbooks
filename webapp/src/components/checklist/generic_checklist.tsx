@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
@@ -29,12 +29,13 @@ interface Props {
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean
     itemButtonsFormat?: ItemButtonsFormat;
     onViewerModeInteract?: () => void;
+    isEmptyChannelChecklist: boolean;
 }
 
 const GenericChecklist = (props: Props) => {
     const {formatMessage} = useIntl();
     const myUser = useSelector(getCurrentUser);
-    const [addingItem, setAddingItem] = useState(false);
+    const [addingItem, setAddingItem] = useState(props.isEmptyChannelChecklist);
 
     const onUpdateChecklistItem = (index: number, newItem: ChecklistItem) => {
         const newChecklistItems = [...props.checklist.items];
@@ -79,7 +80,10 @@ const GenericChecklist = (props: Props) => {
             type='checklist-item'
         >
             {(droppableProvided: DroppableProvided) => (
-                <ChecklistContainer className='checklist'>
+                <ChecklistContainer
+                    className='checklist'
+                    isEmptyChannelChecklist={props.isEmptyChannelChecklist}
+                >
                     <div
                         ref={droppableProvided.innerRef}
                         {...droppableProvided.droppableProps}
@@ -109,6 +113,7 @@ const GenericChecklist = (props: Props) => {
                                     onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
                                     itemButtonsFormat={props.itemButtonsFormat}
                                     onViewerModeInteract={props.onViewerModeInteract}
+                                    isEmptyChannelChecklist={props.isEmptyChannelChecklist}
                                 />
                             );
                         })}
@@ -128,10 +133,11 @@ const GenericChecklist = (props: Props) => {
                                 onAddChecklistItem={onAddChecklistItem}
                                 itemButtonsFormat={props.itemButtonsFormat}
                                 onViewerModeInteract={props.onViewerModeInteract}
+                                isEmptyChannelChecklist={props.isEmptyChannelChecklist}
                             />
                         }
                         {droppableProvided.placeholder}
-                        {props.readOnly ? null : (
+                        {props.readOnly || props.isEmptyChannelChecklist ? null : (
                             <AddTaskLink
                                 disabled={props.readOnly}
                                 onClick={() => {
@@ -157,12 +163,15 @@ const IconWrapper = styled.div`
     margin: 0;
 `;
 
-const ChecklistContainer = styled.div`
+const ChecklistContainer = styled.div<{isEmptyChannelChecklist?: boolean}>`
     background-color: var(--center-channel-bg);
     border-radius: 0 0 4px 4px;
     border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
-    padding: 8px 0px;
+
+    ${({isEmptyChannelChecklist}) => !isEmptyChannelChecklist && css`
+        padding: 8px 0px;
+    `}
 `;
 
 const AddTaskLink = styled.button`

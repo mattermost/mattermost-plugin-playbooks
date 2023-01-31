@@ -76,7 +76,8 @@ interface ChecklistItemProps {
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
     participantUserIds: string[];
-    onViewerModeInteract?: () => void
+    onViewerModeInteract?: () => void;
+    isEmptyChannelChecklist?: boolean;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -316,6 +317,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             editing={isEditing}
             hoverMenuItemOpen={isHoverMenuItemOpen}
             $disabled={props.readOnly || isSkipped()}
+            isEmptyChannelChecklist={props.isEmptyChannelChecklist}
         >
             <CheckboxContainer>
                 {!props.readOnly && !props.dragging &&
@@ -564,9 +566,12 @@ const Row = styled.div`
     margin-right: 10px;
 `;
 
-const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMenuItemOpen: boolean}>`
-    margin-bottom: 4px;
+const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMenuItemOpen: boolean, isEmptyChannelChecklist?: boolean}>`
     padding: 8px 0px;
+    
+    ${({isEmptyChannelChecklist}) => !isEmptyChannelChecklist && css`
+        margin-bottom: 4px;
+    `}   
 
     ${({hoverMenuItemOpen}) => !hoverMenuItemOpen && css`
         ${HoverMenu} {

@@ -11,6 +11,7 @@ import {clientRenameChecklist} from 'src/client';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import {CancelSaveButtons} from 'src/components/checklist_item/inputs';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import HoverMenu from './collapsible_checklist_hover_menu';
 
@@ -28,6 +29,8 @@ export interface Props {
     onDeleteChecklist: (index: number) => void;
     titleHelpText?: React.ReactNode;
     draggableProvided?: DraggableProvided;
+    type: PlaybookRunType;
+    withSectionHeader: boolean;
 }
 
 const CollapsibleChecklist = ({
@@ -44,6 +47,8 @@ const CollapsibleChecklist = ({
     onDeleteChecklist,
     titleHelpText,
     draggableProvided,
+    type,
+    withSectionHeader,
 }: Props) => {
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
@@ -142,25 +147,31 @@ const CollapsibleChecklist = ({
     };
 
     return (
-        <Border {...borderProps}>
-            <HorizontalBG
-                menuIsOpen={showMenu}
-            >
-                <Horizontal
-                    data-testid={'checklistHeader'}
-                    onClick={() => !isRenaming && setCollapsed(!collapsed)}
-                    onMouseEnter={() => setShowMenu(true)}
-                    onMouseLeave={() => setShowMenu(false)}
+        <Border
+            {...borderProps}
+            hasTitle={type === PlaybookRunType.Playbook}
+        >
+            {withSectionHeader &&
+                <HorizontalBG
+                    menuIsOpen={showMenu}
+                    hasTitle={type === PlaybookRunType.Playbook}
                 >
-                    <Icon className={icon}/>
-                    {titleComp}
-                    {renderTitleHelpText()}
-                    {renderHoverMenu()}
-                </Horizontal>
-                <ProgressBackground>
-                    <ProgressLine width={percentage}/>
-                </ProgressBackground>
-            </HorizontalBG>
+                    <Horizontal
+                        data-testid={'checklistHeader'}
+                        onClick={() => !isRenaming && setCollapsed(!collapsed)}
+                        onMouseEnter={() => setShowMenu(true)}
+                        onMouseLeave={() => setShowMenu(false)}
+                    >
+                        <Icon className={icon}/>
+                        {titleComp}
+                        {renderTitleHelpText()}
+                        {renderHoverMenu()}
+                    </Horizontal>
+                    <ProgressBackground>
+                        <ProgressLine width={percentage}/>
+                    </ProgressBackground>
+                </HorizontalBG>
+            }
             {!collapsed && children}
         </Border>
     );
@@ -170,9 +181,9 @@ const StrikeThrough = styled.text`
     text-decoration: line-through;
 `;
 
-const Border = styled.div`
+const Border = styled.div<{hasTitle: boolean}>`
     margin-bottom: 12px;
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    background-color: ${({hasTitle}) => (hasTitle ? 'rgba(var(--center-channel-color-rgb), 0.04)' : 'var(--center-channel-bg)')};
     border-radius: 4px;
 `;
 
@@ -199,14 +210,14 @@ const ProgressLine = styled.div<{width: number}>`
     }
 `;
 
-export const HorizontalBG = styled.div<{menuIsOpen: boolean}>`
+export const HorizontalBG = styled.div<{menuIsOpen: boolean, hasTitle?: boolean}>`
     background-color: var(--center-channel-bg);
     
     /* sets a higher z-index to the checklist with open menu */
     z-index: ${({menuIsOpen}) => (menuIsOpen ? '2' : '1')};
 
     position: sticky;
-    top: 48px; // height of rhs_checklists MainTitle
+    top: ${({hasTitle}) => (hasTitle ? '48px' : '4px')};
 `;
 
 const Horizontal = styled.div`
@@ -302,7 +313,7 @@ export const ChecklistInputComponent = (props: ChecklistInputProps) => {
                     e.target.value = '';
                     e.target.value = val;
                 }}
-                placeholder={formatMessage({defaultMessage: 'Add checklist name'})}
+                placeholder={formatMessage({defaultMessage: 'Add section name'})}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                         props.onSave();

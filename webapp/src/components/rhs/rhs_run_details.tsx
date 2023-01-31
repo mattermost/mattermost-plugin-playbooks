@@ -42,6 +42,8 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useParticipateInRun, useViewTelemetry} from 'src/hooks';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
+import {useUpdateRun} from 'src/graphql/hooks';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import RHSRunDetailsTitle from './rhs_run_details_title';
 import RHSRunParticipants from './rhs_run_participants';
@@ -50,7 +52,7 @@ import RHSRunParticipantsTitle from './rhs_run_participants_title';
 const toastDuration = 4500;
 
 interface Props {
-    runID: string
+    runID: string;
     onBackClick: () => void;
 }
 
@@ -68,6 +70,8 @@ const RHSRunDetails = (props: Props) => {
 
     const {currentStep: runDetailsStep, setStep: setRunDetailsStep} = useTutorialStepper(TutorialTourCategories.RUN_DETAILS);
     const [showParticipants, setShowParticipants] = useState(false);
+
+    const updateRun = useUpdateRun(props.runID);
 
     useEffect(() => {
         if ((prevStatus !== playbookRun?.current_status) && (playbookRun?.current_status === PlaybookRunStatus.Finished)) {
@@ -145,7 +149,14 @@ const RHSRunDetails = (props: Props) => {
             <RHSTitleRemoteRender>
                 <RHSRunDetailsTitle
                     runID={props.runID}
+                    teamID={playbookRun.team_id}
+                    type={playbookRun.type}
+                    onUpdateName={(newName) => {
+                        updateRun({name: newName});
+                    }}
                     onBackClick={props.onBackClick}
+                    title={playbookRun.name}
+
                 />
             </RHSTitleRemoteRender>
             <RHSContainer>
@@ -160,12 +171,14 @@ const RHSRunDetails = (props: Props) => {
                         renderView={renderView}
                         style={{position: 'absolute'}}
                     >
-                        <RHSAbout
-                            playbookRun={playbookRun}
-                            readOnly={!isParticipant}
-                            onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
-                            setShowParticipants={setShowParticipants}
-                        />
+                        { playbookRun.type === PlaybookRunType.Playbook &&
+                            <RHSAbout
+                                playbookRun={playbookRun}
+                                readOnly={!isParticipant}
+                                onReadOnlyInteract={playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : displayReadOnlyToast}
+                                setShowParticipants={setShowParticipants}
+                            />
+                        }
                         <RHSChecklistList
                             playbookRun={playbookRun}
                             parentContainer={ChecklistParent.RHS}
