@@ -179,10 +179,10 @@ const RHSRunDetails = (props: Props) => {
                     >
                         { playbookRun.type === PlaybookRunType.Playbook &&
                             <RHSAbout
-                            playbookRun={playbookRun}
-                            readOnly={readOnly}
-                            onReadOnlyInteract={onReadOnlyInteract}
-                            setShowParticipants={setShowParticipants}
+                                playbookRun={playbookRun}
+                                readOnly={readOnly}
+                                onReadOnlyInteract={onReadOnlyInteract}
+                                setShowParticipants={setShowParticipants}
                             />
                         }
                         <RHSChecklistList
