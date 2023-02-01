@@ -6,6 +6,7 @@ import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
+    BeforeCapture,
     DragDropContext,
     Draggable,
     DraggableProvided,
@@ -13,7 +14,6 @@ import {
     DropResult,
     Droppable,
     DroppableProvided,
-    BeforeCapture,
 } from 'react-beautiful-dnd';
 
 import classNames from 'classnames';
@@ -180,13 +180,17 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
-    const onBeforeCapture = () => {
+    const onBeforeCapture = (beforeCapture: BeforeCapture) => {
         if (stateKey !== undefined && Boolean(stateKey)) {
-            setChecklistsDragState(checklists.map((item: any, i: number) => ({
-                key: item.id,
-                value: Boolean(checklistsCollapseState[i]),
-            })));
-            dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
+            const selectedIndex = checklists.findIndex((item, index) => beforeCapture.draggableId == `${item.title}${index}`);
+            if (selectedIndex >= 0) {
+                // @ts-ignore
+                setChecklistsDragState(checklists.map((item: any, i: number) => ({
+                    key: item.id,
+                    value: Boolean(checklistsCollapseState[i]),
+                })));
+                dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
+            }
         }
     };
 
