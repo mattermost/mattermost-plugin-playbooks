@@ -21,7 +21,7 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react-dom-interactions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {playbookRunUpdated, setAllChecklistsCollapsedState} from 'src/actions';
+import {playbookRunUpdated, setChecklistCollapsedState, setAllChecklistsCollapsedState} from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
