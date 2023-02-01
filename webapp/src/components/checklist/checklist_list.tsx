@@ -182,16 +182,17 @@ const ChecklistList = ({
         setIsDragging(true);
     };
 
-    const restoreCollapseState = (newChecklists = null) => {
+    const restoreCollapseState = (newChecklists: Checklist[] = []) => {
         if (stateKey !== undefined && Boolean(stateKey)) {
-            if (newChecklists === null) {
+            if (newChecklists.length === 0 && checklists.length > 0) {
                 // eslint-disable-next-line no-param-reassign
                 newChecklists = checklists;
             }
-            for (const [_, item] of Object.entries(checklistsDragState)) {
-                const index = newChecklists.findIndex((checklistItem: any) => item.key === checklistItem.id);
+            for (const [_, {key, value}] of Object.entries(checklistsDragState)) {
+                // @ts-ignore
+                const index = newChecklists.findIndex((checklistItem: never) => key === checklistItem.id);
                 if (index !== -1) {
-                    dispatch(setChecklistCollapsedState(stateKey, index, Boolean(item.value)));
+                    dispatch(setChecklistCollapsedState(stateKey, index, Boolean(value)));
                 }
             }
             setChecklistsDragState([]);
