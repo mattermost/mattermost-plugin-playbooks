@@ -185,6 +185,7 @@ const ChecklistList = ({
     const restoreCollapseState = (newChecklists = null) => {
         if (stateKey !== undefined && Boolean(stateKey)) {
             if (newChecklists === null) {
+                // eslint-disable-next-line no-param-reassign
                 newChecklists = checklists;
             }
             for (const [_, item] of Object.entries(checklistsDragState)) {
