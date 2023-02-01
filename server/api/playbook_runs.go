@@ -1006,7 +1006,7 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(c *Context, w http.ResponseWri
 	ReturnJSON(w, nil, http.StatusOK)
 }
 
-// reminderButtonDismiss handles the POST /runs/{id}/reminder endpoint, called when a
+// reminderReset handles the POST /runs/{id}/reminder endpoint, called when a
 // user clicks on the reminder custom_update_status time selector
 func (h *PlaybookRunHandler) reminderReset(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]

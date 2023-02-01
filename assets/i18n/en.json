@@ -90,10 +90,6 @@
     "translation": "**Owner** {{.Username}}"
   },
   {
-    "id": "app.user.new_run.new_playbook",
-    "translation": "[Click here]({{.RunURL}}) to create your own playbook."
-  },
-  {
     "id": "app.user.new_run.playbook",
     "translation": "Playbook"
   },
