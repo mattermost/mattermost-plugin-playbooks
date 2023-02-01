@@ -4,7 +4,7 @@
 
 import React from 'react';
 import styled, {css} from 'styled-components';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 import {ApolloProvider, useQuery} from '@apollo/client';
 import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
@@ -19,6 +19,7 @@ import ClipboardChecklistSvg from 'src/components/assets/illustrations/clipboard
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {PlaybookPermissionsParams, useHasPlaybookPermission} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {PresetTemplate, PresetTemplates} from 'src/components/templates/template_data';
 
 interface Props {
     teamID: string;
@@ -73,6 +74,21 @@ const PlaybooksModalQuery = graphql(/* GraphQL */`
     }
 `);
 
+const filterTemplates = (templates: PresetTemplate[], text: string) => {
+    return PresetTemplates.filter((t) => {
+        if (t.title === 'Blank') {
+            return false;
+        }
+        if (text === '') {
+            return true;
+        }
+
+        // naive filtering
+        console.log(text.toLocaleLowerCase(), t.title.toLocaleLowerCase());
+        return t.title.toLocaleLowerCase().includes(text.toLocaleLowerCase());
+    });
+};
+
 const PlaybooksSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const {data, loading} = useQuery(PlaybooksModalQuery, {
@@ -83,6 +99,8 @@ const PlaybooksSelector = (props: Props) => {
         },
         fetchPolicy: 'cache-and-network',
     });
+
+    const templates = filterTemplates(PresetTemplates, props.searchTerm);
 
     // Groups are mutually exclusive
     // -> 1) if channelid -> -unique- playbooks whose runs are in linked to this channel
@@ -120,18 +138,8 @@ const PlaybooksSelector = (props: Props) => {
         props.onZeroCaseNoPlaybooks(props.searchTerm === '' && !hasResults);
     }
 
-    if (!hasResults && !loading) {
-        return props.searchTerm === '' ? (
-            <ErrorContainer>
-                <ClipboardSvg/>
-                <ErrorTitle>{formatMessage({defaultMessage: 'Get started with Playbooks'}, {searchTerm: props.searchTerm})}</ErrorTitle>
-                <ErrorSubTitle>{formatMessage({defaultMessage: 'Playbooks are configurable checklists that define a repeatable process for teams to achieve specific and predictable outcomes'})}</ErrorSubTitle>
-                <PrimaryButton onClick={props.onCreatePlaybook}>
-                    <Plus size={16}/>
-                    <FormattedMessage defaultMessage='Create new playbook'/>
-                </PrimaryButton>
-            </ErrorContainer>
-        ) : (
+    if (!hasResults && !loading && templates.length === 0) {
+        return (
             <ErrorContainer>
                 <SearchSvg/>
                 <ErrorTitle>{formatMessage({defaultMessage: 'No results for "{searchTerm}"'}, {searchTerm: props.searchTerm})}</ErrorTitle>
@@ -165,6 +173,18 @@ const PlaybooksSelector = (props: Props) => {
                         </Group>
                     </>
                 ))}
+                <>
+                    <GroupTitle>{formatMessage({defaultMessage: 'Pre-built templates'})}</GroupTitle>
+                    <Group>
+                        {templates.map((template) => (
+                            <TemplateRow
+                                key={`template-${template.title}`}
+                                template={template}
+                                onSelectTemplate={(t) => console.log(t)}
+                            />
+                        ))}
+                    </Group>
+                </>
             </Scrollbars>
         </Container>
     );
@@ -198,6 +218,46 @@ const PlaybookRow = (props: PlaybookRowProps) => {
                     <span>{playbook.last_run_at === 0 ? formatMessage({defaultMessage: 'Never used'}) : formatMessage({defaultMessage: 'Last used {time}'}, {time: DateTime.fromMillis(playbook.last_run_at).toRelative()})}</span>
                     <Dot/>
                     <span>{formatMessage({defaultMessage: '{count, plural, =1{1 run in progress} =0 {No runs in progress} other {# runs in progress}}'}, {count: playbook.active_runs})}</span>
+                </ItemSubTitle>
+            </ItemCenter>
+            <ButtonWrappper className='modal-list-cta'>
+                {hasPermission ? (
+                    <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
+                ) : (
+                    <SecondaryButton
+                        disabled={true}
+                        title={'You do not have permissions'}
+                    >{formatMessage({defaultMessage: 'Select'})}</SecondaryButton>
+                )}
+            </ButtonWrappper>
+        </PlaybookItem>
+    );
+};
+
+interface TemplateRowProps {
+    onSelectTemplate: (template: PresetTemplate) => void;
+    template: PresetTemplate;
+}
+
+const TemplateRow = (props: TemplateRowProps) => {
+    const {formatMessage} = useIntl();
+    const hasPermission = true; // TODO: fill the permission thing
+
+    return (
+        <PlaybookItem
+            hasPermission={hasPermission}
+            onClick={hasPermission ? () => props.onSelectTemplate(props.template) : undefined}
+        >
+            <ItemIcon>
+                <BookOutlineIcon
+                    size={18}
+                    color='rgba(var(--center-channel-color-rgb), 0.56)'
+                />
+            </ItemIcon>
+            <ItemCenter>
+                <ItemTitle>{props.template.title}</ItemTitle>
+                <ItemSubTitle>
+                    <span>{props.template.description}</span>
                 </ItemSubTitle>
             </ItemCenter>
             <ButtonWrappper className='modal-list-cta'>
