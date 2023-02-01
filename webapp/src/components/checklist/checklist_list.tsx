@@ -166,7 +166,7 @@ const ChecklistList = ({
 
     const onBeforeCapture = (beforeCapture: BeforeCapture) => {
         if (stateKey !== undefined && Boolean(stateKey)) {
-            const selectedIndex = checklists.findIndex((item, index) => beforeCapture.draggableId == `${item.title}${index}`);
+            const selectedIndex = checklists.findIndex((item, index) => beforeCapture.draggableId === `${item.title}${index}`);
             if (selectedIndex >= 0) {
                 // @ts-ignore
                 setChecklistsDragState(checklists.map((item: any, i: number) => ({
