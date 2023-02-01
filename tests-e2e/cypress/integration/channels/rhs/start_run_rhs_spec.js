@@ -240,8 +240,8 @@ describe('channels rhs > start a run', () => {
                         // # Fill run name
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                        // # Fill Town square as the channel to be linked
-                        cy.findByText('Select a channel').click().type(`${testChannel.display_name}{enter}`);
+                        // # Select test channel instead of current channel
+                        cy.findByText('Town Square').click().type(`${testChannel.display_name}{enter}`);
 
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
