@@ -63,6 +63,7 @@ const RunPlaybookModal = ({
     const [createPublicRun, setCreatePublicRun] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showsearch, setShowsearch] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
     let userId = useSelector(getCurrentUserId);
@@ -109,10 +110,11 @@ const RunPlaybookModal = ({
         modalProps.onHide?.();
     };
     const onSubmit = () => {
-        if (!playbook || !selectedPlaybookId) {
+        if (!playbook || !selectedPlaybookId || isSubmitting) {
             return;
         }
 
+        setIsSubmitting(true);
         createPlaybookRun(
             selectedPlaybookId,
             userId,
@@ -138,7 +140,7 @@ const RunPlaybookModal = ({
                 onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
             }).catch(() => {
             // show error
-            });
+            }).finally(() => setIsSubmitting(false));
     };
 
     // Start a run tab
@@ -148,7 +150,7 @@ const RunPlaybookModal = ({
                 cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
                 showCancel={true}
-                isConfirmDisabled={!isFormValid}
+                isConfirmDisabled={isSubmitting || !isFormValid}
                 handleConfirm={onSubmit}
                 autoCloseOnConfirmButton={false}
                 id={ID}
