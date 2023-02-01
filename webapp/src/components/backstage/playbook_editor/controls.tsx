@@ -233,7 +233,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                 <div>
                     <CheckboxInputStyled
                         testId={'auto-follow-runs'}
-                        text={'Auto-follow runs'}
+                        text={formatMessage({defaultMessage: 'Auto-follow runs'})}
                         checked={isFollowing}
                         disabled={archived}
                         onChange={setFollowing}
