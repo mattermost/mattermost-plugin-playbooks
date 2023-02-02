@@ -240,7 +240,29 @@ describe('playbooks > start a run', () => {
                 cy.findByTestId('run-summary-section').contains('Test Run Summary');
             });
 
-            it('change to link to exsiting channel', () => {
+            it('change to link to existing channel does not default to current channel', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+                // # Fill default values
+                fillPBE({name: 'Channel template', summary: 'run summary template', channelMode: 'create_new_channel', defaultOwnerEnabled: true});
+
+                // # Click start a run button
+                cy.findByTestId('run-playbook').click();
+
+                cy.get('#root-portal.modal-open').within(() => {
+                    // # Wait the modal to render
+                    cy.wait(500);
+
+                    // # Change to link to existing channel
+                    cy.findByTestId('link-existing-channel-radio').click();
+
+                    // * Assert selected channel is unchanged
+                    cy.findByText('Select a channel').should('be.visible');
+                });
+            });
+
+            it('change to link to existing channel', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 

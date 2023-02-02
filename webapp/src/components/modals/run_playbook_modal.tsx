@@ -110,7 +110,7 @@ const RunPlaybookModal = ({
     const handleSetChannelMode = (mode: 'link_existing_channel' | 'create_new_channel') => {
         setChannelMode(mode);
 
-        // Default to current channel when choosing link
+        // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel
         if (mode === 'link_existing_channel' && playbook?.channel_mode === 'create_new_channel' && channelId === '' && currentChannelId) {
             setChannelId(currentChannelId);
         }
