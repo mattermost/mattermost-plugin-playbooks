@@ -84,6 +84,12 @@ ifneq ($(HAS_WEBAPP),)
 endif
 	cd tests-e2e && npm run fix
 
+ifneq ($(HAS_SERVER),)
+	@echo Running golangci-lint
+	$(GOBIN)/golangci-lint run ./... --fix
+endif
+
+
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
 .PHONY: server
