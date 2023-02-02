@@ -44,11 +44,9 @@ apply:
 	./build/bin/manifest apply
 
 ## Install go tools
-# Golangci uses a pinned version to commit until 10.2 is released since some macos version have problems
-# with the native diff tools used by typecheck (gometalinter problem)
 install-go-tools:
 	@echo Installing go tools
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@8f6de2c65895749d9ced401cde189d80f41617a0
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.0
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
 	$(GO) install gotest.tools/gotestsum@v1.7.0
 	$(GO) install github.com/cortesi/modd/cmd/modd@latest

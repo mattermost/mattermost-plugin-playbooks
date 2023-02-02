@@ -24,6 +24,8 @@ linters:
     - staticcheck
     - unconvert
     - unused
+    - misspell
+    - gocheckcompilerdirectives
 
 linters-settings:
   gofmt:

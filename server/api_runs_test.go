@@ -937,7 +937,7 @@ func TestChecklistManagement(t *testing.T) {
 			nil,
 		},
 		{
-			"One checklist - invalid source checklist: greater than lenght of checklists",
+			"One checklist - invalid source checklist: greater than length of checklists",
 			[][]string{{"00"}},
 			1, 0, 0, 0,
 			[][]string{},
@@ -965,7 +965,7 @@ func TestChecklistManagement(t *testing.T) {
 			&ExpectedError{StatusCode: 500},
 		},
 		{
-			"One checklist - invalid source item: greater than lenght of items",
+			"One checklist - invalid source item: greater than length of items",
 			[][]string{{"00"}},
 			0, 1, 0, 0,
 			[][]string{},
