@@ -1,7 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -14,6 +19,7 @@ import {
     DropResult,
     Droppable,
     DroppableProvided,
+    Position,
 } from 'react-beautiful-dnd';
 
 import classNames from 'classnames';
@@ -71,6 +77,8 @@ const ChecklistList = ({
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const [checklistsDragState, setChecklistsDragState] = useState([]);
+    const ref = useRef<HTMLElement | null>(null);
+    const clientSelectionRef = useRef<Position | null>(null);
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
@@ -175,6 +183,23 @@ const ChecklistList = ({
                 })));
                 dispatch(setAllChecklistsCollapsedState(stateKey, true, checklists.length));
             }
+            const el: HTMLElement | null = ref.current;
+            if (!el) {
+                return;
+            }
+
+            if (clientSelectionRef.current && el) {
+                const node = document.evaluate(`//*[@data-rbd-draggable-id='${beforeCapture.draggableId}']`, el, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                if (!node) {
+                    return;
+                }
+                const {x, y} = node.getBoundingClientRect();
+                if (clientSelectionRef.current.y <= y) {
+                    node.style.transform = `translateY(${clientSelectionRef.current?.y - y}px)`;
+                } else {
+                    node.style.transform = `translateY(${y - clientSelectionRef.current?.y}px)`;
+                }
+            }
         }
     };
 
@@ -188,6 +213,7 @@ const ChecklistList = ({
                 // eslint-disable-next-line no-param-reassign
                 newChecklists = checklists;
             }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             for (const [_, {key, value}] of Object.entries(checklistsDragState)) {
                 // @ts-ignore
                 const index = newChecklists.findIndex((checklistItem: never) => key === checklistItem.id);
@@ -348,6 +374,23 @@ const ChecklistList = ({
 
     const keys = generateKeys(checklists.map((checklist) => checklist.title));
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+        function onMouseMove(event: MouseEvent) {
+            clientSelectionRef.current = {
+                x: event.clientX,
+                y: event.clientY,
+            };
+        }
+
+        // Bind the event listener
+        document.addEventListener('mousemove', onMouseMove);
+        return () => {
+            // Unbind the event listener on clean up
+            document.removeEventListener('mousemove', onMouseMove);
+        };
+    });
+
     return (
         <>
             <DragDropContext
@@ -364,7 +407,10 @@ const ChecklistList = ({
                         <ChecklistsContainer
                             {...droppableProvided.droppableProps}
                             className={classNames('checklists', {isDragging})}
-                            ref={droppableProvided.innerRef}
+                            ref={(node: HTMLElement | null) => {
+                                droppableProvided.innerRef(node);
+                                ref.current = node;
+                            }}
                         >
                             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                                 <Draggable
