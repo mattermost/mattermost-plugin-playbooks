@@ -189,11 +189,11 @@ const ChecklistList = ({
             }
 
             if (clientSelectionRef.current && el) {
-                const node = document.evaluate(`//*[@data-rbd-draggable-id='${beforeCapture.draggableId}']`, el, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                const node = document.evaluate(`//*[@data-rbd-draggable-id='${beforeCapture.draggableId}']`, el, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue as HTMLElement;
                 if (!node) {
                     return;
                 }
-                const {x, y} = node.getBoundingClientRect();
+                const {y} = node.getBoundingClientRect();
                 if (clientSelectionRef.current.y <= y) {
                     node.style.transform = `translateY(${clientSelectionRef.current?.y - y}px)`;
                 } else {
