@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -259,6 +260,22 @@ func TestPlaybooks(t *testing.T) {
 		})
 		assert.Nil(t, err)
 	})
+
+	t.Run("create playbook with empty title", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:              " \n ",
+			TeamID:             e.BasicTeam.Id,
+			Public:             true,
+			Checklists:         []client.Checklist{},
+			InvitedUserIDs:     []string{},
+			InviteUsersEnabled: true,
+		})
+		assert.Nil(t, err)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+		assert.Nil(t, err)
+		assert.Equal(t, pb.Title, fmt.Sprintf("@%s's Playbook", e.RegularUser.Username))
+	})
 }
 
 func TestCreateInvalidPlaybook(t *testing.T) {
@@ -387,6 +404,20 @@ func TestPlaybookUpdate(t *testing.T) {
 		e.BasicPlaybook.Description = "This is the updated description"
 		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
+	})
+
+	t.Run("update playbook title with empty title", func(t *testing.T) {
+		previousTitle := e.BasicPlaybook.Title
+		e.BasicPlaybook.Title = " \n "
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+
+		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.Equal(t, pb.Title, previousTitle)
+
+		// Restore local playbook state
+		e.BasicPlaybook.Title = previousTitle
 	})
 
 	t.Run("update playbook no permissions to broadcast", func(t *testing.T) {
@@ -1218,6 +1249,22 @@ func TestPlaybooksImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, e.BasicPlaybook.Title, newPlaybook.Title)
+		assert.NotEqual(t, e.BasicPlaybook.ID, newPlaybook.ID)
+	})
+
+	t.Run("Import playbook with empty title", func(t *testing.T) {
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+
+		reg := regexp.MustCompile("(\"title\":\\s*\").*(\",)")
+		export := reg.ReplaceAllString(string(result), "$1 $2")
+
+		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), []byte(export), e.BasicTeam.Id)
+		require.NoError(t, err)
+		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookID)
+		require.NoError(t, err)
+
+		assert.Equal(t, fmt.Sprintf("@%s's Playbook", e.RegularUser.Username), newPlaybook.Title)
 		assert.NotEqual(t, e.BasicPlaybook.ID, newPlaybook.ID)
 	})
 }

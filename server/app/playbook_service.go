@@ -1,10 +1,12 @@
 package app
 
 import (
+	"fmt"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"strings"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
@@ -36,6 +38,15 @@ func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry Playbo
 }
 
 func (s *playbookService) Create(playbook Playbook, userID string) (string, error) {
+	// If the title is empty, generate a title
+	if len(strings.TrimSpace(playbook.Title)) == 0 {
+		user, err := s.api.User.Get(userID)
+		if err != nil {
+			return "", err
+		}
+		playbook.Title = fmt.Sprintf("@%s's Playbook", user.Username)
+	}
+
 	playbook.CreateAt = model.GetMillis()
 	playbook.UpdateAt = playbook.CreateAt
 
@@ -80,6 +91,15 @@ func (s *playbookService) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamI
 func (s *playbookService) Update(playbook Playbook, userID string) error {
 	if playbook.DeleteAt != 0 {
 		return errors.New("cannot update a playbook that is archived")
+	}
+
+	// If the new title is empty, use the current title instead
+	if len(strings.TrimSpace(playbook.Title)) == 0 {
+		currentPlaybook, err := s.store.Get(playbook.ID)
+		if err != nil {
+			return err
+		}
+		playbook.Title = currentPlaybook.Title
 	}
 
 	playbook.UpdateAt = model.GetMillis()

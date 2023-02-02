@@ -183,7 +183,11 @@ const PlaybookEditor = () => {
                 <TextEdit
                     placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                     value={playbook.title}
-                    onSave={(title) => updatePlaybook({title})}
+                    onSave={(title) => {
+                        if (title.trim().length) {
+                            updatePlaybook({title});
+                        }
+                    }}
                     editStyles={css`
                         input {
                             ${titleCommon}
