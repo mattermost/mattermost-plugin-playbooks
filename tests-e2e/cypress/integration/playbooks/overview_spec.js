@@ -274,7 +274,7 @@ describe('playbooks > overview', () => {
         cy.findByText('Outline').click();
 
         cy.get('#retrospective').within(() => {
-            cy.findByText('7days').should('exist');
+            cy.findByText('7 days').should('exist');
             cy.findByText('Retro template text').should('exist');
         });
     });
