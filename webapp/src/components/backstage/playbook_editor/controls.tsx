@@ -377,6 +377,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
     const [confirmConvertPrivateModal, setShowMakePrivateConfirm] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
 
+    const refreshLHS = useLHSRefresh();
     const {add: addToast} = useToaster();
 
     const currentUserId = useSelector(getCurrentUserId);
@@ -429,6 +430,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         const newID = await clientDuplicatePlaybook(playbook.id);
                         navigateToPluginUrl(`/playbooks/${newID}/outline`);
                         addToast({content: formatMessage({defaultMessage: 'Successfully duplicated playbook'})});
+                        refreshLHS();
                         telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                     }}
                     disabled={!permissionForDuplicate}
