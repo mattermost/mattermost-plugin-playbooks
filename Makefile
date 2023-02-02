@@ -43,6 +43,9 @@ all: check-style test dist
 apply:
 	./build/bin/manifest apply
 
+prebuild: ## Run prebuild actions (install dependencies etc.).
+	cd webapp; npm install
+
 ## Install go tools
 # Golangci uses a pinned version to commit until 10.2 is released since some macos version have problems
 # with the native diff tools used by typecheck (gometalinter problem)
