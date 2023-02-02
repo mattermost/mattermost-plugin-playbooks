@@ -13,7 +13,7 @@ import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
 import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import MarkdownEdit from 'src/components/markdown_edit';
 import {savePlaybook} from 'src/client';
-import RetrospectiveInterval from 'src/components/backstage/playbook_editor/outline/inputs/retrospective_interval_selector';
+import RetrospectiveIntervalSelector from 'src/components/backstage/playbook_editor/outline/inputs/retrospective_interval_selector';
 
 export interface EditingMetric {
     index: number;
@@ -51,9 +51,9 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                         {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
-                <RetrospectiveInterval
+                <RetrospectiveIntervalSelector
                     seconds={playbook.retrospective_reminder_interval_seconds}
-                    setSeconds={(seconds) => {
+                    onChange={(seconds) => {
                         updatePlaybook({
                             retrospectiveReminderIntervalSeconds: seconds,
                         });

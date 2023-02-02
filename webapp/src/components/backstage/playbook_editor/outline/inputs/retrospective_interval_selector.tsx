@@ -11,11 +11,11 @@ import {StyledSelect} from 'src/components/backstage/styles';
 
 interface Props {
     seconds: number;
-    setSeconds: (seconds: number) => void;
+    onChange: (seconds: number) => void;
     disabled?: boolean;
 
 }
-const RetrospectiveInterval = (props: Props) => {
+const RetrospectiveIntervalSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const makeOption = useMakeOption(Mode.DurationValue);
 
@@ -31,7 +31,7 @@ const RetrospectiveInterval = (props: Props) => {
         if (!Duration.isDuration(option.value)) {
             return;
         }
-        props.setSeconds(option.value.as('seconds'));
+        props.onChange(option.value.as('seconds'));
     };
 
     return (
@@ -45,4 +45,4 @@ const RetrospectiveInterval = (props: Props) => {
     );
 };
 
-export default RetrospectiveInterval;
+export default RetrospectiveIntervalSelector;
