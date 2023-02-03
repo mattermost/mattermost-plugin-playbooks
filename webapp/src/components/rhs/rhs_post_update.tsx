@@ -227,7 +227,7 @@ const UpdateNoticeTime = styled.div<CollapsedProps>`
 
 const Spacer = styled.div`
     flex-grow: 0;
-    flex-shrink: 0;
+    flex-shrink: 1;
     width: 44px;
 `;
 
