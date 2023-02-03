@@ -52,7 +52,7 @@
     "5Ofkag": "Geçmiş değerlendirmesini etkinleştir",
     "3hBelc": "Bir geçmiş değerlendirmesi beklenmiyor.",
     "GAuN6w": "Varsayımları kur",
-    "G/yZLu": "Sil",
+    "G/yZLu": "Kaldır",
     "FXCLuZ": "toplam {total, number}",
     "FGzxgY": "Örnek: Onay zamanı, Çözümlenme zamanı",
     "FEGywG": "Lütfen güncelleme hatırlatıcısı için gelecekte bir tarih ve saat yazın.",
@@ -753,5 +753,7 @@
     "LaseGE": "Bu kontrol listesini düzenleme izniniz yok",
     "Edy3wX": "Kontrol listesi {channel} kanalına taşındı",
     "8//+Yb": "Kontrol listesini başka bir kanala bağla",
-    "706Soh": "görevler tamamlandı"
+    "706Soh": "görevler tamamlandı",
+    "XHJUSG": "Oyunları otomatik izle",
+    "DqTQOp": "Bir kez"
 }
