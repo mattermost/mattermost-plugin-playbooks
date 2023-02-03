@@ -208,7 +208,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                 onEdit={() => edit(p.id)}
                 onRestore={() => openConfirmRestoreModal({id: p.id, title: p.title})}
                 onArchive={() => openConfirmArchiveModal(p)}
-                onDuplicate={() => duplicatePlaybook(p.id)}
+                onDuplicate={() => duplicatePlaybook(p.id).then(refreshLHS)}
                 onMembershipChanged={() => fetchPlaybooks()}
             />
         ));
