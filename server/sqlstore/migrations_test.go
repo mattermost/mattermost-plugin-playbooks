@@ -647,38 +647,38 @@ func TestMigration_000070(t *testing.T) {
 		// validate migration
 		type Data struct {
 			PKey     string
-			PluginId string
+			PluginID string
 		}
 
 		var res []Data
 		err = store.selectBuilder(store.db, &res, store.builder.
-			Select("PKey", "PluginId").
+			Select("PKey", "PluginId as PluginID").
 			From("PluginKeyValueStore").
 			OrderBy("PKey ASC").
 			OrderBy("PluginId ASC"))
 
 		require.NoError(t, err)
 		require.Len(t, res, 4)
-		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginId)
-		require.Equal(t, "playbooks", res[1].PluginId)
-		require.Equal(t, "playbooks", res[2].PluginId)
-		require.Equal(t, "playbooks", res[3].PluginId)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginID)
+		require.Equal(t, "playbooks", res[1].PluginID)
+		require.Equal(t, "playbooks", res[2].PluginID)
+		require.Equal(t, "playbooks", res[3].PluginID)
 
 		// roll back migration
 		runMigrationDown(t, store, engine, 1)
 		res = nil
 		err = store.selectBuilder(store.db, &res, store.builder.
-			Select("PKey", "PluginId").
+			Select("PKey", "PluginId as PluginID").
 			From("PluginKeyValueStore").
 			OrderBy("PKey ASC").
 			OrderBy("PluginId ASC"))
 
 		require.NoError(t, err)
 		require.Len(t, res, 4)
-		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginId)
-		require.Equal(t, "playbooks", res[1].PluginId)
-		require.Equal(t, "com.mattermost.plugin-incident-management", res[2].PluginId)
-		require.Equal(t, "com.mattermost.plugin-incident-management", res[3].PluginId)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginID)
+		require.Equal(t, "playbooks", res[1].PluginID)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[2].PluginID)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[3].PluginID)
 	}
 }
 
