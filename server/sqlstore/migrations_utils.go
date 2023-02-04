@@ -319,3 +319,37 @@ func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
 
 	return results, err
 }
+
+type ConstraintsInfo struct {
+	ConstraintName string
+	TableName      string
+	ConstraintType string
+}
+
+// getDBIndexesInfo returns index info for each table created by Playbook plugin
+func getDBConstraintsInfo(store *SQLStore) ([]ConstraintsInfo, error) {
+	var results []ConstraintsInfo
+	var err error
+
+	if store.db.DriverName() == model.DatabaseDriverMysql {
+		err = store.db.Select(&results, `
+			SELECT CONSTRAINT_NAME as ConstraintName, TABLE_NAME as TableName, CONSTRAINT_TYPE as ConstraintType
+			FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+			WHERE TABLE_NAME LIKE 'ir_%'
+			AND TABLE_NAME != 'ir_db_migrations'
+			GROUP BY CONSTRAINT_NAME, TABLE_NAME, CONSTRAINT_TYPE
+			ORDER BY CONSTRAINT_NAME ASC, TABLE_NAME ASC;
+		`)
+	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
+		err = store.db.Select(&results, `
+			SELECT conname as ConstraintName, contype as ConstraintType
+			FROM pg_constraint
+			WHERE conname LIKE 'ir_%'
+			AND conname NOT LIKE 'ir_db_migrations%'
+			GROUP BY conname, contype
+			ORDER BY conname ASC, contype ASC;
+		`)
+	}
+
+	return results, err
+}
