@@ -34,7 +34,7 @@ const MetricsRunListHeader = ({metricsInfo, fetchParams, setFetchParams}: Props)
         let direction = 'asc';
         if (index > -1) {
             // change to a new column; default to descending for time-based columns, ascending otherwise
-            direction = (metricsInfo[index].type === MetricType.Duration) ? 'desc' : 'asc';
+            direction = (metricsInfo[index].type === MetricType.MetricDuration) ? 'desc' : 'asc';
         }
 
         setFetchParams((oldParams) => ({...oldParams, sort: colName, direction}));

@@ -30,7 +30,7 @@ import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_me
 import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
 import CopyLink from 'src/components/widgets/copy_link';
-import {usePlaybook, useUpdatePlaybook} from 'src/graphql/hooks';
+import {usePlaybook, useUpdatePlaybook, useUpdatePlaybookFavorite} from 'src/graphql/hooks';
 import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -48,6 +48,7 @@ const PlaybookEditor = () => {
 
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
+    const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
     const currentUserId = useSelector(getCurrentUserId);
 
@@ -107,7 +108,7 @@ const PlaybookEditor = () => {
     const FavoriteIcon = playbook.is_favorite ? StarIcon : StarOutlineIcon;
 
     const toggleFavorite = () => {
-        updatePlaybook({isFavorite: !playbook.is_favorite});
+        updatePlaybookFavorite(!playbook.is_favorite);
     };
 
     return (
@@ -436,6 +437,7 @@ const TitleHeaderBackdrop = styled.div`
 `;
 
 const Editor = styled.main<{$headingVisible: boolean}>`
+    height: fit-content;
     min-height: 100%;
     display: grid;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);

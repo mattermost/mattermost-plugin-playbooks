@@ -1,17 +1,20 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
 
+import {useQuery} from '@apollo/client';
+
 import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
-import {usePlaybookLhsQuery} from 'src/graphql/generated_types';
+import {graphql} from 'src/graphql/generated';
 
 import {pluginUrl} from 'src/browser_routing';
 
 import {LHSPlaybookDotMenu} from 'src/components/backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from 'src/components/backstage/lhs_run_dot_menu';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import Sidebar, {SidebarGroup} from './sidebar';
 import CreatePlaybookDropdown from './create_playbook_dropdown';
@@ -20,16 +23,58 @@ import {ItemContainer, StyledNavLink} from './item';
 export const RunsCategoryName = 'runsCategory';
 export const PlaybooksCategoryName = 'playbooksCategory';
 
+export const playbookLHSQueryDocument = graphql(/* GraphQL */`
+    query PlaybookLHS($userID: String!, $teamID: String!, $types: [PlaybookRunType!]) {
+        runs (participantOrFollowerID: $userID, teamID: $teamID, sort: "name", statuses: ["InProgress"], types: $types){
+            edges {
+                node {
+                    id
+                    name
+                    isFavorite
+                    playbookID
+                    ownerUserID
+                    participantIDs
+                    followers
+                }
+            }
+        }
+        playbooks (teamID: $teamID, withMembershipOnly: true) {
+            id
+            title
+            isFavorite
+            public
+        }
+    }
+`);
+
+const pollInterval = 60000; // Poll every minute for updates
+
 const useLHSData = (teamID: string) => {
     const normalizeCategoryName = useReservedCategoryTitleMapper();
-    const {data, error} = usePlaybookLhsQuery({
+    const {data, error, startPolling, stopPolling} = useQuery(playbookLHSQueryDocument, {
         variables: {
             userID: 'me',
             teamID,
+            types: [PlaybookRunType.Playbook],
         },
         fetchPolicy: 'cache-and-network',
-        pollInterval: 60000, // Poll every minute for updates
     });
+
+    useEffect(() => {
+        const focus = () => {
+            startPolling(pollInterval);
+        };
+        const blur = () => {
+            stopPolling();
+        };
+        window.addEventListener('focus', focus);
+        window.addEventListener('blur', blur);
+
+        return () => {
+            window.removeEventListener('focus', focus);
+            window.removeEventListener('blur', blur);
+        };
+    }, [startPolling, stopPolling]);
 
     if (error || !data) {
         return {groups: [], ready: false};
@@ -84,7 +129,7 @@ const useLHSData = (teamID: string) => {
                     isFavorite={run.isFavorite}
                     ownerUserId={run.ownerUserID}
                     participantIDs={run.participantIDs}
-                    followerIDs={run.metadata.followers}
+                    followerIDs={run.followers}
                     hasPermanentViewerAccess={hasViewerAccessToPlaybook(run.playbookID)}
                 />),
             isFavorite: run.isFavorite,

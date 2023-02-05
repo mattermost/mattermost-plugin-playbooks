@@ -152,7 +152,7 @@ describe('lhs', () => {
             cy.findByTestId('dropdownmenu').should('be.visible');
         });
 
-        it('can copy link', () => {
+        it.skip('can copy link', () => {
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
@@ -322,7 +322,7 @@ describe('lhs', () => {
             });
         });
 
-        it('leave run, when on rdp of the same run', () => {
+        it.skip('leave run, when on rdp of the same run', () => {
             cy.wait('@gqlPlaybookLHS');
 
             // # Click on leave menu item

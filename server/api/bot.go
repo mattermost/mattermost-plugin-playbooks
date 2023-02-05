@@ -43,7 +43,6 @@ func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster,
 	notifyAdminsRouter.HandleFunc("", withContext(handler.notifyAdmins)).Methods(http.MethodPost)
 	notifyAdminsRouter.HandleFunc("/button-start-trial", withContext(handler.startTrial)).Methods(http.MethodPost)
 
-	botRouter.HandleFunc("/prompt-for-feedback", withContext(handler.promptForFeedback)).Methods(http.MethodPost)
 	botRouter.HandleFunc("/connect", withContext(handler.connect)).Methods(http.MethodGet)
 
 	return handler
@@ -163,22 +162,6 @@ outer:
 	}
 
 	ReturnJSON(w, post, http.StatusOK)
-}
-
-func (h *BotHandler) promptForFeedback(c *Context, w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if err := h.config.SupportsGivingFeedback(); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "giving feedback not supported", err)
-		return
-	}
-
-	if err := h.poster.PromptForFeedback(userID); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 type DigestSenderParams struct {

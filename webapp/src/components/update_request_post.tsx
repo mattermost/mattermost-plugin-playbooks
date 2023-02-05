@@ -13,8 +13,9 @@ import {Channel} from '@mattermost/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {ApolloProvider, useQuery} from '@apollo/client';
 
-import {getPlaybookRunByTeamAndChannelId} from 'src/selectors';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import PostText from 'src/components/post_text';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
@@ -29,19 +30,84 @@ import {
 import {nearest} from 'src/utils';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
-import {PlaybookRun} from 'src/types/playbook_run';
+import {graphql} from 'src/graphql/generated';
+import {PlaybookRunReminderQuery} from 'src/graphql/generated/graphql';
 
 interface Props {
     post: Post;
 }
 
-export const UpdateRequestPost = (props: Props) => {
+const playbookRunReminderQuery = graphql(/* GraphQL */`
+    query PlaybookRunReminder($runID: String!) {
+        run (id: $runID){
+            id
+            name
+            previousReminder
+            reminderTimerDefaultSeconds
+        }
+    }
+`);
+
+const firstActiveRunInChannelQuery = graphql(/* GraphQL */`
+    query FirstActiveRunInChannel($channelID: String!) {
+        runs(
+            channelID: $channelID,
+            statuses: ["InProgress"],
+            first: 1,
+        ) {
+            edges {
+                node {
+                    id
+                    name
+                    previousReminder
+                    reminderTimerDefaultSeconds
+                }
+            }
+        }
+    }
+`);
+
+const UpdateRequestPost = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
-    const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>((state) => getPlaybookRunByTeamAndChannelId(state, team?.id, channel?.id));
     const targetUsername = props.post.props.targetUsername ?? '';
+    const playbookRunId = props.post.props.playbookRunId;
+
+    const [run, setRun] = useState<PlaybookRunReminderQuery['run']>(null);
+    const {data, loading} = useQuery(playbookRunReminderQuery, {
+        variables: {
+            runID: playbookRunId,
+        },
+        fetchPolicy: 'network-only',
+        skip: playbookRunId === undefined,
+    });
+
+    const {data: firstRunInChannelData} = useQuery(firstActiveRunInChannelQuery, {
+        variables: {
+            channelID: props.post.channel_id,
+        },
+        fetchPolicy: 'network-only',
+        skip: playbookRunId !== undefined,
+    });
+
+    useEffect(() => {
+        if (data && !loading) {
+            setRun(data?.run);
+        }
+
+        // If playbookRunId is undefined (could be in old existent reminders), we need this fallback
+        // to get all runs for the channel and take the first one (will be enough for
+        // old one-run-per-channel cases but without post props)
+        //
+        // Since posts are removed after post-update or snooze, this fallback will be unused with the
+        // pass of time. However, the only way the to check that the fallback is not needed is executing
+        // an SQL query.
+        if (!data && !loading && firstRunInChannelData && firstRunInChannelData.runs.edges.length > 0) {
+            setRun(firstRunInChannelData.runs.edges[0]?.node);
+        }
+    }, [data, loading, firstRunInChannelData, props.post.channel_id]);
 
     // Decide whether to open the snooze menu above or below
     const [snoozeMenuPos, setSnoozeMenuPos] = useState('top');
@@ -56,7 +122,7 @@ export const UpdateRequestPost = (props: Props) => {
 
     const makeOption = useMakeOption(Mode.DurationValue);
 
-    if (!playbookRun) {
+    if (!run) {
         return (
             <StyledPostText
                 text={props.post.message}
@@ -76,16 +142,16 @@ export const UpdateRequestPost = (props: Props) => {
             options.push(option);
         }
     };
-    if (playbookRun.previous_reminder) {
-        pushIfNotIn(makeOption({seconds: nearest(playbookRun.previous_reminder * 1e-9, 1)}));
+    if (run.previousReminder) {
+        pushIfNotIn(makeOption({seconds: nearest(run.previousReminder * 1e-9, 1)}));
     }
-    if (playbookRun.reminder_timer_default_seconds) {
-        pushIfNotIn(makeOption({seconds: playbookRun.reminder_timer_default_seconds}));
+    if (run.reminderTimerDefaultSeconds) {
+        pushIfNotIn(makeOption({seconds: run.reminderTimerDefaultSeconds}));
     }
     options.sort((a, b) => ms(a.value) - ms(b.value));
 
     const snoozeFor = (option: Option) => {
-        resetReminder(playbookRun.id, ms(option.value) / 1000);
+        resetReminder(run.id, ms(option.value) / 1000);
     };
 
     const SelectContainer = ({children, ...ownProps}: ContainerProps<Option, boolean>) => {
@@ -101,12 +167,12 @@ export const UpdateRequestPost = (props: Props) => {
         );
     };
 
-    const playbookURL = `/playbooks/runs/${playbookRun.id}`;
+    const playbookRunURL = `/playbooks/runs/${run.id}`;
 
     return (
         <>
             <StyledPostText
-                text={formatMessage({defaultMessage: '@{targetUsername}, please provide a status update for [{runName}]({playbookURL}).'}, {runName: playbookRun.name, targetUsername, playbookURL})}
+                text={formatMessage({defaultMessage: '@{targetUsername}, please provide a status update for [{runName}]({playbookURL}).'}, {runName: run.name, targetUsername, playbookURL: playbookRunURL})}
                 team={team}
             />
             <Container ref={ref}>
@@ -114,7 +180,7 @@ export const UpdateRequestPost = (props: Props) => {
                     onClick={() => {
                         dispatch(promptUpdateStatus(
                             team.id,
-                            playbookRun?.id,
+                            run.id,
                             props.post.channel_id,
                         ));
                     }}
@@ -173,3 +239,10 @@ const Container = styled(CustomPostContainer)`
 const StyledPostText = styled(PostText)`
     margin-bottom: 8px;
 `;
+
+const ApolloWrappedPost = (props: Props) => {
+    const client = getPlaybooksGraphQLClient();
+    return <ApolloProvider client={client}><UpdateRequestPost {...props}/></ApolloProvider>;
+};
+
+export default ApolloWrappedPost;

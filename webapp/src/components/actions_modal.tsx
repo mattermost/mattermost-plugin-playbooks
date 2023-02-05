@@ -35,12 +35,12 @@ const ActionsModal = (props: Props) => {
                     color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                 />
             </IconWrapper>
-            <div>
+            <ModalTitle>
                 {props.title}
                 <ModalSubheading>
                     {props.subtitle}
                 </ModalSubheading>
-            </div>
+            </ModalTitle>
         </Header>
     );
 
@@ -102,6 +102,12 @@ const StyledModal = styled(GenericModal)`
     }
 `;
 
+const ModalTitle = styled.div`
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 20px;
+`;
+
 const ModalFooter = styled(DefaultFooterContainer)`
     :after {
         content: '';
@@ -119,38 +125,6 @@ const ModalFooter = styled(DefaultFooterContainer)`
         cursor: not-allowed;
     }
 `;
-
-const renderThumbVertical = ({style, ...props}: any) => (
-    <div
-        {...props}
-        style={{
-            ...style,
-            width: '4px',
-            background: 'var(--center-channel-color)',
-            opacity: '0.24',
-            borderRadius: '4px',
-            position: 'fixed',
-            right: '8px',
-        }}
-    />
-);
-
-const renderTrackVertical = ({style, ...props}: any) => (
-    <div
-        {...props}
-        style={{
-            ...style,
-            paddingTop: '8px',
-            paddingBottom: '8px',
-
-            // The following three props are needed to actually render the track;
-            // without them, the scrollbar disappears
-            height: '100%',
-            top: '0',
-            right: '0',
-        }}
-    />
-);
 
 const Header = styled.div`
     display: flex;

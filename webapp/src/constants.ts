@@ -11,12 +11,8 @@ export enum ErrorPageTypes {
     DEFAULT = 'default',
 }
 
-export const TEMPLATE_TITLE_KEY = 'template_title';
-
 export const BACKSTAGE_LIST_PER_PAGE = 15;
-
 export const PROFILE_CHUNK_SIZE = 200;
-
 export const RUN_NAME_MAX_LENGTH = 64;
 
 export enum AdminNotificationType {

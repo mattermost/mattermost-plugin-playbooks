@@ -28,7 +28,7 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
-import {PlaybookUpdates} from 'src/graphql/generated_types';
+import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {getDistinctAssignees} from 'src/utils';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
@@ -48,7 +48,7 @@ interface Props {
     onEveryChecklistCollapsedStateChange: (state: Record<number, boolean>) => void;
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
     itemButtonsFormat?: ItemButtonsFormat;
-    onViewerModeInteract?: () => void;
+    onReadOnlyInteract?: () => void;
 }
 
 const ChecklistList = ({
@@ -60,7 +60,7 @@ const ChecklistList = ({
     onEveryChecklistCollapsedStateChange,
     showItem,
     itemButtonsFormat,
-    onViewerModeInteract,
+    onReadOnlyInteract,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -366,7 +366,7 @@ const ChecklistList = ({
                                                     onUpdateChecklist={(newChecklist: Checklist) => onUpdateChecklist(checklistIndex, newChecklist)}
                                                     showItem={showItem}
                                                     itemButtonsFormat={itemButtonsFormat}
-                                                    onViewerModeInteract={onViewerModeInteract}
+                                                    onReadOnlyInteract={onReadOnlyInteract}
                                                 />
                                             </CollapsibleChecklist>
                                         );
