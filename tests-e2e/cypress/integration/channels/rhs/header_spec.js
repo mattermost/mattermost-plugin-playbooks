@@ -141,7 +141,7 @@ describe('channels > rhs > header', () => {
             });
 
             cy.findByTestId('dropdownmenu').within(() => {
-                cy.get('span').should('have.length', 3);
+                cy.get('span').should('have.length', 4);
                 cy.findByText('Edit run summary').click();
             });
 

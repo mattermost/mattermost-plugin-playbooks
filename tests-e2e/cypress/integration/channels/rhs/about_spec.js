@@ -91,6 +91,25 @@ describe('channels > rhs > header', () => {
         });
     });
 
+    describe('link to a different channel', () => {
+        it('by clicking on dot menu item', () => {
+            // # click on the field
+            cy.get('#rhsContainer').within(() => {
+                cy.findByTestId('buttons-row').invoke('show').within(() => {
+                    cy.findAllByRole('button').eq(1).click();
+                });
+            });
+
+            cy.findByText('Link run to a different channel').click({force: true});
+
+            cy.get('#link_existing_channel_selector').click().type('town square{ctrl+enter}');
+
+            cy.findByTestId('modal-confirm-button').click();
+
+            cy.findByText('Start a run').should('be.visible');
+        });
+    });
+
     describe('edit summary', () => {
         it('by clicking on placeholder', () => {
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').click();
