@@ -337,7 +337,7 @@ func getDBConstraintsInfo(store *SQLStore) ([]ConstraintsInfo, error) {
 			FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
 			WHERE TABLE_NAME LIKE 'ir_%'
 			AND TABLE_NAME != 'ir_db_migrations'
-			GROUP BY CONSTRAINT_NAME, TABLE_NAME, CONSTRAINT_TYPE
+			AND TABLE_SCHEMA = (SELECT DATABASE())
 			ORDER BY CONSTRAINT_NAME ASC, TABLE_NAME ASC;
 		`)
 	} else if store.db.DriverName() == model.DatabaseDriverPostgres {
@@ -346,7 +346,6 @@ func getDBConstraintsInfo(store *SQLStore) ([]ConstraintsInfo, error) {
 			FROM pg_constraint
 			WHERE conname LIKE 'ir_%'
 			AND conname NOT LIKE 'ir_db_migrations%'
-			GROUP BY conname, contype
 			ORDER BY conname ASC, contype ASC;
 		`)
 	}
