@@ -100,12 +100,16 @@ describe('channels > rhs > header', () => {
                 });
             });
 
+            // # click on button
             cy.findByText('Link run to a different channel').click({force: true});
 
+            // # select town square
             cy.get('#link_existing_channel_selector').click().type('town square{ctrl+enter}');
 
+            // # confirm changes
             cy.findByTestId('modal-confirm-button').click();
 
+            // * verify run was moved
             cy.findByText('Start a run').should('be.visible');
         });
     });
