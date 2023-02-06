@@ -7,6 +7,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
 
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {usePlaybook} from 'src/graphql/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
@@ -65,13 +67,14 @@ const RunPlaybookModal = ({
     const [showsearch, setShowsearch] = useState(true);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
+    const currentChannelId = useSelector(getCurrentChannelId);
     let userId = useSelector(getCurrentUserId);
     if (playbook?.default_owner_enabled && playbook.default_owner_id) {
         userId = playbook.default_owner_id;
     }
 
     useEffect(() => {
-        if (playbook && playbook.channel_mode === 'create_new_channel') {
+        if (playbook?.channel_mode === 'create_new_channel') {
             setRunName(playbook.channel_name_template);
         }
     }, [playbook, playbook?.channel_name_template, playbook?.channel_mode]);
@@ -103,6 +106,15 @@ const RunPlaybookModal = ({
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
     const isFormValid = runName !== '' && runName.length <= RUN_NAME_MAX_LENGTH && (createNewChannel || channelId !== '');
+
+    const handleSetChannelMode = (mode: 'link_existing_channel' | 'create_new_channel') => {
+        setChannelMode(mode);
+
+        // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel
+        if (mode === 'link_existing_channel' && playbook?.channel_mode === 'create_new_channel' && channelId === '' && currentChannelId) {
+            setChannelId(currentChannelId);
+        }
+    };
 
     const onCreatePlaybook = () => {
         dispatch(displayPlaybookCreateModal({}));
@@ -192,7 +204,7 @@ const RunPlaybookModal = ({
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
                         onSetCreatePublicRun={setCreatePublicRun}
-                        onSetChannelMode={setChannelMode}
+                        onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
                     />
                 </Body>
