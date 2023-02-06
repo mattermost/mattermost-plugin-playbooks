@@ -840,5 +840,10 @@
     "8//+Yb": "Checkliste mit einem anderen Kanal verknüpfen",
     "706Soh": "erledigte Aufgaben",
     "XHJUSG": "Durchläufen automatisch folgen",
-    "DqTQOp": "Einmalig"
+    "DqTQOp": "Einmalig",
+    "vjb+hS": "{user} hat den Checklistenpunkt \"{name}\" wiederhergestellt",
+    "OqWwvQ": "{user} hat den Checklistenpunkt \"{name}\" zurückgesetzt",
+    "DKiv0o": "{user} hat den Checklistenpunkt \"{name}\" übersprungen",
+    "8FzC0B": "{user} hat den Checklistenpunkt \"{name}\" abgehakt",
+    "3qPQMX": "{name} hat ein Status-Update angefordert"
 }
