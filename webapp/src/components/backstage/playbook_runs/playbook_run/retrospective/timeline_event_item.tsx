@@ -13,6 +13,7 @@ import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {
     ParticipantsChangedDetails,
+    TaskStateModifiedDetails,
     TimelineEvent,
     TimelineEventType,
     UserJoinedLeftDetails,
@@ -214,11 +215,26 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.StatusUpdateSnoozed:
             return formatMessage({defaultMessage: '{name} snoozed a status update'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdateRequested:
-            return event.summary;
+            return formatMessage({defaultMessage: '{name} requested a status update'}, {name: event.subject_display_name});
         case TimelineEventType.OwnerChanged:
             return formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: event.summary});
-        case TimelineEventType.TaskStateModified:
-            return (event.subject_display_name + ' ' + event.summary).replace(/\*\*/g, '"');
+        case TimelineEventType.TaskStateModified: {
+            const user = event.subject_display_name;
+            const {action, task: name} = parsedDetails as TaskStateModifiedDetails;
+
+            switch (action) {
+            case 'check':
+                return formatMessage({defaultMessage: '{user} checked off checklist item "{name}"'}, {user, name});
+            case 'uncheck':
+                return formatMessage({defaultMessage: '{user} unchecked checklist item "{name}"'}, {user, name});
+            case 'skip':
+                return formatMessage({defaultMessage: '{user} skipped checklist item "{name}"'}, {user, name});
+            case 'restore':
+                return formatMessage({defaultMessage: '{user} restored checklist item "{name}"'}, {user, name});
+            default:
+                return (event.subject_display_name + ' ' + event.summary).replace(/\*\*/g, '"');
+            }
+        }
         case TimelineEventType.AssigneeChanged:
             return formatMessage({defaultMessage: 'Assignee Changed'});
         case TimelineEventType.RanSlashCommand:
