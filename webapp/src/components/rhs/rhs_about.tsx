@@ -23,12 +23,14 @@ import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {setRHSAboutCollapsedState} from 'src/actions';
 import {useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRunChannel} from 'src/components/modals/run_update_channel';
 
 interface Props {
     playbookRun: PlaybookRun;
     readOnly?: boolean;
     onReadOnlyInteract?: () => void
     setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
+    onLinkRunToChannel: () => void;
 }
 
 const RHSAbout = (props: Props) => {
@@ -38,6 +40,7 @@ const RHSAbout = (props: Props) => {
     const channel = useSelector(getCurrentChannel);
     const profilesInTeam = useProfilesInTeam();
     const updateRun = useUpdateRun(props.playbookRun.id);
+    const updateRunChannel = useUpdateRunChannel(props.playbookRun.id);
 
     const myUserId = useSelector(getCurrentUserId);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
@@ -95,6 +98,10 @@ const RHSAbout = (props: Props) => {
                         toggleCollapsed={toggleCollapsed}
                         editSummary={editSummary}
                         readOnly={props.readOnly}
+                        onUpdateChannel={(newChannelId, newChannelName) => {
+                            updateRunChannel(newChannelId, newChannelName);
+                            props.onLinkRunToChannel();
+                        }}
                     />
                 </ButtonsRow>
                 <RHSAboutTitle

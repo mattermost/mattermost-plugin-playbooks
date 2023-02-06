@@ -20,9 +20,10 @@ import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRunChannel} from 'src/components/modals/run_update_channel';
 import {useViewTelemetry} from 'src/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
@@ -36,8 +37,6 @@ import {pluginId} from 'src/manifest';
 import {getSiteUrl} from 'src/client';
 import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {useToaster} from 'src/components/backstage/toast_banner';
-import {ToastStyle} from 'src/components/backstage/toast';
 
 import {GeneralViewTarget} from 'src/types/telemetry';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -423,13 +422,14 @@ interface RHSRunListCardProps extends RunToDisplay {
 const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
     const [removed, setRemoved] = useState(false);
-    const {add: addToastMessage} = useToaster();
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
     const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
     const [movedChannel, setMovedChannel] = useState({channelId: '', channelName: ''});
     const updateRun = useUpdateRun(props.id);
+    const updateRunChannel = useUpdateRunChannel(props.id);
+
     const isPlaybookRun = props.type === PlaybookRunType.Playbook;
     const icon = isPlaybookRun ? <PlayOutlineIcon size={22}/> : <CheckAllIcon size={22}/>;
 
@@ -441,11 +441,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 if (!movedChannel.channelId) {
                     return;
                 }
-                updateRun({channelID: movedChannel.channelId});
-                addToastMessage({
-                    content: isPlaybookRun ? formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: movedChannel.channelName}) : formatMessage({defaultMessage: 'Checklist moved to {channel}'}, {channel: movedChannel.channelName}),
-                    toastStyle: ToastStyle.Success,
-                });
+                updateRunChannel(movedChannel.channelId, movedChannel.channelName);
                 props.onLinkRunToChannel();
             }}
         >

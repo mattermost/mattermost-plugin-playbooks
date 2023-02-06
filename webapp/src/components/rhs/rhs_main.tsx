@@ -227,6 +227,7 @@ const RightHandSidebar = () => {
             <RHSRunDetails
                 runID={currentRunId}
                 onBackClick={clearCurrentRunId}
+                onLinkRunToChannel={() => setCurrentRunId(undefined)}
             />
         );
     }

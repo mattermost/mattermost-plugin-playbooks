@@ -52,6 +52,7 @@ const toastDuration = 4500;
 interface Props {
     runID: string
     onBackClick: () => void;
+    onLinkRunToChannel: () => void;
 }
 
 const RHSRunDetails = (props: Props) => {
@@ -170,6 +171,7 @@ const RHSRunDetails = (props: Props) => {
                             playbookRun={playbookRun}
                             readOnly={readOnly}
                             onReadOnlyInteract={onReadOnlyInteract}
+                            onLinkRunToChannel={props.onLinkRunToChannel}
                             setShowParticipants={setShowParticipants}
                         />
                         <RHSChecklistList

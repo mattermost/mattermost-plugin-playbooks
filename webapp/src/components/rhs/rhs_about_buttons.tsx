@@ -5,7 +5,15 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {NotebookOutlineIcon, PencilOutlineIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+import {
+    LinkVariantIcon,
+    NotebookOutlineIcon,
+    PencilOutlineIcon,
+    PlayOutlineIcon,
+} from '@mattermost/compass-icons/components';
+
+import {useDispatch, useSelector} from 'react-redux';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {navigateToPluginUrl} from 'src/browser_routing';
@@ -13,6 +21,8 @@ import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {usePlaybookName} from 'src/hooks';
+import {openUpdateRunChannelModal} from 'src/actions';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -20,11 +30,14 @@ interface Props {
     toggleCollapsed: () => void;
     editSummary: () => void;
     readOnly?: boolean;
+    onUpdateChannel: (newChannelId: string, newChannelName: string) => void;
 }
 
 const RHSAboutButtons = (props: Props) => {
+    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const playbookName = usePlaybookName(props.playbookRun.playbook_id);
+    const teamId = useSelector(getCurrentTeamId);
 
     const overviewURL = `/runs/${props.playbookRun.id}?from=channel_rhs_dotmenu`;
     const playbookURL = `/playbooks/${props.playbookRun.playbook_id}`;
@@ -55,6 +68,14 @@ const RHSAboutButtons = (props: Props) => {
             >
                 {!props.readOnly &&
                 <>
+                    <StyledDropdownMenuItem
+                        onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRun.id, teamId, PlaybookRunType.Playbook, props.onUpdateChannel))}
+                    >
+                        <IconWrapper>
+                            <LinkVariantIcon size={20}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Link run to a different channel'/>
+                    </StyledDropdownMenuItem>
                     <StyledDropdownMenuItem
                         onClick={() => {
                             props.editSummary();

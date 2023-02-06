@@ -5,12 +5,22 @@ import React, {ComponentProps, useEffect, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
+import {useDispatch, useSelector} from 'react-redux';
+
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+
 import GenericModal, {InlineLabel, ModalSubheading} from 'src/components/widgets/generic_modal';
 import {useRun} from 'src/hooks';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {useUpdateRun} from 'src/graphql/hooks';
+
+import {currentPlaybookRun} from 'src/selectors';
+import {removedFromPlaybookRunChannel} from 'src/actions';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 const ID = 'playbook_run_update';
 
@@ -146,3 +156,30 @@ export const StyledChannelSelector = styled(ChannelSelector)`
         }
     }
 `;
+
+export const useUpdateRunChannel = (id: string) => {
+    const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+
+    const [run] = useRun(id);
+    const updateRun = useUpdateRun(id);
+    const currentRun = useSelector(currentPlaybookRun);
+    const channelId = useSelector(getCurrentChannelId);
+
+    const isPlaybookRun = run?.type === PlaybookRunType.Playbook;
+
+    return async (newChannelId: string, newChannelName: string) => {
+        await updateRun({channelID: newChannelId});
+
+        // Remove old reference to run in state tree if there is one
+        if (currentRun && currentRun.id === run?.id) {
+            dispatch(removedFromPlaybookRunChannel(channelId));
+        }
+
+        addToast({
+            content: isPlaybookRun ? formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: newChannelName}) : formatMessage({defaultMessage: 'Checklist moved to {channel}'}, {channel: newChannelName}),
+            toastStyle: ToastStyle.Success,
+        });
+    };
+};
