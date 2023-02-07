@@ -231,7 +231,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 			"action_type":  ActionTypeCategorizeChannel,
 			"trigger_type": TriggerTypeNewMemberJoins,
 			"num_actions":  len(actions),
-		}).Errorf("expected only one action to be retrived")
+		}).Errorf("expected only one action to be retrieved")
 	}
 
 	if len(actions) != 1 {

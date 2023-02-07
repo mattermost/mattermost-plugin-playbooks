@@ -1422,6 +1422,11 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
 // any action if the checklist item is already in the given checked state
 func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
+	type Details struct {
+		Action string `json:"action,omitempty"`
+		Task   string `json:"task,omitempty"`
+	}
+
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1436,14 +1441,22 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return nil
 	}
 
+	details := Details{
+		Action: "check",
+		Task:   stripmd.Strip(itemToCheck.Title),
+	}
+
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	if newState == ChecklistItemStateOpen {
+		details.Action = "uncheck"
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 	if newState == ChecklistItemStateSkipped {
+		details.Action = "skip"
 		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 	if itemToCheck.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
+		details.Action = "restore"
 		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 
@@ -1458,6 +1471,11 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 
 	s.telemetry.ModifyCheckedState(playbookRunID, userID, itemToCheck, playbookRunToModify.OwnerUserID == userID)
 
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		return errors.Wrap(err, "failed to encode timeline event details")
+	}
+
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      itemToCheck.StateModified,
@@ -1465,6 +1483,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		EventType:     TaskStateModified,
 		Summary:       modifyMessage,
 		SubjectUserID: userID,
+		Details:       string(detailsJSON),
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
