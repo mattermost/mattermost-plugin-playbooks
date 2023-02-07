@@ -830,5 +830,10 @@
     "8//+Yb": "Linkowanie listy kontrolnej do innego kanału",
     "706Soh": "wykonane zadania",
     "XHJUSG": "Automatyczne śledzenie uruvhomień",
-    "DqTQOp": "Raz"
+    "DqTQOp": "Raz",
+    "vjb+hS": "{user} przywrócił pozycję z listy kontrolnej \"{name}\"",
+    "OqWwvQ": "{user} odznaczył pozycję z listy kontrolnej \"{name}\"",
+    "DKiv0o": "{user} pominął pozycję z listy kontrolnej \"{name}\"",
+    "8FzC0B": "{user} odznaczył pozycję z listy kontrolnej \"{name}\"",
+    "3qPQMX": "{name} poprosił o aktualizację statusu"
 }
