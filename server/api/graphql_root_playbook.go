@@ -288,7 +288,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 
-	// Not optimal graphql. Stopgap measure. Should be updated seperately.
+	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {
 		app.CleanUpChecklists(*args.Updates.Checklists)
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
