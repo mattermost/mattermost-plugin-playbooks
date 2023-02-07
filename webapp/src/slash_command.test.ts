@@ -23,5 +23,5 @@ test('makeSlashCommandHook leaves rejected slash commands unmodified', async () 
     const slashCommandHook = makeSlashCommandHook(store);
     const result = await slashCommandHook(undefined, undefined); //eslint-disable-line no-undefined
 
-    expect(result).toEqual({});
+    expect(result).toEqual(null);
 });
