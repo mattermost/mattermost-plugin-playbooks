@@ -82,11 +82,11 @@ describe('channels > update request post', () => {
                 reminder: 1,
             });
 
-            // # Post a status update, with a reminder in 1 second.
+            // # Post a status update, with a reminder in 2 second.
             cy.apiUpdateStatus({
                 playbookRunId: testPlaybookRun.id,
                 message: 'status update',
-                reminder: 1,
+                reminder: 2,
             });
 
             // Ensure the status update reminder gets posted

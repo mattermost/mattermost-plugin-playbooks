@@ -324,8 +324,8 @@ const verifyInitialAndStatusPostInBroadcast = (testTeam, channelName, runName, i
                 // * Thread should have two posts
                 cy.findAllByRole('listitem').should('have.length', 2);
 
-                // * Root should be announcement
-                cy.get('.thread__root').contains(initialMessage);
+                // * The first should be announcement
+                cy.findAllByRole('listitem').eq(0).contains(initialMessage);
 
                 // * Latest post should be update
                 cy.get(`#rhsPost_${lastPostId}`).contains(
@@ -348,28 +348,32 @@ const deleteLatestPostRoot = (testTeam, channelName) => {
         // # Open RHS comment menu
         cy.clickPostCommentIcon(lastPostId);
 
-        cy.get('.thread__root').then((root) => {
-            const rootId = root.attr('id').slice(8);
+        cy.get('#rhsContainer')
+            .should('exist')
+            .within(() => {
+                cy.findAllByRole('listitem').eq(0).then((root) => {
+                    const rootId = root.attr('id').slice(8);
 
-            // # Click root's post dot menu.
-            cy.clickPostDotMenu(rootId, 'RHS_ROOT');
+                    // # Click root's post dot menu.
+                    cy.clickPostDotMenu(rootId, 'RHS_ROOT');
 
-            // # Click delete button.
-            const id = `#delete_post_${rootId}`;
-            cy.get(id).click();
+                    // # Click delete button.
+                    const id = `#delete_post_${rootId}`;
+                    cy.get(id).click();
+                });
+            });
 
-            // * Check that confirmation dialog is open.
-            cy.get('#deletePostModal').should('be.visible');
+        // * Check that confirmation dialog is open.
+        cy.get('#deletePostModal').should('be.visible');
 
-            // * Check that confirmation dialog contains correct text
-            cy.get('#deletePostModal')
-                .should('contain', 'Are you sure you want to delete this Post?');
+        // * Check that confirmation dialog contains correct text
+        cy.get('#deletePostModal')
+            .should('contain', 'Are you sure you want to delete this Post?');
 
-            // * Check that confirmation dialog shows that the post has one comment on it
-            cy.get('#deletePostModal').should('contain', 'This post has 1 comment on it.');
+        // * Check that confirmation dialog shows that the post has one comment on it
+        cy.get('#deletePostModal').should('contain', 'This post has 1 comment on it.');
 
-            // # Confirm deletion.
-            cy.get('#deletePostModalButton').click();
-        });
+        // # Confirm deletion.
+        cy.get('#deletePostModalButton').click();
     });
 };

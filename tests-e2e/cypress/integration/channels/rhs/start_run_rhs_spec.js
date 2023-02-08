@@ -204,6 +204,85 @@ describe('channels rhs > start a run', () => {
                 });
             });
 
+            it('change to link to existing channel defaults to current channel', () => {
+                // # Fill default values
+                createPlaybook({
+                    title: 'Playbook title' + Date.now(),
+                    channelNameTemplate: 'Channel template',
+                    runSummaryTemplate: 'run summary template',
+                    channelMode: 'create_new_channel'
+                }).then((playbook) => {
+                    // # Visit the town square channel
+                    cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    // # Open playbooks RHS.
+                    cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+                    // # Click start a run button
+                    cy.findByTestId('rhs-runlist-start-run').click();
+
+                    cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // # Change to link to existing channel
+                        cy.findByTestId('link-existing-channel-radio').click();
+
+                        // * Assert current channel is selected
+                        cy.findByText('Town Square').should('be.visible');
+                    });
+                });
+            });
+
+            it('change to link to existing channel with already selected channel', () => {
+                // # Fill default values
+                createPlaybook({
+                    title: 'Playbook title' + Date.now(),
+                    channelNameTemplate: 'Channel template',
+                    runSummaryTemplate: 'run summary template',
+                    channelMode: 'create_new_channel',
+                    channelId: testChannel.id,
+                }).then((playbook) => {
+                    // # Visit the town square channel
+                    cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    // # Open playbooks RHS.
+                    cy.getPlaybooksAppBarIcon().should('be.visible').click();
+
+                    // # Click start a run button
+                    cy.findByTestId('rhs-runlist-start-run').click();
+
+                    cy.get('#root-portal.modal-open').within(() => {
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // * Assert we are at playbooks tab
+                        cy.findByText('Select a playbook').should('be.visible');
+
+                        // # Click on the playbook
+                        cy.findAllByText(playbook.title).eq(0).click();
+
+                        // # Wait the modal to render
+                        cy.wait(500);
+
+                        // # Change to link to existing channel
+                        cy.findByTestId('link-existing-channel-radio').click();
+
+                        // * Assert selected channel is unchanged
+                        cy.findByText(testChannel.display_name).should('be.visible');
+                    });
+                });
+            });
+
             it('change to link to existing channel', () => {
                 // # Fill default values
                 createPlaybook({
@@ -240,8 +319,8 @@ describe('channels rhs > start a run', () => {
                         // # Fill run name
                         cy.findByTestId('run-name-input').clear().type('Test Run Name');
 
-                        // # Fill Town square as the channel to be linked
-                        cy.findByText('Select a channel').click().type(`${testChannel.display_name}{enter}`);
+                        // # Select test channel instead of current channel
+                        cy.findByText('Town Square').click().type(`${testChannel.display_name}{enter}`);
 
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
