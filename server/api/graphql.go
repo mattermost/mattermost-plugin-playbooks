@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/graph-gophers/dataloader/v7"
 	graphql "github.com/graph-gophers/graphql-go"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -94,6 +95,8 @@ type GraphQLContext struct {
 	config             config.Service
 	permissions        *app.PermissionsService
 	licenceChecker     app.LicenseChecker
+	favoritesLoader    *dataloader.Loader[favoriteInfo, bool]
+	playbooksLoader    *dataloader.Loader[playbookInfo, *app.Playbook]
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
@@ -118,6 +121,10 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	// dataloaders
+	favoritesLoader := dataloader.NewBatchedLoader(graphQLFavoritesLoader[bool], dataloader.WithBatchCapacity[favoriteInfo, bool](loaderBatchCapacity))
+	playbooksLoader := dataloader.NewBatchedLoader(graphQLPlaybooksLoader[*app.Playbook], dataloader.WithBatchCapacity[playbookInfo, *app.Playbook](loaderBatchCapacity))
+
 	graphQLContext := &GraphQLContext{
 		r:                  r,
 		playbookService:    h.playbookService,
@@ -129,6 +136,8 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		permissions:        h.permissions,
 		playbookStore:      h.playbookStore,
 		licenceChecker:     h.licenceChecker,
+		favoritesLoader:    favoritesLoader,
+		playbooksLoader:    playbooksLoader,
 	}
 
 	// Populate the context with required info.

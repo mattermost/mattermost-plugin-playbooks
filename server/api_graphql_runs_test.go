@@ -781,6 +781,64 @@ func TestSetRunFavorite(t *testing.T) {
 	})
 }
 
+func TestResolverFavorites(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRun := func() *client.PlaybookRun {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		return run
+	}
+
+	runs := []*client.PlaybookRun{
+		createRun(),
+		createRun(),
+	}
+	response, err := setRunFavorite(e.PlaybooksClient, runs[0].ID, true)
+	require.NoError(t, err)
+	require.Empty(t, response.Errors)
+	response, err = setRunFavorite(e.PlaybooksClient, runs[1].ID, true)
+	require.NoError(t, err)
+	require.Empty(t, response.Errors)
+
+	favorites, err := getRunFavorites(e.PlaybooksClient)
+	require.NoError(t, err)
+	require.True(t, favorites[runs[0].ID])
+	require.True(t, favorites[runs[1].ID])
+}
+
+func TestResolverPlaybooks(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRun := func() *client.PlaybookRun {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		return run
+	}
+
+	runs := []*client.PlaybookRun{
+		createRun(),
+		createRun(),
+	}
+
+	playbooks, err := getRunPlaybooks(e.PlaybooksClient)
+	require.NoError(t, err)
+	require.Equal(t, e.BasicPlaybook.ID, playbooks[runs[0].ID])
+	require.Equal(t, e.BasicPlaybook.ID, playbooks[runs[1].ID])
+}
+
 func TestUpdateRun(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1097,6 +1155,102 @@ func setRunFavorite(c *client.Client, playbookRunID string, fav bool) (graphql.R
 	}, &response)
 
 	return response, err
+}
+
+func getRunFavorites(c *client.Client) (map[string]bool, error) {
+	query := `
+	query GetFavorites {
+		runs {
+			edges {
+				node{
+					id
+					isFavorite
+				}
+			}
+		}
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         query,
+		OperationName: "GetFavorites",
+	}, &response)
+
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Errors) > 0 {
+		return nil, fmt.Errorf("error from query %v", response.Errors)
+	}
+	rawResult := struct {
+		Runs struct {
+			Edges []struct {
+				Node struct {
+					ID         string `json:"id"`
+					IsFavorite bool   `json:"isFavorite"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"runs"`
+	}{}
+	err = json.Unmarshal(response.Data, &rawResult)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]bool)
+	for _, edges := range rawResult.Runs.Edges {
+		result[edges.Node.ID] = edges.Node.IsFavorite
+	}
+	return result, nil
+}
+
+func getRunPlaybooks(c *client.Client) (map[string]string, error) {
+	query := `
+	query GetRunsWithPlaybooks {
+		runs {
+			edges {
+				node{
+					id
+					playbook {
+						id
+					}
+				}
+			}
+		}
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         query,
+		OperationName: "GetRunsWithPlaybooks",
+	}, &response)
+
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Errors) > 0 {
+		return nil, fmt.Errorf("error from query %v", response.Errors)
+	}
+	rawResult := struct {
+		Runs struct {
+			Edges []struct {
+				Node struct {
+					ID       string `json:"id"`
+					Playbook struct {
+						ID string `json:"id"`
+					}
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"runs"`
+	}{}
+	err = json.Unmarshal(response.Data, &rawResult)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]string)
+	for _, edges := range rawResult.Runs.Edges {
+		result[edges.Node.ID] = edges.Node.Playbook.ID
+	}
+	return result, nil
 }
 
 func getRunFavorite(c *client.Client, playbookRunID string) (bool, error) {

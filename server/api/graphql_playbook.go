@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,20 +22,18 @@ func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
+	thunk := c.favoritesLoader.Load(ctx, favoriteInfo{
+		TeamID: r.TeamID,
+		UserID: userID,
+		Type:   app.PlaybookItemType,
+		ID:     r.ID,
+	})
 
-	isFavorite, err := c.categoryService.IsItemFavorite(
-		app.CategoryItem{
-			ItemID: r.ID,
-			Type:   app.PlaybookItemType,
-		},
-		r.TeamID,
-		userID,
-	)
+	result, err := thunk()
 	if err != nil {
-		return false, errors.Wrap(err, "can't determine if item is favorite or not")
+		return false, err
 	}
-
-	return isFavorite, nil
+	return result, nil
 }
 
 func (r *PlaybookResolver) DeleteAt() float64 {
