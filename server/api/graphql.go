@@ -177,6 +177,8 @@ func getContext(ctx context.Context) (*GraphQLContext, error) {
 	return c, nil
 }
 
+// GraphiqlPage is the html base code for the graphiQL query runner
+//
 //go:embed graphqli.html
 var GraphiqlPage []byte
 

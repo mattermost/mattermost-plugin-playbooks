@@ -397,7 +397,7 @@ type PlaybookStore interface {
 	GetPlaybooksWithKeywords(opts PlaybookFilterOptions) ([]Playbook, error)
 
 	// GetTimeLastUpdated retrieves time last playbook was updated at.
-	// Passed argument determins whether to include playbooks with
+	// Passed argument determines whether to include playbooks with
 	// SignalAnyKeywordsEnabled flag or not.
 	GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error)
 

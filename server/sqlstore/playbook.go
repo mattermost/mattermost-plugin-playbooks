@@ -562,7 +562,7 @@ func (p *playbookStore) GetPlaybooksWithKeywords(opts app.PlaybookFilterOptions)
 }
 
 // GetTimeLastUpdated retrieves time last playbook was updated at.
-// Passed argument determins whether to include playbooks with
+// Passed argument determines whether to include playbooks with
 // SignalAnyKeywordsEnabled flag or not.
 func (p *playbookStore) GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error) {
 	queryForResults := p.store.builder.
