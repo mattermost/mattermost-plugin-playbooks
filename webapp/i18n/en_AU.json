@@ -828,5 +828,10 @@
     "Edy3wX": "Checklist moved to {channel}",
     "DqTQOp": "Once",
     "8//+Yb": "Link checklist to a different channel",
-    "706Soh": "tasks done"
+    "706Soh": "tasks done",
+    "vjb+hS": "{user} restored checklist item '\\{name}'\\",
+    "OqWwvQ": "{user} unticked checklist item '\\{name}'\\",
+    "8FzC0B": "{user} ticked off checklist item '\\{name}'\\",
+    "DKiv0o": "{user} skipped checklist item '\\{name}'\\",
+    "3qPQMX": "{name} requested a status update"
 }
