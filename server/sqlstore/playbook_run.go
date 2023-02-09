@@ -161,7 +161,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 					JOIN IR_Run_Participants as rp on rp.IncidentID = i2.ID
 				WHERE i2.Id = i.Id
 				AND rp.IsParticipant = true
-				AND rp.UserId NOT IN (SELECT UserId FROM Bots)
+				AND NOT EXISTS(SELECT 1 FROM Bots as bo WHERE bo.UserId = rp.UserId)
 			), ''
         ) AS ConcatenatedParticipantIDs`
 	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
@@ -172,7 +172,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 					JOIN IR_Run_Participants as rp on rp.IncidentID = i2.ID
 				WHERE i2.Id = i.Id
 				AND rp.IsParticipant = true
-				AND rp.UserId NOT IN (SELECT UserId FROM Bots)
+				AND NOT EXISTS(SELECT 1 FROM Bots as bo WHERE bo.UserId = rp.UserId)
 			), ''
         ) AS ConcatenatedParticipantIDs`
 	}
@@ -850,7 +850,7 @@ func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID s
 		Select("COUNT(DISTINCT cmh.UserId)").
 		From("ChannelMemberHistory AS cmh").
 		Where(sq.Eq{"cmh.ChannelId": channelID}).
-		Where(sq.Expr("cmh.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Where(sq.Expr("NOT EXISTS(SELECT 1 FROM Bots as bo WHERE bo.UserId = cmh.UserId)"))
 
 	var numParticipants int64
 	err := s.store.getBuilder(s.store.db, &numParticipants, query)
@@ -1334,7 +1334,7 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 		Join("IR_Incident AS i ON i.ID = rp.IncidentID").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(sq.Eq{"rp.IsParticipant": true}).
-		Where(sq.Expr("rp.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Where(sq.Expr("NOT EXISTS(SELECT 1 FROM Bots as bo WHERE bo.UserId = rp.UserId)"))
 
 	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
 		return 0, errors.Wrap(err, "failed to count active participants")
