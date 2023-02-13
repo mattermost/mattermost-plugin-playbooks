@@ -826,5 +826,12 @@
     "LaseGE": "Nemaš prava za uređivanje ovog popisa zadataka",
     "Edy3wX": "Popis zadataka premješten u {channel}",
     "8//+Yb": "Poveži popis zadataka s jednim drugim kanalom",
-    "706Soh": "obavljeni zadaci"
+    "706Soh": "obavljeni zadaci",
+    "vjb+hS": "{user} je obnovio/la element popisa zadataka „{name}”",
+    "OqWwvQ": "{user} je odznačio/la element popisa zadataka „{name}”",
+    "DKiv0o": "{user} je preskočio/la element popisa zadataka „{name}”",
+    "8FzC0B": "{user} je označio/la element popisa zadataka „{name}” kao obavljen",
+    "3qPQMX": "{name} je zatražio/la aktualiziranje stanja",
+    "XHJUSG": "Automatski prati izvođenja",
+    "DqTQOp": "Jednom"
 }
