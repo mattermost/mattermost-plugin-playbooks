@@ -306,7 +306,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.CurrentStatus = StatusInProgress
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
-	if playbookRun.PlaybookID == "" {
+	if playbookRun.PlaybookID == "" && pb == nil {
 		playbookRun.Checklists = []Checklist{
 			{
 				Title: "Checklist",

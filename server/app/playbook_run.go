@@ -24,8 +24,9 @@ const (
 )
 
 const (
-	RunSourcePost   = "post"
-	RunSourceDialog = "dialog"
+	RunSourcePost     = "post"
+	RunSourceTemplate = "template"
+	RunSourceDialog   = "dialog"
 )
 
 const (

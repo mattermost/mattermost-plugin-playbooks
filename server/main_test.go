@@ -128,6 +128,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.SqlSettings = *sqlSettings
 	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
 	config.LogSettings.EnableConsole = model.NewBool(true)
+	config.LogSettings.ConsoleJson = model.NewBool(false)
 	config.LogSettings.EnableFile = model.NewBool(false)
 	config.LogSettings.ConsoleLevel = model.NewString("INFO")
 

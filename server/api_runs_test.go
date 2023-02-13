@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -208,8 +209,37 @@ func TestRunCreation(t *testing.T) {
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
 		})
+		fmt.Println(err)
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
+	})
+
+	t.Run("create valid run with checklist but no playbook id", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No playbook",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			Playbook: &client.Playbook{
+				Description: "the summary",
+				Checklists: []client.Checklist{
+					{
+						Title: "A",
+						Items: []client.ChecklistItem{
+							{
+								Title: "Do this1",
+							},
+							{
+								Title: "Do this2",
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+		assert.Len(t, run.Checklists, 1)
+		assert.Len(t, run.Checklists[0].Items, 2)
 	})
 
 	t.Run("can't without owner", func(t *testing.T) {

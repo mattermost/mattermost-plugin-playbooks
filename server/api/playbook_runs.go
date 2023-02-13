@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
@@ -21,6 +20,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
+
+const Me = "me"
 
 // PlaybookRunHandler is the API handler.
 type PlaybookRunHandler struct {
@@ -152,31 +153,59 @@ func (h *PlaybookRunHandler) checkEditPermissions(next http.Handler) http.Handle
 	})
 }
 
+type playbookRunCreateOptions struct {
+	Name            string `json:"name"`
+	OwnerUserID     string `json:"owner_user_id"`
+	TeamID          string `json:"team_id"`
+	ChannelID       string `json:"channel_id"`
+	Description     string `json:"description"`
+	PostID          string `json:"post_id"`
+	CreatePublicRun *bool  `json:"create_public_run"`
+	Type            string `json:"type"`
+
+	// It doesn't make sense to fill both fields, you can provide
+	// no data, a playbook ID or a playbook struct.
+	PlaybookID string        `json:"playbook_id"`
+	Playbook   *app.Playbook `json:"playbook"`
+}
+
 // createPlaybookRunFromPost handles the POST /runs endpoint
 func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
+	var playbookRunCreateOptions playbookRunCreateOptions
 
-	var playbookRunCreateOptions client.PlaybookRunCreateOptions
 	if err := json.NewDecoder(r.Body).Decode(&playbookRunCreateOptions); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook run create options", err)
 		return
 	}
 
+	playbook := playbookRunCreateOptions.Playbook
+	if playbookRunCreateOptions.PlaybookID != "" {
+		pb, err := h.playbookService.Get(playbookRunCreateOptions.PlaybookID)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get playbook", err)
+			return
+		}
+		playbook = &pb
+	}
+
 	playbookRun, err := h.createPlaybookRun(
-		app.PlaybookRun{
-			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
-			TeamID:      playbookRunCreateOptions.TeamID,
-			ChannelID:   playbookRunCreateOptions.ChannelID,
-			Name:        playbookRunCreateOptions.Name,
-			Summary:     playbookRunCreateOptions.Description,
-			PostID:      playbookRunCreateOptions.PostID,
-			PlaybookID:  playbookRunCreateOptions.PlaybookID,
-			Type:        playbookRunCreateOptions.Type,
-		},
-		userID,
-		playbookRunCreateOptions.CreatePublicRun,
-		app.RunSourcePost,
-	)
+		createPlaybookParams{
+			PlaybookRun: app.PlaybookRun{
+				OwnerUserID: playbookRunCreateOptions.OwnerUserID,
+				TeamID:      playbookRunCreateOptions.TeamID,
+				ChannelID:   playbookRunCreateOptions.ChannelID,
+				Name:        playbookRunCreateOptions.Name,
+				Summary:     playbookRunCreateOptions.Description,
+				PostID:      playbookRunCreateOptions.PostID,
+				PlaybookID:  playbookRunCreateOptions.PlaybookID,
+				Type:        playbookRunCreateOptions.Type,
+			},
+			UserID:          userID,
+			CreatePublicRun: playbookRunCreateOptions.CreatePublicRun,
+			Source:          app.RunSourcePost,
+			Playbook:        playbook,
+		})
 	if errors.Is(err, app.ErrNoPermissions) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
 		return
@@ -261,19 +290,21 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	}
 
 	playbookRun, err := h.createPlaybookRun(
-		app.PlaybookRun{
-			OwnerUserID: request.UserId,
-			TeamID:      request.TeamId,
-			ChannelID:   playbook.GetRunChannelID(),
-			Name:        name,
-			PostID:      state.PostID,
-			PlaybookID:  playbookID,
-			Type:        app.RunTypePlaybook,
-		},
-		request.UserId,
-		nil,
-		app.RunSourceDialog,
-	)
+		createPlaybookParams{
+			PlaybookRun: app.PlaybookRun{
+				OwnerUserID: request.UserId,
+				TeamID:      request.TeamId,
+				ChannelID:   playbook.GetRunChannelID(),
+				Name:        name,
+				PostID:      state.PostID,
+				PlaybookID:  playbookID,
+				Type:        app.RunTypePlaybook,
+			},
+			UserID:          request.UserId,
+			CreatePublicRun: nil,
+			Source:          app.RunSourceDialog,
+			Playbook:        &playbook,
+		})
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
@@ -424,7 +455,18 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
+type createPlaybookParams struct {
+	PlaybookRun     app.PlaybookRun
+	UserID          string
+	CreatePublicRun *bool
+	Source          string
+	Playbook        *app.Playbook
+}
+
+func (h *PlaybookRunHandler) createPlaybookRun(params createPlaybookParams) (*app.PlaybookRun, error) {
+
+	playbookRun := params.PlaybookRun
+
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -466,36 +508,31 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 	// Copy data from playbook if needed
 	public := true
-	if createPublicRun != nil {
-		public = *createPublicRun
+	if params.CreatePublicRun != nil {
+		public = *params.CreatePublicRun
 	}
 
-	var playbook *app.Playbook
-	if playbookRun.PlaybookID != "" {
-		pb, err := h.playbookService.Get(playbookRun.PlaybookID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get playbook")
-		}
-		playbook = &pb
-
+	playbook := params.Playbook
+	if params.Playbook != nil && params.Playbook.ID != "" {
 		if playbook.DeleteAt != 0 {
 			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
 		}
 
-		if err := h.permissions.RunCreate(userID, *playbook); err != nil {
+		if err := h.permissions.RunCreate(params.UserID, *playbook); err != nil {
 			return nil, err
 		}
 
-		if source == "dialog" && playbook.ChannelMode == app.PlaybookRunLinkExistingChannel && playbookRun.ChannelID == "" {
+		if params.Source == "dialog" && playbook.ChannelMode == app.PlaybookRunLinkExistingChannel && playbookRun.ChannelID == "" {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook is configured to be linked to existing channel but no channel is configured. Run can not be created from dialog")
 		}
+	}
 
-		if createPublicRun == nil {
-			public = pb.CreatePublicPlaybookRun
+	if playbook != nil {
+		if params.CreatePublicRun == nil {
+			public = params.Playbook.CreatePublicPlaybookRun
 		}
-
 		playbookRun.SetChecklistFromPlaybook(*playbook)
-		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
+		playbookRun.SetConfigurationFromPlaybook(*playbook, params.Source)
 	}
 
 	// Check the permissions on the channel: the user must be able to create it or,
@@ -507,7 +544,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			permission = model.PermissionCreatePublicChannel
 			permissionMessage = "You are not able to create a public channel"
 		}
-		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
+		if !h.pluginAPI.User.HasPermissionToTeam(params.UserID, playbookRun.TeamID, permission) {
 			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 	} else {
@@ -521,7 +558,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			permissionMessage = "You do not have access to this channel"
 		}
 
-		if !h.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
+		if !h.pluginAPI.User.HasPermissionToChannel(params.UserID, channel.Id, permission) {
 			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 	}
@@ -532,16 +569,16 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook run original post")
 		}
-		if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
+		if !h.pluginAPI.User.HasPermissionToChannel(params.UserID, post.ChannelId, model.PermissionReadChannel) {
 			return nil, errors.New("user does not have access to the channel containing the playbook run's original post")
 		}
 	}
-
-	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
+	fmt.Println("--->1: ", playbookRun.Checklists)
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, params.UserID, public)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("--->2: ", playbookRunReturned.Checklists)
 	// force database retrieval to ensure all data is processed correctly (i.e participantIds)
 	return h.playbookRunService.GetPlaybookRun(playbookRunReturned.ID)
 
@@ -1846,19 +1883,19 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	statuses := u.Query()["statuses"]
 
 	ownerID := u.Query().Get("owner_user_id")
-	if ownerID == client.Me {
+	if ownerID == Me {
 		ownerID = currentUserID
 	}
 
 	searchTerm := u.Query().Get("search_term")
 
 	participantID := u.Query().Get("participant_id")
-	if participantID == client.Me {
+	if participantID == Me {
 		participantID = currentUserID
 	}
 
 	participantOrFollowerID := u.Query().Get("participant_or_follower_id")
-	if participantOrFollowerID == client.Me {
+	if participantOrFollowerID == Me {
 		participantOrFollowerID = currentUserID
 	}
 

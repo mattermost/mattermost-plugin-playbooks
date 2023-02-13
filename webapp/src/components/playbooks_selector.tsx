@@ -30,8 +30,8 @@ interface Props {
      * Callback that will trigger if the conditions for zero case no results are met.
      */
     onZeroCaseNoPlaybooks: (zerocase: boolean) => void;
-    onCreatePlaybook: () => void;
     onSelectPlaybook: (playbookId: string) => void;
+    onSelectTemplate: (template: PresetTemplate) => void;
 }
 
 const PlaybookModalFieldsFragment = graphql(/* GraphQL */`
@@ -84,7 +84,6 @@ const filterTemplates = (templates: PresetTemplate[], text: string) => {
         }
 
         // naive filtering
-        console.log(text.toLocaleLowerCase(), t.title.toLocaleLowerCase());
         return t.title.toLocaleLowerCase().includes(text.toLocaleLowerCase());
     });
 };
@@ -180,7 +179,7 @@ const PlaybooksSelector = (props: Props) => {
                             <TemplateRow
                                 key={`template-${template.title}`}
                                 template={template}
-                                onSelectTemplate={(t) => console.log(t)}
+                                onSelectTemplate={props.onSelectTemplate}
                             />
                         ))}
                     </Group>

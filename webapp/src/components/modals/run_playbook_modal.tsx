@@ -4,6 +4,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
 
@@ -24,6 +25,7 @@ import {SecondaryButton} from 'src/components/assets/buttons';
 import SearchInput from 'src/components/backstage/search_input';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
+import {PresetTemplate} from 'src/components/templates/template_data';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -58,7 +60,9 @@ const RunPlaybookModal = ({
     const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
     const [playbook] = usePlaybook(selectedPlaybookId || '');
+    const currentTeamId = useSelector(getCurrentTeamId);
     const [runName, setRunName] = useState('');
+    const [selectedTemplate, setSelectedTemplate] = useState<PresetTemplate|null>(null);
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
     const [channelId, setChannelId] = useState('');
@@ -78,19 +82,28 @@ const RunPlaybookModal = ({
         if (playbook?.channel_mode === 'create_new_channel') {
             setRunName(playbook.channel_name_template);
         }
-    }, [playbook, playbook?.channel_name_template, playbook?.channel_mode]);
+        if (selectedTemplate?.template.channel_mode === 'create_new_channel') {
+            setRunName(selectedTemplate?.template.channel_name_template);
+        }
+    }, [playbook, playbook?.channel_name_template, playbook?.channel_mode, selectedTemplate, selectedTemplate?.template.channel_name_template]);
 
     useEffect(() => {
         if (playbook && playbook?.run_summary_template_enabled) {
             setRunSummary(playbook.run_summary_template);
         }
-    }, [playbook, playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
+        if (selectedTemplate && selectedTemplate?.template.run_summary_template) {
+            setRunSummary(selectedTemplate.template.run_summary_template);
+        }
+    }, [playbook, playbook?.run_summary_template_enabled, playbook?.run_summary_template, selectedTemplate, selectedTemplate?.template.run_summary_template]);
 
     useEffect(() => {
         if (playbook) {
             setChannelMode(playbook.channel_mode);
         }
-    }, [playbook, playbook?.channel_mode]);
+        if (selectedTemplate) {
+            setChannelMode(selectedTemplate.template.channel_mode);
+        }
+    }, [playbook, playbook?.channel_mode, selectedTemplate, selectedTemplate?.template.channel_mode]);
 
     useEffect(() => {
         if (playbook) {
@@ -102,7 +115,10 @@ const RunPlaybookModal = ({
         if (playbook) {
             setCreatePublicRun(playbook.create_public_playbook_run);
         }
-    }, [playbook, playbook?.create_public_playbook_run]);
+        if (selectedTemplate) {
+            setCreatePublicRun(selectedTemplate.template.create_public_playbook_run);
+        }
+    }, [playbook, playbook?.create_public_playbook_run, selectedTemplate, selectedTemplate?.template.create_public_playbook_run]);
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
@@ -121,20 +137,26 @@ const RunPlaybookModal = ({
         dispatch(displayPlaybookCreateModal({}));
         modalProps.onHide?.();
     };
+
     const onSubmit = () => {
-        if (!playbook || !selectedPlaybookId || isSubmitting) {
+        if (isSubmitting) {
+            return;
+        }
+
+        if (!playbook && !selectedPlaybookId && !selectedTemplate) {
             return;
         }
 
         setIsSubmitting(true);
         createPlaybookRun(
-            selectedPlaybookId,
+            selectedPlaybookId || '',
             userId,
-            playbook.team_id,
+            playbook?.team_id || currentTeamId,
             runName,
             runSummary,
             linkExistingChannel ? channelId : undefined,
             createNewChannel ? createPublicRun : undefined,
+            selectedTemplate?.template,
         )
             .then((newPlaybookRun) => {
                 modalProps.onHide?.();
@@ -143,11 +165,11 @@ const RunPlaybookModal = ({
                     channelMode,
                     public: createNewChannel ? createPublicRun : undefined,
                     hasPlaybookChanged: playbookId !== selectedPlaybookId,
-                    hasNameChanged: runName !== playbook.channel_name_template,
-                    hasSummaryChanged: runSummary !== playbook.run_summary_template,
-                    hasChannelModeChanged: channelMode !== playbook.channel_mode,
-                    hasChannelIdChanged: channelId !== playbook.channel_id,
-                    hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
+                    hasNameChanged: runName !== (playbook?.channel_name_template ?? selectedTemplate?.template.channel_name_template),
+                    hasSummaryChanged: runSummary !== (playbook?.run_summary_template ?? selectedTemplate?.template.run_summary_template),
+                    hasChannelModeChanged: channelMode !== (playbook?.channel_mode ?? selectedTemplate?.template.channel_mode),
+                    hasChannelIdChanged: channelId !== (playbook?.channel_id ?? selectedTemplate?.template.channel_id),
+                    hasPublicChanged: !linkExistingChannel && createPublicRun !== (playbook?.create_public_playbook_run ?? selectedTemplate?.template.create_public_playbook_run),
                 };
                 onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
             }).catch(() => {
@@ -247,13 +269,18 @@ const RunPlaybookModal = ({
         >
             <Body>
                 <PlaybooksSelector
-                    onCreatePlaybook={onCreatePlaybook}
                     teamID={teamId}
                     channelID={triggerChannelId || ''}
                     onZeroCaseNoPlaybooks={(isZeroNoShow: boolean) => setShowsearch(!isZeroNoShow)}
                     searchTerm={searchTerm}
+                    onSelectTemplate={(template) => {
+                        setSelectedTemplate(template);
+                        setSelectedPlaybookId('');
+                        setStep('run-details');
+                    }}
                     onSelectPlaybook={(id) => {
                         setSelectedPlaybookId(id);
+                        setSelectedTemplate(null);
                         setStep('run-details');
                     }}
                 />

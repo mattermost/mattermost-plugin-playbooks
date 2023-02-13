@@ -73,6 +73,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             ...emptyPlaybook(),
             title: 'Product Release',
             description: 'Customize this playbook to reflect your own product release process.',
+            channel_mode: 'create_new_channel',
             checklists: [
                 {
                     title: 'Prepare code',
@@ -160,6 +161,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             ...emptyPlaybook(),
             title: 'Incident Resolution',
             description: 'Customize this playbook to reflect your own incident resolution process.',
+            channel_mode: 'create_new_channel',
             checklists: [
                 {
                     title: 'Setup for triage',
@@ -253,6 +255,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             description: mtrim`New Mattermost customers are onboarded following a process similar to this playbook.
 
             Customize this playbook to reflect your own customer onboarding process.`,
+            channel_mode: 'create_new_channel',
             checklists: [
                 {
                     title: 'Sales to Post-Sales Handoff',
@@ -345,6 +348,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             description: mtrim`Every new Mattermost Staff member completes this onboarding process when joining the company.
 
             Customize this playbook to reflect your own employee onboarding process.`,
+            channel_mode: 'create_new_channel',
             checklists: [
                 {
                     title: 'Pre-day one',
@@ -448,6 +452,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             ...emptyPlaybook(),
             title: 'Feature Lifecycle',
             description: 'Customize this playbook to reflect your own feature lifecycle process.',
+            channel_mode: 'create_new_channel',
             checklists: [
                 {
                     title: 'Plan',
@@ -573,6 +578,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             description: mtrim`About once or twice a month, the Mattermost Playbooks team uses this playbook to run a 50 minute bug-bash testing the latest version of Playbooks.
 
             Customize this playbook to reflect your own bug bash process.`,
+            channel_mode: 'create_new_channel',
             create_public_playbook_run: true,
             channel_name_template: 'Bug Bash (vX.Y)',
             checklists: [
@@ -731,6 +737,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             ...emptyPlaybook(),
             title: 'Learn how to use playbooks',
             description: mtrim`Use this playbook to learn more about playbooks. Go through this page to check out the contents or simply select ‘start a test run’ in the top right corner.`,
+            channel_mode: 'create_new_channel',
             create_public_playbook_run: true,
             channel_name_template: 'Onboarding Run',
             checklists: [

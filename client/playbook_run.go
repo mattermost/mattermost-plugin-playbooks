@@ -131,9 +131,13 @@ type PlaybookRunCreateOptions struct {
 	ChannelID       string `json:"channel_id"`
 	Description     string `json:"description"`
 	PostID          string `json:"post_id"`
-	PlaybookID      string `json:"playbook_id"`
 	CreatePublicRun *bool  `json:"create_public_run"`
 	Type            string `json:"type"`
+
+	// It doesn't make sense to fill both fields, you can provide
+	// no data, a playbook ID or a playbook struct.
+	PlaybookID string    `json:"playbook_id"`
+	Playbook   *Playbook `json:"playbook"`
 }
 
 // RunAction represents the run action settings. Frontend passes this struct to update settings.
