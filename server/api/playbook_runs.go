@@ -172,16 +172,16 @@ type playbookRunCreateOptions struct {
 // createPlaybookRunFromPost handles the POST /runs endpoint
 func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
-	var playbookRunCreateOptions playbookRunCreateOptions
+	var options playbookRunCreateOptions
 
-	if err := json.NewDecoder(r.Body).Decode(&playbookRunCreateOptions); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&options); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook run create options", err)
 		return
 	}
 
-	playbook := playbookRunCreateOptions.Playbook
-	if playbookRunCreateOptions.PlaybookID != "" {
-		pb, err := h.playbookService.Get(playbookRunCreateOptions.PlaybookID)
+	playbook := options.Playbook
+	if options.PlaybookID != "" {
+		pb, err := h.playbookService.Get(options.PlaybookID)
 		if err != nil {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get playbook", err)
 			return
@@ -192,17 +192,17 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 	playbookRun, err := h.createPlaybookRun(
 		createPlaybookParams{
 			PlaybookRun: app.PlaybookRun{
-				OwnerUserID: playbookRunCreateOptions.OwnerUserID,
-				TeamID:      playbookRunCreateOptions.TeamID,
-				ChannelID:   playbookRunCreateOptions.ChannelID,
-				Name:        playbookRunCreateOptions.Name,
-				Summary:     playbookRunCreateOptions.Description,
-				PostID:      playbookRunCreateOptions.PostID,
-				PlaybookID:  playbookRunCreateOptions.PlaybookID,
-				Type:        playbookRunCreateOptions.Type,
+				OwnerUserID: options.OwnerUserID,
+				TeamID:      options.TeamID,
+				ChannelID:   options.ChannelID,
+				Name:        options.Name,
+				Summary:     options.Description,
+				PostID:      options.PostID,
+				PlaybookID:  options.PlaybookID,
+				Type:        options.Type,
 			},
 			UserID:          userID,
-			CreatePublicRun: playbookRunCreateOptions.CreatePublicRun,
+			CreatePublicRun: options.CreatePublicRun,
 			Source:          app.RunSourcePost,
 			Playbook:        playbook,
 		})
