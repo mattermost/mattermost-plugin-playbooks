@@ -60,8 +60,9 @@ export const InviteUsers = (props: Props) => {
                         isChecked={props.enabled}
                         onChange={handleToggle}
                         disabled={props.disabled}
-                    />
-                    <FormattedMessage defaultMessage='Invite participants'/>
+                    >
+                        <FormattedMessage defaultMessage='Invite participants'/>
+                    </Toggle>
                 </AutomationTitle>
                 <SelectorWrapper>
                     <InviteUsersSelector
