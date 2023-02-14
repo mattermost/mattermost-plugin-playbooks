@@ -53,18 +53,18 @@
     },
     {
         "id": "app.user.digest.runs_in_progress.zero_in_progress",
-        "translation": "Du hast keinen laufenden Durchlauf."
+        "translation": "Du hast keinen aktiven Durchlauf."
     },
     {
         "id": "app.user.digest.runs_in_progress.num_in_progress",
         "translation": {
-            "one": "Du hast einen laufenden Durchlauf:",
-            "other": "Du hast {{.Count}} laufende Durchläufe:"
+            "one": "Du hast einen aktiven Durchlauf:",
+            "other": "Du hast {{.Count}} aktive Durchläufe:"
         }
     },
     {
         "id": "app.user.digest.runs_in_progress.heading",
-        "translation": "Laufende Durchläufe"
+        "translation": "Aktive Durchläufe"
     },
     {
         "id": "app.user.digest.overdue_status_updates.zero_overdue",
@@ -107,7 +107,7 @@
     },
     {
         "id": "app.user.run.request_join_channel",
-        "translation": "@{{.Name}} ist ein Laufteilnehmer und möchte diesem Kanal beitreten. Jedes Mitglied des Channels kann ihn einladen.\n"
+        "translation": "@{{.Name}} ist ein Teilnehmer und möchte diesem Kanal beitreten. Jedes Mitglied des Kanals kann ihn einladen.\n"
     },
     {
         "id": "app.user.run.status_enable",
@@ -132,8 +132,8 @@
     {
         "id": "app.user.run.update_status.num_channel",
         "translation": {
-            "one": "Bringe die Beteiligten auf den neuesten Stand. Dieser Beitrag wird auf einem Kanal veröffentlicht.",
-            "other": "Bringe die Beteiligten auf den neuesten Stand. Dieser Beitrag wird auf {{.Count}} Kanälen veröffentlicht."
+            "one": "Bringe die Beteiligten auf den neuesten Stand. Dieser Beitrag wird in einem Kanal veröffentlicht.",
+            "other": "Bringe die Beteiligten auf den neuesten Stand. Dieser Beitrag wird in {{.Count}} Kanälen veröffentlicht."
         }
     },
     {
@@ -150,7 +150,7 @@
     },
     {
         "id": "app.user.run.confirm_finish.title",
-        "translation": "Bestätige das Beenden des Durchlaufs"
+        "translation": "Beenden des Durchlaufs bestätigen"
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
@@ -159,8 +159,8 @@
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Es gibt eine **{{.Count}} offene Aufgabe**. Bist du sicher, dass du den Lauf *{{.RunName}}* für alle Teilnehmer beenden willst?",
-            "other": "Es gibt **{{.Count}} offene Aufgaben**. Bist du sicher, dass du den Lauf *{{.RunName}}* für alle Teilnehmer beenden willst?"
+            "one": "Es gibt eine **{{.Count}} offene Aufgabe**. Bist du sicher, dass du den Durchlauf *{{.RunName}}* für alle Teilnehmer beenden willst?",
+            "other": "Es gibt **{{.Count}} offene Aufgaben**. Bist du sicher, dass du den Durchlauf *{{.RunName}}* für alle Teilnehmer beenden willst?"
         }
     },
     {
@@ -173,7 +173,7 @@
     },
     {
         "id": "app.user.run.add_to_timeline.summary.help",
-        "translation": "Maximal 64 Zeichen"
+        "translation": "Max. 64 Zeichen"
     },
     {
         "id": "app.user.run.add_to_timeline.summary",
