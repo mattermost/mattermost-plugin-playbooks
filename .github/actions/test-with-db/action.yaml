@@ -10,6 +10,7 @@ runs:
       with:
         go-version: "${{ env.GO_VERSION }}"
         cache: true
+
     - name: ci/setup-node
       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
       with:
@@ -18,6 +19,7 @@ runs:
         cache-dependency-path: |
           webapp/package-lock.json
           tests-e2e/package-lock.json
+
     - name: ci/cache-node-modules
       id: cache-node-modules
       uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
@@ -27,15 +29,16 @@ runs:
           tests-e2e/node_modules
         key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
         restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
+
     - name: ci/setup-webapp-npm-deps
       if: steps.cache-node-modules.outputs.cache-hit != 'true'
       shell: bash
       env:
         NODE_ENV: development
       run: |
-        set -e
         cd webapp
         npm install --ignore-scripts --no-save --legacy-peer-deps
+
     - name: ci/test-db-integration
       shell: bash
       env:
@@ -49,14 +52,12 @@ runs:
         MARIADB_DATABASE: mattermost_test
         MARIADB_USER: mmuser
         MARIADB_PASSWORD: mostest
-      run: |
-        set -e
-        make test-ci
-        mkdir -p server/test-results
-        cp report.xml server/test-results
+      run: make test-ci
+
     - name: ci/upload-test-results
+      if: failure()
       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
-        name: test-results
-        path: server/test-results/
+        name: test-results-${{ github.workflow }}
+        path: report.xml
         retention-days: 5 ## No need to keep CI builds more than 5 days

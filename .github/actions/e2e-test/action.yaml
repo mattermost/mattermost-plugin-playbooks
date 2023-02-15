@@ -17,6 +17,7 @@ runs:
       with:
         go-version: "${{ env.GO_VERSION }}"
         cache: true
+
     - name: ci/setup-node
       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
       with:
@@ -25,6 +26,7 @@ runs:
         cache-dependency-path: |
           webapp/package-lock.json
           tests-e2e/package-lock.json
+
     - name: ci/cache-node-modules
       id: cache-node-modules
       uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
@@ -34,22 +36,24 @@ runs:
           tests-e2e/node_modules
         key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
         restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
+
     - name: ci/disable-ALSA
       run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
       shell: bash
+
     - name: ci/restore-postresql
       uses: docker://postgres:10.17
       env:
         TEST_DATABASE_URL: postgres://mmuser:mostest@postgres:5432/mattermost_test
       with:
         entrypoint: ./.github/actions/e2e-test/generate-test-data.sh
+
     - name: ci/upload-licence
       env:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
         MM_ADMIN_USERNAME: sysadmin
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
       run: |
-        set -e
         TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
         TOKEN=${TOKEN//$'\r'/}
         STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
@@ -62,18 +66,18 @@ runs:
       env:
         NODE_ENV: development
       run: |
-        set -e
         cd webapp
         npm install --ignore-scripts --no-save
         cd ../tests-e2e
         npm install --ignore-scripts --no-save
 
-    - name: ci/installing-cypress
+    - name: ci/installing-cypress-deps
       shell: bash
       env:
         NODE_ENV: development
       run: |
         sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
+        cd tests-e2e/
         npx cypress install
 
     - name: ci/install-playbooks
@@ -99,7 +103,6 @@ runs:
         CYPRESS_serverEdition: ${{ inputs.CYPRESS_serverEdition }}
         TERM: xterm
       run: |
-        set -e
         cd tests-e2e
         npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
@@ -113,4 +116,4 @@ runs:
           tests-e2e/cypress/results/junit
           tests-e2e/cypress/videos
           tests-e2e/cypress/screenshots
-        retention-days: 14 ## No need to keep CI builds more than 5 days
+        retention-days: 14 ## No need to keep test results more than 14 days
