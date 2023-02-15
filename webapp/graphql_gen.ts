@@ -3,7 +3,7 @@ import {CodegenConfig} from '@graphql-codegen/cli';
 const config: CodegenConfig = {
     overwrite: true,
     schema: '../server/api/schema.graphqls',
-    documents: ['src/graphql/*.graphql', 'src/**/*.tsx', '!src/garphql/generated/**/*'],
+    documents: ['src/graphql/*.graphql', 'src/**/*.tsx', '!src/graphql/generated/**/*'],
     generates: {
         'src/graphql/generated/': {
             preset: 'client',
@@ -18,4 +18,5 @@ const config: CodegenConfig = {
     },
 };
 
+// ts-prune-ignore-next
 export default config;

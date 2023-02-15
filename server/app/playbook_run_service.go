@@ -501,7 +501,7 @@ func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error {
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, promptPostID string) error {
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {
@@ -510,7 +510,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 		}
 	}
 
-	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp, promptPostID)
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, promptPostID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -579,6 +579,7 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 		ParticipantID: requesterInfo.UserID,
 		Sort:          SortByCreateAt,
 		Direction:     DirectionDesc,
+		Types:         []string{RunTypePlaybook},
 		Page:          0,
 		PerPage:       PerPageDefault,
 	}
@@ -1308,6 +1309,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunsForChannelByUser(channelID strin
 			PerPage:   1000,
 			Sort:      SortByCreateAt,
 			Direction: DirectionDesc,
+			Types:     []string{RunTypePlaybook},
 		},
 	)
 
@@ -1420,6 +1422,11 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
 // any action if the checklist item is already in the given checked state
 func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
+	type Details struct {
+		Action string `json:"action,omitempty"`
+		Task   string `json:"task,omitempty"`
+	}
+
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1434,14 +1441,22 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return nil
 	}
 
+	details := Details{
+		Action: "check",
+		Task:   stripmd.Strip(itemToCheck.Title),
+	}
+
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	if newState == ChecklistItemStateOpen {
+		details.Action = "uncheck"
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 	if newState == ChecklistItemStateSkipped {
+		details.Action = "skip"
 		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 	if itemToCheck.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
+		details.Action = "restore"
 		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 
@@ -1456,6 +1471,11 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 
 	s.telemetry.ModifyCheckedState(playbookRunID, userID, itemToCheck, playbookRunToModify.OwnerUserID == userID)
 
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		return errors.Wrap(err, "failed to encode timeline event details")
+	}
+
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      itemToCheck.StateModified,
@@ -1463,6 +1483,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		EventType:     TaskStateModified,
 		Summary:       modifyMessage,
 		SubjectUserID: userID,
+		Details:       string(detailsJSON),
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -1606,6 +1627,11 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.New("invalid checklist item indices")
 	}
 
+	// CommandLastRun is reset to avoid misunderstandings when the command is changed but the date
+	// of the previous run is set (and show rerun in the UI)
+	if playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command != newCommand {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = 0
+	}
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2448,7 +2474,7 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *Playboo
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, promptPostID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(requesterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
@@ -2473,18 +2499,10 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 		})
 	}
 
-	newPlaybookMarkdown := ""
-	if !isMobileApp {
-		data := map[string]interface{}{
-			"RunURL": getPlaybooksNewRelativeURL(),
-		}
-		newPlaybookMarkdown = T("app.user.new_run.new_playbook", data)
-	}
-
 	data := map[string]interface{}{
 		"Username": getUserDisplayName(user),
 	}
-	introText := T("app.user.new_run.intro", data) + "\n\n" + newPlaybookMarkdown
+	introText := T("app.user.new_run.intro", data)
 
 	defaultPlaybookID := ""
 	defaultChannelNameTemplate := ""
@@ -3549,7 +3567,7 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 	}
 }
 
-func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(sessionID string, post *model.Post) {
+func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(post *model.Post) {
 	runIDs, err := s.store.GetPlaybookRunIDsForChannel(post.ChannelId)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {

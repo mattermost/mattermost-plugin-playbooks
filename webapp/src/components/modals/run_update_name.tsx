@@ -8,6 +8,7 @@ import {useIntl} from 'react-intl';
 import GenericModal, {InlineLabel, ModalSubheading} from 'src/components/widgets/generic_modal';
 import {BaseInput} from 'src/components/assets/inputs';
 import {useRun} from 'src/hooks';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 const ID = 'playbook_run_update';
 
@@ -32,6 +33,7 @@ const UpdateRunModal = ({
     const {formatMessage} = useIntl();
     const [name, setName] = useState('');
     const [run] = useRun(playbookRunId);
+    const isPlaybookRun = run?.type === PlaybookRunType.Playbook;
 
     useEffect(() => {
         if (run) {
@@ -49,7 +51,7 @@ const UpdateRunModal = ({
             id={ID}
             modalHeaderText={
                 <Header>
-                    {formatMessage({defaultMessage: 'Rename run'})}
+                    {isPlaybookRun ? formatMessage({defaultMessage: 'Rename run'}) : formatMessage({defaultMessage: 'Rename checklist'})}
                     <ModalSubheading>
                         {run?.name}
                     </ModalSubheading>
@@ -58,7 +60,7 @@ const UpdateRunModal = ({
             {...modalProps}
         >
             <Body>
-                <InlineLabel>{formatMessage({defaultMessage: 'Run name'})}</InlineLabel>
+                <InlineLabel>{isPlaybookRun ? formatMessage({defaultMessage: 'Run name'}) : formatMessage({defaultMessage: 'Checklist name'})}</InlineLabel>
                 <BaseInput
                     data-testid={'run-name-input'}
                     autoFocus={true}

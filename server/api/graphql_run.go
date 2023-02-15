@@ -12,26 +12,32 @@ type RunResolver struct {
 	app.PlaybookRun
 }
 
-// Progress is a computed atrtibute (not stored in database) which
-// returns the % of tasks that are closed (checked or skipped) from the total:
-// - 0 -> no tasks closed
-// - 0.3 -> 30% of tasks closed
-// - 1 -> all tasks closed
-func (r *RunResolver) Progress() float64 {
-	var closed float64
-	var total int
+// NumTasks is a computed attribute (not stored in database) which
+// returns the number of total tasks in a playbook run:
+func (r *RunResolver) NumTasks() int32 {
+	total := 0
 	for _, checklist := range r.PlaybookRun.Checklists {
 		total += len(checklist.Items)
+	}
+	return int32(total)
+}
+
+// NumTasksClosed is a computed attribute (not stored in database) which
+// returns the number of tasks closed in a playbook run:
+func (r *RunResolver) NumTasksClosed() int32 {
+	closed := 0
+	for _, checklist := range r.PlaybookRun.Checklists {
 		for _, item := range checklist.Items {
 			if item.State == app.ChecklistItemStateClosed || item.State == app.ChecklistItemStateSkipped {
 				closed++
 			}
 		}
 	}
-	if total == 0 {
-		return 1
-	}
-	return closed / float64(total)
+	return int32(closed)
+}
+
+func (r *RunResolver) Type() string {
+	return r.PlaybookRun.Type
 }
 
 func (r *RunResolver) CreateAt() float64 {
@@ -99,19 +105,19 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	isFavorite, err := c.categoryService.IsItemFavorite(
-		app.CategoryItem{
-			ItemID: r.ID,
-			Type:   app.RunItemType,
-		},
-		r.TeamID,
-		userID,
-	)
+	thunk := c.favoritesLoader.Load(ctx, favoriteInfo{
+		TeamID: r.TeamID,
+		UserID: userID,
+		Type:   app.RunItemType,
+		ID:     r.ID,
+	})
+
+	result, err := thunk()
 	if err != nil {
-		return false, errors.Wrap(err, "can't determine if item is favorite or not")
+		return false, err
 	}
 
-	return isFavorite, nil
+	return result, nil
 }
 
 type StatusPostResolver struct {
@@ -161,16 +167,24 @@ func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
 	if err != nil {
 		return nil, err
 	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	val, err := getGraphqlPlaybook(ctx, r.PlaybookID)
+	thunk := c.playbooksLoader.Load(ctx, playbookInfo{
+		UserID: userID,
+		ID:     r.PlaybookID,
+		TeamID: r.TeamID,
+	})
+
+	result, err := thunk()
 	if err != nil {
-		if !errors.Is(err, app.ErrNoPermissions) {
-			c.logger.WithError(err).Error("error retrieving playbook of run")
-		}
+		return nil, err
+	}
+
+	if result == nil {
 		return nil, nil
 	}
 
-	return val, nil
+	return &PlaybookResolver{*result}, nil
 }
 
 func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {

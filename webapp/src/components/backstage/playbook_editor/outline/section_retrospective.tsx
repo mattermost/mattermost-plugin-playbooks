@@ -3,34 +3,22 @@
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-
 import styled from 'styled-components';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-
-import {Card} from 'src/components/backstage/playbook_preview_cards';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-
 import {Metric, PlaybookWithChecklist} from 'src/types/playbook';
-
 import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
 import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
-import {BackstageSubheader, BackstageSubheaderDescription, StyledSelect} from 'src/components/backstage/styles';
+import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import MarkdownEdit from 'src/components/markdown_edit';
 import {savePlaybook} from 'src/client';
+import RetrospectiveIntervalSelector from 'src/components/backstage/playbook_editor/outline/inputs/retrospective_interval_selector';
 
 export interface EditingMetric {
     index: number;
     metric: Metric;
 }
-
-const retrospectiveReminderOptions = [
-    {value: 0, label: 'Once'},
-    {value: 3600, label: '1hr'},
-    {value: 14400, label: '4hr'},
-    {value: 86400, label: '24hr'},
-    {value: 604800, label: '7days'},
-] as const;
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
@@ -63,16 +51,14 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                         {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
-                <StyledSelect
-                    value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
-                    onChange={(option: {label: string; value: number;}) => {
+                <RetrospectiveIntervalSelector
+                    seconds={playbook.retrospective_reminder_interval_seconds}
+                    onChange={(seconds) => {
                         updatePlaybook({
-                            retrospectiveReminderIntervalSeconds: option?.value,
+                            retrospectiveReminderIntervalSeconds: seconds,
                         });
                     }}
-                    options={retrospectiveReminderOptions}
-                    isClearable={false}
-                    isDisabled={!playbook.retrospective_enabled || archived}
+                    disabled={!playbook.retrospective_enabled || archived}
                 />
             </SidebarBlock>
             <SidebarBlock id={'retrospective-metrics'}>
@@ -118,6 +104,23 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
 
 const RetrospectiveTextContainer = styled.div`
     padding: 0 8px;
+`;
+
+const Card = styled.div`
+    background: var(--center-channel-bg);
+    width: 100%;
+
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
+    box-sizing: border-box;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+
+    padding: 16px;
+    padding-left: 11px;
+    padding-right: 20px;
+
+    display: flex;
+    flex-direction: column;
 `;
 
 export default SectionRetrospective;

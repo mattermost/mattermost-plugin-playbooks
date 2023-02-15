@@ -84,7 +84,7 @@ const Label = styled.label<DisabledProps>`
     align-items: center;
     column-gap: 12px;
     font-weight: inherit;
-    line-height: 0;
+    line-height: 16px;
     cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
     margin-bottom: 0;
 `;

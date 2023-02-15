@@ -1,12 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-export enum RHSState {
-    ViewingList,
-    ViewingPlaybookRun,
-    ViewingPlaybookRunParticipants,
-}
-
 export enum TimelineEventType {
     RunCreated = 'incident_created',
     StatusUpdated = 'status_updated',
@@ -78,4 +72,9 @@ export interface UserJoinedLeftDetails {
     action: string;
     requester: string;
     users: string[];
+}
+
+export interface TaskStateModifiedDetails {
+    action: string | 'check' | 'uncheck' | 'skip' | 'restore';
+    task: string;
 }

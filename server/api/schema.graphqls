@@ -19,6 +19,7 @@ type Query {
 		channelID: String = "",
 		first: Int,
 		after: String,
+		types: [PlaybookRunType!] = [],
 	): RunConnection!
 }
 
@@ -224,6 +225,11 @@ type PlaybookMetricConfig {
 	target: Int
 }
 
+enum PlaybookRunType {
+	playbook
+	channelChecklist
+}
+
 type Run {
 	id: String!
 	playbookID: String!
@@ -270,7 +276,10 @@ type Run {
 	timelineEvents: [TimelineEvent!]!
 	followers: [String!]!
 
-	progress: Float!
+	numTasks: Int!
+	numTasksClosed: Int!
+
+	type: PlaybookRunType!
 }
 
 type RunConnection {

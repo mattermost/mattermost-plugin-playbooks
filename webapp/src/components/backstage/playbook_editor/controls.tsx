@@ -54,7 +54,7 @@ import {
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
-import {displayEditPlaybookAccessModal, openPlaybookRunNewModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
@@ -233,7 +233,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                 <div>
                     <CheckboxInputStyled
                         testId={'auto-follow-runs'}
-                        text={'Auto-follow runs'}
+                        text={formatMessage({defaultMessage: 'Auto-follow runs'})}
                         checked={isFollowing}
                         disabled={archived}
                         onChange={setFollowing}
@@ -258,7 +258,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
     return (
         <PrimaryButtonLarger
             onClick={() => {
-                dispatch(openPlaybookRunNewModal({
+                dispatch(openPlaybookRunModal({
                     onRunCreated: (runId, channelId, statsData) => {
                         navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                         refreshLHS();
@@ -377,6 +377,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
     const [confirmConvertPrivateModal, setShowMakePrivateConfirm] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
 
+    const refreshLHS = useLHSRefresh();
     const {add: addToast} = useToaster();
 
     const currentUserId = useSelector(getCurrentUserId);
@@ -429,6 +430,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         const newID = await clientDuplicatePlaybook(playbook.id);
                         navigateToPluginUrl(`/playbooks/${newID}/outline`);
                         addToast({content: formatMessage({defaultMessage: 'Successfully duplicated playbook'})});
+                        refreshLHS();
                         telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                     }}
                     disabled={!permissionForDuplicate}

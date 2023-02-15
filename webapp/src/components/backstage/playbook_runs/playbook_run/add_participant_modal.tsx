@@ -62,7 +62,9 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                         size={18}
                         color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                     />
-                    {formatMessage({defaultMessage: 'Participants will also be added to the channel linked to this run'})}
+                    <FooterText>
+                        {formatMessage({defaultMessage: 'Participants will also be added to the channel linked to this run'})}
+                    </FooterText>
                 </FooterExtraInfoContainer>
             );
         }
@@ -146,6 +148,7 @@ const FooterExtraInfoContainer = styled.div`
     display: flex;
     flex-direction: row;
 
+    text-align: left;
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
@@ -154,16 +157,8 @@ const FooterExtraInfoContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
-export const TriggersContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    row-gap: 16px;
-`;
-
-export const ActionsContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    row-gap: 20px;
+const FooterText = styled.span`
+    margin-left: 10px;
 `;
 
 const StyledCheckboxInput = styled(CheckboxInput)`

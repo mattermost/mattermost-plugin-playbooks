@@ -65,7 +65,7 @@ import {
 } from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
-import {UpdateRequestPost} from 'src/components/update_request_post';
+import UpdateRequestPost from 'src/components/update_request_post';
 
 import {RetrospectivePost} from './components/retrospective_post';
 
@@ -128,6 +128,7 @@ function getSiteURL(): string {
     return getSiteURLFromWindowObject(window);
 }
 
+// ts-prune-ignore-next
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
     activityFunc?: () => void;

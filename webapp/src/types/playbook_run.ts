@@ -3,6 +3,7 @@
 
 import {TimelineEvent} from 'src/types/rhs';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 export interface PlaybookRun {
     id: string;
@@ -48,6 +49,8 @@ export interface PlaybookRun {
 
     /** Whether a channel member should be removed when an existing participant leaves the run */
     remove_channel_member_on_removed_participant: boolean;
+
+    type: PlaybookRunType
 }
 
 export interface StatusPost {

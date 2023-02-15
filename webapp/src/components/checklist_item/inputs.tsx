@@ -13,7 +13,7 @@ interface CheckBoxButtonProps {
     item: ChecklistItem;
     readOnly: boolean;//when true, component can receive events, but can't be modified.
     disabled?: boolean;
-    onViewerModeInteract?: () => void;
+    onReadOnlyInteract?: () => void;
 }
 
 export const CheckBoxButton = (props: CheckBoxButtonProps) => {
@@ -33,7 +33,7 @@ export const CheckBoxButton = (props: CheckBoxButtonProps) => {
     //     and leaving the item in an unknown state
     const handleOnChange = async () => {
         if (props.readOnly) {
-            props.onViewerModeInteract?.();
+            props.onReadOnlyInteract?.();
             return;
         }
         const newValue = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;

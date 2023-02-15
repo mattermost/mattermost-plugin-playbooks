@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-import {AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
+import {AccountMultiplePlusOutlineIcon, AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import Tooltip from 'src/components/widgets/tooltip';
@@ -84,7 +84,20 @@ const RHSParticipants = (props: Props) => {
                     sizeInPx={height}
                 />
             </UserRow>
-            {props.onParticipate ? becomeParticipant : null}
+            {props.onParticipate ? becomeParticipant : (
+                <Tooltip
+                    id={'rhs-add-participant'}
+                    content={formatMessage({defaultMessage: 'Add participant'})}
+                >
+                    <AddParticipantIconButton
+                        onClick={showParticipants}
+                        data-testid={'rhs-add-participant-icon'}
+                        format={'icon'}
+                    >
+                        <AccountMultiplePlusOutlineIcon size={20}/>
+                    </AddParticipantIconButton>
+                </Tooltip>
+            )}
         </Container>
     );
 };
@@ -135,6 +148,7 @@ const NoParticipants = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 11px;
     line-height: 16px;
+    white-space: nowrap;
 `;
 
 const Container = styled.div`
@@ -151,6 +165,7 @@ const UserRow = styled.div`
     flex-direction: row;
 
     margin-left: -4px;
+    margin-right: 2px;
 
     border-radius: 44px;
     border: 6px solid transparent;
@@ -165,7 +180,7 @@ const UserRow = styled.div`
 export default RHSParticipants;
 
 const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
-    margin-left: 6px;
+    margin-left: 2px;
     padding: 0 ${(props) => (props.format === 'icontext' ? '8px' : '0')};
     border-radius: ${(props) => (props.format === 'icontext' ? '15px' : '50%')};
     border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
@@ -185,6 +200,17 @@ const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
     }
     svg {
         margin-right: ${(props) => (props.format === 'icontext' ? '4px' : '0')};
+    }
+`;
+
+const AddParticipantIconButton = styled(IconWrapper)`
+    border-radius: 4px;
+    border: 0;
+    width: 32px;
+    height: 32px;
+    &:hover {
+        border: 0;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;
 

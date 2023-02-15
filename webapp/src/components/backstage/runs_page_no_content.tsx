@@ -15,7 +15,7 @@ import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
 
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
-import {openPlaybookRunNewModal} from 'src/actions';
+import {openPlaybookRunModal} from 'src/actions';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useCanCreatePlaybooksInTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -85,7 +85,7 @@ const NoContentPage = () => {
 
     const handleClick = () => {
         if (playbookExist) {
-            dispatch(openPlaybookRunNewModal({
+            dispatch(openPlaybookRunModal({
                 teamId,
                 onRunCreated: (runId: string, channelId: string, statsData: object) => {
                     navigateToPluginUrl(`/runs/${runId}?from=run_modal`);

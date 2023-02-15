@@ -454,6 +454,9 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		Where(permissionsAndFilter).
 		Where(teamLimitExpr)
 
+	if len(opts.PlaybookIDs) > 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"p.ID": opts.PlaybookIDs})
+	}
 	queryForResults, err := applyPlaybookFilterOptionsSort(queryForResults, opts)
 	if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to apply sort options")
@@ -559,7 +562,7 @@ func (p *playbookStore) GetPlaybooksWithKeywords(opts app.PlaybookFilterOptions)
 }
 
 // GetTimeLastUpdated retrieves time last playbook was updated at.
-// Passed argument determins whether to include playbooks with
+// Passed argument determines whether to include playbooks with
 // SignalAnyKeywordsEnabled flag or not.
 func (p *playbookStore) GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error) {
 	queryForResults := p.store.builder.

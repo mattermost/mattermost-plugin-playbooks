@@ -97,10 +97,6 @@ export interface FetchPlaybooksReturn {
     items: Playbook[];
 }
 
-export interface FetchPlaybooksCountReturn {
-    count: number;
-}
-
 export interface Checklist {
     title: string;
     items: ChecklistItem[];
@@ -275,11 +271,11 @@ export const newMetric = (type: MetricType, title = '', description = '', target
     target,
 });
 
-export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
+export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/guides/playbooks.html). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
 
 Here are some resources that you may find helpful:
-[Mattermost community channel](https://community.mattermost.com/core/channels/ee-incident-response)
-[User guide and documentation](https://docs.mattermost.com/administration/devops-command-center.html)`;
+[Mattermost community channel](https://community.mattermost.com/core/channels/developers-playbooks)
+[User guide and documentation](https://docs.mattermost.com/guides/playbooks.html)`;
 
 export const defaultRetrospectiveTemplate = `### Summary
 This should contain 2-3 sentences that give a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.

@@ -5,8 +5,6 @@ import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
-import {UserProfile} from '@mattermost/types/users';
-import {Channel} from '@mattermost/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from '@mattermost/client';
@@ -39,14 +37,9 @@ import {
     Playbook,
     PlaybookWithChecklist,
 } from 'src/types/playbook';
-import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
+import {AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
-import {
-    EmptyPlaybookStats,
-    PlaybookStats,
-    SiteStats,
-    Stats,
-} from 'src/types/stats';
+import {EmptyPlaybookStats, PlaybookStats, SiteStats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -253,14 +246,14 @@ export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybo
 
 export async function archivePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}`, {
-        method: 'delete',
+        method: 'DELETE',
     });
     return data;
 }
 
 export async function restorePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
-        method: 'put',
+        method: 'PUT',
     });
     return data;
 }
@@ -273,18 +266,6 @@ export async function importFile(file: any, teamId: string) {
 export async function duplicatePlaybook(playbookId: Playbook['id']) {
     const {id} = await doPost(`${apiUrl}/playbooks/${playbookId}/duplicate`, '');
     return id;
-}
-
-export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
-    return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
-}
-
-export async function fetchMyChannels(teamId: string): Promise<Channel[]> {
-    return Client4.getMyChannels(teamId);
-}
-
-export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
-    return Client4.getProfilesInTeam(teamId, 0, 200);
 }
 
 export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
@@ -356,13 +337,6 @@ export async function setChecklistItemState(playbookRunID: string, checklistNum:
     } catch (error) {
         return {error: error as ClientError};
     }
-}
-
-export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
-    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
-        method: 'delete',
-        body: '',
-    });
 }
 
 export async function clientDuplicateChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
@@ -442,12 +416,6 @@ export async function clientAddChecklist(playbookRunID: string, checklist: Check
     return data;
 }
 
-export async function clientRemoveChecklist(playbookRunID: string, checklistNum: number) {
-    const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
-
-    return data;
-}
-
 export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/duplicate`, {
         method: 'post',
@@ -505,15 +473,6 @@ export async function fetchSiteStats(): Promise<SiteStats | null> {
     return data as SiteStats;
 }
 
-export async function fetchStats(teamID: string): Promise<Stats | null> {
-    const data = await doGet(`${apiUrl}/stats?team_id=${teamID}`);
-    if (!data) {
-        return null;
-    }
-
-    return data as Stats;
-}
-
 export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookStats> {
     const data = await doGet(`${apiUrl}/stats/playbook?playbook_id=${playbookID}`);
     if (!data) {
@@ -563,13 +522,6 @@ export async function telemetryView(name: TelemetryViewTarget, properties: {[key
         body: JSON.stringify(
             {name, type: 'page', properties}
         ),
-    });
-}
-
-export async function setGlobalSettings(settings: GlobalSettings) {
-    await doFetchWithoutResponse(`${apiUrl}/settings`, {
-        method: 'PUT',
-        body: JSON.stringify(settings),
     });
 }
 
@@ -645,22 +597,6 @@ export const postMessageToAdmins = async (messageType: AdminNotificationType) =>
     }
 };
 
-export const promptForFeedback = async () => {
-    try {
-        const response = await doPost(`${apiUrl}/bot/prompt-for-feedback`);
-        return {data: response};
-    } catch (e) {
-        return {error: e.message};
-    }
-};
-
-export const changeChannelName = async (channelId: string, newName: string) => {
-    await doFetchWithoutResponse(`${basePath}/api/v4/channels/${channelId}/patch`, {
-        method: 'PUT',
-        body: JSON.stringify({display_name: newName}),
-    });
-};
-
 export const notifyConnect = async () => {
     await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {
         method: 'GET',
@@ -693,15 +629,6 @@ export const autoUnfollowPlaybook = async (playbookId: string, userId: string) =
         method: 'DELETE',
     });
 };
-
-export async function clientFetchIsPlaybookFollower(playbookId: string, userId: string): Promise<boolean> {
-    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`);
-    if (!data) {
-        return false;
-    }
-
-    return data as boolean;
-}
 
 export async function clientFetchPlaybookFollowers(playbookId: string): Promise<string[]> {
     const data = await doGet<string[]>(`${apiUrl}/playbooks/${playbookId}/autofollows`);
@@ -761,28 +688,6 @@ export const requestJoinChannel = async (playbookRunId: string) => {
     }
 };
 
-export const favoriteItem = async (teamID: string, itemID: string, itemType: string) => {
-    try {
-        return await doPost<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
-            item_id: itemID,
-            type: itemType,
-        }));
-    } catch (error) {
-        return {error};
-    }
-};
-
-export const unfavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
-    try {
-        return await doDelete<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}`, JSON.stringify({
-            item_id: itemID,
-            type: itemType,
-        }));
-    } catch (error) {
-        return {error};
-    }
-};
-
 export const isFavoriteItem = async (teamID: string, itemID: string, itemType: string) => {
     const data = await doGet<void>(`${apiUrl}/my_categories/favorites?team_id=${teamID}&item_id=${itemID}&type=${itemType}`);
     return Boolean(data);
@@ -821,27 +726,9 @@ export const doPost = async <TData = any>(url: string, body = {}) => {
     return data;
 };
 
-export const doDelete = async <TData = any>(url: string, body = {}) => {
-    const {data} = await doFetchWithResponse<TData>(url, {
-        method: 'DELETE',
-        body,
-    });
-
-    return data;
-};
-
 export const doPut = async <TData = any>(url: string, body = {}) => {
     const {data} = await doFetchWithResponse<TData>(url, {
         method: 'PUT',
-        body,
-    });
-
-    return data;
-};
-
-export const doPatch = async <TData = any>(url: string, body = {}) => {
-    const {data} = await doFetchWithResponse<TData>(url, {
-        method: 'PATCH',
         body,
     });
 

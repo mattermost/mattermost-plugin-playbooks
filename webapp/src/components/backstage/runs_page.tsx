@@ -23,6 +23,8 @@ import {pluginUrl} from 'src/browser_routing';
 
 import Header from 'src/components/widgets/header';
 
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
+
 import RunList from './runs_list/runs_list';
 import NoContentPage from './runs_page_no_content';
 
@@ -46,6 +48,7 @@ const defaultPlaybookFetchParams = {
     statuses: statusOptions
         .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
         .map((opt) => opt.value),
+    types: [PlaybookRunType.Playbook],
 };
 
 const RunListContainer = styled.div`

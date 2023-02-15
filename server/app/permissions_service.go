@@ -445,20 +445,6 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 	return p.PlaybookView(userID, run.PlaybookID)
 }
 
-func (p *PermissionsService) RunUpdateStatus(userID string, playbookRun *PlaybookRun) error {
-	if !CanPostToChannel(userID, playbookRun.ChannelID, p.pluginAPI) {
-		return errors.Wrapf(ErrNoPermissions, "user %s cannot post to playbook run channel %s", userID, playbookRun.ChannelID)
-	}
-
-	for _, channelID := range playbookRun.BroadcastChannelIDs {
-		if !CanPostToChannel(userID, channelID, p.pluginAPI) {
-			return errors.Wrapf(ErrNoPermissions, "user %s cannot post to broadcast channel %s", userID, channelID)
-		}
-	}
-
-	return nil
-}
-
 func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error {
 	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
 		return nil

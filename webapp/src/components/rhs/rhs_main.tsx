@@ -54,8 +54,10 @@ const RHSRunsQuery = graphql(/* GraphQL */`
                     playbook {
                         title
                     }
-                    progress
+                    numTasksClosed
+                    numTasks
                     lastUpdatedAt
+                    type
                 }
             }
             pageInfo {

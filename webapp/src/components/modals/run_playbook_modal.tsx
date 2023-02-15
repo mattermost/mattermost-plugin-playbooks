@@ -7,6 +7,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
 
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {usePlaybook} from 'src/graphql/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
@@ -43,7 +45,7 @@ type Props = {
     onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
-const RunPlaybookNewModal = ({
+const RunPlaybookModal = ({
     playbookId,
     triggerChannelId,
     teamId,
@@ -63,15 +65,17 @@ const RunPlaybookNewModal = ({
     const [createPublicRun, setCreatePublicRun] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showsearch, setShowsearch] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
+    const currentChannelId = useSelector(getCurrentChannelId);
     let userId = useSelector(getCurrentUserId);
     if (playbook?.default_owner_enabled && playbook.default_owner_id) {
         userId = playbook.default_owner_id;
     }
 
     useEffect(() => {
-        if (playbook && playbook.channel_mode === 'create_new_channel') {
+        if (playbook?.channel_mode === 'create_new_channel') {
             setRunName(playbook.channel_name_template);
         }
     }, [playbook, playbook?.channel_name_template, playbook?.channel_mode]);
@@ -104,15 +108,25 @@ const RunPlaybookNewModal = ({
     const linkExistingChannel = channelMode === 'link_existing_channel';
     const isFormValid = runName !== '' && runName.length <= RUN_NAME_MAX_LENGTH && (createNewChannel || channelId !== '');
 
+    const handleSetChannelMode = (mode: 'link_existing_channel' | 'create_new_channel') => {
+        setChannelMode(mode);
+
+        // Default to the current channel when choosing link to the existing channel, we are in a channel context and the playbook does not have a linked channel
+        if (mode === 'link_existing_channel' && playbook?.channel_mode === 'create_new_channel' && channelId === '' && currentChannelId) {
+            setChannelId(currentChannelId);
+        }
+    };
+
     const onCreatePlaybook = () => {
         dispatch(displayPlaybookCreateModal({}));
         modalProps.onHide?.();
     };
     const onSubmit = () => {
-        if (!playbook || !selectedPlaybookId) {
+        if (!playbook || !selectedPlaybookId || isSubmitting) {
             return;
         }
 
+        setIsSubmitting(true);
         createPlaybookRun(
             selectedPlaybookId,
             userId,
@@ -138,7 +152,7 @@ const RunPlaybookNewModal = ({
                 onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
             }).catch(() => {
             // show error
-            });
+            }).finally(() => setIsSubmitting(false));
     };
 
     // Start a run tab
@@ -148,7 +162,7 @@ const RunPlaybookNewModal = ({
                 cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
                 showCancel={true}
-                isConfirmDisabled={!isFormValid}
+                isConfirmDisabled={isSubmitting || !isFormValid}
                 handleConfirm={onSubmit}
                 autoCloseOnConfirmButton={false}
                 id={ID}
@@ -192,7 +206,7 @@ const RunPlaybookNewModal = ({
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
                         onSetCreatePublicRun={setCreatePublicRun}
-                        onSetChannelMode={setChannelMode}
+                        onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
                     />
                 </Body>
@@ -510,6 +524,6 @@ const ErrorMessage = styled.div`
 
 const ApolloWrappedModal = (props: Props) => {
     const client = getPlaybooksGraphQLClient();
-    return <ApolloProvider client={client}><RunPlaybookNewModal {...props}/></ApolloProvider>;
+    return <ApolloProvider client={client}><RunPlaybookModal {...props}/></ApolloProvider>;
 };
 
