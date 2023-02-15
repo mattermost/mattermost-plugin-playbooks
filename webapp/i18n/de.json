@@ -834,5 +834,16 @@
     "m4vqJl": "Dateien",
     "Zbk+OU": "Die Dateigröße überschreitet die Grenze von 5 MB.",
     "MieztS": "Lege eine Playbook-Exportdatei ab um sie zu importieren.",
-    "HGSVzc": "Es können nicht mehrere Dateien auf einmal importiert werden."
+    "HGSVzc": "Es können nicht mehrere Dateien auf einmal importiert werden.",
+    "LaseGE": "Du hast keine Berechtigung, diese Checkliste zu bearbeiten",
+    "Edy3wX": "Checkliste verschoben nach {channel}",
+    "8//+Yb": "Checkliste mit einem anderen Kanal verknüpfen",
+    "706Soh": "erledigte Aufgaben",
+    "XHJUSG": "Durchläufen automatisch folgen",
+    "DqTQOp": "Einmalig",
+    "vjb+hS": "{user} hat den Checklistenpunkt \"{name}\" wiederhergestellt",
+    "OqWwvQ": "{user} hat den Checklistenpunkt \"{name}\" zurückgesetzt",
+    "DKiv0o": "{user} hat den Checklistenpunkt \"{name}\" übersprungen",
+    "8FzC0B": "{user} hat den Checklistenpunkt \"{name}\" abgehakt",
+    "3qPQMX": "{name} hat ein Status-Update angefordert"
 }
