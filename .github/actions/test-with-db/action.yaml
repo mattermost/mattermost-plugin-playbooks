@@ -17,7 +17,17 @@ runs:
         cache-dependency-path: |
           webapp/package-lock.json
           tests-e2e/package-lock.json
+    - name: ci/cache-node-modules
+      id: cache-node-modules
+      uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
+      with:
+        path: |
+          webapp/node_modules
+          tests-e2e/node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
     - name: ci/setup-webapp-npm-deps
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
       shell: bash
       env:
         NODE_ENV: development

@@ -24,6 +24,15 @@ runs:
         cache-dependency-path: |
           webapp/package-lock.json
           tests-e2e/package-lock.json
+    - name: ci/cache-node-modules
+      id: cache-node-modules
+      uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
+      with:
+        path: |
+          webapp/node_modules
+          tests-e2e/node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
     - name: ci/disable-ALSA
       run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
       shell: bash
@@ -46,17 +55,24 @@ runs:
         if test $STATUSCODE -ne 200; then exit 1; fi
       shell: bash
 
-    - name: ci/installing-cypress-and-deps
+    - name: ci/installing-deps
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
       shell: bash
       env:
         NODE_ENV: development
       run: |
         set -e
-        sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
         cd webapp
         npm install --ignore-scripts --no-save
         cd ../tests-e2e
         npm install --ignore-scripts --no-save
+
+    - name: ci/installing-cypress
+      shell: bash
+      env:
+        NODE_ENV: development
+      run: |
+        sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
         npx cypress install
 
     - name: ci/install-playbooks
