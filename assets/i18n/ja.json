@@ -85,7 +85,7 @@
     },
     {
         "id": "app.user.run.add_to_timeline.playbook_run",
-        "translation": "Playbookを実行"
+        "translation": "プレイブックを実行"
     },
     {
         "id": "app.user.run.add_checklist_item.title",
@@ -101,7 +101,7 @@
     },
     {
         "id": "app.user.new_run.title",
-        "translation": "Playbookを実行"
+        "translation": "プレイブックを実行"
     },
     {
         "id": "app.user.new_run.submit_label",
@@ -113,11 +113,11 @@
     },
     {
         "id": "app.user.new_run.playbook",
-        "translation": "Playbook"
+        "translation": "プレイブック"
     },
     {
         "id": "app.user.new_run.new_playbook",
-        "translation": "[ここ]({{.RunURL}}) をクリックして、独自のPlaybookを作成することができます。"
+        "translation": "[ここ]({{.RunURL}}) をクリックして、独自のプレイブックを作成することができます。"
     },
     {
         "id": "app.user.new_run.intro",
