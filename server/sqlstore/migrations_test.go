@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/morph"
 	"github.com/stretchr/testify/require"
@@ -157,12 +158,41 @@ var migrationsMapping = []MigrationMapping{
 		LegacyMigrationIndex: 29,
 		MorphMigrationLimit:  6, // 000064-000069
 	},
+	{
+		Name:                 "0.30.0 > 0.31.0",
+		LegacyMigrationIndex: 30,
+		MorphMigrationLimit:  1, // 000070
+	},
+	{
+		Name:                 "0.31.0 > 0.32.0",
+		LegacyMigrationIndex: 31,
+		MorphMigrationLimit:  1, // 000071
+	},
+	{
+		Name:                 "0.32.0 > 0.33.0",
+		LegacyMigrationIndex: 32,
+		MorphMigrationLimit:  4, // 000072-000075
+	},
+	{
+		Name:                 "0.33.0 > 0.34.0",
+		LegacyMigrationIndex: 33,
+		MorphMigrationLimit:  1, // 000076
+	},
+	{
+		Name:                 "0.34.0 > 0.35.0",
+		LegacyMigrationIndex: 34,
+		MorphMigrationLimit:  1, // 000077
+	},
+	{
+		Name:                 "0.35.0 > 0.36.0",
+		LegacyMigrationIndex: 35,
+		MorphMigrationLimit:  2, // 000078-000079
+	},
 }
 
 func TestDBSchema(t *testing.T) {
 	for _, driverName := range driverNames {
-		tableInfoList := tableInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
-		indexInfoList := indexInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
+		tableInfoList, indexInfoList, constraintInfo := dbInfoAfterEachLegacyMigration(t, driverName, migrationsMapping)
 
 		// create database for morph migration
 		db := setupTestDB(t, driverName)
@@ -180,13 +210,18 @@ func TestDBSchema(t *testing.T) {
 				require.NoError(t, err)
 				// this way it's easier to find out why test fails
 				for j := range dbSchemaMorph {
-					require.Equal(t, tableInfoList[i+1][j], dbSchemaMorph[j])
+					require.Equal(t, tableInfoList[i+1][j], dbSchemaMorph[j], driverName)
 				}
 
 				// compare indexes
 				dbIndexesMorph, err := getDBIndexesInfo(store)
 				require.NoError(t, err)
-				require.Equal(t, indexInfoList[i+1], dbIndexesMorph)
+				require.Equal(t, indexInfoList[i+1], dbIndexesMorph, driverName)
+
+				// compare constraints
+				dbConstraintsMorph, err := getDBConstraintsInfo(store)
+				require.NoError(t, err)
+				require.Equal(t, constraintInfo[i+1], dbConstraintsMorph, driverName)
 			})
 		}
 
@@ -198,15 +233,21 @@ func TestDBSchema(t *testing.T) {
 				// compare table schemas
 				dbSchemaMorph, err := getDBSchemaInfo(store)
 				require.NoError(t, err)
+
 				// this way it's easier to find out why test fails
 				for j := range dbSchemaMorph {
-					require.Equal(t, tableInfoList[migrationIndex][j], dbSchemaMorph[j])
+					require.Equal(t, tableInfoList[migrationIndex][j], dbSchemaMorph[j], driverName)
 				}
 
 				// compare indexes
 				dbIndexesMorph, err := getDBIndexesInfo(store)
 				require.NoError(t, err)
-				require.Equal(t, dbIndexesMorph, indexInfoList[migrationIndex])
+				require.Equal(t, indexInfoList[migrationIndex], dbIndexesMorph, driverName)
+
+				// compare constraints
+				dbConstraintsMorph, err := getDBConstraintsInfo(store)
+				require.NoError(t, err)
+				require.Equal(t, constraintInfo[migrationIndex], dbConstraintsMorph, driverName)
 			})
 		}
 	}
@@ -577,6 +618,70 @@ func TestMigration_000063(t *testing.T) {
 	require.Equal(t, encodingExpected, encodingActual)
 }
 
+func TestMigration_000070(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupTables(t, db)
+		engine, err := store.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		runMigrationUp(t, store, engine, 69)
+
+		// insert test data
+		rows := [][]string{{"1", "com.mattermost.plugin-incident-management"}, {"1", "playbooks"}, {"2", "com.mattermost.plugin-incident-management"}, {"3", "playbooks"}}
+		for i := range rows {
+			_, err = store.execBuilder(store.db, sq.
+				Insert("PluginKeyValueStore").
+				SetMap(
+					map[string]interface{}{
+						"PKey":     rows[i][0],
+						"PluginId": rows[i][1],
+					},
+				))
+			require.NoError(t, err)
+		}
+
+		runMigrationUp(t, store, engine, 1)
+
+		// validate migration
+		type Data struct {
+			PKey     string
+			PluginID string
+		}
+
+		var res []Data
+		err = store.selectBuilder(store.db, &res, store.builder.
+			Select("PKey", "PluginId as PluginID").
+			From("PluginKeyValueStore").
+			OrderBy("PKey ASC").
+			OrderBy("PluginId ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, res, 4)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginID)
+		require.Equal(t, "playbooks", res[1].PluginID)
+		require.Equal(t, "playbooks", res[2].PluginID)
+		require.Equal(t, "playbooks", res[3].PluginID)
+
+		// roll back migration
+		runMigrationDown(t, store, engine, 1)
+		res = nil
+		err = store.selectBuilder(store.db, &res, store.builder.
+			Select("PKey", "PluginId as PluginID").
+			From("PluginKeyValueStore").
+			OrderBy("PKey ASC").
+			OrderBy("PluginId ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, res, 4)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[0].PluginID)
+		require.Equal(t, "playbooks", res[1].PluginID)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[2].PluginID)
+		require.Equal(t, "com.mattermost.plugin-incident-management", res[3].PluginID)
+	}
+}
+
 func runMigrationUp(t *testing.T, store *SQLStore, engine *morph.Morph, limit int) {
 	applied, err := engine.Apply(limit)
 	require.NoError(t, err)
@@ -594,50 +699,46 @@ func runLegacyMigration(t *testing.T, store *SQLStore, index int) {
 	require.NoError(t, err)
 }
 
-// tableInfoAfterEachLegacyMigration runs legacy migrations, extracts database schema after each migration
+// dbInfoAfterEachLegacyMigration runs legacy migrations, extracts database schema, indexes and constraints info after each migration
 // and returns the list. The first and last elements in the list describe DB before and after running all migrations.
-func tableInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]TableInfo {
+func dbInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) ([][]TableInfo, [][]IndexInfo, [][]ConstraintsInfo) {
 	// create database for legacy migration
 	db := setupTestDB(t, driverName)
 	store := setupTables(t, db)
 
-	list := make([][]TableInfo, len(migrationsToRun)+1)
+	schemaInfo := make([][]TableInfo, len(migrationsToRun)+1)
+	indexInfo := make([][]IndexInfo, len(migrationsToRun)+1)
+	constraintInfo := make([][]ConstraintsInfo, len(migrationsToRun)+1)
+
 	schema, err := getDBSchemaInfo(store)
 	require.NoError(t, err)
-	list[0] = schema
+	schemaInfo[0] = schema
+
+	indexes, err := getDBIndexesInfo(store)
+	require.NoError(t, err)
+	indexInfo[0] = indexes
+
+	constraints, err := getDBConstraintsInfo(store)
+	require.NoError(t, err)
+	constraintInfo[0] = constraints
 
 	for i, mm := range migrationsToRun {
 		runLegacyMigration(t, store, mm.LegacyMigrationIndex)
 
 		schema, err = getDBSchemaInfo(store)
 		require.NoError(t, err)
-		list[i+1] = schema
-	}
-
-	return list
-}
-
-// indexInfoAfterEachLegacyMigration runs legacy migrations, extracts database indexes info after each migration
-// and returns the list. The first and last elements in the list describe DB before and after running all migrations.
-func indexInfoAfterEachLegacyMigration(t *testing.T, driverName string, migrationsToRun []MigrationMapping) [][]IndexInfo {
-	// create database for legacy migration
-	db := setupTestDB(t, driverName)
-	store := setupTables(t, db)
-
-	list := make([][]IndexInfo, len(migrationsToRun)+1)
-	indexes, err := getDBIndexesInfo(store)
-	require.NoError(t, err)
-	list[0] = indexes
-
-	for i, mm := range migrationsToRun {
-		runLegacyMigration(t, store, mm.LegacyMigrationIndex)
+		schemaInfo[i+1] = schema
 
 		indexes, err = getDBIndexesInfo(store)
 		require.NoError(t, err)
-		list[i+1] = indexes
+		indexInfo[i+1] = indexes
+
+		constraints, err = getDBConstraintsInfo(store)
+		require.NoError(t, err)
+		constraintInfo[i+1] = constraints
 	}
 
-	return list
+	return schemaInfo, indexInfo, constraintInfo
 }
 
 type RunMapBuilder struct {
