@@ -11,6 +11,7 @@ defaults:
 
 env:
   TERM: xterm
+  GO_VERSION: 1.19.5
 
 jobs:
   lint:
@@ -23,6 +24,7 @@ jobs:
       - name: ci/setup-go
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
         with:
+          go-version: "${{ env.GO_VERSION }}"
           cache: true
       - name: ci/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
@@ -88,6 +90,7 @@ jobs:
       - name: ci/setup-go
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
         with:
+          go-version: "${{ env.GO_VERSION }}"
           cache: true
       - name: ci/ensure-build-on-all-platforms
         run: make dist
@@ -270,6 +273,7 @@ jobs:
     runs-on: ubuntu-22.04
     name: e2e-cypress-tests-master-run-${{ matrix.runId }}
     needs:
+      - lint
       - generate-specs
     strategy:
       fail-fast: false
@@ -357,6 +361,7 @@ jobs:
     runs-on: ubuntu-22.04
     name: e2e-cypress-tests-cloud-run-${{ matrix.runId }}
     needs:
+      - lint
       - generate-specs
     strategy:
       fail-fast: false
