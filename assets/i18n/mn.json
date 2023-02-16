@@ -1,1 +1,77 @@
-{}
+[
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "one": "Танд {{.Count}}-н хариуцсан даалгавар байна:",
+            "other": "Танд нийт {{.Count}}-н хариуцсан даалгавар байна:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.heading",
+        "translation": "Таны хариусан даалгавар"
+    },
+    {
+        "id": "app.user.digest.tasks.due_yesterday",
+        "translation": "Өчигдөр эцсийн хугацаа"
+    },
+    {
+        "id": "app.user.digest.tasks.due_x_days_ago",
+        "translation": "Эцсийн хугацаа {{.Count}} өдрийн өмнө"
+    },
+    {
+        "id": "app.user.digest.tasks.due_today",
+        "translation": "Өнөөдөр эцсийн хугацаа"
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "one": "Ганц\nЭцсийн хугацаа {{.Count}} хоног",
+            "other": "Олон\nЭцсийн хугацаа {{.Count}} хоногт"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "one": "Ганц\nТанд **өнөөдрөөс хойш хугацаа хэтрэх томилсон даалгавар {{.Count}} байна**.",
+            "other": "Олон\nТанд **өнөөдрөөс хойш хугацаа хэтрэх томилсон даалгавар {{.Count}} байна**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.all_tasks_command",
+        "translation": "'/playbook todo' -г ашиглаж өөрийн бүх таскаа харна уу."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "Танд одоогоор боловсруулагдаж байгаа үйлдэл 0 байна."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "Ганц үйлдэл\nТаны {{.Count}} үйлдэл процеслогдож байна:",
+            "other": "Олон үйлдэл\nТаны {{.Count}} үйлдэл процеслогдож байна:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Үйлдэл хийгдэж байна"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "Танд хугацаа хэтэрсэн шинэчлэл үйлдэл 0 байна."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "Ганц тоо\nТанд {{.Count}} төлөвийн шинэчлэлтийн хугацаа хэтэрсэн байна:",
+            "other": "Олон тоо\nТанд {{.Count}} төлөвийн шинэчлэлтийн хугацаа хэтэрсэн байна:"
+        }
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Хугацаа хэтэрсэн төлөвийн мэдээлэл"
+    },
+    {
+        "id": "app.command.execute.error",
+        "translation": "Командыг биелүүлэх боломжгүй."
+    }
+]
