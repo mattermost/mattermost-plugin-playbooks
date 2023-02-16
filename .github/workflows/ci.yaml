@@ -290,7 +290,7 @@ jobs:
           search_path: cypress/integration
 
   e2e-cypress-tests-master:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest-8-cores
     name: e2e-cypress-tests-master-run-${{ matrix.runId }}
     needs:
       - lint
@@ -379,7 +379,7 @@ jobs:
           SPECS: ${{ matrix.specs }}
 
   e2e-cypress-tests-cloud:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest-8-cores
     name: e2e-cypress-tests-cloud-run-${{ matrix.runId }}
     needs:
       - lint
