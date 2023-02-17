@@ -3,7 +3,7 @@
     "waVyVY": "Derzeit aktive Teilnehmer",
     "wEQDC6": "Bearbeiten",
     "v3+TmO": "{members, plural, =0 {Keine Person kann} =1 {Eine Person kann} other {# Personen können}} auf das Playbook zugreifen",
-    "t6SiGO": "Derzeit laufende Läufe",
+    "t6SiGO": "Derzeit aktive Läufe",
     "soePYH": "{num_checklists, plural, =0 {keine Check-Listen} one {# Check-Liste} other {# Check-Listen}}",
     "sQu1rA": "{numTotalRuns, plural, =0 {keine Läufe gestartet} =1 {# Lauf gestartet} other {# Läufe gestartet}}",
     "s3jjqi": "{num_actions, plural, =0 {keine Aktionen} one {# Aktion} other {# Aktionen}}",
@@ -845,5 +845,6 @@
     "OqWwvQ": "{user} hat den Checklistenpunkt \"{name}\" zurückgesetzt",
     "DKiv0o": "{user} hat den Checklistenpunkt \"{name}\" übersprungen",
     "8FzC0B": "{user} hat den Checklistenpunkt \"{name}\" abgehakt",
-    "3qPQMX": "{name} hat ein Status-Update angefordert"
+    "3qPQMX": "{name} hat ein Status-Update angefordert",
+    "9M92On": "Kanäle auswählen"
 }
