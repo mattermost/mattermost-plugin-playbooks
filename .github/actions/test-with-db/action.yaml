@@ -55,9 +55,9 @@ runs:
       run: make test-ci
 
     - name: ci/upload-test-results
-      if: failure()
+      if: always()
       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
         name: test-results-${{ github.workflow }}
         path: report.xml
-        retention-days: 5 ## No need to keep CI builds more than 5 days
+        retention-days: 5 ## No need to keep test results for more than 5 days
