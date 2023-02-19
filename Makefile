@@ -56,8 +56,8 @@ endif
 ifneq ($(HAS_SERVER),)
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1
 	@echo Running golangci-lint
-	golangci-lint --version
-	golangci-lint run ./...
+	$(GOBIN)/golangci-lint --version
+	$(GOBIN)/golangci-lint run ./...
 endif
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
