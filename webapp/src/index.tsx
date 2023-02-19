@@ -80,6 +80,44 @@ const OldRoutesRedirect = () => {
     );
 };
 
+type WindowObject = {
+    location: {
+        origin: string;
+        protocol: string;
+        hostname: string;
+        port: string;
+    };
+    basename?: string;
+}
+
+// From mattermost-webapp/utils
+function getSiteURLFromWindowObject(obj: WindowObject): string {
+    let siteURL = '';
+    if (obj.location.origin) {
+        siteURL = obj.location.origin;
+    } else {
+        siteURL = obj.location.protocol + '//' + obj.location.hostname + (obj.location.port ? ':' + obj.location.port : '');
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    if (obj.basename) {
+        siteURL += obj.basename;
+    }
+
+    if (siteURL[siteURL.length - 1] === '/') {
+        siteURL = siteURL.substring(0, siteURL.length - 1);
+    }
+
+    return siteURL;
+}
+
+function getSiteURL(): string {
+    return getSiteURLFromWindowObject(window);
+}
+
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
     activityFunc?: () => void;
@@ -177,7 +215,7 @@ export default class Plugin {
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
-        const siteUrl = getConfig(store.getState())?.SiteURL || '';
+        const siteUrl = getSiteURL();
         setSiteUrl(siteUrl);
         Client4.setUrl(siteUrl);
 
