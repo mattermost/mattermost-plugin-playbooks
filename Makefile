@@ -54,14 +54,10 @@ ifneq ($(HAS_WEBAPP),)
 endif
 
 ifneq ($(HAS_SERVER),)
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-		exit 1; \
-	fi; \
-
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1
 	@echo Running golangci-lint
-	golangci-lint --version
-	golangci-lint run ./...
+	$(GOBIN)/golangci-lint --version
+	$(GOBIN)/golangci-lint run ./...
 endif
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
