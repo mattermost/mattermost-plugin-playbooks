@@ -85,12 +85,6 @@ jobs:
       - name: ci/check-diff-on-webapp-i18n-files
         run: git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in webapp/i18n/en.json." && exit 1)
 
-      - name: ci/run-make-graphql
-        run: make graphql
-
-      - name: ci/check-diff-on-webapp-graphql-generated-files
-        run: git --no-pager diff --exit-code webapp/src/graphql/generated/ || (echo "Please run \"make graphql\" and commit the changes." && exit 1)
-
   dist:
     runs-on: ubuntu-22.04
     needs:
