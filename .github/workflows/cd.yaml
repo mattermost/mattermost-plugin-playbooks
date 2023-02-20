@@ -132,4 +132,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md  dist/*.tar.gz
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file dist/release-notes.md  dist/*.tar.gz
