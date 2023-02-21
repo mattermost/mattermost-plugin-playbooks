@@ -826,5 +826,17 @@
     "m4vqJl": "Bestanden",
     "Zbk+OU": "De bestandsgrootte overschrijdt de limiet van 5MB.",
     "MieztS": "Sleep een playbook export file om deze te importeren.",
-    "HGSVzc": "Kan geen meerdere bestanden tegelijk importeren."
+    "HGSVzc": "Kan geen meerdere bestanden tegelijk importeren.",
+    "LaseGE": "Je hebt geen toestemming om deze checklist te bewerken",
+    "Edy3wX": "Checklist verplaatst naar {channel}",
+    "8//+Yb": "Koppel checklist aan een ander kanaal",
+    "706Soh": "uitgevoerde taken",
+    "XHJUSG": "Automatisch uitvoeringen volgen",
+    "DqTQOp": "Eenmalig",
+    "vjb+hS": "{user} zette checklistitem \"{name}\" terug",
+    "OqWwvQ": "{user} vinkte checklistitem \"{name}\" uit",
+    "DKiv0o": "{user} sloeg checklist item \"{name}\" over",
+    "9M92On": "Kanalen selecteren",
+    "8FzC0B": "{user} vinkte checklistitem \"{name}\" af",
+    "3qPQMX": "{name} vroeg om een statusupdate"
 }

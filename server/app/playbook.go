@@ -397,7 +397,7 @@ type PlaybookStore interface {
 	GetPlaybooksWithKeywords(opts PlaybookFilterOptions) ([]Playbook, error)
 
 	// GetTimeLastUpdated retrieves time last playbook was updated at.
-	// Passed argument determins whether to include playbooks with
+	// Passed argument determines whether to include playbooks with
 	// SignalAnyKeywordsEnabled flag or not.
 	GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error)
 
@@ -509,6 +509,7 @@ type PlaybookFilterOptions struct {
 	SearchTerm         string
 	WithArchived       bool
 	WithMembershipOnly bool //if true will return only playbooks you are a member of
+	PlaybookIDs        []string
 
 	// Pagination options.
 	Page    int

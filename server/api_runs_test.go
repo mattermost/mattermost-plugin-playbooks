@@ -506,12 +506,31 @@ func TestRunPostStatusUpdate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("update", func(t *testing.T) {
+	t.Run("post an update", func(t *testing.T) {
 		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
 		assert.NoError(t, err)
 	})
 
-	t.Run("update empty message", func(t *testing.T) {
+	t.Run("creates a reminder post", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 1)
+		assert.NoError(t, err)
+
+		// wait for the scheduler to run the job
+		time.Sleep(2 * time.Second)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.Equal(t, 1*time.Second, run.PreviousReminder)
+		assert.NotEmpty(t, run.ReminderPostID)
+		assert.NoError(t, err)
+
+		// post created with expected props
+		post, _, err := e.ServerClient.GetPost(run.ReminderPostID, "")
+		assert.NoError(t, err)
+		assert.Equal(t, run.ID, post.GetProp("playbookRunId"))
+		assert.Equal(t, e.RegularUser.Username, post.GetProp("targetUsername"))
+	})
+
+	t.Run("poar an update with empty message", func(t *testing.T) {
 		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "  \t  \r ", 600)
 		assert.Error(t, err)
 	})
@@ -918,7 +937,7 @@ func TestChecklistManagement(t *testing.T) {
 			nil,
 		},
 		{
-			"One checklist - invalid source checklist: greater than lenght of checklists",
+			"One checklist - invalid source checklist: greater than length of checklists",
 			[][]string{{"00"}},
 			1, 0, 0, 0,
 			[][]string{},
@@ -946,7 +965,7 @@ func TestChecklistManagement(t *testing.T) {
 			&ExpectedError{StatusCode: 500},
 		},
 		{
-			"One checklist - invalid source item: greater than lenght of items",
+			"One checklist - invalid source item: greater than length of items",
 			[][]string{{"00"}},
 			0, 1, 0, 0,
 			[][]string{},
@@ -1409,24 +1428,46 @@ func TestReminderReset(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("reminder reset - event created", func(t *testing.T) {
+	t.Run("reminder reset - timeline event created", func(t *testing.T) {
 		payload := client.ReminderResetPayload{
 			NewReminderSeconds: 100,
 		}
 		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
 		assert.NoError(t, err)
 
-		pb, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.Equal(t, 100*time.Second, run.PreviousReminder)
 		assert.NoError(t, err)
 
 		statusSnoozed := make([]client.TimelineEvent, 0)
-		for _, te := range pb.TimelineEvents {
+		for _, te := range run.TimelineEvents {
 			if te.EventType == "status_update_snoozed" {
 				statusSnoozed = append(statusSnoozed, te)
 			}
 		}
-
 		require.Len(t, statusSnoozed, 1)
+	})
+
+	t.Run("reminder reset - reminder post created", func(t *testing.T) {
+		payload := client.ReminderResetPayload{
+			NewReminderSeconds: 1,
+		}
+		err := e.PlaybooksClient.Reminders.Reset(context.Background(), e.BasicRun.ID, payload)
+		assert.NoError(t, err)
+
+		// wait for scheduler to run the job
+		time.Sleep(2 * time.Second)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), e.BasicRun.ID)
+		assert.Equal(t, 1*time.Second, run.PreviousReminder)
+		assert.NotEmpty(t, run.ReminderPostID)
+		assert.NoError(t, err)
+
+		// post created with expected props
+		post, _, err := e.ServerClient.GetPost(run.ReminderPostID, "")
+		assert.NoError(t, err)
+		assert.Equal(t, run.ID, post.GetProp("playbookRunId"))
+		assert.Equal(t, e.RegularUser.Username, post.GetProp("targetUsername"))
 	})
 }
 

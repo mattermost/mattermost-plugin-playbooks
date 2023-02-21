@@ -778,5 +778,15 @@
     "m4vqJl": "Filer",
     "Zbk+OU": "Filstorleken överskrider gränsen på 5MB.",
     "MieztS": "Släpp en exporterad playbook-fil för att importera den.",
-    "HGSVzc": "Det går inte att importera flera filer samtidigt."
+    "HGSVzc": "Det går inte att importera flera filer samtidigt.",
+    "LaseGE": "Du har inte behörighet att redigera den här checklistan",
+    "Edy3wX": "Checklistan flyttad till {channel}",
+    "8//+Yb": "Länka checklistan till en annan kanal",
+    "706Soh": "utförda uppgifter",
+    "vjb+hS": "{user} återförde punkten \"{name}\" på checklistan",
+    "XHJUSG": "Följ körningar automatiskt",
+    "DqTQOp": "En gång",
+    "DKiv0o": "{user} skippade punkten \"{name}\" på checklistan",
+    "8FzC0B": "{user} checkade av punkten \"{name}\" på checklistan",
+    "3qPQMX": "{name} begärde en statusuppdatering"
 }

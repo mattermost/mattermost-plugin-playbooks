@@ -238,13 +238,13 @@ describe('channels > slash command > todo', () => {
                 cy.wrap(post).contains('You have 4 total assigned tasks:');
 
                 // * Should show 3 runs w/ tasks
-                cy.get('a').then((links) => {
+                cy.get('.post__body a').then((links) => {
                     expect(links[0]).to.contain.text(run1.name);
                     expect(links[1]).to.contain.text(run2.name);
                     expect(links[2]).to.contain.text(run3.name);
                 });
 
-                cy.get('li').then((items) => {
+                cy.get('.post__body li').then((items) => {
                     // * first run
                     expect(items[0]).to.contain.text('Playbook One - Stage 1: Step 1');
                     expect(items[1]).to.contain.text('Playbook One - Stage 2: Step 2');
@@ -271,12 +271,12 @@ describe('channels > slash command > todo', () => {
                 cy.wrap(post).contains('You have 2 total assigned tasks:');
 
                 // * Should show 2 runs w/ tasks
-                cy.get('a').then((links) => {
+                cy.get('.post__body a').then((links) => {
                     expect(links[0]).to.contain.text(run1.name);
                     expect(links[1]).to.contain.text(run2.name);
                 });
 
-                cy.get('li').then((items) => {
+                cy.get('.post__body li').then((items) => {
                     // * first run
                     expect(items[0]).to.contain.text('Playbook One - Stage 2: Step 2');
 
@@ -309,7 +309,7 @@ describe('channels > slash command > todo', () => {
 
             // # Should show two runs overdue -- ignoring the rest
             cy.getLastPost().within(() => {
-                cy.get('li').then((liItems) => {
+                cy.get('.post__body li').then((liItems) => {
                     expect(liItems[0]).to.contain.text(run1.name);
                     expect(liItems[1]).to.contain.text(run3.name);
                 });

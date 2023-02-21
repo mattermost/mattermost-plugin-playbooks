@@ -822,5 +822,16 @@
     "m4vqJl": "Files",
     "Zbk+OU": "The file size exceeds the limit of 5MB.",
     "MieztS": "Drop a playbook export file to import it.",
-    "HGSVzc": "Unable to import multiple files at once."
+    "HGSVzc": "Unable to import multiple files at once.",
+    "XHJUSG": "Auto-follow runs",
+    "LaseGE": "You do not have permission to edit this checklist",
+    "Edy3wX": "Checklist moved to {channel}",
+    "DqTQOp": "Once",
+    "8//+Yb": "Link checklist to a different channel",
+    "706Soh": "tasks done",
+    "vjb+hS": "{user} restored checklist item '\\{name}'\\",
+    "OqWwvQ": "{user} unticked checklist item '\\{name}'\\",
+    "8FzC0B": "{user} ticked off checklist item '\\{name}'\\",
+    "DKiv0o": "{user} skipped checklist item '\\{name}'\\",
+    "3qPQMX": "{name} requested a status update"
 }

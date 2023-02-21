@@ -73,3 +73,8 @@ export interface UserJoinedLeftDetails {
     requester: string;
     users: string[];
 }
+
+export interface TaskStateModifiedDetails {
+    action: string | 'check' | 'uncheck' | 'skip' | 'restore';
+    task: string;
+}

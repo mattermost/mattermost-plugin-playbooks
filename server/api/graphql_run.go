@@ -105,19 +105,19 @@ func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	isFavorite, err := c.categoryService.IsItemFavorite(
-		app.CategoryItem{
-			ItemID: r.ID,
-			Type:   app.RunItemType,
-		},
-		r.TeamID,
-		userID,
-	)
+	thunk := c.favoritesLoader.Load(ctx, favoriteInfo{
+		TeamID: r.TeamID,
+		UserID: userID,
+		Type:   app.RunItemType,
+		ID:     r.ID,
+	})
+
+	result, err := thunk()
 	if err != nil {
-		return false, errors.Wrap(err, "can't determine if item is favorite or not")
+		return false, err
 	}
 
-	return isFavorite, nil
+	return result, nil
 }
 
 type StatusPostResolver struct {
@@ -167,16 +167,24 @@ func (r *RunResolver) Playbook(ctx context.Context) (*PlaybookResolver, error) {
 	if err != nil {
 		return nil, err
 	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	val, err := getGraphqlPlaybook(ctx, r.PlaybookID)
+	thunk := c.playbooksLoader.Load(ctx, playbookInfo{
+		UserID: userID,
+		ID:     r.PlaybookID,
+		TeamID: r.TeamID,
+	})
+
+	result, err := thunk()
 	if err != nil {
-		if !errors.Is(err, app.ErrNoPermissions) {
-			c.logger.WithError(err).Error("error retrieving playbook of run")
-		}
+		return nil, err
+	}
+
+	if result == nil {
 		return nil, nil
 	}
 
-	return val, nil
+	return &PlaybookResolver{*result}, nil
 }
 
 func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {
