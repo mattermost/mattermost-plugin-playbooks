@@ -482,7 +482,7 @@ func (a *serviceAPIAdapter) Execute(command *mm_model.CommandArgs) (*mm_model.Co
 }
 
 func (a *serviceAPIAdapter) RegisterCommand(command *mm_model.Command) error {
-	return a.api.commandService.RegisterPluginCommand(playbooksProductID, command)
+	return a.api.commandService.RegisterProductCommand(playbooksProductName, command)
 }
 
 func (a *serviceAPIAdapter) IsEnterpriseReady() bool {

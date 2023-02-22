@@ -8,7 +8,7 @@ replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistog
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
-// replace github.com/mattermost/mattermost-server/v6 => ../mattermost-server
+replace github.com/mattermost/mattermost-server/v6 => ../mattermost-server
 
 require (
 	github.com/Masterminds/squirrel v1.5.3
@@ -20,7 +20,7 @@ require (
 	github.com/graph-gophers/graphql-go v1.5.1-0.20230110080634-edea822f558a
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.7
-	github.com/mattermost/logr/v2 v2.0.15
+	github.com/mattermost/logr/v2 v2.0.16
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20230131094318-aaaae00b50e0
 	github.com/mattermost/morph v1.0.5-0.20221115094356-4c18a75b1f5e
@@ -36,6 +36,7 @@ require (
 
 require (
 	code.sajari.com/docconv v1.3.5 // indirect
+	github.com/HdrHistogram/hdrhistogram-go v0.0.0-00010101000000-000000000000 // indirect
 	github.com/JalfResi/justext v0.0.0-20221106200834-be571e3e3052 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
@@ -91,6 +92,7 @@ require (
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/gomodule/redigo v1.8.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect

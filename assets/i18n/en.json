@@ -1,9 +1,5 @@
 [
   {
-    "id": "app.command.execute.error",
-    "translation": "Unable to execute command."
-  },
-  {
     "id": "app.user.digest.overdue_status_updates.heading",
     "translation": "Overdue Status Updates"
   },
