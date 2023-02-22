@@ -150,6 +150,7 @@ if (TARGET_IS_PRODUCT) {
                 'react-intl',
                 'react-redux',
                 'react-router-dom',
+                'styled-components',
             ]),
         ],
     }));
