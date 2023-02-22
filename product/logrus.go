@@ -37,12 +37,15 @@ func (lh *LogrusHook) Levels() []logrus.Level {
 func (lh *LogrusHook) Fire(entry *logrus.Entry) error {
 	fields := []logr.Field{}
 	for key, value := range entry.Data {
-		fields = append(fields,
-			logr.Field{
-				Key:       key,
-				Interface: value,
-				//TODO: add type check and more fields
-			})
+		field := logr.Field{
+			Key:       key,
+			Interface: value,
+		}
+		if key == "error" {
+			field.Type = logr.ErrorType
+		}
+
+		fields = append(fields, field)
 	}
 
 	if entry.Caller != nil {
