@@ -16,7 +16,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/i18n"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/playbooks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
@@ -172,11 +171,6 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to ensure bot")
-	}
-
-	err = i18n.TranslationsInit()
-	if err != nil {
-		return nil, err
 	}
 
 	playbooks.config = config.NewConfigService(playbooks.serviceAdapter, manifest)
