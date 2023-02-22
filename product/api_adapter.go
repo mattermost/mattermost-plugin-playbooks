@@ -145,8 +145,17 @@ func (a *serviceAPIAdapter) GetDirectChannelOrCreate(userID1, userID2 string) (*
 //
 
 func (a *serviceAPIAdapter) CreatePost(post *mm_model.Post) (*mm_model.Post, error) {
-	post, appErr := a.api.postService.CreatePost(a.ctx, post)
-	return post, normalizeAppErr(appErr)
+	createdPost, appErr := a.api.postService.CreatePost(a.ctx, post)
+	if appErr != nil {
+		return nil, normalizeAppErr(appErr)
+	}
+
+	err := createdPost.ShallowCopy(post)
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
 }
 
 func (a *serviceAPIAdapter) GetPostsByIds(postIDs []string) ([]*mm_model.Post, error) {
