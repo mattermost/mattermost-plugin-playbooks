@@ -14,6 +14,7 @@ import {FormattedMessage} from 'react-intl';
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import appIcon from 'src/components/assets/app-bar-icon.png';
 import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
@@ -203,8 +204,7 @@ export default class Plugin {
         // App Bar icon
         if (registry.registerAppBarComponent) {
             const siteUrl = getConfig(store.getState())?.SiteURL || '';
-            const iconURL = `${siteUrl}/plugins/${pluginId}/public/app-bar-icon.png`;
-            registry.registerAppBarComponent(iconURL, boundToggleRHSAction, ChannelHeaderTooltip);
+            registry.registerAppBarComponent(appIcon, boundToggleRHSAction, ChannelHeaderTooltip);
         }
 
         // Site statistics handler
