@@ -14,6 +14,7 @@ import {FormattedMessage} from 'react-intl';
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import appIcon from 'src/components/assets/app-bar-icon.png';
 import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
@@ -21,7 +22,6 @@ import LoginHook from 'src/components/login_hook';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/retrospective_reminder_posts';
-import {pluginId} from 'src/manifest';
 import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
@@ -203,8 +203,7 @@ export default class Plugin {
         // App Bar icon
         if (registry.registerAppBarComponent) {
             const siteUrl = getConfig(store.getState())?.SiteURL || '';
-            const iconURL = `${siteUrl}/plugins/${pluginId}/public/app-bar-icon.png`;
-            registry.registerAppBarComponent(iconURL, boundToggleRHSAction, ChannelHeaderTooltip);
+            registry.registerAppBarComponent(appIcon, boundToggleRHSAction, ChannelHeaderTooltip);
         }
 
         // Site statistics handler

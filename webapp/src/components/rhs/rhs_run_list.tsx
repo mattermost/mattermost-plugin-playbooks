@@ -22,6 +22,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
+import appIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {useViewTelemetry} from 'src/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
@@ -32,8 +33,6 @@ import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/ass
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {pluginId} from 'src/manifest';
-import {getSiteUrl} from 'src/client';
 import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -118,7 +117,7 @@ const RHSRunList = (props: Props) => {
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <ClipboardImage src={`${getSiteUrl()}/plugins/${pluginId}/public/app-bar-icon.png`}/>
+                    <ClipboardImage src={appIcon}/>
                     <RHSTitleText>
                         {/* product name; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
