@@ -32,7 +32,7 @@ import (
 
 const (
 	playbooksProductName = "playbooks"
-	playbooksProductID   = "com.mattermost.playbooks"
+	playbooksProductID   = "playbooks"
 )
 
 const (
