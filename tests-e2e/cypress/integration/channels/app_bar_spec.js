@@ -60,10 +60,11 @@ describe('channels > App Bar', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
+            // # Wait for the application to load
+            cy.get('#channel_view').should('be.visible');
+
             // * Verify App Bar icon is not showing
-            cy.get('#channel_view').within(() => {
-                cy.getPlaybooksAppBarIcon().should('not.exist');
-            });
+            cy.getPlaybooksAppBarIcon().should('not.exist');
         });
     });
 
