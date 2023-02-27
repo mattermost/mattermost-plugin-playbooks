@@ -73,7 +73,6 @@ describe('Task Inbox >', () => {
 
         cy.visit(`/playbooks/runs/${testRun.id}`);
         cy.gqlInterceptQuery('PlaybookLHS');
-        cy.wait('@gqlPlaybookLHS').wait('@gqlPlaybookLHS');
         cy.assertRunDetailsPageRenderComplete(testUser.username);
     });
 
