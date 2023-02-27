@@ -25,14 +25,14 @@ ASSETS_DIR ?= assets
 default: all
 
 # Verify environment, and define PLUGIN_ID, PLUGIN_VERSION, HAS_SERVER and HAS_WEBAPP as needed.
-include build/setup.mk
+# include build/setup.mk
 
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
 
 # Include custom makefile, if present
-ifneq ($(wildcard build/custom.mk),)
-	include build/custom.mk
-endif
+# ifneq ($(wildcard build/custom.mk),)
+# 	include build/custom.mk
+# endif
 
 ## Checks the code style, tests, builds and bundles the plugin.
 .PHONY: all
@@ -198,7 +198,7 @@ build-product: apply
 	cd webapp && npm run build:product
 
 .PHONY: watch-product
-watch-product: apply
+watch-product:
 	cd webapp && npm run start:product
 
 ## Builds and installs the plugin to a server, then starts the webpack dev server on 9005
