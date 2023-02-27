@@ -161,6 +161,7 @@ if (TARGET_IS_PRODUCT) {
 
     config.output = {
         path: path.join(__dirname, '/dist'),
+        chunkFilename: '[name].[contenthash].js',
     };
     config.externals = {
         react: 'React',
