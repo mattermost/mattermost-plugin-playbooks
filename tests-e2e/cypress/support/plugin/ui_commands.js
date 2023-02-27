@@ -44,7 +44,7 @@ Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbook
 
 // Selects Playbooks icon in the App Bar
 Cypress.Commands.add('getPlaybooksAppBarIcon', () => {
-    cy.apiGetConfig(true).then(({config}) => {
+    cy.apiGetConfig(true).then(() => {
         cy.get('#channel_view').should('be.visible');
         return cy.get('#app-bar-icon-playbooks img');
     });
