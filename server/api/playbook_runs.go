@@ -266,6 +266,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 			TeamID:      request.TeamId,
 			ChannelID:   playbook.GetRunChannelID(),
 			Name:        name,
+			PostID:      state.PostID,
 			PlaybookID:  playbookID,
 			Type:        app.RunTypePlaybook,
 		},
