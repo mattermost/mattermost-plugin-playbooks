@@ -161,7 +161,7 @@ describe('channels > rhs > checklist', () => {
             });
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('Failed to execute slash command /invalid');
+            cy.verifyEphemeralMessage('Failed to find slash command /invalid');
         });
 
         it('successfully runs a valid slash command', () => {
