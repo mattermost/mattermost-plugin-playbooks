@@ -168,17 +168,7 @@ if (TARGET_IS_PRODUCT) {
 
     config.output = {
         path: path.join(__dirname, '/dist'),
-    };
-    config.externals = {
-        react: 'React',
-        'react-dom': 'ReactDOM',
-        redux: 'Redux',
-        luxon: 'Luxon',
-        'react-redux': 'ReactRedux',
-        'prop-types': 'PropTypes',
-        'react-bootstrap': 'ReactBootstrap',
-        'react-router-dom': 'ReactRouterDom',
-        'react-intl': 'ReactIntl',
+        chunkFilename: '[name].[contenthash].js',
     };
 } else {
     config.resolve.alias['react-intl'] = path.resolve(__dirname, '../../webapp/node_modules/react-intl/');
