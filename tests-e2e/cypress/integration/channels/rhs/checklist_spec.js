@@ -161,7 +161,7 @@ describe('channels > rhs > checklist', () => {
             });
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('Failed to execute slash command /invalid');
+            cy.verifyEphemeralMessage('Failed to find slash command /invalid');
         });
 
         it('successfully runs a valid slash command', () => {
@@ -335,10 +335,11 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('due-date-info-button').eq(0).click();
 
             // # Enter due date in 3 days
-            cy.get('.playbook-react-select__value-container').type('in 3 days')
+            cy.get('.playbook-react-select__value-container input').type('in 3 days', {force: true})
                 .wait(HALF_SEC)
                 .trigger('keydown', {
                     key: 'Enter',
+                    force: true,
                 });
 
             // * Verify if Due in 3 days info is added
@@ -462,6 +463,7 @@ const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
             .wait(HALF_SEC)
             .trigger('keydown', {
                 key: 'Enter',
+                force: true,
             });
     });
 

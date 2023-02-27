@@ -41,10 +41,7 @@ interface SidebarProps {
 const teamNameSelector = (teamId: string) => (state: GlobalState): Team => getTeam(state, teamId);
 
 const Sidebar = (props: SidebarProps) => {
-    let team = useSelector(teamNameSelector(props.team_id));
-    if (!props.team_id) {
-        team = {...team, display_name: 'All Teams', description: 'No team is selected'};
-    }
+    const team = useSelector(teamNameSelector(props.team_id));
 
     return (
         <SidebarComponent>
@@ -53,12 +50,12 @@ const Sidebar = (props: SidebarProps) => {
                     placement='bottom'
                     delay={OVERLAY_DELAY}
                     shouldUpdatePosition={true}
-                    overlay={team.description?.length ? (
-                        <Tooltip id='team-name__tooltip'>{team.description}</Tooltip>
-                    ) : <></>}
+                    overlay={
+                        <Tooltip id='team-name__tooltip'>{team?.description?.length ? team.description : 'No team is selected'}</Tooltip>
+                    }
                 >
                     <TeamName>
-                        {team.display_name}
+                        {team?.display_name?.length ? team.display_name : 'All Teams'}
                     </TeamName>
                 </OverlayTrigger>
                 {props.headerDropdown}
