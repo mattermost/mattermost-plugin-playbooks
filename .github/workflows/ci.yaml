@@ -526,6 +526,7 @@ jobs:
           TERM: xterm
         run: |
           cd mattermost-server
+          ln -s ../webapp/dist client
           make run-server
           sleep 20
           cd bin
