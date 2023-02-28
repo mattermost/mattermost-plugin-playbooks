@@ -485,6 +485,7 @@ jobs:
 
       - name: ci/run-server
         env:
+          IS_CI: true
           RUN_IN_BACKGROUND: true
           MM_CLUSTERSETTINGS_READONLYCONFIG: false
           MM_EMAILSETTINGS_SMTPSERVER: inbucket
