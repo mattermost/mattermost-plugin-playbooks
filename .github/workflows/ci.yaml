@@ -501,14 +501,74 @@ jobs:
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
+          MM_SERVICESETTINGS_ENABLELOCALMODE: true
         run: |
           cd mattermost-server
           make run-server
 
-      - name: ci/e2e-test
-        uses: ./.github/actions/e2e-test
+      # - name: ci/e2e-test
+      #   uses: ./.github/actions/e2e-test
+      #   with:
+      #     SPECS: ${{ matrix.specs }}
+
+      - name: ci/configure-sysadmin
+        run: |
+          sleep 20
+          cd mattermost-server/bin
+          ./mmctl --local user create --email sysadmin@sample.mattermost.com --username sysadmin --password Sys@dmin-sample1
+
+      - name: ci/disable-ALSA
+        run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
+        shell: bash
+
+      - name: ci/upload-licence
+        env:
+          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+          MM_ADMIN_USERNAME: sysadmin
+          MM_ADMIN_PASSWORD: Sys@dmin-sample1
+        run: |
+          TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
+          TOKEN=${TOKEN//$'\r'/}
+          STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+          if test $STATUSCODE -ne 200; then exit 1; fi
+        shell: bash
+
+      - name: ci/installing-cypress-deps
+        shell: bash
+        env:
+          NODE_ENV: development
+        run: |
+          sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
+          cd tests-e2e/
+          npx cypress install
+
+      - name: ci/run-cypress-tests
+        env:
+          TYPE: NONE
+          PULL_REQUEST: ""
+          BROWSER: chrome
+          HEADLESS: "true"
+          DASHBOARD_ENABLE: "false"
+          FULL_REPORT: "false"
+          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+          MM_ADMIN_USERNAME: sysadmin
+          MM_ADMIN_PASSWORD: Sys@dmin-sample1
+          TERM: xterm
+        run: |
+          cd mattermost-plugin-playbooks/tests-e2e
+          npm run test -- --spec "${{ matrix.SPECS }}"
+        shell: bash
+
+      - name: ci/upload-cypress-test-results
+        if: always()
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          SPECS: ${{ matrix.specs }}
+          name: cypress-test-results
+          path: |
+            mattermost-plugin-playbooks/tests-e2e/cypress/results/junit
+            mattermost-plugin-playbooks/tests-e2e/cypress/videos
+            mattermost-plugin-playbooks/tests-e2e/cypress/screenshots
+          retention-days: 1 ## No need to keep test results more than 1 days
 
   # report-test-results:
   #   if: always()
