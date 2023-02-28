@@ -130,7 +130,7 @@ if (TARGET_IS_PRODUCT) {
 
                 // Set these to false so that any version provided by the web app will be accepted
                 requiredVersion: false,
-                version: false
+                version: false,
             };
         }
 
