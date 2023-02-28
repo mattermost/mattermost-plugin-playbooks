@@ -120,10 +120,17 @@ if (TARGET_IS_PRODUCT) {
         const sharedObject = {};
 
         for (const packageName of packageNames) {
-            // Set both versions to false so that the version of this module provided by the web app will be used
             sharedObject[packageName] = {
-                requiredVersion: false,
+
+                // Ensure only one copy of this package is ever loaded
                 singleton: true,
+
+                // Set this to false to prevent Webpack from packaging any "fallback" version of this package so that
+                // only the version provided by the web app will be used
+                import: false,
+
+                // Set these to false so that any version provided by the web app will be accepted
+                requiredVersion: false,
                 version: false,
             };
         }
@@ -142,8 +149,8 @@ if (TARGET_IS_PRODUCT) {
         },
         shared: [
             '@mattermost/client',
-            '@types/luxon',
-            '@types/react-bootstrap',
+
+            'luxon',
 
             makeSingletonSharedModules([
                 'react',
@@ -163,17 +170,6 @@ if (TARGET_IS_PRODUCT) {
     config.output = {
         path: path.join(__dirname, '/dist'),
         chunkFilename: '[name].[contenthash].js',
-    };
-    config.externals = {
-        react: 'React',
-        'react-dom': 'ReactDOM',
-        redux: 'Redux',
-        luxon: 'Luxon',
-        'react-redux': 'ReactRedux',
-        'prop-types': 'PropTypes',
-        'react-bootstrap': 'ReactBootstrap',
-        'react-router-dom': 'ReactRouterDom',
-        'react-intl': 'ReactIntl',
     };
 } else {
     config.resolve.alias['react-intl'] = path.resolve(__dirname, '../../webapp/node_modules/react-intl/');
