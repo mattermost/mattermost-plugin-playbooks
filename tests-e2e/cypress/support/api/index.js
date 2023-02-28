@@ -6,7 +6,6 @@ import './common';
 import './keycloak';
 import './ldap';
 import './preference';
-import './plugin';
 import './role';
 import './scheme';
 import './setup';
