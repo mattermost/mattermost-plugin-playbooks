@@ -483,6 +483,19 @@ jobs:
           mkdir -p ../../mattermost-webapp/dist/products/playbooks
           cp dist/* ../../mattermost-webapp/dist/products/playbooks
 
+      - name: ci/disable-ALSA
+        run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
+        shell: bash
+
+      - name: ci/installing-cypress-deps
+        shell: bash
+        env:
+          NODE_ENV: development
+        run: |
+          sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
+          cd mattermost-plugin-playbooks/tests-e2e/
+          npx cypress install
+
       - name: ci/run-server
         env:
           IS_CI: true
@@ -502,48 +515,22 @@ jobs:
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
           MM_SERVICESETTINGS_ENABLELOCALMODE: true
-        run: |
-          cd mattermost-server
-          make run-server
-
-      # - name: ci/e2e-test
-      #   uses: ./.github/actions/e2e-test
-      #   with:
-      #     SPECS: ${{ matrix.specs }}
-
-      - name: ci/configure-sysadmin
-        run: |
-          sleep 20
-          cd mattermost-server/bin
-          ./mmctl --local user create --email sysadmin@sample.mattermost.com --username sysadmin --password Sys@dmin-sample1
-
-      - name: ci/disable-ALSA
-        run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
-        shell: bash
-
-      - name: ci/installing-cypress-deps
-        shell: bash
-        env:
-          NODE_ENV: development
-        run: |
-          sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
-          cd mattermost-plugin-playbooks/tests-e2e/
-          npx cypress install
-
-      - name: ci/run-cypress-tests
-        env:
           TYPE: NONE
           PULL_REQUEST: ""
           BROWSER: chrome
           HEADLESS: "true"
           DASHBOARD_ENABLE: "false"
           FULL_REPORT: "false"
-          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
           MM_ADMIN_USERNAME: sysadmin
           MM_ADMIN_PASSWORD: Sys@dmin-sample1
           TERM: xterm
         run: |
-          cd mattermost-plugin-playbooks/tests-e2e
+          cd mattermost-server
+          make run-server
+          sleep 20
+          cd bin
+          ./mmctl --local user create --email sysadmin@sample.mattermost.com --username sysadmin --password Sys@dmin-sample1
+          cd ../../mattermost-plugin-playbooks/tests-e2e
           npm run test -- --spec "${{ matrix.SPECS }}"
         shell: bash
 
