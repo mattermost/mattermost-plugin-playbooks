@@ -8,18 +8,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 )
 
-func main() {
-	if len(os.Args) > 1 {
-		operation := os.Args[1]
-		if operation == "graphqlcheck" {
-			graphqlCheck()
-		}
-		return
-	}
-
-	// plugin.ClientMain(&Plugin{})
-}
-
 func graphqlCheck() {
 	opts := []graphql.SchemaOpt{
 		graphql.UseFieldResolvers(),

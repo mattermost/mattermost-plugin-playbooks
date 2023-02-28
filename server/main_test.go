@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"testing"
 
@@ -27,13 +26,6 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	// Run the plugin under test if the server is trying to run us as a plugin.
-	// value := os.Getenv("MATTERMOST_PLUGIN")
-	// if value == "Securely message teams, anywhere." {
-	// 	plugin.ClientMain(&Plugin{})
-	// 	return
-	// }
-
 	serverpathBytes, err := exec.Command("go", "list", "-f", "'{{.Dir}}'", "-m", "github.com/mattermost/mattermost-server/v6").Output()
 	if err != nil {
 		panic(err)
@@ -104,25 +96,14 @@ func getEnvWithDefault(name, defaultValue string) string {
 func Setup(t *testing.T) *TestEnvironment {
 	// Environment Settings
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
-
 	sqlSettings := storetest.MakeSqlSettings(driverName, false)
-
-	// Directories for plugin stuff
-	dir := t.TempDir()
-	clientDir := t.TempDir()
-	playbooksDir := path.Join(dir, "playbooks")
-	// binaryDir := path.Join(playbooksDir, "server", "dist")
-	// pluginBinary := path.Join(binaryDir, "plugin-"+runtime.GOOS+"-"+runtime.GOARCH)
-	pluginManifest := path.Join(playbooksDir, "plugin.json")
-	assetsDir := path.Join(playbooksDir, "assets")
 
 	// Create a test memory store and modify configuration appropriately
 	configStore := config.NewTestMemoryStore()
 	config := configStore.Get()
-	config.PluginSettings.Directory = &dir
-	config.PluginSettings.ClientDirectory = &clientDir
-	addr := "localhost:9056"
-	config.ServiceSettings.ListenAddress = &addr
+	// Force plugins to be disabled since we are in product mode
+	config.PluginSettings.Enable = model.NewBool(false)
+	config.ServiceSettings.ListenAddress = model.NewString("localhost:9056")
 	config.TeamSettings.MaxUsersPerTeam = model.NewInt(10000)
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
@@ -141,22 +122,6 @@ func Setup(t *testing.T) *TestEnvironment {
 	}
 
 	_, _, err = configStore.Set(config)
-	require.NoError(t, err)
-
-	// Copy ourselves into the correct directory so we are executed.
-	// currentBinary, err := os.Executable()
-	// require.NoError(t, err)
-	// err = utils.CopyFile(currentBinary, pluginBinary)
-	// require.NoError(t, err)
-	err = utils.CopyDir("../assets", assetsDir)
-	require.NoError(t, err)
-
-	// Copy the manifest without webapp to the correct directory
-	modifiedManifest := model.Manifest{}
-	_ = json.NewDecoder(strings.NewReader(manifestStr)).Decode(&modifiedManifest)
-	modifiedManifest.Webapp = nil
-	manifestJSONBytes, _ := json.Marshal(modifiedManifest)
-	err = os.WriteFile(pluginManifest, manifestJSONBytes, 0700)
 	require.NoError(t, err)
 
 	// Create a logger to override

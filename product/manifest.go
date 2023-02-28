@@ -11,6 +11,10 @@ import (
 
 var manifest *model.Manifest
 
+func GetProductId() string {
+	return manifest.Id
+}
+
 const manifestStr = `
 {
   "id": "playbooks",

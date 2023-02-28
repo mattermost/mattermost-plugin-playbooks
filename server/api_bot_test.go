@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/product"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +25,7 @@ func TestTrialLicences(t *testing.T) {
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", dialogRequestBytes, "")
+		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+product.GetProductId()+"/api/v0/bot/notify-admins/button-start-trial", dialogRequestBytes, "")
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
@@ -40,7 +41,7 @@ func TestTrialLicences(t *testing.T) {
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.ServerAdminClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", dialogRequestBytes, "")
+		resp, err := e.ServerAdminClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+product.GetProductId()+"/api/v0/bot/notify-admins/button-start-trial", dialogRequestBytes, "")
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
