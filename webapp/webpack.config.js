@@ -227,7 +227,7 @@ if (targetIsDevServer) {
 }
 
 if (NPM_TARGET === 'start:product') {
-    const url = new URL(process.env.MM_BOARDS_DEV_SERVER_URL ?? 'http://localhost:9007'); //eslint-disable-line no-process-env
+    const url = new URL(process.env.MM_PLAYBOOKS_DEV_SERVER_URL ?? 'http://localhost:9007'); //eslint-disable-line no-process-env
 
     config.devServer = {
         https: url.protocol === 'https:' && {
