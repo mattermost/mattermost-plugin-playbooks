@@ -1,4 +1,5 @@
 GO ?= $(shell command -v go 2> /dev/null)
+NPM ?= $(shell command -v npm 2> /dev/null)
 GO_TEST_FLAGS ?= -race
 
 export GO111MODULE=on

@@ -125,6 +125,7 @@ config.plugins.push(new webpack.DefinePlugin({
 
 config.output = {
     path: path.join(__dirname, '/dist'),
+    chunkFilename: '[name].[contenthash].js',
 };
 config.externals = {
     react: 'React',
