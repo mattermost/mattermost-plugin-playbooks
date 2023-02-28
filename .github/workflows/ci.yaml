@@ -411,12 +411,65 @@ jobs:
           ref: "mpa-playbooks"
           path: "mattermost-webapp"
 
+      - name: ci/setup-go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+        with:
+          go-version: "${{ env.GO_VERSION }}"
+          cache: true
+          cache-dependency-path: |
+            mattermost-server/go.sum
+            mattermost-plugin-playbooks/go.sum
+
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "mattermost-webapp/.nvmrc"
+          cache: "npm"
+          cache-dependency-path: |
+            mattermost-webapp/packge-lock.json
+            mattermost-plugin-playbooks/webapp/package-lock.json
+            mattermost-plugin-playbooks/tests-e2e/package-lock.json
+
+      - name: ci/cache-node-modules
+        id: cache-node-modules
+        uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
+        with:
+          path: |
+            mattermost-webapp/node_modules
+            mattermost-plugin-playbooks/webapp/node_modules
+            mattermost-plugin-playbooks/tests-e2e/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('mattermost-webapp/package-lock.json', 'mattermost-plugin-playbooks/webapp/package-lock.json', 'mattermost-plugin-playbooks/tests-e2e/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('mattermost-webapp/package-lock.json', 'mattermost-plugin-playbooks/webapp/package-lock.json', 'mattermost-plugin-playbooks/tests-e2e/package-lock.json') }}
+
+      - name: ci/setup-platform-npm-deps
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        env:
+          NODE_ENV: development
+        run: |
+          cd mattermost-webapp
+          npm ci --include=dev
+
+      - name: ci/setup-webapp-npm-deps
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        env:
+          NODE_ENV: development
+        run: |
+          cd mattermost-plugin-playbooks/webapp
+          npm install --ignore-scripts --no-save --legacy-peer-deps
+
+      - name: ci/setup-e2e-npm-deps
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        env:
+          NODE_ENV: development
+        run: |
+          cd mattermost-plugin-playbooks/tests-e2e
+          npm install --ignore-scripts --no-save
+
       - name: ci/build-webapp
         env:
           NODE_ENV: production
         run: |
           cd mattermost-webapp
-          npm ci --include=dev
           npm run build
 
       - name: ci/build-playbooks-webapp
@@ -424,7 +477,6 @@ jobs:
           NODE_ENV: production
         run: |
           cd mattermost-plugin-playbooks/webapp
-          npm ci --include=dev
           npm run build:product
           mkdir -p ../../mattermost-webapp/dist/products/playbooks
           cp dist/* ../../mattermost-webapp/dist/products/playbooks
