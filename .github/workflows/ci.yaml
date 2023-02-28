@@ -476,7 +476,9 @@ jobs:
         env:
           NODE_ENV: production
         run: |
-          cd mattermost-plugin-playbooks/webapp
+          cd mattermost-plugin-playbooks
+          make apply
+          cd webapp
           npm run build:product
           mkdir -p ../../mattermost-webapp/dist/products/playbooks
           cp dist/* ../../mattermost-webapp/dist/products/playbooks
