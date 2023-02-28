@@ -521,25 +521,13 @@ jobs:
         run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
         shell: bash
 
-      - name: ci/upload-licence
-        env:
-          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_ADMIN_USERNAME: sysadmin
-          MM_ADMIN_PASSWORD: Sys@dmin-sample1
-        run: |
-          TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
-          TOKEN=${TOKEN//$'\r'/}
-          STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-          if test $STATUSCODE -ne 200; then exit 1; fi
-        shell: bash
-
       - name: ci/installing-cypress-deps
         shell: bash
         env:
           NODE_ENV: development
         run: |
           sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
-          cd tests-e2e/
+          cd mattermost-plugin-playbooks/tests-e2e/
           npx cypress install
 
       - name: ci/run-cypress-tests
