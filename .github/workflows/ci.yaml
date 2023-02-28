@@ -427,7 +427,7 @@ jobs:
           npm ci --include=dev
           npm run build:product
           mkdir -p ../../mattermost-webapp/dist/products/playbooks
-          cp dist/* ../../webapp/dist/products/playbooks
+          cp dist/* ../../mattermost-webapp/dist/products/playbooks
 
       - name: ci/run-server
         env:
