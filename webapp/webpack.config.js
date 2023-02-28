@@ -230,10 +230,13 @@ if (NPM_TARGET === 'start:product') {
     const url = new URL(process.env.MM_PLAYBOOKS_DEV_SERVER_URL ?? 'http://localhost:9007'); //eslint-disable-line no-process-env
 
     config.devServer = {
-        https: url.protocol === 'https:' && {
-            minVersion: process.env.MM_SERVICESETTINGS_TLSMINVER, //eslint-disable-line no-process-env
-            key: process.env.MM_SERVICESETTINGS_TLSKEYFILE, //eslint-disable-line no-process-env
-            cert: process.env.MM_SERVICESETTINGS_TLSCERTFILE, //eslint-disable-line no-process-env
+        server: {
+            type: url.protocol.substring(0, url.protocol.length - 1),
+            options: {
+                minVersion: process.env.MM_SERVICESETTINGS_TLSMINVER ?? 'TLSv1.2',
+                key: process.env.MM_SERVICESETTINGS_TLSKEYFILE,
+                cert: process.env.MM_SERVICESETTINGS_TLSCERTFILE,
+            },
         },
         host: url.hostname,
         port: url.port,
