@@ -490,9 +490,9 @@ jobs:
           MM_CLUSTERSETTINGS_READONLYCONFIG: false
           MM_EMAILSETTINGS_SMTPSERVER: inbucket
           MM_EMAILSETTINGS_SMTPPORT: 10025
-          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://elasticsearch:9200
+          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://localhost:9200
           MM_EXPERIMENTALSETTINGS_USENEWSAMLLIBRARY: true
-          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
@@ -506,7 +506,7 @@ jobs:
           make run-server
 
       - name: ci/e2e-test
-        uses: ./mattmost-plugin-playbooks/.github/actions/e2e-test
+        uses: ./.github/actions/e2e-test
         with:
           SPECS: ${{ matrix.specs }}
 

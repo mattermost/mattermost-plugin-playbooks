@@ -12,31 +12,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: ci/setup-go
-      uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
-      with:
-        go-version: "${{ env.GO_VERSION }}"
-        cache: true
-
-    - name: ci/setup-node
-      uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-      with:
-        node-version-file: ".nvmrc"
-        cache: "npm"
-        cache-dependency-path: |
-          webapp/package-lock.json
-          tests-e2e/package-lock.json
-
-    - name: ci/cache-node-modules
-      id: cache-node-modules
-      uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
-      with:
-        path: |
-          webapp/node_modules
-          tests-e2e/node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
-        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
-
     - name: ci/disable-ALSA
       run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
       shell: bash
