@@ -1,16 +1,17 @@
+/* eslint-disable no-console, no-process-env */
+
 const path = require('path');
 
 const webpack = require('webpack');
 const {ModuleFederationPlugin} = require('webpack').container;
 
-const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
+const NPM_TARGET = process.env.npm_lifecycle_event;
 const TARGET_IS_PRODUCT = NPM_TARGET?.endsWith(':product');
-const targetIsDevServer = NPM_TARGET === 'dev-server';
 const mode = 'production';
 const devtool = 'source-map';
 const plugins = [];
 
-let config = {
+const config = {
     entry: './src/remote_entry.ts',
     resolve: {
         alias: {
@@ -81,12 +82,18 @@ let config = {
 // Set up module federation
 function makeSingletonSharedModules(packageNames) {
     const sharedObject = {};
-
     for (const packageName of packageNames) {
-        // Set both versions to false so that the version of this module provided by the web app will be used
         sharedObject[packageName] = {
-            requiredVersion: false,
+
+            // Ensure only one copy of this package is ever loaded
             singleton: true,
+
+            // Set this to false to prevent Webpack from packaging any "fallback" version of this package so that
+            // only the version provided by the web app will be used
+            import: false,
+
+            // Set these to false so that any version provided by the web app will be accepted
+            requiredVersion: false,
             version: false,
         };
     }
@@ -139,43 +146,17 @@ config.externals = {
     'react-intl': 'ReactIntl',
 };
 
-if (targetIsDevServer) {
-    config = {
-        ...config,
-        devServer: {
-            hot: true,
-            liveReload: false,
-            proxy: [{
-                context: () => true,
-                bypass(req) {
-                    if (req.url.indexOf('/static/plugins/playbooks/') === 0) {
-                        return '/main.js'; // return the webpacked asset
-                    }
-                    return null;
-                },
-                logLevel: 'silent',
-                target: 'http://localhost:8065',
-                xfwd: true,
-                ws: true,
-            }],
-            port: 9005,
-        },
-        performance: false,
-        optimization: {
-            ...config.optimization,
-            splitChunks: false,
-        },
-    };
-}
-
 if (NPM_TARGET === 'start:product') {
-    const url = new URL(process.env.MM_PLAYBOOKS_DEV_SERVER_URL ?? 'http://localhost:9007'); //eslint-disable-line no-process-env
+    const url = new URL(process.env.MM_PLAYBOOKS_DEV_SERVER_URL ?? 'http://localhost:9007');
 
     config.devServer = {
-        https: url.protocol === 'https:' && {
-            minVersion: process.env.MM_SERVICESETTINGS_TLSMINVER, //eslint-disable-line no-process-env
-            key: process.env.MM_SERVICESETTINGS_TLSKEYFILE, //eslint-disable-line no-process-env
-            cert: process.env.MM_SERVICESETTINGS_TLSCERTFILE, //eslint-disable-line no-process-env
+        server: {
+            type: url.protocol.substring(0, url.protocol.length - 1),
+            options: {
+                minVersion: process.env.MM_SERVICESETTINGS_TLSMINVER ?? 'TLSv1.2',
+                key: process.env.MM_SERVICESETTINGS_TLSKEYFILE,
+                cert: process.env.MM_SERVICESETTINGS_TLSCERTFILE,
+            },
         },
         host: url.hostname,
         port: url.port,
