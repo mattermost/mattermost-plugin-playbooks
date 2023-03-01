@@ -132,5 +132,4 @@ type ServicesAPI interface {
 	RegisterCollectionAndTopic(collectionType, topicType string) error
 
 	IsEnterpriseReady() bool
-	GetBundlePath() (string, error)
 }

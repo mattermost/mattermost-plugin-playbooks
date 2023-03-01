@@ -106,9 +106,6 @@ config.plugins.push(new ModuleFederationPlugin({
     filename: 'remote_entry.js',
     exposes: {
         '.': './src/index',
-
-        // This probably won't need to be exposed in the long run, but its a POC for exposing multiple modules
-        './manifest': './src/manifest',
     },
     shared: [
         '@mattermost/client',

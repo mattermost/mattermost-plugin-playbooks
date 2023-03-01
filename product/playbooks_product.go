@@ -162,7 +162,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 
 	playbooks.server = services[ServerKey].(*mmapp.Server)
 
-	playbooks.serviceAdapter = newServiceAPIAdapter(playbooks, manifest)
+	playbooks.serviceAdapter = newServiceAPIAdapter(playbooks)
 	botID, err := playbooks.serviceAdapter.EnsureBot(&model.Bot{
 		Username:    "playbooks",
 		DisplayName: "Playbooks",
@@ -173,7 +173,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 		return nil, errors.Wrapf(err, "failed to ensure bot")
 	}
 
-	playbooks.config = config.NewConfigService(playbooks.serviceAdapter, manifest)
+	playbooks.config = config.NewConfigService(playbooks.serviceAdapter)
 	err = playbooks.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
@@ -190,7 +190,7 @@ func newPlaybooksProduct(services map[product.ServiceKey]interface{}) (product.P
 	} else {
 		diagnosticID := playbooks.serviceAdapter.GetDiagnosticID()
 		serverVersion := playbooks.serviceAdapter.GetServerVersion()
-		playbooks.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
+		playbooks.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, model.BuildHashPlaybooks, serverVersion)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed init telemetry client")
 		}

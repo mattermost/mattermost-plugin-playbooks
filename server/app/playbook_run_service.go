@@ -512,7 +512,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/dialog",
-			s.configService.GetManifest().Id),
+			"playbooks"),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -555,7 +555,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, t
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/update-status-dialog",
-			s.configService.GetManifest().Id,
+			"playbooks",
 			playbookRunID),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
@@ -591,7 +591,7 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/add-to-timeline-dialog",
-			s.configService.GetManifest().Id),
+			"playbooks"),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -635,7 +635,7 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, p
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/checklists/%v/add-dialog",
-			s.configService.GetManifest().Id, playbookRunID, checklist),
+			"playbooks", playbookRunID, checklist),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -893,7 +893,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/finish-dialog",
-			s.configService.GetManifest().Id,
+			"playbooks",
 			playbookRunID),
 		Dialog:    *s.newFinishPlaybookRunDialog(currentPlaybookRun, numOutstanding, user.Locale),
 		TriggerId: triggerID,
@@ -1228,7 +1228,7 @@ func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *Playbook
 					Name: "No Retrospective",
 					Integration: &model.PostActionIntegration{
 						URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/no-retrospective-button",
-							s.configService.GetManifest().Id,
+							"playbooks",
 							playbookRun.ID),
 					},
 				},

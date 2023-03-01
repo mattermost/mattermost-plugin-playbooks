@@ -1,7 +1,5 @@
 package config
 
-import "github.com/mattermost/mattermost-server/v6/model"
-
 // Service is the config.Service interface.
 // NOTE: for now we are defining this here for simplicity. It will be mocked by multiple consumers,
 // so keep the definition in one place -- here. In the future we may move to a
@@ -23,9 +21,6 @@ type Service interface {
 
 	// UnregisterConfigChangeListener unregisters the listener function identified by id.
 	UnregisterConfigChangeListener(id string)
-
-	// GetManifest gets the plugin manifest.
-	GetManifest() *model.Manifest
 
 	// IsConfiguredForDevelopmentAndTesting returns true when the server has `EnableDeveloper` and
 	// `EnableTesting` configuration settings enabled.

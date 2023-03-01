@@ -81,7 +81,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 					Name: "Update status",
 					Integration: &model.PostActionIntegration{
 						URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/reminder/button-update",
-							s.configService.GetManifest().Id,
+							"playbooks",
 							playbookRunToModify.ID),
 					},
 				},

@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/product"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
@@ -1267,7 +1266,7 @@ func TestAddPostToTimeline(t *testing.T) {
 		e.RemoveLicence()
 
 		// Post the request with the dialog payload and verify it is not allowed
-		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+product.GetProductID()+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+"playbooks"+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
 		require.Error(t, err)
 		require.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
@@ -1277,7 +1276,7 @@ func TestAddPostToTimeline(t *testing.T) {
 		e.SetE10Licence()
 
 		// Post the request with the dialog payload and verify it is allowed
-		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+product.GetProductID()+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+"playbooks"+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
 		require.NoError(t, err)
 	})
 
@@ -1286,7 +1285,7 @@ func TestAddPostToTimeline(t *testing.T) {
 		e.SetE20Licence()
 
 		// Post the request with the dialog payload and verify it is allowed
-		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+product.GetProductID()+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+"playbooks"+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
 		require.NoError(t, err)
 	})
 }

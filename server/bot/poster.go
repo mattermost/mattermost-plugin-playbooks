@@ -235,7 +235,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 			Type:  "button",
 			Integration: &model.PostActionIntegration{
 				URL: fmt.Sprintf("/plugins/%s/api/v0/bot/notify-admins/button-start-trial",
-					b.configService.GetManifest().Id),
+					"playbooks"),
 				Context: map[string]interface{}{
 					"users":                 100,
 					"termsAccepted":         true,

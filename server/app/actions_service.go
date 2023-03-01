@@ -456,7 +456,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(post *model.Post) {
 	}
 
 	message := getPlaybookSuggestionsMessage(triggeredPlaybooks, presentTriggers)
-	attachment := getPlaybookSuggestionsSlackAttachment(triggeredPlaybooks, post.Id, a.configService.GetManifest().Id)
+	attachment := getPlaybookSuggestionsSlackAttachment(triggeredPlaybooks, post.Id, "playbooks")
 
 	rootID := post.RootId
 	if rootID == "" {

@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -45,15 +44,12 @@ func normalizeAppErr(appErr *mm_model.AppError) error {
 type serviceAPIAdapter struct {
 	api *playbooksProduct
 	ctx *request.Context
-
-	manifest *model.Manifest
 }
 
-func newServiceAPIAdapter(api *playbooksProduct, manifest *model.Manifest) *serviceAPIAdapter {
+func newServiceAPIAdapter(api *playbooksProduct) *serviceAPIAdapter {
 	return &serviceAPIAdapter{
-		api:      api,
-		ctx:      request.EmptyContext(api.logger),
-		manifest: manifest,
+		api: api,
+		ctx: request.EmptyContext(api.logger),
 	}
 }
 
@@ -321,13 +317,6 @@ func (a *serviceAPIAdapter) GetConfig() *mm_model.Config {
 func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 	finalConfig := make(map[string]any)
 
-	// First set final config to defaults
-	if a.manifest.SettingsSchema != nil {
-		for _, setting := range a.manifest.SettingsSchema.Settings {
-			finalConfig[strings.ToLower(setting.Key)] = setting.Default
-		}
-	}
-
 	// If we have settings given we override the defaults with them
 	for setting, value := range a.api.configService.Config().PluginSettings.Plugins[playbooksProductID] {
 		finalConfig[strings.ToLower(setting)] = value
@@ -347,7 +336,7 @@ func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 
 func (a *serviceAPIAdapter) SavePluginConfig(pluginConfig map[string]any) error {
 	cfg := a.GetConfig()
-	cfg.PluginSettings.Plugins[a.manifest.Id] = pluginConfig
+	cfg.PluginSettings.Plugins["playbooks"] = pluginConfig
 	_, _, err := a.api.configService.SaveConfig(cfg, true)
 
 	return normalizeAppErr(err)
@@ -495,15 +484,6 @@ func (a *serviceAPIAdapter) RegisterCommand(command *mm_model.Command) error {
 func (a *serviceAPIAdapter) IsEnterpriseReady() bool {
 	result, _ := strconv.ParseBool(model.BuildEnterpriseReady)
 	return result
-}
-
-func (a *serviceAPIAdapter) GetBundlePath() (string, error) {
-	bundlePath, err := filepath.Abs(filepath.Join(*a.GetConfig().PluginSettings.Directory, a.manifest.Id))
-	if err != nil {
-		return "", err
-	}
-
-	return bundlePath, err
 }
 
 //
