@@ -49,7 +49,6 @@ module.exports = defineConfig({
         configFile: 'reporter-config.json',
     },
     numTestsKeptInMemory: 0,
-    projectId: 'mattermost-plugin-playbooks',
     e2e: {
         setupNodeEvents(on, config) {
             return cypressPlugins(on, config);
