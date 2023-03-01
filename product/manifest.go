@@ -11,7 +11,7 @@ import (
 
 var manifest *model.Manifest
 
-func GetProductId() string {
+func GetProductID() string {
 	return manifest.Id
 }
 

@@ -13,7 +13,7 @@ func TestAPI(t *testing.T) {
 	e.CreateClients()
 
 	t.Run("404", func(t *testing.T) {
-		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+product.GetProductId()+"/api/v0/nothing", nil, "")
+		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+product.GetProductID()+"/api/v0/nothing", nil, "")
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
