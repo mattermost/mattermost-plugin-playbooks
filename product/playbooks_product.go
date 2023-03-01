@@ -568,7 +568,7 @@ func (pp *playbooksProduct) Stop() error {
 func newMetricsInstance() *metrics.Metrics {
 	// Init metrics
 	instanceInfo := metrics.InstanceInfo{
-		Version:        "0", //manifest.Version, TODO:  we can get product hash from the server
+		Version:        model.BuildHashPlaybooks,
 		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
 	}
 	return metrics.NewMetrics(instanceInfo)
