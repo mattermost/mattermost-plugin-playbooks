@@ -363,7 +363,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		logrus.WithError(err).WithFields(map[string]any{
 			"playbookRunId":  playbookRun.ID,
 			"invitedUserIDs": invitedUserIDs,
-		}).Warning("failed to add invited users on playbook run creation")
+		}).Warn("failed to add invited users on playbook run creation")
 	}
 
 	if len(invitedUserIDs) > 0 {
@@ -3039,7 +3039,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 
 	// To be added to the UI as an optional action
 	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
-		logrus.WithError(err).Errorf("failed to remove user from linked channel, userID '%s'", userID)
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to remove user from linked channel")
 	}
 }
 
@@ -3072,7 +3072,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	channel, err := s.api.GetChannelByID(playbookRun.ChannelID)
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to get channel, channelID '%s'", playbookRun.ChannelID)
+		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("failed to get channel")
 	}
 
 	s.failedInvitedUserActions(usersFailedToInvite, channel)
@@ -3180,7 +3180,7 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, ch
 
 	// Add user to the channel
 	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, user.Id); err != nil {
-		logrus.WithError(err).Errorf("participateActions: failed to add user to linked channel, userID '%s'", user.Id)
+		logrus.WithError(err).WithField("user_id", user.Id).Error("participateActions: failed to add user to linked channel")
 	}
 }
 
