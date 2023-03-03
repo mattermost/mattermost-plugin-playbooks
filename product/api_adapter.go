@@ -20,7 +20,6 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	mm_model "github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/shared/i18n"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
 
 // normalizeAppError returns a truly nil error if appErr is nil
@@ -324,12 +323,12 @@ func (a *serviceAPIAdapter) LoadPluginConfiguration(dest any) error {
 
 	pluginSettingsJSONBytes, err := json.Marshal(finalConfig)
 	if err != nil {
-		logrus.WithError(err).Error("Error marshaling config for plugin", mlog.Err(err))
+		logrus.WithError(err).Error("Error marshaling config for plugin")
 		return nil
 	}
 	err = json.Unmarshal(pluginSettingsJSONBytes, dest)
 	if err != nil {
-		logrus.WithError(err).Error("Error unmarshaling config for plugin", mlog.Err(err))
+		logrus.WithError(err).Error("Error unmarshaling config for plugin")
 	}
 	return nil
 }
