@@ -556,7 +556,7 @@ func (pp *playbooksProduct) Stop() error {
 	if pp.metricsServer != nil {
 		err := pp.metricsServer.Shutdown()
 		if err != nil {
-			logrus.Warn("unable to shut down metric server", err)
+			logrus.WithError(err).Warn("unable to shut down metric server")
 		}
 	}
 	if pp.metricsUpdaterTask != nil {
