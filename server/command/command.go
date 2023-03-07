@@ -256,7 +256,7 @@ func (r *Runner) actionRun(args []string) {
 		return
 	}
 
-	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, session.IsMobileApp(), ""); err != nil {
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, session.IsMobileApp()); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
@@ -311,7 +311,7 @@ func (r *Runner) actionRunPlaybook(args []string) {
 		return
 	}
 
-	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, session.IsMobileApp(), ""); err != nil {
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, session.IsMobileApp()); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}

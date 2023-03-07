@@ -292,14 +292,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 		return
 	}
 
-	// If the dialog was spawn from a prompt post (the one that is automatically sent when
-	// certain keywords are posted in a channel), then we need to edit that original post
-	if state.PromptPostID != "" {
-		if err := h.editPromptPost(state.PromptPostID, playbookID, playbookRun.ID, userID, name); err != nil {
-			h.log.Warnf("failed editing the prompt post; error: %s", err.Error())
-		}
-	}
-
 	channel, err := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to get new channel", err)
@@ -326,33 +318,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
 	w.WriteHeader(http.StatusCreated)
-}
-
-func (h *PlaybookRunHandler) editPromptPost(promptPostID string, playbookID string, runID string, userID string, runName string) error {
-	post, err := h.pluginAPI.Post.GetPost(promptPostID)
-	if err != nil {
-		return errors.Wrapf(err, "unable to retrieve the post with ID %q", promptPostID)
-	}
-
-	playbook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		return errors.Wrapf(err, "unable to retrieve the playbook with ID %q", playbookID)
-	}
-
-	user, err := h.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "unable to retrieve the user with ID %q", userID)
-	}
-
-	// Update the message and remove the attachments; i.e., the buttons
-	post.Message = fmt.Sprintf("@%s started the run [%s](%s) using the [%s](%s) playbook.",
-		user.Username, runName, app.GetRunDetailsRelativeURL(runID), playbook.Title, app.GetPlaybookDetailsRelativeURL(playbookID))
-	model.ParseSlackAttachment(post, []*model.SlackAttachment{})
-	if err := h.pluginAPI.Post.UpdatePost(post); err != nil {
-		return errors.Wrapf(err, "unable to update the post with ID %q", post.Id)
-	}
-
-	return nil
 }
 
 // addToTimelineDialog handles the interactive dialog submission when a user clicks the

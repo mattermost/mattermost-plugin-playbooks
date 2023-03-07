@@ -485,7 +485,7 @@ func getPlaybookSuggestionsMessage(suggestedPlaybooks []Playbook, triggers []str
 	return message
 }
 
-func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, isMobile bool, pluginID string) *model.SlackAttachment {
+func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, triggeringPostID string, isMobile bool, pluginID string) *model.SlackAttachment {
 	ignoreButton := &model.PostAction{
 		Id:   "ignoreKeywordsButton",
 		Name: "No, ignore thread",
@@ -493,7 +493,7 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 		Integration: &model.PostActionIntegration{
 			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/ignore-thread", pluginID),
 			Context: map[string]interface{}{
-				"postID": postID,
+				"postID": triggeringPostID,
 			},
 		},
 	}
@@ -506,7 +506,7 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 			Integration: &model.PostActionIntegration{
 				URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/run-playbook", pluginID),
 				Context: map[string]interface{}{
-					"postID":          postID,
+					"postID":          triggeringPostID,
 					"selected_option": playbooks[0].ID,
 					"isMobile":        isMobile,
 				},
@@ -537,7 +537,7 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/run-playbook", pluginID),
 			Context: map[string]interface{}{
 				"isMobile": isMobile,
-				"postID":   postID,
+				"postID":   triggeringPostID,
 			},
 		},
 		Options: options,

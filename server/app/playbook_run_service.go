@@ -476,7 +476,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error {
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {
@@ -485,7 +485,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 		}
 	}
 
-	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp, promptPostID)
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -2275,16 +2275,15 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *mo
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
 	}
 
 	state, err := json.Marshal(DialogState{
-		PostID:       postID,
-		ClientID:     clientID,
-		PromptPostID: promptPostID,
+		PostID:   postID,
+		ClientID: clientID,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
