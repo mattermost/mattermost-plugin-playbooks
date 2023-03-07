@@ -66,30 +66,22 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	postID, err := getStringField("postID", req.Context, w)
-	if err != nil {
-		h.returnError(publicErrorMessage, err, c.logger, w)
-		return
-	}
-
-	post, err := h.api.Post.GetPost(req.PostId)
-	if err != nil {
-		h.returnError(fmt.Sprintf("unable to get original post with ID %q", postID), err, c.logger, w)
-		return
-	}
-
 	pbook, err := h.playbookService.Get(id)
 	if err != nil {
 		h.returnError("can't get chosen playbook", errors.Wrapf(err, "can't get chosen playbook, id - %s", id), c.logger, w)
 		return
 	}
 
-	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile, post.Id); err != nil {
+	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, "", "", []app.Playbook{pbook}, isMobile); err != nil {
 		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), c.logger, w)
 		return
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
+	if err := h.api.Post.DeletePost(req.PostId); err != nil {
+		h.returnError("unable to delete original post", err, c.logger, w)
+		return
+	}
 }
 
 func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *http.Request) {

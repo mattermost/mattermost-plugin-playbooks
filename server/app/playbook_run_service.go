@@ -501,7 +501,7 @@ func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error {
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {
@@ -510,7 +510,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 		}
 	}
 
-	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp, promptPostID)
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -2453,7 +2453,7 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *Playboo
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(requesterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
@@ -2462,9 +2462,8 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 	T := i18n.GetUserTranslations(user.Locale)
 
 	state, err := json.Marshal(DialogState{
-		PostID:       postID,
-		ClientID:     clientID,
-		PromptPostID: promptPostID,
+		PostID:   postID,
+		ClientID: clientID,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
