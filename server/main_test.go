@@ -94,6 +94,10 @@ func getEnvWithDefault(name, defaultValue string) string {
 }
 
 func Setup(t *testing.T) *TestEnvironment {
+	// Ignore any locally defined SiteURL as we intend to host our own.
+	os.Unsetenv("MM_SERVICESETTINGS_SITEURL")
+	os.Unsetenv("MM_SERVICESETTINGS_LISTENADDRESS")
+
 	// Environment Settings
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
 	sqlSettings := storetest.MakeSqlSettings(driverName, false)
