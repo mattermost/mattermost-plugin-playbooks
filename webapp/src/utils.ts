@@ -122,3 +122,13 @@ export function getDistinctAssignees(checklists: Checklist[]) {
     ];
 }
 
+export function runCallsSlashCommand(command: string, channelId: string, teamId: string) {
+    window.postMessage({
+        type: 'calls-run-slash-command',
+        message: command,
+        args: {
+            channel_id: channelId,
+            team_id: teamId,
+        },
+    }, window.origin);
+}

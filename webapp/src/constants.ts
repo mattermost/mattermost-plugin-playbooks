@@ -32,3 +32,5 @@ export const DateTimeFormats = {
     // eslint-disable-next-line no-undefined
     DATE_MED_NO_YEAR: {...DateTime.DATE_MED, year: undefined},
 };
+
+export const CallsSlashCommandPrefix = '/call ';

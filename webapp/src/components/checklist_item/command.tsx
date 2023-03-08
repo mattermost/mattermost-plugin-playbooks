@@ -6,11 +6,13 @@ import styled, {css} from 'styled-components';
 import {clientRunChecklistItemSlashCommand} from 'src/client';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import CommandInput from 'src/components/command_input';
+import {CallsSlashCommandPrefix} from 'src/constants';
+import {runCallsSlashCommand} from 'src/utils';
 
 import Dropdown from 'src/components/dropdown';
 
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import {useTimeout} from 'src/hooks';
+import {useRun, useTimeout} from 'src/hooks';
 
 import {CancelSaveButtons} from './inputs';
 import {DropdownArrow} from './assign_to';
@@ -37,6 +39,7 @@ const Command = (props: CommandProps) => {
     const [command, setCommand] = useState(props.command);
     const dispatch = useDispatch();
 
+    const [playbookRun] = useRun(String(props.playbookRunId));
     const [commandOpen, setCommandOpen] = useState(false);
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
@@ -70,6 +73,9 @@ const Command = (props: CommandProps) => {
                 if (!running) {
                     setRunning(true);
                     clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId || '', props.checklistNum, props.itemNum);
+                    if (props.command?.startsWith(CallsSlashCommandPrefix) && playbookRun) {
+                        runCallsSlashCommand(props.command, playbookRun.channel_id, playbookRun.team_id);
+                    }
                 }
             }}
         >

@@ -8,8 +8,6 @@ replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistog
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
-replace github.com/mattermost/mattermost-server/v6 => ../mattermost-server
-
 require (
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/blang/semver v3.5.1+incompatible
