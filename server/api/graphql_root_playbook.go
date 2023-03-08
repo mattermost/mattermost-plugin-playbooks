@@ -21,7 +21,7 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := c.permissions.PlaybookView(userID, playbookID); err != nil {
+	if err = c.permissions.PlaybookView(userID, playbookID); err != nil {
 		return nil, err
 	}
 
@@ -55,7 +55,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if args.TeamID != "" {
-		if err := c.permissions.PlaybookList(userID, args.TeamID); err != nil {
+		if err = c.permissions.PlaybookList(userID, args.TeamID); err != nil {
 			return nil, err
 		}
 	}
@@ -105,7 +105,7 @@ func (r *RunRootResolver) UpdatePlaybookFavorite(ctx context.Context, args struc
 
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := c.permissions.PlaybookView(userID, args.ID); err != nil {
+	if err = c.permissions.PlaybookView(userID, args.ID); err != nil {
 		return "", err
 	}
 

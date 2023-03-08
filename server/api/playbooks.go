@@ -222,7 +222,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if err := h.validateMetrics(playbook); err != nil {
+	if err = h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
@@ -242,7 +242,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	app.CleanUpChecklists(playbook.Checklists)
 
-	if err := validatePreAssignment(playbook); err != nil {
+	if err = validatePreAssignment(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid user pre-assignment", err)
 		return
 	}
