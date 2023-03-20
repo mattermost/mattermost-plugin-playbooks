@@ -131,7 +131,6 @@ func (p *Plugin) OnActivate() error {
 
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
-		c.AdminLogLevel = "debug"
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed save bot to config")
