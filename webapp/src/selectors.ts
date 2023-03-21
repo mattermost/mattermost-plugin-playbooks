@@ -32,6 +32,7 @@ import {
 } from 'src/types/playbook';
 import {PlaybooksPluginState} from 'src/reducer';
 
+
 // Assert known typing
 const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins-' + pluginId as keyof GlobalState] as unknown as PlaybooksPluginState || {} as PlaybooksPluginState;
 
