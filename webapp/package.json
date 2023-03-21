@@ -83,6 +83,7 @@
     "jest": "27.4.7",
     "jest-canvas-mock": "2.3.1",
     "jest-junit": "13.0.0",
+    "mmjstool": "github:mattermost/mattermost-utilities#237c2194aa646021535c54e4aafed084807b93a6",
     "react-beautiful-dnd": "13.1.0",
     "react-bootstrap": "1.6.1",
     "react-refresh": "0.11.0",
