@@ -42,6 +42,7 @@ jobs:
         run: |
           set -e
           cd webapp
+          node skip_integrity_check.js
           npm install --ignore-scripts --no-save --legacy-peer-deps
       - name: Building Plugin Bundle
         run: make dist CGO_ENABLED=0
