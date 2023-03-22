@@ -80,7 +80,6 @@ jobs:
 
       - name: cd/rename-artifacts
         run: mv dist/*.tar.gz dist/${GITHUB_REPOSITORY#*/}-ci.tar.gz
-        working-directory: dist
 
       - name: cd/rename-artifacts
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
@@ -90,10 +89,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.PLUGIN_AWS_SECRET_ACCESS_KEY }}
 
       - name: cd/artifact-upload
-        shell: bash
         run: |
           aws s3 cp dist/${GITHUB_REPOSITORY#*/}-ci.tar.gz s3://mattermost-plugins-ci/ci/ --acl public-read --cache-control no-cache
-        working-directory: dist
 
   deploy-release:
     runs-on: ubuntu-22.04
@@ -114,7 +111,6 @@ jobs:
         run: |
           mv dist/*.tar.gz dist/${GITHUB_REPOSITORY#*/}-latest.tar.gz
           cp dist/${GITHUB_REPOSITORY#*/}-latest.tar.gz dist/${GITHUB_REPOSITORY#*/}-${GITHUB_REF_NAME}.tar.gz
-        working-directory: dist
 
       - name: cd/rename-artifacts
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
@@ -124,10 +120,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.PLUGIN_AWS_SECRET_ACCESS_KEY }}
 
       - name: cd/artifact-upload
-        shell: bash
         run: |
           aws s3 cp dist/${GITHUB_REPOSITORY#*/}-${GITHUB_REF_NAME}.tar.gz s3://mattermost-plugins-ci/release/ --acl public-read --cache-control no-cache
-        working-directory: dist
 
       - name: cd/create-github-release
         env:
