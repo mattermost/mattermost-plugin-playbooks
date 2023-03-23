@@ -125,6 +125,6 @@ jobs:
 
       - name: cd/create-github-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
         run: |
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file dist/release-notes.md  dist/*.tar.gz
