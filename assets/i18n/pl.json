@@ -85,7 +85,7 @@
     },
     {
         "id": "app.user.digest.overdue_status_updates.heading",
-        "translation": "Aktualizacje Stanu Zaległości"
+        "translation": "Zaległe aktualizacje statusu"
     },
     {
         "id": "app.command.execute.error",
