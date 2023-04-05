@@ -1,7 +1,7 @@
 [
     {
         "id": "app.user.digest.tasks.zero_assigned",
-        "translation": "0 atanmış göreviniz var."
+        "translation": "Atanmış bir göreviniz yok."
     },
     {
         "id": "app.user.digest.tasks.num_assigned_due_until_today",
@@ -36,15 +36,15 @@
     {
         "id": "app.user.digest.tasks.due_in_x_days",
         "translation": {
-            "one": "{{.Count}} gun içinde süresi dolacak",
-            "other": "{{.Count}} gun içinde süresi dolacak"
+            "one": "{{.Count}} gün içinde süresi dolacak",
+            "other": "{{.Count}} gün içinde süresi dolacak"
         }
     },
     {
         "id": "app.user.digest.tasks.due_after_today",
         "translation": {
-            "one": "Bugünden sonra atanmış **{{.Count}} göreviniz var**.",
-            "other": "Bugünden sonra atanmış **{{.Count}} göreviniz var**."
+            "one": "Bugünden sonra süresi dolacak **{{.Count}} göreviniz var**.",
+            "other": "Bugünden sonra süresi dolacak **{{.Count}} göreviniz var**."
         }
     },
     {
@@ -107,7 +107,7 @@
     },
     {
         "id": "app.user.run.request_join_channel",
-        "translation": "@{{.Name}} bir oyun Katılımcısı ve bu kanala katılmak istiyor. Kanalın herhangi bir üyesi onu çağırabilir.\n"
+        "translation": "@{{.Name}} bir oyun katılımcısı ve bu kanala katılmak istiyor. Kanalın herhangi bir üyesi onu çağırabilir.\n"
     },
     {
         "id": "app.user.run.status_enable",
@@ -159,7 +159,7 @@
     },
     {
         "id": "app.user.new_run.title",
-        "translation": "Senaryoyu oyuna"
+        "translation": "Senaryoyu oyna"
     },
     {
         "id": "app.user.new_run.submit_label",
@@ -171,7 +171,7 @@
     },
     {
         "id": "app.user.new_run.playbook",
-        "translation": "Playbook"
+        "translation": "Senaryo"
     },
     {
         "id": "app.user.new_run.new_playbook",
