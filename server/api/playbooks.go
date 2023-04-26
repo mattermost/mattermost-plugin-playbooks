@@ -7,12 +7,10 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -701,14 +699,8 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWrit
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return
 	}
-	timezone, err := timeutils.GetUserTimezone(user)
-	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user timezone", err)
-		return
-	}
-	if timezone == nil {
-		timezone = time.Now().UTC().Location()
-	}
+	timezone := user.GetTimezoneLocation()
+
 	// get unix time for duration
 	startTime, appErr := model.GetStartOfDayForTimeRange(timeRange, timezone)
 	if appErr != nil {
@@ -758,14 +750,8 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWrit
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user", err)
 		return
 	}
-	timezone, err := timeutils.GetUserTimezone(user)
-	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to get user timezone", err)
-		return
-	}
-	if timezone == nil {
-		timezone = time.Now().UTC().Location()
-	}
+	timezone := user.GetTimezoneLocation()
+
 	// get unix time for duration
 	startTime, appErr := model.GetStartOfDayForTimeRange(timeRange, timezone)
 	if appErr != nil {
