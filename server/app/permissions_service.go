@@ -67,7 +67,7 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	// Public playbooks
 	if playbook.Public {
 		// Public playbooks are public to those who can list channels on a team. (Not guests)
-		if p.api.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionListTeamChannels) {
+		if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionListTeamChannels) {
 			if playbook.DefaultPlaybookMemberRole == "" {
 				return []string{playbook.DefaultPlaybookMemberRole}
 			}

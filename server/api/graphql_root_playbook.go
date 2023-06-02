@@ -60,7 +60,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 		}
 	}
 
-	isGuest, err := app.IsGuest(userID, c.api)
+	isGuest, err := app.IsGuest(userID, c.pluginAPI)
 	if err != nil {
 		return nil, err
 	}
