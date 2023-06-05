@@ -66,10 +66,13 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 
 	// Public playbooks
 	if playbook.Public {
-		if playbook.DefaultPlaybookMemberRole == "" {
-			return []string{playbook.DefaultPlaybookMemberRole}
+		// Public playbooks are public to those who can list channels on a team. (Not guests)
+		if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionListTeamChannels) {
+			if playbook.DefaultPlaybookMemberRole == "" {
+				return []string{playbook.DefaultPlaybookMemberRole}
+			}
+			return []string{PlaybookRoleMember}
 		}
-		return []string{PlaybookRoleMember}
 	}
 
 	return []string{}
@@ -360,9 +363,10 @@ func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Pl
 		return errors.Wrapf(noAccessErr, "no playbook access; no team view permission for team `%s`", playbook.TeamID)
 	}
 
-	// If the playbook is public team access is enough to view
 	if p.PlaybookIsPublic(playbook) {
-		return nil
+		if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPublicPlaybookView) {
+			return nil
+		}
 	}
 
 	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPrivatePlaybookView) {
