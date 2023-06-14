@@ -128,8 +128,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config := configStore.Get()
 	config.PluginSettings.Directory = &dir
 	config.PluginSettings.ClientDirectory = &clientDir
-	addr := "localhost:9056"
-	config.ServiceSettings.ListenAddress = &addr
+	config.ServiceSettings.ListenAddress = model.NewString("localhost:0")
 	config.TeamSettings.MaxUsersPerTeam = model.NewInt(10000)
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
@@ -246,7 +245,7 @@ func (e *TestEnvironment) CreateClients() {
 	require.Nil(e.T, appErr)
 	e.RegularUserNotInTeam = notInTeam
 
-	siteURL := "http://localhost:9056"
+	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
 
 	serverAdminClient := model.NewAPIv4Client(siteURL)
 	_, _, err := serverAdminClient.Login(admin.Email, userPassword)
