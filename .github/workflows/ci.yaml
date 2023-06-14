@@ -109,13 +109,13 @@ jobs:
       - name: ci/ensure-build-on-all-platforms
         run: make dist
 
-  test-MySQL57-Postgres10:
+  test-MySQL57-Postgres11:
     runs-on: ubuntu-22.04
     needs:
       - lint
     services:
       postgres:
-        image: postgres:10.17
+        image: postgres:11.13
         env:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -143,47 +143,6 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout repository
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-
-      - name: ci/test-with-db
-        uses: ./.github/actions/test-with-db
-
-  test-MySQL8-Postgres11:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    services:
-      postgres:
-        image: postgres:11.13
-        env:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           fetch-depth: "0"
@@ -431,8 +390,7 @@ jobs:
     needs:
       - e2e-cypress-tests-master
       - e2e-cypress-tests-cloud
-      - test-MySQL57-Postgres10
-      - test-MySQL8-Postgres11
+      - test-MySQL57-Postgres11
       - test-MySQL8-Postgres14
     runs-on: ubuntu-22.04
     permissions:
