@@ -232,47 +232,6 @@ jobs:
       - name: ci/test-with-db
         uses: ./.github/actions/test-with-db
 
-  test-MariaDB10-Postgres12:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    services:
-      postgres:
-        image: postgres:12.9
-        env:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mariadb:10.6
-        env:
-          MARIADB_ROOT_PASSWORD: mostest
-          MARIADB_DATABASE: mattermost_test
-          MARIADB_USER: mmuser
-          MARIADB_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-
-      - name: ci/test-with-db
-        uses: ./.github/actions/test-with-db
-
   generate-specs:
     runs-on: ubuntu-22.04
     outputs:
@@ -475,7 +434,6 @@ jobs:
       - test-MySQL57-Postgres10
       - test-MySQL8-Postgres11
       - test-MySQL8-Postgres14
-      - test-MariaDB10-Postgres12
     runs-on: ubuntu-22.04
     permissions:
       checks: write
