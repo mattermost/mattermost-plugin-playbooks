@@ -1,8 +1,8 @@
 {
   "private": true,
   "engines": {
-    "npm": ">=7.0.0",
-    "node": ">=16.4.0"
+    "npm": ">=7.24.0",
+    "node": ">=16.10.0"
   },
   "dependencies": {
     "@apollo/client": "3.7.3",
