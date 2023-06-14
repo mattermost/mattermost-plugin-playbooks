@@ -9,6 +9,6 @@ query-filters:
       id: go/log-injection
 
 paths-ignore:
-  - tests-e2e
+  - e2e-tests
   - '**/*_test.go'
   - '**/*.test.*'

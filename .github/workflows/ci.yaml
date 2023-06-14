@@ -35,7 +35,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: |
             webapp/package-lock.json
-            tests-e2e/package-lock.json
+            e2e-tests/package-lock.json
 
       - name: ci/cache-node-modules
         id: cache-node-modules
@@ -43,9 +43,9 @@ jobs:
         with:
           path: |
             webapp/node_modules
-            tests-e2e/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
+            e2e-tests/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
 
       - name: ci/setup-webapp-npm-deps
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -60,7 +60,7 @@ jobs:
         env:
           NODE_ENV: development
         run: |
-          cd tests-e2e
+          cd e2e-tests
           npm install --ignore-scripts --no-save
 
       - name: ci/checking-code-style
@@ -286,8 +286,8 @@ jobs:
         uses: ./.github/actions/generate-specs
         with:
           parallelism: 3
-          directory: tests-e2e
-          search_path: cypress/integration
+          directory: e2e-tests
+          search_path: tests/integration
 
   e2e-cypress-tests-master:
     runs-on: ubuntu-latest-8-cores

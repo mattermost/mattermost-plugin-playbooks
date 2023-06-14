@@ -5,10 +5,10 @@
 
 bin
 dist
-tests-e2e/node_modules
-tests-e2e/cypress/screenshots
-tests-e2e/cypress/videos
-tests-e2e/cypress/results
+e2e-tests/node_modules
+e2e-tests/cypress/screenshots
+e2e-tests/cypress/videos
+e2e-tests/cypress/results
 .eslintcache
 report.xml
 

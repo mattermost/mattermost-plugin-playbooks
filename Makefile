@@ -53,7 +53,7 @@ install-go-tools:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: apply webapp/node_modules tests-e2e/node_modules install-go-tools
+check-style: apply webapp/node_modules e2e-tests/node_modules install-go-tools
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -61,7 +61,7 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run check-types
 endif
 
-	cd tests-e2e && npm run check
+	cd e2e-tests && npm run check
 
 # It's highly recommended to run go-vet first
 # to find potential compile errors that could introduce
@@ -74,13 +74,13 @@ endif
 
 ## Fix JS file ESLint issues
 .PHONY: fix-style
-fix-style: apply webapp/node_modules tests-e2e/node_modules
+fix-style: apply webapp/node_modules e2e-tests/node_modules
 	@echo Fixing lint issues to follow style guide
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run fix
 endif
-	cd tests-e2e && npm run fix
+	cd e2e-tests && npm run fix
 
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
@@ -122,9 +122,9 @@ ifneq ($(HAS_WEBAPP),)
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
-tests-e2e/node_modules: $(wildcard tests-e2e/package.json)
+e2e-tests/node_modules: $(wildcard e2e-tests/package.json)
 ifneq ($(HAS_WEBAPP),)
-	cd tests-e2e && $(NPM) install
+	cd e2e-tests && $(NPM) install
 	touch $@
 endif
 

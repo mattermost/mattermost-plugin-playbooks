@@ -25,7 +25,7 @@ runs:
         cache: "npm"
         cache-dependency-path: |
           webapp/package-lock.json
-          tests-e2e/package-lock.json
+          e2e-tests/package-lock.json
 
     - name: ci/cache-node-modules
       id: cache-node-modules
@@ -33,9 +33,9 @@ runs:
       with:
         path: |
           webapp/node_modules
-          tests-e2e/node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
-        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
+          e2e-tests/node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
 
     - name: ci/disable-ALSA
       run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
@@ -68,7 +68,7 @@ runs:
       run: |
         cd webapp
         npm install --ignore-scripts --no-save
-        cd ../tests-e2e
+        cd ../e2e-tests
         npm install --ignore-scripts --no-save
 
     - name: ci/installing-cypress-deps
@@ -77,7 +77,7 @@ runs:
         NODE_ENV: development
       run: |
         sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
-        cd tests-e2e/
+        cd e2e-tests/
         npx cypress install
 
     - name: ci/install-playbooks
@@ -103,7 +103,7 @@ runs:
         CYPRESS_serverEdition: ${{ inputs.CYPRESS_serverEdition }}
         TERM: xterm
       run: |
-        cd tests-e2e
+        cd e2e-tests
         npm run test -- --spec "${{ inputs.SPECS }}"
       shell: bash
 
@@ -113,7 +113,7 @@ runs:
       with:
         name: cypress-test-results
         path: |
-          tests-e2e/cypress/results/junit
-          tests-e2e/cypress/videos
-          tests-e2e/cypress/screenshots
+          e2e-tests/cypress/results/junit
+          e2e-tests/cypress/videos
+          e2e-tests/cypress/screenshots
         retention-days: 14 ## No need to keep test results more than 14 days
