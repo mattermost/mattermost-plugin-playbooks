@@ -150,13 +150,13 @@ jobs:
       - name: ci/test-with-db
         uses: ./.github/actions/test-with-db
 
-  test-MySQL8-Postgres14:
+  test-MySQL8-Postgres15:
     runs-on: ubuntu-22.04
     needs:
       - lint
     services:
       postgres:
-        image: postgres:14.1
+        image: postgres:15.3
         env:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -218,7 +218,7 @@ jobs:
       matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
     services:
       postgres:
-        image: postgres:10.17
+        image: postgres:15.3
         env:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
@@ -307,7 +307,7 @@ jobs:
       matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
     services:
       postgres:
-        image: postgres:10.17
+        image: postgres:15.3
         env:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
@@ -391,7 +391,7 @@ jobs:
       - e2e-cypress-tests-master
       - e2e-cypress-tests-cloud
       - test-MySQL57-Postgres11
-      - test-MySQL8-Postgres14
+      - test-MySQL8-Postgres15
     runs-on: ubuntu-22.04
     permissions:
       checks: write
