@@ -1330,8 +1330,9 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 	if IsSystemAdmin(requesterInfo.UserID, s.pluginAPI) {
 		return owners, nil
 	}
-	// If setting is not nil, means that ShowFullName is true
-	if s.pluginAPI.Configuration.GetConfig().PrivacySettings.ShowFullName != nil {
+	// If ShowFullName is true return owners info unedited
+	showFullName := s.pluginAPI.Configuration.GetConfig().PrivacySettings.ShowFullName
+	if showFullName != nil && *showFullName {
 		return owners, nil
 	}
 	// Remove names otherwise
