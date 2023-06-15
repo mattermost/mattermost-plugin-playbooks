@@ -9,3 +9,8 @@
 
 # node
 *.lock
+
+node_modules
+results
+tests/screenshots
+tests/videos
