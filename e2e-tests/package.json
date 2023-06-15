@@ -86,7 +86,6 @@
     "cypress:run:electron": "cross-env TZ=Etc/UTC cypress run --browser electron",
     "benchmarks:run-server": "cd mattermost && bin/mattermost",
     "start:webhook": "node webhook_serve.js",
-    "pretest": "npm run clean",
     "test": "cross-env TZ=Etc/UTC cypress run",
     "test:ci": "node run_tests.js",
     "uniq-meta": "grep -r \"^// $META:\" cypress | grep -ow '@\\w*' | sort | uniq",
