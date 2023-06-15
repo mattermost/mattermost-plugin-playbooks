@@ -13,6 +13,13 @@ export default defineConfig({
     taskTimeout: 20000,
     video: false,
     viewportWidth: 1300,
+    reporter: 'cypress-multi-reporters',
+    reporterOptions: {
+        reporterEnabled: 'spec, mocha-junit-reporter',
+        mochaJunitReporterReporterOptions: {
+            mochaFile: 'results/junit/test_results[hash].xml',
+        },
+    },
     env: {
         adminEmail: 'sysadmin@sample.mattermost.com',
         adminUsername: 'sysadmin',
