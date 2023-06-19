@@ -12,25 +12,8 @@ package config
 // If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
 // copy appropriate for your types.
 type Configuration struct {
-	// PlaybookCreatorsUserIds is a list of users that can edit playbooks
-	PlaybookCreatorsUserIds []string
-
-	// EnableExperimentalFeatures determines if experimental features are enabled.
-	EnableExperimentalFeatures bool
-
-	// ** The following are NOT stored on the server
-	// AdminUserIDs contains a list of user IDs that are allowed
-	// to administer plugin functions, even if not Mattermost sysadmins.
-	AllowedUserIDs []string
-
 	// BotUserID used to post messages.
 	BotUserID string
-
-	// AdminLogLevel is "debug", "info", "warn", or "error".
-	AdminLogLevel string
-
-	// AdminLogVerbose: set to include full context with admin log messages.
-	AdminLogVerbose bool
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if

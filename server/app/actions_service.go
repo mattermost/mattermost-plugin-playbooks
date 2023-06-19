@@ -203,13 +203,13 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID st
 func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	user, err := a.api.User.Get(userID)
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to resolve user for userID '%s'", userID)
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to resolve user")
 		return
 	}
 
 	channel, err := a.api.Channel.Get(channelID)
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to resolve channel for channelID '%s'", channelID)
+		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to resolve channel")
 		return
 	}
 
@@ -222,7 +222,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		TriggerType: TriggerTypeNewMemberJoins,
 	})
 	if err != nil {
-		logrus.WithError(err).Errorf("failed to get the channel actions for channelID %q", channelID)
+		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to get the channel actions")
 		return
 	}
 
@@ -231,7 +231,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 			"action_type":  ActionTypeCategorizeChannel,
 			"trigger_type": TriggerTypeNewMemberJoins,
 			"num_actions":  len(actions),
-		}).Errorf("expected only one action to be retrieved")
+		}).Error("expected only one action to be retrieved")
 	}
 
 	if len(actions) != 1 {
@@ -244,7 +244,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 	}
 
 	var payload CategorizeChannelPayload
-	if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+	if err = mapstructure.Decode(action.Payload, &payload); err != nil {
 		logrus.WithError(err).Error("unable to decode payload of CategorizeChannelPayload")
 		return
 	}

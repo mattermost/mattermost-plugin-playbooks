@@ -35,7 +35,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: |
             webapp/package-lock.json
-            tests-e2e/package-lock.json
+            e2e-tests/package-lock.json
 
       - name: ci/cache-node-modules
         id: cache-node-modules
@@ -43,9 +43,9 @@ jobs:
         with:
           path: |
             webapp/node_modules
-            tests-e2e/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('tests-e2e/package-lock.json') }}
+            e2e-tests/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/package-lock.json') }}
 
       - name: ci/setup-webapp-npm-deps
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -60,7 +60,7 @@ jobs:
         env:
           NODE_ENV: development
         run: |
-          cd tests-e2e
+          cd e2e-tests
           npm install --ignore-scripts --no-save
 
       - name: ci/checking-code-style
@@ -109,13 +109,13 @@ jobs:
       - name: ci/ensure-build-on-all-platforms
         run: make dist
 
-  test-MySQL57-Postgres10:
+  test-MySQL57-Postgres11:
     runs-on: ubuntu-22.04
     needs:
       - lint
     services:
       postgres:
-        image: postgres:10.17
+        image: postgres:11.13
         env:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -150,13 +150,13 @@ jobs:
       - name: ci/test-with-db
         uses: ./.github/actions/test-with-db
 
-  test-MySQL8-Postgres11:
+  test-MySQL8-Postgres15:
     runs-on: ubuntu-22.04
     needs:
       - lint
     services:
       postgres:
-        image: postgres:11.13
+        image: postgres:15.3
         env:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
@@ -175,88 +175,6 @@ jobs:
           MYSQL_DATABASE: mattermost_test
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-
-      - name: ci/test-with-db
-        uses: ./.github/actions/test-with-db
-
-  test-MySQL8-Postgres14:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    services:
-      postgres:
-        image: postgres:14.1
-        env:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          fetch-depth: "0"
-
-      - name: ci/test-with-db
-        uses: ./.github/actions/test-with-db
-
-  test-MariaDB10-Postgres12:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    services:
-      postgres:
-        image: postgres:12.9
-        env:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mariadb:10.6
-        env:
-          MARIADB_ROOT_PASSWORD: mostest
-          MARIADB_DATABASE: mattermost_test
-          MARIADB_USER: mmuser
-          MARIADB_PASSWORD: mostest
         ports:
           - 3306:3306
         options: >-
@@ -286,8 +204,8 @@ jobs:
         uses: ./.github/actions/generate-specs
         with:
           parallelism: 3
-          directory: tests-e2e
-          search_path: cypress/integration
+          directory: e2e-tests
+          search_path: tests/integration
 
   e2e-cypress-tests-master:
     runs-on: ubuntu-latest-8-cores
@@ -300,7 +218,7 @@ jobs:
       matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
     services:
       postgres:
-        image: postgres:10.17
+        image: postgres:15.3
         env:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
@@ -364,6 +282,7 @@ jobs:
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
+          MM_SERVICEENVIRONMENT: test
         ports:
           - 8065:8065
     steps:
@@ -389,7 +308,7 @@ jobs:
       matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
     services:
       postgres:
-        image: postgres:10.17
+        image: postgres:15.3
         env:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
@@ -453,6 +372,7 @@ jobs:
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
+          MM_SERVICEENVIRONMENT: test
         ports:
           - 8065:8065
     steps:
@@ -472,10 +392,8 @@ jobs:
     needs:
       - e2e-cypress-tests-master
       - e2e-cypress-tests-cloud
-      - test-MySQL57-Postgres10
-      - test-MySQL8-Postgres11
-      - test-MySQL8-Postgres14
-      - test-MariaDB10-Postgres12
+      - test-MySQL57-Postgres11
+      - test-MySQL8-Postgres15
     runs-on: ubuntu-22.04
     permissions:
       checks: write
@@ -484,8 +402,6 @@ jobs:
       - name: ci/download-test-results
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
       - name: ci/publish-results
-        uses: EnricoMi/publish-unit-test-result-action@a3caf02865c0604ad3dc1ecfcc5cdec9c41b7936 # v2.3.0
+        uses: mikepenz/action-junit-report@c0e4b81aaa0067314a2d0d06e19b512c9d8af4f5 # v3.7.7
         with:
-          comment_mode: failures
-          compare_to_earlier_commit: false
-          junit_files: "**/*.xml"
+          report_paths: "**/*.xml"

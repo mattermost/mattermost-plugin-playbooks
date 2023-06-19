@@ -105,6 +105,10 @@ func getEnvWithDefault(name, defaultValue string) string {
 }
 
 func Setup(t *testing.T) *TestEnvironment {
+	// Ignore any locally defined SiteURL as we intend to host our own.
+	os.Unsetenv("MM_SERVICESETTINGS_SITEURL")
+	os.Unsetenv("MM_SERVICESETTINGS_LISTENADDRESS")
+
 	// Environment Settings
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
 
@@ -124,8 +128,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config := configStore.Get()
 	config.PluginSettings.Directory = &dir
 	config.PluginSettings.ClientDirectory = &clientDir
-	addr := "localhost:9056"
-	config.ServiceSettings.ListenAddress = &addr
+	config.ServiceSettings.ListenAddress = model.NewString("localhost:0")
 	config.TeamSettings.MaxUsersPerTeam = model.NewInt(10000)
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
@@ -137,7 +140,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	// override config with e2etest.config.json if it exists
 	textConfig, err := os.ReadFile("./e2etest.config.json")
 	if err == nil {
-		err := json.Unmarshal(textConfig, config)
+		err = json.Unmarshal(textConfig, config)
 		if err != nil {
 			require.NoError(t, err)
 		}
@@ -206,39 +209,43 @@ func (e *TestEnvironment) CreateClients() {
 	e.T.Helper()
 
 	userPassword := "Password123!"
-	admin, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
+	admin, appErr := e.A.CreateUserAsAdmin(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksadmin@example.com",
 		Username: "playbooksadmin",
 		Password: userPassword,
-	})
+	}, "")
+	require.Nil(e.T, appErr)
 	e.AdminUser = admin
 
-	user, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
+	user, appErr := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:     "playbooksuser@example.com",
 		Username:  "playbooksuser",
 		Password:  userPassword,
 		FirstName: "First 1",
 		LastName:  "Last 1",
 	})
+	require.Nil(e.T, appErr)
 	e.RegularUser = user
 
-	user2, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
+	user2, appErr := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:     "playbooksuser2@example.com",
 		Username:  "playbooksuser2",
 		Password:  userPassword,
 		FirstName: "First 2",
 		LastName:  "Last 2",
 	})
+	require.Nil(e.T, appErr)
 	e.RegularUser2 = user2
 
-	notInTeam, _ := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
+	notInTeam, appErr := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
 		Email:    "playbooksusernotinteam@example.com",
 		Username: "playbooksusenotinteam",
 		Password: userPassword,
 	})
+	require.Nil(e.T, appErr)
 	e.RegularUserNotInTeam = notInTeam
 
-	siteURL := "http://localhost:9056"
+	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
 
 	serverAdminClient := model.NewAPIv4Client(siteURL)
 	_, _, err := serverAdminClient.Login(admin.Email, userPassword)

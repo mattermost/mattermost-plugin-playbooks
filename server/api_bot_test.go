@@ -10,6 +10,9 @@ import (
 )
 
 func TestTrialLicences(t *testing.T) {
+	// This test is flaky due to upstream connectivity issues.
+	t.Skip()
+
 	e := Setup(t)
 	e.CreateBasic()
 

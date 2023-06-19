@@ -630,9 +630,8 @@
         "onlyEquality": false
       }
     ],
-    "formatjs/no-id": 2,
+    "formatjs/no-multiple-whitespaces": 2,
     "formatjs/enforce-default-message": 2,
-    "formatjs/no-multiple-whitespaces": 1,
     "formatjs/no-multiple-plurals": 2,
     "formatjs/enforce-placeholders": 2,
     "formatjs/no-literal-string-in-jsx": 2,
@@ -650,6 +649,13 @@
         "@typescript-eslint/ban-ts-ignore": 0,
         "@typescript-eslint/ban-types": 1,
         "@typescript-eslint/ban-ts-comment": 0,
+        "@typescript-eslint/no-unused-vars": [
+          2,
+          {
+            "vars": "all",
+            "args": "after-used"
+          }
+        ],
         "@typescript-eslint/no-var-requires": 0,
         "@typescript-eslint/prefer-interface": 0,
         "@typescript-eslint/explicit-function-return-type": 0,

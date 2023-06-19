@@ -35,7 +35,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: |
             webapp/package-lock.json
-            tests-e2e/package-lock.json
+            e2e-tests/package-lock.json
       - name: Install webapp npm deps
         env:
           NODE_ENV: development

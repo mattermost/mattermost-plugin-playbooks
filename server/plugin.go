@@ -131,7 +131,6 @@ func (p *Plugin) OnActivate() error {
 
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
-		c.AdminLogLevel = "debug"
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed save bot to config")
@@ -354,7 +353,7 @@ func (p *Plugin) runMetricsServer() {
 	// Run server to expose metrics
 	go func() {
 		err := metricServer.Run()
-		if err != nil {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logrus.WithError(err).Error("Metrics server could not be started")
 		}
 	}()

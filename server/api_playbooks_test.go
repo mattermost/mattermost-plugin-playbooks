@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -38,7 +39,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("create public playbook, unlicensed with one pre-existing playbook in the team, should succeed", func(t *testing.T) {
@@ -47,7 +48,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	e.SetE10Licence()
@@ -58,7 +59,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("e10 licenced servers can't create private playbooks", func(t *testing.T) {
@@ -79,7 +80,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: false,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("create playbook with no permissions to broadcast channel", func(t *testing.T) {
@@ -97,18 +98,18 @@ func TestPlaybooks(t *testing.T) {
 			Title:  "test6 - to be archived",
 			TeamID: e.BasicTeam.Id,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		// Make sure we /can/ update
 		playbook.Title = "New Title!"
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *playbook)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		err = e.PlaybooksClient.Playbooks.Archive(context.Background(), id)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		// Test that we cannot update an archived playbook
 		playbook.Title = "Another title"
@@ -131,14 +132,14 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 
 		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "SearchTest 2 -- only regular user access",
 			TeamID: e.BasicTeam.Id,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 
 		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -146,7 +147,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 
 		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -154,43 +155,43 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam2.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 
 		playbookResults, err := e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam: "SearchTest",
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 4, playbookResults.TotalCount)
 
 		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam: "SearchTest 2",
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
 
 		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam: "ümber",
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
 
 		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam: "よこそ",
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
 
 		playbookResults, err = e.PlaybooksClient2.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam: "SearchTest",
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 2, playbookResults.TotalCount)
 
 		playbookResults, err = e.PlaybooksClient2.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam: "ümberdå",
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
 	})
 
@@ -200,7 +201,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 
 		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -208,7 +209,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 		err = e.PlaybooksClient.Playbooks.Archive(context.Background(), id)
 		assert.NoError(t, err)
@@ -216,14 +217,14 @@ func TestPlaybooks(t *testing.T) {
 		playbookResults, err := e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam: "ArchiveTest",
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
 
 		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
 			SearchTeam:   "ArchiveTest",
 			WithArchived: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 2, playbookResults.TotalCount)
 
 	})
@@ -235,7 +236,7 @@ func TestPlaybooks(t *testing.T) {
 			Public:         true,
 			InvitedUserIDs: []string{e.RegularUser.Id},
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("create playbook with pre-assigned task, valid user list, and invitations enabled", func(t *testing.T) {
@@ -257,7 +258,7 @@ func TestPlaybooks(t *testing.T) {
 			InvitedUserIDs:     []string{e.RegularUser.Id},
 			InviteUsersEnabled: true,
 		})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 }
 
@@ -1156,14 +1157,14 @@ func TestPlaybooksConversions(t *testing.T) {
 		t.Run("E0", func(t *testing.T) {
 			e.RemoveLicence()
 
-			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		})
 
 		t.Run("E10", func(t *testing.T) {
 			e.SetE10Licence()
 
-			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		})
 
@@ -1420,6 +1421,9 @@ func TestPlaybookGetAutoFollows(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, c.expectedTotalCount, len(res))
+
+				sort.Strings(res)
+				sort.Strings(c.expectedFollowers)
 				require.Equal(t, c.expectedFollowers, res)
 			}
 		})
