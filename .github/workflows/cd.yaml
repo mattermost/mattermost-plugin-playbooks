@@ -123,8 +123,15 @@ jobs:
         run: |
           aws s3 cp dist/${GITHUB_REPOSITORY#*/}-${GITHUB_REF_NAME}.tar.gz s3://mattermost-plugins-ci/release/ --acl public-read --cache-control no-cache
 
+      - uses: jnwng/github-app-installation-token-action@c54add4c02866dc41e106745ac6dcf5cdd6339e5
+        id: installationToken
+        with:
+          appId: 276366
+          installationId: 32621164
+          privateKey: ${{ secrets.UNIFIED_CI_PRIVATE_KEY }}
+
       - name: cd/create-github-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.installationToken.outputs.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file dist/release-notes.md  dist/*.tar.gz
