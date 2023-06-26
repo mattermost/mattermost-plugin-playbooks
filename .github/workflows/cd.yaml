@@ -109,8 +109,7 @@ jobs:
 
       - name: cd/rename-artifacts
         run: |
-          mv dist/*.tar.gz dist/${GITHUB_REPOSITORY#*/}-latest.tar.gz
-          cp dist/${GITHUB_REPOSITORY#*/}-latest.tar.gz dist/${GITHUB_REPOSITORY#*/}-${GITHUB_REF_NAME}.tar.gz
+          mv dist/*.tar.gz dist/${GITHUB_REPOSITORY#*/}-${GITHUB_REF_NAME}.tar.gz
 
       - name: cd/rename-artifacts
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
