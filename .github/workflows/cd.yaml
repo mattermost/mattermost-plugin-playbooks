@@ -109,7 +109,7 @@ jobs:
 
       - name: cd/rename-artifacts
         run: |
-          mv dist/*.tar.gz dist/${GITHUB_REPOSITORY#*/}-${GITHUB_REF_NAME}.tar.gz
+          mv dist/*.tar.gz dist/playbooks-${GITHUB_REF_NAME}.tar.gz
 
       - name: cd/rename-artifacts
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
@@ -120,7 +120,7 @@ jobs:
 
       - name: cd/artifact-upload
         run: |
-          aws s3 cp dist/${GITHUB_REPOSITORY#*/}-${GITHUB_REF_NAME}.tar.gz s3://mattermost-plugins-ci/release/ --acl public-read --cache-control no-cache
+          aws s3 cp dist/playbooks-${GITHUB_REF_NAME}.tar.gz s3://mattermost-plugins-ci/release/ --acl public-read --cache-control no-cache
 
       - uses: jnwng/github-app-installation-token-action@c54add4c02866dc41e106745ac6dcf5cdd6339e5
         id: installationToken
