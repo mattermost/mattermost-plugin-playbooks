@@ -14,9 +14,9 @@
     {
         "id": "app.user.digest.tasks.num_assigned",
         "translation": {
-            "one": "Masz przydzielone zadanie {{.Count}}:",
-            "few": "Masz przydzielone zadania {{.Count}}:",
-            "many": "Masz przydzielonych zadań {{.Count}}:"
+            "one": "Masz {{.Count}} przydzielone zadanie:",
+            "few": "Masz {{.Count}} przydzielone zadania:",
+            "many": "Masz {{.Count}} przydzielonych zadań:"
         }
     },
     {
@@ -62,9 +62,9 @@
     {
         "id": "app.user.digest.runs_in_progress.num_in_progress",
         "translation": {
-            "one": "Aktualnie trwa {{.Count}} bieg:",
-            "few": "Aktualnie trwają {{.Count}} biegi:",
-            "many": "Aktualnie trwa {{.Count}} biegów:"
+            "one": "Masz {{.Count}} uruchomienie w toku:",
+            "few": "Masz {{.Count}} uruchomienia w toku:",
+            "many": "Masz {{.Count}} uruchomień w toku:"
         }
     },
     {
@@ -85,7 +85,7 @@
     },
     {
         "id": "app.user.digest.overdue_status_updates.heading",
-        "translation": "Aktualizacje Stanu Zaległości"
+        "translation": "Zaległe aktualizacje statusu"
     },
     {
         "id": "app.command.execute.error",
