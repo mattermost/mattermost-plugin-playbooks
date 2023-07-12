@@ -1,15 +1,15 @@
 [
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{.Username}} zapnul aktualizace statusu pro tento běh"
+        "translation": "@{{.Username}} zapnul aktualizace statusu pro [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.Username}} vypnul aktualizace statusu pro tento běh"
+        "translation": "@{{.Username}} vypnul aktualizace stavu pro běh [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here — @{{.Name}} si vyžádal aktualizaci statusu. \n"
+        "translation": "@here — @{{.Name}} vyžádal aktualizaci stavu pro [{{.RunName}}]({{.RunURL}}). \n"
     },
     {
         "id": "app.user.run.request_join_channel",
@@ -106,5 +106,113 @@
     {
         "id": "app.command.execute.error",
         "translation": "Není možné provést příkaz."
+    },
+    {
+        "id": "app.user.run.confirm_finish.submit_label",
+        "translation": "Dokončit běh"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.placeholder",
+        "translation": "Krátký souhrn zobrazený na časové ose"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.title",
+        "translation": "Přidat do časové osy běhu"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "one": "Je tu **{{.Count}} nesplněný úkol**. Opravdu chcete dokončit běh *{{.RunName}}* pro všechny účastníky?",
+            "few": "Je tu **{{.Count}} nesplněných úkolů**. Opravdu chcete dokončit běh *{{.RunName}}* pro všechny účastníky?",
+            "other": "Jsou tu **{{.Count}} nesplněné úkoly**. Opravdu chcete dokončit běh *{{.RunName}}* pro všechny účastníky?"
+        }
+    },
+    {
+        "id": "app.user.new_run.intro",
+        "translation": "**Vlastník** {{.Username}}"
+    },
+    {
+        "id": "app.user.new_run.playbook",
+        "translation": "Playbook"
+    },
+    {
+        "id": "app.user.new_run.run_name",
+        "translation": "Název běhu"
+    },
+    {
+        "id": "app.user.new_run.submit_label",
+        "translation": "Spustit běh"
+    },
+    {
+        "id": "app.user.new_run.title",
+        "translation": "Spustit playbook"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.description",
+        "translation": "Popis"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.name",
+        "translation": "Název"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.submit_label",
+        "translation": "Přidat úkol"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.title",
+        "translation": "Přidat nový úkol"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.playbook_run",
+        "translation": "Playbook běh"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.submit_label",
+        "translation": "Přidat do časové osy běhu"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "Souhrn"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.help",
+        "translation": "Max. 64 znaků"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run",
+        "translation": "Dokončit běh"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run.placeholder",
+        "translation": "Také označit jako dokončené"
+    },
+    {
+        "id": "app.user.run.confirm_finish.title",
+        "translation": "Potvrdit dokončení běhu"
+    },
+    {
+        "id": "app.user.run.update_status.change_since_last_update",
+        "translation": "Změn od poslední aktualizace stavu"
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "one": "Poskytnout aktualizaci pro zúčastněné. Tato zpráva bude odeslána do {{.Count}} kanálu.",
+            "few": "Poskytnout aktualizaci pro zúčastněné. Tato zpráva bude odeslána do {{.Count}} kanálů.",
+            "other": "Poskytnout aktualizaci pro zúčastněné. Tato zpráva bude odeslána do {{.Count}} kanálů."
+        }
+    },
+    {
+        "id": "app.user.run.update_status.reminder_for_next_update",
+        "translation": "Připomínka pro další aktualizaci"
+    },
+    {
+        "id": "app.user.run.update_status.submit_label",
+        "translation": "Aktualizovat stav"
+    },
+    {
+        "id": "app.user.run.update_status.title",
+        "translation": "Aktualizace stavu"
     }
 ]
