@@ -108,5 +108,95 @@
     {
         "id": "app.user.run.add_checklist_item.submit_label",
         "translation": "新增任務"
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "other": "您有 **{{.Count}} 個分配的任務在今天之後到期**。"
+        }
+    },
+    {
+        "id": "app.user.run.add_to_timeline.playbook_run",
+        "translation": "Playbook 執行"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.submit_label",
+        "translation": "新增到執行時間軸"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "摘要"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.help",
+        "translation": "最多 64 個字元"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.placeholder",
+        "translation": "在時間軸中顯示簡短摘要"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.title",
+        "translation": "新增至執行時間軸"
+    },
+    {
+        "id": "app.user.run.confirm_finish.submit_label",
+        "translation": "執行完成"
+    },
+    {
+        "id": "app.user.run.confirm_finish.title",
+        "translation": "確認完程執行"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run",
+        "translation": "執行完成"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run.placeholder",
+        "translation": "同時將執行標記為已完成"
+    },
+    {
+        "id": "app.user.run.request_join_channel",
+        "translation": "@{{.Name}} 是執行參與者，想要加入此頻道。該頻道的任何成員都可以邀請他們。\n"
+    },
+    {
+        "id": "app.user.run.request_update",
+        "translation": "@here — @{{.Name}} 請求 [{{.RunName}}]({{.RunURL}}) 的狀態更新。 \n"
+    },
+    {
+        "id": "app.user.run.status_disable",
+        "translation": "@{{.Username}} 禁用了 [{{.RunName}}]({{.RunURL}}) 的狀態更新"
+    },
+    {
+        "id": "app.user.run.status_enable",
+        "translation": "@{{.Username}} 啟用了 [{{.RunName}}]({{.RunURL}}) 的狀態更新"
+    },
+    {
+        "id": "app.user.run.update_status.title",
+        "translation": "更新狀態"
+    },
+    {
+        "id": "app.user.run.update_status.change_since_last_update",
+        "translation": "自上次更新以來的異動"
+    },
+    {
+        "id": "app.user.run.update_status.reminder_for_next_update",
+        "translation": "下次更新提醒"
+    },
+    {
+        "id": "app.user.run.update_status.submit_label",
+        "translation": "更新狀態"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "other": "有 **{{.Count}} 個未完成的任務**。您確定要為所有參與者完成跑步 *{{.RunName}}* 嗎？"
+        }
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "other": "向利益相關者提供更新。此文章將被廣播到 {{.Count}} 個頻道。"
+        }
     }
 ]
