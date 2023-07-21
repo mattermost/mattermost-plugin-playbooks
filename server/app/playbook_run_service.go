@@ -2257,7 +2257,9 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
-		return nil, err
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"user_id": user.Id,
+		}).Warn("failed to get user timezone")
 	}
 
 	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force)
