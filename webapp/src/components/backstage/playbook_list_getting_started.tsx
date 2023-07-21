@@ -71,7 +71,7 @@ const GettingStarted = (props: {canCreatePlaybooks: boolean, scrollToNext: () =>
             <Title><FormattedMessage defaultMessage='Get started with Playbooks'/></Title>
             <Description>
                 <FormattedMessage
-                    defaultMessage='Playbooks make important procedures more repeatable and accountable. A playbook can be run multiple times, and each run has its own record and retrospective.'
+                    defaultMessage='Playbooks make important procedures more repeatable and accountable. A playbook can be run multiple times, and each run has its own record and retrospective. Learn more in our <a href="https://docs.mattermost.com/guides/playbooks.html">documentation</a>.'
                 />
             </Description>
             {props.canCreatePlaybooks ? (
