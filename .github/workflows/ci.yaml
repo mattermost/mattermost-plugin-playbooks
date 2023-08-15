@@ -347,7 +347,7 @@ jobs:
         ports:
           - 9200:9200
       mattermost-server:
-        image: mattermost/mm-ee-test:prerelease
+        image: mattermost/mattermost-cloud:latest
         env:
           DB_HOST: postgres
           DB_PORT_NUMBER: 5432
