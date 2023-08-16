@@ -691,7 +691,7 @@
     "egUE/K": "Senden an ausgewählte Kanäle",
     "Xm0L7N": "Wenn eine Statusaktualisierung gesendet oder eine Retrospektive veröffentlicht wird",
     "iEtImk": "Wenn du einen Durchlauf verlässt{isFollowing, select, true { und nicht mehr folgst} other { }}, wird er aus der linken Seitenleiste entfernt. Du findest ihn weiterhin, wenn du alle Durchläufe ansiehst.",
-    "cnfVhV": "Verlassen {isFollowing, select, true { und nicht folgen } other {}}run",
+    "cnfVhV": "Durchlauf verlassen {isFollowing, select, true { und nicht mehr folgen } other {}}",
     "Q4sutg": "Bestätige verlassen{isFollowing, select, true { und nicht mehr folgen} other {}}",
     "Suyx6A": "Der Playbook Import ist fehlgeschlagen. Bitte prüfe, dass das JSON valide ist und nochmal versuchen.",
     "QegBKq": "Playbook beitreten",
@@ -846,5 +846,6 @@
     "DKiv0o": "{user} hat den Checklistenpunkt \"{name}\" übersprungen",
     "8FzC0B": "{user} hat den Checklistenpunkt \"{name}\" abgehakt",
     "3qPQMX": "{name} hat ein Status-Update angefordert",
-    "9M92On": "Kanäle auswählen"
+    "9M92On": "Kanäle auswählen",
+    "N7Ln74": "Wiederholung"
 }
