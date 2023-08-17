@@ -42,12 +42,9 @@ const (
 	CollectionTypeRun = "run"
 )
 
-// These credentials for Rudder need to be populated at build-time,
-// passing the following flags to the go build command:
-// -ldflags "-X main.rudderDataplaneURL=<url> -X main.rudderWriteKey=<write_key>"
-var (
-	rudderDataplaneURL string
-	rudderWriteKey     string
+const (
+	rudderDataplaneURL = "https://pdat.matterlytics.com"
+	rudderWriteKey     = "1ag0Mv7LPf5uJNhcnKomqg0ENFd"
 )
 
 type TelemetryClient interface {
