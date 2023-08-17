@@ -1,5 +1,4 @@
 # Include custom targets and environment variables here
-GO_BUILD_FLAGS += -ldflags "-X main.rudderDataplaneURL=$(MM_RUDDER_DATAPLANE_URL) -X main.rudderWriteKey=$(MM_RUDDER_WRITE_KEY)"
 
 ## Generate mocks.
 mocks:
