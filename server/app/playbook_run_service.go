@@ -653,12 +653,7 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, p
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID, summary string) error {
-	post, err := s.pluginAPI.Post.GetPost(postID)
-	if err != nil {
-		return errors.Wrap(err, "failed to find post")
-	}
-
+func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID string, post *model.Post, summary string) error {
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      model.GetMillis(),
@@ -667,12 +662,12 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID
 		EventType:     EventFromPost,
 		Summary:       summary,
 		Details:       "",
-		PostID:        postID,
+		PostID:        post.Id,
 		SubjectUserID: post.UserId,
 		CreatorUserID: userID,
 	}
 
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 

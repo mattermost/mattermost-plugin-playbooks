@@ -381,7 +381,17 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, state.PostID, summary); err != nil {
+	post, err := h.pluginAPI.Post.GetPost(state.PostID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "couldn't get post ID", err)
+		return
+	}
+
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
+	}
+
+	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {
 		h.HandleError(w, c.logger, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
