@@ -385,7 +385,7 @@
     "ruJGqS": "Dostęp do Playbooka",
     "osuP6z": "Przeciągnij, aby zmienić kolejność listy kontrolnej",
     "o+ZEL3": "Opublikowano {timestamp}",
-    "lQT7iD": "Utwórz playbook",
+    "lQT7iD": "Utwórz Playbook",
     "gGcNUr": "Nie masz uprawnień",
     "g0mp+I": "Podczas konwersji do prywatnego playbooka, członkostwo i historia uruchomień są zachowane. Ta zmiana jest trwała i nie może być cofnięta. Czy na pewno chcesz przekonwertować {playbookTitle} do prywatnego playbooka?",
     "SXJ98n": "Po opublikowaniu raportu retrospektywnego nie będzie można go edytować. Czy chcesz opublikować raport retrospektywny?",
@@ -546,7 +546,7 @@
     "9trZXa": "Każdy członek zespołu może przeglądać",
     "7P5T3W": "Przywróć listę kontrolną",
     "v5/Cox": "Duplikat listy kontrolnej",
-    "mCrdeS": "Razem Playbooków",
+    "mCrdeS": "Razem uruchomień Playbooków",
     "4GjZsL": "Razem Playbooków",
     "IxtSML": "Dodaj listę kontrolną",
     "CwwzAU": "Dodaj nazwę listy kontrolnej",
@@ -836,5 +836,6 @@
     "DKiv0o": "{user} pominął pozycję z listy kontrolnej \"{name}\"",
     "8FzC0B": "{user} odznaczył pozycję z listy kontrolnej \"{name}\"",
     "3qPQMX": "{name} poprosił o aktualizację statusu",
-    "9M92On": "Wybierz kanały"
+    "9M92On": "Wybierz kanały",
+    "N7Ln74": "Ponowne uruchomienie"
 }
