@@ -243,7 +243,7 @@ func TestActionList(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	playbookID := model.NewId()
+	playbookID := e.BasicPlaybook.ID
 	promptActionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
 		ChannelID:   e.BasicPublicChannel.Id,
 		Enabled:     true,
