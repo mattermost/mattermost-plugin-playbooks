@@ -29,12 +29,6 @@ Although a valid Mattermost Enterprise license is required to access all feature
 
 If you're running Mattermost Starter and don't already have a valid license, you can obtain a trial license from **System Console > Edition and License**. If you're running the Team Edition of Mattermost, including when you run the server directly from source, you may instead configure your server to enable both testing (`ServiceSettings.EnableTesting`) and developer mode (`ServiceSettings.EnableDeveloper`). These settings are not recommended in production environments. See [Contributing](#contributing) to learn more about how to set up your development environment.
 
-## Updating documentation
-
-When you've submitted a PR that requires a documentation update, please visit the documentation [here](https://docs.mattermost.com/administration/devops-command-center.html), select **Edit** in the top-right corner of the page, and add your update. You can read more about the process in the [docs repo README file](https://github.com/mattermost/docs).
-
-If you're uncertain whether your PR requires documentation, or you'd like some editorial feedback prior to submitting the docs PR, you can add the `Docs/Needed` label to your PR in this repo, and tag @justinegeffen.
-
 ## Generating test data
 
 To quickly test Mattermost Playbooks, use the following test commands to create playbook runs populated with random data:
@@ -59,7 +53,7 @@ When running E2E tests, the local `mattermost-server` configuration may be unexp
 
 This plugin contains both a server and web app portion. Read our documentation about the [Developer Workflow](https://developers.mattermost.com/extend/plugins/developer-workflow/) and [Developer Setup](https://developers.mattermost.com/extend/plugins/developer-setup/) for more information about developing and extending plugins.
 
-For more information about contributing to Mattermost, and the different ways you can contribute, see https://www.mattermost.org/contribute-to-mattermost.
+For more information about contributing to Mattermost, and the different ways you can contribute, see [https://www.mattermost.org/contribute-to-mattermost](https://mattermost.com/contribute/?redirect_source=mm-org).
 
 ### Logging
 
@@ -99,7 +93,7 @@ All migrations in the `future` folder should have both migration directions - `u
 
 ## Popular searches for Help Wanted issues:
 
-* [Help wanted tickets currently up for grab](https://github.com/mattermost/mattermost-server/issues?q=is%3Aopen+is%3Aissue+label%3AArea%2FPlaybooks+label%3A%22Up+For+Grabs%22)
-* [Good first issue tickets](https://github.com/mattermost/mattermost-server/issues?q=is%3Aopen+is%3Aissue+label%3AArea%2FPlaybooks+label%3A%22Good+First+Issue%22+label%3A%22Up+For+Grabs%22)
+* [Help wanted tickets currently up for grab]([https://github.com/mattermost/mattermost-server/issues?q=is%3Aopen+is%3Aissue+label%3AArea%2FPlaybooks+label%3A%22Up+For+Grabs%22](https://github.com/mattermost/mattermost-plugin-playbooks/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+Wanted%22+label%3A%22Up+For+Grabs%22))
+* [Good first issue tickets]([https://github.com/mattermost/mattermost-server/issues?q=is%3Aopen+is%3Aissue+label%3AArea%2FPlaybooks+label%3A%22Good+First+Issue%22+label%3A%22Up+For+Grabs%22](https://github.com/mattermost/mattermost-plugin-playbooks/issues?q=is%3Aopen+is%3Aissue+label%3A%22Good+First+Issue%22))
 
 For more information, join the discussion in the [`Developers: Playbooks` channel](https://community.mattermost.com/core/channels/developers-playbooks).
