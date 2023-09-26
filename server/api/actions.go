@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
@@ -63,6 +64,18 @@ func (a *ActionsHandler) createChannelAction(c *Context, w http.ResponseWriter, 
 	if channelAction.ChannelID != channelID {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel ID in request body must match channel ID in URL", nil)
 		return
+	}
+
+	if channelAction.ActionType == app.ActionTypePromptRunPlaybook {
+		var payload app.PromptRunPlaybookFromKeywordsPayload
+		if err := mapstructure.Decode(channelAction.Payload, &payload); err != nil {
+			a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "couldn't verify permissions for run playbook action", err)
+			return
+		}
+
+		if !a.PermissionsCheck(w, c.logger, a.permissions.PlaybookView(userID, payload.PlaybookID)) {
+			return
+		}
 	}
 
 	// Validate the action type and payload
@@ -193,6 +206,18 @@ func (a *ActionsHandler) updateChannelAction(c *Context, w http.ResponseWriter, 
 	if newChannelAction.ChannelID != channelID {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel ID in request body must match channel ID in URL", nil)
 		return
+	}
+
+	if newChannelAction.ActionType == app.ActionTypePromptRunPlaybook {
+		var payload app.PromptRunPlaybookFromKeywordsPayload
+		if err := mapstructure.Decode(newChannelAction.Payload, &payload); err != nil {
+			a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "couldn't verify permissions for run playbook action", err)
+			return
+		}
+
+		if !a.PermissionsCheck(w, c.logger, a.permissions.PlaybookView(userID, payload.PlaybookID)) {
+			return
+		}
 	}
 
 	// Validate the new action type and payload

@@ -381,7 +381,17 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, state.PostID, summary); err != nil {
+	post, err := h.pluginAPI.Post.GetPost(state.PostID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "couldn't get post ID", err)
+		return
+	}
+
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
+	}
+
+	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {
 		h.HandleError(w, c.logger, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
@@ -922,12 +932,22 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 
 	var options app.StatusUpdateOptions
 	if message, ok := request.Submission[app.DialogFieldMessageKey]; ok {
-		options.Message = message.(string)
+		messageStr, valid := message.(string)
+		if !valid {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "message must be a string", nil)
+			return
+		}
+		options.Message = messageStr
 	}
 
 	if reminderI, ok := request.Submission[app.DialogFieldReminderInSecondsKey]; ok {
+		reminderStr, valid := reminderI.(string)
+		if !valid {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "reminder must be a string", nil)
+			return
+		}
 		var reminder int
-		reminder, err = strconv.Atoi(reminderI.(string))
+		reminder, err = strconv.Atoi(reminderStr)
 		if err != nil {
 			h.HandleError(w, c.logger, err)
 			return
