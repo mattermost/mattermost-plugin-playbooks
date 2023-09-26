@@ -419,6 +419,19 @@ func TestCreateInvalidRuns(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 		assert.Nil(t, run)
 	})
+
+	t.Run("checklist title way too long", func(t *testing.T) {
+		run := e.BasicRun
+		require.Len(t, run.Checklists, 0)
+
+		// Create a valid checklist
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: strings.Repeat("T", 257*1024),
+			Items: []client.ChecklistItem{},
+		})
+		t.Logf("Error: %v", err)
+		require.Error(t, err)
+	})
 }
 
 func TestRunRetrieval(t *testing.T) {
