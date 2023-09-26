@@ -312,6 +312,10 @@ func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct 
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
+	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+		return "", err
+	}
+
 	if err := validateTaskActions(*args.TaskActions); err != nil {
 		return "", err
 	}
