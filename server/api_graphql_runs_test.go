@@ -969,6 +969,7 @@ func TestUpdateRun(t *testing.T) {
 func TestUpdateRunTaskActions(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
+	e.CreateGuest()
 
 	t.Run("task actions mutation create and update", func(t *testing.T) {
 		createNewRunWithNoChecklists := func(t *testing.T) *client.PlaybookRun {
@@ -1003,6 +1004,22 @@ func TestUpdateRunTaskActions(t *testing.T) {
 		// create a new task action
 		triggerPayload := "{\"keywords\":[\"one\", \"two\"], \"user_ids\":[\"abc\"]}"
 		actionPayload := "{\"enabled\":false}"
+
+		errorResp, err := UpdateRunTaskActions(e.PlaybooksClientGuest, run.ID, 0, 0, &[]app.TaskAction{
+			{
+				Trigger: app.Trigger{
+					Type:    app.KeywordsByUsersTriggerType,
+					Payload: triggerPayload,
+				},
+				Actions: []app.Action{{
+					Type:    app.MarkItemAsDoneActionType,
+					Payload: actionPayload,
+				}},
+			},
+		})
+		require.NotEmpty(t, errorResp.Errors)
+		require.NoError(t, err)
+
 		response, err := UpdateRunTaskActions(e.PlaybooksClient, run.ID, 0, 0, &[]app.TaskAction{
 			{
 				Trigger: app.Trigger{
