@@ -414,4 +414,31 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.get('#rhsContainer').should('not.exist');
         });
     });
+
+    describe('telemetry', () => {
+        it('does not run with bad run id', () => {
+            // # Watch for bad request
+            cy.intercept('**/d0nt').as('telemetryRequest');
+
+            // # Run the playbook before loading the application
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName,
+                ownerUserId: testUser.id,
+            });
+
+            // # Navigate to the application and a channel with a playbook run
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}?telem_action=mock_action_name&telem_run_id=../../d0nt&forceRHSOpen`);
+
+            // * Ensure telemetry doesn't run
+            cy.wait(3000);
+            cy.get('@telemetryRequest.all').then((interceptions) => {
+                expect(interceptions).to.have.length(0);
+            });
+        });
+    });
 });
