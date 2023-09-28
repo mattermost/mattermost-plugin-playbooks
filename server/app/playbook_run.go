@@ -604,7 +604,7 @@ type PlaybookRunService interface {
 	OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error
 
 	// AddPostToTimeline adds an event based on a post to a playbook run's timeline.
-	AddPostToTimeline(playbookRunID, userID, postID, summary string) error
+	AddPostToTimeline(playbookRunID, userID string, post *model.Post, summary string) error
 
 	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
 	RemoveTimelineEvent(playbookRunID, userID, eventID string) error

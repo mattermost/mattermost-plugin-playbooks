@@ -1613,7 +1613,7 @@ func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 	}
 
 	if len(checklistsJSON) > maxJSONLength {
-		return nil, errors.Wrapf(err, "checklist json for playbook run id '%s' is too long (max %d)", playbookRun.ID, maxJSONLength)
+		return nil, errors.Errorf("checklist json for playbook run id '%s' is too long (max %d)", playbookRun.ID, maxJSONLength)
 	}
 
 	return &sqlPlaybookRun{
