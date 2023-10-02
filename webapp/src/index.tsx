@@ -19,6 +19,7 @@ import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
 import LoginHook from 'src/components/login_hook';
 import {makeRHSOpener} from 'src/rhs_opener';
+import {makeWelcomeMessagePoster} from 'src/welcome_message_poster';
 import {makeSlashCommandHook} from 'src/slash_command';
 import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/retrospective_reminder_posts';
 import {pluginId} from 'src/manifest';
@@ -38,7 +39,6 @@ import reducer from 'src/reducer';
 import {
     handleReconnect,
     handleWebsocketChannelUpdated,
-    handleWebsocketChannelViewed,
     handleWebsocketPlaybookArchived,
     handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookRestored,
@@ -131,6 +131,7 @@ function getSiteURL(): string {
 // ts-prune-ignore-next
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
+    removeChannelSwitcherListener?: Unsubscribe;
     activityFunc?: () => void;
 
     stylesContainer?: Element;
@@ -238,7 +239,6 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_VIEWED, handleWebsocketChannelViewed(store.getState, store.dispatch));
 
         // Local slash commands
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
@@ -320,6 +320,9 @@ export default class Plugin {
         // Listen for channel changes and open the RHS when appropriate.
         this.removeRHSListener = store.subscribe(makeRHSOpener(store));
 
+        // Listen for channel changes to trigger welcome actions when appropriate.
+        this.removeChannelSwitcherListener = store.subscribe(makeWelcomeMessagePoster(store));
+
         // publish templates
         store.dispatch(publishTemplates(PresetTemplates));
     }
@@ -328,6 +331,10 @@ export default class Plugin {
         if (this.removeRHSListener) {
             this.removeRHSListener();
             delete this.removeRHSListener;
+        }
+        if (this.removeChannelSwitcherListener) {
+            this.removeChannelSwitcherListener();
+            delete this.removeChannelSwitcherListener;
         }
         if (this.activityFunc) {
             document.removeEventListener('click', this.activityFunc);
