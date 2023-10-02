@@ -388,8 +388,6 @@ func TestRestorePlaybookRun(t *testing.T) {
 
 // intended to catch problems with the code assembling StatusPosts
 func TestStressTestGetPlaybookRuns(t *testing.T) {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	// Change these to larger numbers to stress test. Keep them low for CI.
 	numPlaybookRuns := 100
 	postsPerPlaybookRun := 3
@@ -438,8 +436,6 @@ func TestStressTestGetPlaybookRuns(t *testing.T) {
 func TestStressTestGetPlaybookRunsStats(t *testing.T) {
 	// don't need to assemble stats in CI
 	t.SkipNow()
-
-	rand.Seed(time.Now().UTC().UnixNano())
 
 	// Change these to larger numbers to stress test.
 	numPlaybookRuns := 1000
