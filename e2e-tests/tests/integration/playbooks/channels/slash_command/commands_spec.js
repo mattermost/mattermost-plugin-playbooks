@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {switchToChannel} from '../../../channels/mark_as_unread/helpers';
+
 describe('channels > slash command > owner', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -263,6 +265,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
 
                             // # Navigate directly to the playbook run channel
                             cy.visit(`/${testTeam.name}/channels/${testPublicChannel.name}`);
+                            switchToChannel(testPublicChannel);
                         });
                     });
                 });

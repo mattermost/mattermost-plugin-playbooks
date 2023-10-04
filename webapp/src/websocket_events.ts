@@ -10,7 +10,6 @@ import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entit
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
-import {ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -21,15 +20,9 @@ import {
     playbookRunUpdated,
     receivedTeamPlaybookRuns,
     removedFromPlaybookRunChannel,
-    setHasViewedChannel,
 } from 'src/actions';
-import {
-    fetchChannelActions,
-    fetchCheckAndSendMessageOnJoin,
-    fetchPlaybookRunByChannel,
-    fetchPlaybookRuns,
-} from 'src/client';
-import {clientId, hasViewedByChannelID, myPlaybookRunsMap} from 'src/selectors';
+import {fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
+import {clientId, myPlaybookRunsMap} from 'src/selectors';
 
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
@@ -196,33 +189,6 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
         const playbookRun = await fetchPlaybookRunByChannel(channel.id);
         if (playbookRun) {
             dispatch(playbookRunUpdated(playbookRun));
-        }
-    };
-};
-
-export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: Dispatch) => {
-    return async (msg: WebSocketMessage<{ channel_id: string }>) => {
-        const channelId = msg.data.channel_id;
-
-        // if the user has already viewed the channel,
-        // there's no need to fetch actions again
-        if (hasViewedByChannelID(getState())[channelId]) {
-            return;
-        }
-
-        // If there are no welcome message actions enabled, stop
-        const actions = await fetchChannelActions(channelId, ChannelTriggerType.NewMemberJoins);
-
-        const welcomeAction = actions.find((action) =>
-            action.trigger_type === ChannelTriggerType.NewMemberJoins && action.action_type === ChannelActionType.WelcomeMessage
-        );
-        if (!welcomeAction?.enabled) {
-            return;
-        }
-
-        const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
-        if (hasViewed) {
-            dispatch(setHasViewedChannel(channelId));
         }
     };
 };

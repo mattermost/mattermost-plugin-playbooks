@@ -1819,7 +1819,7 @@ var dummyListPlaybooks = []app.Playbook{
 // user is a member of, and the randomness is controlled by the `seed` parameter
 // to create reproducible results if needed.
 func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns int, begin, end time.Time, seed int64) {
-	rand.Seed(seed)
+	randWithSeed := rand.New(rand.NewSource(seed))
 
 	beginMillis := begin.Unix() * 1000
 	endMillis := end.Unix() * 1000
@@ -1833,7 +1833,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 
 	timestamps := make([]int64, 0, numPlaybookRuns)
 	for i := 0; i < numPlaybookRuns; i++ {
-		timestamp := rand.Int63n(endMillis-beginMillis) + beginMillis
+		timestamp := randWithSeed.Int63n(endMillis-beginMillis) + beginMillis
 		timestamps = append(timestamps, timestamp)
 	}
 
@@ -1892,12 +1892,12 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	tableMsg := "| Run name | Created at | Status |\n|-	|-	|-	|\n"
 	playbookRuns := make([]*app.PlaybookRun, 0, numPlaybookRuns)
 	for i := 0; i < numPlaybookRuns; i++ {
-		playbook := playbooks[rand.Intn(len(playbooks))]
+		playbook := playbooks[randWithSeed.Intn(len(playbooks))]
 
-		playbookRunName := playbookRunNames[rand.Intn(len(playbookRunNames))]
+		playbookRunName := playbookRunNames[randWithSeed.Intn(len(playbookRunNames))]
 		// Give a company name to 1/3 of the playbook runs created
-		if rand.Intn(3) == 0 {
-			companyName := fakeCompanyNames[rand.Intn(len(fakeCompanyNames))]
+		if randWithSeed.Intn(3) == 0 {
+			companyName := fakeCompanyNames[randWithSeed.Intn(len(fakeCompanyNames))]
 			playbookRunName = fmt.Sprintf("[%s] %s", companyName, playbookRunName)
 		}
 
