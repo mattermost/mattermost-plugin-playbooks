@@ -56,8 +56,10 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         if (searchParams.has('telem_action') && searchParams.has('telem_run_id')) {
             // Record and remove telemetry
             const action = searchParams.get('telem_action') || '';
-            const runId = searchParams.get('telem_run_id') || '';
-            telemetryEventForPlaybookRun(runId, action);
+            const runId = searchParams.get('telem_run_id')?.match(/^\w+$/)?.[0] || '';
+            if (action && runId) {
+                telemetryEventForPlaybookRun(runId, action);
+            }
             searchParams.delete('telem_action');
             searchParams.delete('telem_run_id');
             browserHistory.replace({pathname: url.pathname, search: searchParams.toString()});
