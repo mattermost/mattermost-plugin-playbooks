@@ -31,6 +31,7 @@ const RunsOnTeamQuery = gql`
             edges {
                 node {
                     channel_id: channelID
+                    team_id: teamID
                 }
             }
         }

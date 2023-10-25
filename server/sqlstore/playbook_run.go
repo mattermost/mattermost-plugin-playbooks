@@ -392,33 +392,39 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	}
 
 	var statusPosts playbookRunStatusPosts
+	var timelineEvents []app.TimelineEvent
+	var metricsData []sqlRunMetricData
 
-	postInfoSelect := s.statusPostsSelect.
-		OrderBy("p.CreateAt").
-		Where(sq.Eq{"sp.IncidentID": playbookRunIDs})
+	if !options.SkipExtras {
+		postInfoSelect := s.statusPostsSelect.
+			OrderBy("p.CreateAt").
+			Where(sq.Eq{"sp.IncidentID": playbookRunIDs})
 
-	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, errors.Wrap(err, "failed to get playbook run status posts")
-	}
+		err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
+		if err != nil && err != sql.ErrNoRows {
+			return nil, errors.Wrap(err, "failed to get playbook run status posts")
+		}
 
-	timelineEvents, err := s.getTimelineEventsForPlaybookRun(tx, playbookRunIDs)
-	if err != nil {
-		return nil, err
-	}
+		timelineEvents, err = s.getTimelineEventsForPlaybookRun(tx, playbookRunIDs)
+		if err != nil {
+			return nil, err
+		}
 
-	metricsData, err := s.getMetricsForPlaybookRun(tx, playbookRunIDs)
-	if err != nil {
-		return nil, err
+		metricsData, err = s.getMetricsForPlaybookRun(tx, playbookRunIDs)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
-	addStatusPostsToPlaybookRuns(statusPosts, playbookRuns)
-	addTimelineEventsToPlaybookRuns(timelineEvents, playbookRuns)
-	addMetricsToPlaybookRuns(metricsData, playbookRuns)
+	if !options.SkipExtras {
+		addStatusPostsToPlaybookRuns(statusPosts, playbookRuns)
+		addTimelineEventsToPlaybookRuns(timelineEvents, playbookRuns)
+		addMetricsToPlaybookRuns(metricsData, playbookRuns)
+	}
 
 	return &app.GetPlaybookRunsResults{
 		TotalCount: total,

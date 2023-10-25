@@ -1095,6 +1095,9 @@ type PlaybookRunFilterOptions struct {
 
 	// Types filters by all run types in the list (inclusive)
 	Types []string
+
+	// Skip getting extra information (like timeline events and status posts). Used by GraphQL to limit the amount of data retrieved.
+	SkipExtras bool
 }
 
 // Clone duplicates the given options.
