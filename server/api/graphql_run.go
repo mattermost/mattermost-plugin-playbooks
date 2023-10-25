@@ -80,22 +80,46 @@ func (r *RunResolver) Checklists() []*ChecklistResolver {
 	return checklistResolvers
 }
 
-func (r *RunResolver) StatusPosts() []*StatusPostResolver {
+func (r *RunResolver) StatusPosts(ctx context.Context) ([]*StatusPostResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	thunk := c.statusPostsLoader.Load(ctx, r.ID)
+
+	statusPosts, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+
 	statusPostResolvers := make([]*StatusPostResolver, 0, len(r.PlaybookRun.StatusPosts))
-	for _, statusPost := range r.PlaybookRun.StatusPosts {
+	for _, statusPost := range statusPosts {
 		statusPostResolvers = append(statusPostResolvers, &StatusPostResolver{statusPost})
 	}
 
-	return statusPostResolvers
+	return statusPostResolvers, nil
 }
 
-func (r *RunResolver) TimelineEvents() []*TimelineEventResolver {
+func (r *RunResolver) TimelineEvents(ctx context.Context) ([]*TimelineEventResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	thunk := c.timelineEventsLoader.Load(ctx, r.ID)
+
+	timelineEvents, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+
 	timelineEventResolvers := make([]*TimelineEventResolver, 0, len(r.PlaybookRun.StatusPosts))
-	for _, event := range r.PlaybookRun.TimelineEvents {
+	for _, event := range timelineEvents {
 		timelineEventResolvers = append(timelineEventResolvers, &TimelineEventResolver{event})
 	}
 
-	return timelineEventResolvers
+	return timelineEventResolvers, nil
 }
 
 func (r *RunResolver) IsFavorite(ctx context.Context) (bool, error) {

@@ -396,13 +396,9 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	var metricsData []sqlRunMetricData
 
 	if !options.SkipExtras {
-		postInfoSelect := s.statusPostsSelect.
-			OrderBy("p.CreateAt").
-			Where(sq.Eq{"sp.IncidentID": playbookRunIDs})
-
-		err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
-		if err != nil && err != sql.ErrNoRows {
-			return nil, errors.Wrap(err, "failed to get playbook run status posts")
+		statusPosts, err = s.getStatusPostsForPlaybookRun(tx, playbookRunIDs)
+		if err != nil {
+			return nil, err
 		}
 
 		timelineEvents, err = s.getTimelineEventsForPlaybookRun(tx, playbookRunIDs)
@@ -780,6 +776,51 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 	playbookRun.MetricsData = metricsData
 
 	return playbookRun, nil
+}
+
+func (s *playbookRunStore) GetStatusPostsByIDs(playbookRunIDs []string) (map[string][]app.StatusPost, error) {
+	statusPosts, err := s.getStatusPostsForPlaybookRun(s.store.db, playbookRunIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	statusPostsByRunID := make(map[string][]app.StatusPost)
+	for _, statusPost := range statusPosts {
+		statusPostsByRunID[statusPost.PlaybookRunID] = append(statusPostsByRunID[statusPost.PlaybookRunID], statusPost.StatusPost)
+	}
+
+	return statusPostsByRunID, nil
+}
+
+func (s *playbookRunStore) GetTimelineEventsByIDs(playbookRunIDs []string) ([]app.TimelineEvent, error) {
+	return s.getTimelineEventsForPlaybookRun(s.store.db, playbookRunIDs)
+}
+
+func (s *playbookRunStore) GetMetricsByIDs(playbookRunIDs []string) (map[string][]app.RunMetricData, error) {
+	metrics, err := s.getMetricsForPlaybookRun(s.store.db, playbookRunIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	metricsByIds := make(map[string][]app.RunMetricData)
+	for _, metric := range metrics {
+		metricsByIds[metric.IncidentID] = append(metricsByIds[metric.IncidentID], app.RunMetricData{MetricConfigID: metric.MetricConfigID, Value: metric.Value})
+	}
+
+	return metricsByIds, nil
+}
+
+func (s *playbookRunStore) getStatusPostsForPlaybookRun(q sqlx.Queryer, playbookRunIDs []string) (playbookRunStatusPosts, error) {
+	var statusPosts playbookRunStatusPosts
+	postInfoSelect := s.statusPostsSelect.
+		OrderBy("p.CreateAt").
+		Where(sq.Eq{"sp.IncidentID": playbookRunIDs})
+
+	err := s.store.selectBuilder(q, &statusPosts, postInfoSelect)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrap(err, "failed to get playbook run status posts")
+	}
+	return statusPosts, nil
 }
 
 func (s *playbookRunStore) getTimelineEventsForPlaybookRun(q sqlx.Queryer, playbookRunIDs []string) ([]app.TimelineEvent, error) {

@@ -850,6 +850,60 @@ func TestResolverPlaybooks(t *testing.T) {
 	require.Equal(t, e.BasicPlaybook.ID, playbooks[runs[1].ID])
 }
 
+func TestResolverTimeline(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRun := func() *client.PlaybookRun {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for timeline",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		return run
+	}
+
+	runs := []*client.PlaybookRun{
+		createRun(),
+		createRun(),
+	}
+
+	timelineEvents, err := getRunTimeline(e.PlaybooksClient)
+	require.NoError(t, err)
+	require.Greater(t, len(timelineEvents[runs[0].ID]), 0)
+	require.Greater(t, len(timelineEvents[runs[1].ID]), 0)
+}
+
+func TestResolverStatus(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	createRun := func() *client.PlaybookRun {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for timeline",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		return run
+	}
+
+	run := createRun()
+
+	err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update!", 3000)
+	require.NoError(t, err)
+
+	err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), run.ID, "update 2", 3000)
+	require.NoError(t, err)
+
+	statusUpdates, err := getStatusUpdates(e.PlaybooksClient)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(statusUpdates[run.ID]))
+}
+
 func TestUpdateRun(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -1277,6 +1331,119 @@ func getRunPlaybooks(c *client.Client) (map[string]string, error) {
 	result := make(map[string]string)
 	for _, edges := range rawResult.Runs.Edges {
 		result[edges.Node.ID] = edges.Node.Playbook.ID
+	}
+	return result, nil
+}
+
+func getRunTimeline(c *client.Client) (map[string][]app.TimelineEvent, error) {
+	query := `
+	query GetRunTimeline {
+		runs {
+			edges {
+				node{
+					id
+					timelineEvents {
+						id
+						summary
+					}
+				}
+			}
+		}
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         query,
+		OperationName: "GetRunTimeline",
+	}, &response)
+
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Errors) > 0 {
+		return nil, fmt.Errorf("error from query %v", response.Errors)
+	}
+	rawResult := struct {
+		Runs struct {
+			Edges []struct {
+				Node struct {
+					ID             string `json:"id"`
+					TimelineEvents []struct {
+						ID      string `json:"id"`
+						Summary string `json:"summary"`
+					} `json:"timelineEvents"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"runs"`
+	}{}
+	err = json.Unmarshal(response.Data, &rawResult)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string][]app.TimelineEvent)
+	for _, edges := range rawResult.Runs.Edges {
+		events := []app.TimelineEvent{}
+		for _, event := range edges.Node.TimelineEvents {
+			events = append(events, app.TimelineEvent{
+				ID:      event.ID,
+				Summary: event.Summary,
+			})
+		}
+		result[edges.Node.ID] = events
+	}
+	return result, nil
+}
+
+func getStatusUpdates(c *client.Client) (map[string][]string, error) {
+	query := `
+	query GetRunTimeline {
+		runs {
+			edges {
+				node{
+					id
+					statusPosts {
+						id
+					}
+				}
+			}
+		}
+	}
+	`
+	var response graphql.Response
+	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         query,
+		OperationName: "GetRunTimeline",
+	}, &response)
+
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Errors) > 0 {
+		return nil, fmt.Errorf("error from query %v", response.Errors)
+	}
+	rawResult := struct {
+		Runs struct {
+			Edges []struct {
+				Node struct {
+					ID          string `json:"id"`
+					StatusPosts []struct {
+						ID string `json:"id"`
+					} `json:"statusPosts"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"runs"`
+	}{}
+	err = json.Unmarshal(response.Data, &rawResult)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string][]string)
+	for _, edge := range rawResult.Runs.Edges {
+		posts := []string{}
+		for _, post := range edge.Node.StatusPosts {
+			posts = append(posts, post.ID)
+		}
+		result[edge.Node.ID] = posts
 	}
 	return result, nil
 }
