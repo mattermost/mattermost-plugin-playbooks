@@ -369,6 +369,7 @@ export type Run = {
   summary: Scalars['String'];
   summaryModifiedAt: Scalars['Float'];
   teamID: Scalars['String'];
+  timelineEvents: Array<TimelineEvent>;
   type: PlaybookRunType;
   webhookOnStatusUpdateURLs: Array<Scalars['String']>;
 };
