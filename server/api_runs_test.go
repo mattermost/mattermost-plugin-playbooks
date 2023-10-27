@@ -549,6 +549,15 @@ func TestRunPostStatusUpdate(t *testing.T) {
 	})
 
 	t.Run("no permissions to run", func(t *testing.T) {
+		_, err := e.ServerAdminClient.RemoveTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+	})
+
+	t.Run("no permissions to run", func(t *testing.T) {
 		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
 		require.NoError(t, err)
 		err = e.PlaybooksClient2.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
