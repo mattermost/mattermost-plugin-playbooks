@@ -65,7 +65,7 @@ func graphQLTimelineEventsLoader[V []app.TimelineEvent](ctx context.Context, pla
 			continue
 		}
 		result[i] = &dataloader.Result[V]{
-			Data: V(timelineEvents),
+			Data: timelineEvents,
 		}
 	}
 
