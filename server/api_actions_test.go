@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/safemapstructure"
 	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -269,19 +269,19 @@ func TestActionList(t *testing.T) {
 			switch action.ID {
 			case welcomeActionID:
 				var payload client.WelcomeMessagePayload
-				err = mapstructure.Decode(action.Payload, &payload)
+				err = safemapstructure.Decode(action.Payload, &payload)
 				assert.NoError(t, err)
 				assert.Equal(t, "msg", payload.Message)
 
 			case categorizeActionID:
 				var payload client.CategorizeChannelPayload
-				err = mapstructure.Decode(action.Payload, &payload)
+				err = safemapstructure.Decode(action.Payload, &payload)
 				assert.NoError(t, err)
 				assert.Equal(t, "category", payload.CategoryName)
 
 			case promptActionID:
 				var payload client.PromptRunPlaybookFromKeywordsPayload
-				err = mapstructure.Decode(action.Payload, &payload)
+				err = safemapstructure.Decode(action.Payload, &payload)
 				assert.NoError(t, err)
 				assert.EqualValues(t, []string{"one", "two"}, payload.Keywords)
 				assert.Equal(t, playbookID, payload.PlaybookID)
@@ -386,7 +386,7 @@ func TestActionUpdate(t *testing.T) {
 		assert.Len(t, actions, 1)
 		fetchedAction := actions[0]
 		var fetchedPayload client.PromptRunPlaybookFromKeywordsPayload
-		err = mapstructure.Decode(fetchedAction.Payload, &fetchedPayload)
+		err = safemapstructure.Decode(fetchedAction.Payload, &fetchedPayload)
 		assert.NoError(t, err)
 
 		// Verify that the payload of the created action has one keyword
@@ -411,7 +411,7 @@ func TestActionUpdate(t *testing.T) {
 		assert.Len(t, updatedActions, 1)
 		updatedAction := updatedActions[0]
 		var updatedPayload client.PromptRunPlaybookFromKeywordsPayload
-		err = mapstructure.Decode(updatedAction.Payload, &updatedPayload)
+		err = safemapstructure.Decode(updatedAction.Payload, &updatedPayload)
 		assert.NoError(t, err)
 
 		// Verify that the payload of the updated action has no keywords

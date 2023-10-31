@@ -9,8 +9,8 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/safemapstructure"
 	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -182,7 +182,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 	}
 
 	var payload CategorizeChannelPayload
-	if err = mapstructure.Decode(action.Payload, &payload); err != nil {
+	if err = safemapstructure.Decode(action.Payload, &payload); err != nil {
 		logrus.WithError(err).Error("unable to decode payload of CategorizeChannelPayload")
 		return
 	}
@@ -304,7 +304,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 	for _, action := range actions {
 		if action.ActionType == ActionTypeWelcomeMessage {
 			var payload WelcomeMessagePayload
-			if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+			if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
 				logrus.WithError(err).WithField("action_type", action.ActionType).Error("payload of action is not valid")
 			}
 
@@ -350,7 +350,7 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(post *model.Post) {
 		}
 
 		var payload PromptRunPlaybookFromKeywordsPayload
-		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+		if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
 				"payload":     payload,
 				"actionType":  action.ActionType,

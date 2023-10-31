@@ -7,8 +7,8 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/safemapstructure"
 	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
@@ -113,7 +113,7 @@ func (a *ActionsHandler) ValidateChannelAction(c *Context, w http.ResponseWriter
 	switch action.ActionType {
 	case app.ActionTypeWelcomeMessage:
 		var payload app.WelcomeMessagePayload
-		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+		if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
 			return fmt.Errorf("unable to decode payload from action")
 		}
 
@@ -121,7 +121,7 @@ func (a *ActionsHandler) ValidateChannelAction(c *Context, w http.ResponseWriter
 		action.Payload = payload
 	case app.ActionTypePromptRunPlaybook:
 		var payload app.PromptRunPlaybookFromKeywordsPayload
-		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+		if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
 			return fmt.Errorf("unable to decode payload from action")
 		}
 		if err := checkValidPromptRunPlaybookFromKeywordsPayload(payload); err != nil {
@@ -136,7 +136,7 @@ func (a *ActionsHandler) ValidateChannelAction(c *Context, w http.ResponseWriter
 		action.Payload = payload
 	case app.ActionTypeCategorizeChannel:
 		var payload app.CategorizeChannelPayload
-		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+		if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
 			return fmt.Errorf("unable to decode payload from action")
 		}
 
