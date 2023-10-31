@@ -115,68 +115,6 @@ func (a *channelActionServiceImpl) GetChannelActions(channelID string, options G
 	return a.store.GetChannelActions(channelID, options)
 }
 
-func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
-	// Validate the trigger type and action types
-	switch action.TriggerType {
-	case TriggerTypeNewMemberJoins:
-		switch action.ActionType {
-		case ActionTypeWelcomeMessage:
-			break
-		case ActionTypeCategorizeChannel:
-			break
-		default:
-			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
-		}
-	case TriggerTypeKeywordsPosted:
-		if action.ActionType != ActionTypePromptRunPlaybook {
-			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
-		}
-	default:
-		return fmt.Errorf("trigger type %q not recognized", action.TriggerType)
-	}
-
-	// Validate the payload depending on the action type
-	switch action.ActionType {
-	case ActionTypeWelcomeMessage:
-		var payload WelcomeMessagePayload
-		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-			return fmt.Errorf("unable to decode payload from action")
-		}
-	case ActionTypePromptRunPlaybook:
-		var payload PromptRunPlaybookFromKeywordsPayload
-		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-			return fmt.Errorf("unable to decode payload from action")
-		}
-		if err := checkValidPromptRunPlaybookFromKeywordsPayload(payload); err != nil {
-			return err
-		}
-	case ActionTypeCategorizeChannel:
-		var payload CategorizeChannelPayload
-		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
-			return fmt.Errorf("unable to decode payload from action")
-		}
-
-	default:
-		return fmt.Errorf("action type %q not recognized", action.ActionType)
-	}
-
-	return nil
-}
-
-func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFromKeywordsPayload) error {
-	for _, keyword := range payload.Keywords {
-		if keyword == "" {
-			return fmt.Errorf("payload field 'keywords' must contain only non-empty keywords")
-		}
-	}
-
-	if payload.PlaybookID != "" && !model.IsValidId(payload.PlaybookID) {
-		return fmt.Errorf("payload field 'playbook_id' must be a valid ID")
-	}
-
-	return nil
-}
-
 func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID string) error {
 	oldAction, err := a.Get(action.ID)
 	if err != nil {
