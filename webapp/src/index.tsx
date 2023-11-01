@@ -318,7 +318,7 @@ export default class Plugin {
         this.userActivityWatch();
 
         // Listen for channel changes and open the RHS when appropriate.
-        this.removeRHSListener = store.subscribe(makeRHSOpener(store));
+        this.removeRHSListener = store.subscribe(makeRHSOpener(store, graphqlClient));
 
         // Listen for channel changes to trigger welcome actions when appropriate.
         this.removeChannelSwitcherListener = store.subscribe(makeWelcomeMessagePoster(store));

@@ -25,6 +25,7 @@ type GraphQLHandler struct {
 	config             config.Service
 	permissions        *app.PermissionsService
 	playbookStore      app.PlaybookStore
+	runStore           app.PlaybookRunStore
 	licenceChecker     app.LicenseChecker
 
 	schema *graphql.Schema
@@ -42,6 +43,7 @@ func NewGraphQLHandler(
 	configService config.Service,
 	permissions *app.PermissionsService,
 	playbookStore app.PlaybookStore,
+	runStore app.PlaybookRunStore,
 	licenceChecker app.LicenseChecker,
 ) *GraphQLHandler {
 	handler := &GraphQLHandler{
@@ -53,6 +55,7 @@ func NewGraphQLHandler(
 		config:             configService,
 		permissions:        permissions,
 		playbookStore:      playbookStore,
+		runStore:           runStore,
 		licenceChecker:     licenceChecker,
 	}
 
@@ -85,18 +88,22 @@ func NewGraphQLHandler(
 type ctxKey struct{}
 
 type GraphQLContext struct {
-	r                  *http.Request
-	playbookService    app.PlaybookService
-	playbookRunService app.PlaybookRunService
-	playbookStore      app.PlaybookStore
-	categoryService    app.CategoryService
-	pluginAPI          *pluginapi.Client
-	logger             logrus.FieldLogger
-	config             config.Service
-	permissions        *app.PermissionsService
-	licenceChecker     app.LicenseChecker
-	favoritesLoader    *dataloader.Loader[favoriteInfo, bool]
-	playbooksLoader    *dataloader.Loader[playbookInfo, *app.Playbook]
+	r                    *http.Request
+	playbookService      app.PlaybookService
+	playbookRunService   app.PlaybookRunService
+	playbookStore        app.PlaybookStore
+	runStore             app.PlaybookRunStore
+	categoryService      app.CategoryService
+	pluginAPI            *pluginapi.Client
+	logger               logrus.FieldLogger
+	config               config.Service
+	permissions          *app.PermissionsService
+	licenceChecker       app.LicenseChecker
+	favoritesLoader      *dataloader.Loader[favoriteInfo, bool]
+	playbooksLoader      *dataloader.Loader[playbookInfo, *app.Playbook]
+	statusPostsLoader    *dataloader.Loader[string, []app.StatusPost]
+	timelineEventsLoader *dataloader.Loader[string, []app.TimelineEvent]
+	runMetricsLoader     *dataloader.Loader[string, []app.RunMetricData]
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
@@ -124,20 +131,27 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 	// dataloaders
 	favoritesLoader := dataloader.NewBatchedLoader(graphQLFavoritesLoader[bool], dataloader.WithBatchCapacity[favoriteInfo, bool](loaderBatchCapacity))
 	playbooksLoader := dataloader.NewBatchedLoader(graphQLPlaybooksLoader[*app.Playbook], dataloader.WithBatchCapacity[playbookInfo, *app.Playbook](loaderBatchCapacity))
+	statusPostsLoader := dataloader.NewBatchedLoader(graphQLStatusPostsLoader[[]app.StatusPost], dataloader.WithBatchCapacity[string, []app.StatusPost](loaderBatchCapacity))
+	timelineEventsLoader := dataloader.NewBatchedLoader(graphQLTimelineEventsLoader[[]app.TimelineEvent], dataloader.WithBatchCapacity[string, []app.TimelineEvent](loaderBatchCapacity))
+	runMetricsLoader := dataloader.NewBatchedLoader(graphQLRunMetricsLoader[[]app.RunMetricData], dataloader.WithBatchCapacity[string, []app.RunMetricData](loaderBatchCapacity))
 
 	graphQLContext := &GraphQLContext{
-		r:                  r,
-		playbookService:    h.playbookService,
-		playbookRunService: h.playbookRunService,
-		categoryService:    h.categoryService,
-		pluginAPI:          h.pluginAPI,
-		logger:             c.logger,
-		config:             h.config,
-		permissions:        h.permissions,
-		playbookStore:      h.playbookStore,
-		licenceChecker:     h.licenceChecker,
-		favoritesLoader:    favoritesLoader,
-		playbooksLoader:    playbooksLoader,
+		r:                    r,
+		playbookService:      h.playbookService,
+		playbookRunService:   h.playbookRunService,
+		categoryService:      h.categoryService,
+		pluginAPI:            h.pluginAPI,
+		logger:               c.logger,
+		config:               h.config,
+		permissions:          h.permissions,
+		playbookStore:        h.playbookStore,
+		runStore:             h.runStore,
+		licenceChecker:       h.licenceChecker,
+		favoritesLoader:      favoritesLoader,
+		playbooksLoader:      playbooksLoader,
+		statusPostsLoader:    statusPostsLoader,
+		timelineEventsLoader: timelineEventsLoader,
+		runMetricsLoader:     runMetricsLoader,
 	}
 
 	// Populate the context with required info.

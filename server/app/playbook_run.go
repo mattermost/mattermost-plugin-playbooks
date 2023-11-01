@@ -929,6 +929,15 @@ type PlaybookRunStore interface {
 
 	// GetStatusAsTopicMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
 	GetStatusAsTopicMetadataByIDs(statusIDs []string) ([]TopicMetadata, error)
+
+	// GetStatsPostsByIDs gets the status posts for playbook runs
+	GetStatusPostsByIDs(playbookRunID []string) (map[string][]StatusPost, error)
+
+	// GetTimelineEventsByIDs gets the timeline events for playbook runs.
+	GetTimelineEventsByIDs(playbookRunID []string) ([]TimelineEvent, error)
+
+	// GetMetricsByIDs gets the metrics for playbook runs.
+	GetMetricsByIDs(playbookRunID []string) (map[string][]RunMetricData, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -1095,6 +1104,9 @@ type PlaybookRunFilterOptions struct {
 
 	// Types filters by all run types in the list (inclusive)
 	Types []string
+
+	// Skip getting extra information (like timeline events and status posts). Used by GraphQL to limit the amount of data retrieved.
+	SkipExtras bool
 }
 
 // Clone duplicates the given options.

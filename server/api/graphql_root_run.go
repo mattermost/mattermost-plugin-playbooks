@@ -85,6 +85,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		Types:                   args.Types,
 		Page:                    page,
 		PerPage:                 perPage,
+		SkipExtras:              true,
 	}
 
 	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
