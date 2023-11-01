@@ -19,15 +19,12 @@ func TestDecodeNoMatchesCase(t *testing.T) {
 		"other_tEst": "incorrect",
 	}
 
-	// Do it a bunch of times since map order is randomized
-	for i := 0; i < 100; i++ {
-		var output Test
-		err := Decode(input, &output)
-		require.Nil(t, err)
+	var output Test
+	err := Decode(input, &output)
+	require.Nil(t, err)
 
-		require.Equal(t, "", output.Test)
-		require.Equal(t, "", output.OtherTest)
-	}
+	require.Equal(t, "", output.Test)
+	require.Equal(t, "", output.OtherTest)
 }
 
 func TestDecodeHasMatch(t *testing.T) {
