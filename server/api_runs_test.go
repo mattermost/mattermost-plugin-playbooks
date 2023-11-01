@@ -515,6 +515,55 @@ func TestRunRetrieval(t *testing.T) {
 	})
 }
 
+func TestRunPostStatusUpdateDialog(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("post an update", func(t *testing.T) {
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: e.BasicTeam.Id,
+			UserId: e.RegularUser.Id,
+			State:  "{}",
+			Submission: map[string]interface{}{
+				app.DialogFieldMessageKey:           "someupdate",
+				app.DialogFieldReminderInSecondsKey: "100000",
+				app.DialogFieldFinishRun:            false,
+			},
+		}
+		dialogRequestBytes, err := json.Marshal(dialogRequest)
+		require.NoError(t, err)
+
+		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, result.StatusCode)
+	})
+
+	t.Run("no permissions to team", func(t *testing.T) {
+		_, err := e.ServerAdminClient.RemoveTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: e.BasicTeam.Id,
+			UserId: e.RegularUser.Id,
+			State:  "{}",
+			Submission: map[string]interface{}{
+				app.DialogFieldMessageKey:           "someupdate",
+				app.DialogFieldReminderInSecondsKey: "100000",
+				app.DialogFieldFinishRun:            false,
+			},
+		}
+		dialogRequestBytes, err := json.Marshal(dialogRequest)
+		require.NoError(t, err)
+
+		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
+		require.Error(t, err)
+		assert.Equal(t, http.StatusForbidden, result.StatusCode)
+
+		_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+	})
+}
+
 func TestRunPostStatusUpdate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
