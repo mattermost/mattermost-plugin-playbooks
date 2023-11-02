@@ -70,10 +70,6 @@ type ChannelActionService interface {
 	// filtered with the options if different from its zero value
 	GetChannelActions(channelID string, options GetChannelActionOptions) ([]GenericChannelAction, error)
 
-	// Validate checks that the action type, trigger type and
-	// payload are all valid and consistent with each other
-	Validate(action GenericChannelAction) error
-
 	// Update updates an existing action identified by action.ID
 	Update(action GenericChannelAction, userID string) error
 

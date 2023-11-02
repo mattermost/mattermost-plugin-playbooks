@@ -7,7 +7,8 @@ import (
 	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mitchellh/mapstructure"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/safemapstructure"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
@@ -66,20 +67,8 @@ func (a *ActionsHandler) createChannelAction(c *Context, w http.ResponseWriter, 
 		return
 	}
 
-	if channelAction.ActionType == app.ActionTypePromptRunPlaybook {
-		var payload app.PromptRunPlaybookFromKeywordsPayload
-		if err := mapstructure.Decode(channelAction.Payload, &payload); err != nil {
-			a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "couldn't verify permissions for run playbook action", err)
-			return
-		}
-
-		if !a.PermissionsCheck(w, c.logger, a.permissions.PlaybookView(userID, payload.PlaybookID)) {
-			return
-		}
-	}
-
 	// Validate the action type and payload
-	if err := a.channelActionsService.Validate(channelAction); err != nil {
+	if err := a.ValidateChannelAction(c, w, &channelAction, userID); err != nil {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid action", err)
 		return
 	}
@@ -98,6 +87,81 @@ func (a *ActionsHandler) createChannelAction(c *Context, w http.ResponseWriter, 
 	w.Header().Add("Location", makeAPIURL(a.pluginAPI, "actions/channel/%s/%s", channelAction.ChannelID, id))
 
 	ReturnJSON(w, &result, http.StatusCreated)
+}
+
+func (a *ActionsHandler) ValidateChannelAction(c *Context, w http.ResponseWriter, action *app.GenericChannelAction, userID string) error {
+	// Validate the trigger type and action types
+	switch action.TriggerType {
+	case app.TriggerTypeNewMemberJoins:
+		switch action.ActionType {
+		case app.ActionTypeWelcomeMessage:
+			break
+		case app.ActionTypeCategorizeChannel:
+			break
+		default:
+			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
+		}
+	case app.TriggerTypeKeywordsPosted:
+		if action.ActionType != app.ActionTypePromptRunPlaybook {
+			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
+		}
+	default:
+		return fmt.Errorf("trigger type %q not recognized", action.TriggerType)
+	}
+
+	// Validate the payload depending on the action type
+	switch action.ActionType {
+	case app.ActionTypeWelcomeMessage:
+		var payload app.WelcomeMessagePayload
+		if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
+			return fmt.Errorf("unable to decode payload from action")
+		}
+
+		// Force the payload to only include the recognized decoded fields.
+		action.Payload = payload
+	case app.ActionTypePromptRunPlaybook:
+		var payload app.PromptRunPlaybookFromKeywordsPayload
+		if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
+			return fmt.Errorf("unable to decode payload from action")
+		}
+		if err := checkValidPromptRunPlaybookFromKeywordsPayload(payload); err != nil {
+			return err
+		}
+
+		if !a.PermissionsCheck(w, c.logger, a.permissions.PlaybookView(userID, payload.PlaybookID)) {
+			return fmt.Errorf("user does not have permissions to view playbook %s", payload.PlaybookID)
+		}
+
+		// Force the payload to only include the recognized decoded fields.
+		action.Payload = payload
+	case app.ActionTypeCategorizeChannel:
+		var payload app.CategorizeChannelPayload
+		if err := safemapstructure.Decode(action.Payload, &payload); err != nil {
+			return fmt.Errorf("unable to decode payload from action")
+		}
+
+		// Force the payload to only include the recognized decoded fields.
+		action.Payload = payload
+
+	default:
+		return fmt.Errorf("action type %q not recognized", action.ActionType)
+	}
+
+	return nil
+}
+
+func checkValidPromptRunPlaybookFromKeywordsPayload(payload app.PromptRunPlaybookFromKeywordsPayload) error {
+	for _, keyword := range payload.Keywords {
+		if keyword == "" {
+			return fmt.Errorf("payload field 'keywords' must contain only non-empty keywords")
+		}
+	}
+
+	if payload.PlaybookID != "" && !model.IsValidId(payload.PlaybookID) {
+		return fmt.Errorf("payload field 'playbook_id' must be a valid ID")
+	}
+
+	return nil
 }
 
 func isValidTrigger(trigger string) bool {
@@ -208,20 +272,8 @@ func (a *ActionsHandler) updateChannelAction(c *Context, w http.ResponseWriter, 
 		return
 	}
 
-	if newChannelAction.ActionType == app.ActionTypePromptRunPlaybook {
-		var payload app.PromptRunPlaybookFromKeywordsPayload
-		if err := mapstructure.Decode(newChannelAction.Payload, &payload); err != nil {
-			a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "couldn't verify permissions for run playbook action", err)
-			return
-		}
-
-		if !a.PermissionsCheck(w, c.logger, a.permissions.PlaybookView(userID, payload.PlaybookID)) {
-			return
-		}
-	}
-
 	// Validate the new action type and payload
-	if err := a.channelActionsService.Validate(newChannelAction); err != nil {
+	if err := a.ValidateChannelAction(c, w, &newChannelAction, userID); err != nil {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid action", err)
 		return
 	}
