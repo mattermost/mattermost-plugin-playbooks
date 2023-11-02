@@ -410,6 +410,10 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 }
 
 func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, run *PlaybookRun) error {
+	if !p.canViewTeam(userID, run.TeamID) {
+		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
+	}
+
 	if run.OwnerUserID == userID {
 		return nil
 	}
@@ -431,6 +435,10 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 	run, err := p.runService.GetPlaybookRun(runID)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
+	}
+
+	if !p.canViewTeam(userID, run.TeamID) {
+		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
 	// Has permission if is the owner of the run
