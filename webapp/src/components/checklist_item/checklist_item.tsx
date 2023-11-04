@@ -201,27 +201,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
-        const shouldHideName = () => {
-            if (buttonsFormat !== ButtonsFormat.Short) {
-                return false;
-            }
-
-            if (isEditing) {
-                return false;
-            }
-            if (command !== '') {
-                return true;
-            }
-            const notFinished = [ChecklistItemState.Open, ChecklistItemState.InProgress].includes(props.checklistItem.state as ChecklistItemState);
-            return dueDate > 0 && notFinished;
-        };
-
         return (
             <AssignTo
                 participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
                 editable={isEditing || (!props.readOnly && !isSkipped())}
-                withoutName={shouldHideName()}
+                withoutName={false}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
             />
