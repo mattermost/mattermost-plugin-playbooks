@@ -217,10 +217,6 @@ const AssignToIcon = styled.i`
 `;
 
 export const AssignToContainer = styled.div`
-    :not(:first-child) {
-        margin-left: 36px;
-    }
-    max-width: calc(100% - 210px);
     display: flex;
 `;
 
