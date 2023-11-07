@@ -58,7 +58,6 @@ interface Props {
     customControlProps?: any;
     placement?: Placement;
     className?: string;
-    selectWithoutName?: boolean;
     customDropdownArrow?: React.ReactNode;
     onOpenChange?: (isOpen: boolean) => void;
 
@@ -195,7 +194,6 @@ export default function ProfileSelector(props: Props) {
                 enableEdit={props.enableEdit}
                 userId={props.selectedUserId}
                 withoutProfilePic={props.withoutProfilePic}
-                withoutName={props.selectWithoutName}
                 profileButtonClass={props.profileButtonClass}
                 onClick={props.enableEdit ? toggleOpen : () => null}
                 customDropdownArrow={props.customDropdownArrow}

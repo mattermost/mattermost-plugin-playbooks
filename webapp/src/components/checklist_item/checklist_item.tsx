@@ -206,7 +206,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
                 editable={isEditing || (!props.readOnly && !isSkipped())}
-                withoutName={false}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
             />

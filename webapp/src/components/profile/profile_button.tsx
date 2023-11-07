@@ -10,7 +10,6 @@ interface Props {
     userId?: string;
     enableEdit: boolean;
     withoutProfilePic?: boolean;
-    withoutName?: boolean;
     profileButtonClass?: string;
     customDropdownArrow?: React.ReactNode;
     onClick: () => void;
@@ -41,7 +40,6 @@ export default function ProfileButton(props: Props) {
                 extra={downChevron}
                 nameFormatter={formatName}
                 withoutProfilePic={props.withoutProfilePic}
-                withoutName={props.withoutName}
             />
         </Button>
     );
