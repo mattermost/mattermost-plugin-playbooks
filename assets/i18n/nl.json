@@ -17,7 +17,7 @@
     {
         "id": "app.user.digest.runs_in_progress.num_in_progress",
         "translation": {
-            "one": "Je hebt één {{.Count}} uitvoering lopen:",
+            "one": "Je hebt {{.Count}} uitvoering lopen:",
             "other": "Je hebt {{.Count}} uitvoeringen lopen:"
         }
     },
