@@ -368,7 +368,7 @@
     "X2K92H": "Ellenőrzőlista neve",
     "WbsomC": "Visszatekintő közzététele",
     "TxCTXQ": "Biztosan be szeretné fejezni a futást?",
-    "QywYDe": "És a futás megjelölése befejezettként",
+    "QywYDe": "Továbbá a futás megjelölése befejezettként",
     "MrJPOh": "Állapot frissítés engedélyezése",
     "Ja1sVR": "Állapot frissítés letiétásra került ehhez a forgatókönyv futáshoz.",
     "I5NMJ8": "Továbbiak",
@@ -725,5 +725,7 @@
     "0CeyUV": "Nincs találat a \"{searchTerm}\" kereséshez",
     "0Azlrb": "Kezelés",
     "/GCoTA": "Törlés",
-    "//o1Nu": "Frissítések letiltása"
+    "//o1Nu": "Frissítések letiltása",
+    "3qPQMX": "{name} állapot frissítést kért",
+    "706Soh": "elvégzett feladatok"
 }
