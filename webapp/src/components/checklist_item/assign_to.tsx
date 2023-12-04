@@ -14,7 +14,6 @@ interface AssignedToProps {
     assignee_id: string;
     participantUserIds: string[];
     editable: boolean;
-    withoutName?: boolean;
     inHoverMenu?: boolean;
     placement?: Placement;
     onSelectedChange?: (user?: UserProfile) => void;
@@ -94,7 +93,7 @@ const AssignTo = (props: AssignedToProps) => {
                     </PlaceholderDiv>
                 }
                 placeholderButtonClass={'NoAssignee-button'}
-                profileButtonClass={props.withoutName ? 'NoName-Assigned-button' : 'Assigned-button'}
+                profileButtonClass={'Assigned-button'}
                 enableEdit={props.editable}
                 getAllUsers={async () => {
                     return profilesInTeam;
@@ -106,7 +105,6 @@ const AssignTo = (props: AssignedToProps) => {
                     showCustomReset: Boolean(props.assignee_id),
                     onCustomReset: resetAssignee,
                 }}
-                selectWithoutName={props.withoutName}
                 customDropdownArrow={dropdownArrow}
                 placement={props.placement}
                 onOpenChange={props.onOpenChange}
@@ -219,10 +217,6 @@ const AssignToIcon = styled.i`
 `;
 
 export const AssignToContainer = styled.div`
-    :not(:first-child) {
-        margin-left: 36px;
-    }
-    max-width: calc(100% - 210px);
     display: flex;
 `;
 
