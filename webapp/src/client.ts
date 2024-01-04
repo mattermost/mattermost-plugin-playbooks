@@ -699,7 +699,7 @@ export const doGet = async <TData = any>(url: string) => {
     return data;
 };
 
-export const doPost = async <TData = any>(url: string, body: any) => {
+export const doPost = async <TData = any>(url: string, body: any = undefined) => {
     const {data} = await doFetchWithResponse<TData>(url, {
         method: 'POST',
         body,
@@ -708,7 +708,7 @@ export const doPost = async <TData = any>(url: string, body: any) => {
     return data;
 };
 
-export const doPut = async <TData = any>(url: string, body: any) => {
+export const doPut = async <TData = any>(url: string, body: any = undefined) => {
     const {data} = await doFetchWithResponse<TData>(url, {
         method: 'PUT',
         body,
