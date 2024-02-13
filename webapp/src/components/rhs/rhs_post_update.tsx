@@ -19,6 +19,7 @@ import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/com
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 
 import {useNow} from 'src/hooks';
+import {useAIStatusUpdateClicked} from 'src/ai_integration';
 
 interface Props {
     collapsed: boolean;
@@ -41,6 +42,7 @@ const RHSPostUpdate = (props: Props) => {
         RunDetailsTutorialSteps.PostUpdate,
         TutorialTourCategories.RUN_DETAILS
     );
+    const aiStatusUpdateClicked = useAIStatusUpdateClicked();
 
     const isNextUpdateScheduled = props.playbookRun.previous_reminder !== 0;
     const timestamp = getTimestamp(props.playbookRun, isNextUpdateScheduled);
@@ -112,6 +114,11 @@ const RHSPostUpdate = (props: Props) => {
                         props.playbookRun.id,
                         props.playbookRun.channel_id,
                     ));
+                }}
+                onAIClick={() => {
+                    if (aiStatusUpdateClicked) {
+                        aiStatusUpdateClicked(props.playbookRun.id);
+                    }
                 }}
                 isDue={isDue}
             />

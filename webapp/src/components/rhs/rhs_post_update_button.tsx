@@ -2,10 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
 import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+
+import IconAI from 'src/components/assets/icons/ai';
+import Tooltip from 'src/components/widgets/tooltip';
+import {useAIAvailable} from 'src/ai_integration';
 
 interface Props {
     collapsed: boolean;
@@ -14,9 +18,13 @@ interface Props {
     updatesExist: boolean;
     disabled: boolean;
     onClick: () => void;
+    onAIClick: () => void;
 }
 
 const RHSPostUpdateButton = (props: Props) => {
+    const {formatMessage} = useIntl();
+    const aiAvailable = useAIAvailable();
+
     let ButtonComponent = PostUpdatePrimaryButton;
 
     if (props.isDue) {
@@ -26,19 +34,49 @@ const RHSPostUpdateButton = (props: Props) => {
     }
 
     return (
-        <ButtonComponent
-            collapsed={props.collapsed}
-            disabled={props.disabled}
-            onClick={props.onClick}
-        >
-            <FormattedMessage defaultMessage='Post update'/>
-        </ButtonComponent>
+        <ButtonsContainer>
+            <ButtonComponent
+                collapsed={props.collapsed}
+                disabled={props.disabled}
+                onClick={props.onClick}
+            >
+                <FormattedMessage defaultMessage='Post update'/>
+            </ButtonComponent>
+            { aiAvailable &&
+            <AIButtonContainer>
+                <Tooltip
+                    id={'rhs-add-participant'}
+                    content={formatMessage({defaultMessage: 'Write with AI'})}
+                >
+                    <ButtonComponent
+                        collapsed={props.collapsed}
+                        disabled={props.disabled}
+                        onClick={props.onAIClick}
+                    >
+                        <IconAI/>
+                    </ButtonComponent>
+                </Tooltip>
+            </AIButtonContainer>
+            }
+        </ButtonsContainer>
     );
 };
 
 interface CollapsedProps {
     collapsed: boolean;
 }
+
+const ButtonsContainer = styled.div`
+	flex-grow: 1;
+	display: flex;
+	flex-direction: row;
+	gap: 2px;
+`;
+
+const AIButtonContainer = styled.div`
+	display: flex;
+	flex-grow: 0;
+`;
 
 const PostUpdateButtonCommon = css<CollapsedProps>`
     justify-content: center;
