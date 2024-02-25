@@ -106,8 +106,7 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
         "@media screen and (max-width: 540px)": {
             ...provided["@media screen and (max-width: 540px)"],
             padding: "2px 2px 22px 0"
-            ,
-        },
+        }
     }),
     multiValue: (provided) => ({
         ...provided,
