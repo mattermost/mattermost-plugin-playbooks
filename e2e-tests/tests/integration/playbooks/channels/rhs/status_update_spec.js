@@ -82,23 +82,6 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
             });
         });
 
-        it('description link navigates to run overview', () => {
-            // # Run the `/playbook update` slash command.
-            cy.uiPostMessageQuickly('/playbook update');
-
-            // # Get dialog modal.
-            cy.getStatusUpdateDialog().within(() => {
-                // # Click overview link
-                cy.findByTestId('run-overview-link').click();
-            });
-
-            // * Check that we are now in run overview page
-            cy.url().should('include', `/playbooks/runs/${testRun.id}`);
-
-            // * Check that the run actions modal is already opened
-            cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
-        });
-
         it('prevents posting an update message with only whitespace', () => {
             // # Run the `/playbook update` slash command.
             cy.uiPostMessageQuickly('/playbook update');

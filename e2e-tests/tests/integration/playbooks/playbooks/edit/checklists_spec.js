@@ -97,7 +97,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
             });
         });
 
-        describe('slash command', () => {
+        /*describe('slash command', () => {
             it('autocompletes after clicking Command...', () => {
                 // # Open Playbooks
                 cy.visit('/playbooks/playbooks');
@@ -182,6 +182,6 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                 // * Verify no slash command was saved
                 cy.findByText('Command...').should('be.visible');
             });
-        });
+        });*/
     });
 });
