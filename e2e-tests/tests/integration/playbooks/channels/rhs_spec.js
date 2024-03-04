@@ -349,8 +349,8 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.findByRole('button', {name: 'Saved messages'}).
                 click({force: true});
 
-            // * Verify Saved Posts is open
-            cy.get('.sidebar--right__title').should('contain.text', 'Saved Posts');
+            // * Verify Saved Messages is open
+            cy.get('.sidebar--right__title').should('contain.text', 'Saved Messages');
 
             // # Start a playbook run with a slash command
             const now = Date.now();
