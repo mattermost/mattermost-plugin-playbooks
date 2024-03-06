@@ -506,6 +506,11 @@ func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topi
 	return topicsMetadata, nil
 }
 
+func (p *Plugin) OnDeactivate() error {
+	logrus.Info("Shutting down store..")
+	return p.pluginAPI.Store.Close()
+}
+
 func mergeSlice(a, b []string) []string {
 	m := make(map[string]struct{}, len(a)+len(b))
 	for _, elem := range a {
