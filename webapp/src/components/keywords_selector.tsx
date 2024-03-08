@@ -103,10 +103,10 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
         ...provided,
         marginLeft: '8px',
         color: 'var(--center-channel-color)',
-        "@media screen and (max-width: 540px)": {
-            ...provided["@media screen and (max-width: 540px)"],
-            padding: "2px 2px 22px 0"
-        }
+        '@media screen and (max-width: 540px)': {
+            ...provided['@media screen and (max-width: 540px)'],
+            padding: '2px 2px 22px 0',
+        },
     }),
     multiValue: (provided) => ({
         ...provided,
