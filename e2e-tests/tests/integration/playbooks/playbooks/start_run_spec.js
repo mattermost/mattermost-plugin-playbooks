@@ -51,7 +51,7 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
 
         // # fill summary template
         if (summary) {
-            cy.contains('run summary template').dblclick();
+            cy.contains('run summary template').click();
             cy.focused().type('run summary template');
             cy.findByRole('button', {name: /save/i}).click();
         }
