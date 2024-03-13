@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -1310,6 +1311,12 @@ func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Check the body is empty
+	if _, err := r.Body.Read(make([]byte, 1)); err != io.EOF {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "request body must be empty", nil)
+		return
+	}
 
 	triggerID, err := h.playbookRunService.RunChecklistItemSlashCommand(playbookRunID, userID, checklistNum, itemNum)
 	if err != nil {
