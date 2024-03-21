@@ -51,11 +51,11 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	requesterInfo := app.RequesterInfo{
-		UserID:  userID,
-		TeamID:  args.TeamID,
-		IsAdmin: app.IsSystemAdmin(userID, c.pluginAPI),
+	requesterInfo, err := app.GetRequesterInfo(userID, c.pluginAPI)
+	if err != nil {
+		return nil, err
 	}
+	requesterInfo.TeamID = args.TeamID
 
 	if args.ParticipantOrFollowerID == client.Me {
 		args.ParticipantOrFollowerID = userID
