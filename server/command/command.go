@@ -815,6 +815,17 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
+	post, err := r.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
+	if !r.pluginAPI.User.HasPermissionToChannel(r.args.UserId, post.ChannelId, model.PermissionReadChannel) {
+		r.warnUserAndLogErrorf("Error no permission to post specified")
+		return
+	}
+
 	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
