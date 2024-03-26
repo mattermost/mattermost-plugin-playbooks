@@ -168,7 +168,7 @@ func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error 
 		return errors.Wrapf(err, "failed to update playbook run after resetting reminder timer")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunToModify.ID, withPlaybookRun(playbookRunToModify))
 
 	return nil
 }
@@ -230,7 +230,7 @@ func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminde
 		}
 	}
 
-	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.sendPlaybookRunUpdatedWS(playbookRunToModify.ID, withPlaybookRun(playbookRunToModify))
 
 	return nil
 }
