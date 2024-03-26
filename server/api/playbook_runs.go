@@ -493,7 +493,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if channel.Type == model.ChannelTypePrivate {
 			permission = model.PermissionManagePrivateChannelProperties
 			permissionMessage = "You are not able to manage private channel properties"
-		} else if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
+		} else if channel.IsGroupOrDirect() {
 			permission = model.PermissionReadChannel
 			permissionMessage = "You do not have access to this channel"
 		}
