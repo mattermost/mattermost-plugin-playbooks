@@ -992,31 +992,16 @@ func TestUpdateRun(t *testing.T) {
 		require.False(t, editedRun.RemoveChannelMemberOnRemovedParticipant)
 	})
 
-	t.Run("update fails due to lack of permissions", func(t *testing.T) {
+	t.Run("update channelid to a private channel fails due to lack of permissions", func(t *testing.T) {
 		run := createRun()
 
 		//update
 		updates := map[string]interface{}{
-			"statusUpdateBroadcastChannelsEnabled":    true,
-			"statusUpdateBroadcastWebhooksEnabled":    true,
-			"broadcastChannelIDs":                     []string{e.BasicPublicChannel.Id},
-			"webhookOnStatusUpdateURLs":               []string{"https://url1", "https://url2"},
-			"createChannelMemberOnNewParticipant":     false,
-			"removeChannelMemberOnRemovedParticipant": false,
+			"channelID": e.BasicPrivateChannel.Id,
 		}
-		response, err := updateRun(e.PlaybooksClient2, run.ID, updates)
+		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
 		require.NotEmpty(t, response.Errors)
 		require.NoError(t, err)
-
-		// Make sure the action settings are not updated
-		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
-		require.NoError(t, err)
-		require.False(t, editedRun.StatusUpdateBroadcastChannelsEnabled)
-		require.False(t, editedRun.StatusUpdateBroadcastWebhooksEnabled)
-		assert.Empty(t, editedRun.WebhookOnStatusUpdateURLs)
-		assert.Empty(t, editedRun.BroadcastChannelIDs)
-		require.True(t, editedRun.CreateChannelMemberOnNewParticipant)
-		require.True(t, editedRun.RemoveChannelMemberOnRemovedParticipant)
 	})
 }
 
