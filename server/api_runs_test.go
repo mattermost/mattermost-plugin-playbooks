@@ -1714,6 +1714,12 @@ func TestChecklisItem_SetCommand(t *testing.T) {
 		require.NotZero(t, run.Checklists[0].Items[0].CommandLastRun)
 	})
 
+	t.Run("can't run if not member", func(t *testing.T) {
+		// run command
+		err = e.PlaybooksClient2.PlaybookRuns.RunItemCommand(context.Background(), run.ID, 0, 0)
+		require.Error(t, err)
+	})
+
 	t.Run("rerun command", func(t *testing.T) {
 		lastRun := run.Checklists[0].Items[0].CommandLastRun
 
