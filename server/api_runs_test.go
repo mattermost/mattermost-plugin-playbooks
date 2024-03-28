@@ -335,6 +335,12 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
 		assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
+
+		// Verify user was not promoted to admin
+		member, _, err := e.ServerAdminClient.GetChannelMember(e.BasicPublicChannel.Id, e.RegularUser.Id, "")
+		require.NoError(t, err)
+		assert.NotContains(t, member.Roles, model.ChannelAdminRoleId)
+
 	})
 
 	t.Run("no access to the linked channel", func(t *testing.T) {

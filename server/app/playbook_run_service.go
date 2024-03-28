@@ -236,6 +236,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	var err error
 	var channel *model.Channel
+	createdChannel := false
 
 	if playbookRun.ChannelID == "" {
 		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
@@ -252,6 +253,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		playbookRun.ChannelID = channel.Id
+		createdChannel = true
 	} else {
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 		if err != nil {
@@ -323,7 +325,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
 	s.metricsService.IncrementRunsCreatedCount(1)
 
-	err = s.addPlaybookRunInitialMemberships(playbookRun, channel)
+	err = s.addPlaybookRunInitialMemberships(playbookRun, channel, createdChannel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to setup core memberships at run/channel")
 	}
@@ -2401,7 +2403,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 }
 
 // addPlaybookRunInitialMemberships creates the memberships in run and channels for the most core users: playbooksbot, reporter and owner
-func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *PlaybookRun, channel *model.Channel) error {
+func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *PlaybookRun, channel *model.Channel, createdChannel bool) error {
 	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
 		return errors.Wrapf(err, "failed to add bot to the team")
 	}
@@ -2421,12 +2423,14 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 		}
 	}
 
-	_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"channel_id":    channel.Id,
-			"owner_user_id": playbookRun.OwnerUserID,
-		}).Warn("failed to promote owner to admin")
+	if createdChannel {
+		_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
+		if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"channel_id":    channel.Id,
+				"owner_user_id": playbookRun.OwnerUserID,
+			}).Warn("failed to promote owner to admin")
+		}
 	}
 
 	// run related
