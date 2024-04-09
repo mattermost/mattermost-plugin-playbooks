@@ -1318,17 +1318,6 @@ func (h *PlaybookRunHandler) itemRun(c *Context, w http.ResponseWriter, r *http.
 		return
 	}
 
-	playbookRun, err := h.playbookRunService.GetPlaybookRun(vars["id"])
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	if !h.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionCreatePost) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "user does not have permission to channel", nil)
-		return
-	}
-
 	triggerID, err := h.playbookRunService.RunChecklistItemSlashCommand(playbookRunID, userID, checklistNum, itemNum)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
