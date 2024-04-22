@@ -22,7 +22,6 @@ import {
     CustomPostContent,
     CustomPostHeader,
 } from 'src/components/custom_post_styles';
-import {useOpenCloudModal} from 'src/hooks';
 
 const StyledTertiaryButton = styled(TertiaryButton)`
     margin-left: 10px;
@@ -33,7 +32,6 @@ interface Props {
 }
 
 export const CloudUpgradePost = (props: Props) => {
-    const openCloudModal = useOpenCloudModal();
     const attachments = props.post.props.attachments[0];
 
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
@@ -42,6 +40,10 @@ export const CloudUpgradePost = (props: Props) => {
     // Remove the footer (which starts with the Upgrade now link),
     // and the separator, both used as fallback for mobile
     const text = attachments.text.split('[Upgrade now]')[0].replace(/---/g, '');
+
+    const handleContactSales = () => {
+        window.open('https://mattermost.com/contact-sales/')
+    }
 
     return (
         <>
@@ -58,8 +60,8 @@ export const CloudUpgradePost = (props: Props) => {
                         {text}
                     </TextBody>
                     <CustomPostButtonRow>
-                        <PrimaryButton onClick={openCloudModal} >
-                            <FormattedMessage defaultMessage='Upgrade now'/>
+                        <PrimaryButton onClick={handleContactSales} >
+                            <FormattedMessage defaultMessage='Contact Sales'/>
                         </PrimaryButton>
                         <StyledTertiaryButton
                             onClick={() => window.open('https://mattermost.com/pricing-cloud')}
