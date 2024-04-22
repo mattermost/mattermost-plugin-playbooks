@@ -348,11 +348,10 @@ export function useEnsureProfiles(userIds: string[]) {
     }, [userIds]);
 }
 
-
 export function useOpenContactSales() {
     return () => {
         window.open('https://mattermost.com/contact-sales');
-    }
+    };
 }
 
 export function useOpenStartTrialFormModal() {

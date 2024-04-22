@@ -22,7 +22,7 @@ import {
     CustomPostContent,
     CustomPostHeader,
 } from 'src/components/custom_post_styles';
-import { useOpenContactSales } from 'src/hooks';
+import {useOpenContactSales} from 'src/hooks';
 
 const StyledTertiaryButton = styled(TertiaryButton)`
     margin-left: 10px;
