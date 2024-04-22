@@ -17,7 +17,7 @@ import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise
 import {postMessageToAdmins} from 'src/client';
 import {AdminNotificationType} from 'src/constants';
 import {isCloud} from 'src/license';
-import {useOpenCloudModal, useOpenStartTrialFormModal} from 'src/hooks';
+import {useOpenContactSales, useOpenStartTrialFormModal} from 'src/hooks';
 
 import SuccessSvg from './assets/success_svg';
 import ErrorSvg from './assets/error_svg';
@@ -120,7 +120,7 @@ interface Props {
 
 const UpgradeBanner = (props: Props) => {
     const isServerCloud = useSelector(isCloud);
-    const openCloudModal = useOpenCloudModal();
+    const openContactSales = useOpenContactSales();
     const currentUser = useSelector(getCurrentUser);
     const isCurrentUserAdmin = isSystemAdmin(currentUser.roles);
     const [actionState, setActionState] = useState(ActionState.Uninitialized);
@@ -155,7 +155,7 @@ const UpgradeBanner = (props: Props) => {
             return;
         }
 
-        openCloudModal();
+        openContactSales();
     };
 
     let adminMainAction = requestLicenseSelfHosted;

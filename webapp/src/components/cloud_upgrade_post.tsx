@@ -22,6 +22,7 @@ import {
     CustomPostContent,
     CustomPostHeader,
 } from 'src/components/custom_post_styles';
+import { useOpenContactSales } from 'src/hooks';
 
 const StyledTertiaryButton = styled(TertiaryButton)`
     margin-left: 10px;
@@ -37,13 +38,11 @@ export const CloudUpgradePost = (props: Props) => {
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
 
+    const openContactSales = useOpenContactSales();
+
     // Remove the footer (which starts with the Upgrade now link),
     // and the separator, both used as fallback for mobile
     const text = attachments.text.split('[Upgrade now]')[0].replace(/---/g, '');
-
-    const handleContactSales = () => {
-        window.open('https://mattermost.com/contact-sales/')
-    }
 
     return (
         <>
@@ -60,7 +59,7 @@ export const CloudUpgradePost = (props: Props) => {
                         {text}
                     </TextBody>
                     <CustomPostButtonRow>
-                        <PrimaryButton onClick={handleContactSales} >
+                        <PrimaryButton onClick={openContactSales} >
                             <FormattedMessage defaultMessage='Contact Sales'/>
                         </PrimaryButton>
                         <StyledTertiaryButton
