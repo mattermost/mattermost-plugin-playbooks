@@ -9,7 +9,6 @@ import {GlobalState} from '@mattermost/types/store';
 import {Theme, getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {useForceDocumentTitle} from 'src/hooks';
-import CloudModal from 'src/components/cloud_modal';
 import {applyTheme} from 'src/components/backstage/css_utils';
 
 import BackstageRHS from 'src/components/backstage/rhs/rhs';
@@ -57,7 +56,6 @@ const Backstage = () => {
                     <LHSNavigation/>
                     <MainBody/>
                 </MainContainer>
-                <CloudModal/>
             </ToastProvider>
             <BackstageRHS/>
         </BackstageContainer>

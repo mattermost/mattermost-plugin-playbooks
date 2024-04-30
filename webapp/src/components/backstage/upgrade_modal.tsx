@@ -11,7 +11,7 @@ import {isCurrentUserAdmin, isTeamEdition} from 'src/selectors';
 
 import {AdminNotificationType} from 'src/constants';
 import {isCloud} from 'src/license';
-import {useOpenCloudModal, useOpenStartTrialFormModal} from 'src/hooks';
+import {useOpenContactSales, useOpenStartTrialFormModal} from 'src/hooks';
 
 import {ModalActionState, getUpgradeModalButtons, getUpgradeModalCopy} from 'src/components/backstage/upgrade_modal_data';
 
@@ -25,7 +25,7 @@ interface Props {
 }
 
 const UpgradeModal = (props: Props) => {
-    const openCloudModal = useOpenCloudModal();
+    const openContactSales = useOpenContactSales();
     const isServerCloud = useSelector(isCloud);
     const isAdmin = useSelector(isCurrentUserAdmin);
     const isServerTeamEdition = useSelector(isTeamEdition);
@@ -48,7 +48,7 @@ const UpgradeModal = (props: Props) => {
 
         props.onHide();
 
-        openCloudModal();
+        openContactSales();
     };
 
     let adminMainAction = requestLicenseSelfHosted;

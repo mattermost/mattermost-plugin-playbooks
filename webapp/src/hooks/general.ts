@@ -41,7 +41,6 @@ import {
     fetchPlaybookRuns,
     fetchPlaybookStats,
 } from 'src/client';
-import {isCloud} from 'src/license';
 import {resolve} from 'src/utils';
 
 export type FetchMetadata = {
@@ -349,6 +348,12 @@ export function useEnsureProfiles(userIds: string[]) {
     }, [userIds]);
 }
 
+export function useOpenContactSales() {
+    return () => {
+        window.open('https://mattermost.com/contact-sales');
+    };
+}
+
 export function useOpenStartTrialFormModal() {
     const dispatch = useDispatch();
 
@@ -376,45 +381,6 @@ export function useOpenStartTrialFormModal() {
                 dialogProps: {
                     page,
                     onClose,
-                },
-            }),
-        );
-    };
-}
-
-export function useOpenCloudModal() {
-    const dispatch = useDispatch();
-    const isServerCloud = useSelector(isCloud);
-
-    if (!isServerCloud) {
-        return () => {
-            /*do nothing*/
-        };
-    }
-
-    // @ts-ignore
-    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CLOUD_PURCHASE || !window.Components?.PurchaseModal) {
-        // eslint-disable-next-line no-console
-        console.error('unable to open cloud modal');
-
-        return () => {
-            /*do nothing*/
-        };
-    }
-
-    // @ts-ignore
-    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
-
-    // @ts-ignore
-    const PurchaseModal = window.Components.PurchaseModal;
-
-    return () => {
-        dispatch(
-            openModal({
-                modalId: ModalIdentifiers.CLOUD_PURCHASE,
-                dialogType: PurchaseModal,
-                dialogProps: {
-                    callerCTA: 'playbooks',
                 },
             }),
         );
