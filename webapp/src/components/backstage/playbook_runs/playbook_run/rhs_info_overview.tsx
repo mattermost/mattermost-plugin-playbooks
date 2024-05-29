@@ -81,6 +81,7 @@ interface Props {
     runMetadata?: Metadata;
     editable: boolean;
     channel: Channel | undefined | null;
+    channelDeleted: boolean;
     followState: FollowState;
     playbook?: PlaybookWithChecklist;
     role: Role;
@@ -91,7 +92,7 @@ const StyledArrowIcon = styled(ArrowForwardIosIcon)`
     margin-left: 7px;
 `;
 
-const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
+const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, followState, editable, playbook, onViewParticipants}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
     const refreshLHS = useLHSRefresh();
@@ -197,24 +198,13 @@ const RHSInfoOverview = ({run, role, channel, runMetadata, followState, editable
                 icon={ProductChannelsIcon}
                 name={formatMessage({defaultMessage: 'Channel'})}
             >
-                {channel && runMetadata ? <>
-                    <ItemLink
-                        to={`/${runMetadata.team_name}/channels/${channel.name}`}
-                        data-testid='runinfo-channel-link'
-                    >
-                        <ItemContent >
-                            {channel.display_name}
-                        </ItemContent>
-                        <OpenInNewIcon
-                            size={14}
-                            color={'var(--button-bg)'}
-                        />
-                    </ItemLink>
-                </> : <ItemDisabledContent>
-                    {role === Role.Participant ? <RequestJoinButton onClick={showRequestJoinConfirm}>{formatMessage({defaultMessage: 'Request to Join'})}</RequestJoinButton> : null}
-                    <LockOutlineIcon size={20}/> {formatMessage({defaultMessage: 'Private'})}
-                </ItemDisabledContent>
-                }
+                <ChannelRow
+                    channel={channel}
+                    runMetadata={runMetadata}
+                    channelDeleted={channelDeleted}
+                    role={role}
+                    onClickRequestJoin={showRequestJoinConfirm}
+                />
             </Item>
             {RequestJoinModal}
         </Section>
@@ -277,7 +267,7 @@ const ItemDisabledContent = styled(ItemContent)`
     color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
-const OverviewRow = styled.div<{onClick?: () => void}>`
+const OverviewRow = styled.div<{ onClick?: () => void }>`
     padding: 10px 24px;
     height: 44px;
     display: flex;
@@ -321,3 +311,47 @@ const ParticipantsContainer = styled.div`
     flex-direction: row;
     align-items: center;
 `;
+
+interface ChannelRowProps {
+    channel: Channel | undefined | null;
+    channelDeleted: boolean;
+    runMetadata?: Metadata;
+    role: Role;
+    onClickRequestJoin: () => void;
+}
+
+const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJoin}: ChannelRowProps) => {
+    const {formatMessage} = useIntl();
+
+    if (channelDeleted) {
+        return (
+            <ItemDisabledContent>
+                {formatMessage({defaultMessage: 'Channel deleted'})}
+            </ItemDisabledContent>
+        );
+    }
+
+    if (channel && runMetadata) {
+        return (
+            <ItemLink
+                to={`/${runMetadata.team_name}/channels/${channel.name}`}
+                data-testid='runinfo-channel-link'
+            >
+                <ItemContent >
+                    {channel.display_name}
+                </ItemContent>
+                <OpenInNewIcon
+                    size={14}
+                    color={'var(--button-bg)'}
+                />
+            </ItemLink>
+        );
+    }
+
+    return (
+        <ItemDisabledContent>
+            {role === Role.Participant ? <RequestJoinButton onClick={onClickRequestJoin}>{formatMessage({defaultMessage: 'Request to Join'})}</RequestJoinButton> : null}
+            <LockOutlineIcon size={20}/> {formatMessage({defaultMessage: 'Private'})}
+        </ItemDisabledContent>
+    );
+};

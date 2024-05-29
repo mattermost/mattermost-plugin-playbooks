@@ -193,6 +193,15 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     cy.url().should('include', `${testTeam.name}/channels/the-run-name`);
                 });
             });
+
+            it('indicates when the channel has been deleted', () => {
+                cy.apiDeleteChannel(testRun.channel_id).then(() => {
+                    cy.visit(`/playbooks/runs/${testRun.id}`);
+
+                    // * Assert channel name
+                    getOverviewEntry('channel').contains('Channel deleted');
+                });
+            });
         });
 
         describe('as viewer', () => {

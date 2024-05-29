@@ -90,7 +90,7 @@ const PlaybookRunDetails = () => {
     // we must force metadata refetch when participants change (leave&unfollow)
     const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
-    const [channel] = useChannel(playbookRun?.channel_id ?? '');
+    const [channel, channelResult] = useChannel(playbookRun?.channel_id ?? '');
     const myUser = useSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
     const followState = useRunFollowers(metadata?.followers || []);
@@ -144,6 +144,8 @@ const PlaybookRunDetails = () => {
         }
     }, [urlHash]);
 
+    const channelDeleted = Boolean(channel?.delete_at) || channelResult.isErrorCode(404);
+
     // not found or error
     if (playbookRunResult.error !== null || metadataResult.error !== null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
@@ -176,6 +178,7 @@ const PlaybookRunDetails = () => {
                 role={role}
                 followState={followState}
                 channel={channel}
+                channelDeleted={channelDeleted}
                 onViewParticipants={() => RHS.open(RHSContent.RunParticipants, RHSParticipantsTitle, playbookRun.name, () => onViewInfo)}
                 onViewTimeline={() => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, () => onViewInfo, false)}
             />
