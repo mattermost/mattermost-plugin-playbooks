@@ -1267,7 +1267,6 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("failed to retrieve channel id", "channel_id", playbookRun.ChannelID)
-		channel = &model.Channel{}
 	}
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
@@ -1284,14 +1283,17 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		return nil, errors.Wrapf(err, "failed to get followers of playbook run %s", playbookRunID)
 	}
 
-	return &Metadata{
-		ChannelName:        channel.Name,
-		ChannelDisplayName: channel.DisplayName,
-		TeamName:           team.Name,
-		TotalPosts:         channel.TotalMsgCount,
-		NumParticipants:    numParticipants,
-		Followers:          followers,
-	}, nil
+	metadata := &Metadata{
+		TeamName:        team.Name,
+		NumParticipants: numParticipants,
+		Followers:       followers,
+	}
+	if channel != nil {
+		metadata.ChannelName = channel.Name
+		metadata.ChannelDisplayName = channel.DisplayName
+		metadata.TotalPosts = channel.TotalMsgCount
+	}
+	return metadata, nil
 }
 
 // GetPlaybookRunsForChannelByUser get the playbookRuns list associated with this channel and user.
