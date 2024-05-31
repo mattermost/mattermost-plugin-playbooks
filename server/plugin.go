@@ -24,6 +24,8 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/cluster"
+
+	_ "time/tzdata" // for systems that don't have tzdata installed
 )
 
 const (
