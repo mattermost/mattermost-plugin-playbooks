@@ -337,7 +337,7 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
                 to={`/${runMetadata.team_name}/channels/${channel.name}`}
                 data-testid='runinfo-channel-link'
             >
-                <ItemContent >
+                <ItemContent>
                     {channel.display_name}
                 </ItemContent>
                 <OpenInNewIcon
