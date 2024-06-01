@@ -14,21 +14,27 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
+type PostVerifier interface {
+	IsFromPoster(post *model.Post) bool
+}
+
 type SignalHandler struct {
 	*ErrorHandler
 	api                   *pluginapi.Client
 	playbookRunService    app.PlaybookRunService
 	playbookService       app.PlaybookService
 	keywordsThreadIgnorer app.KeywordsThreadIgnorer
+	postVerifier          PostVerifier
 }
 
-func NewSignalHandler(router *mux.Router, api *pluginapi.Client, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, keywordsThreadIgnorer app.KeywordsThreadIgnorer) *SignalHandler {
+func NewSignalHandler(router *mux.Router, api *pluginapi.Client, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, keywordsThreadIgnorer app.KeywordsThreadIgnorer, postVerifier PostVerifier) *SignalHandler {
 	handler := &SignalHandler{
 		ErrorHandler:          &ErrorHandler{},
 		api:                   api,
 		playbookRunService:    playbookRunService,
 		playbookService:       playbookService,
 		keywordsThreadIgnorer: keywordsThreadIgnorer,
+		postVerifier:          postVerifier,
 	}
 
 	signalRouter := router.PathPrefix("/signal").Subrouter()
@@ -54,7 +60,13 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	id, err := getStringField("selected_option", req.Context, w)
+	err = h.verifyRequestAuthenticity(req, "runPlaybookButton")
+	if err != nil {
+		h.returnError(publicErrorMessage, err, c.logger, w)
+		return
+	}
+
+	id, err := getStringField("selected_option", req.Context)
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
@@ -88,10 +100,15 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
-	postID, err := getStringField("postID", req.Context, w)
+	err = h.verifyRequestAuthenticity(req, "ignoreKeywordsButton")
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
+	}
+
+	postID, err := getStringField("postID", req.Context)
+	if err != nil {
+		h.returnError(publicErrorMessage, err, c.logger, w)
 	}
 	post, err := h.api.Post.GetPost(postID)
 	if err != nil {
@@ -119,7 +136,7 @@ func (h *SignalHandler) returnError(returnMessage string, err error, logger logr
 	ReturnJSON(w, &resp, http.StatusOK)
 }
 
-func getStringField(field string, context map[string]interface{}, w http.ResponseWriter) (string, error) {
+func getStringField(field string, context map[string]interface{}) (string, error) {
 	fieldInt, ok := context[field]
 	if !ok {
 		return "", errors.Errorf("no %s field in the request context", field)
@@ -129,4 +146,38 @@ func getStringField(field string, context map[string]interface{}, w http.Respons
 		return "", errors.Errorf("%s field is not a string", field)
 	}
 	return fieldValue, nil
+}
+
+// verifyRequestAuthenticity verifies the authenticity of the request by checking if the original post is from the plugin bot
+// and if the action ID and post ID match the ones provided in the request.
+// It returns an error if the authenticity check fails.
+func (h *SignalHandler) verifyRequestAuthenticity(req *model.PostActionIntegrationRequest, actionID string) error {
+	botPost, err := h.api.Post.GetPost(req.PostId)
+	if err != nil {
+		return fmt.Errorf("unable to retrieve original post: %w", err)
+	}
+	if !h.postVerifier.IsFromPoster(botPost) {
+		return errors.New("original post is not from the plugin bot")
+	}
+
+	postID, err := getStringField("postID", req.Context)
+	if err != nil {
+		return fmt.Errorf("unable to get postID from the request context: %w", err)
+	}
+	attachments := botPost.Attachments()
+	if len(attachments) == 0 {
+		return errors.New("no attachments in the bot post")
+	}
+	for _, action := range attachments[0].Actions {
+		if action.Id == actionID {
+			postIDFromBotPost, err := getStringField("postID", action.Integration.Context)
+			if err != nil {
+				return fmt.Errorf("unable to get postID from the bot post: %w", err)
+			}
+			if postID == postIDFromBotPost {
+				return nil
+			}
+		}
+	}
+	return errors.New("no matching action found in the bot post")
 }
