@@ -11,6 +11,7 @@ replace github.com/golang/mock => github.com/golang/mock v1.4.4
 require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/blang/semver/v4 v4.0.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.0
@@ -48,7 +49,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.3.3 // indirect
 	github.com/bits-and-blooms/bloom/v3 v3.3.1 // indirect
-	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blevesearch/bleve/v2 v2.3.6-0.20221111171245-56dc9b25507e // indirect
 	github.com/blevesearch/bleve_index_api v1.0.5 // indirect
 	github.com/blevesearch/geo v0.1.15 // indirect
