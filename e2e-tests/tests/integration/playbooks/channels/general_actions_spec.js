@@ -256,8 +256,10 @@ describe('channels > general actions', {testIsolation: true}, () => {
 
             // # Login
             // # send a message and get its postID
-            // # send a POST request to /plugins/playbooks/api/v0/signal/keywords/ignore-thread with of a body id {"postID": "<someExistingPostID>"}"
-            // # verify that the post is still there
+            // # create and trigger an alert
+            // # send a random postID
+            // # try to remove this post: this should fail
+            // # just to make sure the principle of this test work, doing the same step on the bot message should delete the bot post
             cy.apiLogin(testUser);
             cy.apiCreateChannel(
                 testTeam.id,
