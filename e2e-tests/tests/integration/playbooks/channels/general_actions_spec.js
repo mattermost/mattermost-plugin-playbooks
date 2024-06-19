@@ -296,7 +296,6 @@ describe('channels > general actions', {testIsolation: true}, () => {
                     });
                 });
 
-                // # Post the trigger phrase
                 cy.uiPostMessageQuickly('do not delete me!');
                 cy.getLastPostId().then((postId) => {
                     cy.request({
