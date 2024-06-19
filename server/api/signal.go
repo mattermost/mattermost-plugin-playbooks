@@ -149,8 +149,8 @@ func getStringField(field string, context map[string]interface{}) (string, error
 }
 
 // verifyRequestAuthenticity verifies the authenticity of the request by checking if the original post is from the plugin bot
-// and if the action ID and post ID match the ones provided in the request.
-// It returns an error if the authenticity check fails.
+// and if the action ID match the ones provided in the request.
+// It returns an error if the authenticity check fails, otherwise it returns the original post.
 func (h *SignalHandler) verifyRequestAuthenticity(req *model.PostActionIntegrationRequest, actionID string) (*model.Post, error) {
 	botPost, err := h.api.Post.GetPost(req.PostId)
 	if err != nil {
