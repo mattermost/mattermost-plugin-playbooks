@@ -6,12 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 type PostVerifier interface {
@@ -60,7 +60,7 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = h.verifyRequestAuthenticity(req, "runPlaybookButton")
+	botPost, err := h.verifyRequestAuthenticity(req, "runPlaybookButton")
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
@@ -84,7 +84,7 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
-	if err := h.api.Post.DeletePost(req.PostId); err != nil {
+	if err := h.api.Post.DeletePost(botPost.Id); err != nil {
 		h.returnError("unable to delete original post", err, c.logger, w)
 		return
 	}
@@ -100,7 +100,7 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
-	err = h.verifyRequestAuthenticity(req, "ignoreKeywordsButton")
+	botPost, err := h.verifyRequestAuthenticity(req, "ignoreKeywordsButton")
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
@@ -122,7 +122,7 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
-	if err := h.api.Post.DeletePost(req.PostId); err != nil {
+	if err := h.api.Post.DeletePost(botPost.Id); err != nil {
 		h.returnError("unable to delete original post", err, c.logger, w)
 		return
 	}
@@ -151,33 +151,23 @@ func getStringField(field string, context map[string]interface{}) (string, error
 // verifyRequestAuthenticity verifies the authenticity of the request by checking if the original post is from the plugin bot
 // and if the action ID and post ID match the ones provided in the request.
 // It returns an error if the authenticity check fails.
-func (h *SignalHandler) verifyRequestAuthenticity(req *model.PostActionIntegrationRequest, actionID string) error {
+func (h *SignalHandler) verifyRequestAuthenticity(req *model.PostActionIntegrationRequest, actionID string) (*model.Post, error) {
 	botPost, err := h.api.Post.GetPost(req.PostId)
 	if err != nil {
-		return fmt.Errorf("unable to retrieve original post: %w", err)
+		return nil, fmt.Errorf("unable to retrieve original post: %w", err)
 	}
 	if !h.postVerifier.IsFromPoster(botPost) {
-		return errors.New("original post is not from the plugin bot")
+		return nil, errors.New("original post is not from the plugin bot")
 	}
 
-	postID, err := getStringField("postID", req.Context)
-	if err != nil {
-		return fmt.Errorf("unable to get postID from the request context: %w", err)
-	}
 	attachments := botPost.Attachments()
 	if len(attachments) == 0 {
-		return errors.New("no attachments in the bot post")
+		return nil, errors.New("no attachments in the bot post")
 	}
 	for _, action := range attachments[0].Actions {
 		if action.Id == actionID {
-			postIDFromBotPost, err := getStringField("postID", action.Integration.Context)
-			if err != nil {
-				return fmt.Errorf("unable to get postID from the bot post: %w", err)
-			}
-			if postID == postIDFromBotPost {
-				return nil
-			}
+			return botPost, nil
 		}
 	}
-	return errors.New("no matching action found in the bot post")
+	return nil, errors.New("no matching action found in the bot post")
 }
