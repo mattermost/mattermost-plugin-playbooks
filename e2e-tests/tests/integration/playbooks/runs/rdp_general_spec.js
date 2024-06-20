@@ -53,7 +53,7 @@ describe('runs > run details page', {testIsolation: true}, () => {
 
     it('redirects to not found error if the playbook run is unknown', () => {
         // # Visit the URL of a non-existing playbook run
-        cy.visit('/playbooks/runs/an_unknown_id');
+        cy.visit('/playbooks/runs/abcdefghijklmnopqrstuvwx');
 
         // * Verify that the user has been redirected to the playbook runs not found error page
         cy.url().should('include', '/playbooks/error?type=playbook_runs');
