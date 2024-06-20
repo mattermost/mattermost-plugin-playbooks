@@ -316,7 +316,7 @@ describe('channels > general actions', {testIsolation: true}, () => {
                             headers: {'X-Requested-With': 'XMLHttpRequest'},
                             url: '/plugins/playbooks/api/v0/signal/keywords/ignore-thread',
                             method: 'POST',
-                            body:{
+                            body: {
                                 post_id: botPostId,
                                 context: {postID: botPostId},
                             },
