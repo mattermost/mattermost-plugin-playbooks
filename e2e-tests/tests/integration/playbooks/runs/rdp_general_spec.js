@@ -59,6 +59,14 @@ describe('runs > run details page', {testIsolation: true}, () => {
         cy.url().should('include', '/playbooks/error?type=playbook_runs');
     });
 
+    it('redirect to not found if the url is incorrect', () => {
+        // # visit the run url with an incorrect id
+        cy.visit('/playbooks/runs/..%252F..%252f..%252F..%252F..%252fapi%252Fv4%252Ffiles%252Fo47cow5h6fgjzp8abfqqxw5jwc');
+
+        // * Verify that the user has been redirected to the not found error page
+        cy.url().should('include', '/playbooks/error?type=default');
+    });
+
     it('telemetry is triggered', () => {
         // # Intercept all calls to telemetry
         cy.interceptTelemetry();

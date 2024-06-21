@@ -116,6 +116,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
         // # visit the playbook url with an incorrect id
         cy.visit('/playbooks/playbooks/..%252F..%252f..%252F..%252F..%252fapi%252Fv4%252Ffiles%252Fo47cow5h6fgjzp8abfqqxw5jwc');
 
+        // * Verify that the user has been redirected to the not found error page
         cy.url().should('include', '/playbooks/error?type=default');
     });
 
