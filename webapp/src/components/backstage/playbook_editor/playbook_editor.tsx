@@ -10,6 +10,7 @@ import {
     Switch,
     useRouteMatch,
 } from 'react-router-dom';
+import {generatePath} from 'react-router';
 
 import {useIntl} from 'react-intl';
 
@@ -45,7 +46,7 @@ const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const {url, path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
-
+    console.log(url, path, playbookId);
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
@@ -233,20 +234,20 @@ const PlaybookEditor = () => {
             </Header>
             <NavBar>
                 <NavItem
-                    to={`${url}`}
+                    to={generatePath(path, {playbookId})}
                     exact={true}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
                 <NavItem
-                    to={`${url}/outline`}
+                    to={generatePath(path, {playbookId, tab: 'outline'})}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Outline'})}
                 </NavItem>
                 <NavItem
-                    to={`${url}/reports`}
+                    to={generatePath(path, {playbookId, tab: 'reports'})}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_reports_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Reports'})}
@@ -254,7 +255,7 @@ const PlaybookEditor = () => {
             </NavBar>
             <Switch>
                 <Route
-                    path={`${path}`}
+                    path={generatePath(path, {playbookId})}
                     exact={true}
                 >
                     <PlaybookUsage
@@ -262,13 +263,19 @@ const PlaybookEditor = () => {
                         stats={stats}
                     />
                 </Route>
-                <Route path={`${path}/outline`}>
+                <Route
+                    path={generatePath(path, {playbookId, tab: 'outline'})}
+                    exact={true}
+                >
                     <Outline
                         playbook={playbook}
                         refetch={refetch}
                     />
                 </Route>
-                <Route path={`${path}/reports`}>
+                <Route
+                    path={generatePath(path, {playbookId, tab: 'reports'})}
+                    exact={true}
+                >
                     <PlaybookKeyMetrics
                         playbookID={playbook.id}
                         playbookMetrics={playbook.metrics}

@@ -91,10 +91,13 @@ const MainBody = () => {
 
     return (
         <Switch>
-            <Route path={`${match.url}/playbooks/:playbookId(${mattermostIDFormat})`}>
+            <Route path={`${match.url}/playbooks/:playbookId(${mattermostIDFormat})/:tab(outline|reports)?`}>
                 <PlaybookEditor/>
             </Route>
-            <Route path={`${match.url}/playbooks`}>
+            <Route
+                path={`${match.url}/playbooks`}
+                exact={true}
+            >
                 <PlaybookList/>
             </Route>
             <Redirect
