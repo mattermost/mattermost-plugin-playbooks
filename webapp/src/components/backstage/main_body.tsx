@@ -113,7 +113,7 @@ const MainBody = () => {
             />
             <Route
                 path={`${match.url}/runs`}
-                strict={true}
+                exact={true}
             >
                 <RunsPage/>
             </Route>
