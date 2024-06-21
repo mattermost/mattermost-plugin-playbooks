@@ -106,7 +106,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
 
     it('redirects to not found error if the playbook is unknown', () => {
         // # Visit the URL of a non-existing playbook
-        cy.visit('/playbooks/playbooks/abcdefghijklmnopqrstuvwx');
+        cy.visit('/playbooks/playbooks/abcdefghijklmnopqrstuvwxyz');
 
         // * Verify that the user has been redirected to the playbooks not found error page
         cy.url().should('include', '/playbooks/error?type=playbooks');
