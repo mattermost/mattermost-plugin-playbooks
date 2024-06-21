@@ -45,8 +45,8 @@ import * as Controls from './controls';
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
-    const {url, path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
-    console.log(url, path, playbookId);
+    const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
+
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
