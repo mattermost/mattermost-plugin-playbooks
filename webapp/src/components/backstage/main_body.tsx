@@ -111,7 +111,10 @@ const MainBody = () => {
                 from={`${match.url}/incidents`}
                 to={`${match.url}/runs`}
             />
-            <Route path={`${match.url}/runs`}>
+            <Route
+                path={`${match.url}/runs`}
+                strict={true}
+            >
                 <RunsPage/>
             </Route>
             <Route path={`${match.url}/error`}>
