@@ -42,6 +42,7 @@ describe('formatDuration', () => {
         [{months: 1}, '30d', '30 days'],
         [{months: 2}, '60d', '60 days'],
         [{years: 2, days: 6, minutes: 12}, '2y, 6d, 12m', '2 years, 6 days, 12 minutes'],
+        [{days: -1, hours: -2, minutes: -5}, '-1d, 2h, 5m', '-1 day, 2 hours, 5 minutes'],
     ])('should format %p as %p and %p', (durationObj, expectedNarrow, expectedLong) => {
         const duration = Duration.fromObject(durationObj);
         expect(formatDuration(duration)).toEqual(expectedNarrow);
