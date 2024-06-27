@@ -53,10 +53,18 @@ describe('runs > run details page', {testIsolation: true}, () => {
 
     it('redirects to not found error if the playbook run is unknown', () => {
         // # Visit the URL of a non-existing playbook run
-        cy.visit('/playbooks/runs/an_unknown_id');
+        cy.visit('/playbooks/runs/abcdefghijklmnopqrstuvwxyz');
 
         // * Verify that the user has been redirected to the playbook runs not found error page
         cy.url().should('include', '/playbooks/error?type=playbook_runs');
+    });
+
+    it('redirect to not found if the url is incorrect', () => {
+        // # visit the run url with an incorrect id
+        cy.visit('/playbooks/runs/..%252F..%252f..%252F..%252F..%252fapi%252Fv4%252Ffiles%252Fo47cow5h6fgjzp8abfqqxw5jwc');
+
+        // * Verify that the user has been redirected to the not found error page
+        cy.url().should('include', '/playbooks/error?type=default');
     });
 
     it('telemetry is triggered', () => {
