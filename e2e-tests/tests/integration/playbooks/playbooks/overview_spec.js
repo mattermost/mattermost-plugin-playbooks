@@ -106,10 +106,18 @@ describe('playbooks > overview', {testIsolation: true}, () => {
 
     it('redirects to not found error if the playbook is unknown', () => {
         // # Visit the URL of a non-existing playbook
-        cy.visit('/playbooks/playbooks/an_unknown_id');
+        cy.visit('/playbooks/playbooks/abcdefghijklmnopqrstuvwxyz');
 
         // * Verify that the user has been redirected to the playbooks not found error page
         cy.url().should('include', '/playbooks/error?type=playbooks');
+    });
+
+    it('redirect to not found if the url is incorrect', () => {
+        // # visit the playbook url with an incorrect id
+        cy.visit('/playbooks/playbooks/..%252F..%252f..%252F..%252F..%252fapi%252Fv4%252Ffiles%252Fo47cow5h6fgjzp8abfqqxw5jwc');
+
+        // * Verify that the user has been redirected to the not found error page
+        cy.url().should('include', '/playbooks/error?type=default');
     });
 
     describe('should switch to channels and prompt to run when clicking run', () => {

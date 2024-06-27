@@ -85,39 +85,42 @@ export const useDefaultRedirectOnTeamChange = (teamScopedModelTeamId: string | u
 };
 
 const MainBody = () => {
+    const mattermostIDFormat = '[a-z0-9]{26}';
     const match = useRouteMatch();
     useInitTeamRoutingLogic();
 
     return (
         <Switch>
-            <Route
-                path={`${match.url}/playbooks/:playbookId`}
-            >
+            <Route path={`${match.url}/playbooks/:playbookId(${mattermostIDFormat})/:tab(outline|reports)?`}>
                 <PlaybookEditor/>
             </Route>
-            <Route path={`${match.url}/playbooks`}>
+            <Route
+                path={`${match.url}/playbooks`}
+                exact={true}
+            >
                 <PlaybookList/>
             </Route>
             <Redirect
                 from={`${match.url}/incidents/:playbookRunId`}
                 to={`${match.url}/runs/:playbookRunId`}
             />
-            <Route path={`${match.url}/runs/:playbookRunId`}>
+            <Route path={`${match.url}/runs/:playbookRunId(${mattermostIDFormat})`}>
                 <PlaybookRun/>
             </Route>
             <Redirect
                 from={`${match.url}/incidents`}
                 to={`${match.url}/runs`}
             />
-            <Route path={`${match.url}/runs`}>
+            <Route
+                path={`${match.url}/runs`}
+                exact={true}
+            >
                 <RunsPage/>
             </Route>
             <Route path={`${match.url}/error`}>
                 <ErrorPage/>
             </Route>
-            <Route
-                path={`${match.url}/start`}
-            >
+            <Route path={`${match.url}/start`}>
                 <PlaybookList firstTimeUserExperience={true}/>
             </Route>
             <Route
