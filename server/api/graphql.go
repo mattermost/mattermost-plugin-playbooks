@@ -165,16 +165,32 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 	)
 	r.Header.Set("X-GQL-Operation", params.OperationName)
 
-	for _, err := range response.Errors {
-		errLogger := c.logger.WithError(err).WithField("operation", params.OperationName)
+	if len(response.Errors) > 0 {
+		for i, err := range response.Errors {
+			errLogger := c.logger.WithError(err).WithField("operation", params.OperationName)
 
-		if errors.Is(err, app.ErrNoPermissions) {
-			errLogger.Warn("Warning executing request")
-		} else if err.Rule == "FieldsOnCorrectType" {
-			errLogger.Warn("Query for non existent field")
-		} else {
-			errLogger.Error("Error executing request")
+			if errors.Is(err, app.ErrNoPermissions) {
+				errLogger.Warn("Warning executing request")
+			} else if err.Rule == "FieldsOnCorrectType" {
+				errLogger.Warn("Query for non existent field")
+			} else {
+				errLogger.Error("Error executing request")
+			}
+
+			if i == 9 {
+				errLogger.Warnf("Too many errors, not logging %d more", len(response.Errors)-10)
+				break
+			}
 		}
+
+		if err := json.NewEncoder(w).Encode(map[string]string{"errors": "Error while executing your request"}); err != nil {
+			c.logger.WithError(err).Warn("Error while writing error response")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
