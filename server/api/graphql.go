@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/dataloader/v7"
 	graphql "github.com/graph-gophers/graphql-go"
+	graphql_errors "github.com/graph-gophers/graphql-go/errors"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -183,7 +184,11 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 			}
 		}
 
-		if err := json.NewEncoder(w).Encode(map[string]string{"errors": "Error while executing your request"}); err != nil {
+		response.Errors = response.Errors[:1]
+		response.Errors[0].Message = "Error while executing your request"
+		response.Errors[0].Locations = []graphql_errors.Location{{Line: 0, Column: 0}}
+
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			c.logger.WithError(err).Warn("Error while writing error response")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
