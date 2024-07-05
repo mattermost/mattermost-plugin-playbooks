@@ -31,7 +31,6 @@ describe('api > graphql_errors', {testIsolation: true}, () => {
             method: 'POST',
             failOnStatusCode: false,
         }).then((response) => {
-            expect(response.status).to.equal(400);
             expect(response.body.errors).to.have.length(1);
             expect(response.body.errors[0].message).to.equal('Error while executing your request');
         });
