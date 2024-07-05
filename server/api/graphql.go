@@ -187,14 +187,10 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		response.Errors = response.Errors[:1]
 		response.Errors[0].Message = "Error while executing your request"
 		response.Errors[0].Locations = []graphql_errors.Location{{Line: 0, Column: 0}}
-
+		w.WriteHeader(http.StatusBadRequest)
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			c.logger.WithError(err).Warn("Error while writing error response")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
 		}
-
-		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
