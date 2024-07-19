@@ -1143,7 +1143,7 @@ func TestBadGraphQLRequest(t *testing.T) {
 		Variables:     map[string]interface{}{"userID": "me"},
 	}, &result)
 	require.NoError(t, err)
-	require.Len(t, result.Errors, 4)
+	require.Len(t, result.Errors, 1)
 }
 
 // AddParticipants adds participants to the run

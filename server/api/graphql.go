@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/dataloader/v7"
 	graphql "github.com/graph-gophers/graphql-go"
+	graphql_errors "github.com/graph-gophers/graphql-go/errors"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -165,16 +166,33 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 	)
 	r.Header.Set("X-GQL-Operation", params.OperationName)
 
-	for _, err := range response.Errors {
-		errLogger := c.logger.WithError(err).WithField("operation", params.OperationName)
+	if len(response.Errors) > 0 {
+		for i, err := range response.Errors {
+			errLogger := c.logger.WithError(err).WithField("operation", params.OperationName)
 
-		if errors.Is(err, app.ErrNoPermissions) {
-			errLogger.Warn("Warning executing request")
-		} else if err.Rule == "FieldsOnCorrectType" {
-			errLogger.Warn("Query for non existent field")
-		} else {
-			errLogger.Error("Error executing request")
+			if errors.Is(err, app.ErrNoPermissions) {
+				errLogger.Warn("Warning executing request")
+			} else if err.Rule == "FieldsOnCorrectType" {
+				errLogger.Warn("Query for non existent field")
+			} else {
+				errLogger.Error("Error executing request")
+			}
+
+			if i == 9 {
+				errLogger.Warnf("Too many errors, not logging %d more", len(response.Errors)-10)
+				break
+			}
 		}
+
+		response.Errors[0].Message = "Error while executing your request"
+		response.Errors[0].Locations = []graphql_errors.Location{{Line: 0, Column: 0}}
+		// remove all other errors
+		response.Errors = response.Errors[:1]
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			c.logger.WithError(err).Warn("Error while writing error response")
+		}
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
