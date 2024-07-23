@@ -23,17 +23,7 @@ func TestPlaybooks(t *testing.T) {
 	e.CreateClients()
 	e.CreateBasicServer()
 
-	t.Run("unlicenced servers can't create a private playbook", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:  "test1",
-			TeamID: e.BasicTeam.Id,
-			Public: false,
-		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Empty(t, id)
-	})
-
-	t.Run("create public playbook, unlicensed with zero pre-existing playbooks in the team, should succeed", func(t *testing.T) {
+	t.Run("create public playbook with zero pre-existing playbooks in the team, should succeed", func(t *testing.T) {
 		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test1",
 			TeamID: e.BasicTeam.Id,
@@ -42,7 +32,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("create public playbook, unlicensed with one pre-existing playbook in the team, should succeed", func(t *testing.T) {
+	t.Run("create public playbook with one pre-existing playbook in the team, should succeed", func(t *testing.T) {
 		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test2",
 			TeamID: e.BasicTeam.Id,
@@ -51,30 +41,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	e.SetE10Licence()
-
-	t.Run("create playbook, e10 licenced with one pre-existing playbook in the team, should now succeed", func(t *testing.T) {
-		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:  "test2",
-			TeamID: e.BasicTeam.Id,
-			Public: true,
-		})
-		assert.NoError(t, err)
-	})
-
-	t.Run("e10 licenced servers can't create private playbooks", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:  "test3",
-			TeamID: e.BasicTeam.Id,
-			Public: false,
-		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Empty(t, id)
-	})
-
-	e.SetE20Licence()
-
-	t.Run("e20 licenced servers can create private playbooks", func(t *testing.T) {
+	t.Run("can create private playbooks", func(t *testing.T) {
 		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test4",
 			TeamID: e.BasicTeam.Id,
@@ -98,6 +65,7 @@ func TestPlaybooks(t *testing.T) {
 			Title:  "test6 - to be archived",
 			TeamID: e.BasicTeam.Id,
 		})
+		t.Log("err is", err)
 		assert.NoError(t, err)
 
 		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
@@ -1154,26 +1122,8 @@ func TestPlaybooksConversions(t *testing.T) {
 
 		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
-		t.Run("E0", func(t *testing.T) {
-			e.RemoveLicence()
-
-			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
-			requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		})
-
-		t.Run("E10", func(t *testing.T) {
-			e.SetE10Licence()
-
-			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
-			requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		})
-
-		t.Run("E20", func(t *testing.T) {
-			e.SetE20Licence()
-
-			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
-			require.NoError(t, err)
-		})
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
 	})
 
 	t.Run("private to public conversion", func(t *testing.T) {
@@ -1262,33 +1212,9 @@ func TestAddPostToTimeline(t *testing.T) {
 	dialogRequestBytes, err := json.Marshal(dialogRequest)
 	require.NoError(t, err)
 
-	t.Run("unlicensed server", func(t *testing.T) {
-		// Make sure there is no license
-		e.RemoveLicence()
-
-		// Post the request with the dialog payload and verify it is not allowed
-		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
-		require.Error(t, err)
-		require.Equal(t, http.StatusForbidden, resp.StatusCode)
-	})
-
-	t.Run("E10 server", func(t *testing.T) {
-		// Set an E10 license
-		e.SetE10Licence()
-
-		// Post the request with the dialog payload and verify it is allowed
-		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
-		require.NoError(t, err)
-	})
-
-	t.Run("E20 server", func(t *testing.T) {
-		// Set an E20 license
-		e.SetE20Licence()
-
-		// Post the request with the dialog payload and verify it is allowed
-		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
-		require.NoError(t, err)
-	})
+	// Post the request with the dialog payload and verify it is allowed
+	_, err = e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+	require.NoError(t, err)
 }
 
 func TestPlaybookStats(t *testing.T) {
@@ -1298,32 +1224,9 @@ func TestPlaybookStats(t *testing.T) {
 	e.SetE20Licence()
 	e.CreateBasicPlaybook()
 
-	t.Run("unlicensed server", func(t *testing.T) {
-		// Make sure there is no license
-		e.RemoveLicence()
-
-		// Verify that retrieving stats is not allowed
-		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-	})
-
-	t.Run("E10 server", func(t *testing.T) {
-		// Set an E10 license
-		e.SetE10Licence()
-
-		// Verify that ertrieving stats is not allowed
-		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-	})
-
-	t.Run("E20 server", func(t *testing.T) {
-		// Set an E20 license
-		e.SetE20Licence()
-
-		// Verify that retrieving stats is allowed
-		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
-		require.NoError(t, err)
-	})
+	// Verify that retrieving stats is allowed
+	_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+	require.NoError(t, err)
 }
 
 func TestPlaybookGetAutoFollows(t *testing.T) {
