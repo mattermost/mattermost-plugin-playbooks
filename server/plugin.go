@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/blang/semver/v4"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -112,15 +111,7 @@ func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
-	v2, err := semver.Parse("2.0.0")
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse semver")
-	}
-	pluginVersion, err := semver.Parse(manifest.Version)
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse plugin version")
-	}
-	if pluginVersion.GTE(v2) && !pluginapi.IsE20LicensedOrDevelopment(
+	if !pluginapi.IsE20LicensedOrDevelopment(
 		pluginAPIClient.Configuration.GetConfig(),
 		pluginAPIClient.System.GetLicense(),
 	) {
