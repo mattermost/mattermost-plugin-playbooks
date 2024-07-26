@@ -65,7 +65,6 @@ func TestPlaybooks(t *testing.T) {
 			Title:  "test6 - to be archived",
 			TeamID: e.BasicTeam.Id,
 		})
-		t.Log("err is", err)
 		assert.NoError(t, err)
 
 		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
