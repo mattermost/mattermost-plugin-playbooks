@@ -174,8 +174,12 @@ func Setup(t *testing.T) *TestEnvironment {
 	err = utils.TranslationsPreInit()
 	require.NoError(t, err)
 
+	e20license := model.NewTestLicense()
+	e20license.SkuShortName = model.LicenseShortSkuE20
+
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
+		sapp.WithLicense(e20license),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)
