@@ -169,21 +169,11 @@ export const StyledModal = styled(Modal)`
         place-content: start center;
         padding: 8px;
         /* content-spacing */
-        .modal-header {
-            margin-bottom: 8px;
-        }
         .modal-body {
             overflow: visible;
+            padding: 0 32px;
         }
-        .modal-content {
-            padding: 24px;
-        }
-        .modal-footer {
-            padding: 24px 0 0 0;
-        }
-        .close {
-            margin: 12px 12px 0 0;
-        }
+
         .modal-dialog {
             margin: 0px !important;
             max-width: 100%;
@@ -221,6 +211,7 @@ export const ModalHeading = styled.h1`
     font-size: 22px;
     line-height: 28px;
     color: var(--center-channel-color);
+    margin: 0;
 `;
 
 export const ModalSideheading = styled.h6`
