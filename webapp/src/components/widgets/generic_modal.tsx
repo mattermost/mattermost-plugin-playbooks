@@ -227,6 +227,7 @@ export const ModalSubheading = styled.h6`
     font-size: 12px;
     line-height: 16px;
     margin-top: 6px;
+    margin-bottom: 0;
     font-family: 'Open Sans';
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
