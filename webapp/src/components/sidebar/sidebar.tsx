@@ -105,7 +105,7 @@ const SidebarComponent = styled.div`
 const Header = styled.div`
     height: 52px;
     padding: 0 16px;
-
+    gap: 8px;
     display: flex;
     flex: initial;
     flex-flow: row nowrap;
@@ -115,14 +115,17 @@ const Header = styled.div`
 `;
 
 const TeamName = styled.h1`
+    display: inline-block;
+    margin: 0px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--sidebar-header-text-color);
-    cursor: pointer;
-    display: flex;
     font-family: Metropolis, sans-serif;
     font-weight: 600;
     font-size: 16px;
     line-height: 24px;
-    margin: 0px;
+    cursor: pointer;
 `;
 
 export default Sidebar;
