@@ -85,20 +85,14 @@ const ActionsModal = (props: Props) => {
 const ModalHeader = styled(Modal.Header)`
     &&&& {
         margin-bottom: 0;
+        padding-top: 24px;
+        padding-bottom: 20px;
     }
 `;
 
 const StyledModal = styled(GenericModal)`
     .modal-body {
-        :before {
-            content: '';
-            height: 1px;
-            width: 600px;
-            position: absolute;
-            left: -24px;
-            top: 0px;
-            background: rgba(var(--center-channel-color-rgb), 0.08);
-        }
+        border-top: var(--border-default);
     }
 `;
 
@@ -106,6 +100,7 @@ const ModalTitle = styled.div`
     font-weight: 600;
     font-size: 20px;
     line-height: 20px;
+    margin-top: 4px;
 `;
 
 const ModalFooter = styled(DefaultFooterContainer)`
@@ -132,8 +127,8 @@ const Header = styled.div`
 `;
 
 const IconWrapper = styled.div`
-    margin-right: 14px;
-    margin-top: 2px;
+    margin-right: 12px;
+    margin-left: -4px;
 `;
 
 export const TriggersContainer = styled.div`

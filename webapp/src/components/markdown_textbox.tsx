@@ -104,6 +104,7 @@ const Wrapper = styled.div`
     && .textarea-wrapper-preview  {
         .custom-textarea.custom-textarea.textbox-preview-area {
             display: block!important;
+            z-index: 0;
         }
         .input-wrapper {
             display: none;

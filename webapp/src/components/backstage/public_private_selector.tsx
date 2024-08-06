@@ -21,14 +21,19 @@ const HorizontalContainer = styled.div`
 `;
 
 const BigButton = styled.button`
-	padding: 16px;
-	border: 1px solid rgba(var(--button-bg-rgb), 0.08);
-	background: var(--center-channel-bg);
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
-	border-radius: 4px;
+    padding: 16px 12px;
+    border: var(--border-default);
+    background: var(--center-channel-bg);
+    box-shadow: var(--elevation-1);
+    border-radius: var(--radius-s);
 	flex-grow: 1;
 	flex-basis: 0;
 	margin: 4px;
+
+    &:hover {
+        border: var(--border-dark);
+        box-shadow: var(--elevation-2);
+    }
 
     &:disabled {
         background: rgba(var(--center-channel-color-rgb), 0.08);
@@ -46,9 +51,21 @@ const StackedText = styled.div`
 `;
 
 const GiantIcon = styled.i<{active?: boolean}>`
-	font-size: 36px;
-	line-height: 42px;
-	color: ${(props) => (props.active ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+	line-height: 28px;
+	color: ${(props) => (props.active ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};
+    background: ${(props) => (props.active ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    border-radius: var(--radius-full);
+
+    &:before {
+        margin: 0;
+    }
 `;
 
 const CheckIcon = styled.i`
