@@ -328,6 +328,7 @@ const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
 `;
 
 const MainTitleBG = styled.div<{numChecklists: number}>`
+    background-color: var(--center-channel-bg);
     z-index: ${({numChecklists}) => numChecklists + 2};
     position: sticky;
     top: 0;
