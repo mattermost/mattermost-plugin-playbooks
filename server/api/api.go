@@ -41,8 +41,8 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 	}
 
 	root := mux.NewRouter()
+	root.Use(LogRequest)
 	api := root.PathPrefix("/api/v0").Subrouter()
-	api.Use(LogRequest)
 	api.Use(MattermostAuthorizationRequired)
 
 	api.Handle("{anything:.*}", http.NotFoundHandler())
