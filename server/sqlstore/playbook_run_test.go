@@ -1166,7 +1166,7 @@ func TestGetParticipantsActiveTotal(t *testing.T) {
 			createRuns(store, playbookRunStore, playbook1ID, []userInfo{alice, bob, bot1}, team1ID, 3, app.StatusInProgress)
 			createRuns(store, playbookRunStore, playbook2ID, []userInfo{tom, bob}, team2ID, 5, app.StatusInProgress)
 
-			expected := 2*3 + 2*5 // ignore bots
+			expected := 3*3 + 2*5
 			actual, err := playbookRunStore.GetParticipantsActiveTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(expected), actual)

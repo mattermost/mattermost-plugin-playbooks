@@ -196,41 +196,41 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		}
 
 		addUsersToRuns(t, store, []userInfo{bob, lucy, phil}, []string{playbookRuns[0].ID, playbookRuns[1].ID, playbookRuns[2].ID, playbookRuns[3].ID, playbookRuns[5].ID, playbookRuns[6].ID, playbookRuns[7].ID, playbookRuns[8].ID})
-		addUsersToRuns(t, store, []userInfo{bob, quincy}, []string{playbookRuns[4].ID})
-		addUsersToRuns(t, store, []userInfo{john}, []string{playbookRuns[0].ID})
+		addUsersToRuns(t, store, []userInfo{bob, quincy, bot1}, []string{playbookRuns[4].ID})
+		addUsersToRuns(t, store, []userInfo{john, bot2}, []string{playbookRuns[0].ID})
 		addUsersToRuns(t, store, []userInfo{jane}, []string{playbookRuns[0].ID, playbookRuns[1].ID})
 
 		t.Run(driverName+" Active Participants - team1", func(t *testing.T) {
 			result := statsStore.TotalActiveParticipants(&StatsFilters{
 				TeamID: team1id,
 			})
-			assert.Equal(t, 5, result)
+			assert.Equal(t, 6, result)
 		})
 
 		t.Run(driverName+" Active Participants - team2", func(t *testing.T) {
 			result := statsStore.TotalActiveParticipants(&StatsFilters{
 				TeamID: team2id,
 			})
-			assert.Equal(t, 4, result)
+			assert.Equal(t, 5, result)
 		})
 
 		t.Run(driverName+" Active Participants, playbook1", func(t *testing.T) {
 			result := statsStore.TotalActiveParticipants(&StatsFilters{
 				PlaybookID: "playbook1",
 			})
-			assert.Equal(t, 5, result)
+			assert.Equal(t, 6, result)
 		})
 
 		t.Run(driverName+" Active Participants, playbook2", func(t *testing.T) {
 			result := statsStore.TotalActiveParticipants(&StatsFilters{
 				PlaybookID: "playbook2",
 			})
-			assert.Equal(t, 4, result)
+			assert.Equal(t, 5, result)
 		})
 
 		t.Run(driverName+" Active Participants, all", func(t *testing.T) {
 			result := statsStore.TotalActiveParticipants(&StatsFilters{})
-			assert.Equal(t, 6, result)
+			assert.Equal(t, 8, result)
 		})
 
 		t.Run(driverName+" In-progress Playbook Runs - team1", func(t *testing.T) {

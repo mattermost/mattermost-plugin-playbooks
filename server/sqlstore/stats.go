@@ -96,8 +96,7 @@ func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 		From("IR_Run_Participants as rp").
 		Join("IR_Incident AS i ON i.ID = rp.IncidentID").
 		Where("i.EndAt = 0").
-		Where("rp.IsParticipant = true").
-		Where(sq.Expr("rp.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Where("rp.IsParticipant = true")
 
 	query = applyFilters(query, filters)
 
@@ -316,8 +315,7 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 
 	q = q.
 		From("IR_Incident as i").
-		InnerJoin("ChannelMemberHistory as cmh ON i.ChannelId = cmh.ChannelId").
-		Where(sq.Expr("cmh.UserId NOT IN (SELECT UserId FROM Bots)"))
+		InnerJoin("ChannelMemberHistory as cmh ON i.ChannelId = cmh.ChannelId")
 	q = applyFilters(q, filters)
 
 	counts, err := s.performQueryForXCols(q, x)
