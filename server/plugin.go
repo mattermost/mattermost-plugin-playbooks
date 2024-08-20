@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -79,6 +82,10 @@ type Plugin struct {
 	telemetryClient      TelemetryClient
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
+
+	cancelRunning     context.CancelFunc
+	cancelRunningLock sync.Mutex
+	tabAppJWTKeyFunc  keyfunc.Keyfunc
 }
 
 type StatusRecorder struct {
@@ -172,6 +179,19 @@ func (p *Plugin) OnActivate() error {
 
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
+
+	setupTeamsTabApp := func() {
+		err := p.setupTeamsTabApp()
+		if err != nil {
+			logrus.WithError(err).Error("failed to setup teams tab app")
+		}
+	}
+
+	setupTeamsTabApp()
+	p.config.RegisterConfigChangeListener(func() {
+		// Run this asynchronously, since we may update the config when saving the bot.
+		go setupTeamsTabApp()
+	})
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
@@ -280,6 +300,15 @@ func (p *Plugin) OnActivate() error {
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
 	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
 	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
+	api.NewTabAppHandler(
+		p.handler,
+		p.playbookRunService,
+		pluginAPIClient,
+		p.config,
+		func() keyfunc.Keyfunc {
+			return p.tabAppJWTKeyFunc
+		},
+	)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -516,6 +545,13 @@ func (p *Plugin) GetTopicMetadataByIds(c *plugin.Context, topicType string, topi
 }
 
 func (p *Plugin) OnDeactivate() error {
+	p.cancelRunningLock.Lock()
+	if p.cancelRunning != nil {
+		p.cancelRunning()
+		p.cancelRunning = nil
+	}
+	p.cancelRunningLock.Unlock()
+
 	logrus.Info("Shutting down store..")
 	return p.pluginAPI.Store.Close()
 }
