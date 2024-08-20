@@ -419,7 +419,7 @@ const NewChecklist = styled.div`
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
     z-index: 1;
     position: sticky;
-    top: 48px; // height of rhs_checklists MainTitle
+    top: 0;
     border-radius: 4px 4px 0px 0px;
 
     display: flex;
