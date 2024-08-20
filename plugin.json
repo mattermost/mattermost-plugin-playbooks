@@ -23,6 +23,20 @@
     "footer": "",
     "settings": [
       {
+        "key": "enableTeamsTabApp",
+        "display_name": "Enable Teams Tab App",
+        "type": "bool",
+        "help_text": "When true, enable a Microsoft Teams Tab app to expose Mattermost Playbook runs.",
+        "default": false
+      },
+      {
+        "key": "teamsTabAppTenantIDs",
+        "display_name": "Authorized Tenant IDs for Teams Tab App",
+        "type": "text",
+        "help_text": "A comma separated list of Microsoft Tenant IDs allowed to access Playbook runs.",
+        "default": ""
+      },
+      {
         "key": "EnableExperimentalFeatures",
         "type": "bool",
         "display_name": "Enable Experimental Features:",

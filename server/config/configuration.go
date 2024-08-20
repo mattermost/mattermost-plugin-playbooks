@@ -14,6 +14,10 @@ package config
 type Configuration struct {
 	// BotUserID used to post messages.
 	BotUserID string
+
+	EnableTeamsTabApp    bool   `json:"enableTeamsTabApp"`
+	TeamsTabAppTenantIDs string `json:"teamsTabAppTenantIDs"`
+	TeamsTabAppBotUserID string
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if

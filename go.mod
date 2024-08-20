@@ -1,6 +1,8 @@
 module github.com/mattermost/mattermost-plugin-playbooks
 
-go 1.19
+go 1.21
+
+toolchain go1.21.13
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
 
@@ -36,6 +38,8 @@ require (
 	code.sajari.com/docconv v1.3.5 // indirect
 	github.com/JalfResi/justext v0.0.0-20221106200834-be571e3e3052 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
+	github.com/MicahParks/jwkset v0.5.18 // indirect
+	github.com/MicahParks/keyfunc/v3 v3.3.3 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/RoaringBitmap/roaring v1.2.1 // indirect
 	github.com/advancedlogic/GoOse v0.0.0-20210820140952-9d5822d4a625 // indirect
@@ -84,6 +88,7 @@ require (
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang-migrate/migrate/v4 v4.15.2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 // indirect
@@ -185,6 +190,7 @@ require (
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221114212237-e4508ebdbee1 // indirect
