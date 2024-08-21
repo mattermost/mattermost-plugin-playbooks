@@ -87,7 +87,7 @@ export const Search = styled.div<{width?: string}>`
 
     &:before {
         left: 16px;
-        top: 6px;
+        top: 7px;
         position: absolute;
         color: rgba(var(--center-channel-color-rgb), 0.56);
         content: '\\f0349';
