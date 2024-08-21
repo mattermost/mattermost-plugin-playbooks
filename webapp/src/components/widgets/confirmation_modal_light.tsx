@@ -61,7 +61,7 @@ const ConfirmModalTitle = styled.h1`
     font-family: Metropolis;
     font-size: 22px;
     line-height: 28px;
-
+    margin-top: 0;
     text-align: center;
     color: var(--center-channel-color);
 `;

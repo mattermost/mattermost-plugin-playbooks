@@ -334,6 +334,7 @@ const OptionDesc = styled.div`
 
 const ConfirmModalFooter = styled(DefaultFooterContainer)`
     align-items: center;
+    flex: 1;
     margin-bottom: 24px;
 
     button.confirm {
