@@ -76,6 +76,7 @@ export const Search = styled.div<{width?: string}>`
         width: ${(props) => (props.width ? props.width : '360px')};
         height: 4rem;
         font-size: 14px;
+        font-family: 'Open Sans', sans-serif;
         padding-left: 4rem;
 
         &:focus {
@@ -86,7 +87,7 @@ export const Search = styled.div<{width?: string}>`
 
     &:before {
         left: 16px;
-        top: 8px;
+        top: 6px;
         position: absolute;
         color: rgba(var(--center-channel-color-rgb), 0.56);
         content: '\\f0349';

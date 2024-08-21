@@ -227,7 +227,7 @@ const RunPlaybookModal = ({
                             <FormattedMessage defaultMessage='Select a playbook'/>
                         </HeaderTitle>
                         <HeaderButtonWrapper>
-                            {canCreatePlaybooks && <CreatePlaybookButton onClick={onCreatePlaybook}>
+                            {canCreatePlaybooks && <CreatePlaybookButton onClick={onCreatePlaybook} className="btn btn-sm btn-tertiary">
                                 <FormattedMessage defaultMessage='Create new playbook'/>
                             </CreatePlaybookButton>}
                         </HeaderButtonWrapper>
@@ -501,10 +501,8 @@ const HeaderButtonWrapper = styled.div`
     margin-left: auto;
     margin-right: 30px;
 `;
-const CreatePlaybookButton = styled(SecondaryButton)`
+const CreatePlaybookButton = styled.button`
     font-family: 'Open Sans';
-    height: 32px;
-    padding: 0 10px;
 `;
 
 const SearchWrapper = styled.div`
