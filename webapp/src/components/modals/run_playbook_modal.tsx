@@ -20,7 +20,6 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
-import {SecondaryButton} from 'src/components/assets/buttons';
 import SearchInput from 'src/components/backstage/search_input';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
@@ -227,9 +226,14 @@ const RunPlaybookModal = ({
                             <FormattedMessage defaultMessage='Select a playbook'/>
                         </HeaderTitle>
                         <HeaderButtonWrapper>
-                            {canCreatePlaybooks && <CreatePlaybookButton onClick={onCreatePlaybook} className="btn btn-sm btn-tertiary">
-                                <FormattedMessage defaultMessage='Create new playbook'/>
-                            </CreatePlaybookButton>}
+                            {canCreatePlaybooks &&
+                                <CreatePlaybookButton
+                                    onClick={onCreatePlaybook}
+                                    className='btn btn-sm btn-tertiary'
+                                >
+                                    <FormattedMessage defaultMessage='Create new playbook'/>
+                                </CreatePlaybookButton>
+                            }
                         </HeaderButtonWrapper>
                     </ColContainer>
                     {showsearch && <SearchWrapper>
