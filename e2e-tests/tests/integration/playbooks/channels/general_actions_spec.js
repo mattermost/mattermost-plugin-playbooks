@@ -247,6 +247,90 @@ describe('channels > general actions', {testIsolation: true}, () => {
             });
         });
 
+        it('MM-58432 - prevents users from deleting an arbitrary post by crafting a query', () => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Public Playbook',
+                memberIDs: [],
+            });
+
+            // # Login
+            // # send a message and get its postID
+            // # create and trigger an alert
+            // # send a random postID
+            // # try to remove this post: this should fail
+            // # just to make sure the principle of this test work, doing the same step on the bot message should delete the bot post
+            cy.apiLogin(testUser);
+            cy.apiCreateChannel(
+                testTeam.id,
+                'action-channel',
+                'Action Channel',
+                'O',
+            ).then(({channel}) => {
+                // # Go to the test channel
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
+
+                // # Open Channel Header and the Channel Actions modal
+                cy.get('#channelHeaderTitle').click();
+                cy.findByText('Channel Actions').click();
+
+                // # Set a keyword, enable the playbook trigger,
+                // # and select the Playbook to run
+                cy.contains('Type a keyword or phrase, then press Enter on your keyboard').click().type('red alert{enter}');
+                cy.contains('Prompt to run a playbook').click();
+                cy.contains('Select a playbook').click();
+                cy.findByText('Public Playbook').click();
+
+                cy.get('#channel-actions-modal').within(() => {
+                    // # Save action
+                    cy.findByRole('button', {name: /save/i}).click();
+                });
+
+                cy.uiPostMessageQuickly('this is a red alert !');
+
+                let botPostId;
+                cy.getLastPostId().then((postId) => {
+                    cy.get(`#post_${postId}`).within(() => {
+                        cy.contains('trigger for the Public Playbook').should('exist');
+                        botPostId = postId;
+                    });
+                });
+
+                cy.uiPostMessageQuickly('do not delete me!');
+                cy.getLastPostId().then((postId) => {
+                    cy.request({
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                        url: '/plugins/playbooks/api/v0/signal/keywords/ignore-thread',
+                        method: 'POST',
+                        failOnStatusCode: false,
+                        body: {
+                            post_id: postId,
+                            context: {postID: postId},
+                        },
+                    }).then(() => {
+                        // * Verify that the post is still there
+                        cy.get(`#post_${postId}`).should('exist');
+
+                        // Now if we do that same request but on the bot message, it should be deleted
+                        cy.request({
+                            headers: {'X-Requested-With': 'XMLHttpRequest'},
+                            url: '/plugins/playbooks/api/v0/signal/keywords/ignore-thread',
+                            method: 'POST',
+                            body: {
+                                post_id: botPostId,
+                                context: {postID: botPostId},
+                            },
+                        }).then(() => {
+                            // * Verify that the post is still deleted
+                            cy.get(`#post_${botPostId}`).within(() => {
+                                cy.contains('(message deleted)').should('exist');
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
         it('disabled triggers do not run even with a keyword set', () => {
             // # Create a public playbook
             cy.apiCreatePlaybook({
