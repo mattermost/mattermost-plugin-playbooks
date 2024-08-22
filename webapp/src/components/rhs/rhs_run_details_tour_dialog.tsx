@@ -71,7 +71,6 @@ const Title = styled.h1`
 const Desc = styled.div`
     font-size: 14px;
     text-align: center;
-
     padding: 0 16px;
     margin: 0;
     margin-top: 8px;
@@ -80,7 +79,6 @@ const Desc = styled.div`
 
 const Footer = styled(DefaultFooterContainer)`
     align-items: center;
-    margin-bottom: 24px;
 `;
 const ChecklistIllustration = () => {
     return (

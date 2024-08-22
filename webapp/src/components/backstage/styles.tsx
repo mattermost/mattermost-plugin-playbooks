@@ -76,6 +76,7 @@ export const GlobalSelectStyle = createGlobalStyle`
         .playbooks-rselect__menu-list {
             background-color: var(--center-channel-bg);
             border: none;
+            border-radius: var(--radius-s);
         }
 
         .playbooks-rselect__input {
