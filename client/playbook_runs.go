@@ -19,7 +19,7 @@ type PlaybookRunService struct {
 // Get a playbook run.
 func (s *PlaybookRunService) Get(ctx context.Context, playbookRunID string) (*PlaybookRun, error) {
 	playbookRunURL := fmt.Sprintf("runs/%s", playbookRunID)
-	req, err := s.client.newRequest(http.MethodGet, playbookRunURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, playbookRunURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (s *PlaybookRunService) Get(ctx context.Context, playbookRunID string) (*Pl
 // GetByChannelID gets a playbook run by ChannelID.
 func (s *PlaybookRunService) GetByChannelID(ctx context.Context, channelID string) (*PlaybookRun, error) {
 	channelURL := fmt.Sprintf("runs/channel/%s", channelID)
-	req, err := s.client.newRequest(http.MethodGet, channelURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, channelURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *PlaybookRunService) GetByChannelID(ctx context.Context, channelID strin
 // Get a playbook run's metadata.
 func (s *PlaybookRunService) GetMetadata(ctx context.Context, playbookRunID string) (*Metadata, error) {
 	playbookRunURL := fmt.Sprintf("runs/%s/metadata", playbookRunID)
-	req, err := s.client.newRequest(http.MethodGet, playbookRunURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, playbookRunURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (s *PlaybookRunService) GetMetadata(ctx context.Context, playbookRunID stri
 // Get all playbook status updates.
 func (s *PlaybookRunService) GetStatusUpdates(ctx context.Context, playbookRunID string) ([]StatusPostComplete, error) {
 	playbookRunURL := fmt.Sprintf("runs/%s/status-updates", playbookRunID)
-	req, err := s.client.newRequest(http.MethodGet, playbookRunURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, playbookRunURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (s *PlaybookRunService) List(ctx context.Context, page, perPage int, opts P
 		return nil, fmt.Errorf("failed to build pagination options: %w", err)
 	}
 
-	req, err := s.client.newRequest(http.MethodGet, playbookRunURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, playbookRunURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
@@ -118,7 +118,7 @@ func (s *PlaybookRunService) List(ctx context.Context, page, perPage int, opts P
 // Create a playbook run.
 func (s *PlaybookRunService) Create(ctx context.Context, opts PlaybookRunCreateOptions) (*PlaybookRun, error) {
 	playbookRunURL := "runs"
-	req, err := s.client.newRequest(http.MethodPost, playbookRunURL, opts)
+	req, err := s.client.newAPIRequest(http.MethodPost, playbookRunURL, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID str
 		Message:  message,
 		Reminder: time.Duration(reminderInSeconds),
 	}
-	req, err := s.client.newRequest(http.MethodPost, updateURL, opts)
+	req, err := s.client.newAPIRequest(http.MethodPost, updateURL, opts)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID str
 
 func (s *PlaybookRunService) RequestUpdate(ctx context.Context, playbookRunID, userID string) error {
 	requestURL := fmt.Sprintf("runs/%s/request-update", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPost, requestURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodPost, requestURL, nil)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (s *PlaybookRunService) RequestUpdate(ctx context.Context, playbookRunID, u
 
 func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) error {
 	finishURL := fmt.Sprintf("runs/%s/finish", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPut, finishURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodPut, finishURL, nil)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPost, createURL, checklist)
+	req, err := s.client.newAPIRequest(http.MethodPost, createURL, checklist)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID 
 
 func (s *PlaybookRunService) RemoveChecklist(ctx context.Context, playbookRunID string, checklistNumber int) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d", playbookRunID, checklistNumber)
-	req, err := s.client.newRequest(http.MethodDelete, createURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodDelete, createURL, nil)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func (s *PlaybookRunService) RemoveChecklist(ctx context.Context, playbookRunID 
 
 func (s *PlaybookRunService) RenameChecklist(ctx context.Context, playbookRunID string, checklistNumber int, newTitle string) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d/rename", playbookRunID, checklistNumber)
-	req, err := s.client.newRequest(http.MethodPut, createURL, struct{ Title string }{newTitle})
+	req, err := s.client.newAPIRequest(http.MethodPut, createURL, struct{ Title string }{newTitle})
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func (s *PlaybookRunService) RenameChecklist(ctx context.Context, playbookRunID 
 
 func (s *PlaybookRunService) AddChecklistItem(ctx context.Context, playbookRunID string, checklistNumber int, checklistItem ChecklistItem) error {
 	addURL := fmt.Sprintf("runs/%s/checklists/%d/add", playbookRunID, checklistNumber)
-	req, err := s.client.newRequest(http.MethodPost, addURL, checklistItem)
+	req, err := s.client.newAPIRequest(http.MethodPost, addURL, checklistItem)
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func (s *PlaybookRunService) MoveChecklist(ctx context.Context, playbookRunID st
 		DestChecklistIdx   int `json:"dest_checklist_idx"`
 	}{sourceChecklistIdx, destChecklistIdx}
 
-	req, err := s.client.newRequest(http.MethodPost, createURL, body)
+	req, err := s.client.newAPIRequest(http.MethodPost, createURL, body)
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func (s *PlaybookRunService) MoveChecklistItem(ctx context.Context, playbookRunI
 		DestItemIdx        int `json:"dest_item_idx"`
 	}{sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx}
 
-	req, err := s.client.newRequest(http.MethodPost, createURL, body)
+	req, err := s.client.newAPIRequest(http.MethodPost, createURL, body)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func (s *PlaybookRunService) MoveChecklistItem(ctx context.Context, playbookRunI
 // UpdateRetrospective updates the run's retrospective info
 func (s *PlaybookRunService) UpdateRetrospective(ctx context.Context, playbookRunID, userID string, retroUpdate RetrospectiveUpdate) error {
 	createURL := fmt.Sprintf("runs/%s/retrospective", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPost, createURL, retroUpdate)
+	req, err := s.client.newAPIRequest(http.MethodPost, createURL, retroUpdate)
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (s *PlaybookRunService) UpdateRetrospective(ctx context.Context, playbookRu
 // PublishRetrospective publishes the run's retrospective
 func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookRunID, userID string, retroUpdate RetrospectiveUpdate) error {
 	createURL := fmt.Sprintf("runs/%s/retrospective/publish", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPost, createURL, retroUpdate)
+	req, err := s.client.newAPIRequest(http.MethodPost, createURL, retroUpdate)
 	if err != nil {
 		return err
 	}
@@ -306,7 +306,7 @@ func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID 
 		AssigneeID string `json:"assignee_id"`
 	}{assigneeID}
 
-	req, err := s.client.newRequest(http.MethodPut, createURL, body)
+	req, err := s.client.newAPIRequest(http.MethodPut, createURL, body)
 	if err != nil {
 		return err
 	}
@@ -321,7 +321,7 @@ func (s *PlaybookRunService) SetItemCommand(ctx context.Context, playbookRunID s
 		Command string `json:"command"`
 	}{newCommand}
 
-	req, err := s.client.newRequest(http.MethodPut, createURL, body)
+	req, err := s.client.newAPIRequest(http.MethodPut, createURL, body)
 	if err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func (s *PlaybookRunService) SetItemCommand(ctx context.Context, playbookRunID s
 func (s *PlaybookRunService) RunItemCommand(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/run", playbookRunID, checklistIdx, itemIdx)
 
-	req, err := s.client.newRequest(http.MethodPost, createURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodPost, createURL, nil)
 	if err != nil {
 		return err
 	}
@@ -348,7 +348,7 @@ func (s *PlaybookRunService) SetItemDueDate(ctx context.Context, playbookRunID s
 		DueDate int64 `json:"due_date"`
 	}{duedate}
 
-	req, err := s.client.newRequest(http.MethodPut, createURL, body)
+	req, err := s.client.newAPIRequest(http.MethodPut, createURL, body)
 	if err != nil {
 		return err
 	}
@@ -359,7 +359,7 @@ func (s *PlaybookRunService) SetItemDueDate(ctx context.Context, playbookRunID s
 
 // Get a playbook run.
 func (s *PlaybookRunService) GetOwners(ctx context.Context) ([]OwnerInfo, error) {
-	req, err := s.client.newRequest(http.MethodGet, "runs/owners", nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, "runs/owners", nil)
 	if err != nil {
 		return nil, err
 	}

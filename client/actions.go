@@ -18,7 +18,7 @@ type ActionsService struct {
 // Create an action. Returns the id of the newly created action.
 func (s *ActionsService) Create(ctx context.Context, channelID string, opts ChannelActionCreateOptions) (string, error) {
 	actionURL := fmt.Sprintf("actions/channels/%s", channelID)
-	req, err := s.client.newRequest(http.MethodPost, actionURL, opts)
+	req, err := s.client.newAPIRequest(http.MethodPost, actionURL, opts)
 	if err != nil {
 		return "", err
 	}
@@ -46,7 +46,7 @@ func (s *ActionsService) List(ctx context.Context, channelID string, opts Channe
 		return nil, fmt.Errorf("failed to build options: %w", err)
 	}
 
-	req, err := s.client.newRequest(http.MethodGet, actionURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, actionURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
@@ -64,7 +64,7 @@ func (s *ActionsService) List(ctx context.Context, channelID string, opts Channe
 // Update an existing action.
 func (s *ActionsService) Update(ctx context.Context, action GenericChannelAction) error {
 	updateURL := fmt.Sprintf("actions/channels/%s/%s", action.ChannelID, action.ID)
-	req, err := s.client.newRequest(http.MethodPut, updateURL, action)
+	req, err := s.client.newAPIRequest(http.MethodPut, updateURL, action)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,7 @@ type SettingsService struct {
 // Get the configured settings.
 func (s *SettingsService) Get(ctx context.Context) (*GlobalSettings, error) {
 	settingsURL := "settings"
-	req, err := s.client.newRequest(http.MethodGet, settingsURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, settingsURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (s *SettingsService) Get(ctx context.Context) (*GlobalSettings, error) {
 // Update the configured settings.
 func (s *SettingsService) Update(ctx context.Context, settings GlobalSettings) error {
 	settingsURL := "settings"
-	req, err := s.client.newRequest(http.MethodPut, settingsURL, settings)
+	req, err := s.client.newAPIRequest(http.MethodPut, settingsURL, settings)
 	if err != nil {
 		return err
 	}
