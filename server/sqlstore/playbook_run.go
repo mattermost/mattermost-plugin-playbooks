@@ -156,13 +156,15 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 	// the user is not a member of the channel they won't have permissions to get the user list
 	participantsCol := `
         COALESCE(
-			(SELECT string_agg(rp.UserId, ',')
+			(SELECT string_agg(x.UserId, ',') FROM (
+				SELECT rp.UserId
 				FROM IR_Incident as i2
 					JOIN IR_Run_Participants as rp on rp.IncidentID = i2.ID
+					LEFT JOIN Bots b ON (b.UserId = rp.UserId)
 				WHERE i2.Id = i.Id
 				AND rp.IsParticipant = true
-				AND rp.UserId NOT IN (SELECT UserId FROM Bots)
-			), ''
+				ORDER BY (CASE WHEN b.UserId IS NULL THEN 0 ELSE 1 END), rp.UserId
+			) x), ''
         ) AS ConcatenatedParticipantIDs`
 	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
 		participantsCol = `
@@ -170,9 +172,10 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			(SELECT group_concat(rp.UserId separator ',')
 				FROM IR_Incident as i2
 					JOIN IR_Run_Participants as rp on rp.IncidentID = i2.ID
+					LEFT JOIN Bots b ON (b.UserId = rp.UserId)
 				WHERE i2.Id = i.Id
 				AND rp.IsParticipant = true
-				AND rp.UserId NOT IN (SELECT UserId FROM Bots)
+				ORDER BY (CASE WHEN b.UserId IS NULL THEN 0 ELSE 1 END), rp.UserId
 			), ''
         ) AS ConcatenatedParticipantIDs`
 	}
@@ -891,13 +894,12 @@ func (s *playbookRunStore) GetPlaybookRunIDsForChannel(channelID string) ([]stri
 }
 
 // GetHistoricalPlaybookRunParticipantsCount returns the count of all members of a playbook run's channel
-// since the beginning of the playbook run, excluding bots.
+// since the beginning of the playbook run.
 func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID string) (int64, error) {
 	query := s.queryBuilder.
 		Select("COUNT(DISTINCT cmh.UserId)").
 		From("ChannelMemberHistory AS cmh").
-		Where(sq.Eq{"cmh.ChannelId": channelID}).
-		Where(sq.Expr("cmh.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Where(sq.Eq{"cmh.ChannelId": channelID})
 
 	var numParticipants int64
 	err := s.store.getBuilder(s.store.db, &numParticipants, query)
@@ -1380,8 +1382,7 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 		From("IR_Run_Participants as rp").
 		Join("IR_Incident AS i ON i.ID = rp.IncidentID").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		Where(sq.Eq{"rp.IsParticipant": true}).
-		Where(sq.Expr("rp.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Where(sq.Eq{"rp.IsParticipant": true})
 
 	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
 		return 0, errors.Wrap(err, "failed to count active participants")
