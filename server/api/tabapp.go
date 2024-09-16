@@ -255,6 +255,25 @@ func validateToken(jwtKeyFunc keyfunc.Keyfunc, r *http.Request, expectedTenantID
 	}
 }
 
+func (h *TabAppHandler) getLimitedUser(userID string, showFullName bool) (limitedUser, error) {
+	user, err := h.pluginAPI.User.Get(userID)
+	if err != nil {
+		return limitedUser{}, err
+	}
+
+	lUser := limitedUser{
+		UserID: user.Id,
+	}
+	if showFullName {
+		lUser.FirstName = user.FirstName
+		lUser.LastName = user.LastName
+	} else {
+		lUser.FirstName = user.Username
+	}
+
+	return lUser, nil
+}
+
 // getPlaybookRuns handles the GET /tabapp/runs endpoint.
 //
 // It returns certain runs and associated users and status posts in support of
@@ -345,25 +364,13 @@ func (h *TabAppHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, r *ht
 				continue
 			}
 
-			// TODO: Ideally, this would be a single GetUserByIDs call, but we didn't
-			// expose that in the PluginAPI.
-			user, err := h.pluginAPI.User.Get(participantID)
+			user, err := h.getLimitedUser(participantID, showFullName)
 			if err != nil {
 				logrus.WithField("user_id", participantID).WithError(err).Warn("Failed to get participant user")
 				continue
 			}
 
-			lUser := limitedUser{
-				UserID: user.Id,
-			}
-			if showFullName {
-				lUser.FirstName = user.FirstName
-				lUser.LastName = user.LastName
-			} else {
-				lUser.FirstName = user.Username
-			}
-
-			users[participantID] = lUser
+			users[participantID] = user
 		}
 	}
 
@@ -398,16 +405,13 @@ func (h *TabAppHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, r *ht
 		// only going to look up the single @playbooks user right now. Update this
 		// to extract the username from the stauts post props and resolve that user
 		// instead.
-		user, err := h.pluginAPI.User.Get(statusPost.UserID)
+		user, err := h.getLimitedUser(statusPost.UserID, showFullName)
 		if err != nil {
 			logrus.WithField("user_id", statusPost.UserID).WithError(err).Warn("Failed to get status post user")
 			continue
 		}
-		users[statusPost.UserID] = limitedUser{
-			UserID:    user.Id,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-		}
+
+		users[statusPost.UserID] = user
 	}
 
 	c.logger.WithField("total_count", runResults.TotalCount).Info("Handled request from tabapp client")
