@@ -11,7 +11,7 @@ defaults:
 
 env:
   TERM: xterm
-  GO_VERSION: 1.21.13
+  GO_VERSION: 1.22.6
 
 jobs:
   lint:

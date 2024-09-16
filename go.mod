@@ -1,8 +1,8 @@
 module github.com/mattermost/mattermost-plugin-playbooks
 
-go 1.21
+go 1.22.0
 
-toolchain go1.21.13
+toolchain go1.22.6
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
 
