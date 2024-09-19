@@ -3665,18 +3665,3 @@ func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, u
 func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
 	return s.store.GetPlaybookRunIDsForUser(userID)
 }
-
-// GetRunMetadataByIDs returns playbook runs metadata by passed run IDs.
-func (s *PlaybookRunServiceImpl) GetRunMetadataByIDs(runIDs []string) ([]RunMetadata, error) {
-	return s.store.GetRunMetadataByIDs(runIDs)
-}
-
-// GetTaskMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by taskIDs
-func (s *PlaybookRunServiceImpl) GetTaskMetadataByIDs(taskIDs []string) ([]TopicMetadata, error) {
-	return s.store.GetTaskAsTopicMetadataByIDs(taskIDs)
-}
-
-// GetStatusMetadataByIDs gets PlaybookRunIDs and TeamIDs from runs by statusIDs
-func (s *PlaybookRunServiceImpl) GetStatusMetadataByIDs(statusIDs []string) ([]TopicMetadata, error) {
-	return s.store.GetStatusAsTopicMetadataByIDs(statusIDs)
-}

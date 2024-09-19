@@ -88,16 +88,6 @@ func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Pl
 	return p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, permission)
 }
 
-func (p *PermissionsService) HasPermissionsToRun(userID string, run *PlaybookRun, permission *model.Permission) bool {
-	// Check at run level
-	if err := p.runManagePropertiesWithPlaybookRun(userID, run); err != nil {
-		return false
-	}
-
-	// Cascade normally to higher level permissions
-	return p.pluginAPI.User.HasPermissionToTeam(userID, run.TeamID, permission)
-}
-
 func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
 	if teamID == "" || userID == "" {
 		return false
