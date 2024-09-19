@@ -448,7 +448,7 @@ func (p *Plugin) GetAllCollectionIDsForUser(c *plugin.Context, userID, collectio
 	return ids, nil
 }
 
-func (p *Plugin) GetAllUserIdsForCollection(c *plugin.Context, collectionType, collectionID string) ([]string, error) {
+func (p *Plugin) GetAllUserIDsForCollection(c *plugin.Context, collectionType, collectionID string) ([]string, error) {
 	if collectionType != CollectionTypeRun {
 		return nil, errors.Errorf("collection %s is not registered by playbooks", collectionType)
 	}

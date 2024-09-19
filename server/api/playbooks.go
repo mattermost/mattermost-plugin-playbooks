@@ -655,7 +655,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 
 func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 	if len(pb.Metrics) > app.MaxMetricsPerPlaybook {
-		return errors.Errorf(fmt.Sprintf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook))
+		return errors.Errorf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook)
 	}
 
 	//check if titles are unique

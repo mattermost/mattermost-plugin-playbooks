@@ -805,12 +805,12 @@ func (s *playbookRunStore) GetMetricsByIDs(playbookRunIDs []string) (map[string]
 		return nil, err
 	}
 
-	metricsByIds := make(map[string][]app.RunMetricData)
+	metricsByIDs := make(map[string][]app.RunMetricData)
 	for _, metric := range metrics {
-		metricsByIds[metric.IncidentID] = append(metricsByIds[metric.IncidentID], app.RunMetricData{MetricConfigID: metric.MetricConfigID, Value: metric.Value})
+		metricsByIDs[metric.IncidentID] = append(metricsByIDs[metric.IncidentID], app.RunMetricData{MetricConfigID: metric.MetricConfigID, Value: metric.Value})
 	}
 
-	return metricsByIds, nil
+	return metricsByIDs, nil
 }
 
 func (s *playbookRunStore) getStatusPostsForPlaybookRun(q sqlx.Queryer, playbookRunIDs []string) (playbookRunStatusPosts, error) {

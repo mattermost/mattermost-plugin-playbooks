@@ -3,11 +3,6 @@ service:
 
 run:
   timeout: 5m
-  skip-files:
-     - example.*.go
-     - server/manifest.go
-  skip-dirs:
-    - build/
 
 linters:
   disable-all: true
@@ -20,7 +15,7 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - exportloopref
+    - copyloopvar
     - staticcheck
     - unconvert
     - unused
@@ -31,7 +26,6 @@ linters-settings:
   gofmt:
     simplify: true
   govet:
-    check-shadowing: true
     enable-all: true
     disable:
       - fieldalignment
@@ -41,6 +35,11 @@ issues:
   exclude:
     - G404
     - 'shadow: declaration of "err" shadows declaration at'
+  exclude-dirs:
+    - build/
+  exclude-files:
+     - example.*.go
+     - server/manifest.go
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go
@@ -52,3 +51,9 @@ issues:
       - revive
       - gocritic
       path: "server/bot/logger.go"
+    - linters:
+      - revive
+      text: unused-parameter
+    - linters:
+      - gosec
+      text: G115
