@@ -576,8 +576,7 @@ func ValidateWebhookURLs(urls []string) error {
 func ValidateCategoryName(categoryName string) error {
 	categoryNameLength := len(categoryName)
 	if categoryNameLength > 22 {
-		msg := fmt.Sprintf("invalid category name: %s (maximum length is 22 characters)", categoryName)
-		return errors.Errorf(msg)
+		return errors.Errorf("invalid category name: %s (maximum length is 22 characters)", categoryName)
 	}
 	return nil
 }
@@ -616,11 +615,11 @@ func GetDistinctAssignees[T ChecklistCommon](checklists []T) []string {
 			}
 		}
 	}
-	uIds := make([]string, 0, len(uMap))
+	uIDs := make([]string, 0, len(uMap))
 	for k := range uMap {
-		uIds = append(uIds, k)
+		uIDs = append(uIDs, k)
 	}
-	return uIds
+	return uIDs
 }
 
 func assigneesAreInvited(assignees []string, invited []string) bool {

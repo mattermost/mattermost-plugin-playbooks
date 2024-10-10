@@ -266,6 +266,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 				return
 			}
 
+			//nolint:govet
 			if _, err := b.PostCustomMessageWithAttachments(channel.Id, postType, attachments, message); err != nil {
 				logrus.WithError(err).WithField("user_id", adminID).Error("failed to send a DM to user")
 			}

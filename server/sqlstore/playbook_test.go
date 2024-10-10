@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func membersFromIds(ids []string) []app.PlaybookMember {
+func membersFromIDs(ids []string) []app.PlaybookMember {
 	members := []app.PlaybookMember{}
 	for _, id := range ids {
 		members = append(members, app.PlaybookMember{
@@ -1067,7 +1067,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
-					old.Members = membersFromIds([]string{andrew.ID})
+					old.Members = membersFromIDs([]string{andrew.ID})
 					return old
 				},
 				expectedErr: nil,
@@ -1079,7 +1079,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				update: func(old app.Playbook) app.Playbook {
 					oldMembers := []string{matt.ID, bill.ID, alice.ID, jen.ID}
 					sort.Strings(oldMembers)
-					old.Members = membersFromIds(oldMembers)
+					old.Members = membersFromIDs(oldMembers)
 					return old
 				},
 				expectedErr: nil,
@@ -1091,7 +1091,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				update: func(old app.Playbook) app.Playbook {
 					oldMembers := []string{jon.ID, andrew.ID, bob.ID, alice.ID}
 					sort.Strings(oldMembers)
-					old.Members = membersFromIds(oldMembers)
+					old.Members = membersFromIDs(oldMembers)
 					return old
 				},
 				expectedErr: nil,
@@ -1102,7 +1102,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				update: func(old app.Playbook) app.Playbook {
 					oldMembers := []string{alice.ID, jen.ID}
 					sort.Strings(oldMembers)
-					old.Members = membersFromIds(oldMembers)
+					old.Members = membersFromIDs(oldMembers)
 					return old
 				},
 				expectedErr: nil,
@@ -1832,7 +1832,7 @@ func (p *PlaybookBuilder) WithMembers(members []userInfo) *PlaybookBuilder {
 	}
 	sort.Strings(memberIDs)
 
-	p.Members = membersFromIds(memberIDs)
+	p.Members = membersFromIDs(memberIDs)
 
 	if len(members) == 0 {
 		p.Public = true
