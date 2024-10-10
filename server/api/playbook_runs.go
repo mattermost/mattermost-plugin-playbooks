@@ -681,12 +681,12 @@ func (h *PlaybookRunHandler) getChannels(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	channelIds := make([]string, 0, len(playbookRuns.Items))
+	channelIDs := make([]string, 0, len(playbookRuns.Items))
 	for _, playbookRun := range playbookRuns.Items {
-		channelIds = append(channelIds, playbookRun.ChannelID)
+		channelIDs = append(channelIDs, playbookRun.ChannelID)
 	}
 
-	ReturnJSON(w, channelIds, http.StatusOK)
+	ReturnJSON(w, channelIDs, http.StatusOK)
 }
 
 // changeOwner handles the /runs/{id}/change-owner api endpoint.

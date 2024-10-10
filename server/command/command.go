@@ -1323,7 +1323,7 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 		dummyListPlaybooks[i], dummyListPlaybooks[j] = dummyListPlaybooks[j], dummyListPlaybooks[i]
 	})
 
-	playbookIds := make([]string, 0, numPlaybooks)
+	playbookIDs := make([]string, 0, numPlaybooks)
 	for i := 0; i < numPlaybooks; i++ {
 		dummyPlaybook := dummyListPlaybooks[i]
 		dummyPlaybook.TeamID = r.args.TeamId
@@ -1339,11 +1339,11 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 			return
 		}
 
-		playbookIds = append(playbookIds, newPlaybookID)
+		playbookIDs = append(playbookIDs, newPlaybookID)
 	}
 
 	msg := "Playbooks successfully created"
-	for i, playbookID := range playbookIds {
+	for i, playbookID := range playbookIDs {
 		url := fmt.Sprintf("/playbooks/playbooks/%s", playbookID)
 		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[i].Title, url)
 	}
