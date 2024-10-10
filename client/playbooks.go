@@ -22,7 +22,7 @@ type PlaybooksService struct {
 // Get a playbook.
 func (s *PlaybooksService) Get(ctx context.Context, playbookID string) (*Playbook, error) {
 	playbookURL := fmt.Sprintf("playbooks/%s", playbookID)
-	req, err := s.client.newRequest(http.MethodGet, playbookURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, playbookURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *PlaybooksService) List(ctx context.Context, teamId string, page, perPag
 		return nil, fmt.Errorf("failed to build options: %w", err)
 	}
 
-	req, err := s.client.newRequest(http.MethodGet, playbookURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, playbookURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
@@ -78,7 +78,7 @@ func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOption
 	}
 
 	playbookURL := "playbooks"
-	req, err := s.client.newRequest(http.MethodPost, playbookURL, opts)
+	req, err := s.client.newAPIRequest(http.MethodPost, playbookURL, opts)
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +101,7 @@ func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOption
 
 func (s *PlaybooksService) Update(ctx context.Context, playbook Playbook) error {
 	updateURL := fmt.Sprintf("playbooks/%s", playbook.ID)
-	req, err := s.client.newRequest(http.MethodPut, updateURL, playbook)
+	req, err := s.client.newAPIRequest(http.MethodPut, updateURL, playbook)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (s *PlaybooksService) Update(ctx context.Context, playbook Playbook) error 
 
 func (s *PlaybooksService) Archive(ctx context.Context, playbookID string) error {
 	updateURL := fmt.Sprintf("playbooks/%s", playbookID)
-	req, err := s.client.newRequest(http.MethodDelete, updateURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodDelete, updateURL, nil)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (s *PlaybooksService) Archive(ctx context.Context, playbookID string) error
 
 func (s *PlaybooksService) Export(ctx context.Context, playbookID string) ([]byte, error) {
 	url := fmt.Sprintf("playbooks/%s/export", playbookID)
-	req, err := s.client.newRequest(http.MethodGet, url, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *PlaybooksService) Export(ctx context.Context, playbookID string) ([]byt
 // Duplicate a playbook. Returns the id of the newly created playbook
 func (s *PlaybooksService) Duplicate(ctx context.Context, playbookID string) (string, error) {
 	url := fmt.Sprintf("playbooks/%s/duplicate", playbookID)
-	req, err := s.client.newRequest(http.MethodPost, url, nil)
+	req, err := s.client.newAPIRequest(http.MethodPost, url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -208,7 +208,7 @@ func (s *PlaybooksService) Import(ctx context.Context, toImport []byte, team str
 
 func (s *PlaybooksService) Stats(ctx context.Context, playbookID string) (*PlaybookStats, error) {
 	playbookStatsURL := fmt.Sprintf("stats/playbook?playbook_id=%s", playbookID)
-	req, err := s.client.newRequest(http.MethodGet, playbookStatsURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, playbookStatsURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (s *PlaybooksService) Stats(ctx context.Context, playbookID string) (*Playb
 
 func (s *PlaybooksService) AutoFollow(ctx context.Context, playbookID string, userID string) error {
 	followsURL := fmt.Sprintf("playbooks/%s/autofollows/%s", playbookID, userID)
-	req, err := s.client.newRequest(http.MethodPut, followsURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodPut, followsURL, nil)
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func (s *PlaybooksService) AutoFollow(ctx context.Context, playbookID string, us
 
 func (s *PlaybooksService) AutoUnfollow(ctx context.Context, playbookID string, userID string) error {
 	followsURL := fmt.Sprintf("playbooks/%s/autofollows/%s", playbookID, userID)
-	req, err := s.client.newRequest(http.MethodDelete, followsURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodDelete, followsURL, nil)
 	if err != nil {
 		return err
 	}
@@ -253,7 +253,7 @@ func (s *PlaybooksService) AutoUnfollow(ctx context.Context, playbookID string, 
 
 func (s *PlaybooksService) GetAutoFollows(ctx context.Context, playbookID string) ([]string, error) {
 	autofollowsURL := fmt.Sprintf("playbooks/%s/autofollows", playbookID)
-	req, err := s.client.newRequest(http.MethodGet, autofollowsURL, nil)
+	req, err := s.client.newAPIRequest(http.MethodGet, autofollowsURL, nil)
 	if err != nil {
 		return nil, err
 	}

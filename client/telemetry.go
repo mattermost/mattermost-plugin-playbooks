@@ -23,7 +23,7 @@ func (s *TelemetryService) CreateEvent(ctx context.Context, name string, eventTy
 		Properties: properties,
 	}
 
-	req, err := s.client.newRequest(http.MethodPost, "telemetry", payload)
+	req, err := s.client.newAPIRequest(http.MethodPost, "telemetry", payload)
 	if err != nil {
 		return err
 	}

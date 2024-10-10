@@ -14,6 +14,10 @@ package config
 type Configuration struct {
 	// BotUserID used to post messages.
 	BotUserID string
+
+	EnableTeamsTabApp    bool   `json:"enableteamstabapp"`
+	TeamsTabAppTenantIDs string `json:"teamstabapptenantids"`
+	TeamsTabAppBotUserID string
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -26,5 +30,8 @@ func (c *Configuration) Clone() *Configuration {
 func (c *Configuration) serialize() map[string]interface{} {
 	ret := make(map[string]interface{})
 	ret["BotUserID"] = c.BotUserID
+	ret["EnableTeamsTabApp"] = c.EnableTeamsTabApp
+	ret["TeamsTabAppTenantIDs"] = c.TeamsTabAppTenantIDs
+	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	return ret
 }

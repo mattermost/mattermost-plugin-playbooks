@@ -109,6 +109,9 @@ func Setup(t *testing.T) *TestEnvironment {
 	os.Unsetenv("MM_SERVICESETTINGS_SITEURL")
 	os.Unsetenv("MM_SERVICESETTINGS_LISTENADDRESS")
 
+	// Ignore developer mode and configure it ourselves during testing.
+	os.Unsetenv("MM_SERVICESETTINGS_ENABLEDEVELOPER")
+
 	// Environment Settings
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
 
