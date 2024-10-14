@@ -162,6 +162,7 @@ const StyledFooterContainer = styled.div`
     flex-direction: column;
     align-items: center;
     margin-bottom: 24px;
+    width: 100%;
 `;
 
 const ExtraInfoContainer = styled.div`

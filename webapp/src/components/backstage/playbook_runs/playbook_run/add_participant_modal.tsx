@@ -142,6 +142,7 @@ const StyledFooterContainer = styled.div`
     display: flex;
     flex-direction: row-reverse;
     align-items: center;
+    width: 100%;
 `;
 
 const FooterExtraInfoContainer = styled.div`
