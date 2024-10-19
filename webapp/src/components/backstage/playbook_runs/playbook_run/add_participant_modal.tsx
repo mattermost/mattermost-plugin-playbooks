@@ -111,6 +111,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             footer={renderFooter()}
             components={{
                 Header: ModalHeader,
+                Footer: ModalFooter,
                 FooterContainer: StyledFooterContainer,
             }}
         >
@@ -130,6 +131,12 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
 const ModalHeader = styled(Modal.Header)`
     &&&& {
         margin-bottom: 16px;
+    }
+`;
+
+const ModalFooter = styled(Modal.Footer)`
+    &&&& {
+        display: block;
     }
 `;
 

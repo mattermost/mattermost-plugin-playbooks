@@ -32,6 +32,7 @@ type Props = {
     footer?: React.ReactNode;
     components?: Partial<{
         Header: typeof Modal.Header;
+        Footer: typeof Modal.Footer;
         FooterContainer: typeof DefaultFooterContainer;
     }>;
     adjustTop?: number;
@@ -119,6 +120,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         }
 
         const Header = this.props.components?.Header || Modal.Header;
+        const Footer = this.props.components?.Footer || Modal.Footer;
         const FooterContainer = this.props.components?.FooterContainer || DefaultFooterContainer;
         const showFooter = Boolean(confirmButton || cancelButton || this.props.footer !== undefined);
 
@@ -146,7 +148,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 <>
                     <Modal.Body>{this.props.children}</Modal.Body>
                     {showFooter ? (
-                        <Modal.Footer>
+                        <Footer>
                             <FooterContainer>
                                 <Buttons>
                                     {cancelButton}
@@ -154,7 +156,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                                 </Buttons>
                                 {this.props.footer}
                             </FooterContainer>
-                        </Modal.Footer>
+                        </Footer>
                     ) : null}
                 </>
             </StyledModal>
