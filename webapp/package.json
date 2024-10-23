@@ -23,7 +23,7 @@
     "luxon": "3.3.0",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#c0f36d4502e9f14aca250d885881ee8ec5efa56b",
     "parse-duration": "1.0.2",
-    "qs": "6.10.2",
+    "qs": "6.10.3",
     "react": "^17.0.2",
     "react-chartjs-2": "4.3.1",
     "react-dom": "^17.0.2",
