@@ -122,6 +122,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	}
 
 	configuration.BotUserID = c.configuration.BotUserID
+	configuration.TeamsTabAppBotUserID = c.configuration.TeamsTabAppBotUserID
 
 	c.setConfiguration(configuration)
 
