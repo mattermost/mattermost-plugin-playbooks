@@ -11,7 +11,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -1406,7 +1406,7 @@ var migrations = []Migration{
 				// Just in case (so we don't crash out during the migration) remove any old reminders
 				sqlStore.scheduler.Cancel(ID)
 
-				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek), nil); err != nil {
 					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
 				}
 
@@ -1650,7 +1650,7 @@ var migrations = []Migration{
 				// Just in case (so we don't crash out during the migration) remove any old reminders
 				sqlStore.scheduler.Cancel(ID)
 
-				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek), nil); err != nil {
 					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
 				}
 

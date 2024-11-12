@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
 // MaxRequestSize is the size limit for any incoming request

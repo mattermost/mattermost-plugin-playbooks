@@ -22,7 +22,7 @@ import {makeRHSOpener} from 'src/rhs_opener';
 import {makeWelcomeMessagePoster} from 'src/welcome_message_poster';
 import {makeSlashCommandHook} from 'src/slash_command';
 import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/retrospective_reminder_posts';
-import {pluginId} from 'src/manifest';
+import manifest from 'src/manifest';
 import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
@@ -347,4 +347,4 @@ export default class Plugin {
 }
 
 // @ts-ignore
-window.registerPlugin(pluginId, new Plugin());
+window.registerPlugin(manifest.id, new Plugin());

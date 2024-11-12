@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 )
 
@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 var manifest *model.Manifest
@@ -39,9 +39,6 @@ const manifest = JSON.parse(` + "`" + `
 ` + "`" + `);
 
 export default manifest;
-export const id = manifest.id;
-export const version = manifest.version;
-export const pluginId = manifest.id;
 `
 
 // These build-time vars are read from shell commands and populated in ../setup.mk
@@ -89,6 +86,11 @@ func main() {
 			panic("failed to write manifest to dist directory: " + err.Error())
 		}
 
+	case "check":
+		if err := manifest.IsValid(); err != nil {
+			panic("failed to check manifest: " + err.Error())
+		}
+
 	default:
 		panic("unrecognized command: " + cmd)
 	}
@@ -114,27 +116,29 @@ func findManifest() (*model.Manifest, error) {
 		return nil, errors.Wrap(err, "failed to parse manifest")
 	}
 
-	// Update the manifest based on the state of the current commit
-	// Use the first version we find (to prevent causing errors)
-	var version string
-	tags := strings.Fields(BuildTagCurrent)
-	for _, t := range tags {
-		if strings.HasPrefix(t, "v") {
-			version = t
-			break
+	// If no version is listed in the manifest, generate one based on the state of the current
+	// commit, and use the first version we find (to prevent causing errors)
+	if manifest.Version == "" {
+		var version string
+		tags := strings.Fields(BuildTagCurrent)
+		for _, t := range tags {
+			if strings.HasPrefix(t, "v") {
+				version = t
+				break
+			}
 		}
-	}
-	if version == "" {
-		if BuildTagLatest != "" {
-			version = BuildTagLatest + "+" + BuildHashShort
-		} else {
-			version = "v0.0.0+" + BuildHashShort
+		if version == "" {
+			if BuildTagLatest != "" {
+				version = BuildTagLatest + "+" + BuildHashShort
+			} else {
+				version = "v0.0.0+" + BuildHashShort
+			}
 		}
+		manifest.Version = strings.TrimPrefix(version, "v")
 	}
-	manifest.Version = strings.TrimPrefix(version, "v")
 
-	// Update the release notes url to point at the latest tag, if present.
-	if BuildTagLatest != "" {
+	// If no release notes specified, generate one from the latest tag, if present.
+	if manifest.ReleaseNotesURL == "" && BuildTagLatest != "" {
 		manifest.ReleaseNotesURL = manifest.HomepageURL + "releases/tag/" + BuildTagLatest
 	}
 
@@ -190,7 +194,7 @@ func applyManifest(manifest *model.Manifest) error {
 			[]byte(fmt.Sprintf(pluginIDJSFileTemplate, manifestStr)),
 			0600,
 		); err != nil {
-			return errors.Wrap(err, "failed to open webapp/src/manifest.js")
+			return errors.Wrap(err, "failed to open webapp/src/manifest.ts")
 		}
 	}
 

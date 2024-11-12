@@ -6,7 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin"
 )
 
 func main() {

@@ -1,8 +1,8 @@
 package app
 
 import (
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -22,6 +22,12 @@ type playbookService struct {
 	telemetry      PlaybookTelemetry
 	api            *pluginapi.Client
 	metricsService *metrics.Metrics
+}
+
+type InsightsOpts struct {
+	StartUnixMilli int64
+	Page           int
+	PerPage        int
 }
 
 // NewPlaybookService returns a new playbook service
@@ -204,7 +210,7 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 }
 
 // get top playbooks for teams
-func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error) {
+func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error) {
 	permissionFlag, err := licenseAndGuestCheck(s, userID, false)
 	if err != nil {
 		return nil, err
@@ -217,7 +223,7 @@ func (s *playbookService) GetTopPlaybooksForTeam(teamID, userID string, opts *mo
 }
 
 // get top playbooks for users
-func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error) {
+func (s *playbookService) GetTopPlaybooksForUser(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error) {
 	permissionFlag, err := licenseAndGuestCheck(s, userID, true)
 	if err != nil {
 		return nil, err

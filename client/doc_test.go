@@ -6,14 +6,14 @@ import (
 	"log"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 func Example() {
 	ctx := context.Background()
 
 	client4 := model.NewAPIv4Client("http://localhost:8065")
-	_, _, err := client4.Login("test@example.com", "testtest")
+	_, _, err := client4.Login(context.Background(), "test@example.com", "testtest")
 	if err != nil {
 		log.Fatal(err)
 	}

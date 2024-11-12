@@ -1,6 +1,6 @@
 package config
 
-import "github.com/mattermost/mattermost-server/v6/model"
+import "github.com/mattermost/mattermost/server/public/model"
 
 // Service is the config.Service interface.
 // NOTE: for now we are defining this here for simplicity. It will be mocked by multiple consumers,

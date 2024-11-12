@@ -7,10 +7,10 @@ import (
 
 	"gopkg.in/guregu/null.v4"
 
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-api/cluster"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 )
 
 const (
@@ -713,7 +713,7 @@ type PlaybookRunService interface {
 	RemoveReminder(playbookRunID string)
 
 	// HandleReminder is the handler for all reminder events.
-	HandleReminder(key string)
+	HandleReminder(key string, _ any)
 
 	// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
 	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
@@ -1002,9 +1002,9 @@ type PlaybookRunTelemetry interface {
 
 type JobOnceScheduler interface {
 	Start() error
-	SetCallback(callback func(string)) error
+	SetCallback(callback func(string, any)) error
 	ListScheduledJobs() ([]cluster.JobOnceMetadata, error)
-	ScheduleOnce(key string, runAt time.Time) (*cluster.JobOnce, error)
+	ScheduleOnce(key string, runAt time.Time, props any) (*cluster.JobOnce, error)
 	Cancel(key string)
 }
 

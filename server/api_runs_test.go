@@ -10,7 +10,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -185,7 +185,7 @@ func TestRunCreation(t *testing.T) {
 					tc.permissionsPrep()
 				}
 
-				result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
+				result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
 				tc.expected(t, result, err)
 			})
 		}
@@ -337,7 +337,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
 
 		// Verify user was not promoted to admin
-		member, _, err := e.ServerAdminClient.GetChannelMember(e.BasicPublicChannel.Id, e.RegularUser.Id, "")
+		member, _, err := e.ServerAdminClient.GetChannelMember(context.Background(), e.BasicPublicChannel.Id, e.RegularUser.Id, "")
 		require.NoError(t, err)
 		assert.NotContains(t, member.Roles, model.ChannelAdminRoleId)
 
@@ -360,14 +360,14 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 
 	t.Run("create a run, pass a channel different from the playbook configs", func(t *testing.T) {
 		// create private channel
-		privateChannel, _, err := e.ServerAdminClient.CreateChannel(&model.Channel{
+		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "test_private",
 			Name:        "test_private",
 			Type:        model.ChannelTypePrivate,
 			TeamId:      e.BasicTeam.Id,
 		})
 		require.NoError(e.T, err)
-		_, _, err = e.ServerAdminClient.AddChannelMember(privateChannel.Id, e.RegularUser.Id)
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), privateChannel.Id, e.RegularUser.Id)
 		require.NoError(e.T, err)
 
 		// create a run, pass the channel id different from the playbook configs
@@ -396,7 +396,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		assert.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
+		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
 
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
@@ -497,7 +497,7 @@ func TestRunRetrieval(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
-		resp, err := e.ServerClient.DoAPIRequest("GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", "")
+		resp, err := e.ServerClient.DoAPIRequest(context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", "")
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
@@ -539,13 +539,13 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
+		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
 	t.Run("no permissions to team", func(t *testing.T) {
-		_, err := e.ServerAdminClient.RemoveTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		_, err := e.ServerAdminClient.RemoveTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -561,11 +561,11 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
+		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
 		require.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
-		_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 	})
 }
@@ -592,7 +592,7 @@ func TestRunPostStatusUpdate(t *testing.T) {
 		assert.NoError(t, err)
 
 		// post created with expected props
-		post, _, err := e.ServerClient.GetPost(run.ReminderPostID, "")
+		post, _, err := e.ServerClient.GetPost(context.Background(), run.ReminderPostID, "")
 		assert.NoError(t, err)
 		assert.Equal(t, run.ID, post.GetProp("playbookRunId"))
 		assert.Equal(t, e.RegularUser.Username, post.GetProp("targetUsername"))
@@ -604,16 +604,16 @@ func TestRunPostStatusUpdate(t *testing.T) {
 	})
 
 	t.Run("no permissions to run", func(t *testing.T) {
-		_, err := e.ServerAdminClient.RemoveTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		_, err := e.ServerAdminClient.RemoveTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 		err = e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicRun.TeamID, e.RegularUser.Id)
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 	})
 
 	t.Run("no permissions to run", func(t *testing.T) {
-		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicRun.ChannelID, e.RegularUser2.Id)
+		_, _, err := e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicRun.ChannelID, e.RegularUser2.Id)
 		require.NoError(t, err)
 		err = e.PlaybooksClient2.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1541,7 +1541,7 @@ func TestReminderReset(t *testing.T) {
 		assert.NoError(t, err)
 
 		// post created with expected props
-		post, _, err := e.ServerClient.GetPost(run.ReminderPostID, "")
+		post, _, err := e.ServerClient.GetPost(context.Background(), run.ReminderPostID, "")
 		assert.NoError(t, err)
 		assert.Equal(t, run.ID, post.GetProp("playbookRunId"))
 		assert.Equal(t, e.RegularUser.Username, post.GetProp("targetUsername"))
@@ -1831,8 +1831,8 @@ func TestGetOwners(t *testing.T) {
 	} {
 		t.Run(tc.Name, func(t *testing.T) {
 			cfg := e.Srv.Config()
-			cfg.PrivacySettings.ShowFullName = model.NewBool(tc.ShowFullName)
-			_, _, err = e.ServerAdminClient.UpdateConfig(cfg)
+			cfg.PrivacySettings.ShowFullName = model.NewPointer(tc.ShowFullName)
+			_, _, err = e.ServerAdminClient.UpdateConfig(context.Background(), cfg)
 			require.NoError(t, err)
 
 			owners, err := tc.Client.PlaybookRuns.GetOwners(context.Background())

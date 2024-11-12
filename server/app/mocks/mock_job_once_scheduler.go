@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	cluster "github.com/mattermost/mattermost-plugin-api/cluster"
+	cluster "github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 )
 
 // MockJobOnceScheduler is a mock of JobOnceScheduler interface.
@@ -63,22 +63,22 @@ func (mr *MockJobOnceSchedulerMockRecorder) ListScheduledJobs() *gomock.Call {
 }
 
 // ScheduleOnce mocks base method.
-func (m *MockJobOnceScheduler) ScheduleOnce(arg0 string, arg1 time.Time) (*cluster.JobOnce, error) {
+func (m *MockJobOnceScheduler) ScheduleOnce(arg0 string, arg1 time.Time, arg2 interface{}) (*cluster.JobOnce, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScheduleOnce", arg0, arg1)
+	ret := m.ctrl.Call(m, "ScheduleOnce", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*cluster.JobOnce)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ScheduleOnce indicates an expected call of ScheduleOnce.
-func (mr *MockJobOnceSchedulerMockRecorder) ScheduleOnce(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockJobOnceSchedulerMockRecorder) ScheduleOnce(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleOnce", reflect.TypeOf((*MockJobOnceScheduler)(nil).ScheduleOnce), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleOnce", reflect.TypeOf((*MockJobOnceScheduler)(nil).ScheduleOnce), arg0, arg1, arg2)
 }
 
 // SetCallback mocks base method.
-func (m *MockJobOnceScheduler) SetCallback(arg0 func(string)) error {
+func (m *MockJobOnceScheduler) SetCallback(arg0 func(string, interface{})) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetCallback", arg0)
 	ret0, _ := ret[0].(error)

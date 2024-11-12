@@ -10,9 +10,9 @@ import (
 	"github.com/graph-gophers/dataloader/v7"
 	graphql "github.com/graph-gophers/graphql-go"
 	graphql_errors "github.com/graph-gophers/graphql-go/errors"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

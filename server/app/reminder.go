@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -16,7 +16,7 @@ import (
 const RetrospectivePrefix = "retro_"
 
 // HandleReminder is the handler for all reminder events.
-func (s *PlaybookRunServiceImpl) HandleReminder(key string) {
+func (s *PlaybookRunServiceImpl) HandleReminder(key string, _ any) {
 	if strings.HasPrefix(key, RetrospectivePrefix) {
 		s.handleReminderToFillRetro(strings.TrimPrefix(key, RetrospectivePrefix))
 	} else {
@@ -142,7 +142,7 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 // SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
 // reminded to update the playbook run's status.
 func (s *PlaybookRunServiceImpl) SetReminder(playbookRunID string, fromNow time.Duration) error {
-	if _, err := s.scheduler.ScheduleOnce(playbookRunID, time.Now().Add(fromNow)); err != nil {
+	if _, err := s.scheduler.ScheduleOnce(playbookRunID, time.Now().Add(fromNow), nil); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
 	}
 

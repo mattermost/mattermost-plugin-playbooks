@@ -12,7 +12,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1212,7 +1212,7 @@ func TestAddPostToTimeline(t *testing.T) {
 	require.NoError(t, err)
 
 	// Post the request with the dialog payload and verify it is allowed
-	_, err = e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+	_, err = e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
 	require.NoError(t, err)
 }
 
