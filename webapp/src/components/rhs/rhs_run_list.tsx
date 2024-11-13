@@ -307,12 +307,13 @@ const TitleContainer = styled.div`
 
 const VerticalLine = styled.div`
     opacity: 0.16;
-    border: 1px solid var(--center-channel-color);
+    border-left: 1px solid var(--center-channel-color);
     height: 24px;
 `;
 
 const ChannelNameText = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-family: "Open Sans", sans-serif;
     font-weight: 400;
     font-size: 12px;
     line-height: 20px;
