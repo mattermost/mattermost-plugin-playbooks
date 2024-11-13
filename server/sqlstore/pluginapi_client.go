@@ -3,9 +3,8 @@ package sqlstore
 import (
 	"database/sql"
 
-	"github.com/mattermost/mattermost/server/public/pluginapi"
-
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
 // StoreAPI is the interface exposing the underlying database, provided by pluginapi

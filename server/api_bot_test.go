@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 func TestTrialLicences(t *testing.T) {

@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/sirupsen/logrus"
+
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 // statusRecorder intercepts and saves the status code written to an http.ResponseWriter.
