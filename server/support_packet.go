@@ -16,6 +16,8 @@ type SupportPacket struct {
 	Version string `yaml:"version"`
 	// The total number of playbooks.
 	TotalPlaybooks int64 `yaml:"total_playbooks"`
+	// The number of active playbooks.
+	ActivePlaybooks int64 `yaml:"active_playbooks"`
 	// The total number of playbook runs.
 	TotalPlaybookRuns int64 `yaml:"total_playbook_runs"`
 }
@@ -28,6 +30,11 @@ func (p *Plugin) GenerateSupportData(_ *plugin.Context) ([]*model.FileData, erro
 		result = multierror.Append(result, errors.Wrap(err, "Failed to get total number of playbooks for Support Packet"))
 	}
 
+	activePlaybooks, err := p.playbookService.GetActivePlaybooks()
+	if err != nil {
+		result = multierror.Append(result, errors.Wrap(err, "Failed to get number of active playbooks for Support Packet"))
+	}
+
 	playbookRuns, err := p.playbookRunService.GetPlaybookRuns(app.RequesterInfo{IsAdmin: true}, app.PlaybookRunFilterOptions{SkipExtras: true})
 	if err != nil {
 		result = multierror.Append(result, errors.Wrap(err, "Failed to get total number of playbook runs for Support Packet"))
@@ -36,6 +43,7 @@ func (p *Plugin) GenerateSupportData(_ *plugin.Context) ([]*model.FileData, erro
 	diagnostics := SupportPacket{
 		Version:           manifest.Version,
 		TotalPlaybooks:    int64(len(playbooks)),
+		ActivePlaybooks:   int64(len(activePlaybooks)),
 		TotalPlaybookRuns: int64(playbookRuns.TotalCount),
 	}
 	b, err := yaml.Marshal(diagnostics)

@@ -879,7 +879,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run(driverName+" - zero playbooks", func(t *testing.T) {
-			result, err := playbookStore.GetPlaybooks()
+			result, err := playbookStore.GetActivePlaybooks()
 			require.NoError(t, err)
 			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
@@ -1343,7 +1343,7 @@ func TestGetPlaybooksForKeywords(t *testing.T) {
 		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run("zero playbooks", func(t *testing.T) {
-			result, err := playbookStore.GetPlaybooks()
+			result, err := playbookStore.GetActivePlaybooks()
 			require.NoError(t, err)
 			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
@@ -1420,7 +1420,7 @@ func TestGetTimeLastUpdated(t *testing.T) {
 		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run("zero playbooks", func(t *testing.T) {
-			result, err := playbookStore.GetPlaybooks()
+			result, err := playbookStore.GetActivePlaybooks()
 			require.NoError(t, err)
 			require.ElementsMatch(t, []app.Playbook{}, result)
 
@@ -1539,7 +1539,7 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run("zero playbooks", func(t *testing.T) {
-			result, err := playbookStore.GetPlaybooks()
+			result, err := playbookStore.GetActivePlaybooks()
 			require.NoError(t, err)
 			require.ElementsMatch(t, []app.Playbook{}, result)
 		})

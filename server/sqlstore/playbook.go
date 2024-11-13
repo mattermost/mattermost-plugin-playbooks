@@ -334,9 +334,71 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	return playbook, nil
 }
 
+func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
+	return builder.Select(
+		"p.ID",
+		"p.Title",
+		"p.Description",
+		"p.TeamID",
+		"p.Public",
+		"p.CreatePublicIncident AS CreatePublicPlaybookRun",
+		"p.CreateAt",
+		"p.DeleteAt",
+		"p.NumStages",
+		"p.NumSteps",
+		"COUNT(i.ID) AS NumRuns",
+		"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
+		`(
+			1 + -- Channel creation is hard-coded
+			CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
+			CASE WHEN p.CreateChannelMemberOnNewParticipant THEN 1 ELSE 0 END +
+			CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
+		) AS NumActions`,
+		"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+		"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
+		"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
+		"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
+		"COALESCE(s.DefaultRunMemberRole, 'run_member') DefaultRunMemberRole",
+	).
+		From("IR_Playbook AS p").
+		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		LeftJoin("Teams t ON t.Id = p.TeamID").
+		LeftJoin("Schemes s ON t.SchemeId = s.Id").
+		GroupBy("p.ID").
+		GroupBy("s.Id")
+}
+
 // GetPlaybooks retrieves all playbooks that are not deleted.
 // Members are not retrieved for this as the query would be large and we don't need it for this for now.
-// This is only used for the keywords feature
+func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
+	tx, err := p.store.db.Beginx()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not begin transaction")
+	}
+	defer p.store.finalizeTransaction(tx)
+
+	var playbooks []app.Playbook
+	err = p.store.selectBuilder(tx, &playbooks,
+		selectAllPlaybooks(p.store.builder).Where(sq.Eq{"p.DeleteAt": 0}),
+	)
+	if err == sql.ErrNoRows {
+		return nil, errors.Wrap(app.ErrNotFound, "no playbooks found")
+	} else if err != nil {
+		return nil, errors.Wrap(err, "failed to get playbooks")
+	}
+
+	return playbooks, nil
+}
+
+// GetPlaybooks retrieves all playbooks, even deleted ones.
+// Members are not retrieved for this as the query would be large and we don't need it for this for now.
 func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	tx, err := p.store.db.Beginx()
 	if err != nil {
@@ -345,47 +407,9 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	defer p.store.finalizeTransaction(tx)
 
 	var playbooks []app.Playbook
-	err = p.store.selectBuilder(tx, &playbooks, p.store.builder.
-		Select(
-			"p.ID",
-			"p.Title",
-			"p.Description",
-			"p.TeamID",
-			"p.Public",
-			"p.CreatePublicIncident AS CreatePublicPlaybookRun",
-			"p.CreateAt",
-			"p.DeleteAt",
-			"p.NumStages",
-			"p.NumSteps",
-			"COUNT(i.ID) AS NumRuns",
-			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
-			`(
-				1 + -- Channel creation is hard-coded
-				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CreateChannelMemberOnNewParticipant THEN 1 ELSE 0 END +
-				CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
-			) AS NumActions`,
-			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
-			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
-			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
-			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
-			"COALESCE(s.DefaultRunMemberRole, 'run_member') DefaultRunMemberRole",
-		).
-		From("IR_Playbook AS p").
-		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
-		LeftJoin("Teams t ON t.Id = p.TeamID").
-		LeftJoin("Schemes s ON t.SchemeId = s.Id").
-		Where(sq.Eq{"p.DeleteAt": 0}).
-		GroupBy("p.ID").
-		GroupBy("s.Id"))
-
+	err = p.store.selectBuilder(tx, &playbooks,
+		selectAllPlaybooks(p.store.builder),
+	)
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrap(app.ErrNotFound, "no playbooks found")
 	} else if err != nil {

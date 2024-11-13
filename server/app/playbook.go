@@ -347,6 +347,9 @@ type PlaybookService interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 
+	// GetActivePlaybooks retrieves all active playbooks
+	GetActivePlaybooks() ([]Playbook, error)
+
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
@@ -388,6 +391,9 @@ type PlaybookStore interface {
 
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
+
+	// GetActivePlaybooks retrieves all active playbooks
+	GetActivePlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
