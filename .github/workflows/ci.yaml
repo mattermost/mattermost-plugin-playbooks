@@ -15,7 +15,7 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-22.04
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -208,7 +208,7 @@ jobs:
           search_path: tests/integration
 
   e2e-cypress-tests:
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-22.04
     name: e2e-cypress-tests-run-${{ matrix.runId }}
     needs:
       - lint
