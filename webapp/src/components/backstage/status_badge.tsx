@@ -26,7 +26,7 @@ const Badge = styled.div<BadgeProps>`
     font-weight: 600;
     margin: 2px;
 
-    color: var(--sidebar-text);
+    color: var(--button-color);
 
     ${(props) => {
         switch (props.status) {
