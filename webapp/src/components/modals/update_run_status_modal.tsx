@@ -10,17 +10,22 @@ import React, {
 import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime, Duration} from 'luxon';
 
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {TertiaryButton} from 'src/components/assets/buttons';
+
 import {ApolloProvider, useQuery} from '@apollo/client';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
+import IconAI from 'src/components/assets/icons/ai';
+import AIModal from 'src/ai_modal'
+import {useAIAvailable} from 'src/ai_integration';
 
 import {
     Mode,
@@ -51,9 +56,12 @@ import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {getFragmentData, graphql} from 'src/graphql/generated';
 import {DefaultMessageFragment, ReminderTimerFragment} from 'src/graphql/generated/graphql';
+import {useAIStatusUpdateClicked} from 'src/ai_integration';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
+
+const Textbox = window.Components.Textbox;
 
 type Props = {
     playbookRunId: string;
@@ -102,6 +110,10 @@ const UpdateRunStatusModal = ({
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
+    const [aiModalOpen, setAIModalOpen] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const aiAvailable = useAIAvailable();
+    const aiStatusUpdateClicked = useAIStatusUpdateClicked();
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
@@ -261,6 +273,24 @@ const UpdateRunStatusModal = ({
             <Label>
                 {formatMessage({defaultMessage: 'Change since last update'})}
             </Label>
+            { aiAvailable &&
+              <TertiaryButton onClick={() => {
+                setAIModalOpen(true);
+                setGenerating(true);
+              }}>
+                  <IconAI/>
+                  <FormattedMessage defaultMessage="Generate update with AI"/>
+              </TertiaryButton>
+            }
+            { aiAvailable && aiModalOpen &&
+              <AiModalContainer>
+                <AIModal
+                  playbookRunId={playbookRunId}
+                  generating={generating}
+                  onGeneratingChanged={(generating) => setGenerating(generating)}
+                />
+              </AiModalContainer>
+            }
             <MarkdownTextbox
                 id='update_run_status_textbox'
                 value={message ?? ''}
@@ -513,6 +543,10 @@ const StyledCheckboxInput = styled(CheckboxInput)`
         background-color: transparent;
     }
 `;
+
+const AiModalContainer =  styled.div`
+    position: relative;
+`
 
 const ApolloWrappedModal = (props: Props) => {
     const client = getPlaybooksGraphQLClient();
