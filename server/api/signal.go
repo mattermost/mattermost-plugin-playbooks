@@ -92,6 +92,7 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 
 func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *http.Request) {
 	publicErrorMessage := "unable to decode post action integration request"
+	userID := r.Header.Get("Mattermost-User-ID")
 
 	var req *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -104,6 +105,10 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
 		return
+	}
+
+	if !h.api.User.HasPermissionToChannel(userID, botPost.ChannelId, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
 	}
 
 	postID, err := getStringField("postID", req.Context)
