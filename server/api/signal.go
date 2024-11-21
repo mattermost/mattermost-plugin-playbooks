@@ -109,6 +109,7 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 
 	if !h.api.User.HasPermissionToChannel(userID, botPost.ChannelId, model.PermissionReadChannel) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
+		return
 	}
 
 	postID, err := getStringField("postID", req.Context)
