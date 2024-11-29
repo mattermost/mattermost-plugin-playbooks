@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/morph"
 	"github.com/stretchr/testify/require"
 )

@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 )
 
 func TestTabAppGetRuns(t *testing.T) {
@@ -19,7 +21,7 @@ func TestTabAppGetRuns(t *testing.T) {
 	do := func(t *testing.T, method string, headers map[string]string) (*http.Response, error) {
 		t.Helper()
 
-		return e.ServerClient.DoAPIRequestReader(method, e.ServerClient.URL+"/plugins/playbooks/tabapp/runs", nil, headers)
+		return e.ServerClient.DoAPIRequestReader(context.Background(), method, e.ServerClient.URL+"/plugins/playbooks/tabapp/runs", nil, headers)
 	}
 
 	setTabApp := func(t *testing.T, enable bool) {
@@ -30,25 +32,25 @@ func TestTabAppGetRuns(t *testing.T) {
 
 		// Patching only the plugin config mysteriously doesn't trigger an OnConfigurationChange
 		// back to the plugin. So mess with an unrelated setting to force this to happen.
-		patchedConfig.ServiceSettings.GfycatAPIKey = model.NewString(model.NewRandomString(6))
+		patchedConfig.ServiceSettings.GiphySdkKey = model.NewPointer(model.NewRandomString(6))
 		patchedConfig.PluginSettings.Plugins = map[string]map[string]any{
 			"playbooks": cfg.PluginSettings.Plugins["playbooks"],
 		}
-		_, _, err := e.ServerAdminClient.PatchConfig(&patchedConfig)
+		_, _, err := e.ServerAdminClient.PatchConfig(context.Background(), &patchedConfig)
 		require.NoError(t, err)
 	}
 
 	setDeveloperMode := func(t *testing.T, enable bool) {
 		var patchedConfig model.Config
-		patchedConfig.ServiceSettings.EnableDeveloper = model.NewBool(enable)
-		_, _, err := e.ServerAdminClient.PatchConfig(&patchedConfig)
+		patchedConfig.ServiceSettings.EnableDeveloper = model.NewPointer(enable)
+		_, _, err := e.ServerAdminClient.PatchConfig(context.Background(), &patchedConfig)
 		require.NoError(t, err)
 	}
 
 	setShowFullName := func(t *testing.T, enable bool) {
 		var patchedConfig model.Config
-		patchedConfig.PrivacySettings.ShowFullName = model.NewBool(enable)
-		_, _, err := e.ServerAdminClient.PatchConfig(&patchedConfig)
+		patchedConfig.PrivacySettings.ShowFullName = model.NewPointer(enable)
+		_, _, err := e.ServerAdminClient.PatchConfig(context.Background(), &patchedConfig)
 		require.NoError(t, err)
 	}
 
@@ -157,10 +159,10 @@ func TestTabAppGetRuns(t *testing.T) {
 			require.NoError(t, err)
 		})
 
-		msteamsUser, _, err := e.ServerClient.GetUserByUsername("msteams", "")
+		msteamsUser, _, err := e.ServerClient.GetUserByUsername(context.Background(), "msteams", "")
 		require.NoError(t, err)
 
-		_, _, err = e.ServerClient.AddTeamMember(e.BasicTeam.Id, msteamsUser.Id)
+		_, _, err = e.ServerClient.AddTeamMember(context.Background(), e.BasicTeam.Id, msteamsUser.Id)
 		require.NoError(t, err)
 
 		_, err = addParticipants(e.PlaybooksClient, run.ID, []string{msteamsUser.Id})
@@ -203,10 +205,10 @@ func TestTabAppGetRuns(t *testing.T) {
 			require.NoError(t, err)
 		})
 
-		msteamsUser, _, err := e.ServerClient.GetUserByUsername("msteams", "")
+		msteamsUser, _, err := e.ServerClient.GetUserByUsername(context.Background(), "msteams", "")
 		require.NoError(t, err)
 
-		_, _, err = e.ServerClient.AddTeamMember(e.BasicTeam.Id, msteamsUser.Id)
+		_, _, err = e.ServerClient.AddTeamMember(context.Background(), e.BasicTeam.Id, msteamsUser.Id)
 		require.NoError(t, err)
 
 		_, err = addParticipants(e.PlaybooksClient, run.ID, []string{msteamsUser.Id})

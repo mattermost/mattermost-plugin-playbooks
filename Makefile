@@ -151,6 +151,11 @@ major-rc: ## to bump major release candidate version (semver)
 .PHONY: all
 all: check-style test dist
 
+## Ensures the plugin manifest is valid
+.PHONY: manifest-check
+manifest-check:
+	./build/bin/manifest check
+
 ## Propagates plugin manifest information into the server/ and webapp/ folders.
 .PHONY: apply
 apply:
@@ -166,7 +171,7 @@ install-go-tools:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: apply webapp/node_modules e2e-tests/node_modules install-go-tools
+check-style: manifest-check apply webapp/node_modules e2e-tests/node_modules install-go-tools
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -277,7 +282,7 @@ endif
 
 ## Builds and bundles the plugin.
 .PHONY: dist
-dist:	apply server webapp bundle
+dist: apply server webapp bundle
 
 ## Builds and installs the plugin to a server.
 .PHONY: deploy
@@ -454,6 +459,14 @@ ifneq ($(HAS_WEBAPP),)
 	rm -fr webapp/node_modules
 endif
 	rm -fr build/bin/
+
+.PHONY: logs
+logs:
+	./build/bin/pluginctl logs $(PLUGIN_ID)
+
+.PHONY: logs-watch
+logs-watch:
+	./build/bin/pluginctl logs-watch $(PLUGIN_ID)
 
 # Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

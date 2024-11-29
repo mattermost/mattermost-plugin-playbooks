@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 
-	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
-	"github.com/pkg/errors"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 )
 
 type StatsHandler struct {

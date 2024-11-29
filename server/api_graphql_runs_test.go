@@ -8,12 +8,14 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/app/request"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/shared/request"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 func TestGraphQLRunList(t *testing.T) {
@@ -205,16 +207,16 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	user3, _, err := e.ServerAdminClient.CreateUser(&model.User{
+	user3, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 		Email:    "thirduser@example.com",
 		Username: "thirduser",
 		Password: "Password123!",
 	})
 	require.NoError(t, err)
-	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, user3.Id)
 	require.NoError(t, err)
 
-	userNotInTeam, _, err := e.ServerAdminClient.CreateUser(&model.User{
+	userNotInTeam, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 		Email:    "notinteam@example.com",
 		Username: "notinteam",
 		Password: "Password123!",
@@ -668,13 +670,13 @@ func TestGraphQLChangeRunOwner(t *testing.T) {
 	e.CreateBasic()
 
 	// create a third user to test change owner
-	user3, _, err := e.ServerAdminClient.CreateUser(&model.User{
+	user3, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 		Email:    "thirduser@example.com",
 		Username: "thirduser",
 		Password: "Password123!",
 	})
 	require.NoError(t, err)
-	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicTeam.Id, user3.Id)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, user3.Id)
 	require.NoError(t, err)
 
 	t.Run("set another participant as owner", func(t *testing.T) {

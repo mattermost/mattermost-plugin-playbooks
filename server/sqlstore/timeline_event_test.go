@@ -6,9 +6,10 @@ package sqlstore
 import (
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 func TestPlaybookRunStore_CreateTimelineEvent(t *testing.T) {

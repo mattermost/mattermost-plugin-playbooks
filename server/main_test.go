@@ -11,20 +11,23 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/api4"
-	sapp "github.com/mattermost/mattermost-server/v6/app"
-	"github.com/mattermost/mattermost-server/v6/app/request"
-	"github.com/mattermost/mattermost-server/v6/config"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
-	"github.com/mattermost/mattermost-server/v6/store/storetest"
-	"github.com/mattermost/mattermost-server/v6/utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
+
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
+	"github.com/mattermost/mattermost/server/public/shared/request"
+	putils "github.com/mattermost/mattermost/server/public/utils"
+	"github.com/mattermost/mattermost/server/v8/channels/api4"
+	sapp "github.com/mattermost/mattermost/server/v8/channels/app"
+	"github.com/mattermost/mattermost/server/v8/channels/store/storetest"
+	"github.com/mattermost/mattermost/server/v8/channels/utils"
+	"github.com/mattermost/mattermost/server/v8/config"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 func TestMain(m *testing.M) {
@@ -35,7 +38,7 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	serverpathBytes, err := exec.Command("go", "list", "-f", "'{{.Dir}}'", "-m", "github.com/mattermost/mattermost-server/v6").Output()
+	serverpathBytes, err := exec.Command("go", "list", "-f", "'{{.Dir}}'", "-m", "github.com/mattermost/mattermost/server/v8").Output()
 	if err != nil {
 		panic(err)
 	}
@@ -62,9 +65,10 @@ type serverPermissionsWrapper struct {
 }
 
 type TestEnvironment struct {
-	T   testing.TB
-	Srv *sapp.Server
-	A   *sapp.App
+	T       testing.TB
+	Context *request.Context
+	Srv     *sapp.Server
+	A       *sapp.App
 
 	Permissions PermissionsHelper
 	logger      mlog.LoggerIFace
@@ -131,14 +135,14 @@ func Setup(t *testing.T) *TestEnvironment {
 	config := configStore.Get()
 	config.PluginSettings.Directory = &dir
 	config.PluginSettings.ClientDirectory = &clientDir
-	config.ServiceSettings.ListenAddress = model.NewString("localhost:0")
-	config.TeamSettings.MaxUsersPerTeam = model.NewInt(10000)
+	config.ServiceSettings.ListenAddress = model.NewPointer("localhost:0")
+	config.TeamSettings.MaxUsersPerTeam = model.NewPointer(10000)
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
-	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
-	config.LogSettings.EnableConsole = model.NewBool(true)
-	config.LogSettings.EnableFile = model.NewBool(false)
-	config.LogSettings.ConsoleLevel = model.NewString("INFO")
+	config.ServiceSettings.SiteURL = model.NewPointer("http://testsiteurlplaybooks.mattermost.com/")
+	config.LogSettings.EnableConsole = model.NewPointer(true)
+	config.LogSettings.EnableFile = model.NewPointer(false)
+	config.LogSettings.ConsoleLevel = model.NewPointer("INFO")
 
 	// override config with e2etest.config.json if it exists
 	textConfig, err := os.ReadFile("./e2etest.config.json")
@@ -155,9 +159,9 @@ func Setup(t *testing.T) *TestEnvironment {
 	// Copy ourselves into the correct directory so we are executed.
 	currentBinary, err := os.Executable()
 	require.NoError(t, err)
-	err = utils.CopyFile(currentBinary, pluginBinary)
+	err = putils.CopyFile(currentBinary, pluginBinary)
 	require.NoError(t, err)
-	err = utils.CopyDir("../assets", assetsDir)
+	err = putils.CopyDir("../assets", assetsDir)
 	require.NoError(t, err)
 
 	// Copy the manifest without webapp to the correct directory
@@ -199,9 +203,10 @@ func Setup(t *testing.T) *TestEnvironment {
 	ap := sapp.New(sapp.ServerConnector(server.Channels()))
 
 	return &TestEnvironment{
-		T:   t,
-		Srv: server,
-		A:   ap,
+		T:       t,
+		Context: request.EmptyContext(testLogger),
+		Srv:     server,
+		A:       ap,
 		Permissions: &serverPermissionsWrapper{
 			TestHelper: api4.TestHelper{
 				Server: server,
@@ -216,7 +221,7 @@ func (e *TestEnvironment) CreateClients() {
 	e.T.Helper()
 
 	userPassword := "Password123!"
-	admin, appErr := e.A.CreateUserAsAdmin(request.EmptyContext(e.logger), &model.User{
+	admin, appErr := e.A.CreateUserAsAdmin(e.Context, &model.User{
 		Email:    "playbooksadmin@example.com",
 		Username: "playbooksadmin",
 		Password: userPassword,
@@ -224,7 +229,7 @@ func (e *TestEnvironment) CreateClients() {
 	require.Nil(e.T, appErr)
 	e.AdminUser = admin
 
-	user, appErr := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
+	user, appErr := e.A.CreateUser(e.Context, &model.User{
 		Email:     "playbooksuser@example.com",
 		Username:  "playbooksuser",
 		Password:  userPassword,
@@ -234,7 +239,7 @@ func (e *TestEnvironment) CreateClients() {
 	require.Nil(e.T, appErr)
 	e.RegularUser = user
 
-	user2, appErr := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
+	user2, appErr := e.A.CreateUser(e.Context, &model.User{
 		Email:     "playbooksuser2@example.com",
 		Username:  "playbooksuser2",
 		Password:  userPassword,
@@ -244,7 +249,7 @@ func (e *TestEnvironment) CreateClients() {
 	require.Nil(e.T, appErr)
 	e.RegularUser2 = user2
 
-	notInTeam, appErr := e.A.CreateUser(request.EmptyContext(e.logger), &model.User{
+	notInTeam, appErr := e.A.CreateUser(e.Context, &model.User{
 		Email:    "playbooksusernotinteam@example.com",
 		Username: "playbooksusenotinteam",
 		Password: userPassword,
@@ -255,7 +260,7 @@ func (e *TestEnvironment) CreateClients() {
 	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
 
 	serverAdminClient := model.NewAPIv4Client(siteURL)
-	_, _, err := serverAdminClient.Login(admin.Email, userPassword)
+	_, _, err := serverAdminClient.Login(context.Background(), admin.Email, userPassword)
 	require.NoError(e.T, err)
 
 	playbooksAdminClient, err := client.New(serverAdminClient)
@@ -265,7 +270,7 @@ func (e *TestEnvironment) CreateClients() {
 	e.PlaybooksAdminClient = playbooksAdminClient
 
 	serverClient := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClient.Login(user.Email, userPassword)
+	_, _, err = serverClient.Login(context.Background(), user.Email, userPassword)
 	require.NoError(e.T, err)
 
 	playbooksClient, err := client.New(serverClient)
@@ -276,14 +281,14 @@ func (e *TestEnvironment) CreateClients() {
 	require.NoError(e.T, err)
 
 	serverClient2 := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClient2.Login(user2.Email, userPassword)
+	_, _, err = serverClient2.Login(context.Background(), user2.Email, userPassword)
 	require.NoError(e.T, err)
 
 	playbooksClient2, err := client.New(serverClient2)
 	require.NoError(e.T, err)
 
 	serverClientNotInTeam := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClientNotInTeam.Login(notInTeam.Email, userPassword)
+	_, _, err = serverClientNotInTeam.Login(context.Background(), notInTeam.Email, userPassword)
 	require.NoError(e.T, err)
 
 	playbooksClientNotInTeam, err := client.New(serverClientNotInTeam)
@@ -299,7 +304,7 @@ func (e *TestEnvironment) CreateClients() {
 func (e *TestEnvironment) CreateBasicServer() {
 	e.T.Helper()
 
-	team, _, err := e.ServerAdminClient.CreateTeam(&model.Team{
+	team, _, err := e.ServerAdminClient.CreateTeam(context.Background(), &model.Team{
 		DisplayName: "basic",
 		Name:        "basic",
 		Email:       "success+playbooks@simulator.amazonses.com",
@@ -307,12 +312,12 @@ func (e *TestEnvironment) CreateBasicServer() {
 	})
 	require.NoError(e.T, err)
 
-	_, _, err = e.ServerAdminClient.AddTeamMember(team.Id, e.RegularUser.Id)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), team.Id, e.RegularUser.Id)
 	require.NoError(e.T, err)
-	_, _, err = e.ServerAdminClient.AddTeamMember(team.Id, e.RegularUser2.Id)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), team.Id, e.RegularUser2.Id)
 	require.NoError(e.T, err)
 
-	pubChannel, _, err := e.ServerAdminClient.CreateChannel(&model.Channel{
+	pubChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 		DisplayName: "testpublic1",
 		Name:        "testpublic1",
 		Type:        model.ChannelTypeOpen,
@@ -320,17 +325,17 @@ func (e *TestEnvironment) CreateBasicServer() {
 	})
 	require.NoError(e.T, err)
 
-	pubPost, _, err := e.ServerAdminClient.CreatePost(&model.Post{
+	pubPost, _, err := e.ServerAdminClient.CreatePost(context.Background(), &model.Post{
 		UserId:    e.AdminUser.Id,
 		ChannelId: pubChannel.Id,
 		Message:   "this is a public channel post by a system admin",
 	})
 	require.NoError(e.T, err)
 
-	_, _, err = e.ServerAdminClient.AddChannelMember(pubChannel.Id, e.RegularUser.Id)
+	_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), pubChannel.Id, e.RegularUser.Id)
 	require.NoError(e.T, err)
 
-	privateChannel, _, err := e.ServerAdminClient.CreateChannel(&model.Channel{
+	privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 		DisplayName: "testprivate1",
 		Name:        "testprivate1",
 		Type:        model.ChannelTypePrivate,
@@ -338,7 +343,7 @@ func (e *TestEnvironment) CreateBasicServer() {
 	})
 	require.NoError(e.T, err)
 
-	privatePost, _, err := e.ServerAdminClient.CreatePost(&model.Post{
+	privatePost, _, err := e.ServerAdminClient.CreatePost(context.Background(), &model.Post{
 		UserId:    e.AdminUser.Id,
 		ChannelId: privateChannel.Id,
 		Message:   "this is a private channel post by a system admin",
@@ -352,7 +357,7 @@ func (e *TestEnvironment) CreateBasicServer() {
 	e.BasicPrivateChannelPost = privatePost
 
 	// Add a second team to test cross-team features
-	team2, _, err := e.ServerAdminClient.CreateTeam(&model.Team{
+	team2, _, err := e.ServerAdminClient.CreateTeam(context.Background(), &model.Team{
 		DisplayName: "second team",
 		Name:        "second-team",
 		Email:       "success+playbooks@simulator.amazonses.com",
@@ -360,7 +365,7 @@ func (e *TestEnvironment) CreateBasicServer() {
 	})
 	require.NoError(e.T, err)
 
-	_, _, err = e.ServerAdminClient.AddTeamMember(team2.Id, e.RegularUser.Id)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), team2.Id, e.RegularUser.Id)
 	require.NoError(e.T, err)
 
 	e.BasicTeam2 = team2
@@ -476,12 +481,12 @@ func (e *TestEnvironment) CreateAdditionalPlaybooks() {
 
 func (e *TestEnvironment) CreateGuest() {
 	cfg := e.Srv.Config()
-	cfg.GuestAccountsSettings.Enable = model.NewBool(true)
-	_, _, err := e.ServerAdminClient.UpdateConfig(cfg)
+	cfg.GuestAccountsSettings.Enable = model.NewPointer(true)
+	_, _, err := e.ServerAdminClient.UpdateConfig(context.Background(), cfg)
 	require.NoError(e.T, err)
 
 	userPassword := "password123!"
-	guest, appErr := e.A.CreateGuest(request.EmptyContext(e.logger), &model.User{
+	guest, appErr := e.A.CreateGuest(e.Context, &model.User{
 		Email:    "playbookguest@example.com",
 		Username: "playbookguest",
 		Password: userPassword,
@@ -489,15 +494,15 @@ func (e *TestEnvironment) CreateGuest() {
 	require.Nil(e.T, appErr)
 	e.GuestUser = guest
 
-	_, _, err = e.ServerAdminClient.AddTeamMember(e.BasicPublicChannel.TeamId, e.GuestUser.Id)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicPublicChannel.TeamId, e.GuestUser.Id)
 	require.NoError(e.T, err)
 
-	_, _, err = e.ServerAdminClient.AddChannelMember(e.BasicPublicChannel.Id, e.GuestUser.Id)
+	_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicPublicChannel.Id, e.GuestUser.Id)
 	require.NoError(e.T, err)
 
 	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
 	serverClientGuest := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClientGuest.Login(e.GuestUser.Email, userPassword)
+	_, _, err = serverClientGuest.Login(context.Background(), e.GuestUser.Email, userPassword)
 	require.NoError(e.T, err)
 
 	playbooksClientGuest, err := client.New(serverClientGuest)

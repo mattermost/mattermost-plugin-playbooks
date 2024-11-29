@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/mattermost/mattermost/server/public/model"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/pkg/errors"
 )
 
 const (

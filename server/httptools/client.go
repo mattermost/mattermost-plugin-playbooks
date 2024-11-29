@@ -7,8 +7,8 @@ import (
 	"time"
 	"unicode"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/services/httpservice"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/shared/httpservice"
 )
 
 func MakeClient(pluginAPI *pluginapi.Client) *http.Client {

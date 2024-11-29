@@ -7,15 +7,17 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
 // PlaybookHandler is the API handler.
@@ -702,13 +704,13 @@ func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWrit
 	timezone := user.GetTimezoneLocation()
 
 	// get unix time for duration
-	startTime, appErr := model.GetStartOfDayForTimeRange(timeRange, timezone)
-	if appErr != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid time parameter", appErr)
+	startTime, err := GetStartOfDayForTimeRange(timeRange, timezone)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid time parameter", err)
 		return
 	}
 
-	topPlaybooks, err := h.playbookService.GetTopPlaybooksForUser(teamID, userID, &model.InsightsOpts{
+	topPlaybooks, err := h.playbookService.GetTopPlaybooksForUser(teamID, userID, &app.InsightsOpts{
 		StartUnixMilli: model.GetMillisForTime(*startTime),
 		Page:           page,
 		PerPage:        perPage,
@@ -753,13 +755,13 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWrit
 	timezone := user.GetTimezoneLocation()
 
 	// get unix time for duration
-	startTime, appErr := model.GetStartOfDayForTimeRange(timeRange, timezone)
-	if appErr != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid time parameter", appErr)
+	startTime, err := GetStartOfDayForTimeRange(timeRange, timezone)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid time parameter", err)
 		return
 	}
 
-	topPlaybooks, err := h.playbookService.GetTopPlaybooksForTeam(teamID, userID, &model.InsightsOpts{
+	topPlaybooks, err := h.playbookService.GetTopPlaybooksForTeam(teamID, userID, &app.InsightsOpts{
 		StartUnixMilli: model.GetMillisForTime(*startTime),
 		Page:           page,
 		PerPage:        perPage,
@@ -769,4 +771,30 @@ func (h *PlaybookHandler) getTopPlaybooksForTeam(c *Context, w http.ResponseWrit
 		return
 	}
 	ReturnJSON(w, &topPlaybooks, http.StatusOK)
+}
+
+// Copied from https://github.com/mattermost/mattermost/blob/e37459cd000bbcea6f09675285e2fe080bd52605/server/public/model/insights.go
+const (
+	TimeRangeToday string = "today"
+	TimeRange7Day  string = "7_day"
+	TimeRange28Day string = "28_day"
+)
+
+// GetStartOfDayForTimeRange gets the unix start time in milliseconds from the given time range.
+// Time range can be one of: "today", "7_day", or "28_day".
+//
+// Copied from https://github.com/mattermost/mattermost/blob/e37459cd000bbcea6f09675285e2fe080bd52605/server/public/model/insights.go
+func GetStartOfDayForTimeRange(timeRange string, location *time.Location) (*time.Time, error) {
+	now := time.Now().In(location)
+	resultTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
+	switch timeRange {
+	case TimeRangeToday:
+	case TimeRange7Day:
+		resultTime = resultTime.Add(time.Hour * time.Duration(-144))
+	case TimeRange28Day:
+		resultTime = resultTime.Add(time.Hour * time.Duration(-648))
+	default:
+		return nil, errors.New("Invalid time range")
+	}
+	return &resultTime, nil
 }
