@@ -17,7 +17,7 @@
     "chrono-node": "2.3.5",
     "core-js": "3.20.2",
     "debounce": "1.2.1",
-    "graphql": "16.3.0",
+    "graphql": "16.9.0",
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "3.3.0",
