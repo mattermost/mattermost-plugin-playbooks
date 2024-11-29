@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 // RunMutationCollection hold all mutation functions for a playbookRun

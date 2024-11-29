@@ -5,9 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/guregu/null.v4"
-
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"

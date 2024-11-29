@@ -3,10 +3,12 @@ package api
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost/server/public/model"
-	"github.com/pkg/errors"
 )
 
 // RunRootResolver hold all queries and mutations for a playbookRun

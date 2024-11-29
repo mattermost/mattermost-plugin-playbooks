@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 // 'IF NOT EXISTS' syntax is not supported in Postgres 9.4, so we need

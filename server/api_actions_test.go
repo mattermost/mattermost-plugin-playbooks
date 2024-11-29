@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/safemapstructure"
-	"github.com/mattermost/mattermost/server/public/model"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestActionCreation(t *testing.T) {

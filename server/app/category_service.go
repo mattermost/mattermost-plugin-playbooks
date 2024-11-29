@@ -3,9 +3,10 @@ package app
 import (
 	"database/sql"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
-	"github.com/pkg/errors"
 )
 
 type categoryService struct {

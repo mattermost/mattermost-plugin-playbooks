@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"

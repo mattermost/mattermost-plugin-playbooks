@@ -3,13 +3,14 @@ package sqlstore
 import (
 	"database/sql"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/sirupsen/logrus"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 // maxJSONLength holds the limit we set for JSON data in postgres

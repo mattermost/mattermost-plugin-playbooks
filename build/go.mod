@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.8
 
 require (
-	github.com/mattermost/mattermost/server/public v0.1.7
+	github.com/mattermost/mattermost/server/public v0.1.8
 	github.com/pkg/errors v0.9.1
 )
 

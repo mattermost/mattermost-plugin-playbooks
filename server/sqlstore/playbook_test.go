@@ -6,15 +6,16 @@ import (
 	"strconv"
 	"testing"
 
-	"gopkg.in/guregu/null.v4"
-
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/guregu/null.v4"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
 )
 
 func membersFromIDs(ids []string) []app.PlaybookMember {

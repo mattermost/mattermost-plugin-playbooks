@@ -7,9 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"gopkg.in/guregu/null.v4"
-
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 )
 
 // Playbook represents a desired business outcome, from which playbook runs are started to solve

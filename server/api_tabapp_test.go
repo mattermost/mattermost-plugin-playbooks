@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 )
 
 func TestTabAppGetRuns(t *testing.T) {
@@ -36,7 +38,6 @@ func TestTabAppGetRuns(t *testing.T) {
 		}
 		_, _, err := e.ServerAdminClient.PatchConfig(context.Background(), &patchedConfig)
 		require.NoError(t, err)
-
 	}
 
 	setDeveloperMode := func(t *testing.T, enable bool) {
