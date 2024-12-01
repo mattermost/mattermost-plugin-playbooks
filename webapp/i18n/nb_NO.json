@@ -119,5 +119,11 @@
     "v1SpKO": "Rolleendringer",
     "wEQDC6": "Rediger",
     "wCDmf3": "Ativer oppdateringer",
-    "sVlNlY": "Strukturen til hvert team er forskjellig. Du kan administrere hvilke brukere i teamet som kan lage playbooks."
+    "sVlNlY": "Strukturen til hvert team er forskjellig. Du kan administrere hvilke brukere i teamet som kan lage playbooks.",
+    "+Tmpup": "Du mottar automatisk oppdateringer når denne playbooken kjøres.",
+    "/RnCQb": "Send utgående webhook",
+    "/1FEJW": "AKTIVE DELTAKERE per dag de siste 14 dagene",
+    "/gbqA6": "{duration} før kjøringen startet",
+    "/MaJux": "Start retrospektivt",
+    "0CeyUV": "Ingen resultater for “{searchTerm}”"
 }
