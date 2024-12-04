@@ -1,7 +1,7 @@
 package main
 
 import (
-	"path"
+	"path/filepath"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -46,13 +46,13 @@ func (p *Plugin) GenerateSupportData(_ *plugin.Context) ([]*model.FileData, erro
 		ActivePlaybooks:   int64(len(activePlaybooks)),
 		TotalPlaybookRuns: int64(playbookRuns.TotalCount),
 	}
-	b, err := yaml.Marshal(diagnostics)
+	body, err := yaml.Marshal(diagnostics)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to marshal diagnostics")
 	}
 
 	return []*model.FileData{{
-		Filename: path.Join(manifest.Id, "diagnostics.yaml"),
-		Body:     b,
+		Filename: filepath.Join(manifest.Id, "diagnostics.yaml"),
+		Body:     body,
 	}}, result.ErrorOrNil()
 }
