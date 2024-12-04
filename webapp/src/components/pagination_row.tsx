@@ -6,13 +6,12 @@ import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 const PaginationRowDiv = styled.div`
-    margin: 10px 0 20px;
+    margin: 10px 32px 20px;
     font-size: 14px;
     display: grid;
     align-items: center;
     grid-template-columns: minmax(20rem, min-content) auto minmax(20rem, min-content);
     justify-content: space-between;
-    padding: 0 2px;
 `;
 
 const Count = styled.span`
