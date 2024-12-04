@@ -6,7 +6,7 @@ import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 const PaginationRowDiv = styled.div`
-    margin: 10px 32px 20px;
+    margin: 10px 16px 20px;
     font-size: 14px;
     display: grid;
     align-items: center;
