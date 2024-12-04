@@ -1,7 +1,7 @@
 package enterprise
 
 import (
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
 type LicenseChecker struct {

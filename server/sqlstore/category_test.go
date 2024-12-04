@@ -5,10 +5,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/stretchr/testify/require"
 )
 
 func setupCategoryStore(t *testing.T, db *sqlx.DB) app.CategoryStore {

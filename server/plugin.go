@@ -9,6 +9,15 @@ import (
 	"time"
 
 	"github.com/MicahParks/keyfunc/v3"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
+	"github.com/mattermost/mattermost/server/public/shared/i18n"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -19,14 +28,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/shared/i18n"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 
 	_ "time/tzdata" // for systems that don't have tzdata installed
 )
@@ -143,9 +144,9 @@ func (p *Plugin) OnActivate() error {
 		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
 		p.telemetryClient = &telemetry.NoopTelemetry{}
 	} else {
-		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
+		telemetryID := pluginAPIClient.System.GetTelemetryID()
 		serverVersion := pluginAPIClient.System.GetServerVersion()
-		p.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
+		p.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, telemetryID, manifest.Version, serverVersion)
 		if err != nil {
 			return errors.Wrapf(err, "failed init telemetry client")
 		}

@@ -1,8 +1,9 @@
 package app
 
 import (
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
 var (

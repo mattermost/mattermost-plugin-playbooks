@@ -8,9 +8,11 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 type sqlPlaybook struct {
@@ -1138,7 +1140,7 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 
 // insights - store manager functions
 
-func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
+func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *app.InsightsOpts) (*app.PlaybooksInsightsList, error) {
 
 	query := insightsQueryBuilder(p, teamID, userID, opts, insightsQueryTypeTeam)
 
@@ -1153,7 +1155,7 @@ func (p *playbookStore) GetTopPlaybooksForTeam(teamID, userID string, opts *mode
 	return topPlaybooks, nil
 }
 
-func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*app.PlaybooksInsightsList, error) {
+func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *app.InsightsOpts) (*app.PlaybooksInsightsList, error) {
 
 	query := insightsQueryBuilder(p, teamID, userID, opts, insightsQueryTypeUser)
 
@@ -1168,7 +1170,7 @@ func (p *playbookStore) GetTopPlaybooksForUser(teamID, userID string, opts *mode
 	return topPlaybooks, nil
 }
 
-func insightsQueryBuilder(p *playbookStore, teamID, userID string, opts *model.InsightsOpts, queryType string) sq.SelectBuilder {
+func insightsQueryBuilder(p *playbookStore, teamID, userID string, opts *app.InsightsOpts, queryType string) sq.SelectBuilder {
 	permissionsAndFilter := sq.Expr(`(
 		EXISTS(SELECT 1
 				FROM IR_PlaybookMember as pm

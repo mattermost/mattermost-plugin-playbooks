@@ -7,11 +7,12 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/mattermost/mattermost-server/v6/model"
-
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 type sqlUserInfo struct {

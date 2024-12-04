@@ -41,14 +41,14 @@ import {AdminNotificationType} from 'src/constants';
 import {ChannelAction} from 'src/types/channel_actions';
 import {EmptyPlaybookStats, PlaybookStats, SiteStats} from 'src/types/stats';
 
-import {pluginId} from './manifest';
+import manifest from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
 
 let siteURL = '';
 let basePath = '';
-let apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
+let apiUrl = `${basePath}/plugins/${manifest.id}/api/v0`;
 
 export const setSiteUrl = (url?: string): void => {
     if (url) {
@@ -59,7 +59,7 @@ export const setSiteUrl = (url?: string): void => {
         siteURL = '';
     }
 
-    apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
+    apiUrl = `${basePath}/plugins/${manifest.id}/api/v0`;
 };
 
 export const getSiteUrl = (): string => {
