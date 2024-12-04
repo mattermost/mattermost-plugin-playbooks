@@ -18,3 +18,5 @@ server/e2etest.config.json
 
 # Notice
 .notice-work
+.aider*
+.env
