@@ -264,6 +264,11 @@ func validatePreAssignment(pb app.Playbook) error {
 // validateTaskActions validates the taskactions in the given checklist
 // NOTE: Any changes to this function must be made to function 'validateUpdateTaskActions' for the GraphQL endpoint.
 func validateTaskActions(taskActions []app.TaskAction) error {
+	// Limit task actions to 10
+	if len(taskActions) > 10 {
+		return errors.Errorf("playbook cannot have more than 10 task actions")
+	}
+
 	for _, ta := range taskActions {
 		if err := app.ValidateTrigger(ta.Trigger); err != nil {
 			return err
