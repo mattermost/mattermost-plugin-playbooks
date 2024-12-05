@@ -1304,7 +1304,7 @@ func TestIgnoreKeywords(t *testing.T) {
 				},
 			},
 		}
-		botPost, err := e.Srv.Store().Post().Save(botPost)
+		botPost, err := e.Srv.Store().Post().Save(e.Context, botPost)
 		require.NoError(t, err)
 
 		// Create post action request
@@ -1321,14 +1321,14 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
+		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
 		require.Error(t, err)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
 
 	t.Run("has permission to channel", func(t *testing.T) {
 		// Add user to private channel
-		_, _, err := e.ServerAdminClient.AddChannelMember(e.BasicPrivateChannel.Id, e.RegularUser.Id)
+		_, _, err := e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicPrivateChannel.Id, e.RegularUser.Id)
 		require.NoError(t, err)
 
 		// Create a bot post in the private channel
@@ -1348,7 +1348,7 @@ func TestIgnoreKeywords(t *testing.T) {
 				},
 			},
 		}
-		botPost, err = e.Srv.Store().Post().Save(botPost)
+		botPost, err = e.Srv.Store().Post().Save(e.Context, botPost)
 		require.NoError(t, err)
 
 		// Create post action request
@@ -1365,7 +1365,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
+		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})

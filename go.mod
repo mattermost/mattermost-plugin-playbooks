@@ -22,11 +22,12 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/graph-gophers/dataloader/v7 v7.1.0
 	github.com/graph-gophers/graphql-go v1.4.0
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost/server/public v0.1.8
-	github.com/mattermost/mattermost/server/v8 v8.0.0-20241112090719-5eef415a39e1
+	github.com/mattermost/mattermost/server/public v0.1.9
+	github.com/mattermost/mattermost/server/v8 v8.0.0-20241113102039-053d0b5f0ad5
 	github.com/mattermost/morph v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
@@ -36,6 +37,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
 	gopkg.in/guregu/null.v4 v4.0.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -107,7 +109,6 @@ require (
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-plugin v1.6.1 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
@@ -203,7 +204,6 @@ require (
 	gopkg.in/mail.v2 v2.3.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/gc/v3 v3.0.0-20240722195230-4a140ff9c08e // indirect
 	modernc.org/libc v1.55.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
