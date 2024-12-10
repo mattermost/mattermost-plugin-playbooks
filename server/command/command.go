@@ -1155,7 +1155,7 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	gotPlaybooks, err := r.playbookService.GetPlaybooks()
+	gotPlaybooks, err := r.playbookService.GetActivePlaybooks()
 	if err != nil {
 		r.postCommandResponse("There was an error while retrieving all playbooks. Err: " + err.Error())
 		return
