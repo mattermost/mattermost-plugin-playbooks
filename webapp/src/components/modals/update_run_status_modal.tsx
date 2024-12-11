@@ -24,7 +24,7 @@ import {ApolloProvider, useQuery} from '@apollo/client';
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 import IconAI from 'src/components/assets/icons/ai';
-import AIModal from 'src/ai_modal'
+import AIModal from 'src/components/modals/ai_modal';
 import {useAIAvailable, useAIAvailableBots, useBotSelector} from 'src/ai_integration';
 
 import {
