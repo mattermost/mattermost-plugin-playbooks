@@ -24,6 +24,7 @@ type Props = {
 const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, currentBot}: Props) => {
     const intl = useIntl();
     const currentUser = useSelector(getCurrentUser);
+    const [copied, setCopied] = useState(false);
     const [prevMessages, setPrevMessages] = useState<string[]>([]);
     const [update, setUpdate] = useState('');
     const [instructions, setInstructions] = useState<string[]>([]);
@@ -31,7 +32,7 @@ const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, curr
     const suggestionBox = useRef<HTMLDivElement>()
 
     useEffect(() => {
-        generateStatusUpdate(playbookRunId, instructions);
+        generateStatusUpdate(playbookRunId, currentBot.id, []);
     }, []);
 
     useEffect(() => {
@@ -55,11 +56,13 @@ const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, curr
     const regenerate = useCallback(() => {
         setUpdate('')
         onGeneratingChanged(true);
-        generateStatusUpdate(playbookRunId, instructions);
-    }, [playbookRunId, instructions]);
+        generateStatusUpdate(playbookRunId, currentBot.id, instructions, [...prevMessages, update]);
+    }, [playbookRunId, instructions, prevMessages, update, currentBot.id]);
 
     const copyText = useCallback(() => {
       navigator.clipboard.writeText(update);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
     }, [update])
 
     const onInputEnter = useCallback((e: React.KeyboardEvent) => {
@@ -67,13 +70,13 @@ const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, curr
       if (e.key === 'Enter') {
         setPrevMessages([...prevMessages, update])
         setUpdate('')
-        generateStatusUpdate(playbookRunId, [...instructions, instruction]);
+        generateStatusUpdate(playbookRunId, currentBot.id, [...instructions, instruction], [...prevMessages, update]);
         setInstructions([...instructions, instruction])
         setInstruction('')
         onGeneratingChanged(true);
         setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
       }
-    }, [instructions, instruction, playbookRunId, prevMessages, update])
+    }, [instructions, instruction, playbookRunId, prevMessages, update, currentBot.id])
 
     const stopGenerating = useCallback(() => {
         onGeneratingChanged(false);
@@ -140,6 +143,9 @@ const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, curr
                 <i className="icon icon-content-copy"/>
               </IconButton>
             }
+            <Copied copied={copied}>
+              <FormattedMessage defaultMessage="Copied!"/>
+            </Copied>
             <ExtraInstructionsInput>
               <IconAI/>
               <input
@@ -286,6 +292,13 @@ const AssistantMessageBox = styled.div`
     max-height: 200px;
     height: 200px;
     overflow-y: auto;
+`
+
+const Copied = styled.span<{copied: boolean}>`
+    color: var(--center-channel-color-64);
+    margin: 12px 0px;
+    transition: opacity 1s;
+    opacity: ${(props) => (props.copied ? 1 : 0)};
 `
 
 export default AIModal;

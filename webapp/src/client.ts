@@ -817,11 +817,15 @@ export async function getTeamTopPlaybooks(timeRange: string, page: number, perPa
 }
 
 
-export async function generateStatusUpdate(playbookRunID: string, instructions: string[]) {
+export async function generateStatusUpdate(playbookRunID: string, botId: string, instructions: string[], messages: string[]) {
     const url = `${playbookRunRoute(playbookRunID)}/generate_status`;
     const response = await fetch(url, Client4.getOptions({
         method: 'POST',
-        body: JSON.stringify(instructions || [])
+        body: JSON.stringify({
+          instructions,
+          messages,
+          bot: botId,
+        })
     }));
 
     if (response.ok) {
