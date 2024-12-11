@@ -42,22 +42,6 @@ const RHSPostUpdateButton = (props: Props) => {
             >
                 <FormattedMessage defaultMessage='Post update'/>
             </ButtonComponent>
-            { aiAvailable &&
-            <AIButtonContainer>
-                <Tooltip
-                    id={'rhs-add-participant'}
-                    content={formatMessage({defaultMessage: 'Write with AI'})}
-                >
-                    <ButtonComponent
-                        collapsed={props.collapsed}
-                        disabled={props.disabled}
-                        onClick={props.onAIClick}
-                    >
-                        <IconAI/>
-                    </ButtonComponent>
-                </Tooltip>
-            </AIButtonContainer>
-            }
         </ButtonsContainer>
     );
 };

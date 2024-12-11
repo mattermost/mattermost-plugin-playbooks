@@ -25,7 +25,7 @@ import GenericModal, {Description, Label} from 'src/components/widgets/generic_m
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 import IconAI from 'src/components/assets/icons/ai';
 import AIModal from 'src/ai_modal'
-import {useAIAvailable} from 'src/ai_integration';
+import {useAIAvailable, useAIAvailableBots, useBotSelector} from 'src/ai_integration';
 
 import {
     Mode,
@@ -60,8 +60,6 @@ import {useAIStatusUpdateClicked} from 'src/ai_integration';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
-
-const Textbox = window.Components.Textbox;
 
 type Props = {
     playbookRunId: string;
@@ -109,10 +107,13 @@ const UpdateRunStatusModal = ({
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
+    const [currentBot, setCurrentBot] = useState<any>(null);
     const currentUserId = useSelector(getCurrentUserId);
     const [aiModalOpen, setAIModalOpen] = useState(false);
     const [generating, setGenerating] = useState(false);
     const aiAvailable = useAIAvailable();
+    const aiAvailableBots = useAIAvailableBots();
+    const BotSelector = useBotSelector() as any;
     const aiStatusUpdateClicked = useAIStatusUpdateClicked();
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
@@ -270,24 +271,32 @@ const UpdateRunStatusModal = ({
     const form = (
         <FormContainer>
             <Description data-testid='update_run_status_description'>{description()}</Description>
-            <Label>
-                {formatMessage({defaultMessage: 'Change since last update'})}
-            </Label>
-            { aiAvailable &&
-              <TertiaryButton onClick={() => {
-                setAIModalOpen(true);
-                setGenerating(true);
-              }}>
-                  <IconAI/>
-                  <FormattedMessage defaultMessage="Generate update with AI"/>
-              </TertiaryButton>
-            }
+            <LastChangeSince>
+              <Label>
+                  {formatMessage({defaultMessage: 'Change since last update'})}
+              </Label>
+              { aiAvailable &&
+                  <BotSelector
+                      bots={aiAvailableBots}
+                      activeBot={currentBot}
+                      setActiveBot={(bot: any) => {
+                        if (!aiModalOpen) {
+                          setCurrentBot(bot)
+                          setAIModalOpen(true);
+                          setGenerating(true);
+                        }
+                      }}
+                  />
+              }
+            </LastChangeSince>
             { aiAvailable && aiModalOpen &&
               <AiModalContainer>
                 <AIModal
                   playbookRunId={playbookRunId}
                   generating={generating}
+                  currentBot={currentBot}
                   onGeneratingChanged={(generating) => setGenerating(generating)}
+                  onAccept={(text) => { setMessage(text); setAIModalOpen(false); }}
                 />
               </AiModalContainer>
             }
@@ -546,6 +555,15 @@ const StyledCheckboxInput = styled(CheckboxInput)`
 
 const AiModalContainer =  styled.div`
     position: relative;
+`
+
+const LastChangeSince = styled.div`
+    display: flex;
+    justify-content: space-between;
+    button {
+        height: 26px;
+        margin-top: 20px;
+    }
 `
 
 const ApolloWrappedModal = (props: Props) => {
