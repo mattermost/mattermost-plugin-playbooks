@@ -85,5 +85,18 @@
     "706Soh": "úkolů hotovo",
     "7P5T3W": "Obnovit kontrolní seznam",
     "8//+Yb": "Propojte kontrolní seznam s jiným kanálem",
-    "8FzC0B": "{user} škrtl ze seznamu: \"{name}\""
+    "8FzC0B": "{user} označil položku kontrolního seznamu \"{name}\" jako splněnou",
+    "9M92On": "Zvolte kanály",
+    "95v+5O": "{actions, plural, =0 {Akce úkolu} one {# akce} few {# akce} other {# akcí}}",
+    "9AQ5FE": "Souhrn běhu",
+    "4ltHYh": "Jdi na playbook",
+    "4vuNrq": "{duration} po spuštění běhu",
+    "5b1zuB": "Přidejte je do kanálu běhu",
+    "5qBEKB": "Co jsou běhy playbook běhy?",
+    "8n24G2": "Zobrazit podrobnosti běhu na postranním panelu",
+    "91Hr5f": "Přetáhněte mě pro změnu pořadí",
+    "9Obw6C": "Filter",
+    "9PXW6Q": "Doba trvání / Zahájeno",
+    "9SIW2x": "Cílová hodnota pro každý běh",
+    "8oPf1o": "Kontaktujte prodejní oddělení"
 }
