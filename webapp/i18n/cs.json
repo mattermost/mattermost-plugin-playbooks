@@ -30,7 +30,7 @@
     "+8G9qr": "Výchozí text pro retrospektivu.",
     "+/x2FM": "Vyberte playbook",
     "9+Ddtu": "Další",
-    "3/wF0G": "Příkazy s lomítkem",
+    "3/wF0G": "Lomítkové příkazy",
     "3Yvt4d": "Playbooky jsou konfigurovatelné kontrolní seznamy, které definují opakovatelný proces pro týmy k dosažení konkrétních a předvídatelných výsledků",
     "/HtNUp": "Vyberte nebo zadejte {mode, select, DurationValue {časový úsek („4 hodiny“, „7 dní“...)} DateTimeValue {čas („za 4 hodiny“, „1. května“, „Zítra ve 13:00“...)} other {čas nebo časový úsek}}",
     "1OluNs": "Potvrďte povolení aktualizací stavu",
@@ -45,7 +45,7 @@
     "3sXVwy": "Akce Úkolu...",
     "1fXVVz": "Termín...",
     "1ikfp3": "Pokud odstraníte tuto metriku, hodnoty pro ni nebudou shromažďovány při žádných budoucích spuštěních.",
-    "1prgB2": "Hledat osoby",
+    "1prgB2": "Vyhledat uživatele",
     "2563nT": "Potvrdit dokončení spuštění",
     "28FTjr": "Akce spuštění umožňují automatizovat činnosti pro tento kanál",
     "2Q5PhZ": "Výzva k spuštění playbooku",
@@ -67,5 +67,9 @@
     "3qPQMX": "{name} žádá o změnu stavu",
     "0CeyUV": "Žádné výsledky pro \"{searchTerm}\"",
     "2/2yg+": "Přidat",
-    "2BCWLD": "Nastavit kanál"
+    "2BCWLD": "Nastavit kanál",
+    "5BUxvl": "Každý v tomto týmu může nahlížet na tento playbook.",
+    "5CI3KH": "Kontaktovat podporu",
+    "4mCpAv": "Nebylo možné změnit vlastníka",
+    "5AJmOz": "Když se uživatel připojí ke kanálu"
 }
