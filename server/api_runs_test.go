@@ -1281,6 +1281,96 @@ func TestChecklisFailTooLarge(t *testing.T) {
 	})
 }
 
+func TestIgnoreKeywords(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	botID := e.Srv.Config().PluginSettings.Plugins[manifest.Id]["BotUserID"].(string)
+
+	t.Run("no permission to channel", func(t *testing.T) {
+		// Create a bot post in the private channel
+		botPost := &model.Post{
+			UserId:    botID,
+			ChannelId: e.BasicPrivateChannel.Id,
+			Message:   "test message",
+			Props: model.StringInterface{
+				"attachments": []*model.SlackAttachment{
+					{
+						Actions: []*model.PostAction{
+							{
+								Id: "ignoreKeywordsButton",
+							},
+						},
+					},
+				},
+			},
+		}
+		botPost, err := e.Srv.Store().Post().Save(e.Context, botPost)
+		require.NoError(t, err)
+
+		// Create post action request
+		req := &model.PostActionIntegrationRequest{
+			UserId: e.RegularUser.Id,
+			Context: map[string]interface{}{
+				"post_id": botPost.Id,
+			},
+			PostId: botPost.Id,
+		}
+
+		// Convert request to JSON
+		reqBytes, err := json.Marshal(req)
+		require.NoError(t, err)
+
+		// Make the request
+		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusForbidden, result.StatusCode)
+	})
+
+	t.Run("has permission to channel", func(t *testing.T) {
+		// Add user to private channel
+		_, _, err := e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicPrivateChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// Create a bot post in the private channel
+		botPost := &model.Post{
+			UserId:    botID,
+			ChannelId: e.BasicPrivateChannel.Id,
+			Message:   "test message",
+			Props: model.StringInterface{
+				"attachments": []*model.SlackAttachment{
+					{
+						Actions: []*model.PostAction{
+							{
+								Id: "ignoreKeywordsButton",
+							},
+						},
+					},
+				},
+			},
+		}
+		botPost, err = e.Srv.Store().Post().Save(e.Context, botPost)
+		require.NoError(t, err)
+
+		// Create post action request
+		req := &model.PostActionIntegrationRequest{
+			UserId: e.RegularUser.Id,
+			Context: map[string]interface{}{
+				"post_id": botPost.Id,
+			},
+			PostId: botPost.Id,
+		}
+
+		// Convert request to JSON
+		reqBytes, err := json.Marshal(req)
+		require.NoError(t, err)
+
+		// Make the request
+		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, result.StatusCode)
+	})
+}
+
 func TestRunGetStatusUpdates(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()

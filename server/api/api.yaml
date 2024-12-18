@@ -1249,7 +1249,7 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
-  /plugins/playbooks/api/v0/runs/{id}/timeline/{event_id}/:
+  /plugins/playbooks/api/v0/runs/{id}/timeline/{event_id}:
     delete:
       summary: Remove a timeline event from the playbook run
       operationId: removeTimelineEvent
