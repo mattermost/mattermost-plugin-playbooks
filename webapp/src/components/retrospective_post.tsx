@@ -33,8 +33,8 @@ export const RetrospectivePost = (props: Props) => {
 
     const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
-    const metricsConfigs: Array<Metric> = JSON.parse(props.post.props.metricsConfigs);
-    const metricsData: Array<RunMetricData> = JSON.parse(props.post.props.metricsData);
+    const metricsConfigs: Array<Metric> = props.post.props?.metricsConfigs ? JSON.parse(props.post.props.metricsConfigs) : [];
+    const metricsData: Array<RunMetricData> = props.post.props?.metricsData ? JSON.parse(props.post.props.metricsData) : [];
 
     return (
         <>
