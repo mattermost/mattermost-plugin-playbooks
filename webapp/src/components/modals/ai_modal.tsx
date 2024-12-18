@@ -1,38 +1,46 @@
 import {WebSocketMessage} from '@mattermost/client';
-import {useSelector} from 'react-redux';
-import {Client4} from 'mattermost-redux/client';
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import IconAI from 'src/components/assets/icons/ai';
-import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {Textbox} from 'src/webapp_globals';
 
-import {generateStatusUpdate} from './client';
+import {generateStatusUpdate} from 'src/client';
+import {useAIAvailableBots, useBotSelector} from 'src/ai_integration';
 
-import postEventListener, {PostUpdateWebsocketMessage} from './websocket';
+import postEventListener, {PostUpdateWebsocketMessage} from 'src/websocket';
 
-const UserAvatar = window.Components.Avatar;
+type Version = {
+  instruction: string
+  prevValue: string
+  value: string
+}
 
 type Props = {
     playbookRunId: string
-    generating: boolean
-    currentBot: any
-    onGeneratingChanged: (generating: boolean) => void
     onAccept: (text: string) => void
+    onClose: () => void
 }
 
-const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, currentBot}: Props) => {
+const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
     const intl = useIntl();
-    const currentUser = useSelector(getCurrentUser);
     const [copied, setCopied] = useState(false);
-    const [prevMessages, setPrevMessages] = useState<string[]>([]);
-    const [update, setUpdate] = useState('');
-    const [instructions, setInstructions] = useState<string[]>([]);
     const [instruction, setInstruction] = useState('');
     const suggestionBox = useRef<HTMLDivElement>()
+    const aiAvailableBots = useAIAvailableBots();
+    const BotSelector = useBotSelector() as any;
+    const [currentBot, setCurrentBot] = useState<any>(aiAvailableBots.length > 0 ? aiAvailableBots[0] : null);
+    const [currentVersion, setCurrentVersion] = useState<number>(1);
+    const [versions, setVersions] = useState<Version[]>([]);
+    const [generating, setGenerating] = useState<any>(null);
 
     useEffect(() => {
-        generateStatusUpdate(playbookRunId, currentBot.id, []);
+        if (currentBot?.id) {
+          setCurrentVersion(versions.length + 1)
+          setVersions([...versions, {instruction: '', value: '', prevValue: ''}])
+          setGenerating(true);
+          generateStatusUpdate(playbookRunId, currentBot.id, [], []);
+        }
     }, []);
 
     useEffect(() => {
@@ -40,11 +48,13 @@ const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, curr
             postEventListener.registerPostUpdateListener('playbooks_post_update', (msg: WebSocketMessage<PostUpdateWebsocketMessage>) => {
               const data = msg.data;
               if (!data.control) {
-                onGeneratingChanged(true);
-                setUpdate(data.next);
+                setGenerating(true);
+                const newVersions = [...versions]
+                newVersions[versions.length-1] = {...newVersions[versions.length-1], value: data.next}
+                setVersions(newVersions)
                 setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
               } else if (data.control === 'end') {
-                onGeneratingChanged(false);
+                setGenerating(false);
               }
             });
         }
@@ -53,72 +63,63 @@ const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, curr
         };
     }, [generating]);
 
+    const onBotChange = useCallback((bot: any) => {
+      setCurrentBot(bot)
+      setCurrentVersion(versions.length + 1)
+      setVersions([...versions, {instruction: '', value: '', prevValue: ''}])
+      setGenerating(true);
+      generateStatusUpdate(playbookRunId, bot.id, [], []);
+    }, [versions, playbookRunId])
+
     const regenerate = useCallback(() => {
-        setUpdate('')
-        onGeneratingChanged(true);
-        generateStatusUpdate(playbookRunId, currentBot.id, instructions, [...prevMessages, update]);
-    }, [playbookRunId, instructions, prevMessages, update, currentBot.id]);
+        setGenerating(true);
+        generateStatusUpdate(playbookRunId, currentBot?.id, [versions[currentVersion-1].instruction], [versions[currentVersion-1].prevValue]);
+        setCurrentVersion(versions.length + 1)
+        setVersions([...versions, {...versions[currentVersion-1], value: ''}])
+    }, [versions, playbookRunId, instruction, versions, currentVersion, currentBot?.id]);
 
     const copyText = useCallback(() => {
-      navigator.clipboard.writeText(update);
+      navigator.clipboard.writeText(versions[currentVersion-1].value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1000);
-    }, [update])
+    }, [versions, currentVersion])
 
     const onInputEnter = useCallback((e: React.KeyboardEvent) => {
       // Detect hitting enter and run the generateStatusUpdate
       if (e.key === 'Enter') {
-        setPrevMessages([...prevMessages, update])
-        setUpdate('')
-        generateStatusUpdate(playbookRunId, currentBot.id, [...instructions, instruction], [...prevMessages, update]);
-        setInstructions([...instructions, instruction])
+        generateStatusUpdate(playbookRunId, currentBot?.id, [instruction], [versions[currentVersion-1].value]);
+        setVersions([...versions, {instruction, prevValue: versions[currentVersion-1].value, value: ''}])
+        setCurrentVersion(versions.length + 1)
         setInstruction('')
-        onGeneratingChanged(true);
+        setGenerating(true);
         setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
       }
-    }, [instructions, instruction, playbookRunId, prevMessages, update, currentBot.id])
+    }, [versions, instruction, playbookRunId, versions, currentVersion, currentBot?.id])
 
     const stopGenerating = useCallback(() => {
-        onGeneratingChanged(false);
+        setGenerating(false);
     }, [])
+
+    if (!currentBot?.id) {
+        return null
+    }
 
     return (
         <AIModalContainer>
+            <TopBar>
+              <Versions>
+                <i className={"icon icon-arrow-back-ios" + (currentVersion === 1 ? ' disabled' : '')} onClick={() => setCurrentVersion(currentVersion-1)}/>
+                <FormattedMessage defaultMessage="version {number} of {total}" values={{number: currentVersion, total: versions.length}}/>
+                <i className={"icon icon-arrow-forward-ios" + (currentVersion === versions.length ? ' disabled' : '')} onClick={() => setCurrentVersion(currentVersion+1)}/>
+              </Versions>
+              <BotSelector
+                  bots={aiAvailableBots || []}
+                  activeBot={currentBot}
+                  setActiveBot={onBotChange}
+              />
+            </TopBar>
             <AssistantMessageBox ref={suggestionBox}>
-              {prevMessages.map((msg, idx) => (
-                <>
-                  <Assistant>
-                    <UserAvatar
-                        url={Client4.getProfilePictureUrl(currentBot.id, 0)}
-                        username={currentBot.displayName}
-                    />
-                    <Username>{currentBot.displayName}</Username>
-                  </Assistant>
-                  <Messages>{msg}</Messages>
-                  <Assistant>
-                    <UserAvatar
-                        url={Client4.getProfilePictureUrl(currentUser.id, 0)}
-                        username={currentUser.username}
-                    />
-                      <Username>
-                          <FormattedMessage
-                              id={'post_priority.you.acknowledge'}
-                              defaultMessage={'(you)'}
-                          />
-                      </Username>
-                  </Assistant>
-                  <Messages>{instructions[idx]}</Messages>
-                </>
-              ))}
-
-              <Assistant>
-                <UserAvatar
-                    url={Client4.getProfilePictureUrl(currentBot.id, 0)}
-                    username={currentBot.displayName}
-                />
-                <Username>{currentBot.displayName}</Username>
-              </Assistant>
-              <Messages>{update}</Messages>
+              <Textbox value={versions[currentVersion-1]?.value || ''} preview={true}/>
             </AssistantMessageBox>
 
             {generating &&
@@ -128,20 +129,21 @@ const AIModal = ({generating, playbookRunId, onGeneratingChanged, onAccept, curr
               </StopGeneratingButton>
             }
             {!generating &&
-              <InsertButton onClick={() => onAccept(update)}>
-                <i className="icon icon-check"/>
-                <FormattedMessage defaultMessage="insert"/>
-              </InsertButton>
-            }
-            {!generating &&
-              <IconButton onClick={regenerate}>
-                <i className="icon icon-refresh"/>
-              </IconButton>
-            }
-            {!generating &&
-              <IconButton onClick={copyText}>
-                <i className="icon icon-content-copy"/>
-              </IconButton>
+              <>
+                <IconButton onClick={copyText}>
+                  <i className="icon icon-content-copy"/>
+                </IconButton>
+                <IconButton onClick={regenerate}>
+                  <i className="icon icon-refresh"/>
+                </IconButton>
+                <IconButton onClick={onClose}>
+                  <i className="icon icon-trash-can-outline"/>
+                </IconButton>
+                <InsertButton onClick={() => onAccept(versions[currentVersion-1].value)}>
+                  <i className="icon icon-check"/>
+                  <FormattedMessage defaultMessage="insert"/>
+                </InsertButton>
+              </>
             }
             <Copied copied={copied}>
               <FormattedMessage defaultMessage="Copied!"/>
@@ -198,9 +200,9 @@ const StopGeneratingButton = styled.button`
 `
 
 const AIModalContainer = styled.div`
-    width: 580px;
-    left: -23px;
-    top: -2px;
+    width: 480px;
+    right: -2px;
+    top: -10px;
     position: absolute;
     z-index: 1000;
     background: var(--center-channel-bg);
@@ -246,7 +248,7 @@ const ExtraInstructionsInput = styled.div`
 
 const InsertButton = styled.button`
     display: inline-block;
-    margin: 12px 0px;
+    margin: 12px 12px 12px 0;
     border-radius: 4px;
     background: var(--button-bg-08);
     padding: 8px 16px 8px 8px;
@@ -267,31 +269,15 @@ const InsertButton = styled.button`
     }
 `
 
-const Assistant = styled.div`
-    display: flex;
-    .Avatar {
-        width: 50px;
-        min-width: 50px;
-        height: 50px;
-        margin-right: 14px;
-    }
-`
-
-const Username = styled.span`
-    font-weight: 600;
-`
-
-const Messages = styled.div`
-    margin-top: -24px;
-    white-space: pre-wrap;
-    padding-left: 64px;
-    margin-bottom: 16px;
-`
-
 const AssistantMessageBox = styled.div`
     max-height: 200px;
     height: 200px;
     overflow-y: auto;
+    &&&& .custom-textarea {
+        border: none;
+        box-shadow: none;
+        height: 100%;
+    }
 `
 
 const Copied = styled.span<{copied: boolean}>`
@@ -299,6 +285,26 @@ const Copied = styled.span<{copied: boolean}>`
     margin: 12px 0px;
     transition: opacity 1s;
     opacity: ${(props) => (props.copied ? 1 : 0)};
+`
+
+const TopBar = styled.div`
+    display: flex;
+    justify-content: space-between;
+`
+
+const Versions = styled.div`
+    display: flex;
+    align-items: center;
+    color: var(--center-channel-color-75);
+    .icon {
+        cursor: pointer;
+        opacity: 0.5;
+    }
+    .icon.disabled {
+        cursor: auto;
+        pointer-events: none;
+        opacity: 0.2;
+    }
 `
 
 export default AIModal;

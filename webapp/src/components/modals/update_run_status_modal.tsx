@@ -25,7 +25,7 @@ import GenericModal, {Description, Label} from 'src/components/widgets/generic_m
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 import IconAI from 'src/components/assets/icons/ai';
 import AIModal from 'src/components/modals/ai_modal';
-import {useAIAvailable, useAIAvailableBots, useBotSelector} from 'src/ai_integration';
+import {useAIAvailable} from 'src/ai_integration';
 
 import {
     Mode,
@@ -56,7 +56,6 @@ import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {getFragmentData, graphql} from 'src/graphql/generated';
 import {DefaultMessageFragment, ReminderTimerFragment} from 'src/graphql/generated/graphql';
-import {useAIStatusUpdateClicked} from 'src/ai_integration';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -107,14 +106,9 @@ const UpdateRunStatusModal = ({
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
-    const [currentBot, setCurrentBot] = useState<any>(null);
     const currentUserId = useSelector(getCurrentUserId);
     const [aiModalOpen, setAIModalOpen] = useState(false);
-    const [generating, setGenerating] = useState(false);
     const aiAvailable = useAIAvailable();
-    const aiAvailableBots = useAIAvailableBots();
-    const BotSelector = useBotSelector() as any;
-    const aiStatusUpdateClicked = useAIStatusUpdateClicked();
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
@@ -271,32 +265,25 @@ const UpdateRunStatusModal = ({
     const form = (
         <FormContainer>
             <Description data-testid='update_run_status_description'>{description()}</Description>
-            <LastChangeSince>
+            <LastChangeSince disabled={aiModalOpen}>
               <Label>
                   {formatMessage({defaultMessage: 'Change since last update'})}
               </Label>
               { aiAvailable &&
-                  <BotSelector
-                      bots={aiAvailableBots}
-                      activeBot={currentBot}
-                      setActiveBot={(bot: any) => {
-                        if (!aiModalOpen) {
-                          setCurrentBot(bot)
-                          setAIModalOpen(true);
-                          setGenerating(true);
-                        }
-                      }}
-                  />
+                <TertiaryButton onClick={() => {
+                  setAIModalOpen(true);
+                }}>
+                    <IconAI/>
+                    <FormattedMessage defaultMessage="Generate update with AI"/>
+                </TertiaryButton>
               }
             </LastChangeSince>
             { aiAvailable && aiModalOpen &&
               <AiModalContainer>
                 <AIModal
                   playbookRunId={playbookRunId}
-                  generating={generating}
-                  currentBot={currentBot}
-                  onGeneratingChanged={(generating) => setGenerating(generating)}
                   onAccept={(text) => { setMessage(text); setAIModalOpen(false); }}
+                  onClose={() => setAIModalOpen(false)}
                 />
               </AiModalContainer>
             }
@@ -560,9 +547,12 @@ const AiModalContainer =  styled.div`
 const LastChangeSince = styled.div`
     display: flex;
     justify-content: space-between;
-    button {
-        height: 26px;
+    >div {
+        margin: 24px 0 8px 0;
+    }
+    >button {
         margin-top: 20px;
+        height: 24px;
     }
 `
 
