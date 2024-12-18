@@ -54,6 +54,7 @@ import {
     WEBSOCKET_PLAYBOOK_RESTORED,
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
+    WEBSOCKET_MATTERMOST_AI_POSTUPDATE,
 } from 'src/types/websocket_events';
 import {
     fetchGlobalSettings,
@@ -73,6 +74,7 @@ import {setPlaybooksGraphQLClient} from './graphql_client';
 import {RHSTitlePlaceholder} from './rhs_title_remote_render';
 import {ApolloWrapper, makeGraphqlClient} from './graphql/apollo';
 import PresetTemplates from './components/templates/template_data';
+import postEventListener from './websocket';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -239,6 +241,7 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_MATTERMOST_AI_POSTUPDATE, postEventListener.handlePostUpdateWebsockets);
 
         // Local slash commands
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
