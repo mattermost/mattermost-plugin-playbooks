@@ -10,6 +10,13 @@ import {Metric, MetricType} from 'src/types/playbook';
 
 import {RunMetricData} from 'src/types/playbook_run';
 
+import {
+    isArrayOf,
+    isMetric,
+    isMetricData,
+    safeJSONParse,
+} from 'src/utils';
+
 import {ClockOutline, DollarSign, PoundSign} from './backstage/playbook_edit/styles';
 import {metricToString} from './backstage/playbook_edit/metrics/shared';
 
@@ -33,8 +40,11 @@ export const RetrospectivePost = (props: Props) => {
 
     const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
-    const metricsConfigs: Array<Metric> = props.post.props?.metricsConfigs ? JSON.parse(props.post.props.metricsConfigs) : [];
-    const metricsData: Array<RunMetricData> = props.post.props?.metricsData ? JSON.parse(props.post.props.metricsData) : [];
+    const parsedMetricsConfigs = safeJSONParse<unknown>(props.post.props?.metricsConfigs);
+    const parsedMetricsData = safeJSONParse<unknown>(props.post.props?.metricsData);
+
+    const metricsConfigs: Array<Metric> = isArrayOf(parsedMetricsConfigs, isMetric) ? parsedMetricsConfigs : [];
+    const metricsData: Array<RunMetricData> = isArrayOf(parsedMetricsData, isMetricData) ? parsedMetricsData : [];
 
     return (
         <>
