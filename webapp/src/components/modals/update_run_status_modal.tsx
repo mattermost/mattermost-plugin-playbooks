@@ -17,7 +17,7 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {TertiaryButton} from 'src/components/assets/buttons';
+import {TertiaryButton, QuaternaryButton} from 'src/components/assets/buttons';
 
 import {ApolloProvider, useQuery} from '@apollo/client';
 
@@ -270,12 +270,21 @@ const UpdateRunStatusModal = ({
                   {formatMessage({defaultMessage: 'Change since last update'})}
               </Label>
               { aiAvailable &&
-                <TertiaryButton onClick={() => {
-                  setAIModalOpen(true);
-                }}>
-                    <IconAI/>
-                    <FormattedMessage defaultMessage="Generate update with AI"/>
-                </TertiaryButton>
+                (aiModalOpen ? (
+                  <TertiaryButton onClick={() => {
+                    setAIModalOpen(true);
+                  }}>
+                      <IconAI size={14}/>
+                      <FormattedMessage defaultMessage="Generate update with AI"/>
+                  </TertiaryButton>
+                ) : (
+                  <QuaternaryButton onClick={() => {
+                    setAIModalOpen(true);
+                  }}>
+                      <IconAI size={14}/>
+                      <FormattedMessage defaultMessage="Generate update with AI"/>
+                  </QuaternaryButton>
+                ))
               }
             </LastChangeSince>
             { aiAvailable && aiModalOpen &&
@@ -289,6 +298,7 @@ const UpdateRunStatusModal = ({
             }
             <MarkdownTextbox
                 id='update_run_status_textbox'
+                minHeight='200px'
                 value={message ?? ''}
                 setValue={setMessage}
                 channelId={channelId}
@@ -347,6 +357,7 @@ const UpdateRunStatusModal = ({
                 id={ID}
                 footer={footer}
                 components={{FooterContainer}}
+                compassDesign={true}
             >
                 {hasPermission ? form : warning}
             </GenericModal>
@@ -528,6 +539,7 @@ const FooterContainer = styled.div`
     display: flex;
     flex-direction: row-reverse;
     align-items: center;
+    width: 100%;
 `;
 
 const StyledCheckboxInput = styled(CheckboxInput)`
@@ -542,6 +554,7 @@ const StyledCheckboxInput = styled(CheckboxInput)`
 
 const AiModalContainer =  styled.div`
     position: relative;
+    box-shadow: var(--elevation-6);
 `
 
 const LastChangeSince = styled.div`
@@ -553,6 +566,9 @@ const LastChangeSince = styled.div`
     >button {
         margin-top: 20px;
         height: 24px;
+        gap: 6px;
+        padding: 0 10px;
+        font-size: 12px;
     }
 `
 

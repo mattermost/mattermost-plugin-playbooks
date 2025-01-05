@@ -4,8 +4,8 @@ import Svg from 'src/components/assets/svg';
 
 const IconAI = () => (
     <Svg
-        width='15'
-        height='15'
+        width='16'
+        height='16'
         viewBox='0 0 19 19'
         fill='none'
     >

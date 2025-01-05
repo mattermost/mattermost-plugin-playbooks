@@ -108,9 +108,14 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
         <AIModalContainer>
             <TopBar>
               <Versions>
-                <i className={"icon icon-arrow-back-ios" + (currentVersion === 1 ? ' disabled' : '')} onClick={() => setCurrentVersion(currentVersion-1)}/>
+                <IconButton onClick={() => setCurrentVersion(currentVersion-1)} className={currentVersion === 1 ? 'disabled' : ''}>
+                  <i className={"icon icon-10 icon-chevron-left"}/>
+
+                  </IconButton>
                 <FormattedMessage defaultMessage="version {number} of {total}" values={{number: currentVersion, total: versions.length}}/>
-                <i className={"icon icon-arrow-forward-ios" + (currentVersion === versions.length ? ' disabled' : '')} onClick={() => setCurrentVersion(currentVersion+1)}/>
+                <IconButton onClick={() => setCurrentVersion(currentVersion+1)} className={currentVersion === versions.length ? 'disabled' : ''}>
+                  <i className={"icon icon-10 icon-chevron-right"}/>
+                </IconButton>
               </Versions>
               <BotSelector
                   bots={aiAvailableBots || []}
@@ -124,12 +129,12 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
 
             {generating &&
               <StopGeneratingButton onClick={stopGenerating}>
-                <i className="icon icon-cancel"/>
-                <FormattedMessage defaultMessage="stop generating"/>
+                <i className="icon icon-12 icon-cancel"/>
+                <FormattedMessage defaultMessage="Stop generating"/>
               </StopGeneratingButton>
             }
             {!generating &&
-              <>
+              <AIModalFooter>
                 <IconButton onClick={copyText}>
                   <i className="icon icon-content-copy"/>
                 </IconButton>
@@ -140,10 +145,10 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
                   <i className="icon icon-trash-can-outline"/>
                 </IconButton>
                 <InsertButton onClick={() => onAccept(versions[currentVersion-1].value)}>
-                  <i className="icon icon-check"/>
-                  <FormattedMessage defaultMessage="insert"/>
+                  <i className="icon icon-10 icon-check"/>
+                  <FormattedMessage defaultMessage="Accept"/>
                 </InsertButton>
-              </>
+              </AIModalFooter>
             }
             <Copied copied={copied}>
               <FormattedMessage defaultMessage="Copied!"/>
@@ -163,43 +168,71 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
 
 const IconButton = styled.span`
     display: inline-block;
-    margin: 12px 0px;
+    height: 24px;
+    width: 24px;
     border-radius: 4px;
     background: transparent;
     text-decoration: none;
     color: var(--center-channel-color-64);
     padding: 8px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    .icon {
+        font-size: 14.4px;
+    }
+
+    &:hover {
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-75);
+    }
+
+    &:active {
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-80);
+    }
+
+    &.disabled {
+        color: var(--center-channel-color-56);
+        pointer-events: none;
+        cursor: not-allowed;
+    }
 `
 
 const StopGeneratingButton = styled.button`
-    display: inline-block;
+    display: inline-flex;
     margin: 12 0px;
     border-radius: 4px;
-    padding: 8px 16px;
-    display: inline-block;
+    gap: 4px;
     margin: 12px 0px;
     border-radius: 4px;
     background: var(--center-channel-color-08);
-    padding: 8px 16px 8px 8px;
     color: var(--center-channel-color-64);
     cursor: pointer;
     text-decoration: none;
     font-weight: 600;
+    padding: 8px 12px;
+    font-size: 12px;
     text-align: center;
     border: 0px;
+
     &:hover {
       background: var(--center-channel-color-16);
     }
+
     &:active {
       background: var(--center-channel-color-24);
     }
+
     &:focus {
       outline: none;
     }
 `
 
 const AIModalContainer = styled.div`
+    box-shadow: var(--elevation-6);
     width: 480px;
     right: -2px;
     top: -10px;
@@ -208,7 +241,7 @@ const AIModalContainer = styled.div`
     background: var(--center-channel-bg);
     border: 1px solid var(--center-channel-color-16);
     border-radius: 4px;
-    padding: 10px;
+    padding: 12px;
 
     &&&& textarea {
         min-height: 220px;
@@ -226,21 +259,42 @@ const AIModalContainer = styled.div`
     }
 `;
 
+const AIModalFooter = styled.div`
+    margin: 12px 0 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+    padding-left: 8px;
+`;
+
+
 const ExtraInstructionsInput = styled.div`
     display: flex;
     width: 100%;
-    padding: 10px;
+    padding: 6px 16px;
+    min-height: 40px;
     border-radius: 4px;
     border: 1px solid var(--center-channel-color-16);
     align-items: center;
-    &:focus {
-        border: 1px solid var(--center-channel-color-24);
+    transition: border-color 0.15s ease;
+
+    &:focus-within {
+        border: 2px solid var(--button-bg);
+        padding: 5px 15px; /* Reduce padding by 1px to maintain same size with 2px border */
     }
+
     input {
+        font-size: 14px;
         border: 0px;
         width: 100%;
         margin-left: 8px;
+
+        &:focus {
+            outline: none;
+        }
     }
+
     svg {
         color: var(--center-channel-color-64);
     }
@@ -248,14 +302,15 @@ const ExtraInstructionsInput = styled.div`
 
 const InsertButton = styled.button`
     display: inline-block;
-    margin: 12px 12px 12px 0;
     border-radius: 4px;
     background: var(--button-bg-08);
-    padding: 8px 16px 8px 8px;
+    padding: 0px 10px 0 6px;
+    height: 24px;
     color: var(--button-bg);
     cursor: pointer;
     text-decoration: none;
     font-weight: 600;
+    font-size: 11px;
     text-align: center;
     border: 0;
     &:hover {
@@ -282,7 +337,8 @@ const AssistantMessageBox = styled.div`
 
 const Copied = styled.span<{copied: boolean}>`
     color: var(--center-channel-color-64);
-    margin: 12px 0px;
+    margin: 8px 0px;
+    font-size: 11px;
     transition: opacity 1s;
     opacity: ${(props) => (props.copied ? 1 : 0)};
 `
@@ -290,20 +346,20 @@ const Copied = styled.span<{copied: boolean}>`
 const TopBar = styled.div`
     display: flex;
     justify-content: space-between;
+    padding-bottom: 12px;
 `
 
 const Versions = styled.div`
     display: flex;
     align-items: center;
     color: var(--center-channel-color-75);
-    .icon {
-        cursor: pointer;
-        opacity: 0.5;
-    }
-    .icon.disabled {
-        cursor: auto;
+    font-size: 12px;
+    gap: 4px;
+    font-weight: 600;
+
+    &.disabled {
+        color: var(--center-channel-color-64);
         pointer-events: none;
-        opacity: 0.2;
     }
 `
 
