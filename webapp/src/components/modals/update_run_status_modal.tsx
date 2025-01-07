@@ -287,12 +287,13 @@ const UpdateRunStatusModal = ({
                 ))
               }
             </LastChangeSince>
-            { aiAvailable && aiModalOpen &&
+            { aiAvailable &&
               <AiModalContainer>
                 <AIModal
                   playbookRunId={playbookRunId}
                   onAccept={(text) => { setMessage(text); setAIModalOpen(false); }}
                   onClose={() => setAIModalOpen(false)}
+                  isOpen={aiModalOpen}
                 />
               </AiModalContainer>
             }

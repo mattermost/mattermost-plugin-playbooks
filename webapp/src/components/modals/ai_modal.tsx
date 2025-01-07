@@ -1,6 +1,8 @@
 import {WebSocketMessage} from '@mattermost/client';
 import React, {useEffect, useState, useCallback, useRef} from 'react';
+import ReactDOM from 'react-dom';
 import styled from 'styled-components';
+import {createGlobalStyle} from "styled-components";
 import {FormattedMessage, useIntl} from 'react-intl';
 import IconAI from 'src/components/assets/icons/ai';
 import {Textbox} from 'src/webapp_globals';
@@ -20,9 +22,10 @@ type Props = {
     playbookRunId: string
     onAccept: (text: string) => void
     onClose: () => void
+    isOpen: boolean
 }
 
-const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
+const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     const intl = useIntl();
     const [copied, setCopied] = useState(false);
     const [instruction, setInstruction] = useState('');
@@ -30,18 +33,18 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
     const aiAvailableBots = useAIAvailableBots();
     const BotSelector = useBotSelector() as any;
     const [currentBot, setCurrentBot] = useState<any>(aiAvailableBots.length > 0 ? aiAvailableBots[0] : null);
-    const [currentVersion, setCurrentVersion] = useState<number>(1);
+    const [currentVersion, setCurrentVersion] = useState<number>(0);
     const [versions, setVersions] = useState<Version[]>([]);
     const [generating, setGenerating] = useState<any>(null);
 
     useEffect(() => {
-        if (currentBot?.id) {
+        if (currentBot?.id && isOpen) {
           setCurrentVersion(versions.length + 1)
           setVersions([...versions, {instruction: '', value: '', prevValue: ''}])
           setGenerating(true);
           generateStatusUpdate(playbookRunId, currentBot.id, [], []);
         }
-    }, []);
+    }, [isOpen]);
 
     useEffect(() => {
         if (generating) {
@@ -104,6 +107,10 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
         return null
     }
 
+    if (!isOpen) {
+      return null;
+    }
+
     return (
         <AIModalContainer>
             <TopBar>
@@ -122,6 +129,10 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
                   activeBot={currentBot}
                   setActiveBot={onBotChange}
               />
+              <button type="button" className="close" aria-label="Close" onClick={onClose}>
+                <span aria-hidden="true">×</span>
+                <span className="sr-only">Close</span>
+              </button>
             </TopBar>
             <AssistantMessageBox ref={suggestionBox}>
               <Textbox value={versions[currentVersion-1]?.value || ''} preview={true}/>
@@ -140,9 +151,6 @@ const AIModal = ({playbookRunId, onAccept, onClose}: Props) => {
                 </IconButton>
                 <IconButton onClick={regenerate}>
                   <i className="icon icon-refresh"/>
-                </IconButton>
-                <IconButton onClick={onClose}>
-                  <i className="icon icon-trash-can-outline"/>
                 </IconButton>
                 <InsertButton onClick={() => onAccept(versions[currentVersion-1].value)}>
                   <i className="icon icon-10 icon-check"/>
@@ -237,7 +245,6 @@ const AIModalContainer = styled.div`
     right: -2px;
     top: -10px;
     position: absolute;
-    z-index: 1000;
     background: var(--center-channel-bg);
     border: 1px solid var(--center-channel-color-16);
     border-radius: 4px;
@@ -356,6 +363,7 @@ const Versions = styled.div`
     font-size: 12px;
     gap: 4px;
     font-weight: 600;
+    flex-grow: 1;
 
     &.disabled {
         color: var(--center-channel-color-64);
