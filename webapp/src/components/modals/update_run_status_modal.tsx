@@ -288,7 +288,7 @@ const UpdateRunStatusModal = ({
                 ))
               }
             </LastChangeSince>
-            { aiAvailable && aiAvailableBots.length > 0 &&
+            { aiAvailable &&
               <AiModalContainer>
                 <AIModal
                   playbookRunId={playbookRunId}

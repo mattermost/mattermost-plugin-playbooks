@@ -8,7 +8,7 @@ import IconAI from 'src/components/assets/icons/ai';
 import {Textbox} from 'src/webapp_globals';
 
 import {generateStatusUpdate} from 'src/client';
-import {useAIAvailableBots, useBotSelector} from 'src/ai_integration';
+import {useAIAvailableBots, useBotSelector, useBotsLoaderHook} from 'src/ai_integration';
 
 import postEventListener, {PostUpdateWebsocketMessage} from 'src/websocket';
 
@@ -30,19 +30,19 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     const [copied, setCopied] = useState(false);
     const [instruction, setInstruction] = useState('');
     const suggestionBox = useRef<HTMLDivElement>()
-    const aiAvailableBots = useAIAvailableBots();
     const BotSelector = useBotSelector() as any;
-    const [currentBot, setCurrentBot] = useState<any>(aiAvailableBots.length > 0 ? aiAvailableBots[0] : null);
+    const useBotlist = useBotsLoaderHook() as any;
+    const {bots, activeBot, setActiveBot} = useBotlist()
     const [currentVersion, setCurrentVersion] = useState<number>(0);
     const [versions, setVersions] = useState<Version[]>([]);
     const [generating, setGenerating] = useState<any>(null);
 
     useEffect(() => {
-        if (currentBot?.id && isOpen) {
+        if (activeBot?.id && isOpen) {
           setCurrentVersion(versions.length + 1)
           setVersions([...versions, {instruction: '', value: '', prevValue: ''}])
           setGenerating(true);
-          generateStatusUpdate(playbookRunId, currentBot.id, [], []);
+          generateStatusUpdate(playbookRunId, activeBot.id, [], []);
         }
     }, [isOpen]);
 
@@ -67,7 +67,7 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     }, [generating]);
 
     const onBotChange = useCallback((bot: any) => {
-      setCurrentBot(bot)
+      setActiveBot(bot)
       setCurrentVersion(versions.length + 1)
       setVersions([...versions, {instruction: '', value: '', prevValue: ''}])
       setGenerating(true);
@@ -76,10 +76,10 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
 
     const regenerate = useCallback(() => {
         setGenerating(true);
-        generateStatusUpdate(playbookRunId, currentBot?.id, [versions[currentVersion-1].instruction], [versions[currentVersion-1].prevValue]);
+        generateStatusUpdate(playbookRunId, activeBot?.id, [versions[currentVersion-1].instruction], [versions[currentVersion-1].prevValue]);
         setCurrentVersion(versions.length + 1)
         setVersions([...versions, {...versions[currentVersion-1], value: ''}])
-    }, [versions, playbookRunId, instruction, versions, currentVersion, currentBot?.id]);
+    }, [versions, playbookRunId, instruction, versions, currentVersion, activeBot?.id]);
 
     const copyText = useCallback(() => {
       navigator.clipboard.writeText(versions[currentVersion-1].value);
@@ -90,20 +90,20 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     const onInputEnter = useCallback((e: React.KeyboardEvent) => {
       // Detect hitting enter and run the generateStatusUpdate
       if (e.key === 'Enter') {
-        generateStatusUpdate(playbookRunId, currentBot?.id, [instruction], [versions[currentVersion-1].value]);
+        generateStatusUpdate(playbookRunId, activeBot?.id, [instruction], [versions[currentVersion-1].value]);
         setVersions([...versions, {instruction, prevValue: versions[currentVersion-1].value, value: ''}])
         setCurrentVersion(versions.length + 1)
         setInstruction('')
         setGenerating(true);
         setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
       }
-    }, [versions, instruction, playbookRunId, versions, currentVersion, currentBot?.id])
+    }, [versions, instruction, playbookRunId, versions, currentVersion, activeBot?.id])
 
     const stopGenerating = useCallback(() => {
         setGenerating(false);
     }, [])
 
-    if (!currentBot?.id) {
+    if (!activeBot?.id) {
         return null
     }
 
@@ -125,8 +125,8 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
                 </IconButton>
               </Versions>
               <BotSelector
-                  bots={aiAvailableBots || []}
-                  activeBot={currentBot}
+                  bots={bots || []}
+                  activeBot={activeBot}
                   setActiveBot={onBotChange}
               />
               <button type="button" className="close" aria-label="Close" onClick={onClose}>

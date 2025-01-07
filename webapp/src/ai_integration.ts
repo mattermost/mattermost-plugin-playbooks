@@ -34,3 +34,10 @@ export const useBotSelector = () => {
     });
 };
 
+export const useBotsLoaderHook = () => {
+    return useSelector<GlobalState, any[]>((state) => {
+        //@ts-ignore plugins state is a thing
+        return state['plugins-' + aiPluginID]?.botsLoaderHook || (() => null);
+    });
+};
+
