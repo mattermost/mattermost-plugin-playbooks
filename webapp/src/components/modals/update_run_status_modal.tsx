@@ -25,7 +25,7 @@ import GenericModal, {Description, Label} from 'src/components/widgets/generic_m
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 import IconAI from 'src/components/assets/icons/ai';
 import AIModal from 'src/components/modals/ai_modal';
-import {useAIAvailable} from 'src/ai_integration';
+import {useAIAvailable, useAIAvailableBots} from 'src/ai_integration';
 
 import {
     Mode,
@@ -109,6 +109,7 @@ const UpdateRunStatusModal = ({
     const currentUserId = useSelector(getCurrentUserId);
     const [aiModalOpen, setAIModalOpen] = useState(false);
     const aiAvailable = useAIAvailable();
+    const aiAvailableBots = useAIAvailableBots();
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
@@ -269,7 +270,7 @@ const UpdateRunStatusModal = ({
               <Label>
                   {formatMessage({defaultMessage: 'Change since last update'})}
               </Label>
-              { aiAvailable &&
+              { aiAvailable && aiAvailableBots.length > 0 &&
                 (aiModalOpen ? (
                   <TertiaryButton onClick={() => {
                     setAIModalOpen(true);
@@ -287,7 +288,7 @@ const UpdateRunStatusModal = ({
                 ))
               }
             </LastChangeSince>
-            { aiAvailable &&
+            { aiAvailable && aiAvailableBots.length > 0 &&
               <AiModalContainer>
                 <AIModal
                   playbookRunId={playbookRunId}

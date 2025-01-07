@@ -23,7 +23,7 @@ export const useAIStatusUpdateClicked = () => {
 export const useAIAvailableBots = () => {
     return useSelector<GlobalState, any[]>((state) => {
         //@ts-ignore plugins state is a thing
-        return state['plugins-' + aiPluginID]?.bots;
+        return state['plugins-' + aiPluginID]?.bots || [];
     });
 };
 

@@ -245,6 +245,7 @@ const AIModalContainer = styled.div`
     right: -2px;
     top: -10px;
     position: absolute;
+    z-index: 1000;
     background: var(--center-channel-bg);
     border: 1px solid var(--center-channel-color-16);
     border-radius: 4px;
