@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import {createGlobalStyle} from "styled-components";
 import {FormattedMessage, useIntl} from 'react-intl';
 import IconAI from 'src/components/assets/icons/ai';
+import GenericModal from 'src/components/widgets/generic_modal';
 import {Textbox} from 'src/webapp_globals';
 
 import {generateStatusUpdate} from 'src/client';
@@ -112,65 +113,68 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     }
 
     return (
-        <AIModalContainer>
-            <TopBar>
-              <Versions>
-                <IconButton onClick={() => setCurrentVersion(currentVersion-1)} className={currentVersion === 1 ? 'disabled' : ''}>
-                  <i className={"icon icon-10 icon-chevron-left"}/>
+        <GenericModal
+            show={isOpen}
+            onHide={onClose}
+            id={'generateStatusUpdate'}
+            compassDesign={true}
+        >
+          <AIModalContainer>
+              <TopBar>
+                <Versions>
+                  <IconButton onClick={() => setCurrentVersion(currentVersion-1)} className={currentVersion === 1 ? 'disabled' : ''}>
+                    <i className={"icon icon-10 icon-chevron-left"}/>
 
+                    </IconButton>
+                  <FormattedMessage defaultMessage="version {number} of {total}" values={{number: currentVersion, total: versions.length}}/>
+                  <IconButton onClick={() => setCurrentVersion(currentVersion+1)} className={currentVersion === versions.length ? 'disabled' : ''}>
+                    <i className={"icon icon-10 icon-chevron-right"}/>
                   </IconButton>
-                <FormattedMessage defaultMessage="version {number} of {total}" values={{number: currentVersion, total: versions.length}}/>
-                <IconButton onClick={() => setCurrentVersion(currentVersion+1)} className={currentVersion === versions.length ? 'disabled' : ''}>
-                  <i className={"icon icon-10 icon-chevron-right"}/>
-                </IconButton>
-              </Versions>
-              <BotSelector
-                  bots={bots || []}
-                  activeBot={activeBot}
-                  setActiveBot={onBotChange}
-              />
-              <button type="button" className="close" aria-label="Close" onClick={onClose}>
-                <span aria-hidden="true">×</span>
-                <span className="sr-only">Close</span>
-              </button>
-            </TopBar>
-            <AssistantMessageBox ref={suggestionBox}>
-              <Textbox value={versions[currentVersion-1]?.value || ''} preview={true}/>
-            </AssistantMessageBox>
+                </Versions>
+                <BotSelector
+                    bots={bots || []}
+                    activeBot={activeBot}
+                    setActiveBot={onBotChange}
+                />
+              </TopBar>
+              <AssistantMessageBox ref={suggestionBox}>
+                <Textbox value={versions[currentVersion-1]?.value || ''} preview={true}/>
+              </AssistantMessageBox>
 
-            {generating &&
-              <StopGeneratingButton onClick={stopGenerating}>
-                <i className="icon icon-12 icon-cancel"/>
-                <FormattedMessage defaultMessage="Stop generating"/>
-              </StopGeneratingButton>
-            }
-            {!generating &&
-              <AIModalFooter>
-                <IconButton onClick={copyText}>
-                  <i className="icon icon-content-copy"/>
-                </IconButton>
-                <IconButton onClick={regenerate}>
-                  <i className="icon icon-refresh"/>
-                </IconButton>
-                <InsertButton onClick={() => onAccept(versions[currentVersion-1].value)}>
-                  <i className="icon icon-10 icon-check"/>
-                  <FormattedMessage defaultMessage="Accept"/>
-                </InsertButton>
-              </AIModalFooter>
-            }
-            <Copied copied={copied}>
-              <FormattedMessage defaultMessage="Copied!"/>
-            </Copied>
-            <ExtraInstructionsInput>
-              <IconAI/>
-              <input
-                placeholder={intl.formatMessage({defaultMessage: "What would you like AI to do next?"})}
-                onChange={(e) => setInstruction(e.target.value)}
-                value={instruction}
-                onKeyUp={onInputEnter}
-              />
-            </ExtraInstructionsInput>
-        </AIModalContainer>
+              {generating &&
+                <StopGeneratingButton onClick={stopGenerating}>
+                  <i className="icon icon-12 icon-cancel"/>
+                  <FormattedMessage defaultMessage="Stop generating"/>
+                </StopGeneratingButton>
+              }
+              {!generating &&
+                <AIModalFooter>
+                  <IconButton onClick={copyText}>
+                    <i className="icon icon-content-copy"/>
+                  </IconButton>
+                  <IconButton onClick={regenerate}>
+                    <i className="icon icon-refresh"/>
+                  </IconButton>
+                  <InsertButton onClick={() => onAccept(versions[currentVersion-1].value)}>
+                    <i className="icon icon-10 icon-check"/>
+                    <FormattedMessage defaultMessage="Accept"/>
+                  </InsertButton>
+                </AIModalFooter>
+              }
+              <Copied copied={copied}>
+                <FormattedMessage defaultMessage="Copied!"/>
+              </Copied>
+              <ExtraInstructionsInput>
+                <IconAI/>
+                <input
+                  placeholder={intl.formatMessage({defaultMessage: "What would you like AI to do next?"})}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  value={instruction}
+                  onKeyUp={onInputEnter}
+                />
+              </ExtraInstructionsInput>
+          </AIModalContainer>
+        </GenericModal>
     );
 };
 
@@ -240,20 +244,12 @@ const StopGeneratingButton = styled.button`
 `
 
 const AIModalContainer = styled.div`
-    box-shadow: var(--elevation-6);
-    width: 480px;
-    right: -2px;
-    top: -10px;
-    position: absolute;
-    z-index: 1000;
-    background: var(--center-channel-bg);
-    border: 1px solid var(--center-channel-color-16);
-    border-radius: 4px;
-    padding: 12px;
+    position: relative;
+    top: -57px;
 
     &&&& textarea {
-        min-height: 220px;
-        max-height: 220px;
+        min-height: 250px;
+        max-height: 250px;
         border: 0;
         outline: 0;
         box-shadow: none;
@@ -355,6 +351,7 @@ const TopBar = styled.div`
     display: flex;
     justify-content: space-between;
     padding-bottom: 12px;
+    margin-right: 24px;
 `
 
 const Versions = styled.div`
