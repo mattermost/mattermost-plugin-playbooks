@@ -1,22 +1,22 @@
-import {WebSocketMessage} from '@mattermost/client';
-import React, {useEffect, useState, useCallback, useRef} from 'react';
+import { WebSocketMessage } from '@mattermost/client';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
-import {createGlobalStyle} from "styled-components";
-import {FormattedMessage, useIntl} from 'react-intl';
+import { createGlobalStyle } from "styled-components";
+import { FormattedMessage, useIntl } from 'react-intl';
 import IconAI from 'src/components/assets/icons/ai';
 import GenericModal from 'src/components/widgets/generic_modal';
-import {Textbox} from 'src/webapp_globals';
+import { Textbox } from 'src/webapp_globals';
 
-import {generateStatusUpdate} from 'src/client';
-import {useAIAvailableBots, useBotSelector, useBotsLoaderHook} from 'src/ai_integration';
+import { generateStatusUpdate } from 'src/client';
+import { useAIAvailableBots, useBotSelector, useBotsLoaderHook } from 'src/ai_integration';
 
-import postEventListener, {PostUpdateWebsocketMessage} from 'src/websocket';
+import postEventListener, { PostUpdateWebsocketMessage } from 'src/websocket';
 
 type Version = {
-  instruction: string
-  prevValue: string
-  value: string
+    instruction: string
+    prevValue: string
+    value: string
 }
 
 type Props = {
@@ -26,40 +26,58 @@ type Props = {
     isOpen: boolean
 }
 
-const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
+const StyledAIModal = styled(GenericModal)`
+    &&& {
+
+        .modal-content {
+            width: 90%;
+            margin-left: 5%;
+        }
+
+        .modal-body {
+            padding: 0 24px;
+        }
+
+        .modal-header .close {
+            z-index: 5;
+        }
+    }
+`;
+
+const AIModal = ({ playbookRunId, onAccept, onClose, isOpen }: Props) => {
     const intl = useIntl();
     const [copied, setCopied] = useState(false);
     const [instruction, setInstruction] = useState('');
     const suggestionBox = useRef<HTMLDivElement>()
     const BotSelector = useBotSelector() as any;
     const useBotlist = useBotsLoaderHook() as any;
-    const {bots, activeBot, setActiveBot} = useBotlist()
+    const { bots, activeBot, setActiveBot } = useBotlist()
     const [currentVersion, setCurrentVersion] = useState<number>(0);
     const [versions, setVersions] = useState<Version[]>([]);
     const [generating, setGenerating] = useState<any>(null);
 
     useEffect(() => {
         if (activeBot?.id && isOpen) {
-          setCurrentVersion(versions.length + 1)
-          setVersions([...versions, {instruction: '', value: '', prevValue: ''}])
-          setGenerating(true);
-          generateStatusUpdate(playbookRunId, activeBot.id, [], []);
+            setCurrentVersion(versions.length + 1)
+            setVersions([...versions, { instruction: '', value: '', prevValue: '' }])
+            setGenerating(true);
+            generateStatusUpdate(playbookRunId, activeBot.id, [], []);
         }
     }, [isOpen]);
 
     useEffect(() => {
         if (generating) {
             postEventListener.registerPostUpdateListener('playbooks_post_update', (msg: WebSocketMessage<PostUpdateWebsocketMessage>) => {
-              const data = msg.data;
-              if (!data.control) {
-                setGenerating(true);
-                const newVersions = [...versions]
-                newVersions[versions.length-1] = {...newVersions[versions.length-1], value: data.next}
-                setVersions(newVersions)
-                setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
-              } else if (data.control === 'end') {
-                setGenerating(false);
-              }
+                const data = msg.data;
+                if (!data.control) {
+                    setGenerating(true);
+                    const newVersions = [...versions]
+                    newVersions[versions.length - 1] = { ...newVersions[versions.length - 1], value: data.next }
+                    setVersions(newVersions)
+                    setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
+                } else if (data.control === 'end') {
+                    setGenerating(false);
+                }
             });
         }
         return () => {
@@ -68,36 +86,36 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     }, [generating]);
 
     const onBotChange = useCallback((bot: any) => {
-      setActiveBot(bot)
-      setCurrentVersion(versions.length + 1)
-      setVersions([...versions, {instruction: '', value: '', prevValue: ''}])
-      setGenerating(true);
-      generateStatusUpdate(playbookRunId, bot.id, [], []);
+        setActiveBot(bot)
+        setCurrentVersion(versions.length + 1)
+        setVersions([...versions, { instruction: '', value: '', prevValue: '' }])
+        setGenerating(true);
+        generateStatusUpdate(playbookRunId, bot.id, [], []);
     }, [versions, playbookRunId])
 
     const regenerate = useCallback(() => {
         setGenerating(true);
-        generateStatusUpdate(playbookRunId, activeBot?.id, [versions[currentVersion-1].instruction], [versions[currentVersion-1].prevValue]);
+        generateStatusUpdate(playbookRunId, activeBot?.id, [versions[currentVersion - 1].instruction], [versions[currentVersion - 1].prevValue]);
         setCurrentVersion(versions.length + 1)
-        setVersions([...versions, {...versions[currentVersion-1], value: ''}])
+        setVersions([...versions, { ...versions[currentVersion - 1], value: '' }])
     }, [versions, playbookRunId, instruction, versions, currentVersion, activeBot?.id]);
 
     const copyText = useCallback(() => {
-      navigator.clipboard.writeText(versions[currentVersion-1].value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1000);
+        navigator.clipboard.writeText(versions[currentVersion - 1].value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1000);
     }, [versions, currentVersion])
 
     const onInputEnter = useCallback((e: React.KeyboardEvent) => {
-      // Detect hitting enter and run the generateStatusUpdate
-      if (e.key === 'Enter') {
-        generateStatusUpdate(playbookRunId, activeBot?.id, [instruction], [versions[currentVersion-1].value]);
-        setVersions([...versions, {instruction, prevValue: versions[currentVersion-1].value, value: ''}])
-        setCurrentVersion(versions.length + 1)
-        setInstruction('')
-        setGenerating(true);
-        setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
-      }
+        // Detect hitting enter and run the generateStatusUpdate
+        if (e.key === 'Enter') {
+            generateStatusUpdate(playbookRunId, activeBot?.id, [instruction], [versions[currentVersion - 1].value]);
+            setVersions([...versions, { instruction, prevValue: versions[currentVersion - 1].value, value: '' }])
+            setCurrentVersion(versions.length + 1)
+            setInstruction('')
+            setGenerating(true);
+            setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0)
+        }
     }, [versions, instruction, playbookRunId, versions, currentVersion, activeBot?.id])
 
     const stopGenerating = useCallback(() => {
@@ -109,72 +127,71 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     }
 
     if (!isOpen) {
-      return null;
+        return null;
     }
 
     return (
-        <GenericModal
+        <StyledAIModal
             show={isOpen}
             onHide={onClose}
             id={'generateStatusUpdate'}
             compassDesign={true}
         >
-          <AIModalContainer>
-              <TopBar>
-                <Versions>
-                  <IconButton onClick={() => setCurrentVersion(currentVersion-1)} className={currentVersion === 1 ? 'disabled' : ''}>
-                    <i className={"icon icon-10 icon-chevron-left"}/>
+            <AIModalContainer>
+                <TopBar>
+                    <Versions>
+                        <IconButton onClick={() => setCurrentVersion(currentVersion - 1)} className={currentVersion === 1 ? 'disabled' : ''}>
+                            <i className={'icon icon-10 icon-chevron-left'} />
+                        </IconButton>
+                        <FormattedMessage defaultMessage='version {number} of {total}' values={{ number: currentVersion, total: versions.length }} />
+                        <IconButton onClick={() => setCurrentVersion(currentVersion + 1)} className={currentVersion === versions.length ? 'disabled' : ''}>
+                            <i className={'icon icon-10 icon-chevron-right'} />
+                        </IconButton>
+                    </Versions>
+                    <BotSelector
+                        bots={bots || []}
+                        activeBot={activeBot}
+                        setActiveBot={onBotChange}
+                    />
+                </TopBar>
+                <AssistantMessageBox ref={suggestionBox}>
+                    <Textbox value={versions[currentVersion - 1]?.value || ''} preview={true} />
+                </AssistantMessageBox>
 
-                    </IconButton>
-                  <FormattedMessage defaultMessage="version {number} of {total}" values={{number: currentVersion, total: versions.length}}/>
-                  <IconButton onClick={() => setCurrentVersion(currentVersion+1)} className={currentVersion === versions.length ? 'disabled' : ''}>
-                    <i className={"icon icon-10 icon-chevron-right"}/>
-                  </IconButton>
-                </Versions>
-                <BotSelector
-                    bots={bots || []}
-                    activeBot={activeBot}
-                    setActiveBot={onBotChange}
-                />
-              </TopBar>
-              <AssistantMessageBox ref={suggestionBox}>
-                <Textbox value={versions[currentVersion-1]?.value || ''} preview={true}/>
-              </AssistantMessageBox>
-
-              {generating &&
-                <StopGeneratingButton onClick={stopGenerating}>
-                  <i className="icon icon-12 icon-cancel"/>
-                  <FormattedMessage defaultMessage="Stop generating"/>
-                </StopGeneratingButton>
-              }
-              {!generating &&
-                <AIModalFooter>
-                  <IconButton onClick={copyText}>
-                    <i className="icon icon-content-copy"/>
-                  </IconButton>
-                  <IconButton onClick={regenerate}>
-                    <i className="icon icon-refresh"/>
-                  </IconButton>
-                  <InsertButton onClick={() => onAccept(versions[currentVersion-1].value)}>
-                    <i className="icon icon-10 icon-check"/>
-                    <FormattedMessage defaultMessage="Accept"/>
-                  </InsertButton>
-                </AIModalFooter>
-              }
-              <Copied copied={copied}>
-                <FormattedMessage defaultMessage="Copied!"/>
-              </Copied>
-              <ExtraInstructionsInput>
-                <IconAI/>
-                <input
-                  placeholder={intl.formatMessage({defaultMessage: "What would you like AI to do next?"})}
-                  onChange={(e) => setInstruction(e.target.value)}
-                  value={instruction}
-                  onKeyUp={onInputEnter}
-                />
-              </ExtraInstructionsInput>
-          </AIModalContainer>
-        </GenericModal>
+                {generating &&
+                    <StopGeneratingButton onClick={stopGenerating}>
+                        <i className='icon icon-12 icon-cancel' />
+                        <FormattedMessage defaultMessage='Stop generating' />
+                    </StopGeneratingButton>
+                }
+                {!generating &&
+                    <AIModalFooter>
+                        <IconButton onClick={copyText}>
+                            <i className='icon icon-content-copy' />
+                        </IconButton>
+                        <IconButton onClick={regenerate}>
+                            <i className='icon icon-refresh' />
+                        </IconButton>
+                        <InsertButton onClick={() => onAccept(versions[currentVersion - 1].value)}>
+                            <i className='icon icon-10 icon-check'/>
+                            <FormattedMessage defaultMessage='Accept'/>
+                        </InsertButton>
+                        <Copied copied={copied}>
+                            <FormattedMessage defaultMessage='Copied!'/>
+                        </Copied>
+                    </AIModalFooter>
+                }
+                <ExtraInstructionsInput>
+                    <IconAI />
+                    <input
+                        placeholder={intl.formatMessage({ defaultMessage: 'What would you like AI to do next?' })}
+                        onChange={(e) => setInstruction(e.target.value)}
+                        value={instruction}
+                        onKeyUp={onInputEnter}
+                    />
+                </ExtraInstructionsInput>
+            </AIModalContainer>
+        </StyledAIModal>
     );
 };
 
@@ -202,8 +219,8 @@ const IconButton = styled.span`
     }
 
     &:active {
-        background: var(--center-channel-color-08);
-        color: var(--center-channel-color-80);
+        color: rgba(var(--button-bg-rgb));
+        background: rgba(var(--button-bg-rgb), 0.16);
     }
 
     &.disabled {
@@ -215,37 +232,39 @@ const IconButton = styled.span`
 
 const StopGeneratingButton = styled.button`
     display: inline-flex;
-    margin: 12 0px;
-    border-radius: 4px;
+    margin: 12px 0;
+    align-items: center;
     gap: 4px;
-    margin: 12px 0px;
     border-radius: 4px;
-    background: var(--center-channel-color-08);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    padding: 0px 10px 0 6px;
+    height: 24px;
     color: var(--center-channel-color-64);
     cursor: pointer;
     text-decoration: none;
     font-weight: 600;
-    padding: 8px 12px;
-    font-size: 12px;
+    font-size: 11px;
     text-align: center;
-    border: 0px;
+    border: 0;
 
     &:hover {
-      background: var(--center-channel-color-16);
+        background: rgba(var(--center-channel-color-rgb), 0.12);
+        color: var(--center-channel-color-75);
     }
 
     &:active {
-      background: var(--center-channel-color-24);
+        background: rgba(var(--center-channel-color-rgb), 0.16);
     }
 
     &:focus {
-      outline: none;
+        outline: none;
     }
-`
+`;
 
 const AIModalContainer = styled.div`
     position: relative;
-    top: -57px;
+    margin-top: -56px;
+    padding-bottom: 24px;
 
     &&&& textarea {
         min-height: 250px;
@@ -264,12 +283,11 @@ const AIModalContainer = styled.div`
 `;
 
 const AIModalFooter = styled.div`
-    margin: 12px 0 0;
+    margin: 12px 0;
     display: flex;
     justify-content: flex-start;
     align-items: center;
     gap: 4px;
-    padding-left: 8px;
 `;
 
 
@@ -339,9 +357,10 @@ const AssistantMessageBox = styled.div`
     }
 `
 
-const Copied = styled.span<{copied: boolean}>`
-    color: var(--center-channel-color-64);
-    margin: 8px 0px;
+const Copied = styled.span<{ copied: boolean }>`
+    color: var(--online-indicator);
+    font-weight: 600;
+    margin: 0 4px;
     font-size: 11px;
     transition: opacity 1s;
     opacity: ${(props) => (props.copied ? 1 : 0)};

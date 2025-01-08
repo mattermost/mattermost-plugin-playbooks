@@ -2,10 +2,14 @@ import React from 'react';
 
 import Svg from 'src/components/assets/svg';
 
-const IconAI = () => (
+interface Props {
+    size?: number;
+}
+
+const IconAI = ({size = 16}: Props) => (
     <Svg
-        width='16'
-        height='16'
+        width={size}
+        height={size}
         viewBox='0 0 19 19'
         fill='none'
     >
@@ -28,4 +32,3 @@ const IconAI = () => (
 );
 
 export default IconAI;
-
