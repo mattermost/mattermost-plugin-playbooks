@@ -26,5 +26,5 @@ class PostEventListener {
     };
 }
 
-const postEventListener = new PostEventListener()
+const postEventListener = new PostEventListener();
 export default postEventListener;

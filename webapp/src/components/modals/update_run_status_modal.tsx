@@ -17,9 +17,9 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {TertiaryButton, QuaternaryButton} from 'src/components/assets/buttons';
-
 import {ApolloProvider, useQuery} from '@apollo/client';
+
+import {QuaternaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
@@ -267,36 +267,43 @@ const UpdateRunStatusModal = ({
         <FormContainer>
             <Description data-testid='update_run_status_description'>{description()}</Description>
             <LastChangeSince disabled={aiModalOpen}>
-              <Label>
-                  {formatMessage({defaultMessage: 'Change since last update'})}
-              </Label>
-              { aiAvailable && aiAvailableBots.length > 0 &&
+                <Label>
+                    {formatMessage({defaultMessage: 'Change since last update'})}
+                </Label>
+                { aiAvailable && aiAvailableBots.length > 0 &&
                 (aiModalOpen ? (
-                  <TertiaryButton onClick={() => {
-                    setAIModalOpen(true);
-                  }}>
-                      <IconAI size={14}/>
-                      <FormattedMessage defaultMessage="Generate update with AI"/>
-                  </TertiaryButton>
+                    <TertiaryButton
+                        onClick={() => {
+                            setAIModalOpen(true);
+                        }}
+                    >
+                        <IconAI size={14}/>
+                        <FormattedMessage defaultMessage='Generate update with AI'/>
+                    </TertiaryButton>
                 ) : (
-                  <QuaternaryButton onClick={() => {
-                    setAIModalOpen(true);
-                  }}>
-                      <IconAI size={14}/>
-                      <FormattedMessage defaultMessage="Generate update with AI"/>
-                  </QuaternaryButton>
+                    <QuaternaryButton
+                        onClick={() => {
+                            setAIModalOpen(true);
+                        }}
+                    >
+                        <IconAI size={14}/>
+                        <FormattedMessage defaultMessage='Generate update with AI'/>
+                    </QuaternaryButton>
                 ))
-              }
+                }
             </LastChangeSince>
             { aiAvailable &&
-              <AiModalContainer>
+            <AiModalContainer>
                 <AIModal
-                  playbookRunId={playbookRunId}
-                  onAccept={(text) => { setMessage(text); setAIModalOpen(false); }}
-                  onClose={() => setAIModalOpen(false)}
-                  isOpen={aiModalOpen}
+                    playbookRunId={playbookRunId}
+                    onAccept={(text) => {
+                        setMessage(text);
+                        setAIModalOpen(false);
+                    }}
+                    onClose={() => setAIModalOpen(false)}
+                    isOpen={aiModalOpen}
                 />
-              </AiModalContainer>
+            </AiModalContainer>
             }
             <MarkdownTextbox
                 id='update_run_status_textbox'
@@ -554,10 +561,10 @@ const StyledCheckboxInput = styled(CheckboxInput)`
     }
 `;
 
-const AiModalContainer =  styled.div`
+const AiModalContainer = styled.div`
     position: relative;
     box-shadow: var(--elevation-6);
-`
+`;
 
 const LastChangeSince = styled.div`
     display: flex;
@@ -572,7 +579,7 @@ const LastChangeSince = styled.div`
         padding: 0 10px;
         font-size: 12px;
     }
-`
+`;
 
 const ApolloWrappedModal = (props: Props) => {
     const client = getPlaybooksGraphQLClient();

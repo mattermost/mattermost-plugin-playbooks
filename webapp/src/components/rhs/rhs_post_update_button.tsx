@@ -7,8 +7,6 @@ import styled, {css} from 'styled-components';
 
 import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
-import IconAI from 'src/components/assets/icons/ai';
-import Tooltip from 'src/components/widgets/tooltip';
 import {useAIAvailable} from 'src/ai_integration';
 
 interface Props {
@@ -21,9 +19,6 @@ interface Props {
 }
 
 const RHSPostUpdateButton = (props: Props) => {
-    const {formatMessage} = useIntl();
-    const aiAvailable = useAIAvailable();
-
     let ButtonComponent = PostUpdatePrimaryButton;
 
     if (props.isDue) {
@@ -54,11 +49,6 @@ const ButtonsContainer = styled.div`
 	display: flex;
 	flex-direction: row;
 	gap: 2px;
-`;
-
-const AIButtonContainer = styled.div`
-	display: flex;
-	flex-grow: 0;
 `;
 
 const PostUpdateButtonCommon = css<CollapsedProps>`

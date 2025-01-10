@@ -19,7 +19,6 @@ import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/com
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 
 import {useNow} from 'src/hooks';
-import {useAIStatusUpdateClicked} from 'src/ai_integration';
 
 interface Props {
     collapsed: boolean;

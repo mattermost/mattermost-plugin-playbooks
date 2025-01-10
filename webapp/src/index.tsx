@@ -49,12 +49,12 @@ import {
     handleWebsocketUserRemoved,
 } from 'src/websocket_events';
 import {
+    WEBSOCKET_MATTERMOST_AI_POSTUPDATE,
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_RESTORED,
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
-    WEBSOCKET_MATTERMOST_AI_POSTUPDATE,
 } from 'src/types/websocket_events';
 import {
     fetchGlobalSettings,
