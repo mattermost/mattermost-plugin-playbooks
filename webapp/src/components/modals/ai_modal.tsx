@@ -1,8 +1,5 @@
 import {WebSocketMessage} from '@mattermost/client';
 
-// Timeout Constants
-const COPY_FEEDBACK_TIMEOUT_MS = 1000;
-const SCROLL_TO_BOTTOM_TIMEOUT_MS = 0;
 import React, {
     useCallback,
     useEffect,
@@ -22,6 +19,9 @@ import {useBotSelector, useBotsLoaderHook} from 'src/ai_integration';
 import {Bot} from 'src/types/ai';
 
 import postEventListener, {PostUpdateWebsocketMessage} from 'src/websocket';
+
+const COPY_FEEDBACK_TIMEOUT_MS = 1000;
+const SCROLL_TO_BOTTOM_TIMEOUT_MS = 0;
 
 type Version = {
     instruction: string
