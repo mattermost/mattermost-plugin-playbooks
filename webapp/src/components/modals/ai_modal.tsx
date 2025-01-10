@@ -149,6 +149,8 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
                         <IconButton
                             onClick={() => setCurrentVersion(currentVersion - 1)}
                             className={currentVersion === 1 ? 'disabled' : ''}
+                            aria-label={intl.formatMessage({defaultMessage: 'Go to previous version'})}
+                            aria-disabled={currentVersion === 1}
                         >
                             <i className={'icon icon-10 icon-chevron-left'}/>
                         </IconButton>
@@ -159,6 +161,8 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
                         <IconButton
                             onClick={() => setCurrentVersion(currentVersion + 1)}
                             className={currentVersion === versions.length ? 'disabled' : ''}
+                            aria-label={intl.formatMessage({defaultMessage: 'Go to next version'})}
+                            aria-disabled={currentVersion === versions.length}
                         >
                             <i className={'icon icon-10 icon-chevron-right'}/>
                         </IconButton>
