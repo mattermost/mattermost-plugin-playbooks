@@ -1,4 +1,8 @@
 import {WebSocketMessage} from '@mattermost/client';
+
+// Timeout Constants
+const COPY_FEEDBACK_TIMEOUT_MS = 1000;
+const SCROLL_TO_BOTTOM_TIMEOUT_MS = 0;
 import React, {
     useCallback,
     useEffect,
@@ -80,7 +84,7 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
                     const newVersions = [...versions];
                     newVersions[versions.length - 1] = {...newVersions[versions.length - 1], value: data.next};
                     setVersions(newVersions);
-                    setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0);
+                    setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), SCROLL_TO_BOTTOM_TIMEOUT_MS);
                 } else if (data.control === 'end') {
                     setGenerating(false);
                 }
@@ -109,7 +113,7 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     const copyText = useCallback(() => {
         navigator.clipboard.writeText(versions[currentVersion - 1].value);
         setCopied(true);
-        setTimeout(() => setCopied(false), 1000);
+        setTimeout(() => setCopied(false), COPY_FEEDBACK_TIMEOUT_MS);
     }, [versions, currentVersion]);
 
     const onInputEnter = useCallback((e: React.KeyboardEvent) => {
@@ -120,7 +124,7 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
             setCurrentVersion(versions.length + 1);
             setInstruction('');
             setGenerating(true);
-            setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), 0);
+            setTimeout(() => suggestionBox.current?.scrollTo(0, suggestionBox.current?.scrollHeight), SCROLL_TO_BOTTOM_TIMEOUT_MS);
         }
     }, [versions, instruction, playbookRunId, versions, currentVersion, activeBot?.id]);
 
