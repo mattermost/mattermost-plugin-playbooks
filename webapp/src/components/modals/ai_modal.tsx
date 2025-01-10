@@ -52,7 +52,7 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     const intl = useIntl();
     const [copied, setCopied] = useState(false);
     const [instruction, setInstruction] = useState('');
-    const suggestionBox = useRef<HTMLDivElement>();
+    const suggestionBox = useRef<HTMLDivElement|null>(null);
     const BotSelector = useBotSelector() as any;
     const useBotlist = useBotsLoaderHook() as any;
     const {bots, activeBot, setActiveBot} = useBotlist();

@@ -566,9 +566,11 @@ const AiModalContainer = styled.div`
     box-shadow: var(--elevation-6);
 `;
 
-const LastChangeSince = styled.div`
+const LastChangeSince = styled.div<{disabled: boolean}>`
     display: flex;
     justify-content: space-between;
+    pointer-events: ${props => props.disabled ? 'none' : 'auto'};
+
     >div {
         margin: 24px 0 8px 0;
     }
