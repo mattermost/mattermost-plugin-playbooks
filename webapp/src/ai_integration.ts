@@ -11,8 +11,6 @@ export const useAIAvailable = () => {
     return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.[aiPluginID]));
 };
 
-export type AIStatusUpdateClickedFunc = ((playbookRunId: string) => string) | undefined;
-
 export const useAIAvailableBots = () => {
     return useSelector<GlobalState, any[]>((state) => {
         //@ts-ignore plugins state is a thing
