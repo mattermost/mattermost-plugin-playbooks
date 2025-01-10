@@ -51,6 +51,7 @@ const StyledAIModal = styled(GenericModal)`
 `;
 
 const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
+    const modalRef = useRef<HTMLDivElement>(null);
     const intl = useIntl();
     const [copied, setCopied] = useState(false);
     const [instruction, setInstruction] = useState('');
@@ -142,8 +143,14 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
             onHide={onClose}
             id={'generateStatusUpdate'}
             compassDesign={true}
+            role="dialog"
+            aria-labelledby="ai-modal-title"
+            aria-modal={true}
         >
-            <AIModalContainer>
+            <AIModalContainer ref={modalRef}>
+                <h1 id="ai-modal-title" className="sr-only">
+                    <FormattedMessage defaultMessage="AI Status Update Generator"/>
+                </h1>
                 <TopBar>
                     <Versions>
                         <IconButton
@@ -177,6 +184,9 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
                     <Textbox
                         value={versions[currentVersion - 1]?.value || ''}
                         preview={true}
+                        aria-label={intl.formatMessage({defaultMessage: 'Generated status update content'})}
+                        role="textbox"
+                        aria-readonly="true"
                     />
                 </AssistantMessageBox>
 
@@ -188,13 +198,22 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
                 }
                 {!generating &&
                     <AIModalFooter>
-                        <IconButton onClick={copyText}>
+                        <IconButton 
+                            onClick={copyText}
+                            aria-label={intl.formatMessage({defaultMessage: 'Copy to clipboard'})}
+                        >
                             <i className='icon icon-content-copy'/>
                         </IconButton>
-                        <IconButton onClick={regenerate}>
+                        <IconButton 
+                            onClick={regenerate}
+                            aria-label={intl.formatMessage({defaultMessage: 'Regenerate content'})}
+                        >
                             <i className='icon icon-refresh'/>
                         </IconButton>
-                        <InsertButton onClick={() => onAccept(versions[currentVersion - 1].value)}>
+                        <InsertButton 
+                            onClick={() => onAccept(versions[currentVersion - 1].value)}
+                            aria-label={intl.formatMessage({defaultMessage: 'Accept and insert generated content'})}
+                        >
                             <i className='icon icon-10 icon-check'/>
                             <FormattedMessage defaultMessage='Accept'/>
                         </InsertButton>
@@ -210,6 +229,8 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
                         onChange={(e) => setInstruction(e.target.value)}
                         value={instruction}
                         onKeyUp={onInputEnter}
+                        aria-label={intl.formatMessage({defaultMessage: 'Additional instructions for AI'})}
+                        role="textbox"
                     />
                 </ExtraInstructionsInput>
             </AIModalContainer>
@@ -252,7 +273,10 @@ const IconButton = styled.span`
     }
 `;
 
-const StopGeneratingButton = styled.button`
+const StopGeneratingButton = styled.button.attrs({
+    'aria-label': 'Stop generating content',
+    type: 'button',
+})`
     display: inline-flex;
     margin: 12px 0;
     align-items: center;
@@ -343,7 +367,9 @@ const ExtraInstructionsInput = styled.div`
     }
 `;
 
-const InsertButton = styled.button`
+const InsertButton = styled.button.attrs({
+    type: 'button',
+})`
     display: inline-block;
     border-radius: 4px;
     background: var(--button-bg-08);
