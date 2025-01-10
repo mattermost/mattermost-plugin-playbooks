@@ -15,6 +15,8 @@ import {Textbox} from 'src/webapp_globals';
 import {generateStatusUpdate} from 'src/client';
 import {useBotSelector, useBotsLoaderHook} from 'src/ai_integration';
 
+import {Bot} from 'src/types/ai';
+
 import postEventListener, {PostUpdateWebsocketMessage} from 'src/websocket';
 
 type Version = {
@@ -53,12 +55,12 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
     const [copied, setCopied] = useState(false);
     const [instruction, setInstruction] = useState('');
     const suggestionBox = useRef<HTMLDivElement|null>(null);
-    const BotSelector = useBotSelector() as any;
-    const useBotlist = useBotsLoaderHook() as any;
+    const BotSelector = useBotSelector();
+    const useBotlist = useBotsLoaderHook();
     const {bots, activeBot, setActiveBot} = useBotlist();
     const [currentVersion, setCurrentVersion] = useState<number>(0);
     const [versions, setVersions] = useState<Version[]>([]);
-    const [generating, setGenerating] = useState<any>(null);
+    const [generating, setGenerating] = useState(false);
 
     useEffect(() => {
         if (activeBot?.id && isOpen) {
@@ -89,7 +91,7 @@ const AIModal = ({playbookRunId, onAccept, onClose, isOpen}: Props) => {
         };
     }, [generating]);
 
-    const onBotChange = useCallback((bot: any) => {
+    const onBotChange = useCallback((bot: Bot) => {
         setActiveBot(bot);
         setCurrentVersion(versions.length + 1);
         setVersions([...versions, {instruction: '', value: '', prevValue: ''}]);
