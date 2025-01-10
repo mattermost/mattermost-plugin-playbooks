@@ -2,12 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 import styled, {css} from 'styled-components';
 
 import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
-import {useAIAvailable} from 'src/ai_integration';
 
 interface Props {
     collapsed: boolean;
@@ -28,28 +26,19 @@ const RHSPostUpdateButton = (props: Props) => {
     }
 
     return (
-        <ButtonsContainer>
-            <ButtonComponent
-                collapsed={props.collapsed}
-                disabled={props.disabled}
-                onClick={props.onClick}
-            >
-                <FormattedMessage defaultMessage='Post update'/>
-            </ButtonComponent>
-        </ButtonsContainer>
+        <ButtonComponent
+            collapsed={props.collapsed}
+            disabled={props.disabled}
+            onClick={props.onClick}
+        >
+            <FormattedMessage defaultMessage='Post update'/>
+        </ButtonComponent>
     );
 };
 
 interface CollapsedProps {
     collapsed: boolean;
 }
-
-const ButtonsContainer = styled.div`
-	flex-grow: 1;
-	display: flex;
-	flex-direction: row;
-	gap: 2px;
-`;
 
 const PostUpdateButtonCommon = css<CollapsedProps>`
     justify-content: center;
