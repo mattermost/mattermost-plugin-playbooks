@@ -18,7 +18,6 @@ interface Props {
     updatesExist: boolean;
     disabled: boolean;
     onClick: () => void;
-    onAIClick: () => void;
 }
 
 const RHSPostUpdateButton = (props: Props) => {
