@@ -4,7 +4,7 @@
 import {GlobalState} from 'mattermost-webapp/packages/types/src/store';
 import {useSelector} from 'react-redux';
 
-import {BotSelector, Bot, BotsLoaderHook} from './types/ai';
+import {Bot, BotSelector, BotsLoaderHook} from './types/ai';
 
 export const aiPluginID = 'mattermost-ai';
 

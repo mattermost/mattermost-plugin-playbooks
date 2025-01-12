@@ -1,13 +1,13 @@
-import React from 'react'
+import React from 'react';
 
 export type Bot = {
-  id: string
+    id: string
 }
 
 type BotSelectorProps = {
-  bots: Bot[]
-  activeBot: Bot
-  setActiveBot: (bot: Bot) => void
+    bots: Bot[]
+    activeBot: Bot
+    setActiveBot: (bot: Bot) => void
 }
 
 export type BotsLoaderHook = () => BotSelectorProps
