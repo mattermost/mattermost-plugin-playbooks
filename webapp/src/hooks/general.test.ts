@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {renderHook} from '@testing-library/react-hooks';
 import * as redux from 'react-redux';
 import {getProfilesByIds, getProfilesInTeam} from 'mattermost-redux/actions/users';

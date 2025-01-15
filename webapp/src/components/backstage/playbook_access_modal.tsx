@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
 import {GlobalState} from '@mattermost/types/store';

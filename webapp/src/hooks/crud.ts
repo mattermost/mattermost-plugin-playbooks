@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {useEffect, useMemo, useState} from 'react';
 import debounce from 'debounce';
 import {useIntl} from 'react-intl';

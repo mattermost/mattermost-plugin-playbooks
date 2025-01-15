@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {Duration, DurationObjectUnits, Settings} from 'luxon';
 
 import range from 'lodash/range';
