@@ -21,7 +21,6 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "3.3.0",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#c0f36d4502e9f14aca250d885881ee8ec5efa56b",
     "parse-duration": "1.0.2",
     "qs": "6.10.5",
     "react": "^17.0.2",
@@ -148,12 +147,7 @@
       "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
       "^.+\\.(css|less|scss)$": "identity-obj-proxy",
       "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
-      "^bundle-loader\\?lazy\\!(.*)$": "$1",
-      "^reselect": "<rootDir>/node_modules/mattermost-webapp/packages/reselect/src",
-      "^mattermost-redux(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/mattermost-redux/src$1",
-      "^@mattermost/(types)/(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/$1/src/$2",
-      "^@mattermost/(client)$": "<rootDir>/node_modules/mattermost-webapp/packages/$1/src",
-      "^@mattermost/(components)$": "<rootDir>/node_modules/mattermost-webapp/packages/$1/src"
+      "^bundle-loader\\?lazy\\!(.*)$": "$1"
     },
     "moduleDirectories": [
       "<rootDir>",
@@ -165,7 +159,7 @@
       "jest-junit"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!react-native|react-router|mattermost-webapp)"
+      "node_modules/(?!react-native|react-router)"
     ],
     "setupFiles": [
       "jest-canvas-mock"
