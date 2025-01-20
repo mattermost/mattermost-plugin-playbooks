@@ -4,7 +4,7 @@
 import React, {useEffect} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useDispatch, useSelector} from 'react-redux';
-import {createSelector} from 'reselect';
+import {createSelector} from 'mattermost-redux/selectors/create_selector';
 import styled from 'styled-components';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';

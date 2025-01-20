@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {getProfilesInTeam, searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
+import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import React, {ComponentProps, useState} from 'react';
