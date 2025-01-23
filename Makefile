@@ -168,7 +168,7 @@ install-go-tools:
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
 	$(GO) install gotest.tools/gotestsum@v1.7.0
 	$(GO) install github.com/cortesi/modd/cmd/modd@latest
-	$(GO) install github.com/mattermost/mattermost-govet/v2@d6f4ad4a08ec4355323d0edb61444019a0d7386d
+	$(GO) install github.com/mattermost/mattermost-govet/v2@3f08281c344327ac09364f196b15f9a81c7eff08
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
@@ -189,7 +189,7 @@ ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
 	$(GO) vet ./...
 	$(GOBIN)/golangci-lint run ./...
-	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license ./...
+	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 ./...
 endif
 
 ## Fix JS file ESLint issues
