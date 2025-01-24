@@ -49,6 +49,8 @@ export const RetrospectivePost = (props: Props) => {
     const metricsConfigs: Array<Metric> = isArrayOf(parsedMetricsConfigs, isMetric) ? parsedMetricsConfigs : [];
     const metricsData: Array<RunMetricData> = isArrayOf(parsedMetricsData, isMetricData) ? parsedMetricsData : [];
 
+    const retrospectiveText = typeof props.post.props.retrospectiveText === 'string' ? props.post.props.retrospectiveText : '';
+
     return (
         <>
             <TextBody>{mdText(props.post.message)}</TextBody>
@@ -78,7 +80,7 @@ export const RetrospectivePost = (props: Props) => {
                     <Separator/>
                 </>}
                 <FullWidthContent>
-                    <TextBody>{mdText(props.post.props.retrospectiveText)}</TextBody>
+                    <TextBody>{mdText(retrospectiveText)}</TextBody>
                 </FullWidthContent>
             </CustomPostContainerVertical>
         </>

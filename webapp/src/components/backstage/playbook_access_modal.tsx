@@ -75,7 +75,7 @@ const PlaybookAccessModal = ({
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const [playbook, updatePlaybook] = useEditPlaybook(playbookId, refetch);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
+    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
 

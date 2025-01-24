@@ -8,12 +8,12 @@ import {createSelector} from 'mattermost-redux/selectors/create_selector';
 import styled from 'styled-components';
 
 import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
-import {IDMappedObjects, RelationOneToMany, RelationOneToOne} from '@mattermost/types/utilities';
+import {IDMappedObjects, RelationOneToManyUnique, RelationOneToOne} from '@mattermost/types/utilities';
 import {GlobeIcon, LockIcon} from '@mattermost/compass-icons/components';
 import General from 'mattermost-redux/constants/general';
 import {Channel, ChannelMembership} from '@mattermost/types/channels';
 import {Team} from '@mattermost/types/teams';
-import {fetchMyChannelsAndMembersREST, getChannel} from 'mattermost-redux/actions/channels';
+import {fetchChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
 
@@ -38,7 +38,7 @@ const getAllPublicChannelsInTeam = (teamId: string) => createSelector(
     'getAllPublicChannelsInTeam',
     getAllChannels,
     getChannelsInTeam,
-    (allChannels: IDMappedObjects<Channel>, channelsByTeam: RelationOneToMany<Team, Channel>): Channel[] => {
+    (allChannels: IDMappedObjects<Channel>, channelsByTeam: RelationOneToManyUnique<Team, Channel>): Channel[] => {
         const publicChannels : Channel[] = [];
         (channelsByTeam[teamId] || []).forEach((channelId: string) => {
             const channel = allChannels[channelId];
@@ -55,7 +55,7 @@ const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
     getAllChannels,
     getChannelsInTeam,
     getMyChannelMemberships,
-    (allChannels: IDMappedObjects<Channel>, channelsByTeam: RelationOneToMany<Team, Channel>, myMembers: RelationOneToOne<Channel, ChannelMembership>): Channel[] => {
+    (allChannels: IDMappedObjects<Channel>, channelsByTeam: RelationOneToManyUnique<Team, Channel>, myMembers: RelationOneToOne<Channel, ChannelMembership>): Channel[] => {
         const myChannels : Channel[] = [];
         (channelsByTeam[teamId] || []).forEach((channelId: string) => {
             if (Object.prototype.hasOwnProperty.call(myMembers, channelId)) {
@@ -99,7 +99,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
 
     useEffect(() => {
         if (props.teamId !== '' && selectableChannels.length === 0) {
-            dispatch(fetchMyChannelsAndMembersREST(props.teamId));
+            dispatch(fetchChannelsAndMembers(props.teamId));
         }
     }, [props.teamId]);
 

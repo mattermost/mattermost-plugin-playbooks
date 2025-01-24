@@ -100,7 +100,7 @@ const RHSRunList = (props: Props) => {
         await props.getMore();
         debouncedSetLoadingMore(false);
     };
-    const currentChannelName = useSelector<GlobalState, string>(getCurrentChannelName);
+    const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
     const showNoRuns = props.runs.length === 0;
     useViewTelemetry(GeneralViewTarget.ChannelsRHSRunList, currentChannelId);

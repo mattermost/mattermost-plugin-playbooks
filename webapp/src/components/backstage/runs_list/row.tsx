@@ -85,7 +85,7 @@ interface Props {
     fixedTeam?: boolean
 }
 
-const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).display_name;
+const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId)?.display_name ?? '';
 
 const Row = (props: Props) => {
     // This is not optimal. One network request for every row.

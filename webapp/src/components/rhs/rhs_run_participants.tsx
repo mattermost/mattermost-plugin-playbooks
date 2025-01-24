@@ -34,7 +34,7 @@ const RHSRunParticipants = (props: Props) => {
                 <Participants
                     playbookRun={props.playbookRun}
                     role={role}
-                    teamName={team.name}
+                    teamName={team?.name}
                 />
             </RHSContent>
         </RHSContainer>
