@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 // Note that This file is not used from webapp's build
@@ -8,6 +7,7 @@
 // old event data into the new event data.
 
 // ts-prune-ignore-next
+// eslint-disable-next-line no-unused-vars
 export function transformEvent(event, metadata) {
     const action = event.properties.Action;
 

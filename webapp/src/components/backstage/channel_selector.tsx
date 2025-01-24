@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import React, {useEffect} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useDispatch, useSelector} from 'react-redux';

@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import styled, {css} from 'styled-components';
 
 const BackstageListHeader = styled.div<{$edgeless?: boolean}>`

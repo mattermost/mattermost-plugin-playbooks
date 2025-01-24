@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import React, {ComponentProps, useEffect, useState} from 'react';
 
 import {FormattedMessage, useIntl} from 'react-intl';

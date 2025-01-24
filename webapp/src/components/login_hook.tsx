@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
