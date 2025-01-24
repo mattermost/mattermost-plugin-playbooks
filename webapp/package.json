@@ -27,6 +27,7 @@
     "qs": "6.10.5",
     "react": "^17.0.2",
     "react-chartjs-2": "4.3.1",
+    "react-custom-scrollbars": "4.2.1",
     "react-dom": "^17.0.2",
     "react-infinite-scroll-component": "^6.1.0",
     "react-infinite-scroller": "1.2.6",
@@ -114,6 +115,12 @@
     "webpack": "5.65.0",
     "webpack-cli": "4.9.1",
     "webpack-dev-server": "4.7.2"
+  },
+  "overrides": {
+    "react-custom-scrollbars": {
+      "react": "17.0.2",
+      "react-dom": "17.0.2"
+    }
   },
   "scripts": {
     "build": "webpack --mode=production --stats-error-details",
