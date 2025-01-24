@@ -5,16 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-
-	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
 )
 
 func TestMigrations(t *testing.T) {
@@ -152,10 +152,10 @@ func TestMigrations(t *testing.T) {
 			// set expected calls we will get below when we run migration
 			newReminder := 24 * 7 * time.Hour
 			scheduler.EXPECT().Cancel(expired)
-			scheduler.EXPECT().ScheduleOnce(expired, gomock.Any()).
+			scheduler.EXPECT().ScheduleOnce(expired, gomock.Any(), nil).
 				Return(nil, nil).
 				Times(1).
-				Do(func(id string, at time.Time) {
+				Do(func(id string, at time.Time, _ any) {
 					shouldHaveReminderBefore := now.Add(newReminder + 1*time.Second)
 					shouldHaveReminderAfter := now.Add(newReminder - 1*time.Second)
 					if at.Before(shouldHaveReminderAfter) || at.After(shouldHaveReminderBefore) {
@@ -165,10 +165,10 @@ func TestMigrations(t *testing.T) {
 					}
 				})
 			scheduler.EXPECT().Cancel(noReminder)
-			scheduler.EXPECT().ScheduleOnce(noReminder, gomock.Any()).
+			scheduler.EXPECT().ScheduleOnce(noReminder, gomock.Any(), nil).
 				Return(nil, nil).
 				Times(1).
-				Do(func(id string, at time.Time) {
+				Do(func(id string, at time.Time, _ any) {
 					shouldHaveReminderBefore := now.Add(newReminder + 1*time.Second)
 					shouldHaveReminderAfter := now.Add(newReminder - 1*time.Second)
 					if at.Before(shouldHaveReminderAfter) || at.After(shouldHaveReminderBefore) {
@@ -178,10 +178,10 @@ func TestMigrations(t *testing.T) {
 					}
 				})
 			scheduler.EXPECT().Cancel(oldExpired)
-			scheduler.EXPECT().ScheduleOnce(oldExpired, gomock.Any()).
+			scheduler.EXPECT().ScheduleOnce(oldExpired, gomock.Any(), nil).
 				Return(nil, nil).
 				Times(1).
-				Do(func(id string, at time.Time) {
+				Do(func(id string, at time.Time, _ any) {
 					shouldHaveReminderBefore := now.Add(newReminder + 1*time.Second)
 					shouldHaveReminderAfter := now.Add(newReminder - 1*time.Second)
 					if at.Before(shouldHaveReminderAfter) || at.After(shouldHaveReminderBefore) {

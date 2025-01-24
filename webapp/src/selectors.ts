@@ -20,7 +20,7 @@ import Permissions from 'mattermost-redux/constants/permissions';
 
 import {Team} from '@mattermost/types/teams';
 
-import {pluginId} from 'src/manifest';
+import manifest from 'src/manifest';
 import {PlaybookRunStatus, playbookRunIsActive} from 'src/types/playbook_run';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
@@ -33,7 +33,7 @@ import {
 import {PlaybooksPluginState} from 'src/reducer';
 
 // Assert known typing
-const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins-' + pluginId as keyof GlobalState] as unknown as PlaybooksPluginState || {} as PlaybooksPluginState;
+const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins-' + manifest.id as keyof GlobalState] as unknown as PlaybooksPluginState || {} as PlaybooksPluginState;
 
 // Fake selector to use it as a selector that always fails to get info from store
 // It's useful to be compliant with some sort of selector-based parameters

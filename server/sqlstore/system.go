@@ -4,8 +4,9 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 // getSystemValue queries the IR_System table for the given key

@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -390,6 +390,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 
 	if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
+		return
 	}
 
 	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {

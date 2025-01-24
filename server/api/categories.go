@@ -6,11 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 const maxItemsInRunsAndPlaybooksCategory = 1000

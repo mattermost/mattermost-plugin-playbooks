@@ -7,10 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mattermost/mattermost-server/v6/model"
-	"gopkg.in/guregu/null.v4"
-
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 )
 
 // Playbook represents a desired business outcome, from which playbook runs are started to solve
@@ -348,6 +346,9 @@ type PlaybookService interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 
+	// GetActivePlaybooks retrieves all active playbooks
+	GetActivePlaybooks() ([]Playbook, error)
+
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
@@ -373,10 +374,10 @@ type PlaybookService interface {
 	Duplicate(playbook Playbook, userID string) (string, error)
 
 	// Get top playbooks for teams
-	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForTeam(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error)
 
 	// Get top playbooks for users
-	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForUser(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -389,6 +390,9 @@ type PlaybookStore interface {
 
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
+
+	// GetActivePlaybooks retrieves all active playbooks
+	GetActivePlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
@@ -441,10 +445,10 @@ type PlaybookStore interface {
 	DeleteMetric(id string) error
 
 	// Get top playbooks for teams
-	GetTopPlaybooksForTeam(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForTeam(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error)
 
 	// Get top playbooks for users
-	GetTopPlaybooksForUser(teamID, userID string, opts *model.InsightsOpts) (*PlaybooksInsightsList, error)
+	GetTopPlaybooksForUser(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error)
 
 	// AddPlaybookMember adds a user as a member to a playbook
 	AddPlaybookMember(id string, memberID string) error

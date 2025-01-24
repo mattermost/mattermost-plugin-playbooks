@@ -5,48 +5,48 @@ import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
-import {pluginId} from 'src/manifest';
+import manifest from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {PresetTemplate} from 'src/components/templates/template_data';
 
-export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
-export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
-export const SET_CLIENT_ID = pluginId + '_set_client_id';
-export const PLAYBOOK_RUN_CREATED = pluginId + '_playbook_run_created';
-export const PLAYBOOK_RUN_UPDATED = pluginId + '_playbook_run_updated';
-export const PLAYBOOK_CREATED = pluginId + '_playbook_created';
-export const PLAYBOOK_ARCHIVED = pluginId + '_playbook_archived';
-export const PLAYBOOK_RESTORED = pluginId + '_playbook_restored';
-export const RECEIVED_PLAYBOOK_RUNS = pluginId + '_received_playbook_runs';
-export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_run_channels';
-export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
-export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
-export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
-export const HIDE_POST_MENU_MODAL = pluginId + '_hide_post_menu_modal';
-export const SHOW_CHANNEL_ACTIONS_MODAL = pluginId + '_show_channel_actions_modal';
-export const HIDE_CHANNEL_ACTIONS_MODAL = pluginId + '_hide_channel_actions_modal';
-export const SHOW_RUN_ACTIONS_MODAL = pluginId + '_show_run_actions_modal';
-export const HIDE_RUN_ACTIONS_MODAL = pluginId + '_hide_run_actions_modal';
-export const SHOW_PLAYBOOK_ACTIONS_MODAL = pluginId + '_show_playbook_actions_modal';
-export const HIDE_PLAYBOOK_ACTIONS_MODAL = pluginId + '_hide_playbook_actions_modal';
-export const SET_HAS_VIEWED_CHANNEL = pluginId + '_set_has_viewed';
-export const SET_RHS_ABOUT_COLLAPSED_STATE = pluginId + '_set_rhs_about_collapsed_state';
-export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_every_checklist_collapsed_state';
-export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
-export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
-export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
+export const RECEIVED_TOGGLE_RHS_ACTION = manifest.id + '_toggle_rhs';
+export const SET_RHS_OPEN = manifest.id + '_set_rhs_open';
+export const SET_CLIENT_ID = manifest.id.id + '_set_client_id';
+export const PLAYBOOK_RUN_CREATED = manifest.id + '_playbook_run_created';
+export const PLAYBOOK_RUN_UPDATED = manifest.id + '_playbook_run_updated';
+export const PLAYBOOK_CREATED = manifest.id + '_playbook_created';
+export const PLAYBOOK_ARCHIVED = manifest.id + '_playbook_archived';
+export const PLAYBOOK_RESTORED = manifest.id + '_playbook_restored';
+export const RECEIVED_PLAYBOOK_RUNS = manifest.id + '_received_playbook_runs';
+export const RECEIVED_TEAM_PLAYBOOK_RUNS = manifest.id + '_received_team_playbook_run_channels';
+export const REMOVED_FROM_CHANNEL = manifest.id + '_removed_from_playbook_run_channel';
+export const RECEIVED_GLOBAL_SETTINGS = manifest.id + '_received_global_settings';
+export const SHOW_POST_MENU_MODAL = manifest.id + '_show_post_menu_modal';
+export const HIDE_POST_MENU_MODAL = manifest.id + '_hide_post_menu_modal';
+export const SHOW_CHANNEL_ACTIONS_MODAL = manifest.id + '_show_channel_actions_modal';
+export const HIDE_CHANNEL_ACTIONS_MODAL = manifest.id + '_hide_channel_actions_modal';
+export const SHOW_RUN_ACTIONS_MODAL = manifest.id + '_show_run_actions_modal';
+export const HIDE_RUN_ACTIONS_MODAL = manifest.id + '_hide_run_actions_modal';
+export const SHOW_PLAYBOOK_ACTIONS_MODAL = manifest.id + '_show_playbook_actions_modal';
+export const HIDE_PLAYBOOK_ACTIONS_MODAL = manifest.id + '_hide_playbook_actions_modal';
+export const SET_HAS_VIEWED_CHANNEL = manifest.id + '_set_has_viewed';
+export const SET_RHS_ABOUT_COLLAPSED_STATE = manifest.id + '_set_rhs_about_collapsed_state';
+export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = manifest.id + '_set_every_checklist_collapsed_state';
+export const SET_CHECKLIST_COLLAPSED_STATE = manifest.id + '_set_checklist_collapsed_state';
+export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = manifest.id + '_set_all_checklists_collapsed_state';
+export const SET_CHECKLIST_ITEMS_FILTER = manifest.id + '_set_checklist_items_filter';
 
 // Backstage RHS related action types
 // Note That this is not the same as channel RHS management
 // TODO: make a refactor with some naming change now we have multiple RHS
 //       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
-export const OPEN_BACKSTAGE_RHS = pluginId + '_open_backstage_rhs';
-export const CLOSE_BACKSTAGE_RHS = pluginId + '_close_backstage_rhs';
+export const OPEN_BACKSTAGE_RHS = manifest.id + '_open_backstage_rhs';
+export const CLOSE_BACKSTAGE_RHS = manifest.id + '_close_backstage_rhs';
 
 // This action is meant to be used by mattermost-webapp
 // so we respect their naming convention (all caps)
-export const PUBLISH_TEMPLATES = (pluginId + '_PUBLISH_TEMPLATES').toUpperCase();
+export const PUBLISH_TEMPLATES = (manifest.id + '_PUBLISH_TEMPLATES').toUpperCase();
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;

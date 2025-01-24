@@ -65,7 +65,7 @@ const Container = styled.div<{isOpen: boolean, viewMode: BackstageRHSViewMode}>`
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     right: 0;
-    top: 40px;
+    top: 45px;
     z-index: 5;
     background-color: var(--center-channel-bg);
 

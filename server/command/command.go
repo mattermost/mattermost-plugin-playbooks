@@ -7,16 +7,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
@@ -1154,7 +1155,7 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	gotPlaybooks, err := r.playbookService.GetPlaybooks()
+	gotPlaybooks, err := r.playbookService.GetActivePlaybooks()
 	if err != nil {
 		r.postCommandResponse("There was an error while retrieving all playbooks. Err: " + err.Error())
 		return

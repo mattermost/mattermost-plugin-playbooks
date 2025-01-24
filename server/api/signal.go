@@ -6,10 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
@@ -92,6 +93,7 @@ func (h *SignalHandler) playbookRun(c *Context, w http.ResponseWriter, r *http.R
 
 func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *http.Request) {
 	publicErrorMessage := "unable to decode post action integration request"
+	userID := r.Header.Get("Mattermost-User-ID")
 
 	var req *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -103,6 +105,11 @@ func (h *SignalHandler) ignoreKeywords(c *Context, w http.ResponseWriter, r *htt
 	botPost, err := h.verifyRequestAuthenticity(req, "ignoreKeywordsButton")
 	if err != nil {
 		h.returnError(publicErrorMessage, err, c.logger, w)
+		return
+	}
+
+	if !h.api.User.HasPermissionToChannel(userID, botPost.ChannelId, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
 		return
 	}
 

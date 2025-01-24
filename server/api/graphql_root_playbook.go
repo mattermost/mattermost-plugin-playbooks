@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
 // RunMutationCollection hold all mutation functions for a playbookRun
@@ -529,6 +531,10 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 	for _, checklist := range checklists {
 		for _, item := range checklist.Items {
 			if taskActions := item.TaskActions; taskActions != nil {
+				// Limit task actions to 10
+				if len(*taskActions) > 10 {
+					return errors.Errorf("playbook cannot have more than 10 task actions")
+				}
 				for _, ta := range *taskActions {
 					if err := app.ValidateTrigger(ta.Trigger); err != nil {
 						return err
