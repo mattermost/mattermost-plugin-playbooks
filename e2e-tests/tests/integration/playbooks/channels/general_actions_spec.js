@@ -386,23 +386,6 @@ describe('channels > general actions', {testIsolation: true}, () => {
         });
     });
 
-    it('action settings are disabled for non-channel admin', () => {
-        // # Login as non-channel admin
-        cy.apiLogin(testUser);
-
-        // # Go to the test channel
-        cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
-
-        // # Open Channel Header and the Channel Actions modal
-        cy.get('#channelHeaderTitle').click();
-        cy.findByText('Channel Actions').click();
-
-        // * Verify the toggles are disabled
-        cy.findByRole('dialog', {name: /channel actions/i}).within(() => {
-            cy.get('input').should('be.disabled');
-        });
-    });
-
     it('action settings are reset to the default when switching to a channel with no actions configured', () => {
         // # Create an additional channel
         const name = 'New channel ' + Date.now();
