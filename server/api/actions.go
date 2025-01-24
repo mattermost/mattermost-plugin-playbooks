@@ -273,6 +273,12 @@ func (a *ActionsHandler) updateChannelAction(c *Context, w http.ResponseWriter, 
 		return
 	}
 
+	// Ensure that the action ID in both the URL and the body of the request are the same as well
+	if newChannelAction.ID != vars["action_id"] {
+		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "action ID in request body must match action ID in URL", nil)
+		return
+	}
+
 	// Validate the new action type and payload
 	if err := a.ValidateChannelAction(c, w, &newChannelAction, userID); err != nil {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid action", err)
