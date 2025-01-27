@@ -1,6 +1,6 @@
 Mattermost Playbooks
 
-©2015-present Mattermost, Inc.  All Rights Reserved.  See LICENSE.txt for license information.
+©2015-present Mattermost, Inc.  All Rights Reserved.  See LICENSE for license information.
 
 NOTICES:
 --------
