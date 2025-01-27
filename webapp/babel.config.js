@@ -46,6 +46,7 @@ const config = {
             },
         ],
     ],
+    sourceType: 'unambiguous',
 };
 
 const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
