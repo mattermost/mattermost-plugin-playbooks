@@ -10,7 +10,7 @@ import React, {
 import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime, Duration} from 'luxon';
 
 import {GlobalState} from '@mattermost/types/store';
@@ -19,8 +19,13 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {ApolloProvider, useQuery} from '@apollo/client';
 
+import {QuaternaryButton, TertiaryButton} from 'src/components/assets/buttons';
+
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
+import IconAI from 'src/components/assets/icons/ai';
+import AIModal from 'src/components/modals/ai_modal';
+import {useAIAvailable, useAIAvailableBots} from 'src/ai_integration';
 
 import {
     Mode,
@@ -102,6 +107,9 @@ const UpdateRunStatusModal = ({
     const dispatch = useDispatch();
     const {formatMessage, formatList} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
+    const [aiModalOpen, setAIModalOpen] = useState(false);
+    const aiAvailable = useAIAvailable();
+    const aiAvailableBots = useAIAvailableBots();
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
@@ -258,11 +266,48 @@ const UpdateRunStatusModal = ({
     const form = (
         <FormContainer>
             <Description data-testid='update_run_status_description'>{description()}</Description>
-            <Label>
-                {formatMessage({defaultMessage: 'Change since last update'})}
-            </Label>
+            <LastChangeSince disabled={aiModalOpen}>
+                <Label>
+                    {formatMessage({defaultMessage: 'Change since last update'})}
+                </Label>
+                { aiAvailable && aiAvailableBots.length > 0 &&
+                (aiModalOpen ? (
+                    <TertiaryButton
+                        onClick={() => {
+                            setAIModalOpen(true);
+                        }}
+                    >
+                        <IconAI size={14}/>
+                        <FormattedMessage defaultMessage='Generate update with AI'/>
+                    </TertiaryButton>
+                ) : (
+                    <QuaternaryButton
+                        onClick={() => {
+                            setAIModalOpen(true);
+                        }}
+                    >
+                        <IconAI size={14}/>
+                        <FormattedMessage defaultMessage='Generate update with AI'/>
+                    </QuaternaryButton>
+                ))
+                }
+            </LastChangeSince>
+            { aiAvailable &&
+            <AiModalContainer>
+                <AIModal
+                    playbookRunId={playbookRunId}
+                    onAccept={(text) => {
+                        setMessage(text);
+                        setAIModalOpen(false);
+                    }}
+                    onClose={() => setAIModalOpen(false)}
+                    isOpen={aiModalOpen}
+                />
+            </AiModalContainer>
+            }
             <MarkdownTextbox
                 id='update_run_status_textbox'
+                minHeight='200px'
                 value={message ?? ''}
                 setValue={setMessage}
                 channelId={channelId}
@@ -321,6 +366,7 @@ const UpdateRunStatusModal = ({
                 id={ID}
                 footer={footer}
                 components={{FooterContainer}}
+                compassDesign={true}
             >
                 {hasPermission ? form : warning}
             </GenericModal>
@@ -502,6 +548,7 @@ const FooterContainer = styled.div`
     display: flex;
     flex-direction: row-reverse;
     align-items: center;
+    width: 100%;
 `;
 
 const StyledCheckboxInput = styled(CheckboxInput)`
@@ -511,6 +558,28 @@ const StyledCheckboxInput = styled(CheckboxInput)`
 
     &:hover {
         background-color: transparent;
+    }
+`;
+
+const AiModalContainer = styled.div`
+    position: relative;
+    box-shadow: var(--elevation-6);
+`;
+
+const LastChangeSince = styled.div<{disabled: boolean}>`
+    display: flex;
+    justify-content: space-between;
+    pointer-events: ${(props) => (props.disabled ? 'none' : 'auto')};
+
+    >div {
+        margin: 24px 0 8px 0;
+    }
+    >button {
+        margin-top: 20px;
+        height: 24px;
+        gap: 6px;
+        padding: 0 10px;
+        font-size: 12px;
     }
 `;
 
