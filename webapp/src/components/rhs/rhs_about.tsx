@@ -42,7 +42,11 @@ const RHSAbout = (props: Props) => {
     const myUserId = useSelector(getCurrentUserId);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
-    const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channel.id, !collapsed));
+    const toggleCollapsed = () => {
+        if (channel) {
+            dispatch(setRHSAboutCollapsedState(channel.id, !collapsed));
+        }
+    };
     const fetchUsersInTeam = async () => {
         return profilesInTeam;
     };
