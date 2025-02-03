@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {ActionFunc} from 'mattermost-redux/types/actions';
+import {ActionFuncAsync} from 'mattermost-redux/types/actions';
 import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
@@ -66,8 +66,8 @@ export interface SelectUsersBelowProps {
     onRemoveUser: (userid: string) => void;
     onMakeAdmin: (userid: string) => void;
     onMakeMember: (userid: string) => void;
-    searchProfiles: (term: string) => ActionFunc;
-    getProfiles: () => ActionFunc;
+    searchProfiles: (term: string) => ActionFuncAsync;
+    getProfiles: () => ActionFuncAsync;
 }
 
 function roleDisplayText(roles: string[]) {
