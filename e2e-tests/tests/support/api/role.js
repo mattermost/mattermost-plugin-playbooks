@@ -72,7 +72,11 @@ Cypress.Commands.add('apiPatchRole', (roleID, patch) => {
 Cypress.Commands.add('apiResetRoles', () => {
     cy.apiGetRolesByNames().then(({roles}) => {
         roles.forEach((role) => {
-            const defaultPermissions = defaultRolesPermissions[role.name].split(' ');
+            // Some default role permissions are empty, so avoid splitting to patch with an empty string.
+            let defaultPermissions = '';
+            if (defaultRolesPermissions[role.name].length > 0) {
+                defaultPermissions = defaultRolesPermissions[role.name].split(' ');
+            }
             const diff = xor(role.permissions, defaultPermissions)?.filter((p) => p?.length);
 
             if (diff?.length > 0) {
