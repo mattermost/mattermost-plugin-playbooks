@@ -40,7 +40,7 @@ interface SidebarProps {
     headerDropdown: React.ReactNode;
 }
 
-const selectTeam = (teamId: string) => (state: GlobalState): Team => getTeam(state, teamId);
+const selectTeam = (teamId: string) => (state: GlobalState): Team | undefined => getTeam(state, teamId);
 
 const Sidebar = (props: SidebarProps) => {
     const team = useSelector(selectTeam(props.team_id));
