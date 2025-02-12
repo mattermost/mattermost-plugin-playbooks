@@ -125,5 +125,10 @@
     "/1FEJW": "AKTIVE DELTAKERE per dag de siste 14 dagene",
     "/gbqA6": "{duration} før kjøringen startet",
     "/MaJux": "Start retrospektivt",
-    "0CeyUV": "Ingen resultater for “{searchTerm}”"
+    "0CeyUV": "Ingen resultater for “{searchTerm}”",
+    "/+8SGX": "Viser {filteredNum} av {totalNum} hendelser",
+    "0Xt1ea": "Du vil fortsatt ha tilgang til historiske data for denne beregningen.",
+    "1ikfp3": "Hvis du sletter denne beregningen, vil verdiene for den ikke bli samlet inn for fremtidige kjøringer.",
+    "1I48bs": "Retrospektiv mal",
+    "2563nT": "Bekreft fullført kjøring"
 }
