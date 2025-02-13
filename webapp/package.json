@@ -22,7 +22,7 @@
     "lodash": "4.17.21",
     "luxon": "3.3.0",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#c0f36d4502e9f14aca250d885881ee8ec5efa56b",
-    "parse-duration": "1.0.2",
+    "parse-duration": "2.1.3",
     "qs": "6.10.5",
     "react": "^17.0.2",
     "react-chartjs-2": "4.3.1",
