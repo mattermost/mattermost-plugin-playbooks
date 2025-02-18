@@ -13,6 +13,7 @@ type Props = {
     className?: string;
     onHide: () => void;
     onExited?: () => void;
+    compassDesign?: boolean;
     modalHeaderText?: React.ReactNode;
     modalHeaderSideText?: React.ReactNode;
     modalHeaderIcon?: React.ReactNode;
@@ -211,7 +212,7 @@ export const ModalHeading = styled.h1`
     font-size: 22px;
     line-height: 28px;
     color: var(--center-channel-color);
-    margin: 0;
+    margin: 8px 0 0;
 `;
 
 export const ModalSideheading = styled.h6`
