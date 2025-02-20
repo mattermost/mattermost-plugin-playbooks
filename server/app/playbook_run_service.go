@@ -1260,42 +1260,54 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 }
 
 // GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
-func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*Metadata, error) {
+func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string, hasChannelAccess bool) (*Metadata, error) {
 	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run '%s'", playbookRunID)
 	}
 
-	// Get main channel details
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
-	if err != nil {
-		s.pluginAPI.Log.Warn("failed to retrieve channel id", "channel_id", playbookRun.ChannelID)
-	}
+	// Get team details (needed for all users with run access)
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", playbookRun.TeamID)
 	}
 
-	numParticipants, err := s.store.GetHistoricalPlaybookRunParticipantsCount(playbookRun.ChannelID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get the count of playbook run members for channel id '%s'", playbookRun.ChannelID)
-	}
-
+	// Get followers (available to anyone who can get metadata)
 	followers, err := s.GetFollowers(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get followers of playbook run %s", playbookRunID)
 	}
 
+	// Create metadata with non-sensitive information
 	metadata := &Metadata{
-		TeamName:        team.Name,
-		NumParticipants: numParticipants,
-		Followers:       followers,
+		TeamName:  team.Name,
+		Followers: followers,
 	}
-	if channel != nil {
-		metadata.ChannelName = channel.Name
-		metadata.ChannelDisplayName = channel.DisplayName
-		metadata.TotalPosts = channel.TotalMsgCount
+
+	// Return early if user doesn't have channel access
+	if !hasChannelAccess {
+		return metadata, nil
 	}
+
+	// Get channel details only if user has channel access
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		s.pluginAPI.Log.Warn("failed to retrieve channel id", "channel_id", playbookRun.ChannelID)
+		return metadata, nil
+	}
+
+	// Get participant count only if user has channel access
+	numParticipants, err := s.store.GetHistoricalPlaybookRunParticipantsCount(playbookRun.ChannelID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get the count of playbook run members for channel id '%s'", playbookRun.ChannelID)
+	}
+
+	// Add channel-specific information for users with channel access
+	metadata.ChannelName = channel.Name
+	metadata.ChannelDisplayName = channel.DisplayName
+	metadata.TotalPosts = channel.TotalMsgCount
+	metadata.NumParticipants = numParticipants
+
 	return metadata, nil
 }
 

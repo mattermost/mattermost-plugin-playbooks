@@ -615,7 +615,7 @@ type PlaybookRunService interface {
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
 
 	// GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
-	GetPlaybookRunMetadata(playbookRunID string) (*Metadata, error)
+    GetPlaybookRunMetadata(playbookRunID string, hasChannelAccess bool) (*Metadata, error)
 
 	// GetPlaybookRunsForChannelByUser get the playbookRuns associated with this channel and user.
 	GetPlaybookRunsForChannelByUser(channelID string, userID string) ([]PlaybookRun, error)
