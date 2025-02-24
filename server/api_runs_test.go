@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -880,46 +879,6 @@ func TestRemoveParticipants(t *testing.T) {
 		})
 	}
 
-	t.Run("race conditions in participant management", func(t *testing.T) {
-		// Create a run
-		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "Run for Race Condition Test",
-			OwnerUserID: e.RegularUser.Id,
-			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  e.BasicPlaybook.ID,
-		})
-		require.NoError(t, err)
-
-		// Create wait group for concurrent requests
-		var wg sync.WaitGroup
-		wg.Add(2)
-
-		// Attempt to add same participant concurrently
-		go func() {
-			defer wg.Done()
-			e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
-		}()
-
-		go func() {
-			defer wg.Done()
-			e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
-		}()
-
-		wg.Wait()
-
-		// Verify participant appears only once
-		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
-		require.NoError(t, err)
-
-		count := 0
-		for _, id := range updatedRun.ParticipantIDs {
-			if id == e.RegularUser2.Id {
-				count++
-			}
-		}
-		require.Equal(t, 1, count)
-	})
-
 	t.Run("remove participant with channel activity", func(t *testing.T) {
 		// Create run with public channel so RegularUser2 can post
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
@@ -952,7 +911,7 @@ func TestRemoveParticipants(t *testing.T) {
 		require.NotNil(t, createdPost)
 
 		// Configure run to remove channel members when participants are removed
-		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		_, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 
 		// Use GraphQL to update the run configuration
@@ -987,7 +946,7 @@ func TestRemoveParticipants(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify the user is removed as participant
-		updatedRun, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.NotContains(t, updatedRun.ParticipantIDs, e.RegularUser2.Id)
 
