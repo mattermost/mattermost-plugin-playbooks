@@ -7,9 +7,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPlaybookRun_MarshalJSON(t *testing.T) {
