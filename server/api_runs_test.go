@@ -715,9 +715,6 @@ func TestRemoveParticipants(t *testing.T) {
 				e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelAdminRoleId)
 				e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
 				e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.TeamAdminRoleId)
-				e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelMembers.Id, model.ChannelAdminRoleId)
-				e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelMembers.Id, model.ChannelUserRoleId)
-				e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelMembers.Id, model.TeamAdminRoleId)
 			},
 			CleanupFn: func() {
 				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
