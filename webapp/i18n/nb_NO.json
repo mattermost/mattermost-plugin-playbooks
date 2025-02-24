@@ -130,5 +130,19 @@
     "0Xt1ea": "Du vil fortsatt ha tilgang til historiske data for denne beregningen.",
     "1ikfp3": "Hvis du sletter denne beregningen, vil verdiene for den ikke bli samlet inn for fremtidige kjøringer.",
     "1I48bs": "Retrospektiv mal",
-    "2563nT": "Bekreft fullført kjøring"
+    "2563nT": "Bekreft fullført kjøring",
+    "3MSGcL": "Kanalnavnet er ikke gyldig.",
+    "42qmJ5": "Du har ikke tillatelse til å legge ut en oppdatering.",
+    "3qPQMX": "{name} ba om en statusoppdatering",
+    "4GjZsL": "Totalt antall Playbooks",
+    "4Hrh5B": "{name} endret status fra {summary}",
+    "4Iqlfe": "Du har blitt med på denne kjøringen.",
+    "4aupaG": "Playbooken {title} ble gjenopprettet.",
+    "4cwL43": "Med arkiverte",
+    "6CGo3o": "Status / Siste oppdatering",
+    "6D6ffM": "Angi en varighet i formatet: dd:hh:mm (f.eks. 12:00:00), eller la målet stå tomt.",
+    "6rygzu": "Fjern fra kjøringen",
+    "9AQ5FE": "Oppsummering av kjøringen",
+    "9M92On": "Velg kanaler",
+    "9SIW2x": "Målverdi for hver kjøring"
 }
