@@ -773,6 +773,104 @@ func TestRemoveParticipants(t *testing.T) {
 	}
 }
 
+func TestRunGetMetadata(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("public - get metadata as participant", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata.ChannelName)
+		assert.NotEmpty(t, metadata.ChannelDisplayName)
+		assert.NotZero(t, metadata.NumParticipants)
+		assert.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("public - get metadata as non-member should hide channel info", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.ChannelName)
+		assert.Empty(t, metadata.ChannelDisplayName)
+		assert.Zero(t, metadata.NumParticipants)
+		assert.NotEmpty(t, metadata.TeamName) // Team name should still be available
+	})
+
+	t.Run("public - fails because not in team", func(t *testing.T) {
+		metadata, err := e.PlaybooksClientNotInTeam.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+
+	t.Run("private channel - get metadata as participant", func(t *testing.T) {
+		// Create a run with private channel
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata.ChannelName)
+		assert.NotEmpty(t, metadata.ChannelDisplayName)
+		assert.NotZero(t, metadata.NumParticipants)
+		assert.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("private channel - get metadata as non-member should hide channel info", func(t *testing.T) {
+		// Create private playbook and run
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// RegularUser2 is a playbook member but not channel member
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.ChannelName)
+		assert.Empty(t, metadata.ChannelDisplayName)
+		assert.Zero(t, metadata.NumParticipants)
+		assert.NotEmpty(t, metadata.TeamName) // Team name should still be available
+	})
+
+	t.Run("private channel - not a member of playbook", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+
+	t.Run("invalid run ID", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), "invalid_id")
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+}
+
 func TestCreateRunInExistingChannel(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
