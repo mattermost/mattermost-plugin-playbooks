@@ -9,7 +9,6 @@ import styled from 'styled-components';
 
 import {Post} from '@mattermost/types/posts';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {Channel} from '@mattermost/types/channels';
 import {GlobalState} from '@mattermost/types/store';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
@@ -36,12 +35,28 @@ interface Props {
 }
 
 export const CloudUpgradePost = (props: Props) => {
-    const attachments = props.post.props.attachments[0];
+    const team = useSelector<GlobalState, Team | undefined>((state) => {
+        const channel = getChannel(state, props.post.channel_id);
 
-    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
+        return channel ? getTeam(state, channel.team_id) : undefined;
+    });
 
     const openContactSales = useOpenContactSales();
+
+    if (!team) {
+        return null;
+    }
+
+    if (
+        !props.post.props.attachments ||
+        !Array.isArray(props.post.props.attachments) ||
+        props.post.props.attachments.length === 0 ||
+        typeof props.post.props.attachments[0]?.text !== 'string'
+    ) {
+        return null;
+    }
+
+    const attachments = props.post.props.attachments[0];
 
     // Remove the footer (which starts with the Upgrade now link),
     // and the separator, both used as fallback for mobile

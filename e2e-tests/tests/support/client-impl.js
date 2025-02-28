@@ -1,11 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import Client4 from 'mattermost-redux/client/client4';
+import * as MMClient from '@mattermost/client';
 
 import clientRequest from '../plugins/client_request';
 
-export class E2EClient extends Client4 {
+export class E2EClient extends MMClient.Client4 {
     async doFetchWithResponse(url, options) {
         const {
             body,
