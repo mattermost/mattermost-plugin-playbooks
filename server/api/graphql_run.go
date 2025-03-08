@@ -187,6 +187,9 @@ func (r *RunResolver) Followers(ctx context.Context) ([]string, error) {
 	// Check if user has permission to view the channel
 	hasChannelAccess := c.pluginAPI.User.HasPermissionToChannel(userID, r.ChannelID, model.PermissionReadChannel)
 	metadata, err := c.playbookRunService.GetPlaybookRunMetadata(r.ID, hasChannelAccess)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get metadata")
+	}
 
 	return metadata.Followers, nil
 }
