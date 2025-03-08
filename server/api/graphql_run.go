@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 )
 
@@ -181,10 +182,11 @@ func (r *RunResolver) Followers(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	metadata, err := c.playbookRunService.GetPlaybookRunMetadata(r.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't get metadata")
-	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	// Check if user has permission to view the channel
+	hasChannelAccess := c.pluginAPI.User.HasPermissionToChannel(userID, r.ChannelID, model.PermissionReadChannel)
+	metadata, err := c.playbookRunService.GetPlaybookRunMetadata(r.ID, hasChannelAccess)
 
 	return metadata.Followers, nil
 }
