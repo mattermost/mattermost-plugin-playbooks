@@ -61,3 +61,4 @@ runs:
         name: test-results-${{ github.workflow }}
         path: report.xml
         retention-days: 5 ## No need to keep test results for more than 5 days
+        overwrite: true
