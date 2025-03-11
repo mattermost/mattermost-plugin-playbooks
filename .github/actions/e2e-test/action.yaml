@@ -115,3 +115,4 @@ runs:
         path: |
           e2e-tests/results/junit
         retention-days: 14 ## No need to keep test results more than 14 days
+        overwrite: true
