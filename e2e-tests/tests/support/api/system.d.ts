@@ -74,7 +74,7 @@ declare namespace Cypress {
          * @example
          *   cy.apiInstallTrialLicense();
          */
-        apiInstallTrialLicense(): Chainable<Record<string, any>>;
+        apiInstallTrialLicense(contactEmail: string): Chainable<Record<string, any>>;
 
         /**
          * Remove the license file from the server. This will disable all enterprise features.
