@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/shared/request"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -1938,4 +1940,837 @@ func TestGetOwners(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddParticipants(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("allows member with channel management permissions", func(t *testing.T) {
+		// Create a private playbook with CreateChannelMemberOnNewParticipant enabled
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Private Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+			CreateChannelMemberOnNewParticipant: true,
+		})
+		require.NoError(t, err)
+
+		// Create a run
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with permissions",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// Add a participant - should succeed
+		err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
+		require.NoError(t, err)
+
+		// Verify the user was added as participant
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+		// Verify the user was added to the channel
+		member, _, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id, "")
+		require.NoError(t, err)
+		require.NotNil(t, member)
+	})
+
+	t.Run("skips permission check when channel member add is disabled", func(t *testing.T) {
+		// Create a private playbook with CreateChannelMemberOnNewParticipant disabled
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Private Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+			CreateChannelMemberOnNewParticipant: false,
+		})
+		require.NoError(t, err)
+
+		// Create a run
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run without channel member add",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// Add a participant - should succeed
+		err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
+		require.NoError(t, err)
+
+		// Verify user was added as participant but not to channel since channel member add is disabled
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id)
+
+		member, resp, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+		require.Nil(t, member)
+	})
+	t.Run("adds participant to run but fails to add to channel when lacking channel management permissions", func(t *testing.T) {
+		// get the original requester user roles
+		origUser, _, err := e.ServerAdminClient.GetUser(context.Background(), e.RegularUser.Id, "")
+		require.NoError(t, err)
+
+		// Save+Restore default permissions
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			//reset the original user roles
+			_, terr := e.ServerAdminClient.UpdateUserRoles(context.Background(), e.RegularUser.Id, origUser.Roles)
+			require.NoError(t, terr)
+		}()
+
+		// Create a private playbook
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                               "Private Playbook",
+			TeamID:                              e.BasicTeam.Id,
+			Public:                              false,
+			CreateChannelMemberOnNewParticipant: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// First create the run (this will add owner as participant)
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run without permissions",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// Get the channel member to verify initial roles
+		member, _, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser.Id, "")
+		require.NoError(t, err)
+		t.Logf("Initial channel roles for user on run channel: %s", member.Roles)
+
+		// remove the private channel management permissions from "channel_admin" and "channel_user" roles
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelAdminRoleId)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
+
+		// Update roles on requester user after permissions removal
+		_, terr := e.ServerAdminClient.UpdateChannelRoles(context.Background(), run.ChannelID, e.RegularUser.Id, "channel_admin channel_user")
+		require.NoError(t, terr)
+
+		updatedUser, _, terr := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser.Id, "")
+		require.NoError(t, terr)
+		require.Contains(t, updatedUser.Roles, model.ChannelAdminRoleId)
+		require.Contains(t, updatedUser.Roles, model.ChannelUserRoleId)
+
+		// Try to add the second participant
+		err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
+		require.NoError(t, err) // Adding to run should succeed
+
+		// Verify the participant was added to the run
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Contains(t, updatedRun.ParticipantIDs, e.RegularUser2.Id)
+
+		// Verify the participant was NOT added to the channel
+		member, resp, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+		require.Nil(t, member)
+	})
+	t.Run("handles edge cases when adding participants", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Edge cases run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		t.Run("adding same participant twice", func(t *testing.T) {
+			// First addition should succeed
+			err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
+			require.NoError(t, err)
+
+			// Second addition should succeed (idempotent)
+			err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
+			require.NoError(t, err)
+
+			// Verify participant appears only once
+			updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+			count := 0
+			for _, id := range updatedRun.ParticipantIDs {
+				if id == e.RegularUser2.Id {
+					count++
+				}
+			}
+			require.Equal(t, 1, count)
+		})
+
+		t.Run("adding mix of valid and non-existent users", func(t *testing.T) {
+			// Create non-existent user ID
+			nonExistentID := model.NewId()
+
+			// Try to add both valid and non-existent users
+			err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID,
+				[]string{e.AdminUser.Id, nonExistentID}, false)
+			require.NoError(t, err) // Should succeed as the operation itself doesn't error
+
+			// Verify valid user was added
+			updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+			require.Contains(t, updatedRun.ParticipantIDs, e.AdminUser.Id)
+
+			// Verify non-existent user was not added
+			require.NotContains(t, updatedRun.ParticipantIDs, nonExistentID)
+		})
+
+		t.Run("adding user not in team", func(t *testing.T) {
+			// Create user not in team
+			userNotInTeam, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+				Email:    "notin@example.com",
+				Username: "notinteam",
+				Password: "Password123!",
+			})
+			require.NoError(t, err)
+
+			// Try to add user not in team
+			err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{userNotInTeam.Id}, false)
+			require.NoError(t, err) // Operation succeeds but user won't be added
+
+			// Verify user was not added
+			updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+			require.NotContains(t, updatedRun.ParticipantIDs, userNotInTeam.Id)
+
+			// Verify not added to channel
+			member, resp, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, userNotInTeam.Id, "")
+			require.Error(t, err)
+			require.Equal(t, http.StatusNotFound, resp.StatusCode)
+			require.Nil(t, member)
+		})
+
+		t.Run("adding empty list of participants", func(t *testing.T) {
+			initialRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+
+			err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{}, false)
+			require.NoError(t, err)
+
+			// Verify run wasn't modified
+			updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+			require.Equal(t, initialRun.ParticipantIDs, updatedRun.ParticipantIDs)
+		})
+	})
+
+	t.Run("middleware prevents channel membership bypass", func(t *testing.T) {
+		// Save default permissions to restore them after the test
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		}()
+
+		// Remove channel management permissions
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelAdminRoleId)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
+
+		// Create a playbook with channel member adding enabled
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                               "Playbook for Permission Test",
+			TeamID:                              e.BasicTeam.Id,
+			Public:                              false,
+			CreateChannelMemberOnNewParticipant: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create a run
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for Permission Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		// Try direct API call to bypass permission check
+		url := fmt.Sprintf("%s/plugins/%s/api/v0/runs/%s/participants",
+			e.ServerClient.URL, manifest.Id, run.ID)
+
+		payload := map[string]interface{}{
+			"user_ids": []string{e.RegularUser2.Id},
+			"force":    true,
+		}
+
+		payloadBytes, _ := json.Marshal(payload)
+		_, err = e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", url, payloadBytes, "")
+		require.NoError(t, err)
+
+		// Should still respect permissions even with direct API call
+		// RegularUser2 should be added as participant but not to channel
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Contains(t, updatedRun.ParticipantIDs, e.RegularUser2.Id)
+
+		// Verify user was NOT added to channel despite direct API call
+		member, resp, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+		require.Nil(t, member)
+	})
+
+	t.Run("force flag should not bypass permission checks", func(t *testing.T) {
+		// Save default permissions to restore them after the test
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		}()
+
+		// Remove channel management permissions
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelAdminRoleId)
+		e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
+
+		// Create a playbook with channel member adding enabled
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                               "Playbook for Force Flag Test",
+			TeamID:                              e.BasicTeam.Id,
+			Public:                              false,
+			CreateChannelMemberOnNewParticipant: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create a run
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for Force Flag Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		// Try to force add with the forceAddToChannel flag
+		err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, true)
+		require.NoError(t, err) // Should succeed in adding participant
+
+		// Verify user was added as participant
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Contains(t, updatedRun.ParticipantIDs, e.RegularUser2.Id)
+
+		// Verify user was NOT added to channel despite force flag
+		member, resp, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+		require.Nil(t, member)
+	})
+}
+
+func TestRemoveParticipants(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Save default permissions to restore them after the test
+	defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+	defer func() {
+		e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+	}()
+
+	// Create a third user that will be used in tests
+	user3, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
+		Email:    "thirduser@example.com",
+		Username: "thirduser",
+		Password: "Password123!",
+	})
+	require.NoError(t, err)
+	_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, user3.Id)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		Name                     string
+		PlaybookCreateOptions    client.PlaybookCreateOptions
+		PlaybookRunCreateOptions client.PlaybookRunCreateOptions
+		ParticipantsToRemove     []string
+		ExpectedParticipants     []string
+		ExpectedFollowers        []string
+		ExpectedChannelMembers   []string
+		UnexpectedChannelMembers []string
+		SetupFn                  func()
+		ValidateErr              func(*testing.T, error)
+		CleanupFn                func()
+	}{
+		{
+			Name: "Remove participant without channel management permission - should remove from run but not channel",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Title:                                   "Public PB no permission on channel",
+				TeamID:                                  e.BasicTeam.Id,
+				Public:                                  true,
+				CreatePublicPlaybookRun:                 false,
+				CreateChannelMemberOnNewParticipant:     true,
+				RemoveChannelMemberOnRemovedParticipant: true,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				Name:        "Run without permissions",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+			},
+			ParticipantsToRemove:     []string{e.RegularUser2.Id, user3.Id},
+			ExpectedParticipants:     []string{e.RegularUser.Id},
+			ExpectedFollowers:        []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			UnexpectedChannelMembers: []string{},
+			SetupFn: func() {
+				e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelAdminRoleId)
+				e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.ChannelUserRoleId)
+				e.Permissions.RemovePermissionFromRole(model.PermissionManagePrivateChannelMembers.Id, model.TeamAdminRoleId)
+			},
+			CleanupFn: func() {
+				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			},
+		},
+		{
+			Name: "Remove 2 participants with channel removal enabled - should remove from both run and channel",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Title:                                   "Public PB remove 2 participants",
+				TeamID:                                  e.BasicTeam.Id,
+				Public:                                  true,
+				CreatePublicPlaybookRun:                 true,
+				CreateChannelMemberOnNewParticipant:     true,
+				RemoveChannelMemberOnRemovedParticipant: true,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				Name:        "Run name",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+			},
+			ParticipantsToRemove:     []string{e.RegularUser2.Id, user3.Id},
+			ExpectedParticipants:     []string{e.RegularUser.Id},
+			ExpectedFollowers:        []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id},
+			UnexpectedChannelMembers: []string{e.RegularUser2.Id, user3.Id},
+		},
+		{
+			Name: "Remove 2 participants with channel removal disabled - should remove from run but not channel",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Title:                                   "Public PB remove 2 participants no channel removal",
+				TeamID:                                  e.BasicTeam.Id,
+				Public:                                  true,
+				CreatePublicPlaybookRun:                 true,
+				CreateChannelMemberOnNewParticipant:     true,
+				RemoveChannelMemberOnRemovedParticipant: false,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				Name:        "Run name",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+			},
+			ParticipantsToRemove:     []string{e.RegularUser2.Id, user3.Id},
+			ExpectedParticipants:     []string{e.RegularUser.Id},
+			ExpectedFollowers:        []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			UnexpectedChannelMembers: []string{},
+		},
+		{
+			Name: "Try to remove owner - should fail and make no changes",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Title:                                   "Public PB try remove owner",
+				TeamID:                                  e.BasicTeam.Id,
+				Public:                                  true,
+				CreatePublicPlaybookRun:                 true,
+				CreateChannelMemberOnNewParticipant:     true,
+				RemoveChannelMemberOnRemovedParticipant: true,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				Name:        "Run name",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+			},
+			ParticipantsToRemove:     []string{e.RegularUser.Id},
+			ExpectedParticipants:     []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedFollowers:        []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			UnexpectedChannelMembers: []string{},
+			ValidateErr: func(t *testing.T, err error) {
+				require.Error(t, err)
+				errMsg := err.Error()
+				//require.Contains(t, errMsg, "[400]")
+				require.Contains(t, errMsg, "owner user can't leave the run")
+			},
+		},
+		{
+			Name: "Remove participant from private run - should remove from run and private channel with permission",
+			PlaybookCreateOptions: client.PlaybookCreateOptions{
+				Title:                                   "Public PB remove from private run",
+				TeamID:                                  e.BasicTeam.Id,
+				Public:                                  true,
+				CreatePublicPlaybookRun:                 false,
+				CreateChannelMemberOnNewParticipant:     true,
+				RemoveChannelMemberOnRemovedParticipant: true,
+			},
+			PlaybookRunCreateOptions: client.PlaybookRunCreateOptions{
+				Name:        "Run name",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+			},
+			ParticipantsToRemove:     []string{e.RegularUser2.Id, user3.Id},
+			ExpectedParticipants:     []string{e.RegularUser.Id},
+			ExpectedFollowers:        []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id},
+			ExpectedChannelMembers:   []string{e.RegularUser.Id},
+			UnexpectedChannelMembers: []string{e.RegularUser2.Id},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			if tc.CleanupFn != nil {
+				defer tc.CleanupFn()
+			}
+			// Create the playbook
+			pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), tc.PlaybookCreateOptions)
+			require.NoError(t, err)
+
+			// Create the run
+			tc.PlaybookRunCreateOptions.PlaybookID = pbID
+			run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), tc.PlaybookRunCreateOptions)
+			require.NoError(t, err)
+
+			// Add initial participants
+			initialParticipants := []string{e.RegularUser2.Id, user3.Id}
+			err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, initialParticipants, false)
+			require.NoError(t, err)
+
+			// Get run and verify initial state
+			run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+			require.ElementsMatch(t, append([]string{e.RegularUser.Id}, initialParticipants...), run.ParticipantIDs)
+
+			// Run specific setup if needed
+			if tc.SetupFn != nil {
+				tc.SetupFn()
+			}
+
+			// Remove the participants
+			err = e.PlaybooksClient.PlaybookRuns.RemoveParticipants(context.Background(), run.ID, tc.ParticipantsToRemove, e.RegularUser.Id)
+
+			// If ExpectedParticipants is nil, we expect an error
+			if err != nil && tc.ValidateErr != nil {
+				//we expect a certain error
+				tc.ValidateErr(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			// Get run again to verify final state
+			run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+
+			// Verify participants
+			require.ElementsMatch(t, tc.ExpectedParticipants, run.ParticipantIDs)
+
+			// Verify followers
+			meta, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), run.ID)
+			require.NoError(t, err)
+			require.ElementsMatch(t, tc.ExpectedFollowers, meta.Followers)
+
+			// Verify expected channel members
+			for _, userID := range tc.ExpectedChannelMembers {
+				member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, userID)
+				require.Nil(t, err)
+				require.Equal(t, userID, member.UserId)
+			}
+
+			// Verify unexpected channel members (should not be in channel)
+			for _, userID := range tc.UnexpectedChannelMembers {
+				member, err := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, userID)
+				require.NotNil(t, err)
+				require.Nil(t, member)
+			}
+		})
+	}
+
+	t.Run("remove participant with channel activity", func(t *testing.T) {
+		// Create run with public channel so RegularUser2 can post
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for Channel Activity Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		// Add RegularUser2 as participant and channel member
+		err = e.PlaybooksClient.PlaybookRuns.AddParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, false)
+		require.NoError(t, err)
+
+		// Ensure RegularUser2 is in the channel
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		// Create post on behalf of RegularUser2 using admin client or direct store access
+		post := &model.Post{
+			UserId:    e.RegularUser2.Id,
+			ChannelId: run.ChannelID,
+			Message:   "Test message from participant",
+		}
+
+		//Use the store directly if available
+		var createdPost *model.Post
+		createdPost, err = e.Srv.Store().Post().Save(e.Context, post)
+		require.NoError(t, err)
+		require.NotNil(t, createdPost)
+
+		// Configure run to remove channel members when participants are removed
+		_, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Use GraphQL to update the run configuration
+		mutation := `
+		mutation UpdateRun($id: String!, $updates: RunUpdates!) {
+			updateRun(id: $id, updates: $updates)
+		}
+		`
+		var updateResult struct {
+			Data struct {
+				UpdateRun bool `json:"updateRun"`
+			}
+			Errors []struct {
+				Message string `json:"message"`
+			}
+		}
+
+		err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query: mutation,
+			Variables: map[string]interface{}{
+				"id": run.ID,
+				"updates": map[string]interface{}{
+					"removeChannelMemberOnRemovedParticipant": true,
+				},
+			},
+		}, &updateResult)
+		require.NoError(t, err)
+		require.Empty(t, updateResult.Errors)
+
+		// Remove participant
+		err = e.PlaybooksClient.PlaybookRuns.RemoveParticipants(context.Background(), run.ID, []string{e.RegularUser2.Id}, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// Verify the user is removed as participant
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotContains(t, updatedRun.ParticipantIDs, e.RegularUser2.Id)
+
+		// Verify the user is removed from channel
+		member, resp, err := e.ServerAdminClient.GetChannelMember(context.Background(), run.ChannelID, e.RegularUser2.Id, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+		require.Nil(t, member)
+
+		// Verify posts still exist and are properly attributed
+		retrievedPost, resp, err := e.ServerAdminClient.GetPost(context.Background(), post.Id, "")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, e.RegularUser2.Id, retrievedPost.UserId)
+	})
+}
+
+func TestRunGetMetadata(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("public - get metadata as participant", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata.ChannelName)
+		assert.NotEmpty(t, metadata.ChannelDisplayName)
+		assert.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("public - get metadata as non-member should hide channel info", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.ChannelName)
+		assert.Empty(t, metadata.ChannelDisplayName)
+		assert.Zero(t, metadata.TotalPosts)
+		assert.NotEmpty(t, metadata.TeamName) // Team name should still be available
+	})
+
+	t.Run("public - fails because not in team", func(t *testing.T) {
+		metadata, err := e.PlaybooksClientNotInTeam.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+
+	t.Run("private channel - get metadata as participant", func(t *testing.T) {
+		// Create a run with private channel
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata.ChannelName)
+		assert.NotEmpty(t, metadata.ChannelDisplayName)
+		assert.NotZero(t, metadata.NumParticipants)
+		assert.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("private channel - get metadata as non-member should hide channel info", func(t *testing.T) {
+		// Create private playbook and run
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// RegularUser2 is a playbook member but not channel member
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.ChannelName)
+		assert.Empty(t, metadata.ChannelDisplayName)
+		assert.Zero(t, metadata.TotalPosts)
+		assert.NotZero(t, metadata.NumParticipants) // Number of participants should still be available
+		assert.NotEmpty(t, metadata.TeamName)       // Team name should still be available
+	})
+
+	t.Run("private channel - not a member of playbook", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+
+	t.Run("invalid run ID", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), "invalid_id")
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+	t.Run("metadata filtering for different user roles", func(t *testing.T) {
+		// Create a private playbook
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Private Playbook for Metadata Test",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create a playbook run with a private channel
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private Run for Metadata Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// 1. Test as channel member (owner) - should see all metadata
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, metadata.ChannelName)
+		require.NotEmpty(t, metadata.ChannelDisplayName)
+		require.NotEmpty(t, metadata.TeamName)
+		// Total posts might be 0 at creation, but the field should exist
+		require.Zero(t, metadata.TotalPosts)
+
+		// Add RegularUser2 as a playbook member so they can access the run but not the channel
+		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), privatePlaybookID)
+		require.NoError(t, err)
+		playbook.Members = append(playbook.Members, client.PlaybookMember{
+			UserID: e.RegularUser2.Id,
+			Roles:  []string{app.PlaybookRoleMember},
+		})
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *playbook)
+		require.NoError(t, err)
+
+		// 2. Test as non-channel member but with run access
+		metadata, err = e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		// These fields should be empty/zero for non-channel members
+		require.Empty(t, metadata.ChannelName)
+		require.Empty(t, metadata.ChannelDisplayName)
+		require.Zero(t, metadata.TotalPosts)
+		// But team name should still be available
+		require.NotEmpty(t, metadata.TeamName)
+		// Followers should be accessible regardless of channel membership
+		require.NotNil(t, metadata.Followers)
+
+		// 3. Test with system admin - should still follow permission rules
+		metadata, err = e.PlaybooksAdminClient.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		// Admin should have all info since they are a playbook member with channel access
+		require.NotEmpty(t, metadata.ChannelName)
+		require.NotEmpty(t, metadata.ChannelDisplayName)
+		require.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("unable to access run metadata without permissions", func(t *testing.T) {
+		// Create a private playbook with no members other than creator
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Restricted Private Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create a run
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Restricted Private Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// Test as non-member - should not be able to access metadata at all
+		_, err = e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.Error(t, err)
+	})
 }
