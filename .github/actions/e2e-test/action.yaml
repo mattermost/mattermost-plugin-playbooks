@@ -51,12 +51,13 @@ runs:
     - name: ci/upload-licence
       env:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+        MM_ADMIN_EMAIL: sysadmin@sample.mattermost.com
         MM_ADMIN_USERNAME: sysadmin
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
       run: |
         TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
         TOKEN=${TOKEN//$'\r'/}
-        STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100, "company_country": "US"}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+        STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100, "company_country": "US", "contact_email": "'${MM_ADMIN_EMAIL}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
         if test $STATUSCODE -ne 200; then exit 1; fi
       shell: bash
 

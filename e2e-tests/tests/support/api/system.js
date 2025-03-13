@@ -75,7 +75,7 @@ Cypress.Commands.add('apiUploadLicense', (filePath) => {
     cy.apiUploadFile('license', filePath, {url: '/api/v4/license', method: 'POST', successStatus: 200});
 });
 
-Cypress.Commands.add('apiInstallTrialLicense', () => {
+Cypress.Commands.add('apiInstallTrialLicense', (contactEmail) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/trial-license',
@@ -85,6 +85,7 @@ Cypress.Commands.add('apiInstallTrialLicense', () => {
             terms_accepted: true,
             users: Cypress.env('numberOfTrialUsers'),
             company_country: 'US',
+            contact_email: contactEmail,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -324,8 +325,10 @@ function uploadLicenseIfNotExist() {
             return cy.wrap(data);
         }
 
-        return cy.apiInstallTrialLicense().then(() => {
-            return cy.apiGetClientLicense();
+        return cy.apiGetMe().then(({user}) => {
+            return cy.apiInstallTrialLicense(user.email).then(() => {
+                return cy.apiGetClientLicense();
+            });
         });
     });
 }
