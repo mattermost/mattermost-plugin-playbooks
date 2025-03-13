@@ -84,6 +84,7 @@ Cypress.Commands.add('apiInstallTrialLicense', () => {
             trialreceive_emails_accepted: true,
             terms_accepted: true,
             users: Cypress.env('numberOfTrialUsers'),
+            company_country: 'US',
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -301,9 +302,7 @@ Cypress.Commands.add('shouldRunWithSubpath', () => {
 Cypress.Commands.add('shouldHaveFeatureFlag', (key, expectedValue) => {
     return cy.apiGetConfig().then(({config}) => {
         const actualValue = config.FeatureFlags[key];
-        const message = actualValue === expectedValue ?
-            `Matches feature flag - "${key}: ${expectedValue}"` :
-            `Expected feature flag "${key}" to be "${expectedValue}", but was "${actualValue}"`;
+        const message = actualValue === expectedValue ? `Matches feature flag - "${key}: ${expectedValue}"` : `Expected feature flag "${key}" to be "${expectedValue}", but was "${actualValue}"`;
         expect(actualValue, message).to.equal(expectedValue);
     });
 });
