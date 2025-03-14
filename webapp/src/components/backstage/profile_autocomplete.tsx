@@ -7,7 +7,7 @@ import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
 
 import styled from 'styled-components';
-import {ActionFunc} from 'mattermost-redux/types/actions';
+import {ActionFuncAsync} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
 import {
     ControlProps,
@@ -76,8 +76,8 @@ interface Props {
     userIds: string[];
     onAddUser?: (userid: string) => void; // for single select
     setValues?: (values: UserProfile[]) => void; // for multi select
-    searchProfiles: (term: string) => ActionFunc;
-    getProfiles?: () => ActionFunc;
+    searchProfiles: (term: string) => ActionFuncAsync;
+    getProfiles?: () => ActionFuncAsync;
     isDisabled?: boolean;
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
