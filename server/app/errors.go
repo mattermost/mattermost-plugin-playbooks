@@ -22,5 +22,3 @@ var ErrMalformedPlaybookRun = errors.New("malformed")
 
 // ErrDuplicateEntry occurs when failing to insert because the entry already existed.
 var ErrDuplicateEntry = errors.New("duplicate entry")
-
-var ErrCannotRemoveOwner = errors.New("owner user can't leave the run")
