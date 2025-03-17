@@ -133,11 +133,6 @@ func NewPlaybookRunHandler(
 	followersRouter.HandleFunc("", withContext(handler.unfollow)).Methods(http.MethodDelete)
 	followersRouter.HandleFunc("", withContext(handler.getFollowers)).Methods(http.MethodGet)
 
-	// Register participant routes
-	participantsRouter := playbookRunRouter.PathPrefix("/participants").Subrouter()
-	participantsRouter.HandleFunc("", withContext(handler.addParticipants)).Methods(http.MethodPost)
-	participantsRouter.HandleFunc("/remove", withContext(handler.removeParticipants)).Methods(http.MethodPost)
-
 	return handler
 }
 
@@ -1929,51 +1924,4 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	}
 
 	return &options, nil
-}
-
-func (h *PlaybookRunHandler) addParticipants(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookRunID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var params struct {
-		UserIDs []string `json:"user_ids"`
-		Force   bool     `json:"force"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode params", err)
-		return
-	}
-
-	if err := h.playbookRunService.AddParticipants(playbookRunID, params.UserIDs, userID, params.Force); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-}
-
-func (h *PlaybookRunHandler) removeParticipants(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookRunID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var params struct {
-		UserIDs []string `json:"user_ids"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode params", err)
-		return
-	}
-
-	if err := h.playbookRunService.RemoveParticipants(playbookRunID, params.UserIDs, userID); err != nil {
-		if errors.Is(err, app.ErrCannotRemoveOwner) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
-			return
-		}
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
