@@ -1290,7 +1290,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string, ha
 	if !hasChannelAccess {
 		return metadata, nil
 	}
-	
+
 	// Only set NumParticipants if user has channel access
 	metadata.NumParticipants = numParticipants
 

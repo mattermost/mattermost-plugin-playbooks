@@ -1959,7 +1959,7 @@ func TestRunGetMetadata(t *testing.T) {
 		assert.Empty(t, metadata.ChannelDisplayName)
 		assert.Zero(t, metadata.TotalPosts)
 		assert.Zero(t, metadata.NumParticipants) // Participants count should be hidden
-		assert.NotEmpty(t, metadata.TeamName) // Team name should still be available
+		assert.NotEmpty(t, metadata.TeamName)    // Team name should still be available
 	})
 
 	t.Run("public - fails because not in team", func(t *testing.T) {
