@@ -1958,6 +1958,7 @@ func TestRunGetMetadata(t *testing.T) {
 		assert.Empty(t, metadata.ChannelName)
 		assert.Empty(t, metadata.ChannelDisplayName)
 		assert.Zero(t, metadata.TotalPosts)
+		assert.Zero(t, metadata.NumParticipants) // Participants count should be hidden
 		assert.NotEmpty(t, metadata.TeamName) // Team name should still be available
 	})
 
@@ -2013,8 +2014,8 @@ func TestRunGetMetadata(t *testing.T) {
 		assert.Empty(t, metadata.ChannelName)
 		assert.Empty(t, metadata.ChannelDisplayName)
 		assert.Zero(t, metadata.TotalPosts)
-		assert.NotZero(t, metadata.NumParticipants) // Number of participants should still be available
-		assert.NotEmpty(t, metadata.TeamName)       // Team name should still be available
+		assert.Zero(t, metadata.NumParticipants) // Number of participants should be hidden for security
+		assert.NotEmpty(t, metadata.TeamName)    // Team name should still be available
 	})
 
 	t.Run("private channel - not a member of playbook", func(t *testing.T) {

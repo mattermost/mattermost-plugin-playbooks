@@ -1282,15 +1282,17 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string, ha
 	}
 
 	metadata := &Metadata{
-		TeamName:        team.Name,
-		NumParticipants: numParticipants,
-		Followers:       followers,
+		TeamName:  team.Name,
+		Followers: followers,
 	}
 
 	// Return early if user doesn't have channel access
 	if !hasChannelAccess {
 		return metadata, nil
 	}
+	
+	// Only set NumParticipants if user has channel access
+	metadata.NumParticipants = numParticipants
 
 	// Get channel details only if user has channel access
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
