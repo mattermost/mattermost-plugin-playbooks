@@ -13,13 +13,13 @@ runs:
   using: "composite"
   steps:
     - name: ci/setup-go
-      uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+      uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
       with:
         go-version: "${{ env.GO_VERSION }}"
         cache: true
 
     - name: ci/setup-node
-      uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+      uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
       with:
         node-version-file: ".nvmrc"
         cache: "npm"
@@ -29,7 +29,7 @@ runs:
 
     - name: ci/cache-node-modules
       id: cache-node-modules
-      uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
+      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
       with:
         path: |
           webapp/node_modules
@@ -51,12 +51,13 @@ runs:
     - name: ci/upload-licence
       env:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+        MM_ADMIN_EMAIL: sysadmin@sample.mattermost.com
         MM_ADMIN_USERNAME: sysadmin
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
       run: |
         TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
         TOKEN=${TOKEN//$'\r'/}
-        STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+        STATUSCODE=$(curl --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"receive_emails_accepted": true, "terms_accepted": true, "users": 100, "company_country": "US", "contact_email": "'${MM_ADMIN_EMAIL}'", "contact_name": "Test Mattermost", "company_name": "MattermostTest", "company_size": "1-10"}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
         if test $STATUSCODE -ne 200; then exit 1; fi
       shell: bash
 
@@ -76,7 +77,7 @@ runs:
       env:
         NODE_ENV: development
       run: |
-        sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
+        sudo apt-get install libgtk2.0-0t64 libgtk-3-0t64 libgbm-dev libnotify-dev libnss3 libxss1 libasound2t64 libxtst6 xauth xvfb -y
         cd e2e-tests/
         npx cypress install
 
@@ -109,9 +110,10 @@ runs:
 
     - name: ci/upload-cypress-test-results
       if: always()
-      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
       with:
         name: cypress-test-results
         path: |
           e2e-tests/results/junit
         retention-days: 14 ## No need to keep test results more than 14 days
+        overwrite: true

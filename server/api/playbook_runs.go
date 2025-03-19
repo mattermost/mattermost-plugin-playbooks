@@ -390,6 +390,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 
 	if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
+		return
 	}
 
 	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {
