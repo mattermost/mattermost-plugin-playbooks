@@ -1952,14 +1952,14 @@ func TestRunGetMetadata(t *testing.T) {
 		assert.NotEmpty(t, metadata.TeamName)
 	})
 
-	t.Run("public - get metadata as non-member should hide channel info", func(t *testing.T) {
+	t.Run("public - get metadata as non-member should hide channel info but include num participants", func(t *testing.T) {
 		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
 		require.NoError(t, err)
 		assert.Empty(t, metadata.ChannelName)
 		assert.Empty(t, metadata.ChannelDisplayName)
 		assert.Zero(t, metadata.TotalPosts)
-		assert.Zero(t, metadata.NumParticipants) // Participants count should be hidden
-		assert.NotEmpty(t, metadata.TeamName)    // Team name should still be available
+		assert.NotZero(t, metadata.NumParticipants) // Participants count should be included
+		assert.NotEmpty(t, metadata.TeamName)       // Team name should still be available
 	})
 
 	t.Run("public - fails because not in team", func(t *testing.T) {
@@ -1986,7 +1986,7 @@ func TestRunGetMetadata(t *testing.T) {
 		assert.NotEmpty(t, metadata.TeamName)
 	})
 
-	t.Run("private channel - get metadata as non-member should hide channel info", func(t *testing.T) {
+	t.Run("private channel - get metadata as non-member should hide channel info but include participants", func(t *testing.T) {
 		// Create private playbook and run
 		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "TestPrivatePlaybook custom",
@@ -2014,8 +2014,8 @@ func TestRunGetMetadata(t *testing.T) {
 		assert.Empty(t, metadata.ChannelName)
 		assert.Empty(t, metadata.ChannelDisplayName)
 		assert.Zero(t, metadata.TotalPosts)
-		assert.Zero(t, metadata.NumParticipants) // Number of participants should be hidden for security
-		assert.NotEmpty(t, metadata.TeamName)    // Team name should still be available
+		assert.NotZero(t, metadata.NumParticipants) // Number of participants should be included
+		assert.NotEmpty(t, metadata.TeamName)       // Team name should still be available
 	})
 
 	t.Run("private channel - not a member of playbook", func(t *testing.T) {
