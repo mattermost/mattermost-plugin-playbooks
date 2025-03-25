@@ -1940,7 +1940,7 @@ func TestGetByChannelID(t *testing.T) {
 		// Try to get run by channel ID - should fail with not found
 		_, err = e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), channel.Id)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "not found")
+		require.Contains(t, err.Error(), "Not found")
 	})
 
 	t.Run("no access to channel", func(t *testing.T) {
@@ -1970,7 +1970,9 @@ func TestGetByChannelID(t *testing.T) {
 		require.Equal(t, privateChannel.Id, run.ChannelID)
 
 		// Try to get run by channel ID with a user who doesn't have access
-		_, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
+		run, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
+		require.NotNil(t, run)
+
 		require.Error(t, err)
 	})
 }
