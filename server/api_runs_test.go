@@ -1987,6 +1987,7 @@ func TestGetByChannelID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run)
 
+		e.CreateGuest()
 		// Try to get run by channel ID with a guest user
 		_, err = e.PlaybooksClientGuest.PlaybookRuns.GetByChannelID(context.Background(), run.ChannelID)
 		require.Error(t, err)
