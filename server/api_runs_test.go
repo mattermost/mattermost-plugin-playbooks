@@ -1861,6 +1861,120 @@ func TestChecklisItem_SetCommand(t *testing.T) {
 	})
 }
 
+func TestGetByChannelID(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("single run in channel", func(t *testing.T) {
+		// Create a run
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Single run in channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Get the run by channel ID
+		retrievedRun, err := e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), run.ChannelID)
+		require.NoError(t, err)
+		require.NotNil(t, retrievedRun)
+		require.Equal(t, run.ID, retrievedRun.ID)
+	})
+
+	t.Run("multiple runs in channel", func(t *testing.T) {
+		// Create a channel
+		channel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "Multiple Runs Channel",
+			Name:        "multiple-runs-channel",
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Add user to channel
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), channel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// Create first run with specific channel
+		run1, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "First run in channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			ChannelID:   channel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run1)
+		require.Equal(t, channel.Id, run1.ChannelID)
+
+		// Create second run with same channel
+		run2, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Second run in channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			ChannelID:   channel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run2)
+		require.Equal(t, channel.Id, run2.ChannelID)
+
+		// Try to get run by channel ID - should fail with multiple runs
+		_, err = e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), channel.Id)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "multiple runs in the channel")
+	})
+
+	t.Run("no run in channel", func(t *testing.T) {
+		// Create a channel with no runs
+		channel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "Empty Channel",
+			Name:        "empty-channel",
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Try to get run by channel ID - should fail with not found
+		_, err = e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), channel.Id)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not found")
+	})
+
+	t.Run("no access to channel", func(t *testing.T) {
+		// Create a private channel
+		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "Private Channel",
+			Name:        "private-channel",
+			Type:        model.ChannelTypePrivate,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Add user to channel
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), privateChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// Create run in private channel
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run in private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			ChannelID:   privateChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Equal(t, privateChannel.Id, run.ChannelID)
+
+		// Try to get run by channel ID with a user who doesn't have access
+		_, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
+		require.Error(t, err)
+	})
+}
+
 func TestGetOwners(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
