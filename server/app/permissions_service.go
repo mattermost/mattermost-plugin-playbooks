@@ -101,13 +101,13 @@ func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
 	return p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
 }
 
-func (p *PermissionsService) canViewChannel(userID string, channelID string) bool {
-	if channelID == "" || userID == "" {
-		return false
-	}
+// func (p *PermissionsService) canViewChannel(userID string, channelID string) bool {
+// 	if channelID == "" || userID == "" {
+// 		return false
+// 	}
 
-	return p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel)
-}
+// 	return p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel)
+// }
 
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {
 	if !p.licenseChecker.PlaybookAllowed(p.PlaybookIsPublic(playbook)) {
@@ -444,9 +444,9 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
-	if !p.canViewChannel(userID, run.ChannelID) {
-		return errors.Wrapf(ErrNoPermissions, "no run access; no channel view permission for channel `%s`", run.ChannelID)
-	}
+	// if !p.canViewChannel(userID, run.ChannelID) {
+	// 	return errors.Wrapf(ErrNoPermissions, "no run access; no channel view permission for channel `%s`", run.ChannelID)
+	// }
 
 	// Has permission if is the owner of the run
 	if run.OwnerUserID == userID {
