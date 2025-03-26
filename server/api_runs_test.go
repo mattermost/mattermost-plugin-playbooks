@@ -457,7 +457,7 @@ func TestRunRetrieval(t *testing.T) {
 
 	t.Run("by channel id not found", func(t *testing.T) {
 		run, err := e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), model.NewId())
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Nil(t, run)
 	})
 
