@@ -1970,10 +1970,9 @@ func TestGetByChannelID(t *testing.T) {
 		require.Equal(t, privateChannel.Id, run.ChannelID)
 
 		// Try to get run by channel ID with a user who doesn't have access
-		// Need to double check this...even via UI team members don't have access.
 		run, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
-		require.NoError(t, err)
-		require.NotNil(t, run)
+		require.Error(t, err)
+		require.Nil(t, run)
 	})
 
 	t.Run("guest user cannot access public playbook run", func(t *testing.T) {
