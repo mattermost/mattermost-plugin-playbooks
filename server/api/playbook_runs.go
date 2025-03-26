@@ -575,12 +575,6 @@ func (h *PlaybookRunHandler) getPlaybookRun(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	// Check if user has permission to view the channel
-	hasChannelAccess := h.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
-	if !hasChannelAccess {
-		return
-	}
-
 	ReturnJSON(w, playbookRun, http.StatusOK)
 }
 
@@ -609,6 +603,12 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Check if user has permission to view the channel
+	hasChannelAccess := h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel)
+	if !hasChannelAccess {
+		return
+	}
 
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
