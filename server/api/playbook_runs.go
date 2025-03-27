@@ -568,7 +568,6 @@ func (h *PlaybookRunHandler) getPlaybookRun(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	// Get the playbook run to access its channel ID
 	playbookRunToGet, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
