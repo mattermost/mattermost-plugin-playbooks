@@ -603,12 +603,23 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	// Check if user has permission to view the channel
+	hasChannelAccess := h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel)
+	if !hasChannelAccess {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found",
+			errors.Errorf("playbook run for channel id %s not found", channelID))
+		return
+	}
+
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
 	// get playbook runs for the specific channel and user
 	playbookRunsResult, err := h.playbookRunService.GetPlaybookRuns(
-		app.RequesterInfo{
-			UserID: userID,
-		},
-
+		requesterInfo,
 		app.PlaybookRunFilterOptions{
 			ChannelID: channelID,
 			Page:      0,
