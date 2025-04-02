@@ -72,12 +72,20 @@ Cypress.Commands.add('apiPatchRole', (roleID, patch) => {
 Cypress.Commands.add('apiResetRoles', () => {
     cy.apiGetRolesByNames().then(({roles}) => {
         roles.forEach((role) => {
-            const defaultPermissions = defaultRolesPermissions[role.name].split(' ');
-            const diff = xor(role.permissions, defaultPermissions)?.filter((p) => p?.length);
+            const permissions = getPermissions(role.name);
+            const diff = xor(role.permissions, permissions)?.filter((p) => p?.length);
 
             if (diff?.length > 0) {
-                cy.apiPatchRole(role.id, {permissions: defaultPermissions});
+                cy.apiPatchRole(role.id, {permissions});
             }
         });
     });
 });
+
+function getPermissions(roleName) {
+    const permissions = defaultRolesPermissions[roleName];
+    if (!permissions) {
+        return [];
+    }
+    return permissions.split(' ').map((permission) => permission.trim()).filter((permission) => permission !== '');
+}
