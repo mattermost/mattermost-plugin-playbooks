@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import {HALF_SEC} from '../../../../fixtures/timeouts';
+
 // Stage: @prod
 // Group: @playbooks
 
@@ -208,7 +210,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # click on the field
             cy.get('#rhsContainer').within(() => {
                 cy.findByTestId('buttons-row').invoke('show').within(() => {
-                    cy.findAllByRole('button').eq(1).click();
+                    cy.findAllByRole('button').eq(1).click().wait(HALF_SEC);
                 });
             });
 
