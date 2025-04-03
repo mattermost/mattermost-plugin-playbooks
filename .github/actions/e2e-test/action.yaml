@@ -115,5 +115,6 @@ runs:
         name: cypress-test-results
         path: |
           e2e-tests/results/junit
+          e2e-tests/tests/screenshots
         retention-days: 14 ## No need to keep test results more than 14 days
         overwrite: true
