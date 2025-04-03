@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {HALF_SEC} from '../../../../fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -113,7 +115,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                 });
             });
 
-            cy.findByText('Edit run summary').click({force: true});
+            cy.findByText('Edit run summary').click({force: true}).wait(HALF_SEC);
 
             // # type text in textarea
             cy.focused().should('be.visible').type('new summary{ctrl+enter}');
