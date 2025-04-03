@@ -112,7 +112,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
       with:
-        name: cypress-test-results-${{ github.action }}
+        name: cypress-test-results-${{ github.job }}
         path: |
           e2e-tests/results/junit
           e2e-tests/tests/screenshots
