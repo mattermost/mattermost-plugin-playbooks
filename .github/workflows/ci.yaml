@@ -257,7 +257,7 @@ jobs:
         ports:
           - 9200:9200
       mattermost-server:
-        image: mattermost/mattermost-enterprise-edition:master
+        image: mattermostdevelopment/mattermost-enterprise-edition:master
         env:
           DB_HOST: postgres
           DB_PORT_NUMBER: 5432
