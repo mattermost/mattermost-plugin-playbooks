@@ -25,14 +25,18 @@ describe('channels > App Bar', {testIsolation: true}, () => {
     });
 
     describe('App Bar disabled', () => {
-        it('should not show the Playbook App Bar icon', () => {
+        before(() => {
             cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: true}});
 
             // # Login as testUser
             cy.apiLogin(testUser);
+        });
 
+        it('should not show the Playbook App Bar icon', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
+
+            cy.findByTestId('post_textbox').should('be.visible');
 
             // * Verify App Bar icon is not showing
             cy.get('.app-bar').should('not.exist');
@@ -40,19 +44,11 @@ describe('channels > App Bar', {testIsolation: true}, () => {
     });
 
     describe('App Bar enabled', () => {
-        beforeEach(() => {
+        before(() => {
             cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: false}});
 
             // # Login as testUser
             cy.apiLogin(testUser);
-        });
-
-        it('should show the Playbook App Bar icon', () => {
-            // # Navigate directly to a non-playbook run channel
-            cy.visit(`/${testTeam.name}/channels/town-square`);
-
-            // * Verify App Bar icon is showing
-            cy.getPlaybooksAppBarIcon().should('exist');
         });
 
         it('should show "Playbooks" tooltip for Playbook App Bar icon', () => {
@@ -60,7 +56,7 @@ describe('channels > App Bar', {testIsolation: true}, () => {
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // # Hover over the channel header icon
-            cy.getPlaybooksAppBarIcon().trigger('mouseover');
+            cy.getPlaybooksAppBarIcon().trigger('mouseenter');
 
             // * Verify tooltip text
             cy.findByRole('tooltip', {name: 'Playbooks'}).should('be.visible');
