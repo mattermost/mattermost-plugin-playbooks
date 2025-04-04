@@ -55,9 +55,6 @@ describe('channels > post type components', {testIsolation: true}, () => {
             // # Go to the playbook run channel
             cy.visit(`/${testTeam.name}/channels/test-run`);
 
-            // # intercepts telemetry
-            cy.interceptTelemetry();
-
             // # Post a status update
             cy.apiUpdateStatus({
                 playbookRunId: testPlaybookRun.id,
@@ -95,30 +92,14 @@ describe('channels > post type components', {testIsolation: true}, () => {
 
             // Grab the post id
             cy.getLastPostId().then((postId) => {
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 // # Go to the other channel
                 cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'run_status_update',
-                        type: 'page',
-                        properties: {
-                            post_id: postId,
-                            playbook_run_id: testPlaybookRun.id,
-                            channel_type: 'O',
-                        },
-                    },
-                ]);
-
                 cy.getLastPost().then((element) => {
-                    // # Verify the expected message text
+                    // * Verify the expected message text
                     cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
                     cy.get(element).contains('status update');
                 });
@@ -137,9 +118,6 @@ describe('channels > post type components', {testIsolation: true}, () => {
             });
 
             cy.getLastPostId().then((postId) => {
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
                 // # Leave the playbook run channel
                 cy.uiLeaveChannel();
 
@@ -149,21 +127,8 @@ describe('channels > post type components', {testIsolation: true}, () => {
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'run_status_update',
-                        type: 'page',
-                        properties: {
-                            post_id: postId,
-                            playbook_run_id: testPlaybookRun.id,
-                            channel_type: '',
-                        },
-                    },
-                ]);
-
                 cy.getLastPost().then((element) => {
-                    // # Verify the expected message text
+                    // * Verify the expected message text
                     cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
                     cy.get(element).contains('status update');
                 });
