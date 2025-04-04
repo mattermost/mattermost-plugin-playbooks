@@ -35,6 +35,7 @@ type Props = {
     hideHelpBar?: boolean;
     previewByDefault?: boolean;
     autoFocus?: boolean;
+    minHeight?: string;
 } & ComponentProps<typeof Textbox>;
 
 const MarkdownTextbox = ({
@@ -48,6 +49,7 @@ const MarkdownTextbox = ({
     previewByDefault,
     autoFocus,
     hideHelpBar,
+    minHeight = '104px',
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(previewByDefault);
@@ -63,7 +65,10 @@ const MarkdownTextbox = ({
     });
 
     return (
-        <Wrapper className={className}>
+        <Wrapper
+            className={className}
+            $minHeight={minHeight}
+        >
             <Textbox
                 tabIndex={0}
                 value={value}
@@ -96,7 +101,7 @@ const MarkdownTextbox = ({
     );
 };
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{$minHeight?: string}>`
     .textarea-wrapper {
         margin-bottom: 6px;
     }
@@ -121,7 +126,7 @@ const Wrapper = styled.div`
             }
 
             height: unset;
-            min-height: 104px;
+            min-height: ${(props) => props.$minHeight || '104px'};
             max-height: 324px;
             overflow: auto;
             padding: 12px 30px 12px 16px;
