@@ -75,15 +75,22 @@ Cypress.Commands.add('apiUploadLicense', (filePath) => {
     cy.apiUploadFile('license', filePath, {url: '/api/v4/license', method: 'POST', successStatus: 200});
 });
 
-Cypress.Commands.add('apiInstallTrialLicense', () => {
+Cypress.Commands.add('apiInstallTrialLicense', (contactEmail) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/trial-license',
         method: 'POST',
         body: {
-            trialreceive_emails_accepted: true,
+            receive_emails_accepted: true,
             terms_accepted: true,
             users: Cypress.env('numberOfTrialUsers'),
+
+            // Enriched fields required for trial license as of v10.7
+            company_country: 'US',
+            contact_email: contactEmail,
+            contact_name: 'Test Mattermost',
+            company_name: 'MattermostTest',
+            company_size: '1-10',
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -301,9 +308,7 @@ Cypress.Commands.add('shouldRunWithSubpath', () => {
 Cypress.Commands.add('shouldHaveFeatureFlag', (key, expectedValue) => {
     return cy.apiGetConfig().then(({config}) => {
         const actualValue = config.FeatureFlags[key];
-        const message = actualValue === expectedValue ?
-            `Matches feature flag - "${key}: ${expectedValue}"` :
-            `Expected feature flag "${key}" to be "${expectedValue}", but was "${actualValue}"`;
+        const message = actualValue === expectedValue ? `Matches feature flag - "${key}: ${expectedValue}"` : `Expected feature flag "${key}" to be "${expectedValue}", but was "${actualValue}"`;
         expect(actualValue, message).to.equal(expectedValue);
     });
 });
@@ -325,8 +330,10 @@ function uploadLicenseIfNotExist() {
             return cy.wrap(data);
         }
 
-        return cy.apiInstallTrialLicense().then(() => {
-            return cy.apiGetClientLicense();
+        return cy.apiGetMe().then(({user}) => {
+            return cy.apiInstallTrialLicense(user.email).then(() => {
+                return cy.apiGetClientLicense();
+            });
         });
     });
 }

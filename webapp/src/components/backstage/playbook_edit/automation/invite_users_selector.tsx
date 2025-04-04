@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {ControlProps, GroupType, OptionsType} from 'react-select';

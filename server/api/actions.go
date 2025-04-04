@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package api
 
 import (
@@ -270,6 +273,12 @@ func (a *ActionsHandler) updateChannelAction(c *Context, w http.ResponseWriter, 
 	// otherwise the permission check done above no longer makes sense
 	if newChannelAction.ChannelID != channelID {
 		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel ID in request body must match channel ID in URL", nil)
+		return
+	}
+
+	// Ensure that the action ID in both the URL and the body of the request are the same as well
+	if newChannelAction.ID != vars["action_id"] {
+		a.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "action ID in request body must match action ID in URL", nil)
 		return
 	}
 
