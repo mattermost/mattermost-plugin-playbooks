@@ -1988,8 +1988,8 @@ func TestGetByChannelID(t *testing.T) {
 	t.Run("no access to channel, public playbook", func(t *testing.T) {
 		// Create a private channel
 		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
-			DisplayName: "Private Channel",
-			Name:        "private-channel",
+			DisplayName: "Private Channel-two",
+			Name:        "private-channel-two",
 			Type:        model.ChannelTypePrivate,
 			TeamId:      e.BasicTeam.Id,
 		})
