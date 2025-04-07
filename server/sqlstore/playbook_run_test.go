@@ -390,6 +390,73 @@ func TestRestorePlaybookRun(t *testing.T) {
 	}
 }
 
+func TestGetPlaybookRunsWithIncludeEnded(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupSQLStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		setupChannelsTable(t, db)
+		setupPostsTable(t, db)
+		setupTeamMembersTable(t, db)
+
+		// Create team
+		teamID := model.NewId()
+		team := model.Team{
+			Id:   teamID,
+			Name: "test-team",
+		}
+		createTeams(t, store, []model.Team{team})
+
+		// Create user with admin permissions
+		userID := model.NewId()
+		user := userInfo{
+			ID:   userID,
+			Name: "test-user",
+		}
+		addUsers(t, store, []userInfo{user})
+		addUsersToTeam(t, store, []userInfo{user}, teamID)
+
+		// Create an active run with EndAt = 0
+		activeRun := NewBuilder(t).
+			WithTeamID(teamID).
+			ToPlaybookRun()
+		activeRun, err := playbookRunStore.CreatePlaybookRun(activeRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, activeRun)
+
+		// Create a run with EndAt > 0 (finished run)
+		finishedRunID := model.NewId()
+		_, err = db.Exec(`
+			INSERT INTO IR_Incident
+				(ID, Name, Description, CommanderUserID, TeamID, ChannelID, CreateAt, EndAt, DeleteAt, CurrentStatus)
+			VALUES
+				(?, 'finished', 'test', ?, ?, ?, ?, ?, 0, 'Finished')
+		`, finishedRunID, userID, teamID, model.NewId(), model.GetMillis(), model.GetMillis())
+		require.NoError(t, err)
+
+		// Skip complex permissions - just use admin
+		requesterInfo := app.RequesterInfo{
+			UserID:  userID,
+			IsAdmin: true,
+		}
+
+		// Test 1: With IncludeEnded = true, both runs should be returned
+		options := app.PlaybookRunFilterOptions{
+			IncludeEnded: true,
+		}
+		results, err := playbookRunStore.GetPlaybookRuns(requesterInfo, options)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(results.Items), "Should include both active and finished runs")
+
+		// Test 2: With IncludeEnded = false, only active run should be returned
+		options.IncludeEnded = false
+		results, err = playbookRunStore.GetPlaybookRuns(requesterInfo, options)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(results.Items), "Should only include active runs")
+		require.Equal(t, activeRun.ID, results.Items[0].ID, "Should be the active run")
+	}
+}
+
 // intended to catch problems with the code assembling StatusPosts
 func TestStressTestGetPlaybookRuns(t *testing.T) {
 	// Change these to larger numbers to stress test. Keep them low for CI.

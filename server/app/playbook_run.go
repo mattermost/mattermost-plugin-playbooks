@@ -1077,6 +1077,10 @@ type PlaybookRunFilterOptions struct {
 
 	// Skip getting extra information (like timeline events and status posts). Used by GraphQL to limit the amount of data retrieved.
 	SkipExtras bool
+
+	// IncludeEnded determines whether to include runs that have ended (EndAt > 0).
+	// If false, only active runs (EndAt = 0) are returned.
+	IncludeEnded bool `url:"include_ended,omitempty"`
 }
 
 // Clone duplicates the given options.
