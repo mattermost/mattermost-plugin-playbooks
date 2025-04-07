@@ -543,6 +543,15 @@ func (h *PlaybookRunHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, 
 		return
 	}
 
+	// Add channel permission check if channel_id filter is used
+	if filterOptions.ChannelID != "" {
+		hasPermission := h.pluginAPI.User.HasPermissionToChannel(userID, filterOptions.ChannelID, model.PermissionReadChannel)
+		if !hasPermission {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "No permission to access this channel", nil)
+			return
+		}
+	}
+
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -1862,6 +1871,9 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 
 	playbookID := u.Query().Get("playbook_id")
 
+	// Get channel_id parameter from URL query
+	channelID := u.Query().Get("channel_id")
+
 	activeGTEParam := u.Query().Get("active_gte")
 	if activeGTEParam == "" {
 		activeGTEParam = "0"
@@ -1901,6 +1913,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		ParticipantID:           participantID,
 		ParticipantOrFollowerID: participantOrFollowerID,
 		PlaybookID:              playbookID,
+		ChannelID:               channelID,
 		ActiveGTE:               activeGTE,
 		ActiveLT:                activeLT,
 		StartedGTE:              startedGTE,

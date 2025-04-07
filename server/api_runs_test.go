@@ -469,6 +469,42 @@ func TestRunRetrieval(t *testing.T) {
 		require.Len(t, list.Items, 0)
 	})
 
+	t.Run("filter by channel id", func(t *testing.T) {
+		// Create another run to verify filtering works
+		otherRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Another run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotEqual(t, e.BasicRun.ChannelID, otherRun.ChannelID)
+
+		// Test filtering by channel_id
+		list, err := e.PlaybooksClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID:    e.BasicTeam.Id,
+			ChannelID: e.BasicRun.ChannelID,
+		})
+		require.NoError(t, err)
+		require.Len(t, list.Items, 1)
+		require.Equal(t, e.BasicRun.ID, list.Items[0].ID)
+
+		// Test filtering by a non-existent channel_id
+		list, err = e.PlaybooksClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID:    e.BasicTeam.Id,
+			ChannelID: model.NewId(),
+		})
+		require.NoError(t, err)
+		require.Len(t, list.Items, 0)
+
+		// Test channel_id filter with no permission
+		_, err = e.PlaybooksClient2.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID:    e.BasicTeam.Id,
+			ChannelID: e.BasicPrivateChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
 	t.Run("filters", func(t *testing.T) {
 		endedRun, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Anouther Run",
