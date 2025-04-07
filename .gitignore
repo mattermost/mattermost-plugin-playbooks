@@ -1,0 +1,22 @@
+.eslintcache
+report.xml
+bin/
+dist/
+webapp/src/manifest.ts
+server/manifest.go
+server/data/
+server/e2etest.config.json
+
+# Mac
+.DS_Store
+
+# Jetbrains
+.idea/
+
+# VS Code
+.vscode
+
+# Notice
+.notice-work
+.aider*
+.env
