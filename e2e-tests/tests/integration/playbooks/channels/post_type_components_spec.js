@@ -173,7 +173,6 @@ describe('channels > post type components', {testIsolation: true}, () => {
                         });
                     });
                 }
-                // If we don't have channel access, the test is effectively skipped
             });
         });
     });
