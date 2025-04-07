@@ -1943,7 +1943,49 @@ func TestGetByChannelID(t *testing.T) {
 		require.Contains(t, err.Error(), "Not found")
 	})
 
-	t.Run("no access to channel", func(t *testing.T) {
+	t.Run("With access to channel cannot access private playbook", func(t *testing.T) {
+		// Create a private channel
+		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "Private Channel",
+			Name:        "private-channel",
+			Type:        model.ChannelTypePrivate,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Add user to channel
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), privateChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// Create run in private channel, private playbook
+		privatePlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run in private channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+			ChannelID:   privateChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Equal(t, privateChannel.Id, run.ChannelID)
+
+		// Try to get run by channel ID with a user who doesn't have access to channel or private playbook
+		run, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
+		require.Error(t, err)
+		require.Nil(t, run)
+	})
+
+	t.Run("no access to channel, public playbook", func(t *testing.T) {
 		// Create a private channel
 		privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
 			DisplayName: "Private Channel",
@@ -1969,10 +2011,11 @@ func TestGetByChannelID(t *testing.T) {
 		require.NotNil(t, run)
 		require.Equal(t, privateChannel.Id, run.ChannelID)
 
-		// Try to get run by channel ID with a user who doesn't have access
+		// Try to get run by channel ID with a user who doesn't have access to channel
+		// Should be able to access public playbook
 		run, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
-		require.Error(t, err)
-		require.Nil(t, run)
+		require.NoError(t, err)
+		require.NotNil(t, run)
 	})
 
 	t.Run("guest user cannot access public playbook run", func(t *testing.T) {
