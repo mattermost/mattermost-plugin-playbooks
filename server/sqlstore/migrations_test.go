@@ -191,6 +191,11 @@ var migrationsMapping = []MigrationMapping{
 		LegacyMigrationIndex: 35,
 		MorphMigrationLimit:  2, // 000078-000079
 	},
+	{
+		Name:                 "0.63.0 > 0.64.0",
+		LegacyMigrationIndex: 36,
+		MorphMigrationLimit:  1, // 000080
+	},
 }
 
 func TestDBSchema(t *testing.T) {
@@ -585,6 +590,59 @@ func TestMigration_000059(t *testing.T) {
 		require.Equal(t, "Playbook Runs", *runs[0].CategoryName)
 		require.True(t, runs[1].CategoryName == nil || *runs[1].CategoryName == "")
 		require.True(t, runs[2].CategoryName == nil || *runs[2].CategoryName == "")
+	}
+}
+
+func TestMigration_000080(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupTables(t, db)
+		engine, err := store.createMorphEngine()
+		require.NoError(t, err)
+		defer engine.Close()
+
+		// Run all migrations up to the last one
+		runMigrationUp(t, store, engine, 79)
+
+		// Insert test data before our migration
+		run1 := NewRunMapBuilder().WithName("run1").ToRunAsMap()
+		err = InsertRun(store, run1)
+		require.NoError(t, err)
+
+		run2 := NewRunMapBuilder().WithName("run2").ToRunAsMap()
+		run2["CreateAt"] = model.GetMillis() - 10000 // Create a run with an older timestamp
+		err = InsertRun(store, run2)
+		require.NoError(t, err)
+
+		// Run our migration
+		runMigrationUp(t, store, engine, 1)
+
+		// Validate migration
+		type Run struct {
+			ID       string
+			Name     string
+			CreateAt int64
+			UpdateAt int64
+		}
+
+		var runs []Run
+		err = store.selectBuilder(store.db, &runs, store.builder.
+			Select("ID", "Name", "CreateAt", "UpdateAt").
+			From("IR_Incident").
+			OrderBy("Name ASC"))
+
+		require.NoError(t, err)
+		require.Len(t, runs, 2)
+
+		// Check that UpdateAt equals CreateAt after the migration
+		for _, run := range runs {
+			require.Equal(t, run.CreateAt, run.UpdateAt, "UpdateAt should equal CreateAt after migration")
+		}
+
+		// Verify the column exists
+		updateAtExists, err := columnExists(store, "IR_Incident", "UpdateAt")
+		require.NoError(t, err)
+		require.True(t, updateAtExists, "UpdateAt column should exist")
 	}
 }
 
