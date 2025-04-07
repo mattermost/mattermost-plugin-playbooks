@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {HALF_SEC} from '../../../../fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -175,7 +177,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.findByText('Rename run').click();
 
             // # type new name
-            cy.findByTestId('run-name-input').clear().type('My cool new run name');
+            cy.findByTestId('run-name-input').clear().type('My cool new run name').wait(HALF_SEC);
 
             // # click save
             cy.findByTestId('modal-confirm-button').click();
