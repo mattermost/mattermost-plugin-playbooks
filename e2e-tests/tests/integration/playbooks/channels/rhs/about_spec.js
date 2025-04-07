@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {HALF_SEC, ONE_SEC} from '../../../../fixtures/timeouts';
+import {ONE_SEC} from '../../../../fixtures/timeouts';
 
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
