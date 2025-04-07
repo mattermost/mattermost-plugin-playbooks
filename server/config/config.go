@@ -39,4 +39,7 @@ type Service interface {
 
 	// SupportsGivingFeedback returns nil when the nps plugin is installed and enabled, thus enabling giving feedback.
 	SupportsGivingFeedback() error
+
+	// IsIncrementalUpdatesEnabled returns true when incremental WebSocket updates are enabled.
+	IsIncrementalUpdatesEnabled() bool
 }

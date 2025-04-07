@@ -100,6 +100,7 @@ export interface FetchPlaybooksReturn {
 export interface Checklist {
     title: string;
     items: ChecklistItem[];
+    id?: string; // Added to support find/filter operations by ID
 }
 
 export enum ChecklistItemState {
