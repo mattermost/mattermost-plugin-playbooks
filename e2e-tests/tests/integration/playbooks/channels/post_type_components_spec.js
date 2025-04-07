@@ -62,20 +62,10 @@ describe('channels > post type components', {testIsolation: true}, () => {
                 reminder: 60,
             });
 
-            // Grab the post id
-            cy.getLastPostId().then((postId) => {
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'run_status_update',
-                        type: 'page',
-                        properties: {
-                            post_id: postId,
-                            playbook_run_id: testPlaybookRun.id,
-                            channel_type: 'O',
-                        },
-                    },
-                ]);
+            cy.getLastPost().then((element) => {
+                // * Verify the expected message text
+                cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
+                cy.get(element).contains('status update');
             });
         });
 
