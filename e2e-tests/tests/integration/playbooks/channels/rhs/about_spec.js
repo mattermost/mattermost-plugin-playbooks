@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ONE_SEC} from '../../../../fixtures/timeouts';
+import {HALF_SEC, ONE_SEC} from '../../../../fixtures/timeouts';
 
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
@@ -120,7 +120,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             cy.wait(ONE_SEC);
 
             // # type text in textarea
-            cy.focused().should('be.visible').type('new summary{ctrl+enter}');
+            cy.focused().should('be.visible').type('new summary').wait(ONE_SEC).type('{ctrl+enter}');
 
             // * make sure the updated summary is here
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
