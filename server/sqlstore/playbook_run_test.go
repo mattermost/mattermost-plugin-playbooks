@@ -1322,6 +1322,216 @@ func TestGetPlaybookRunIDsForUser(t *testing.T) {
 	}
 }
 
+func TestSinceUpdateAt(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		store := setupSQLStore(t, db)
+		setupChannelsTable(t, db)
+
+		teamID := model.NewId()
+
+		// Create base time
+		baseTime := model.GetMillis()
+
+		// Create several playbook runs with different update times
+		run1 := NewBuilder(t).
+			WithTeamID(teamID).
+			WithCreateAt(baseTime - 5000).
+			WithName("Run 1 - oldest").
+			ToPlaybookRun()
+
+		run2 := NewBuilder(t).
+			WithTeamID(teamID).
+			WithCreateAt(baseTime - 4000).
+			WithName("Run 2 - middle").
+			ToPlaybookRun()
+
+		run3 := NewBuilder(t).
+			WithTeamID(teamID).
+			WithCreateAt(baseTime - 3000).
+			WithName("Run 3 - newest").
+			ToPlaybookRun()
+
+		// Create and store the runs
+		run1, err := playbookRunStore.CreatePlaybookRun(run1)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, run1)
+
+		run2, err = playbookRunStore.CreatePlaybookRun(run2)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, run2)
+
+		run3, err = playbookRunStore.CreatePlaybookRun(run3)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, run3)
+
+		// Update run1 with an older timestamp
+		oldUpdateTime := baseTime - 2000
+		run1.UpdateAt = oldUpdateTime
+		run1.Name = "Run 1 - updated older"
+		_, err = playbookRunStore.UpdatePlaybookRun(run1)
+		require.NoError(t, err)
+
+		// Update run2 with a newer timestamp
+		newUpdateTime := baseTime - 1000
+		run2.UpdateAt = newUpdateTime
+		run2.Name = "Run 2 - updated newer"
+		_, err = playbookRunStore.UpdatePlaybookRun(run2)
+		require.NoError(t, err)
+
+		// Finish run3
+		finishTime := baseTime - 500
+		err = playbookRunStore.FinishPlaybookRun(run3.ID, finishTime)
+		require.NoError(t, err)
+
+		// Test cases
+		t.Run("get runs updated since a specific time", func(t *testing.T) {
+			// Get runs updated since oldUpdateTime - should include run1, run2, and run3 (run3 is included because finishing it updates UpdateAt to current time)
+			results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        teamID,
+				SinceUpdateAt: oldUpdateTime,
+				Page:          0,
+				PerPage:       10,
+			})
+
+			require.NoError(t, err)
+
+			require.Equal(t, 3, len(results.Items))
+
+			// Check that finished run IDs are included
+			require.Equal(t, 1, len(results.FinishedIDs))
+			require.Equal(t, run3.ID, results.FinishedIDs[0].ID)
+			require.Equal(t, finishTime, results.FinishedIDs[0].EndAt)
+		})
+
+		t.Run("get runs updated since a later time", func(t *testing.T) {
+			// Get runs updated since newUpdateTime - should include run2 and run3 (run3 is included because finishing it updates UpdateAt to current time)
+			results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        teamID,
+				SinceUpdateAt: newUpdateTime,
+				Page:          0,
+				PerPage:       10,
+			})
+
+			require.NoError(t, err)
+
+			require.Equal(t, 2, len(results.Items))
+
+			// Verify both run2 and run3 are in the results
+			foundRun2 := false
+			foundRun3 := false
+			for _, run := range results.Items {
+				if run.ID == run2.ID {
+					foundRun2 = true
+				} else if run.ID == run3.ID {
+					foundRun3 = true
+				}
+			}
+			require.True(t, foundRun2, "Run2 should be in the results")
+			require.True(t, foundRun3, "Run3 should be in the results")
+
+			// Should still include the finished run in FinishedIDs
+			require.Equal(t, 1, len(results.FinishedIDs))
+		})
+
+		t.Run("get runs updated since a time after all updates", func(t *testing.T) {
+			// Get runs updated since after all updates - should include none
+			results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        teamID,
+				SinceUpdateAt: baseTime + 1000, // Future time
+				Page:          0,
+				PerPage:       10,
+			})
+
+			require.NoError(t, err)
+			require.Equal(t, 0, len(results.Items))
+
+			// Should still include the finished run in FinishedIDs if it was finished after the since time
+			require.Equal(t, 0, len(results.FinishedIDs))
+		})
+
+		t.Run("finished runs are correctly reported", func(t *testing.T) {
+			// Create another run and finish it
+			run4 := NewBuilder(t).
+				WithTeamID(teamID).
+				WithCreateAt(baseTime).
+				WithName("Run 4 - to be finished").
+				ToPlaybookRun()
+
+			run4, err = playbookRunStore.CreatePlaybookRun(run4)
+			require.NoError(t, err)
+			createPlaybookRunChannel(t, store, run4)
+
+			// Finish it with a newer timestamp
+			newerFinishTime := baseTime + 500
+			err = playbookRunStore.FinishPlaybookRun(run4.ID, newerFinishTime)
+			require.NoError(t, err)
+
+			// Get runs with since parameter earlier than the finish
+			results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        teamID,
+				SinceUpdateAt: baseTime,
+				Page:          0,
+				PerPage:       10,
+			})
+
+			require.NoError(t, err)
+
+			// Should include the newly finished run in FinishedIDs
+			foundRun4 := false
+			for _, finished := range results.FinishedIDs {
+				if finished.ID == run4.ID {
+					foundRun4 = true
+					require.Equal(t, newerFinishTime, finished.EndAt)
+				}
+			}
+			require.True(t, foundRun4, "Run 4 should be in FinishedIDs")
+		})
+
+		t.Run("with empty results", func(t *testing.T) {
+			// Add runs in a different team
+			otherTeamID := model.NewId()
+			otherRun := NewBuilder(t).
+				WithTeamID(otherTeamID).
+				WithCreateAt(baseTime).
+				WithName("Run in other team").
+				ToPlaybookRun()
+
+			otherRun, err = playbookRunStore.CreatePlaybookRun(otherRun)
+			require.NoError(t, err)
+			createPlaybookRunChannel(t, store, otherRun)
+
+			// Query with a team filter that won't match anything
+			results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        model.NewId(), // Non-existent team
+				SinceUpdateAt: 0,
+				Page:          0,
+				PerPage:       10,
+			})
+
+			require.NoError(t, err)
+			require.Equal(t, 0, len(results.Items))
+			require.Equal(t, 0, len(results.FinishedIDs))
+		})
+	}
+}
+
 // PlaybookRunBuilder is a utility to build playbook runs with a default base.
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToPlaybookRun()

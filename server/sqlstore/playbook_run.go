@@ -186,7 +186,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 	// When adding a PlaybookRun column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
 		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
+			"i.CreateAt", "i.UpdateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
@@ -359,6 +359,12 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
 	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
 
+	// Filter by UpdateAt for the since parameter
+	if options.SinceUpdateAt > 0 {
+		queryForResults = queryForResults.Where(sq.GtOrEq{"i.UpdateAt": options.SinceUpdateAt})
+		queryForTotal = queryForTotal.Where(sq.GtOrEq{"i.UpdateAt": options.SinceUpdateAt})
+	}
+
 	queryForResults, err := applyPlaybookRunFilterOptionsSort(queryForResults, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to apply sort options")
@@ -428,13 +434,65 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		addMetricsToPlaybookRuns(metricsData, playbookRuns)
 	}
 
-	return &app.GetPlaybookRunsResults{
+	result := &app.GetPlaybookRunsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
-	}, nil
+	}
+
+	// Get finished runs if since parameter is specified
+	// This returns information about runs that were finished (EndAt field set) after the since timestamp
+	if options.SinceUpdateAt > 0 {
+		// We use a separate DB connection instead of the transaction because the transaction
+		// might have already been committed by the time we reach here (in case of an error).
+		// Since this is additional information and not critical for the main query result,
+		// it's safer to use a separate connection.
+		finishedRuns, err := s.getFinishedPlaybookRunsSince(s.store.db, options.SinceUpdateAt, options.TeamID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get finished playbook runs")
+		}
+		result.FinishedIDs = finishedRuns
+	}
+
+	return result, nil
+}
+
+// getFinishedPlaybookRunsSince returns information about runs that have been finished (EndAt field set)
+// since the given timestamp. It returns only minimal information (ID and EndAt) for these runs.
+// It accepts:
+// - q: The database connection or transaction to use
+// - since: Unix timestamp in milliseconds; only runs finished after this time are returned
+// - teamID: Optional team ID to filter runs by team; if empty, runs from all teams are returned
+func (s *playbookRunStore) getFinishedPlaybookRunsSince(q queryer, since int64, teamID string) ([]app.FinishedRun, error) {
+	// If since parameter is 0 or negative, return an empty slice (no filtering)
+	if since <= 0 {
+		return []app.FinishedRun{}, nil
+	}
+
+	whereClause := sq.And{
+		sq.Gt{"i.EndAt": 0},         // Only get runs that have ended
+		sq.GtOrEq{"i.EndAt": since}, // Only get runs that ended since the given timestamp
+	}
+
+	// Add team filter if specified
+	if teamID != "" {
+		whereClause = append(whereClause, sq.Eq{"i.TeamId": teamID})
+	}
+
+	query := s.queryBuilder.
+		Select("i.ID", "i.EndAt").
+		From("IR_Incident AS i").
+		Where(whereClause)
+
+	var finishedRuns []app.FinishedRun
+	err := s.store.selectBuilder(q, &finishedRuns, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query for finished playbook runs")
+	}
+
+	return finishedRuns, nil
 }
 
 // CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.
@@ -473,6 +531,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"TeamID":                                  rawPlaybookRun.TeamID,
 			"ChannelID":                               rawPlaybookRun.ChannelID,
 			"CreateAt":                                rawPlaybookRun.CreateAt,
+			"UpdateAt":                                rawPlaybookRun.CreateAt,
 			"EndAt":                                   rawPlaybookRun.EndAt,
 			"PostID":                                  rawPlaybookRun.PostID,
 			"PlaybookID":                              rawPlaybookRun.PlaybookID,
@@ -525,6 +584,11 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.New("ID should not be empty")
 	}
 
+	// Always ensure UpdateAt is set to current time when updating
+	if playbookRun.UpdateAt == 0 {
+		playbookRun.UpdateAt = model.GetMillis()
+	}
+
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
@@ -566,7 +630,8 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
-			"RunType": rawPlaybookRun.Type,
+			"RunType":  rawPlaybookRun.Type,
+			"UpdateAt": rawPlaybookRun.UpdateAt,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
@@ -614,6 +679,7 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		SetMap(map[string]interface{}{
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
+			"UpdateAt":      model.GetMillis(),
 		}).
 		Where(sq.Eq{"ID": playbookRunID}),
 	); err != nil {
@@ -630,6 +696,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 			"CurrentStatus":      app.StatusInProgress,
 			"EndAt":              0,
 			"LastStatusUpdateAt": restoredAt,
+			"UpdateAt":           model.GetMillis(),
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)
@@ -957,7 +1024,8 @@ func (s *playbookRunStore) NukeDB() (err error) {
 func (s *playbookRunStore) ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error {
 	updateQuery := s.queryBuilder.Update("IR_Incident").
 		Where(sq.Eq{"ID": playbookRunID}).
-		Set("CreateAt", model.GetMillisForTime(creationTimestamp))
+		Set("CreateAt", model.GetMillisForTime(creationTimestamp)).
+		Set("UpdateAt", model.GetMillis())
 
 	sqlResult, err := s.store.execBuilder(s.store.db, updateQuery)
 	if err != nil {
@@ -1009,7 +1077,10 @@ func (s *playbookRunStore) SetBroadcastChannelIDsToRootID(playbookRunID string, 
 
 	_, err = s.store.execBuilder(s.store.db,
 		sq.Update("IR_Incident").
-			Set("ChannelIDToRootID", data).
+			SetMap(map[string]interface{}{
+				"ChannelIDToRootID": data,
+				"UpdateAt":          model.GetMillis(),
+			}).
 			Where(sq.Eq{"ID": playbookRunID}))
 	if err != nil {
 		return errors.Wrapf(err, "failed to set ChannelIDsToRootID column for playbookRunID '%s'", playbookRunID)

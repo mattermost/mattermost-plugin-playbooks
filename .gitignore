@@ -20,3 +20,11 @@ server/e2etest.config.json
 .notice-work
 .aider*
 .env
+
+Claude.md
+
+MM-59287
+MM-61195
+MM-62691
+PlayBookMobileProposal.txt
+cypress/
