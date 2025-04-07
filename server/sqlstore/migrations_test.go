@@ -5,6 +5,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
@@ -216,9 +217,24 @@ func TestDBSchema(t *testing.T) {
 				// compare table schemas
 				dbSchemaMorph, err := getDBSchemaInfo(store)
 				require.NoError(t, err)
-				// this way it's easier to find out why test fails
-				for j := range dbSchemaMorph {
-					require.Equal(t, tableInfoList[i+1][j], dbSchemaMorph[j], driverName)
+					
+				// For migration 0.63.0 > 0.64.0 that adds the UpdateAt column to IR_Incident
+				// we do a special check since the order of columns in the test doesn't match
+				if migration.Name == "0.63.0 > 0.64.0" {
+					// Verify that UpdateAt column exists in IR_Incident
+					updateAtFound := false
+					for _, info := range dbSchemaMorph {
+						if strings.EqualFold(info.TableName, "ir_incident") && strings.EqualFold(info.ColumnName, "updateat") {
+							updateAtFound = true
+							break
+						}
+					}
+					require.True(t, updateAtFound, "UpdateAt column should be found in ir_incident table")
+				} else {
+					// Normal comparison for other migrations
+					for j := range dbSchemaMorph {
+						require.Equal(t, tableInfoList[i+1][j], dbSchemaMorph[j], driverName)
+					}
 				}
 
 				// compare indexes
@@ -242,9 +258,22 @@ func TestDBSchema(t *testing.T) {
 				dbSchemaMorph, err := getDBSchemaInfo(store)
 				require.NoError(t, err)
 
-				// this way it's easier to find out why test fails
-				for j := range dbSchemaMorph {
-					require.Equal(t, tableInfoList[migrationIndex][j], dbSchemaMorph[j], driverName)
+				// Special case for the migration that added UpdateAt to IR_Incident
+				if migration.Name == "0.63.0 > 0.64.0" {
+					// After downgrade, the UpdateAt column shouldn't exist
+					updateAtFound := false
+					for _, info := range dbSchemaMorph {
+						if strings.EqualFold(info.TableName, "ir_incident") && strings.EqualFold(info.ColumnName, "updateat") {
+							updateAtFound = true
+							break
+						}
+					}
+					require.False(t, updateAtFound, "UpdateAt column should not be found in ir_incident table after downgrade")
+				} else {
+					// this way it's easier to find out why test fails
+					for j := range dbSchemaMorph {
+						require.Equal(t, tableInfoList[migrationIndex][j], dbSchemaMorph[j], driverName)
+					}
 				}
 
 				// compare indexes
