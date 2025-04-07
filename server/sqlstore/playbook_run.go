@@ -359,10 +359,10 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
 	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
 
-	// Filter by UpdateAt for the since parameter
-	if options.SinceUpdateAt > 0 {
-		queryForResults = queryForResults.Where(sq.GtOrEq{"i.UpdateAt": options.SinceUpdateAt})
-		queryForTotal = queryForTotal.Where(sq.GtOrEq{"i.UpdateAt": options.SinceUpdateAt})
+	// Filter by UpdateAt for the activity since parameter
+	if options.ActivitySince > 0 {
+		queryForResults = queryForResults.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
+		queryForTotal = queryForTotal.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
 	}
 
 	queryForResults, err := applyPlaybookRunFilterOptionsSort(queryForResults, options)
@@ -442,14 +442,14 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		Items:      playbookRuns,
 	}
 
-	// Get finished runs if since parameter is specified
-	// This returns information about runs that were finished (EndAt field set) after the since timestamp
-	if options.SinceUpdateAt > 0 {
+	// Get finished runs if activity_since parameter is specified
+	// This returns information about runs that were finished (EndAt field set) after the activity_since timestamp
+	if options.ActivitySince > 0 {
 		// We use a separate DB connection instead of the transaction because the transaction
 		// might have already been committed by the time we reach here (in case of an error).
 		// Since this is additional information and not critical for the main query result,
 		// it's safer to use a separate connection.
-		finishedRuns, err := s.getFinishedPlaybookRunsSince(s.store.db, options.SinceUpdateAt, options.TeamID)
+		finishedRuns, err := s.getFinishedPlaybookRunsSince(s.store.db, options.ActivitySince, options.TeamID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get finished playbook runs")
 		}

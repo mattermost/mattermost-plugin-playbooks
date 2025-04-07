@@ -97,7 +97,7 @@ func TestSinceParameter(t *testing.T) {
 		// Call API with since parameter
 		ctx := context.Background()
 		result, err := c.PlaybookRuns.List(ctx, 0, 100, PlaybookRunListOptions{
-			SinceUpdateAt: since,
+			ActivitySince: since,
 		})
 		
 		// Verify results
@@ -129,7 +129,7 @@ func TestSinceParameter(t *testing.T) {
 		// Call API with since parameter
 		ctx := context.Background()
 		result, err := c.PlaybookRuns.List(ctx, 0, 100, PlaybookRunListOptions{
-			SinceUpdateAt: since,
+			ActivitySince: since,
 		})
 		
 		// Verify results
@@ -208,12 +208,12 @@ func TestSinceParameter(t *testing.T) {
 			sinceStr := query.Get("since")
 			
 			// Validate that since parameter exists and has the expected value
-			require.NotEmpty(t, sinceStr, "SinceUpdateAt parameter should be present in URL")
+			require.NotEmpty(t, sinceStr, "ActivitySince parameter should be present in URL")
 			
 			// Parse the value and verify it matches what we sent
 			since, err := strconv.ParseInt(sinceStr, 10, 64)
-			require.NoError(t, err, "SinceUpdateAt parameter should be a valid int64")
-			assert.Equal(t, int64(12345), since, "SinceUpdateAt parameter should match the value we sent")
+			require.NoError(t, err, "ActivitySince parameter should be a valid int64")
+			assert.Equal(t, int64(12345), since, "ActivitySince parameter should match the value we sent")
 			
 			// Return an empty success response
 			w.WriteHeader(http.StatusOK)
@@ -238,7 +238,7 @@ func TestSinceParameter(t *testing.T) {
 		// Make the request with a specific since value that we can check
 		ctx := context.Background()
 		_, err = urlCheckC.PlaybookRuns.List(ctx, 0, 100, PlaybookRunListOptions{
-			SinceUpdateAt: 12345,
+			ActivitySince: 12345,
 		})
 		require.NoError(t, err, "Request with since parameter should succeed")
 	})

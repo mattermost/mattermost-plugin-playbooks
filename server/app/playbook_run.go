@@ -1092,14 +1092,14 @@ type PlaybookRunFilterOptions struct {
 	// Types filters by all run types in the list (inclusive)
 	Types []string
 
-	// SinceUpdateAt, if not zero, returns playbook runs that have been updated since this timestamp
-	// and includes information about runs that have been finished since this timestamp.
-	// Note that both creating and finishing a run update the UpdateAt field, so newly created
-	// runs and finished runs will appear in the results. Finished runs will also be included
-	// in the FinishedIDs field.
+	// ActivitySince, if not zero, returns playbook runs with any activity since this timestamp,
+	// including creation, updates, or completion. It will return playbook runs that have been
+	// created, modified, or finished since this timestamp.
+	// In addition to including these runs in the Items field, any runs that were finished
+	// after this timestamp will also be included in the FinishedIDs field.
 	// A value of 0 (or negative, which is normalized to 0) means this filter is not applied.
 	// Maps to the "since" URL parameter in the API and client.
-	SinceUpdateAt int64 `url:"since,omitempty"`
+	ActivitySince int64 `url:"since,omitempty"`
 
 	// Skip getting extra information (like timeline events and status posts). Used by GraphQL to limit the amount of data retrieved.
 	SkipExtras bool
@@ -1185,9 +1185,9 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
 	}
-	// Normalize negative SinceUpdateAt values to 0, which means "no filtering by update time"
-	if options.SinceUpdateAt < 0 {
-		options.SinceUpdateAt = 0
+	// Normalize negative ActivitySince values to 0, which means "no filtering by activity time"
+	if options.ActivitySince < 0 {
+		options.ActivitySince = 0
 	}
 
 	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {

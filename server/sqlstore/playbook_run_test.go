@@ -1322,7 +1322,7 @@ func TestGetPlaybookRunIDsForUser(t *testing.T) {
 	}
 }
 
-func TestSinceUpdateAt(t *testing.T) {
+func TestActivitySince(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookRunStore := setupPlaybookRunStore(t, db)
@@ -1393,7 +1393,7 @@ func TestSinceUpdateAt(t *testing.T) {
 				IsAdmin: true,
 			}, app.PlaybookRunFilterOptions{
 				TeamID:        teamID,
-				SinceUpdateAt: oldUpdateTime,
+				ActivitySince: oldUpdateTime,
 				Page:          0,
 				PerPage:       10,
 			})
@@ -1415,7 +1415,7 @@ func TestSinceUpdateAt(t *testing.T) {
 				IsAdmin: true,
 			}, app.PlaybookRunFilterOptions{
 				TeamID:        teamID,
-				SinceUpdateAt: newUpdateTime,
+				ActivitySince: newUpdateTime,
 				Page:          0,
 				PerPage:       10,
 			})
@@ -1448,7 +1448,7 @@ func TestSinceUpdateAt(t *testing.T) {
 				IsAdmin: true,
 			}, app.PlaybookRunFilterOptions{
 				TeamID:        teamID,
-				SinceUpdateAt: baseTime + 1000, // Future time
+				ActivitySince: baseTime + 1000, // Future time
 				Page:          0,
 				PerPage:       10,
 			})
@@ -1483,7 +1483,7 @@ func TestSinceUpdateAt(t *testing.T) {
 				IsAdmin: true,
 			}, app.PlaybookRunFilterOptions{
 				TeamID:        teamID,
-				SinceUpdateAt: baseTime,
+				ActivitySince: baseTime,
 				Page:          0,
 				PerPage:       10,
 			})
@@ -1520,7 +1520,7 @@ func TestSinceUpdateAt(t *testing.T) {
 				IsAdmin: true,
 			}, app.PlaybookRunFilterOptions{
 				TeamID:        model.NewId(), // Non-existent team
-				SinceUpdateAt: 0,
+				ActivitySince: 0,
 				Page:          0,
 				PerPage:       10,
 			})
