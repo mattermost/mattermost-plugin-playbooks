@@ -24,13 +24,11 @@ describe('channels > App Bar', {testIsolation: true}, () => {
         cy.apiAdminLogin();
     });
 
-    describe('App Bar disabled', () => {
-        before(() => {
-            cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: true}});
+    it('App Bar disabled', () => {
+        cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: true}});
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
+        // # Login as testUser
+        cy.apiLogin(testUser);
 
         it('should not show the Playbook App Bar icon', () => {
             // # Navigate directly to a non-playbook run channel
@@ -43,13 +41,11 @@ describe('channels > App Bar', {testIsolation: true}, () => {
         });
     });
 
-    describe('App Bar enabled', () => {
-        before(() => {
-            cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: false}});
+    it('App Bar enabled', () => {
+        cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: false}});
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
+        // # Login as testUser
+        cy.apiLogin(testUser);
 
         it('should show "Playbooks" tooltip for Playbook App Bar icon', () => {
             // # Navigate directly to a non-playbook run channel
