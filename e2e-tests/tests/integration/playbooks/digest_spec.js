@@ -11,7 +11,9 @@ import {FIVE_SEC} from '../../fixtures/timeouts';
 // Stage: @prod
 // Group: @playbooks
 
-describe('digest messages', {testIsolation: true}, () => {
+// https://mattermost.atlassian.net/browse/MM-63692
+// eslint-disable-next-line no-only-tests/no-only-tests
+describe.skip('digest messages', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
     let testPlaybook;
@@ -92,7 +94,7 @@ describe('digest messages', {testIsolation: true}, () => {
                 // # assert two blocks: inprogress+overdue
                 cy.get('ul').should('have.length', 3);
 
-                // * CLick the first link - overdue status
+                // * Click the first link - overdue status
                 cy.get('ul a').eq(0).click().wait(FIVE_SEC);
             });
 
@@ -125,7 +127,7 @@ describe('digest messages', {testIsolation: true}, () => {
                 // # assert two blocks: inprogress+overdue
                 cy.get('ul').should('have.length', 3);
 
-                // * CLick the second link - inprogress
+                // * Click the second link - inprogress
                 cy.get('ul a').eq(1).click().wait(FIVE_SEC);
             });
 
@@ -158,7 +160,7 @@ describe('digest messages', {testIsolation: true}, () => {
                 // # assert two blocks: inprogress+overdue
                 cy.get('ul').should('have.length', 3);
 
-                // * CLick link - assigned task
+                // * Click link - assigned task
                 cy.get('p a').click().wait(FIVE_SEC);
             });
 

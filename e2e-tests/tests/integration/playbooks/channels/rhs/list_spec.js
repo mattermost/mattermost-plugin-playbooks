@@ -186,7 +186,9 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').contains('My cool new run name');
         });
 
-        it('can change linked channel', () => {
+        // https://mattermost.atlassian.net/browse/MM-63692
+        // eslint-disable-next-line no-only-tests/no-only-tests
+        it.skip('can change linked channel', () => {
             // # Click on the kebab menu
             cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
 

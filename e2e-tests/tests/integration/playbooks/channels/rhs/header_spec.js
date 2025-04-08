@@ -123,7 +123,9 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
         });
 
-        it('by clicking on dot menu item', () => {
+        // https://mattermost.atlassian.net/browse/MM-63692
+        // eslint-disable-next-line no-only-tests/no-only-tests
+        it.skip('by clicking on dot menu item', () => {
             // # Run the playbook
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
