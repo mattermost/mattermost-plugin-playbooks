@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {HALF_SEC} from '../../../../fixtures/timeouts';
+import {ONE_SEC} from '../../../../fixtures/timeouts';
 
 // Stage: @prod
 // Group: @playbooks
@@ -151,7 +151,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             });
 
             // # type text in textarea
-            cy.focused().should('be.visible').type('new summary{ctrl+enter}').wait(HALF_SEC);
+            cy.get('#rhsContainer').findByTestId('textarea-description').should('be.focused').type('new summary').wait(ONE_SEC).type('{ctrl+enter}').wait(ONE_SEC);
 
             // * make sure the updated summary is here
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
@@ -210,7 +210,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # click on the field
             cy.get('#rhsContainer').within(() => {
                 cy.findByTestId('buttons-row').invoke('show').within(() => {
-                    cy.findAllByRole('button').eq(1).click().wait(HALF_SEC);
+                    cy.findAllByRole('button').eq(1).click();
                 });
             });
 
