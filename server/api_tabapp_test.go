@@ -43,9 +43,10 @@ func TestTabAppGetRuns(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	setDeveloperMode := func(t *testing.T, enable bool) {
+	setDeveloperAndTestingMode := func(t *testing.T, enable bool) {
 		var patchedConfig model.Config
 		patchedConfig.ServiceSettings.EnableDeveloper = model.NewPointer(enable)
+		patchedConfig.ServiceSettings.EnableTesting = model.NewPointer(enable)
 		_, _, err := e.ServerAdminClient.PatchConfig(context.Background(), &patchedConfig)
 		require.NoError(t, err)
 	}
@@ -71,7 +72,7 @@ func TestTabAppGetRuns(t *testing.T) {
 
 	t.Run("feature disabled", func(t *testing.T) {
 		setTabApp(t, false)
-		setDeveloperMode(t, false)
+		setDeveloperAndTestingMode(t, false)
 
 		response, err := do(t, http.MethodGet, nil)
 		require.Error(t, err)
@@ -81,7 +82,7 @@ func TestTabAppGetRuns(t *testing.T) {
 
 	t.Run("CORS headers, no provided Origin header", func(t *testing.T) {
 		setTabApp(t, true)
-		setDeveloperMode(t, false)
+		setDeveloperAndTestingMode(t, false)
 
 		response, err := do(t, http.MethodOptions, nil)
 		require.NoError(t, err)
@@ -91,7 +92,7 @@ func TestTabAppGetRuns(t *testing.T) {
 
 	t.Run("CORS headers, matching Origin header", func(t *testing.T) {
 		setTabApp(t, true)
-		setDeveloperMode(t, false)
+		setDeveloperAndTestingMode(t, false)
 
 		response, err := do(t, http.MethodOptions, map[string]string{
 			"Origin": api.MicrosoftTeamsAppDomain,
@@ -103,7 +104,7 @@ func TestTabAppGetRuns(t *testing.T) {
 
 	t.Run("CORS headers, mis-matched Origin header", func(t *testing.T) {
 		setTabApp(t, true)
-		setDeveloperMode(t, false)
+		setDeveloperAndTestingMode(t, false)
 
 		response, err := do(t, http.MethodOptions, map[string]string{
 			"Origin": "example.com",
@@ -113,9 +114,9 @@ func TestTabAppGetRuns(t *testing.T) {
 		assertCORS(t, api.MicrosoftTeamsAppDomain, response)
 	})
 
-	t.Run("CORS headers, mis-matched Origin header, developer mode", func(t *testing.T) {
+	t.Run("CORS headers, mis-matched Origin header, developer + testing mode", func(t *testing.T) {
 		setTabApp(t, true)
-		setDeveloperMode(t, true)
+		setDeveloperAndTestingMode(t, true)
 
 		response, err := do(t, http.MethodOptions, map[string]string{
 			"Origin": "example.com",
@@ -125,9 +126,9 @@ func TestTabAppGetRuns(t *testing.T) {
 		assertCORS(t, "example.com", response)
 	})
 
-	t.Run("fetch runs, none to return (no token and developer mode)", func(t *testing.T) {
+	t.Run("fetch runs, none to return (no token and developer + testing mode)", func(t *testing.T) {
 		setTabApp(t, true)
-		setDeveloperMode(t, true)
+		setDeveloperAndTestingMode(t, true)
 
 		response, err := do(t, http.MethodGet, map[string]string{
 			"Authorization": "",
@@ -144,9 +145,9 @@ func TestTabAppGetRuns(t *testing.T) {
 		require.Empty(t, tabAppResults.Posts)
 	})
 
-	t.Run("fetch runs, one to return (no token and developer mode), show full name disabled", func(t *testing.T) {
+	t.Run("fetch runs, one to return (no token and developer + testing mode), show full name disabled", func(t *testing.T) {
 		setTabApp(t, true)
-		setDeveloperMode(t, true)
+		setDeveloperAndTestingMode(t, true)
 		setShowFullName(t, false)
 
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
@@ -190,9 +191,9 @@ func TestTabAppGetRuns(t *testing.T) {
 		require.Empty(t, tabAppResults.Posts)
 	})
 
-	t.Run("fetch runs, one to return (no token and developer mode), show full name enabled", func(t *testing.T) {
+	t.Run("fetch runs, one to return (no token and developer + testing mode), show full name enabled", func(t *testing.T) {
 		setTabApp(t, true)
-		setDeveloperMode(t, true)
+		setDeveloperAndTestingMode(t, true)
 		setShowFullName(t, true)
 
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
