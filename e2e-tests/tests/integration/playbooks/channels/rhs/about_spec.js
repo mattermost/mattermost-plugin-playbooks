@@ -120,7 +120,10 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             cy.wait(ONE_SEC);
 
             // # type text in textarea
-            cy.focused().should('be.visible').type('new summary').wait(ONE_SEC).type('{ctrl+enter}');
+            cy.focused().should('be.visible').as('textarea');
+            cy.get('@textarea').type('new summary');
+            cy.wait(ONE_SEC);
+            cy.get('@textarea').type('{ctrl+enter}');
 
             // * make sure the updated summary is here
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
