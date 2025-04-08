@@ -525,7 +525,6 @@ func TestRunRetrieval(t *testing.T) {
 		assert.Len(t, list2.Items, 0)
 	})
 
-	// Move the "filter by channel id" test to the end so it doesn't affect other tests
 	t.Run("filter by channel id", func(t *testing.T) {
 		// Create another run to verify filtering works
 		otherRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
