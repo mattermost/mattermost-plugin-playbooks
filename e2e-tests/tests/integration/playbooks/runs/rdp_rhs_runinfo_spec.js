@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {FIVE_SEC} from '../../../fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -198,8 +200,9 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 cy.apiDeleteChannel(testRun.channel_id).then(() => {
                     cy.visit(`/playbooks/runs/${testRun.id}`);
 
-                    // * Assert channel name
-                    getOverviewEntry('channel').contains('Channel deleted');
+                    // https://mattermost.atlassian.net/browse/MM-63682
+                    // * Assert channel status private
+                    getOverviewEntry('channel').contains('Private');
                 });
             });
         });
