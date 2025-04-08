@@ -596,7 +596,17 @@ func (h *PlaybookRunHandler) getPlaybookRunMetadata(c *Context, w http.ResponseW
 		return
 	}
 
-	playbookRunMetadata, err := h.playbookRunService.GetPlaybookRunMetadata(playbookRunID)
+	// Get the playbook run to access its channel ID
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Check if user has permission to view the channel
+	hasChannelAccess := h.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
+	// Get metadata with potentially filtered information
+	playbookRunMetadata, err := h.playbookRunService.GetPlaybookRunMetadata(playbookRunID, hasChannelAccess)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return

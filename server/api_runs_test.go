@@ -1984,3 +1984,189 @@ func TestGetOwners(t *testing.T) {
 		})
 	}
 }
+
+func TestRunGetMetadata(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("public - get metadata as participant", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata.ChannelName)
+		assert.NotEmpty(t, metadata.ChannelDisplayName)
+		assert.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("public - get metadata as non-member should hide channel info but include num participants", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.ChannelName)
+		assert.Empty(t, metadata.ChannelDisplayName)
+		assert.Zero(t, metadata.TotalPosts)
+		assert.NotZero(t, metadata.NumParticipants) // Participants count should be included
+		assert.NotEmpty(t, metadata.TeamName)       // Team name should still be available
+	})
+
+	t.Run("public - fails because not in team", func(t *testing.T) {
+		metadata, err := e.PlaybooksClientNotInTeam.PlaybookRuns.GetMetadata(context.Background(), e.BasicRun.ID)
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+
+	t.Run("private channel - get metadata as participant", func(t *testing.T) {
+		// Create a run with private channel
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata.ChannelName)
+		assert.NotEmpty(t, metadata.ChannelDisplayName)
+		assert.NotZero(t, metadata.NumParticipants)
+		assert.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("private channel - get metadata as non-member should hide channel info but include participants", func(t *testing.T) {
+		// Create private playbook and run
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "TestPrivatePlaybook custom",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// RegularUser2 is a playbook member but not channel member
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		assert.Empty(t, metadata.ChannelName)
+		assert.Empty(t, metadata.ChannelDisplayName)
+		assert.Zero(t, metadata.TotalPosts)
+		assert.NotZero(t, metadata.NumParticipants) // Number of participants should be included
+		assert.NotEmpty(t, metadata.TeamName)       // Team name should still be available
+	})
+
+	t.Run("private channel - not a member of playbook", func(t *testing.T) {
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private channel run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPrivatePlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		metadata, err := e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+
+	t.Run("invalid run ID", func(t *testing.T) {
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), "invalid_id")
+		require.Error(t, err)
+		assert.Nil(t, metadata)
+	})
+	t.Run("metadata filtering for different user roles", func(t *testing.T) {
+		// Create a private playbook
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Private Playbook for Metadata Test",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create a playbook run with a private channel
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Private Run for Metadata Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// 1. Test as channel member (owner) - should see all metadata
+		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, metadata.ChannelName)
+		require.NotEmpty(t, metadata.ChannelDisplayName)
+		require.NotEmpty(t, metadata.TeamName)
+		// Total posts might be 0 at creation, but the field should exist
+		require.Zero(t, metadata.TotalPosts)
+
+		// Add RegularUser2 as a playbook member so they can access the run but not the channel
+		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), privatePlaybookID)
+		require.NoError(t, err)
+		playbook.Members = append(playbook.Members, client.PlaybookMember{
+			UserID: e.RegularUser2.Id,
+			Roles:  []string{app.PlaybookRoleMember},
+		})
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *playbook)
+		require.NoError(t, err)
+
+		// 2. Test as non-channel member but with run access
+		metadata, err = e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		// These fields should be empty/zero for non-channel members
+		require.Empty(t, metadata.ChannelName)
+		require.Empty(t, metadata.ChannelDisplayName)
+		require.Zero(t, metadata.TotalPosts)
+		// But team name should still be available
+		require.NotEmpty(t, metadata.TeamName)
+		// Followers should be accessible regardless of channel membership
+		require.NotNil(t, metadata.Followers)
+
+		// 3. Test with system admin - should still follow permission rules
+		metadata, err = e.PlaybooksAdminClient.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.NoError(t, err)
+		// Admin should have all info since they are a playbook member with channel access
+		require.NotEmpty(t, metadata.ChannelName)
+		require.NotEmpty(t, metadata.ChannelDisplayName)
+		require.NotEmpty(t, metadata.TeamName)
+	})
+
+	t.Run("unable to access run metadata without permissions", func(t *testing.T) {
+		// Create a private playbook with no members other than creator
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Restricted Private Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Create a run
+		privateRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Restricted Private Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  privatePlaybookID,
+		})
+		require.NoError(t, err)
+
+		// Test as non-member - should not be able to access metadata at all
+		_, err = e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
+		require.Error(t, err)
+	})
+}
