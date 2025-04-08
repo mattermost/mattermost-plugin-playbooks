@@ -150,8 +150,13 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                 cy.findByText('Edit run summary').click();
             });
 
-            // # type text in textarea
-            cy.get('#rhsContainer').findByTestId('textarea-description').should('be.focused').type('new summary').wait(ONE_SEC).type('{ctrl+enter}').wait(ONE_SEC);
+            // * Verify textarea is focused
+            cy.get('#rhsContainer').findByTestId('textarea-description').should('be.focused').as('textarea');
+
+            // # Type text in textarea
+            cy.get('@textarea').type('new summary{ctrl+enter}');
+
+            cy.wait(ONE_SEC);
 
             // * make sure the updated summary is here
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
