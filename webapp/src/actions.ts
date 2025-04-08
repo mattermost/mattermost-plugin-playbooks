@@ -152,7 +152,7 @@ export function openUpdateRunStatusModal(
     hasPermission: boolean,
     message?: string,
     reminderInSeconds?: number,
-    finishRunChecked?: boolean
+    finishRunChecked?: boolean,
 ) {
     return modals.openModal(makeUpdateRunStatusModalDefinition({
         playbookRunId,
