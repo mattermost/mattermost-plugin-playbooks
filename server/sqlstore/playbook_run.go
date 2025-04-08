@@ -527,9 +527,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	// Always ensure UpdateAt is set to current time when updating
-	if playbookRun.UpdateAt == 0 {
-		playbookRun.UpdateAt = model.GetMillis()
-	}
+	playbookRun.UpdateAt = model.GetMillis()
 
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)

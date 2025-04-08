@@ -387,8 +387,8 @@ func TestRestorePlaybookRun(t *testing.T) {
 		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
 		require.NoError(t, err)
 
-		// UpdateAt field is now set automatically by the migration, so we need to copy it
-		// to our expected object to make the test pass
+		// UpdateAt field is now set automatically by RestorePlaybookRun using model.GetMillis(),
+		// so we need to copy the actual value to our expected object to make the test pass
 		finalPlaybookRun.UpdateAt = actual.UpdateAt
 
 		require.Equal(t, &finalPlaybookRun, actual)
