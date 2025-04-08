@@ -304,8 +304,10 @@ func (h *TabAppHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, r *ht
 	// In development, allow CORS from any requestor. Specify the host given in the origin and
 	// not the wildcard '*' to continue to allow exchange of authorization tokens. Otherwise,
 	// in production, we require the app to originate from the known domain.
-	enableDeveloper := h.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper
-	if enableDeveloper != nil && *enableDeveloper {
+	config := h.pluginAPI.Configuration.GetConfig()
+	enableDeveloperAndTesting := config.ServiceSettings.EnableDeveloper != nil && *config.ServiceSettings.EnableDeveloper &&
+		config.ServiceSettings.EnableTesting != nil && *config.ServiceSettings.EnableTesting
+	if enableDeveloperAndTesting {
 		logrus.WithField("origin", r.Header.Get("Origin")).Warn("Setting custom CORS header to match developer origin")
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 	} else {
@@ -322,7 +324,7 @@ func (h *TabAppHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, r *ht
 
 	// Validate the token in the request, handling all errors if invalid.
 	expectedTenantIDs := strings.Split(h.config.GetConfiguration().TeamsTabAppTenantIDs, ",")
-	if validationErr := validateToken(h.getJWTKeyFunc(), r, expectedTenantIDs, enableDeveloper != nil && *enableDeveloper); validationErr != nil {
+	if validationErr := validateToken(h.getJWTKeyFunc(), r, expectedTenantIDs, enableDeveloperAndTesting); validationErr != nil {
 		h.HandleErrorWithCode(w, c.logger, validationErr.StatusCode, validationErr.Message, validationErr.Err)
 		return
 	}
