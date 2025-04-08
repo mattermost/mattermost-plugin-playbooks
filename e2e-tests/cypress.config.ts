@@ -64,12 +64,7 @@ export default defineConfig({
         testIsolation: false,
     },
     retries: {
-        experimentalStrategy: 'detect-flake-and-pass-on-threshold',
-        experimentalOptions: {
-            maxRetries: 2,
-            passesRequired: 1,
-        },
-        openMode: false,
-        runMode: true,
+        openMode: 0,
+        runMode: 2,
     },
 });
