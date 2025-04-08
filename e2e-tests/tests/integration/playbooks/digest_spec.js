@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {FIVE_SEC} from '../../../../fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -91,7 +93,7 @@ describe('digest messages', {testIsolation: true}, () => {
                 cy.get('ul').should('have.length', 3);
 
                 // * CLick the first link - overdue status
-                cy.get('ul a').eq(0).click();
+                cy.get('ul a').eq(0).click().wait(FIVE_SEC);
             });
 
             // # assert url is RDP
@@ -124,7 +126,7 @@ describe('digest messages', {testIsolation: true}, () => {
                 cy.get('ul').should('have.length', 3);
 
                 // * CLick the second link - inprogress
-                cy.get('ul a').eq(1).click();
+                cy.get('ul a').eq(1).click().wait(FIVE_SEC);
             });
 
             // # assert url is RDP
@@ -157,7 +159,7 @@ describe('digest messages', {testIsolation: true}, () => {
                 cy.get('ul').should('have.length', 3);
 
                 // * CLick link - assigned task
-                cy.get('p a').click();
+                cy.get('p a').click().wait(FIVE_SEC);
             });
 
             // # assert url is RDP
