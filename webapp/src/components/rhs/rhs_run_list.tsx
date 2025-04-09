@@ -772,8 +772,8 @@ const ViewOtherRunsButton = styled(TertiaryButton)`
     background: none;
 `;
 const StyledClipboardChecklist = styled(ClipboardChecklist)`
-    width: 98px;
-    height: 98px;
+    width: 189.33px;
+    height: 106.67px;
 `;
 
 interface ContextMenuProps {
