@@ -15,6 +15,7 @@ import {
 
 import {PlaybookRun, PlaybookRunStatus} from './types/playbook_run';
 import {PlaybookRunUpdate} from './types/websocket_events';
+import {TimelineEventType} from './types/rhs';
 import {PlaybookRunType} from './graphql/generated/graphql';
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
@@ -1156,6 +1157,468 @@ describe('incremental updates', () => {
         // require mocking the fetchPlaybookRun client method, which doesn't align with
         // the existing test patterns. The current tests focus on the handler logic for
         // runs that are already in the store.
+    });
+
+    describe('timeline events incremental updates', () => {
+        // Setup test environment for each test
+        let testDispatch: jest.Mock;
+        let testGetState: jest.Mock;
+
+        // Create a fresh copy of the playbook run for each test to avoid state leakage
+        let testPlaybookRun: PlaybookRun;
+
+        beforeEach(() => {
+            // Create a fresh deep copy of the base playbook run
+            testPlaybookRun = JSON.parse(JSON.stringify(basePlaybookRun));
+
+            // Add some initial timeline events for testing
+            testPlaybookRun.timeline_events = [
+                {
+                    id: 'event_1',
+                    playbook_run_id: testPlaybookRun.id,
+                    create_at: 1000,
+                    delete_at: 0,
+                    event_at: 1000,
+                    event_type: TimelineEventType.RunCreated,
+                    summary: 'Playbook run created',
+                    details: 'Run was created',
+                    post_id: '',
+                    subject_user_id: 'user_1',
+                    creator_user_id: 'user_1',
+                },
+                {
+                    id: 'event_2',
+                    playbook_run_id: testPlaybookRun.id,
+                    create_at: 2000,
+                    delete_at: 0,
+                    event_at: 2000,
+                    event_type: TimelineEventType.OwnerChanged,
+                    summary: 'Owner changed',
+                    details: 'Owner was changed to user_1',
+                    post_id: '',
+                    subject_user_id: 'user_1',
+                    creator_user_id: 'user_2',
+                },
+            ];
+
+            // Reset mocks with fresh playbook run
+            testDispatch = jest.fn();
+            testGetState = jest.fn(() => {
+                return {
+                    entities: {
+                        playbookRuns: {
+                            runs: {
+                                [testPlaybookRun.id]: testPlaybookRun,
+                            },
+                        },
+                    },
+                } as any;
+            });
+        });
+
+        it('handles adding a new timeline event', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Create a new timeline event to add to the existing ones
+            const newEvent = {
+                id: 'event_3',
+                playbook_run_id: testPlaybookRun.id,
+                create_at: 3000,
+                delete_at: 0,
+                event_at: 3000,
+                event_type: 'status_updated',
+                summary: 'Status updated',
+                details: 'Status was updated to "In progress"',
+                subject_user_id: 'user_1',
+                creator_user_id: 'user_1',
+            };
+
+            // Create an update with the timeline_events field including the new event
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                updated_at: 3000,
+                changed_fields: {
+                    timeline_events: [...testPlaybookRun.timeline_events, newEvent],
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify the timeline_events was updated correctly
+            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(3);
+
+            // Check for the new event
+            const addedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_3'
+            );
+            expect(addedEvent).toBeDefined();
+            expect(addedEvent?.event_type).toBe('status_updated');
+            expect(addedEvent?.summary).toBe('Status updated');
+
+            // Verify the original events are still there
+            const originalEvent1 = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_1'
+            );
+            const originalEvent2 = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_2'
+            );
+            expect(originalEvent1).toBeDefined();
+            expect(originalEvent2).toBeDefined();
+
+            // Verify sort order by create_at
+            const timelineEvents = dispatchedAction.playbookRun.timeline_events;
+            for (let i = 1; i < timelineEvents.length; i++) {
+                expect(timelineEvents[i - 1].create_at).toBeLessThanOrEqual(timelineEvents[i].create_at);
+            }
+        });
+
+        it('handles modifying existing timeline events', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Create a modified version of an existing event
+            const modifiedEvents = [...testPlaybookRun.timeline_events];
+            modifiedEvents[0] = {
+                ...modifiedEvents[0],
+                summary: 'Updated summary',
+                details: 'Updated details',
+            };
+
+            // Create an update with the modified timeline_events
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                updated_at: 3000,
+                changed_fields: {
+                    timeline_events: modifiedEvents,
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify the timeline_events count hasn't changed
+            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(2);
+
+            // Check that the event was modified correctly
+            const modifiedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_1'
+            );
+            expect(modifiedEvent).toBeDefined();
+            expect(modifiedEvent?.summary).toBe('Updated summary');
+            expect(modifiedEvent?.details).toBe('Updated details');
+
+            // The unmodified event should remain unchanged
+            const unchangedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_2'
+            );
+            expect(unchangedEvent).toBeDefined();
+            expect(unchangedEvent?.summary).toBe('Owner changed');
+        });
+
+        it('handles deleted timeline events', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Make a copy of the first event but mark it as deleted
+            const deletedEvent = {
+                ...testPlaybookRun.timeline_events[0],
+                delete_at: 3000, // Set deletion timestamp
+            };
+
+            // Create an update with one event deleted
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                updated_at: 3000,
+                changed_fields: {
+                    timeline_events: [
+                        deletedEvent,
+                        testPlaybookRun.timeline_events[1],
+                    ],
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify the timeline_events still has both events
+            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(2);
+
+            // Check that the event was marked as deleted
+            const deletedEventInState = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_1'
+            );
+            expect(deletedEventInState).toBeDefined();
+            expect(deletedEventInState?.delete_at).toBe(3000);
+
+            // The other event should remain unchanged
+            const unchangedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_2'
+            );
+            expect(unchangedEvent).toBeDefined();
+            expect(unchangedEvent?.delete_at).toBe(0);
+        });
+
+        it('handles complex timeline updates with additions, modifications, and preserving order', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Add a third event to our test run
+            testPlaybookRun.timeline_events.push({
+                id: 'event_3',
+                playbook_run_id: testPlaybookRun.id,
+                create_at: 3000,
+                delete_at: 0,
+                event_at: 3000,
+                event_type: TimelineEventType.TaskStateModified,
+                summary: 'Task state changed',
+                details: 'Task was completed',
+                post_id: '',
+                subject_user_id: 'user_2',
+                creator_user_id: 'user_2',
+            });
+
+            // Create a new event to add
+            const newEvent = {
+                id: 'event_4',
+                playbook_run_id: testPlaybookRun.id,
+                create_at: 1500, // This timestamp is between events 1 and 2
+                delete_at: 0,
+                event_at: 1500,
+                event_type: 'ran_slash_command',
+                summary: 'Slash command executed',
+                details: 'User ran a slash command',
+                subject_user_id: 'user_1',
+                creator_user_id: 'user_1',
+            };
+
+            // Modified version of event 2
+            const modifiedEvent = {
+                ...testPlaybookRun.timeline_events[1],
+                summary: 'Owner updated',
+                details: 'Owner was updated to user_1',
+            };
+
+            // Deleted event (event 3)
+            const deletedEvent = {
+                ...testPlaybookRun.timeline_events[2],
+                delete_at: 4000,
+            };
+
+            // Create an update with complex timeline changes
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                updated_at: 4000,
+                changed_fields: {
+                    timeline_events: [
+                        testPlaybookRun.timeline_events[0], // Unchanged
+                        newEvent, // New event
+                        modifiedEvent, // Modified event
+                        deletedEvent, // Deleted event
+                    ],
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify we have 4 timeline events total
+            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(4);
+
+            // Verify the new event was added
+            const addedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_4'
+            );
+            expect(addedEvent).toBeDefined();
+            expect(addedEvent?.event_type).toBe('ran_slash_command');
+
+            // Verify the modified event was updated
+            const updatedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_2'
+            );
+            expect(updatedEvent).toBeDefined();
+            expect(updatedEvent?.summary).toBe('Owner updated');
+
+            // Verify the deleted event has the correct delete_at timestamp
+            const markedDeletedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_3'
+            );
+            expect(markedDeletedEvent).toBeDefined();
+            expect(markedDeletedEvent?.delete_at).toBe(4000);
+
+            // Verify events are in correct order by create_at
+            const timelineEvents = dispatchedAction.playbookRun.timeline_events;
+            expect(timelineEvents[0].id).toBe('event_1'); // 1000
+            expect(timelineEvents[1].id).toBe('event_4'); // 1500
+            expect(timelineEvents[2].id).toBe('event_2'); // 2000
+            expect(timelineEvents[3].id).toBe('event_3'); // 3000
+        });
+
+        it('initializes timeline_events if the property is missing', () => {
+            // Create a run without the timeline_events property
+            const runWithoutTimeline = JSON.parse(JSON.stringify(basePlaybookRun));
+            delete runWithoutTimeline.timeline_events;
+
+            // Update the test state
+            testGetState = jest.fn(() => {
+                return {
+                    entities: {
+                        playbookRuns: {
+                            runs: {
+                                [runWithoutTimeline.id]: runWithoutTimeline,
+                            },
+                        },
+                    },
+                } as any;
+            });
+
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // New timeline events to add
+            const newEvents = [
+                {
+                    id: 'event_1',
+                    playbook_run_id: runWithoutTimeline.id,
+                    create_at: 1000,
+                    delete_at: 0,
+                    event_at: 1000,
+                    event_type: 'incident_created',
+                    summary: 'Playbook run created',
+                    details: 'Run was created',
+                    subject_user_id: 'user_1',
+                    creator_user_id: 'user_1',
+                },
+            ];
+
+            // Create an update with timeline events
+            const update: PlaybookRunUpdate = {
+                id: runWithoutTimeline.id,
+                updated_at: 1000,
+                changed_fields: {
+                    timeline_events: newEvents,
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify the timeline_events was initialized correctly
+            expect(dispatchedAction.playbookRun.timeline_events).toBeDefined();
+            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(1);
+            expect(dispatchedAction.playbookRun.timeline_events[0].id).toBe('event_1');
+        });
+
+        it('handles concurrent timeline and other field updates', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Create a new timeline event
+            const newEvent = {
+                id: 'event_3',
+                playbook_run_id: testPlaybookRun.id,
+                create_at: 3000,
+                delete_at: 0,
+                event_at: 3000,
+                event_type: 'status_updated',
+                summary: 'Status updated',
+                details: 'Status was updated to "In progress"',
+                subject_user_id: 'user_1',
+                creator_user_id: 'user_1',
+            };
+
+            // Create an update with both timeline_events and other field changes
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                updated_at: 3000,
+                changed_fields: {
+                    name: 'Updated Run Name',
+                    owner_user_id: 'user_2',
+                    timeline_events: [...testPlaybookRun.timeline_events, newEvent],
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify both the timeline_events and other fields were updated
+            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(3);
+            expect(dispatchedAction.playbookRun.name).toBe('Updated Run Name');
+            expect(dispatchedAction.playbookRun.owner_user_id).toBe('user_2');
+
+            // Verify the new event was added
+            const addedEvent = dispatchedAction.playbookRun.timeline_events.find(
+                (e: any) => e.id === 'event_3'
+            );
+            expect(addedEvent).toBeDefined();
+        });
     });
 
     describe('handling edge cases', () => {
