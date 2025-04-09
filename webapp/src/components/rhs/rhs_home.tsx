@@ -78,12 +78,14 @@ const Heading = styled.h3`
     ${SemiBoldHeading}
     font-size: 30px;
     color: var(--center-channel-color);
+    letter-spacing: -0.01em;
 `;
 
 const ListHeading = styled.h4`
     ${SemiBoldHeading}
     font-size: 18px;
     padding-left: 2.75rem;
+    letter-spacing: -0.005em;
 `;
 
 const ListSection = styled.div`
