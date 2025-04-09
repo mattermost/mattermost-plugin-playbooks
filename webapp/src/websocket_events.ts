@@ -107,12 +107,42 @@ function applyChangedFields(run: PlaybookRun, changedFields: Record<string, any>
     // Apply simple field changes first
     for (const [field, value] of Object.entries(changedFields)) {
         // Skip special fields that need custom handling
-        if (field === 'checklist_updates' || field === 'checklists') {
+        if (field === 'checklist_updates' || field === 'checklists' || field === 'timeline_events') {
             continue;
         }
 
         // Apply the change to the run
         (run as any)[field] = value;
+    }
+
+    // Handle timeline events specially by merging them with existing events
+    if (changedFields.timeline_events) {
+        // If we don't have any existing timeline events, just set them
+        if (!run.timeline_events || !Array.isArray(run.timeline_events)) {
+            run.timeline_events = changedFields.timeline_events;
+        } else {
+            // Merge new timeline events with existing ones
+            // Create a map of existing events by ID for quick lookup
+            const existingEventsMap = new Map();
+            run.timeline_events.forEach(event => {
+                if (event && event.id) {
+                    existingEventsMap.set(event.id, event);
+                }
+            });
+
+            // Process each event from the update
+            changedFields.timeline_events.forEach(newEvent => {
+                if (newEvent && newEvent.id) {
+                    // If an event with this ID already exists, replace it
+                    // Otherwise, it's a new event to add
+                    existingEventsMap.set(newEvent.id, newEvent);
+                }
+            });
+
+            // Convert the map back to an array and sort by createAt if available
+            run.timeline_events = Array.from(existingEventsMap.values());
+            run.timeline_events.sort((a, b) => (a.createAt || 0) - (b.createAt || 0));
+        }
     }
 
     // If we have the entire checklists array, replace it
