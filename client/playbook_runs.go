@@ -311,7 +311,10 @@ func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID 
 		return err
 	}
 
-	_, err = s.client.do(ctx, req, nil)
+	resp, err := s.client.do(ctx, req, nil)
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
+	}
 	return err
 }
 
