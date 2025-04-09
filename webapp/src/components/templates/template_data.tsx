@@ -9,7 +9,7 @@ import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem} from 'src/t
 
 import MattermostLogo from 'src/components/assets/mattermost_logo_svg';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
-import RocketRelease from 'src/components/assets/illustrations/rocket_release_svg';
+import ProductRelease from 'src/components/assets/illustrations/product_release_svg';
 import BugBash from 'src/components/assets/illustrations/bug_bash_svg';
 import LearnPlaybooks from 'src/components/assets/illustrations/learn_playbooks_svg';
 import IncidentResolutionSvg from 'src/components/assets/illustrations/incident_resolution_svg';
@@ -66,7 +66,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Product Release',
         description: 'Perfect your release process from ideation to production.',
-        icon: <RocketRelease/>,
+        icon: <ProductRelease/>,
         color: '#C4313314',
         author: <MattermostLogo/>,
         template: {
