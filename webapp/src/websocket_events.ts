@@ -9,6 +9,8 @@ import {WebSocketMessage} from '@mattermost/client';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import {TimelineEvent} from 'src/types/rhs';
+
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
 import {navigateToUrl} from 'src/browser_routing';
@@ -124,14 +126,14 @@ function applyChangedFields(run: PlaybookRun, changedFields: Record<string, any>
             // Merge new timeline events with existing ones
             // Create a map of existing events by ID for quick lookup
             const existingEventsMap = new Map();
-            run.timeline_events.forEach(event => {
+            run.timeline_events.forEach((event) => {
                 if (event && event.id) {
                     existingEventsMap.set(event.id, event);
                 }
             });
 
             // Process each event from the update
-            changedFields.timeline_events.forEach(newEvent => {
+            changedFields.timeline_events.forEach((newEvent: TimelineEvent) => {
                 if (newEvent && newEvent.id) {
                     // If an event with this ID already exists, replace it
                     // Otherwise, it's a new event to add
@@ -139,9 +141,9 @@ function applyChangedFields(run: PlaybookRun, changedFields: Record<string, any>
                 }
             });
 
-            // Convert the map back to an array and sort by createAt if available
+            // Convert the map back to an array and sort by create_at if available
             run.timeline_events = Array.from(existingEventsMap.values());
-            run.timeline_events.sort((a, b) => (a.createAt || 0) - (b.createAt || 0));
+            run.timeline_events.sort((a, b) => (a.create_at || 0) - (b.create_at || 0));
         }
     }
 
