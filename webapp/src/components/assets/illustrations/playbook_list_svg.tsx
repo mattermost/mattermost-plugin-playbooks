@@ -3,8 +3,12 @@
 
 import React from 'react';
 
-const PlaybookListSvg = () => (
-    <svg width="179" height="179" viewBox="0 0 179 179" fill="none" xmlns="http://www.w3.org/2000/svg">
+interface Props {
+    size?: number;
+}
+
+const PlaybookListSvg = ({size = 179}: Props) => (
+    <svg width={size} height={size} viewBox="0 0 179 179" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g clipPath="url(#clip0_5155_188720)">
             <ellipse cx="89.25" cy="89.25" rx="89.25" ry="89.25" fill="var(--center-channel-color)" fillOpacity="0.08"/>
             <path d="M157.098 101.651L133 101.651L133 78.0001" stroke="var(--center-channel-color)" strokeOpacity="0.32" strokeWidth="1.5" strokeLinecap="round"/>

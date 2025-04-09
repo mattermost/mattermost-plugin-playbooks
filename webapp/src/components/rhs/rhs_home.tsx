@@ -23,7 +23,7 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import {telemetryEventForTemplate} from 'src/client';
 import {useCanCreatePlaybooksInTeam, useViewTelemetry} from 'src/hooks';
 import {RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
-import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
+import PlaybookListSvg from 'src/components/assets/illustrations/playbook_list_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
@@ -74,17 +74,15 @@ const Header = styled.div`
     display: grid;
 `;
 
-const Heading = styled.h4`
-    font-size: 18px;
-    line-height: 24px;
-    font-weight: 700;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
+const Heading = styled.h3`
+    ${SemiBoldHeading}
+    font-size: 30px;
+    color: var(--center-channel-color);
 `;
 
-const ListHeading = styled(Heading)`
-    ${SemiBoldHeading} {
-    }
-
+const ListHeading = styled.h4`
+    ${SemiBoldHeading}
+    font-size: 18px;
     padding-left: 2.75rem;
 `;
 
@@ -123,7 +121,7 @@ const RHSHome = () => {
 
     const headerContent = (
         <WelcomeBlock>
-            <PageRunCollaborationSvg/>
+            <PlaybookListSvg size={119}/>
             <Heading>
                 <FormattedMessage defaultMessage='Welcome to Playbooks!'/>
             </Heading>
