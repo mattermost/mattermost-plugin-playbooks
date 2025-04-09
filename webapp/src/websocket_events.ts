@@ -9,8 +9,6 @@ import {WebSocketMessage} from '@mattermost/client';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {TimelineEvent} from 'src/types/rhs';
-
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
 import {navigateToUrl} from 'src/browser_routing';
@@ -109,7 +107,7 @@ function applyChangedFields(run: PlaybookRun, changedFields: Record<string, any>
     // Apply simple field changes first
     for (const [field, value] of Object.entries(changedFields)) {
         // Skip special fields that need custom handling
-        if (field === 'checklist_updates' || field === 'checklists' || field === 'timeline_events') {
+        if (field === 'checklists' || field === 'timeline_events') {
             continue;
         }
 
@@ -119,43 +117,44 @@ function applyChangedFields(run: PlaybookRun, changedFields: Record<string, any>
 
     // Handle timeline events specially by merging them with existing events
     if (changedFields.timeline_events) {
-        // If we don't have any existing timeline events, just set them
-        if (!run.timeline_events || !Array.isArray(run.timeline_events)) {
-            run.timeline_events = changedFields.timeline_events;
-        } else {
-            // Merge new timeline events with existing ones
-            // Create a map of existing events by ID for quick lookup
-            const existingEventsMap = new Map();
-            run.timeline_events.forEach((event) => {
-                if (event && event.id) {
-                    existingEventsMap.set(event.id, event);
-                }
-            });
-
-            // Process each event from the update
-            changedFields.timeline_events.forEach((newEvent: TimelineEvent) => {
-                if (newEvent && newEvent.id) {
-                    // If an event with this ID already exists, replace it
-                    // Otherwise, it's a new event to add
-                    existingEventsMap.set(newEvent.id, newEvent);
-                }
-            });
-
-            // Convert the map back to an array and sort by create_at if available
-            run.timeline_events = Array.from(existingEventsMap.values());
-            run.timeline_events.sort((a, b) => (a.create_at || 0) - (b.create_at || 0));
-        }
+        applyTimelineUpdates(run, changedFields.timeline_events);
     }
 
-    // If we have the entire checklists array, replace it
+    // Apply checklist updates if provided by the server
     if (changedFields.checklists) {
-        run.checklists = changedFields.checklists;
-        return;
+        // The 'checklists' field contains updates that need to be applied
+        // to the existing checklists
+        applyChecklistUpdates(run, changedFields.checklists);
     }
+}
 
-    // Apply checklist updates if available
-    if (changedFields.checklist_updates) {
-        applyChecklistUpdates(run, changedFields.checklist_updates);
+// Helper function to apply timeline updates
+function applyTimelineUpdates(run: PlaybookRun, timelineEvents: any[]) {
+    // If we don't have any existing timeline events, just set them
+    if (!run.timeline_events || !Array.isArray(run.timeline_events)) {
+        run.timeline_events = timelineEvents;
+    } else {
+        // Merge new timeline events with existing ones
+        // Create a map of existing events by ID for quick lookup
+        const existingEventsMap = new Map();
+        run.timeline_events.forEach((event) => {
+            if (event && event.id) {
+                existingEventsMap.set(event.id, event);
+            }
+        });
+
+        // Process each event from the update
+        timelineEvents.forEach((newEvent) => {
+            if (newEvent && newEvent.id) {
+                // If an event with this ID already exists, replace it
+                // Otherwise, it's a new event to add
+                existingEventsMap.set(newEvent.id, newEvent);
+            }
+        });
+
+        // Convert the map back to an array and sort by create_at if available
+        run.timeline_events = Array.from(existingEventsMap.values());
+        run.timeline_events.sort((a, b) => (a.create_at || 0) - (b.create_at || 0));
     }
 }
 
@@ -181,6 +180,7 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]) {
         // Apply item updates
         if (update.item_updates && update.item_updates.length > 0) {
             checklist.items = [...checklist.items]; // Make a copy of the items array
+            const itemsToReposition: {item: any; position: number}[] = [];
 
             for (const itemUpdate of update.item_updates) {
                 const itemIndex = checklist.items.findIndex((item) => item.id === itemUpdate.id);
@@ -189,10 +189,47 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]) {
                 }
 
                 // Update the item with changed fields
-                checklist.items[itemIndex] = {
+                const updatedItem = {
                     ...checklist.items[itemIndex],
                     ...itemUpdate.fields,
                 };
+                checklist.items[itemIndex] = updatedItem;
+
+                // Track items that need repositioning
+                if (typeof itemUpdate.fields?.position === 'number') {
+                    itemsToReposition.push({
+                        item: updatedItem,
+                        position: itemUpdate.fields.position,
+                    });
+                }
+            }
+
+            // Handle repositioning after all updates are applied
+            if (itemsToReposition.length > 0) {
+                // Ensure all items have a position property for sorting
+                for (let i = 0; i < checklist.items.length; i++) {
+                    if (typeof checklist.items[i].position !== 'number') {
+                        checklist.items[i].position = i;
+                    }
+                }
+
+                // Sort the items by their position property
+                // Use a stable sort to preserve order when positions are the same
+                checklist.items.sort((a, b) => {
+                    const posA = a.position ?? 0;
+                    const posB = b.position ?? 0;
+
+                    // If positions are the same, use ID as a tiebreaker for stable sorting
+                    if (posA !== posB) {
+                        return posA - posB;
+                    }
+
+                    if (!a.id || !b.id) {
+                        return 0;
+                    }
+
+                    return a.id < b.id ? -1 : 1;
+                });
             }
         }
 
@@ -446,16 +483,49 @@ export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFu
         // Create a copy of the items array and the specific item
         const itemsCopy = [...checklist.items];
         const updatedItem = {...itemsCopy[itemIndex]};
+        let needsReordering = false;
 
         // Apply all fields from the update
         if (itemData.fields) {
             for (const [key, value] of Object.entries(itemData.fields)) {
+                // Track if position is being changed
+                if (key === 'position') {
+                    needsReordering = true;
+                }
                 (updatedItem as any)[key] = value;
             }
         }
 
         // Update the item in the items array
         itemsCopy[itemIndex] = updatedItem;
+
+        // If position was changed, we need to reorder the items array
+        if (needsReordering) {
+            // Ensure all items have a position property for sorting
+            for (let i = 0; i < itemsCopy.length; i++) {
+                if (typeof itemsCopy[i].position !== 'number') {
+                    itemsCopy[i].position = i;
+                }
+            }
+
+            // Sort the items by their position property
+            // Use a stable sort to preserve order when positions are the same
+            itemsCopy.sort((a, b) => {
+                const posA = a.position ?? 0;
+                const posB = b.position ?? 0;
+
+                // If positions are the same, use ID as a tiebreaker for stable sorting
+                if (posA !== posB) {
+                    return posA - posB;
+                }
+
+                if (!a.id || !b.id) {
+                    return 0;
+                }
+
+                return a.id < b.id ? -1 : 1;
+            });
+        }
 
         // Update the checklist with the new items array
         const checklistIndex = updatedRun.checklists.findIndex((cl: any) => cl.id === checklistID);

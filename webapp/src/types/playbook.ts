@@ -122,6 +122,7 @@ export interface ChecklistItem {
     command_last_run: number;
     due_date: number;
     task_actions: TaskAction[];
+    position?: number;
 }
 
 export interface TaskAction {
