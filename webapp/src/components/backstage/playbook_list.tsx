@@ -74,6 +74,8 @@ export const Heading = styled.h1`
     ${RegularHeading} {
     }
     font-size: 2.8rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     line-height: 3.6rem;
     margin: 0;
 `;
