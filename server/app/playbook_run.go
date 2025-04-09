@@ -1092,12 +1092,11 @@ type PlaybookRunFilterOptions struct {
 	// Types filters by all run types in the list (inclusive)
 	Types []string
 
-	// ActivitySince, if not zero, returns playbook runs with any activity since this timestamp,
-	// including creation, updates, or completion. It will return playbook runs that have been
-	// created, modified, or finished since this timestamp.
-	// In addition to including these runs in the Items field, any runs that were finished
-	// after this timestamp will also be included in the FinishedIDs field.
-	// A value of 0 (or negative, which is normalized to 0) means this filter is not applied.
+	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
+	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
+	// Matching runs are returned in the Items field, and runs that were finished after this timestamp
+	// are additionally included in the FinishedIDs field with minimal information.
+	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
 	// Maps to the "since" URL parameter in the API and client.
 	ActivitySince int64 `url:"since,omitempty"`
 

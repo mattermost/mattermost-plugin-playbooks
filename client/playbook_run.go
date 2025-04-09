@@ -247,11 +247,10 @@ type PlaybookRunListOptions struct {
 	// A value of 0 means the filter is ignored (which is the default).
 	StartedLT int64 `url:"started_lt,omitempty"`
 	
-	// ActivitySince, if not zero, returns playbook runs with any activity since this timestamp,
-	// including creation, updates, or completion. It will return playbook runs that have been 
-	// created, modified, or finished since this timestamp (in milliseconds).
-	// In addition to including these runs in the Items field, any runs that were finished
-	// after this timestamp will also be included in the FinishedIDs field.
+	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
+	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
+	// Matching runs are returned in the Items field, and runs that were finished after this timestamp
+	// are additionally included in the FinishedIDs field with minimal information (ID and EndAt).
 	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
 	// This is sent as the "since" URL parameter.
 	ActivitySince int64 `url:"since,omitempty"`
