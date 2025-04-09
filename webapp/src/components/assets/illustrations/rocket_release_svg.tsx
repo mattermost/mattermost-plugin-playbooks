@@ -181,4 +181,4 @@ const RocketRelease = () => (
     </Svg>
 );
 
-export default RocketRelease; 
+export default RocketRelease;

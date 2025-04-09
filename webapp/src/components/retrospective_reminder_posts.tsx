@@ -28,9 +28,10 @@ import {
 
 import {Timestamp} from 'src/webapp_globals';
 
+import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
+
 import {PrimaryButton, TertiaryButton} from './assets/buttons';
 import {FutureTimeSpec} from './rhs/rhs_post_update';
-import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 
 const Divider = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);

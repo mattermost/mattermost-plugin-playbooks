@@ -5,8 +5,7 @@ import React, {ReactNode} from 'react';
 
 import {mtrim} from 'js-trim-multiline-string';
 
-import {DraftPlaybookWithChecklist, emptyPlaybook} from 'src/types/playbook';
-import {newChecklistItem} from 'src/types/playbook';
+import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
 
 import MattermostLogo from 'src/components/assets/mattermost_logo_svg';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
