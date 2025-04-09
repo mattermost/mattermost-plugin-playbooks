@@ -49,6 +49,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	First                   *int32
 	After                   *string
 	Types                   []string
+	IncludeEnded            *bool
 }) (*RunConnectionResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -79,6 +80,12 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		}
 	}
 
+	// Default includeEnded to true if not specified
+	includeEnded := true
+	if args.IncludeEnded != nil {
+		includeEnded = *args.IncludeEnded
+	}
+
 	filterOptions := app.PlaybookRunFilterOptions{
 		Sort:                    app.SortField(args.Sort),
 		Direction:               app.SortDirection(args.Direction),
@@ -91,6 +98,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		Page:                    page,
 		PerPage:                 perPage,
 		SkipExtras:              true,
+		IncludeEnded:            includeEnded,
 	}
 
 	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
