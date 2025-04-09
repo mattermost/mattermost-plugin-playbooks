@@ -517,7 +517,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 }
 
 // UpdatePlaybookRun updates a playbook run.
-// Returns the previous state, current state, and any error that occurred.
 func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app.PlaybookRun, error) {
 	if playbookRun == nil {
 		return nil, errors.New("playbook run is nil")
