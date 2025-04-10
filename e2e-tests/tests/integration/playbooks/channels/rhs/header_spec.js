@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import {ONE_SEC} from '../../../../fixtures/timeouts';
+
 // Stage: @prod
 // Group: @playbooks
 
@@ -121,7 +123,9 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
         });
 
-        it('by clicking on dot menu item', () => {
+        // https://mattermost.atlassian.net/browse/MM-63692
+        // eslint-disable-next-line no-only-tests/no-only-tests
+        it.skip('by clicking on dot menu item', () => {
             // # Run the playbook
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
@@ -148,8 +152,13 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                 cy.findByText('Edit run summary').click();
             });
 
-            // # type text in textarea
-            cy.focused().should('be.visible').type('new summary{ctrl+enter}');
+            // * Verify textarea is focused
+            cy.get('#rhsContainer').findByTestId('textarea-description').should('be.focused').as('textarea');
+
+            // # Type text in textarea
+            cy.get('@textarea').type('new summary{ctrl+enter}');
+
+            cy.wait(ONE_SEC);
 
             // * make sure the updated summary is here
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');

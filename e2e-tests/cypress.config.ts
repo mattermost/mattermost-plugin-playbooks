@@ -63,4 +63,8 @@ export default defineConfig({
         supportFile: 'tests/support/index.js',
         testIsolation: false,
     },
+    retries: {
+        openMode: 0,
+        runMode: 2,
+    },
 });

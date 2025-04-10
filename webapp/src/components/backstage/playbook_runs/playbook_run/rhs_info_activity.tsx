@@ -34,6 +34,10 @@ const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
     const team = useSelector((state: GlobalState) => getTeam(state, run.team_id));
 
+    if (!team) {
+        return null;
+    }
+
     return (
         <Section>
             <SectionHeader

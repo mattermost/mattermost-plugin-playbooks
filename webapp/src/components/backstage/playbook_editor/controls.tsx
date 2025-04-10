@@ -250,11 +250,16 @@ export const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTi
 export const RunPlaybook = ({playbook}: ControlProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
+    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
     const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
     const refreshLHS = useLHSRefresh();
+
+    if (!team) {
+        return null;
+    }
+
     return (
         <PrimaryButtonLarger
             onClick={() => {

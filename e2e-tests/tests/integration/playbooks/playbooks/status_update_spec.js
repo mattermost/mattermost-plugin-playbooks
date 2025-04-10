@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {FIVE_SEC, TWO_SEC} from '../../../../tests/fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -94,6 +96,8 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             cy.findAllByTestId('webhooks-input').type('http://hook1.com{enter}http://hook2.com{enter}http://hook3.com{enter}');
             cy.findAllByTestId('checklist-item-save-button').click();
 
+            cy.wait(FIVE_SEC);
+
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
@@ -113,6 +117,8 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
 
             // # Re-enable status update
             cy.findAllByTestId('status-update-toggle').eq(0).click();
+
+            cy.wait(TWO_SEC);
 
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
