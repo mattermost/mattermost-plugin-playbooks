@@ -51,10 +51,6 @@ let config = {
     resolve: {
         alias: {
             src: path.resolve(__dirname, './src/'),
-            'mattermost-redux': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/mattermost-redux/src/'),
-            reselect: path.resolve(__dirname, './node_modules/mattermost-webapp/packages/reselect/src/index'),
-            '@mattermost/client': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/client/src/'),
-            '@mattermost/components': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/components/src/'),
         },
         modules: [
             'src',
@@ -66,7 +62,7 @@ let config = {
         rules: [
             {
                 test: /\.(js|jsx|ts|tsx)$/,
-                exclude: /node_modules\/(?!(mattermost-webapp)\/).*/,
+                exclude: /node_modules\/.*/,
                 use: {
                     loader: 'babel-loader',
                     options: {

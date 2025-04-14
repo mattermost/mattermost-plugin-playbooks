@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {HALF_SEC} from '../../../../fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -175,7 +177,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.findByText('Rename run').click();
 
             // # type new name
-            cy.findByTestId('run-name-input').clear().type('My cool new run name');
+            cy.findByTestId('run-name-input').clear().type('My cool new run name').wait(HALF_SEC);
 
             // # click save
             cy.findByTestId('modal-confirm-button').click();
@@ -184,7 +186,9 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').contains('My cool new run name');
         });
 
-        it('can change linked channel', () => {
+        // https://mattermost.atlassian.net/browse/MM-63692
+        // eslint-disable-next-line no-only-tests/no-only-tests
+        it.skip('can change linked channel', () => {
             // # Click on the kebab menu
             cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
 

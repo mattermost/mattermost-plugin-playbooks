@@ -29,10 +29,10 @@ interface Props {
 
 export const StartPlaybookRunPostMenu = (props: Props) => {
     const dispatch = useDispatch();
-    const channel = useSelector<GlobalState, Channel | null>((state) => {
+    const channel = useSelector<GlobalState, Channel | undefined>((state) => {
         const post = getPost(state, props.postId);
         if (!post || isSystemMessage(post)) {
-            return null;
+            return undefined;
         }
         return getChannel(state, post.channel_id);
     });

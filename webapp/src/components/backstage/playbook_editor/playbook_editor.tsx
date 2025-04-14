@@ -16,11 +16,11 @@ import {useIntl} from 'react-intl';
 
 import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
-import {fetchMyChannelsAndMembersREST} from 'mattermost-redux/actions/channels';
+import {fetchChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch, useSelector} from 'react-redux';
 import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
-import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
@@ -66,7 +66,7 @@ const PlaybookEditor = () => {
         }
 
         dispatch(selectTeam(teamId));
-        dispatch(fetchMyChannelsAndMembersREST(teamId));
+        dispatch(fetchChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, playbook?.team_id, playbookId]);
 
