@@ -62,6 +62,10 @@ export const setSiteUrl = (url?: string): void => {
     apiUrl = `${basePath}/plugins/${manifest.id}/api/v0`;
 };
 
+function playbookRunRoute(playbookRunID: string): string {
+    return `${basePath}/plugins/mattermost-ai/playbook_run/${playbookRunID}`;
+}
+
 export const getSiteUrl = (): string => {
     return siteURL;
 };
@@ -810,4 +814,26 @@ export async function getTeamTopPlaybooks(timeRange: string, page: number, perPa
         return null;
     }
     return data as InsightsResponse;
+}
+
+export async function generateStatusUpdate(playbookRunID: string, botId: string, instructions: string[], messages: string[]) {
+    const url = `${playbookRunRoute(playbookRunID)}/generate_status`;
+    const response = await fetch(url, Client4.getOptions({
+        method: 'POST',
+        body: JSON.stringify({
+            instructions,
+            messages,
+            bot: botId,
+        }),
+    }));
+
+    if (response.ok) {
+        return;
+    }
+
+    throw new ClientError(Client4.url, {
+        message: '',
+        status_code: response.status,
+        url,
+    });
 }
