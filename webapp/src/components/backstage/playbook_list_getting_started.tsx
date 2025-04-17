@@ -5,7 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 import {FormattedMessage} from 'react-intl';
 
-import RocketManSvg from 'src/components/assets/illustrations/rocket_man_svg';
+import PlaybookListSvg from 'src/components/assets/illustrations/playbook_list_svg';
 
 const Container = styled.div`
     display: flex;
@@ -67,7 +67,7 @@ const IconArrowDown = styled.i.attrs(() => ({className: 'icon icon-arrow-down'})
 const GettingStarted = (props: {canCreatePlaybooks: boolean, scrollToNext: () => void}) => {
     return (
         <Container>
-            <RocketManSvg/>
+            <PlaybookListSvg/>
             <Title><FormattedMessage defaultMessage='Get started with Playbooks'/></Title>
             <Description>
                 <FormattedMessage
