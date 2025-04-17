@@ -9,7 +9,7 @@
     "0RlzlZ": "Send en midlertidig velkomstmelding til brukeren",
     "0tznw6": "Konverter til privat playbook",
     "15jbT0": "Legg mer til din tidslinje",
-    "0Vvpht": "Gjør Playbook medlem",
+    "0Vvpht": "Gjør til Playbook-medlem",
     "0oL1zz": "Kopiert!",
     "0oLj/t": "Utvid",
     "1QosTr": "Brukt av",
@@ -353,5 +353,7 @@
     "twieZh": "Gå til kjøreoversikten",
     "u4MwUB": "Lagre kjøringshistorikken for din playbook",
     "uT4ebt": "f.eks. antall ressurser, berørte kunder",
-    "uYrkxy": "Filen må være en gyldig JSON playbook-mal."
+    "uYrkxy": "Filen må være en gyldig JSON playbook-mal.",
+    "+hddg7": "Legg til kjøringens tidslinje",
+    "3hBelc": "En retrospektiv undersøkelse er ikke forventet."
 }
