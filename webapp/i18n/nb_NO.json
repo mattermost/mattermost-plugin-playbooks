@@ -355,5 +355,9 @@
     "uT4ebt": "f.eks. antall ressurser, berørte kunder",
     "uYrkxy": "Filen må være en gyldig JSON playbook-mal.",
     "+hddg7": "Legg til kjøringens tidslinje",
-    "3hBelc": "En retrospektiv undersøkelse er ikke forventet."
+    "3hBelc": "En retrospektiv undersøkelse er ikke forventet.",
+    "S0kWcH": "Oppdatering forsinket",
+    "SK5APX": "Det var ikke mulig å forlate kjøringen.",
+    "RzEVnf": "Playbooks gjør viktige prosedyrer mer repeterbare og ansvarlige. En Playbook kan kjøres flere ganger, og hver kjøring har sin egen registrering og sitt eget retrospektiv.",
+    "SDSqfA": "Når en kjøring starter"
 }
