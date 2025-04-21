@@ -1286,17 +1286,12 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 }
 
 // GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
-func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*Metadata, error) {
+func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string, hasChannelAccess bool) (*Metadata, error) {
 	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run '%s'", playbookRunID)
 	}
 
-	// Get main channel details
-	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
-	if err != nil {
-		s.pluginAPI.Log.Warn("failed to retrieve channel id", "channel_id", playbookRun.ChannelID)
-	}
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", playbookRun.TeamID)
@@ -1314,9 +1309,22 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 
 	metadata := &Metadata{
 		TeamName:        team.Name,
-		NumParticipants: numParticipants,
 		Followers:       followers,
+		NumParticipants: numParticipants,
 	}
+
+	// Return early if user doesn't have channel access
+	if !hasChannelAccess {
+		return metadata, nil
+	}
+
+	// Get channel details only if user has channel access
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		s.pluginAPI.Log.Warn("failed to retrieve channel id", "channel_id", playbookRun.ChannelID)
+		return metadata, nil
+	}
+
 	if channel != nil {
 		metadata.ChannelName = channel.Name
 		metadata.ChannelDisplayName = channel.DisplayName
@@ -3066,7 +3074,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 			}
 		}
 		users = append(users, user)
-		s.leaveActions(playbookRun, userID)
+		s.leaveActions(playbookRun, userID, requesterUserID)
 	}
 
 	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "left")
@@ -3081,8 +3089,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string) {
-
+func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string, requesterID string) {
 	if !playbookRun.RemoveChannelMemberOnRemovedParticipant {
 		return
 	}
@@ -3090,6 +3097,29 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	// Don't do anything if the user not a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member == nil {
+		return
+	}
+
+	// Get channel to check type
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("leaveActions: failed to get channel")
+		return
+	}
+
+	// Check if requester has permission to manage channel members
+	var permission *model.Permission
+	if channel.Type == model.ChannelTypePrivate {
+		permission = model.PermissionManagePrivateChannelMembers
+	} else {
+		permission = model.PermissionManagePublicChannelMembers
+	}
+
+	if !s.pluginAPI.User.HasPermissionToChannel(requesterID, channel.Id, permission) {
+		logrus.WithFields(logrus.Fields{
+			"user_id":    requesterID,
+			"channel_id": channel.Id,
+		}).Warn("leaveActions: user does not have permission to manage channel members")
 		return
 	}
 
@@ -3124,7 +3154,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	}
 
 	if err = s.store.AddParticipants(playbookRun.ID, usersToInvite); err != nil {
-		return errors.Wrapf(err, "users `%+v` failed to participate the run `%s`", usersToInvite, playbookRun.ID)
+		return errors.Wrapf(err, "users `%+v` failed to participate in run `%s`", usersToInvite, playbookRun.ID)
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -3155,7 +3185,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 		// Participate implies following the run
 		if err = s.Follow(playbookRunID, userID); err != nil {
-			return errors.Wrap(err, "failed to make participant to follow run")
+			return errors.Wrap(err, "failed to make participant follow run")
 		}
 	}
 
@@ -3229,9 +3259,24 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, ch
 		return
 	}
 
+	// Add permission check before adding user to channel
+	permission := model.PermissionManagePublicChannelMembers
+	if channel.Type == model.ChannelTypePrivate {
+		permission = model.PermissionManagePrivateChannelMembers
+	}
+
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
 	if member != nil {
+		return
+	}
+
+	// Check if requester has permission to manage channel members
+	if !s.pluginAPI.User.HasPermissionToChannel(requesterUser.Id, playbookRun.ChannelID, permission) {
+		logrus.WithFields(logrus.Fields{
+			"user_id":    requesterUser.Id,
+			"channel_id": playbookRun.ChannelID,
+		}).Warn("participateActions: user does not have permission to manage channel members")
 		return
 	}
 

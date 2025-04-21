@@ -587,7 +587,17 @@ func (h *PlaybookRunHandler) getPlaybookRunMetadata(c *Context, w http.ResponseW
 		return
 	}
 
-	playbookRunMetadata, err := h.playbookRunService.GetPlaybookRunMetadata(playbookRunID)
+	// Get the playbook run to access its channel ID
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Check if user has permission to view the channel
+	hasChannelAccess := h.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
+	// Get metadata with potentially filtered information
+	playbookRunMetadata, err := h.playbookRunService.GetPlaybookRunMetadata(playbookRunID, hasChannelAccess)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -603,12 +613,15 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
 	// get playbook runs for the specific channel and user
 	playbookRunsResult, err := h.playbookRunService.GetPlaybookRuns(
-		app.RequesterInfo{
-			UserID: userID,
-		},
-
+		requesterInfo,
 		app.PlaybookRunFilterOptions{
 			ChannelID: channelID,
 			Page:      0,
