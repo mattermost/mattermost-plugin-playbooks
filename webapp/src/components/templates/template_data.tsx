@@ -9,13 +9,13 @@ import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem} from 'src/t
 
 import MattermostLogo from 'src/components/assets/mattermost_logo_svg';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
-import DumpsterFire from 'src/components/assets/illustrations/dumpster_fire_svg';
-import Gears from 'src/components/assets/illustrations/gears_svg';
-import Handshake from 'src/components/assets/illustrations/handshake_svg';
-import Rocket from 'src/components/assets/illustrations/rocket_svg';
-import SmileySunglasses from 'src/components/assets/illustrations/smiley_sunglasses_svg';
-import BugSearch from 'src/components/assets/illustrations/bug_search_svg';
-import LightBulb from 'src/components/assets/illustrations/light_bulb_svg';
+import ProductRelease from 'src/components/assets/illustrations/product_release_svg';
+import BugBash from 'src/components/assets/illustrations/bug_bash_svg';
+import LearnPlaybooks from 'src/components/assets/illustrations/learn_playbooks_svg';
+import IncidentResolutionSvg from 'src/components/assets/illustrations/incident_resolution_svg';
+import FeatureLifecycle from 'src/components/assets/illustrations/feature_lifecycle_svg';
+import CustomerOnboarding from 'src/components/assets/illustrations/customer_onboarding_svg';
+import EmployeeOnboarding from 'src/components/assets/illustrations/employee_onboarding_svg';
 
 export interface PresetTemplate {
     label?: string;
@@ -66,7 +66,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Product Release',
         description: 'Perfect your release process from ideation to production.',
-        icon: <Rocket/>,
+        icon: <ProductRelease/>,
         color: '#C4313314',
         author: <MattermostLogo/>,
         template: {
@@ -153,7 +153,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Incident Resolution',
         description: 'Resolving incidents requires speed and accuracy. Streamline your processes for rapid response and resolution.',
-        icon: <DumpsterFire/>,
+        icon: <IncidentResolutionSvg/>,
         author: <MattermostLogo/>,
         color: '#33997014',
         template: {
@@ -244,7 +244,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Customer Onboarding',
         description: 'Create a standardized, smooth onboarding experience for new customers to get them up and running quickly. ',
-        icon: <Handshake/>,
+        icon: <CustomerOnboarding/>,
         color: '#3C507A14',
         author: <MattermostLogo/>,
         template: {
@@ -272,7 +272,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                         newChecklistItem('Review current Zendesk tickets and updates'),
                         newChecklistItem('Log customer technical details in Salesforce'),
                         newChecklistItem('Confirm customer received technical discovery summary package'),
-                        newChecklistItem('Send current Mattermost “Pen Test” report to customer'),
+                        newChecklistItem('Send current Mattermost "Pen Test" report to customer'),
                         newChecklistItem('Schedule plugin/integration planning session'),
                         newChecklistItem('Confirm data migration plans'),
                         newChecklistItem('Extend Mattermost with integrations'),
@@ -336,7 +336,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Employee Onboarding',
         description: 'Set your new hires up for success with input from your entire organization, in one smooth process.',
-        icon: <SmileySunglasses/>,
+        icon: <EmployeeOnboarding/>,
         color: '#FFBC1F14',
         author: <MattermostLogo/>,
         template: {
@@ -441,7 +441,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Feature Lifecycle',
         description: 'Create transparent workflows across development teams to ensure your feature development process is seamless.',
-        icon: <Gears/>,
+        icon: <FeatureLifecycle/>,
         color: '#62697E14',
         author: <MattermostLogo/>,
         template: {
@@ -564,7 +564,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Bug Bash',
         description: 'Customize this playbook to reflect your own bug bash process.',
-        icon: <BugSearch/>,
+        icon: <BugBash/>,
         color: '#7A560014',
         author: <MattermostLogo/>,
         template: {
@@ -723,49 +723,33 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         title: 'Learn how to use playbooks',
         label: 'Recommended For Beginners',
         labelColor: '#E5AA1F29-#A37200',
-        icon: <LightBulb/>,
+        icon: <LearnPlaybooks/>,
         color: '#FFBC1F14',
         author: <MattermostLogo/>,
         description: 'New to playbooks? This playbook will help you get familiar with playbooks, configurations, and playbook runs.',
         template: {
             ...emptyPlaybook(),
             title: 'Learn how to use playbooks',
-            description: mtrim`Use this playbook to learn more about playbooks. Go through this page to check out the contents or simply select ‘start a test run’ in the top right corner.`,
+            description: mtrim`Use this playbook to learn more about playbooks. Go through this page to check out the contents or simply select 'start a test run' in the top right corner.`,
             create_public_playbook_run: true,
             channel_name_template: 'Onboarding Run',
             checklists: [
                 {
                     title: 'Learn',
                     items: [
-                        newChecklistItem(
-                            'Try editing the run name or description in the top section of this page.',
-                        ),
-                        newChecklistItem(
-                            'Try checking off the first two tasks!',
-                        ),
-                        newChecklistItem(
-                            'Assign a task to yourself or another member.',
-                        ),
-                        newChecklistItem(
-                            'Post your first status update.',
-                        ),
-                        newChecklistItem(
-                            'Complete your first checklist!',
-                        ),
+                        newChecklistItem('Try editing the run name or description in the top section of this page.'),
+                        newChecklistItem('Try checking off the first two tasks!'),
+                        newChecklistItem('Assign a task to yourself or another member.'),
+                        newChecklistItem('Post your first status update.'),
+                        newChecklistItem('Complete your first checklist!'),
                     ],
                 },
                 {
                     title: 'Collaborate',
                     items: [
-                        newChecklistItem(
-                            'Invite other team members that you’d like to collaborate with.',
-                        ),
-                        newChecklistItem(
-                            'Skip a task.',
-                        ),
-                        newChecklistItem(
-                            'Finish the run.',
-                        ),
+                        newChecklistItem('Invite other team members that you would like to collaborate with.'),
+                        newChecklistItem('Skip a task.'),
+                        newChecklistItem('Finish the run.'),
                     ],
                 },
             ],
