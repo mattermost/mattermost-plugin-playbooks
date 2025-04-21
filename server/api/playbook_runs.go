@@ -613,12 +613,15 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
 	// get playbook runs for the specific channel and user
 	playbookRunsResult, err := h.playbookRunService.GetPlaybookRuns(
-		app.RequesterInfo{
-			UserID: userID,
-		},
-
+		requesterInfo,
 		app.PlaybookRunFilterOptions{
 			ChannelID: channelID,
 			Page:      0,

@@ -14,7 +14,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
 
-import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
+import PlaybookListSvg from 'src/components/assets/illustrations/playbook_list_svg';
 import {openPlaybookRunModal} from 'src/actions';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useCanCreatePlaybooksInTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
@@ -30,19 +30,20 @@ const NoContentContainer = styled.div`
     margin: 0 10vw;
     height: 100%;
     align-items: center;
+    justify-content: center;
 `;
 
 const NoContentTextContainer = styled.div`
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 0 20px;
+    padding: 0 40px 0 20px;
 `;
 
 const NoContentTitle = styled.h2`
     font-family: Open Sans;
     font-style: normal;
-    font-weight: normal;
+    letter-spacing: -0.02em;
     font-size: 28px;
     color: var(--center-channel-color);
     text-align: left;
@@ -114,7 +115,7 @@ const NoContentPage = () => {
                 }
             </NoContentTextContainer>
             <NoContentPlaybookRunSvgContainer>
-                <NoContentPlaybookRunSvg/>
+                <PlaybookListSvg/>
             </NoContentPlaybookRunSvgContainer>
         </NoContentContainer>
     );
