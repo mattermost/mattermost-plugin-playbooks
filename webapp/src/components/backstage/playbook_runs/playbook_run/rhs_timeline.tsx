@@ -36,6 +36,10 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
 
     const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
 
+    if (!team) {
+        return null;
+    }
+
     return (
         <Container data-testid='timeline-view'>
             <Filters>

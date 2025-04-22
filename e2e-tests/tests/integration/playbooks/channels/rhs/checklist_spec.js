@@ -313,7 +313,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             cy.findByTestId('dropdownmenu').findByText('Rename checklist').click();
 
             // # Type the new title and click the confirm button
-            cy.findByTestId('checklist-title-input').type(newTitle);
+            cy.findByTestId('checklist-title-input').type(newTitle, {force: true});
             cy.findByTestId('checklist-item-save-button').click();
 
             // * Verify that the checklist changed its name

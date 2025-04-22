@@ -22,13 +22,17 @@ interface Props {
 }
 
 const ReportTextArea = ({text, isEditable, onEdit, flushChanges, teamId}: Props) => {
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, teamId));
+    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, teamId));
     const textareaRef = useRef(null);
     const [editing, setEditing] = useState(false);
     useClickOutsideRef(textareaRef, () => {
         flushChanges();
         setEditing(false);
     });
+
+    if (!team) {
+        return null;
+    }
 
     if (isEditable && editing) {
         return (

@@ -137,6 +137,10 @@ const PlaybookListRow = (props: Props) => {
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
     const enableRunPlaybook = props.playbook.delete_at === 0 && hasPermissionToRunPlaybook;
 
+    if (!team) {
+        return null;
+    }
+
     const run = async () => {
         if (props.playbook && isTutorialPlaybook) {
             const playbookRun = await createPlaybookRun(props.playbook.id, currentUser.id, props.playbook.team_id, `${currentUser.username}'s onboarding run`, props.playbook.description);

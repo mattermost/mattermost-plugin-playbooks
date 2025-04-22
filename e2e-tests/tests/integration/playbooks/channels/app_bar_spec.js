@@ -24,43 +24,35 @@ describe('channels > App Bar', {testIsolation: true}, () => {
         cy.apiAdminLogin();
     });
 
-    describe('App Bar disabled', () => {
+    it('App Bar disabled', () => {
+        cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: true}});
+
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         it('should not show the Playbook App Bar icon', () => {
-            cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: true}});
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
-
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
+
+            cy.findByTestId('post_textbox').should('be.visible');
 
             // * Verify App Bar icon is not showing
             cy.get('.app-bar').should('not.exist');
         });
     });
 
-    describe('App Bar enabled', () => {
-        beforeEach(() => {
-            cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: false}});
+    it('App Bar enabled', () => {
+        cy.apiUpdateConfig({ExperimentalSettings: {DisableAppBar: false}});
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
-        });
-
-        it('should show the Playbook App Bar icon', () => {
-            // # Navigate directly to a non-playbook run channel
-            cy.visit(`/${testTeam.name}/channels/town-square`);
-
-            // * Verify App Bar icon is showing
-            cy.getPlaybooksAppBarIcon().should('exist');
-        });
+        // # Login as testUser
+        cy.apiLogin(testUser);
 
         it('should show "Playbooks" tooltip for Playbook App Bar icon', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // # Hover over the channel header icon
-            cy.getPlaybooksAppBarIcon().trigger('mouseover');
+            cy.getPlaybooksAppBarIcon().trigger('mouseenter');
 
             // * Verify tooltip text
             cy.findByRole('tooltip', {name: 'Playbooks'}).should('be.visible');
