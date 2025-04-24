@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
@@ -28,8 +28,8 @@ interface Props {
 
 export const UpdatePost = (props: Props) => {
     const {formatMessage} = useIntl();
-    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel?.team_id));
+    const channel = useSelector<GlobalState, Channel | undefined>((state) => getChannel(state, props.post.channel_id));
+    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, channel?.team_id ?? ''));
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
 
     const markdownOptions = {
@@ -46,22 +46,26 @@ export const UpdatePost = (props: Props) => {
 
     const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, messageHtmlToComponentOptions);
 
-    const numTasksChecked = props.post.props.numTasksChecked ?? 0;
-    const numTasks = props.post.props.numTasks ?? 0;
-    const authorUsername = props.post.props.authorUsername ?? '';
+    const numTasksChecked = typeof props.post.props.numTasksChecked === 'number' ? props.post.props.numTasksChecked : 0;
+    const numTasks = typeof props.post.props.numTasks === 'number' ? props.post.props.numTasks : 0;
+    const authorUsername = typeof props.post.props.authorUsername === 'string' ? props.post.props.authorUsername : '';
 
-    const participantIDs = props.post.props.participantIds ?? [];
+    const participantIDs = props.post.props.participantIds && Array.isArray(props.post.props.participantIds) ? props.post.props.participantIds : [];
     const numParticipants = participantIDs.length;
     const participantUsernames = participantIDs.map(useFormattedUsernameByID).join(', ');
 
     const playbookRunId = props.post.props.playbookRunId ?? '';
     const overviewURL = `/playbooks/runs/${playbookRunId}`;
-    const runName = props.post.props.runName ?? '';
+    const runName = typeof props.post.props.runName === 'string' ? props.post.props.runName : '';
     useViewTelemetry(PlaybookRunViewTarget.StatusUpdate, props.post.id, {
         post_id: props.post.id,
         channel_type: channel?.type || '', // not always available
         playbook_run_id: props.post.props.playbookRunId || '',
     });
+
+    if (!team) {
+        return null;
+    }
 
     return (
         <>
@@ -81,14 +85,27 @@ export const UpdatePost = (props: Props) => {
                         <Badge tooltipText={formatMessage({defaultMessage: 'Tasks'})}>
                             <BadgeIcon className={'icon-check-all icon-12'}/>
                             <span>
-                                {formatMessage({defaultMessage: '<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked'}, {b: (x) => <b>{x}</b>, numTasksChecked, numTasks})}
+                                <FormattedMessage
+                                    defaultMessage='<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked'
+                                    values={{
+                                        b: (x) => <b>{x}</b>,
+                                        numTasksChecked,
+                                        numTasks,
+                                    }}
+                                />
                             </span>
                         </Badge>
                         <BadgeSeparator/>
                         <Badge tooltipText={participantUsernames}>
                             <BadgeIcon className={'icon-account-multiple-outline icon-12'}/>
                             <span>
-                                {formatMessage({defaultMessage: '{numParticipants, plural, =1 {<b>#</b> participant} other {<b>#</b> participants}}'}, {b: (x) => <b>{x}</b>, numParticipants})}
+                                <FormattedMessage
+                                    defaultMessage='{numParticipants, plural, =1 {<b>#</b> participant} other {<b>#</b> participants}}'
+                                    values={{
+                                        b: (x) => <b>{x}</b>,
+                                        numParticipants,
+                                    }}
+                                />
                             </span>
                         </Badge>
                     </Badges>

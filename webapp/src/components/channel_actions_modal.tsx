@@ -5,15 +5,15 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 
-import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
 
 import Permissions from 'mattermost-redux/constants/permissions';
 
-import {getCurrentTeamId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
-import {getChannel} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/channels';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {GlobalState} from 'mattermost-webapp/packages/types/src/store';
+import {GlobalState} from '@mattermost/types/store';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideChannelActionsModal} from 'src/actions';

@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {FIVE_SEC} from '../../../../fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -34,6 +36,8 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
 
+                cy.wait(FIVE_SEC);
+
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
@@ -53,6 +57,8 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
             it('after clicking on title', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
+
+                cy.wait(FIVE_SEC);
 
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
