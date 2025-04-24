@@ -83,8 +83,8 @@ export const useShowTutorialStep = (stepToShow: number, category: string, defaul
         if (defaultAutostart) {
             return getInt(state, category, currentUserId, 0);
         }
-        const value = get(state, category, currentUserId, null);
-        return value === null ? null : parseInt(value, 10);
+        const value = get(state, category, currentUserId, '');
+        return value === '' ? null : parseInt(value, 10);
     });
 
     return step === stepToShow;

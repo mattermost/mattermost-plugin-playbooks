@@ -28,7 +28,7 @@ const ChecklistItemTitle = (props: TitleProps) => {
     const placeholder = formatMessage({defaultMessage: 'Add a title'});
 
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
+    const team = useSelector<GlobalState, Team | undefined>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
 
     const markdownOptions = {

@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 
-import {ActionFunc} from 'mattermost-redux/types/actions';
+import {ActionFuncAsync} from 'mattermost-redux/types/actions';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
@@ -16,8 +16,8 @@ interface Props {
     enabled: boolean;
     disabled?: boolean;
     onToggle: () => void;
-    searchProfiles: (term: string) => ActionFunc;
-    getProfiles: () => ActionFunc;
+    searchProfiles: (term: string) => ActionFuncAsync;
+    getProfiles: () => ActionFuncAsync;
     userIds: string[];
     preAssignedUserIds: string[];
     onAddUser: (userId: string) => void;
