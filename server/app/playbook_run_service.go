@@ -1231,6 +1231,18 @@ func updateChecklistItemTimestamp(item *ChecklistItem, timestamp int64) {
 	item.UpdateAt = timestamp
 }
 
+// updateChecklistAndItemTimestamp updates both a checklist item and its parent checklist timestamp
+// This ensures proper synchronization of both the item and its parent checklist
+func updateChecklistAndItemTimestamp(checklist *Checklist, item *ChecklistItem, timestamp int64) {
+	if timestamp == 0 {
+		timestamp = model.GetMillis()
+	}
+	// Update the item timestamp using the existing function
+	updateChecklistItemTimestamp(item, timestamp)
+	// Update the parent checklist timestamp
+	checklist.UpdateAt = timestamp
+}
+
 // GraphqlUpdate updates fields based on a setmap
 func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if len(setmap) == 0 {
@@ -1502,7 +1514,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	itemToCheck.State = newState
 	timestamp := model.GetMillis()
 	itemToCheck.StateModified = timestamp
-	updateChecklistItemTimestamp(&itemToCheck, timestamp)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -1595,7 +1607,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	itemToCheck.AssigneeID = assigneeID
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
-	updateChecklistItemTimestamp(&itemToCheck, timestamp)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -1676,7 +1688,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = 0
 	}
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
-	updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
@@ -1699,7 +1711,7 @@ func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, us
 	}
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].TaskActions = taskActions
-	updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
 
 	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -1723,7 +1735,7 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	itemToCheck.DueDate = duedate
-	updateChecklistItemTimestamp(&itemToCheck, 0)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, 0)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	_, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -1798,7 +1810,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	// Record the last (successful) run time.
 	timestamp := model.GetMillis()
 	playbookRun.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = timestamp
-	updateChecklistItemTimestamp(&playbookRun.Checklists[checklistNumber].Items[itemNumber], timestamp)
+	updateChecklistAndItemTimestamp(&playbookRun.Checklists[checklistNumber], &playbookRun.Checklists[checklistNumber].Items[itemNumber], timestamp)
 
 	_, err = s.store.UpdatePlaybookRun(playbookRun)
 	if err != nil {

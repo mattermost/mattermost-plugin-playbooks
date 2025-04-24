@@ -636,7 +636,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 			"CurrentStatus":      app.StatusInProgress,
 			"EndAt":              0,
 			"LastStatusUpdateAt": restoredAt,
-			"UpdateAt":           model.GetMillis(),
+			"UpdateAt":           restoredAt,
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)
