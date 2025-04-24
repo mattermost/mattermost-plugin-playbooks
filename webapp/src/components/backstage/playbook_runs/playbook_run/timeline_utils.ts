@@ -2,16 +2,16 @@
 // See LICENSE.txt for license information.
 
 import {useEffect, useState} from 'react';
-import {useDispatch, useSelector, useStore} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 
 import {GlobalState} from '@mattermost/types/store';
-import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
-import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
+
+import {DispatchFunc} from 'mattermost-redux/types/actions';
 
 import {
     TimelineEvent,
@@ -23,12 +23,11 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
 
 export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<DispatchFunc>();
     const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
-    const getStateFn = useStore().getState;
-    const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
+    const getUserFn = (userId: string) => dispatch(getUserAction(userId));
     const selectUser = useSelector((state: GlobalState) => (userId: string) => getUser(state, userId));
 
     useEffect(() => {
@@ -49,10 +48,10 @@ export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: Timeli
         }, {});
 
         Promise.all(events.map(async (event) => {
-            let user = selectUser(event.subject_user_id) as UserProfile | undefined;
+            let user = selectUser(event.subject_user_id);
 
             if (!user) {
-                const ret = await getUserFn(event.subject_user_id) as { data?: UserProfile, error?: any };
+                const ret = await getUserFn(event.subject_user_id);
                 if (!ret.data) {
                     return null;
                 }

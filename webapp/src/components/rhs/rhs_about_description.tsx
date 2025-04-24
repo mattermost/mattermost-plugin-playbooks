@@ -27,7 +27,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a run summary…'});
     const [editedValue, setEditedValue] = useState(props.value);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const currentTeam = useSelector<GlobalState, Team | undefined>(getCurrentTeam);
 
     const saveAndClose = () => {
         const newValue = editedValue.trim();
@@ -39,6 +39,10 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     useUpdateEffect(() => {
         setEditedValue(props.value);
     }, [props.value]);
+
+    if (!currentTeam) {
+        return null;
+    }
 
     if (!props.editing) {
         return (
