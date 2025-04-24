@@ -1902,9 +1902,9 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	// Parse types= query string parameters as an array.
 	types := u.Query()["types"]
 
-	// Parse include_ended param - default to true for backward compatibility
-	includeEndedParam := u.Query().Get("include_ended")
-	includeEnded := includeEndedParam != "false" // Default to true if not specified or invalid
+	// Parse omit_ended param - default to false for backward compatibility
+	omitEndedParam := u.Query().Get("omit_ended")
+	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
 
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
@@ -1923,7 +1923,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		StartedGTE:              startedGTE,
 		StartedLT:               startedLT,
 		Types:                   types,
-		IncludeEnded:            includeEnded,
+		OmitEnded:               omitEnded,
 	}
 
 	options, err = options.Validate()

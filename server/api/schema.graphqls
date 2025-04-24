@@ -20,7 +20,7 @@ type Query {
 		first: Int,
 		after: String,
 		types: [PlaybookRunType!] = [],
-		includeEnded: Boolean = true,
+		omitEnded: Boolean = false,
 	): RunConnection!
 }
 

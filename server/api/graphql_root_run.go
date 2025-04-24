@@ -49,8 +49,8 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	First                   *int32
 	After                   *string
 	Types                   []string
-	// Default true will be applied by the schema
-	IncludeEnded bool
+	// Default false will be applied by the schema
+	OmitEnded bool
 }) (*RunConnectionResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -93,7 +93,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		Page:                    page,
 		PerPage:                 perPage,
 		SkipExtras:              true,
-		IncludeEnded:            args.IncludeEnded,
+		OmitEnded:               args.OmitEnded,
 	}
 
 	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)

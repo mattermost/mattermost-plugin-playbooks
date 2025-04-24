@@ -390,8 +390,8 @@ func TestRestorePlaybookRun(t *testing.T) {
 	}
 }
 
-// TestGetPlaybookRunsWithIncludeEnded verifies that the IncludeEnded filter option works correctly.
-func TestGetPlaybookRunsWithIncludeEnded(t *testing.T) {
+// TestGetPlaybookRunsWithOmitEnded verifies that the OmitEnded filter option works correctly.
+func TestGetPlaybookRunsWithOmitEnded(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		store := setupSQLStore(t, db)
@@ -459,22 +459,22 @@ func TestGetPlaybookRunsWithIncludeEnded(t *testing.T) {
 			IsAdmin: true,
 		}
 
-		// Test 1: With IncludeEnded = true, both runs should be returned
+		// Test 1: With OmitEnded = false, both runs should be returned
 		options := app.PlaybookRunFilterOptions{
-			IncludeEnded: true,
-			TeamID:       teamID,
-			Sort:         app.SortByID,
-			Direction:    app.DirectionAsc,
-			Page:         0,
-			PerPage:      10,
+			OmitEnded: false,
+			TeamID:    teamID,
+			Sort:      app.SortByID,
+			Direction: app.DirectionAsc,
+			Page:      0,
+			PerPage:   10,
 		}
 
 		results, err := playbookRunStore.GetPlaybookRuns(requesterInfo, options)
 		require.NoError(t, err)
 		require.Equal(t, 2, len(results.Items), "Should include both active and finished runs")
 
-		// Test 2: With IncludeEnded = false, only active run should be returned
-		options.IncludeEnded = false
+		// Test 2: With OmitEnded = true, only active run should be returned
+		options.OmitEnded = true
 		results, err = playbookRunStore.GetPlaybookRuns(requesterInfo, options)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(results.Items), "Should only include active runs")

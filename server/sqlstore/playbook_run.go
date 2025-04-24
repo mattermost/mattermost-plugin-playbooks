@@ -332,7 +332,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
 	}
 
-	if !options.IncludeEnded {
+	if options.OmitEnded {
 		queryForResults = queryForResults.Where(sq.Eq{"i.EndAt": 0})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
 	}
