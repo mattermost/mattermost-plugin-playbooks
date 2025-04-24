@@ -41,5 +41,6 @@ type Service interface {
 	SupportsGivingFeedback() error
 
 	// IsIncrementalUpdatesEnabled returns true when incremental WebSocket updates are enabled.
+	// This allows the server to send only changed fields in WebSocket events instead of full objects.
 	IsIncrementalUpdatesEnabled() bool
 }

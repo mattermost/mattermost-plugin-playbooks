@@ -80,13 +80,7 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
         if (!currentRun) {
             // If we don't have the current state, we need to fetch the full playbook run
             // This should be rare but can happen if client state gets out of sync
-            fetchPlaybookRun(update.id).then((fullRun) => {
-                dispatch(playbookRunUpdated(fullRun));
-                websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(fullRun));
-            }).catch((error) => {
-                // eslint-disable-next-line no-console
-                console.error('Error fetching playbook run after incremental update:', error);
-            });
+            fetchAndUpdatePlaybookRun(update.id, dispatch);
             return;
         }
 
@@ -97,8 +91,7 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
         applyChangedFields(updatedRun, update.changed_fields);
 
         // Dispatch the updated run
-        dispatch(playbookRunUpdated(updatedRun));
-        websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(updatedRun));
+        dispatchRunUpdate(updatedRun, dispatch);
     };
 }
 
@@ -206,30 +199,7 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]) {
 
             // Handle repositioning after all updates are applied
             if (itemsToReposition.length > 0) {
-                // Ensure all items have a position property for sorting
-                for (let i = 0; i < checklist.items.length; i++) {
-                    if (typeof checklist.items[i].position !== 'number') {
-                        checklist.items[i].position = i;
-                    }
-                }
-
-                // Sort the items by their position property
-                // Use a stable sort to preserve order when positions are the same
-                checklist.items.sort((a, b) => {
-                    const posA = a.position ?? 0;
-                    const posB = b.position ?? 0;
-
-                    // If positions are the same, use ID as a tiebreaker for stable sorting
-                    if (posA !== posB) {
-                        return posA - posB;
-                    }
-
-                    if (!a.id || !b.id) {
-                        return 0;
-                    }
-
-                    return a.id < b.id ? -1 : 1;
-                });
+                sortChecklistItems(checklist.items);
             }
         }
 
@@ -341,6 +311,50 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
     };
 }
 
+// Helper function to fetch and update a playbook run - used when state is not available
+function fetchAndUpdatePlaybookRun(runID: string, dispatch: Dispatch) {
+    fetchPlaybookRun(runID).then((fullRun) => {
+        dispatchRunUpdate(fullRun, dispatch);
+    }).catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('Error fetching playbook run:', error);
+    });
+}
+
+// Helper function to dispatch run updates and notify subscribers
+function dispatchRunUpdate(run: PlaybookRun, dispatch: Dispatch) {
+    dispatch(playbookRunUpdated(run));
+    websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(run));
+}
+
+// Helper function to sort checklist items based on position
+function sortChecklistItems(items: any[]) {
+    // Ensure all items have a position property for sorting
+    for (let i = 0; i < items.length; i++) {
+        if (typeof items[i].position !== 'number') {
+            items[i].position = i;
+        }
+    }
+
+    // Sort the items by their position property
+    // Use a stable sort to preserve order when positions are the same
+    items.sort((a, b) => {
+        const posA = a.position ?? 0;
+        const posB = b.position ?? 0;
+
+        // If positions are the same, use ID as a tiebreaker for stable sorting
+        if (posA !== posB) {
+            return posA - posB;
+        }
+
+        if (!a.id || !b.id) {
+            return 0;
+        }
+
+        return a.id < b.id ? -1 : 1;
+    });
+}
+
 // Handler for playbook_checklist_updated events
 export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
@@ -373,14 +387,8 @@ export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, 
         const currentRun = runsState[runID];
 
         if (!currentRun) {
-            // If we don't have the current state, we need to fetch the full playbook run
-            fetchPlaybookRun(runID).then((fullRun) => {
-                dispatch(playbookRunUpdated(fullRun));
-                websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(fullRun));
-            }).catch((error) => {
-                // eslint-disable-next-line no-console
-                console.error('Error fetching playbook run after checklist update:', error);
-            });
+            // If we don't have the current state, fetch the full playbook run
+            fetchAndUpdatePlaybookRun(runID, dispatch);
             return;
         }
 
@@ -420,8 +428,7 @@ export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, 
         updatedRun.checklists[checklistIndex] = checklist;
 
         // Dispatch the updated run
-        dispatch(playbookRunUpdated(updatedRun));
-        websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(updatedRun));
+        dispatchRunUpdate(updatedRun, dispatch);
     };
 }
 
@@ -458,14 +465,8 @@ export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFu
         const currentRun = runsState[runID];
 
         if (!currentRun) {
-            // If we don't have the current state, we need to fetch the full playbook run
-            fetchPlaybookRun(runID).then((fullRun) => {
-                dispatch(playbookRunUpdated(fullRun));
-                websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(fullRun));
-            }).catch((error) => {
-                // eslint-disable-next-line no-console
-                console.error('Error fetching playbook run after item update:', error);
-            });
+            // If we don't have the current state, fetch the full playbook run
+            fetchAndUpdatePlaybookRun(runID, dispatch);
             return;
         }
 
@@ -505,30 +506,7 @@ export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFu
 
         // If position was changed, we need to reorder the items array
         if (needsReordering) {
-            // Ensure all items have a position property for sorting
-            for (let i = 0; i < itemsCopy.length; i++) {
-                if (typeof itemsCopy[i].position !== 'number') {
-                    itemsCopy[i].position = i;
-                }
-            }
-
-            // Sort the items by their position property
-            // Use a stable sort to preserve order when positions are the same
-            itemsCopy.sort((a, b) => {
-                const posA = a.position ?? 0;
-                const posB = b.position ?? 0;
-
-                // If positions are the same, use ID as a tiebreaker for stable sorting
-                if (posA !== posB) {
-                    return posA - posB;
-                }
-
-                if (!a.id || !b.id) {
-                    return 0;
-                }
-
-                return a.id < b.id ? -1 : 1;
-            });
+            sortChecklistItems(itemsCopy);
         }
 
         // Update the checklist with the new items array
@@ -539,8 +517,7 @@ export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFu
         };
 
         // Dispatch the updated run
-        dispatch(playbookRunUpdated(updatedRun));
-        websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(updatedRun));
+        dispatchRunUpdate(updatedRun, dispatch);
     };
 }
 

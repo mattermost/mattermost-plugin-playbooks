@@ -23,7 +23,9 @@ type Configuration struct {
 	TeamsTabAppBotUserID string
 
 	// EnableIncrementalUpdates controls whether the server sends incremental WebSocket updates
-	// This is set to false by default for backward compatibility
+	// instead of full playbook run objects. When enabled, the server compares previous and current
+	// states to determine what fields changed and only sends those changes.
+	// This is set to false by default for backward compatibility.
 	EnableIncrementalUpdates bool `json:"enableincrementalupdates"`
 }
 
