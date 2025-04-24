@@ -1913,7 +1913,8 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	// Record the last (successful) run time.
 	playbookRun.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
 
-	_, err = s.store.UpdatePlaybookRun(playbookRun)
+	var updatedRun *PlaybookRun
+	updatedRun, err = s.store.UpdatePlaybookRun(playbookRun)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to update playbook run recording run of slash command")
 	}
@@ -1933,7 +1934,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return "", errors.Wrap(err, "failed to create timeline event")
 	}
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, updatedRun)
 
 	return cmdResponse.TriggerId, nil
 }
