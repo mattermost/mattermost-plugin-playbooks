@@ -619,7 +619,7 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		SetMap(map[string]interface{}{
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
-			"UpdateAt":      model.GetMillis(),
+			"UpdateAt":      endAt,
 		}).
 		Where(sq.Eq{"ID": playbookRunID}),
 	); err != nil {
