@@ -35,7 +35,7 @@ Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbook
 Cypress.Commands.add('getPlaybooksAppBarIcon', () => {
     cy.get('#channel_view').should('be.visible');
 
-    return cy.get('.app-bar').find('#app-bar-icon-playbooks .app-bar__icon-inner');
+    return cy.get('.app-bar').find('#app-bar-icon-playbooks');
 });
 
 // Starts playbook run from the playbook run RHS

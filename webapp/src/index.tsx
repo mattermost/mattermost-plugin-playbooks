@@ -198,7 +198,10 @@ export default class Plugin {
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
         // Buttons and menus
-        const shouldRender = (state : GlobalState) => getCurrentChannel(state).type !== General.GM_CHANNEL && getCurrentChannel(state).type !== General.DM_CHANNEL;
+        const shouldRender = (state : GlobalState) => {
+            const currentChannel = getCurrentChannel(state);
+            return currentChannel && currentChannel.type !== General.GM_CHANNEL && currentChannel.type !== General.DM_CHANNEL;
+        };
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
         registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);

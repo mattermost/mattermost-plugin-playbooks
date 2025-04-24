@@ -198,8 +198,9 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 cy.apiDeleteChannel(testRun.channel_id).then(() => {
                     cy.visit(`/playbooks/runs/${testRun.id}`);
 
-                    // * Assert channel name
-                    getOverviewEntry('channel').contains('Channel deleted');
+                    // https://mattermost.atlassian.net/browse/MM-63682
+                    // * Assert channel status private
+                    getOverviewEntry('channel').contains('Private');
                 });
             });
         });
@@ -264,10 +265,16 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 // # Confirm modal
                 cy.findByTestId('modal-confirm-button').click();
 
-                // Assert that request-join button doesn't exist
+                // # Click request-join button
                 getOverviewEntry('channel').within(() => {
-                    cy.get('button').should('not.exist');
+                    cy.get('button').click();
                 });
+
+                // # Click send request button
+                cy.findByText('Send request').click();
+
+                // * Assert that the request was sent
+                cy.findByText('Your request was sent to the run channel.');
             });
         });
     });

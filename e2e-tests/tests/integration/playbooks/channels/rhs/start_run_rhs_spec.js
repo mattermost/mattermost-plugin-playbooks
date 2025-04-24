@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {FIVE_SEC} from '../../../../../tests/fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -68,6 +70,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     // # Visit the selected playbook
                     cy.visit(`/${testTeam.name}/channels/town-square`);
 
+                    cy.wait(FIVE_SEC);
+
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
@@ -119,7 +123,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
 
                     // * Verify channel name
-                    cy.get('h2').contains('Beginning of Channel template');
+                    cy.get('#channelHeaderTitle').contains('Channel template');
 
                     // * Verify run RHS
                     cy.get('#rhsContainer').should('exist').within(() => {
@@ -139,6 +143,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 }).then((playbook) => {
                     // # Visit the selected playbook
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    cy.wait(FIVE_SEC);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
@@ -197,7 +203,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
 
                     // * Verify channel name
-                    cy.get('h2').contains('Beginning of Test Run Name');
+                    cy.get('#channelHeaderTitle').contains('Test Run Name');
 
                     // * Verify run RHS
                     cy.get('#rhsContainer').should('exist').within(() => {
@@ -217,6 +223,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 }).then((playbook) => {
                     // # Visit the town square channel
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    cy.wait(FIVE_SEC);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
@@ -258,6 +266,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     // # Visit the town square channel
                     cy.visit(`/${testTeam.name}/channels/town-square`);
 
+                    cy.wait(FIVE_SEC);
+
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
@@ -296,6 +306,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 }).then((playbook) => {
                     // # Visit the selected playbook
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    cy.wait(FIVE_SEC);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
@@ -350,7 +362,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
                     // * Verify channel name
-                    cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
+                    cy.get('#channelHeaderTitle').contains(`${testChannel.display_name}`);
 
                     // * Verify run RHS
                     cy.get('#rhsContainer').should('exist').within(() => {
@@ -373,6 +385,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 }).then((playbook) => {
                     // # Visit the selected playbook
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    cy.wait(FIVE_SEC);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
@@ -427,7 +441,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
                     // * Verify channel name
-                    cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
+                    cy.get('#channelHeaderTitle').contains(`${testChannel.display_name}`);
 
                     cy.get('#rhsContainer').should('exist').within(() => {
                         // * Verify run RHS
@@ -447,6 +461,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 }).then((playbook) => {
                     // # Visit the selected playbook
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    cy.wait(FIVE_SEC);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
@@ -504,7 +520,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
                     // * Verify channel name
-                    cy.get('h2').contains(`Beginning of ${testChannel.display_name}`);
+                    cy.get('#channelHeaderTitle').contains(`${testChannel.display_name}`);
 
                     cy.get('#rhsContainer').should('exist').within(() => {
                         // * Verify run RHS
@@ -525,6 +541,8 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                 }).then((playbook) => {
                     // # Visit the selected playbook
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+
+                    cy.wait(FIVE_SEC);
 
                     // # Open playbooks RHS.
                     cy.getPlaybooksAppBarIcon().should('be.visible').click();
@@ -576,7 +594,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
 
                     // * Verify channel name
-                    cy.get('h2').contains('Beginning of Test Run Name');
+                    cy.get('#channelHeaderTitle').contains('Test Run Name');
 
                     cy.get('#rhsContainer').should('exist').within(() => {
                         // * Verify run RHS
