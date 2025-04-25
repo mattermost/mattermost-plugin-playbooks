@@ -15,7 +15,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -638,16 +637,6 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 	e.SetE20Licence()
 	e.CreateBasic()
 	e.CreateGuest()
-
-	// Ensure the client has proper URL settings
-	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
-	serverClientGuest := model.NewAPIv4Client(siteURL)
-	_, _, err := serverClientGuest.Login(context.Background(), e.GuestUser.Email, "password123!")
-	require.NoError(t, err)
-
-	playbooksClientGuest, err := client.New(serverClientGuest)
-	require.NoError(t, err)
-	e.PlaybooksClientGuest = playbooksClientGuest
 
 	t.Run("update playbook guest not member", func(t *testing.T) {
 		err := gqlTestPlaybookUpdateGuest(e, t, e.BasicPlaybook.ID, map[string]interface{}{"title": "mutated"})
