@@ -66,16 +66,6 @@ func (s *PlaybookRunServiceImpl) getUniqueRecipientUserIDs(playbookRun *Playbook
 func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID string, previousRun, currentRun *PlaybookRun, additionalUserIDs ...string) {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	// If we don't have both states, get the current state
-	if currentRun == nil {
-		var err error
-		currentRun, err = s.store.GetPlaybookRun(playbookRunID)
-		if err != nil {
-			logger.WithError(err).Error("failed to get current state of playbook run")
-			return
-		}
-	}
-
 	// Determine if incremental updates are enabled
 	incrementalUpdatesEnabled := s.configService.IsIncrementalUpdatesEnabled() && previousRun != nil
 
@@ -87,6 +77,16 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		}
 		s.sendPlaybookRunUpdatedWS(playbookRunID, withRunWSOptions(&sendWSOptions))
 		return
+	}
+
+	// Get the current state only if we don't already have it
+	if currentRun == nil {
+		var err error
+		currentRun, err = s.store.GetPlaybookRun(playbookRunID)
+		if err != nil {
+			logger.WithError(err).Error("failed to get current state of playbook run")
+			return
+		}
 	}
 
 	// Pre-calculate changed fields for incremental updates
