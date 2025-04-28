@@ -74,7 +74,6 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 		return
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	attachments := []*model.SlackAttachment{
@@ -167,7 +166,6 @@ func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error 
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.PreviousReminder = 0
@@ -209,7 +207,6 @@ func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminde
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	// Remove pending reminder (if any)

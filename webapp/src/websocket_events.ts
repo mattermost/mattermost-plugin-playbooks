@@ -54,7 +54,6 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
         }
         const data = JSON.parse(msg.data.payload);
 
-        // This always processes the full update (existing behavior)
         const playbookRun = data as PlaybookRun;
         dispatch(playbookRunUpdated(playbookRun));
         websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(playbookRun));

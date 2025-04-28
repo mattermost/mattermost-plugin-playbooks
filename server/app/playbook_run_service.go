@@ -43,7 +43,21 @@ const (
 	noAssigneeName = "No Assignee"
 )
 
-// sendPlaybookRunObjectUpdatedWS sends updates for a playbook run object to all participants (same logic as sendPlaybookRunUpdatedWS).
+// getUniqueRecipientUserIDs returns a unique list of user IDs to send WebSocket updates to,
+// including the playbook run owner, participants, and any additional user IDs provided.
+func (s *PlaybookRunServiceImpl) getUniqueRecipientUserIDs(playbookRun *PlaybookRun, additionalUserIDs ...string) map[string]bool {
+	uniqueUserIDs := make(map[string]bool, len(additionalUserIDs)+len(playbookRun.ParticipantIDs)+1)
+	uniqueUserIDs[playbookRun.OwnerUserID] = true
+	for _, userID := range additionalUserIDs {
+		uniqueUserIDs[userID] = true
+	}
+	for _, userID := range playbookRun.ParticipantIDs {
+		uniqueUserIDs[userID] = true
+	}
+	return uniqueUserIDs
+}
+
+// sendPlaybookRunObjectUpdatedWS sends updates for a playbook run object to all participants.
 // If incremental updates are enabled, it compares the previous and current states once
 // and sends granular update events with only the changed fields. It also sends more
 // specific events for checklist and checklist item changes. If incremental updates are
@@ -65,81 +79,73 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	// Determine if incremental updates are enabled
 	incrementalUpdatesEnabled := s.configService.IsIncrementalUpdatesEnabled() && previousRun != nil
 
-	// Pre-calculate changed fields once if incremental updates are enabled
-	var changedFields map[string]interface{}
-	var checklistUpdates []ChecklistUpdate
-	var update PlaybookRunUpdate
-	var hasChanges bool
-
-	if incrementalUpdatesEnabled {
-		// Calculate changes between previous and current states once
-		changedFields = DetectChangedFields(previousRun, currentRun)
-		hasChanges = len(changedFields) > 0
-
-		// Only prepare the update data if there are actual changes
-		if hasChanges {
-			update = PlaybookRunUpdate{
-				ID:            currentRun.ID,
-				UpdatedAt:     model.GetMillis(),
-				ChangedFields: changedFields,
-			}
-
-			// Extract checklist updates once
-			if chkUpdates, ok := changedFields["checklists"].([]ChecklistUpdate); ok {
-				checklistUpdates = chkUpdates
-			}
+	if !incrementalUpdatesEnabled {
+		// If incremental updates are disabled, fall back to the standard WS update
+		sendWSOptions := RunWSOptions{
+			AdditionalUserIDs: additionalUserIDs,
+			PlaybookRun:       currentRun,
 		}
+		s.sendPlaybookRunUpdatedWS(playbookRunID, withRunWSOptions(&sendWSOptions))
+		return
 	}
 
-	// create a unique list of user ids to send the message to
-	uniqueUserIDs := make(map[string]bool, len(additionalUserIDs)+len(currentRun.ParticipantIDs)+1)
-	uniqueUserIDs[currentRun.OwnerUserID] = true
-	for _, u := range additionalUserIDs {
-		uniqueUserIDs[u] = true
+	// Pre-calculate changed fields for incremental updates
+	changedFields := DetectChangedFields(previousRun, currentRun)
+	if len(changedFields) == 0 {
+		// No changes detected, nothing to send
+		return
 	}
-	for _, u := range currentRun.ParticipantIDs {
-		uniqueUserIDs[u] = true
+
+	// Prepare the update data
+	update := PlaybookRunUpdate{
+		ID:            currentRun.ID,
+		UpdatedAt:     model.GetMillis(),
+		ChangedFields: changedFields,
 	}
+
+	// Extract checklist updates if they exist
+	var checklistUpdates []ChecklistUpdate
+	if chkUpdates, ok := changedFields["checklists"].([]ChecklistUpdate); ok {
+		checklistUpdates = chkUpdates
+	}
+
+	// Get the list of unique recipients
+	uniqueUserIDs := s.getUniqueRecipientUserIDs(currentRun, additionalUserIDs...)
 
 	// Send notifications to all recipients
 	for recipientID := range uniqueUserIDs {
-		if incrementalUpdatesEnabled && hasChanges {
-			// Send the incremental update
-			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, recipientID)
+		// Send the incremental update
+		s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, recipientID)
 
-			// Send more granular checklist and item updates
-			for _, checklistUpdate := range checklistUpdates {
-				// For each checklist update, send a dedicated checklist update event
-				checklistUpdateWithRunID := struct {
-					PlaybookRunID string          `json:"playbook_run_id"`
-					Update        ChecklistUpdate `json:"update"`
-				}{
-					PlaybookRunID: currentRun.ID,
-					Update:        checklistUpdate,
-				}
+		// Send more granular checklist and item updates if any exist
+		for _, checklistUpdate := range checklistUpdates {
+			// For each checklist update, send a dedicated checklist update event
+			checklistUpdateWithRunID := struct {
+				PlaybookRunID string          `json:"playbook_run_id"`
+				Update        ChecklistUpdate `json:"update"`
+			}{
+				PlaybookRunID: currentRun.ID,
+				Update:        checklistUpdate,
+			}
 
-				s.poster.PublishWebsocketEventToUser(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, recipientID)
+			s.poster.PublishWebsocketEventToUser(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, recipientID)
 
-				// Send even more granular events for individual checklist items if needed
-				if len(checklistUpdate.ItemUpdates) > 0 {
-					for _, itemUpdate := range checklistUpdate.ItemUpdates {
-						itemUpdateWithIDs := struct {
-							PlaybookRunID string              `json:"playbook_run_id"`
-							ChecklistID   string              `json:"checklist_id"`
-							Update        ChecklistItemUpdate `json:"update"`
-						}{
-							PlaybookRunID: currentRun.ID,
-							ChecklistID:   checklistUpdate.ID,
-							Update:        itemUpdate,
-						}
-
-						s.poster.PublishWebsocketEventToUser(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, recipientID)
+			// Send more granular events for individual checklist items if needed
+			if len(checklistUpdate.ItemUpdates) > 0 {
+				for _, itemUpdate := range checklistUpdate.ItemUpdates {
+					itemUpdateWithIDs := struct {
+						PlaybookRunID string              `json:"playbook_run_id"`
+						ChecklistID   string              `json:"checklist_id"`
+						Update        ChecklistItemUpdate `json:"update"`
+					}{
+						PlaybookRunID: currentRun.ID,
+						ChecklistID:   checklistUpdate.ID,
+						Update:        itemUpdate,
 					}
+
+					s.poster.PublishWebsocketEventToUser(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, recipientID)
 				}
 			}
-		} else {
-			// Send full update for backward compatibility
-			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, currentRun, recipientID)
 		}
 	}
 }
@@ -779,7 +785,6 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 		CreatorUserID: userID,
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRun.Clone()
 
 	if _, err := s.store.CreateTimelineEvent(event); err != nil {
@@ -920,7 +925,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	originalPost, err := s.buildStatusUpdatePost(options.Message, playbookRunID, userID)
@@ -1084,7 +1088,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return nil
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	endAt := model.GetMillis()
@@ -1181,7 +1184,6 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	updateAt := model.GetMillis()
@@ -1281,7 +1283,6 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return nil
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToRestore.Clone()
 
 	restoreAt := model.GetMillis()
@@ -1505,7 +1506,6 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		return nil
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	oldOwner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
@@ -1580,7 +1580,6 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return errors.New("invalid checklist item indicies")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -1673,7 +1672,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return errors.New("invalid checklist item indices")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -1777,7 +1775,6 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.New("invalid checklist item indices")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	// CommandLastRun is reset to avoid misunderstandings when the command is changed but the date
@@ -1807,7 +1804,6 @@ func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, us
 		return errors.New("invalid checklist item indices")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].TaskActions = taskActions
@@ -1831,7 +1827,6 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 		return errors.New("invalid checklist item indices")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -1907,7 +1902,6 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", errors.Wrapf(err, "failed to retrieve playbook run after running slash command")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRun.Clone()
 
 	// Record the last (successful) run time.
@@ -1952,7 +1946,6 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	checklistItem.ID = ""
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists[checklistNumber].Items = append(
@@ -1978,7 +1971,6 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
@@ -2001,7 +1993,6 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
@@ -2025,7 +2016,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	oldChecklist := playbookRunToModify.Checklists[checklistNumber]
@@ -2050,7 +2040,6 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists[checklistNumber].Title = newTitle
@@ -2073,7 +2062,6 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
@@ -2096,7 +2084,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -2123,7 +2110,6 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	for itemNumber := 0; itemNumber < len(playbookRunToModify.Checklists[checklistNumber].Items); itemNumber++ {
@@ -2151,7 +2137,6 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	for itemNumber := 0; itemNumber < len(playbookRunToModify.Checklists[checklistNumber].Items); itemNumber++ {
@@ -2178,7 +2163,6 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = model.GetMillis()
@@ -2204,7 +2188,6 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
@@ -2229,7 +2212,6 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 		return err
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
@@ -2260,7 +2242,6 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 		return errors.New("invalid destChecklist")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	// Get checklist to move
@@ -2301,7 +2282,6 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		return errors.New("invalid destItem")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	// Moved item
@@ -2910,6 +2890,15 @@ func withAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
 	}
 }
 
+func withRunWSOptions(options *RunWSOptions) RunWSOption {
+	return func(o *RunWSOptions) {
+		o.AdditionalUserIDs = append(o.AdditionalUserIDs, options.AdditionalUserIDs...)
+		if options.PlaybookRun != nil {
+			o.PlaybookRun = options.PlaybookRun
+		}
+	}
+}
+
 // Individual Websocket messages will be sent to the owner/participants and users
 // (optionally passed as parameter)
 func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, options ...RunWSOption) {
@@ -2930,17 +2919,10 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 		}
 	}
 
-	// create a unique list of user ids to send the message to
-	uniqueUserIDs := make(map[string]bool, len(sendWSOptions.AdditionalUserIDs)+len(playbookRun.ParticipantIDs)+1)
-	uniqueUserIDs[playbookRun.OwnerUserID] = true
-	for _, u := range sendWSOptions.AdditionalUserIDs {
-		uniqueUserIDs[u] = true
-	}
-	for _, u := range playbookRun.ParticipantIDs {
-		uniqueUserIDs[u] = true
-	}
+	// Get the unique list of recipients to notify
+	uniqueUserIDs := s.getUniqueRecipientUserIDs(playbookRun, sendWSOptions.AdditionalUserIDs...)
 
-	// send the websocket message
+	// Send the websocket message to each recipient
 	for userID := range uniqueUserIDs {
 		s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRun, userID)
 	}
@@ -2952,7 +2934,6 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToModify.Clone()
 
 	playbookRunToModify.Retrospective = newRetrospective.Text
@@ -2977,7 +2958,6 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToPublish.Clone()
 
 	now := model.GetMillis()
@@ -3074,7 +3054,6 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRunToCancel.Clone()
 
 	now := model.GetMillis()
@@ -3151,7 +3130,6 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRun.Clone()
 
 	requesterUser, err := s.pluginAPI.User.Get(requesterID)
@@ -3211,7 +3189,6 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		}
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRun.Clone()
 
 	if err = s.store.RemoveParticipants(playbookRunID, userIDs); err != nil {
@@ -3241,7 +3218,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return err
 	}
 
-	// ws send run - include requesterUserID in notifications
+	// ws send run
 	userIDs = append(userIDs, requesterUserID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userIDs...)
 
@@ -3301,7 +3278,6 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrapf(err, "failed to get run %s", playbookRunID)
 	}
 
-	// Store the original run before modifying
 	originalRun := playbookRun.Clone()
 
 	// Ensure new participants are team members

@@ -367,7 +367,7 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 		changes["webhook_on_status_update_urls"] = current.WebhookOnStatusUpdateURLs
 	}
 
-	// Process status posts with detailed comparison
+	// Process status posts
 	statusPostsChanged := false
 	if len(previous.StatusPosts) != len(current.StatusPosts) {
 		statusPostsChanged = true
@@ -387,7 +387,7 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 		changes["status_posts"] = current.StatusPosts
 	}
 
-	// Process timeline events with detailed comparison
+	// Process timeline events
 	timelineEventsChanged := false
 	if len(previous.TimelineEvents) != len(current.TimelineEvents) {
 		timelineEventsChanged = true
@@ -410,7 +410,7 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 		changes["timeline_events"] = current.TimelineEvents
 	}
 
-	// Process metrics data with detailed comparison
+	// Process metrics data
 	metricsDataChanged := false
 	if len(previous.MetricsData) != len(current.MetricsData) {
 		metricsDataChanged = true
