@@ -66,13 +66,6 @@ func TestSinceParameter(t *testing.T) {
 				
 				resp.Items = append(resp.Items, run1, run2)
 			}
-			
-			// Add finished runs info
-			finishedRun := FinishedRun{
-				ID:    "finished1",
-				EndAt: since + 1000,
-			}
-			resp.FinishedIDs = []FinishedRun{finishedRun}
 		}
 
 		// Return JSON response
@@ -104,7 +97,6 @@ func TestSinceParameter(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 2, result.TotalCount, "Should return 2 runs")
 		assert.Len(t, result.Items, 2, "Should have 2 runs in items")
-		assert.Len(t, result.FinishedIDs, 1, "Should have 1 finished run")
 		
 		// Verify first run fields
 		assert.Equal(t, "run1", result.Items[0].ID)
@@ -115,10 +107,6 @@ func TestSinceParameter(t *testing.T) {
 		assert.Equal(t, "run2", result.Items[1].ID)
 		assert.Greater(t, result.Items[1].CreateAt, since, "Second run should be created after since")
 		assert.Greater(t, result.Items[1].UpdateAt, since, "Second run should be updated after since")
-		
-		// Verify finished run fields
-		assert.Equal(t, "finished1", result.FinishedIDs[0].ID)
-		assert.Greater(t, result.FinishedIDs[0].EndAt, since, "Finished run should end after since")
 	})
 
 	// Test 2: Get runs with future since parameter (should return empty results)
@@ -136,7 +124,6 @@ func TestSinceParameter(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 2, result.TotalCount, "Should return empty results metadata")
 		assert.Len(t, result.Items, 0, "Should have no runs in items")
-		assert.Len(t, result.FinishedIDs, 1, "Should still have finished runs info")
 	})
 
 	// Test 3: Get runs without since parameter
@@ -149,55 +136,9 @@ func TestSinceParameter(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 2, result.TotalCount, "Should return default results")
 		assert.Len(t, result.Items, 0, "Should have no items without since parameter")
-		assert.Len(t, result.FinishedIDs, 0, "Should have no finished runs without since parameter")
-	})
-
-	// Test 4: Test serialization of FinishedIDs
-	t.Run("FinishedIDsSerialization", func(t *testing.T) {
-		// Create a response with FinishedIDs
-		now := time.Now().UnixMilli()
-		resp := GetPlaybookRunsResults{
-			TotalCount: 0,
-			PageCount:  0,
-			HasMore:    false,
-			Items:      []PlaybookRun{},
-			FinishedIDs: []FinishedRun{
-				{
-					ID:    "finished1",
-					EndAt: now - 1000,
-				},
-				{
-					ID:    "finished2",
-					EndAt: now,
-				},
-			},
-		}
-		
-		// Serialize to JSON
-		jsonData, err := json.Marshal(resp)
-		require.NoError(t, err, "Failed to marshal GetPlaybookRunsResults to JSON")
-		
-		// Verify that FinishedIDs field exists in JSON
-		jsonStr := string(jsonData)
-		assert.Contains(t, jsonStr, `"finished_ids":`, "JSON should contain finished_ids field")
-		assert.Contains(t, jsonStr, `"id":"finished1"`, "JSON should contain first finished run ID")
-		assert.Contains(t, jsonStr, `"id":"finished2"`, "JSON should contain second finished run ID")
-		assert.Contains(t, jsonStr, `"end_at":`, "JSON should contain end_at for finished runs")
-		
-		// Deserialize from JSON
-		var decodedResp GetPlaybookRunsResults
-		err = json.Unmarshal(jsonData, &decodedResp)
-		require.NoError(t, err, "Failed to unmarshal GetPlaybookRunsResults from JSON")
-		
-		// Verify FinishedIDs was preserved
-		require.Len(t, decodedResp.FinishedIDs, 2, "Should have 2 finished runs after deserialization")
-		assert.Equal(t, resp.FinishedIDs[0].ID, decodedResp.FinishedIDs[0].ID, "First finished run ID should be preserved")
-		assert.Equal(t, resp.FinishedIDs[0].EndAt, decodedResp.FinishedIDs[0].EndAt, "First finished run EndAt should be preserved")
-		assert.Equal(t, resp.FinishedIDs[1].ID, decodedResp.FinishedIDs[1].ID, "Second finished run ID should be preserved")
-		assert.Equal(t, resp.FinishedIDs[1].EndAt, decodedResp.FinishedIDs[1].EndAt, "Second finished run EndAt should be preserved")
 	})
 	
-	// Test 5: Verify URL encoding of since parameter
+	// Test 4: Verify URL encoding of since parameter
 	t.Run("URLEncoding", func(t *testing.T) {
 		// Create a custom server to check URL encoding
 		urlCheckServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

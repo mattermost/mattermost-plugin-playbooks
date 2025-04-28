@@ -442,57 +442,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		Items:      playbookRuns,
 	}
 
-	// Get finished runs if activity_since parameter is specified
-	// This returns information about runs that were finished (EndAt field set) after the activity_since timestamp
-	if options.ActivitySince > 0 {
-		// We use a separate DB connection instead of the transaction because the transaction
-		// might have already been committed by the time we reach here (in case of an error).
-		// Since this is additional information and not critical for the main query result,
-		// it's safer to use a separate connection.
-		finishedRuns, err := s.getFinishedPlaybookRunsSince(s.store.db, options.ActivitySince, options.TeamID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get finished playbook runs")
-		}
-		result.FinishedIDs = finishedRuns
-	}
-
 	return result, nil
-}
-
-// getFinishedPlaybookRunsSince returns information about runs that have been finished (EndAt field set)
-// since the given timestamp. It returns only minimal information (ID and EndAt) for these runs.
-// It accepts:
-// - q: The database connection or transaction to use
-// - since: Unix timestamp in milliseconds; only runs finished after this time are returned
-// - teamID: Optional team ID to filter runs by team; if empty, runs from all teams are returned
-func (s *playbookRunStore) getFinishedPlaybookRunsSince(q queryer, since int64, teamID string) ([]app.FinishedRun, error) {
-	// If since parameter is 0 or negative, return an empty slice (no filtering)
-	if since <= 0 {
-		return []app.FinishedRun{}, nil
-	}
-
-	whereClause := sq.And{
-		sq.Gt{"i.EndAt": 0},         // Only get runs that have ended
-		sq.GtOrEq{"i.EndAt": since}, // Only get runs that ended since the given timestamp
-	}
-
-	// Add team filter if specified
-	if teamID != "" {
-		whereClause = append(whereClause, sq.Eq{"i.TeamId": teamID})
-	}
-
-	query := s.queryBuilder.
-		Select("i.ID", "i.EndAt").
-		From("IR_Incident AS i").
-		Where(whereClause)
-
-	var finishedRuns []app.FinishedRun
-	err := s.store.selectBuilder(q, &finishedRuns, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query for finished playbook runs")
-	}
-
-	return finishedRuns, nil
 }
 
 // CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.

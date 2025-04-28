@@ -466,18 +466,11 @@ type TimelineEvent struct {
 // GetPlaybookRunsResults collects the results of the GetPlaybookRuns call: the list of PlaybookRuns matching
 // the HeaderFilterOptions, and the TotalCount of the matching playbook runs before paging was applied.
 type GetPlaybookRunsResults struct {
-	TotalCount  int           `json:"total_count"`
-	PageCount   int           `json:"page_count"`
-	PerPage     int           `json:"per_page"`
-	HasMore     bool          `json:"has_more"`
-	Items       []PlaybookRun `json:"items"`
-	FinishedIDs []FinishedRun `json:"finished_ids,omitempty"` // Only populated when since parameter is used
-}
-
-// FinishedRun contains minimal information about a finished run
-type FinishedRun struct {
-	ID    string `json:"id"`
-	EndAt int64  `json:"end_at"`
+	TotalCount int           `json:"total_count"`
+	PageCount  int           `json:"page_count"`
+	PerPage    int           `json:"per_page"`
+	HasMore    bool          `json:"has_more"`
+	Items      []PlaybookRun `json:"items"`
 }
 
 type SQLStatusPost struct {
@@ -504,8 +497,6 @@ func (r GetPlaybookRunsResults) Clone() GetPlaybookRunsResults {
 		newGetPlaybookRunsResults.Items = append(newGetPlaybookRunsResults.Items, *i.Clone())
 	}
 
-	newGetPlaybookRunsResults.FinishedIDs = append([]FinishedRun(nil), r.FinishedIDs...)
-
 	return newGetPlaybookRunsResults
 }
 
@@ -517,11 +508,6 @@ func (r GetPlaybookRunsResults) MarshalJSON() ([]byte, error) {
 	// replace nils with empty slices for the frontend
 	if old.Items == nil {
 		old.Items = []PlaybookRun{}
-	}
-
-	// Only include finished_ids if it's not empty
-	if len(old.FinishedIDs) == 0 {
-		old.FinishedIDs = nil
 	}
 
 	return json.Marshal(old)
@@ -1094,8 +1080,6 @@ type PlaybookRunFilterOptions struct {
 
 	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
 	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
-	// Matching runs are returned in the Items field, and runs that were finished after this timestamp
-	// are additionally included in the FinishedIDs field with minimal information.
 	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
 	// Maps to the "since" URL parameter in the API and client.
 	ActivitySince int64 `url:"since,omitempty"`

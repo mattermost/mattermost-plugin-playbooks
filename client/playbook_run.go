@@ -249,8 +249,6 @@ type PlaybookRunListOptions struct {
 	
 	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
 	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
-	// Matching runs are returned in the Items field, and runs that were finished after this timestamp
-	// are additionally included in the FinishedIDs field with minimal information (ID and EndAt).
 	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
 	// This is sent as the "since" URL parameter.
 	ActivitySince int64 `url:"since,omitempty"`
@@ -277,13 +275,6 @@ type GetPlaybookRunsResults struct {
 	PageCount   int           `json:"page_count"`
 	HasMore     bool          `json:"has_more"`
 	Items       []PlaybookRun `json:"items"`
-	FinishedIDs []FinishedRun `json:"finished_ids,omitempty"`
-}
-
-// FinishedRun contains minimal information about a finished run
-type FinishedRun struct {
-	ID    string `json:"id"`
-	EndAt int64  `json:"end_at"`
 }
 
 // StatusUpdateOptions are the fields required to update a playbook run's status

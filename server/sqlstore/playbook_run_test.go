@@ -1406,13 +1406,18 @@ func TestActivitySince(t *testing.T) {
 			})
 
 			require.NoError(t, err)
-
 			require.Equal(t, 3, len(results.Items))
 
-			// Check that finished run IDs are included
-			require.Equal(t, 1, len(results.FinishedIDs))
-			require.Equal(t, run3.ID, results.FinishedIDs[0].ID)
-			require.Equal(t, finishTime, results.FinishedIDs[0].EndAt)
+			// Verify run3 is included in the results with the correct EndAt time
+			foundRun3 := false
+			for _, run := range results.Items {
+				if run.ID == run3.ID {
+					foundRun3 = true
+					require.Equal(t, finishTime, run.EndAt)
+					break
+				}
+			}
+			require.True(t, foundRun3, "Run3 should be in the results")
 		})
 
 		t.Run("get runs updated since a later time", func(t *testing.T) {
@@ -1428,7 +1433,6 @@ func TestActivitySince(t *testing.T) {
 			})
 
 			require.NoError(t, err)
-
 			require.Equal(t, 2, len(results.Items))
 
 			// Verify both run2 and run3 are in the results
@@ -1443,9 +1447,6 @@ func TestActivitySince(t *testing.T) {
 			}
 			require.True(t, foundRun2, "Run2 should be in the results")
 			require.True(t, foundRun3, "Run3 should be in the results")
-
-			// Should still include the finished run in FinishedIDs
-			require.Equal(t, 1, len(results.FinishedIDs))
 		})
 
 		t.Run("get runs updated since a time after all updates", func(t *testing.T) {
@@ -1462,9 +1463,6 @@ func TestActivitySince(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Equal(t, 0, len(results.Items))
-
-			// Should still include the finished run in FinishedIDs if it was finished after the since time
-			require.Equal(t, 0, len(results.FinishedIDs))
 		})
 
 		t.Run("finished runs are correctly reported", func(t *testing.T) {
@@ -1497,15 +1495,16 @@ func TestActivitySince(t *testing.T) {
 
 			require.NoError(t, err)
 
-			// Should include the newly finished run in FinishedIDs
+			// Verify run4 is returned in the items with correct EndAt
 			foundRun4 := false
-			for _, finished := range results.FinishedIDs {
-				if finished.ID == run4.ID {
+			for _, run := range results.Items {
+				if run.ID == run4.ID {
 					foundRun4 = true
-					require.Equal(t, newerFinishTime, finished.EndAt)
+					require.Equal(t, newerFinishTime, run.EndAt)
+					break
 				}
 			}
-			require.True(t, foundRun4, "Run 4 should be in FinishedIDs")
+			require.True(t, foundRun4, "Run 4 should be in the results")
 		})
 
 		t.Run("with empty results", func(t *testing.T) {
@@ -1534,7 +1533,6 @@ func TestActivitySince(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Equal(t, 0, len(results.Items))
-			require.Equal(t, 0, len(results.FinishedIDs))
 		})
 	}
 }
