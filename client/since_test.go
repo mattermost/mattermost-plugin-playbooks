@@ -1,6 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// Test file for the ActivitySince parameter in PlaybookRunListOptions.
+// This test validates that the client properly encodes and sends the 'since'
+// parameter, and correctly handles different response scenarios.
+
 package client
 
 import (
@@ -18,7 +22,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSinceParameter tests the ActivitySince parameter in PlaybookRunListOptions.
+// It covers four test cases:
+// 1. With a past timestamp - should return runs active after that time
+// 2. With a future timestamp - should return no runs
+// 3. Without a since parameter - should return default results
+// 4. URL encoding - verifies the parameter is properly encoded in the URL
 func TestSinceParameter(t *testing.T) {
+	// Common response values
+	const defaultTotalCount = 2
+	const defaultPageCount = 1
+	
 	// Setup server to simulate API responses
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -29,8 +43,8 @@ func TestSinceParameter(t *testing.T) {
 		
 		// Create response based on since parameter
 		resp := GetPlaybookRunsResults{
-			TotalCount: 2,
-			PageCount:  1,
+			TotalCount: defaultTotalCount,
+			PageCount:  defaultPageCount,
 			HasMore:    false,
 			Items:      []PlaybookRun{},
 		}
@@ -46,9 +60,9 @@ func TestSinceParameter(t *testing.T) {
 			// Create timestamps for testing
 			now := time.Now().UnixMilli()
 			
-			// Add playbook runs that would be updated after the since timestamp
+			// Add playbook runs only if the since parameter is in the past
 			if since < now {
-				// First run updated after since
+				// First run - created before since, updated after since
 				run1 := PlaybookRun{
 					ID:       "run1",
 					Name:     "Run 1",
@@ -56,7 +70,7 @@ func TestSinceParameter(t *testing.T) {
 					UpdateAt: since + 5000,  // Updated after since
 				}
 				
-				// Second run updated after since
+				// Second run - both created and updated after since
 				run2 := PlaybookRun{
 					ID:       "run2",
 					Name:     "Run 2",
@@ -82,7 +96,7 @@ func TestSinceParameter(t *testing.T) {
 	c, err := New(mockClient4)
 	require.NoError(t, err)
 
-	// Test 1: Get runs with since parameter
+	// Test 1: Get runs with since parameter in the past
 	t.Run("WithSinceParameter", func(t *testing.T) {
 		// Set since time to 1 hour ago
 		since := time.Now().Add(-1 * time.Hour).UnixMilli()
@@ -95,15 +109,15 @@ func TestSinceParameter(t *testing.T) {
 		
 		// Verify results
 		require.NoError(t, err)
-		assert.Equal(t, 2, result.TotalCount, "Should return 2 runs")
-		assert.Len(t, result.Items, 2, "Should have 2 runs in items")
+		assert.Equal(t, defaultTotalCount, result.TotalCount, "Should return expected total count")
+		assert.Len(t, result.Items, 2, "Should return 2 runs")
 		
-		// Verify first run fields
+		// Verify first run fields - created before since but updated after
 		assert.Equal(t, "run1", result.Items[0].ID)
 		assert.Less(t, result.Items[0].CreateAt, since, "First run should be created before since")
 		assert.Greater(t, result.Items[0].UpdateAt, since, "First run should be updated after since")
 		
-		// Verify second run fields
+		// Verify second run fields - both created and updated after since
 		assert.Equal(t, "run2", result.Items[1].ID)
 		assert.Greater(t, result.Items[1].CreateAt, since, "Second run should be created after since")
 		assert.Greater(t, result.Items[1].UpdateAt, since, "Second run should be updated after since")
@@ -122,8 +136,8 @@ func TestSinceParameter(t *testing.T) {
 		
 		// Verify results
 		require.NoError(t, err)
-		assert.Equal(t, 2, result.TotalCount, "Should return empty results metadata")
-		assert.Len(t, result.Items, 0, "Should have no runs in items")
+		assert.Equal(t, defaultTotalCount, result.TotalCount)
+		assert.Len(t, result.Items, 0, "Should have no runs when using future timestamp")
 	})
 
 	// Test 3: Get runs without since parameter
@@ -134,13 +148,13 @@ func TestSinceParameter(t *testing.T) {
 		
 		// Verify results
 		require.NoError(t, err)
-		assert.Equal(t, 2, result.TotalCount, "Should return default results")
-		assert.Len(t, result.Items, 0, "Should have no items without since parameter")
+		assert.Equal(t, defaultTotalCount, result.TotalCount)
+		assert.Len(t, result.Items, 0, "Should have no runs when since parameter is omitted")
 	})
 	
 	// Test 4: Verify URL encoding of since parameter
 	t.Run("URLEncoding", func(t *testing.T) {
-		// Create a custom server to check URL encoding
+		// Create a specific server just for URL validation
 		urlCheckServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			
@@ -148,15 +162,14 @@ func TestSinceParameter(t *testing.T) {
 			query := r.URL.Query()
 			sinceStr := query.Get("since")
 			
-			// Validate that since parameter exists and has the expected value
-			require.NotEmpty(t, sinceStr, "ActivitySince parameter should be present in URL")
+			// Validate parameter exists with expected value
+			require.NotEmpty(t, sinceStr, "Since parameter should be present in URL")
 			
-			// Parse the value and verify it matches what we sent
 			since, err := strconv.ParseInt(sinceStr, 10, 64)
-			require.NoError(t, err, "ActivitySince parameter should be a valid int64")
-			assert.Equal(t, int64(12345), since, "ActivitySince parameter should match the value we sent")
+			require.NoError(t, err, "Since parameter should be a valid int64")
+			assert.Equal(t, int64(12345), since, "Since parameter should match the value we sent")
 			
-			// Return an empty success response
+			// Return empty success response
 			w.WriteHeader(http.StatusOK)
 			empty := GetPlaybookRunsResults{
 				TotalCount: 0,
@@ -176,7 +189,7 @@ func TestSinceParameter(t *testing.T) {
 		urlCheckC, err := New(urlCheckClient4)
 		require.NoError(t, err)
 		
-		// Make the request with a specific since value that we can check
+		// Make request with specific test value
 		ctx := context.Background()
 		_, err = urlCheckC.PlaybookRuns.List(ctx, 0, 100, PlaybookRunListOptions{
 			ActivitySince: 12345,
