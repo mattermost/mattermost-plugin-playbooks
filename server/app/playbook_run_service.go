@@ -1877,7 +1877,6 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 	timestamp := model.GetMillis()
 	checklist.UpdateAt = timestamp
 
-	// Update timestamps for all items in the checklist
 	for i := range checklist.Items {
 		updateChecklistItemTimestamp(&checklist.Items[i], timestamp)
 	}
@@ -1904,11 +1903,9 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 
 	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
 
-	// Set the duplicated checklist's UpdateAt timestamp
 	timestamp := model.GetMillis()
 	duplicate.UpdateAt = timestamp
 
-	// Update all items in the duplicated checklist with current timestamps
 	for i := range duplicate.Items {
 		updateChecklistItemTimestamp(&duplicate.Items[i], timestamp)
 	}
@@ -2003,7 +2000,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber+1:]...,
 	)
 
-	// Update the checklist's timestamp to reflect the modification
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2156,7 +2152,6 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 	// Get checklist to move
 	checklistMoved := playbookRunToModify.Checklists[sourceChecklistIdx]
 
-	// Update the moved checklist's UpdateAt timestamp
 	timestamp := model.GetMillis()
 	checklistMoved.UpdateAt = timestamp
 
@@ -2195,14 +2190,12 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		return errors.New("invalid destItem")
 	}
 
-	// Get current timestamp for updates
 	timestamp := model.GetMillis()
 
 	// Moved item
 	sourceChecklist := playbookRunToModify.Checklists[sourceChecklistIdx].Items
 	itemMoved := sourceChecklist[sourceItemIdx]
 
-	// Update the moved item's timestamp
 	updateChecklistItemTimestamp(&itemMoved, timestamp)
 
 	// Delete item to move
@@ -2222,12 +2215,10 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 	// are the same, we only need to update the checklist to its final state (destChecklist)
 	if sourceChecklistIdx == destChecklistIdx {
 		playbookRunToModify.Checklists[sourceChecklistIdx].Items = destChecklist
-		// Update the source/destination checklist's timestamp
 		playbookRunToModify.Checklists[sourceChecklistIdx].UpdateAt = timestamp
 	} else {
 		playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist
 		playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
-		// Update both checklists' timestamps
 		playbookRunToModify.Checklists[sourceChecklistIdx].UpdateAt = timestamp
 		playbookRunToModify.Checklists[destChecklistIdx].UpdateAt = timestamp
 	}
