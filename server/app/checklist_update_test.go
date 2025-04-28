@@ -255,3 +255,56 @@ func TestUpdateAt_MoveChecklistItem(t *testing.T) {
 		assert.LessOrEqual(t, playbookRun.Checklists[0].UpdateAt, after)
 	})
 }
+
+func TestUpdateAt_PlaybookRunUpdated(t *testing.T) {
+	t.Run("PlaybookRun UpdateAt field is updated when checklist or item is modified", func(t *testing.T) {
+		// Create a playbook run with initial timestamps
+		initialTime := int64(1000)
+		playbookRun := PlaybookRun{
+			ID:       "playbook1",
+			UpdateAt: initialTime,
+			Checklists: []Checklist{
+				{
+					ID:       "checklist1",
+					Title:    "Test Checklist",
+					UpdateAt: initialTime,
+					Items: []ChecklistItem{
+						{
+							ID:       "item1",
+							Title:    "Test Item",
+							UpdateAt: initialTime,
+						},
+					},
+				},
+			},
+		}
+
+		// Simulate updating a checklist item
+		before := model.GetMillis()
+
+		// Update a checklist item - this should trigger an update to both the item,
+		// checklist, and playbook run update_at fields
+		timestamp := model.GetMillis()
+		playbookRun.Checklists[0].Items[0].Title = "Updated Item Title"
+		updateChecklistItemTimestamp(&playbookRun.Checklists[0].Items[0], timestamp)
+		playbookRun.Checklists[0].UpdateAt = timestamp
+		playbookRun.UpdateAt = timestamp
+
+		after := model.GetMillis()
+
+		// Verify the item was updated
+		assert.Equal(t, "Updated Item Title", playbookRun.Checklists[0].Items[0].Title)
+
+		// Verify all timestamps were updated
+		assert.GreaterOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, before)
+		assert.LessOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, after)
+		assert.GreaterOrEqual(t, playbookRun.Checklists[0].UpdateAt, before)
+		assert.LessOrEqual(t, playbookRun.Checklists[0].UpdateAt, after)
+		assert.GreaterOrEqual(t, playbookRun.UpdateAt, before)
+		assert.LessOrEqual(t, playbookRun.UpdateAt, after)
+
+		// All three timestamps should match
+		assert.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
+		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.UpdateAt)
+	})
+}
