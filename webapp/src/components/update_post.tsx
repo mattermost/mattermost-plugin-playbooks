@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -20,7 +20,7 @@ import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {useFormattedUsernameByID} from 'src/hooks/general';
-import {telemetryView} from 'src/client';
+import {useViewTelemetry} from 'src/hooks/telemetry';
 
 interface Props {
     post: Post;
@@ -57,15 +57,11 @@ export const UpdatePost = (props: Props) => {
     const playbookRunId = props.post.props.playbookRunId ?? '';
     const overviewURL = `/playbooks/runs/${playbookRunId}`;
     const runName = props.post.props.runName ?? '';
-
-    // Send telemetry when this component is rendered
-    useEffect(() => {
-        telemetryView(PlaybookRunViewTarget.StatusUpdate, {
-            post_id: props.post.id,
-            channel_type: channel?.type || '', // not always available
-            playbook_run_id: props.post.props.playbookRunId || '',
-        });
-    }, [props.post.id]);
+    useViewTelemetry(PlaybookRunViewTarget.StatusUpdate, props.post.id, {
+        post_id: props.post.id,
+        channel_type: channel?.type || '', // not always available
+        playbook_run_id: props.post.props.playbookRunId || '',
+    });
 
     return (
         <>
