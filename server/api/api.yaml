@@ -109,6 +109,13 @@ paths:
           example: server down
           schema:
             type: string
+        - name: channel_id
+          in: query
+          description: The returned list will contain only the playbook run associated with this channel ID.
+          required: false
+          example: r3vk8jdys4rlya46xhdthatoyx
+          schema:
+            type: string
       x-codeSamples:
         - lang: curl
           source: |
