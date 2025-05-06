@@ -14,8 +14,8 @@ export enum BadgeType {
 }
 
 interface BadgeProps {
-    status: BadgeType;
-    compact?: boolean;
+    $status: BadgeType;
+    $compact?: boolean;
 }
 
 const Badge = styled.div<BadgeProps>`
@@ -26,11 +26,9 @@ const Badge = styled.div<BadgeProps>`
     padding: 0 8px;
     font-weight: 600;
     margin: 2px;
-
     color: var(--button-color);
-
     ${(props) => {
-        switch (props.status) {
+        switch (props.$status) {
         case BadgeType.InProgress:
             return css`
                 background-color: var(--sidebar-text-active-border);
@@ -45,24 +43,27 @@ const Badge = styled.div<BadgeProps>`
             `;
         default:
             return css`
-                color: var(--center-channel-color);
                 box-shadow: gray 0 0 2pt;
+                color: var(--center-channel-color);
             `;
         }
     }}
-
-
     top: 1px;
     height: 24px;
     line-height: 24px;
 
-    ${(props) => props.compact && css`
-        line-height: 20px;
+    ${(props) => props.$compact && css`
         height: 20px;
+        line-height: 20px;
     `}
 `;
 
-const StatusBadge = (props: BadgeProps) => {
+interface StatusBadgeProps {
+    status: BadgeType;
+    compact?: boolean;
+}
+
+const StatusBadge = (props: StatusBadgeProps) => {
     let message;
     switch (props.status) {
     case BadgeType.InProgress:
@@ -79,7 +80,8 @@ const StatusBadge = (props: BadgeProps) => {
     return (
         <Badge
             data-testid={'badge'}
-            {...props}
+            $status={props.status}
+            $compact={props.compact}
         >
             {message}
         </Badge>

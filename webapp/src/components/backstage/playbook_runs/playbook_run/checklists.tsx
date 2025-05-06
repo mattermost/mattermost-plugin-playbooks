@@ -33,7 +33,7 @@ const Checklists = ({id, playbookRun, role}: Props) => {
 export default Checklists;
 
 const Container = styled.div`
-    width: 100%;
     display: flex;
+    width: 100%;
     flex-direction: column;
 `;

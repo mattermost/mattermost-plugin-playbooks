@@ -101,27 +101,27 @@ const TextEdit = (props: TextEditProps) => {
 };
 
 const HoverMenuContainer = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 0px 8px;
     position: absolute;
-    height: 32px;
-    right: 2px;
-    top: 8px;
     z-index: 1;
+    top: 8px;
+    right: 2px;
+    display: flex;
+    height: 32px;
+    align-items: center;
+    padding: 0 8px;
 `;
 
 const commonTextStyle = css`
     display: block;
     align-items: center;
-    border-radius: var(--markdown-textbox-radius, 4px);
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 400;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
     padding: var(--markdown-textbox-padding, 12px 30px 12px 16px);
+    border-radius: var(--markdown-textbox-radius, 4px);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
 
-    :hover {
+    &:hover {
         cursor: text;
     }
 
@@ -132,8 +132,8 @@ const commonTextStyle = css`
 
 const Container = styled.div`
     position: relative;
-    box-sizing: border-box;
     display: flex;
+    box-sizing: border-box;
     align-items: center;
     border-radius: var(--markdown-textbox-radius, 4px);
 
@@ -144,6 +144,7 @@ const Container = styled.div`
     ${HoverMenuContainer} {
         opacity: 0
     }
+
     &:hover,
     &:focus-within {
         ${HoverMenuContainer} {

@@ -82,9 +82,9 @@ const OuterContainer = styled.div`
 
 const InnerContainer = styled.div`
     display: flex;
+    max-width: 1120px;
     flex-direction: column;
     padding: 20px;
-    max-width: 1120px;
     margin: 0 auto;
     font-family: 'Open Sans', sans-serif;
     font-style: normal;
@@ -101,4 +101,4 @@ const RunListContainer = styled.div`
     }
 `;
 
-export default styled(PlaybookUsage)``;
+export default styled(PlaybookUsage)`/* stylelint-disable no-empty-source */`;

@@ -83,43 +83,45 @@ const RightHandSidebar = ({isOpen, onClose, title, children, subtitle, onBack, s
 export default RightHandSidebar;
 
 const Container = styled.div<{isOpen: boolean}>`
+    right: 0;
     display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
     height: 100%;
     flex-direction: column;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    right: 0;
     background-color: var(--center-channel-bg);
 `;
 
 const Header = styled.div`
     display: flex;
-    flex-direction: row;
     height: 56px;
+    flex-direction: row;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const HeaderIcon = styled.div`
     display: flex;
-    align-self: center;
-    justify-content: center;
-    cursor: pointer;
     width: 32px;
     height: 32px;
-    margin-right: 20px;
+    align-self: center;
+    justify-content: center;
     border-radius: 4px;
+    margin-right: 20px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
-    :hover {
+    cursor: pointer;
+
+    &:hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;
 
 const HeaderTitle = styled.div`
     margin: auto 0;
-    line-height: 32px;
+    color: var(--center-channel-color);
     font-size: 16px;
     font-weight: 600;
-    color: var(--center-channel-color);
+    line-height: 32px;
     white-space: nowrap;
+
     :first-child {
         margin-left: 20px;
     }
@@ -127,19 +129,19 @@ const HeaderTitle = styled.div`
 
 export const HeaderVerticalDivider = styled.div`
     height: 2.4rem;
+    align-self: center;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     margin: 0 8px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
-    align-self: center;
 `;
 
 export const HeaderSubtitle = styled.div`
     overflow: hidden;
+    align-self: center;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    align-self: center;
 `;
 
 const Body = styled.div`

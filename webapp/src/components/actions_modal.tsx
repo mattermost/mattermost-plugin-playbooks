@@ -84,9 +84,9 @@ const ActionsModal = (props: Props) => {
 
 const ModalHeader = styled(Modal.Header)`
     &&&& {
-        margin-bottom: 0;
         padding-top: 24px;
         padding-bottom: 20px;
+        margin-bottom: 0;
     }
 `;
 
@@ -97,27 +97,26 @@ const StyledModal = styled(GenericModal)`
 `;
 
 const ModalTitle = styled.div`
-    font-weight: 600;
-    font-size: 20px;
-    line-height: 20px;
     margin-top: 4px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 20px;
 `;
 
 const ModalFooter = styled(DefaultFooterContainer)`
-    :after {
-        content: '';
-        height: 1px;
-        width: 100%;
+    &::after {
         position: absolute;
-        left: 0px;
+        left: 0;
+        width: 100%;
+        height: 1px;
         margin-top: -24px;
-
         background: rgba(var(--center-channel-color-rgb), 0.08);
+        content: '';
     }
 
     .disabled {
-        opacity: 0.4;
         cursor: not-allowed;
+        opacity: 0.4;
     }
 `;
 
@@ -135,10 +134,10 @@ export const TriggersContainer = styled.div`
     display: flex;
     flex-direction: column;
     row-gap: 16px;
-    @media screen and (max-height: 900px) {
+
+    @media screen and (height <= 900px) {
+        overflow: hidden scroll;
         max-height: 500px;
-        overflow-x: hidden;
-        overflow-y: scroll;
     }
 `;
 

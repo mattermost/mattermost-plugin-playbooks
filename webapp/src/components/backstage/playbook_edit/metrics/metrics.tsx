@@ -306,13 +306,13 @@ const HorizontalContainer = styled.div`
     align-items: start;
 
     > i {
-        color: rgba(var(--center-channel-color-rgb), 0.56);
         margin-top: 2px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 
     > svg {
-        color: rgba(var(--center-channel-color-rgb), 0.56);
         margin: 2px 7px 0 0;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;
 
@@ -327,14 +327,14 @@ const OptionTitle = styled.div`
 `;
 
 const OptionDesc = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const ConfirmModalFooter = styled(DefaultFooterContainer)`
-    align-items: center;
     flex: 1;
+    align-items: center;
     margin-bottom: 24px;
 
     button.confirm {
@@ -353,8 +353,8 @@ const UpgradeButton = styled.div`
 
 const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
     position: absolute;
-    margin-left: -12px;
     top: -4px;
+    margin-left: -12px;
     color: var(--online-indicator);
 `;
 

@@ -158,29 +158,26 @@ const IconWrapper = styled.div`
 `;
 
 const ChecklistContainer = styled.div`
-    background-color: var(--center-channel-bg);
-    border-radius: 0 0 4px 4px;
+    padding: 8px 0;
     border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 0 0 4px 4px;
     border-top: 0;
-    padding: 8px 0px;
+    background-color: var(--center-channel-bg);
 `;
 
 const AddTaskLink = styled.button`
+    display: flex;
+    width: 100%;
+    height: 44px;
+    flex-direction: row;
+    align-items: center;
+    border: none;
+    background: none;
+    color: var(--center-channel-color-64);
+    cursor: pointer;
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-    height: 44px;
-    width: 100%;
-
-    background: none;
-    border: none;
-
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    cursor: pointer;
-
-    color: var(--center-channel-color-64);
 
     &:hover:not(:disabled) {
         background-color: var(--button-bg-08);

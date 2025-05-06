@@ -36,8 +36,8 @@ const BackstageRHS = () => {
             id='playbooks-backstage-sidebar-right'
             role='complementary'
             ref={sidebarRef}
-            isOpen={isOpen}
-            viewMode={viewMode}
+            $isOpen={isOpen}
+            $viewMode={viewMode}
         >
             <Header>
                 <HeaderTitle>{renderTitle()}</HeaderTitle>
@@ -57,53 +57,53 @@ const BackstageRHS = () => {
 
 export default BackstageRHS;
 
-const Container = styled.div<{isOpen: boolean, viewMode: BackstageRHSViewMode}>`
-    display: ${({isOpen}) => (isOpen ? 'flex' : 'hidden')};
+const Container = styled.div<{$isOpen: boolean, $viewMode: BackstageRHSViewMode}>`
     position: fixed;
+    z-index: 5;
+    top: 45px;
+    right: 0;
+    display: ${({$isOpen}) => ($isOpen ? 'flex' : 'hidden')};
     width: 400px;
     height: 100%;
     flex-direction: column;
+    border-radius: 0;
     border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    right: 0;
-    top: 45px;
-    z-index: 5;
     background-color: var(--center-channel-bg);
+    box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
 
 
-    @media screen and (min-width: 1600px) {
+    @media screen and (width >= 1600px) {
         width: 500px;
     }
-
-    border-radius: 0;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
 `;
 
 const Header = styled.div`
     display: flex;
-    flex-direction: row;
     height: 56px;
+    flex-direction: row;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const HeaderIcon = styled.div`
     display: flex;
-    align-self: center;
-    justify-content: center;
-    cursor: pointer;
     width: 32px;
     height: 32px;
+    align-self: center;
+    justify-content: center;
     margin-right: 20px;
-    :hover {
+    cursor: pointer;
+
+    &:hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;
 
 const HeaderTitle = styled.div`
     margin: auto 0 auto 20px;
-    line-height: 32px;
+    color: var(--center-channel-color);
     font-size: 16px;
     font-weight: 600;
-    color: var(--center-channel-color);
+    line-height: 32px;
     white-space: nowrap;
 `;
 

@@ -10,7 +10,7 @@ import {inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
 
 import {fetchPlaybookRunsForChannelByUser} from './client';
 
-type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} | {};
+type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} | object;
 
 export function makeSlashCommandHook(store: Store) {
     return async (inMessage: any, args: any): Promise<SlashCommandObj> => {

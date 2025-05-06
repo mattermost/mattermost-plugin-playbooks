@@ -182,9 +182,9 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
 };
 
 const HelpText = styled.div`
-    font-size: 12px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
     margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
 `;
 
 export default RunActionsModal;

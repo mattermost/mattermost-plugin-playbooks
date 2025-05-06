@@ -88,13 +88,13 @@ export const RetrospectivePost = (props: Props) => {
 };
 
 const HeaderGrid = styled.div`
-    width: 100%;
     display: grid;
+    width: 100%;
+    margin: 8px 0;
 	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    row-gap: 19px;
     place-items: flex-start center;
     justify-items: stretch;
-    margin: 8px 0px;
+    row-gap: 19px;
 `;
 
 const MetricInfo = styled.div`
@@ -106,11 +106,11 @@ const MetricIcon = styled.div`
     display: flex;
     width: 40px;
     height: 40px;
-    padding: 10px;
     align-items: center;
-    background: rgba(var(--button-bg-rgb), 0.08);
+    padding: 10px;
     border-radius: 4px;
-    margin: 0px 8px;
+    margin: 0 8px;
+    background: rgba(var(--button-bg-rgb), 0.08);
 `;
 
 const ViewContent = styled.div`
@@ -118,34 +118,32 @@ const ViewContent = styled.div`
 `;
 
 const Title = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    font-weight: 600;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    margin: 2px 0px;
-
     overflow: hidden;
+    max-width: 220px;
+    margin: 2px 0;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 220px;
 `;
 
 const Value = styled.div`
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
-    font-weight: normal;
-    margin: 2px 0px;
-
     overflow: hidden;
+    max-width: 220px;
+    margin: 2px 0;
+    color: var(--center-channel-color);
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 24px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 220px;
 `;
 
 const CustomPostContainerVertical = styled(CustomPostContainer)`
-    flex-direction: column;
     max-width: 100%;
+    flex-direction: column;
     padding: 12px 16px;
 `;
 
@@ -162,9 +160,10 @@ const TextBody = styled.div`
 
 const Separator = styled.hr`
     padding-bottom: 0;
+
     && {
-        border: none;
         height: 1px;
+        border: none;
         background: rgba(var(--center-channel-color-rgb), 0.61);
     }
 `;

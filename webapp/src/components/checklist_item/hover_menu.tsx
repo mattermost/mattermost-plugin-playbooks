@@ -59,7 +59,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 <ToggleDescriptionButton
                     title={formatMessage({defaultMessage: 'Toggle description'})}
                     className={'icon icon-chevron-up'}
-                    showDescription={props.showDescription}
+                    $showDescription={props.showDescription}
                     onClick={props.toggleDescription}
                 />
             }
@@ -147,25 +147,26 @@ const ChecklistItemHoverMenu = (props: Props) => {
 };
 
 export const HoverMenu = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 0px 3px;
     position: absolute;
-    height: 32px;
-    right: 1px;
     top: -6px;
+    right: 1px;
+    display: flex;
+    height: 32px;
+    align-items: center;
+    padding: 0 3px;
     border: 1px solid var(--center-channel-color-08);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
     background: var(--center-channel-bg);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
 `;
 
-const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{showDescription: boolean}>`
+const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{$showDescription: boolean}>`
     padding: 0;
     border-radius: 4px;
-    &:before {
+
+    &::before {
+        transform: ${({$showDescription}) => ($showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
         transition: all 0.2s linear;
-        transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
     }
 `;
 

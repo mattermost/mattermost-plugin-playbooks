@@ -29,9 +29,9 @@ import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 import ProfileAutocomplete from './profile_autocomplete';
 
 const ProfileAutocompleteContainer = styled.div`
-	border-bottom: 1px solid rgba(var(--sys-center-channel-color-rgb), 0.08);
 	padding-top: 24px;
 	padding-bottom: 24px;
+	border-bottom: 1px solid rgba(var(--sys-center-channel-color-rgb), 0.08);
 `;
 
 const Container = styled.div`
@@ -50,8 +50,8 @@ const UserList = styled.div`
 `;
 
 const BelowLineProfile = styled(Profile)`
-    flex-grow: 1;
     overflow: hidden;
+    flex-grow: 1;
 `;
 
 const IconWrapper = styled.div`
@@ -135,11 +135,12 @@ interface UserLineProps {
     onMakeMember: (userid: string) => void;
 }
 
-const MemberButton = styled.div`
+const MemberButton = styled.button`
     display: inline-flex;
     border-radius: 4px;
-    fill: var(--link-color);
     color: var(--link-color);
+    fill: var(--link-color);
+
     &:hover {
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);

@@ -36,9 +36,9 @@ export const PatternedInput = (props: Props) => (
 );
 
 const ErrorMessage = styled.div`
-    color: var(--error-text);
-    margin-left: auto;
     display: none;
+    margin-left: auto;
+    color: var(--error-text);
 `;
 
 interface TextBoxProps {
@@ -50,6 +50,7 @@ const TextBox = styled.input<TextBoxProps>`
         color: var(--center-channel-color);
         opacity: 0.64;
     }
+
     background: ${(props) => (props.disabled ? 'auto' : 'var(--center-channel-bg)')};
     height: 40px;
     width: 100%;

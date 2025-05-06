@@ -34,7 +34,7 @@ const RHSParticipants = (props: Props) => {
             <IconWrapper
                 onClick={props.onParticipate}
                 data-testid={'rhs-participate-icon'}
-                format={props.userIds.length === 0 ? 'icontext' : 'icon'}
+                $format={props.userIds.length === 0 ? 'icontext' : 'icon'}
             >
                 <AccountPlusOutlineIcon size={16}/>
                 {props.userIds.length === 0 ? formatMessage({defaultMessage: 'Participate'}) : null}
@@ -92,7 +92,7 @@ const RHSParticipants = (props: Props) => {
                     <AddParticipantIconButton
                         onClick={showParticipants}
                         data-testid={'rhs-add-participant-icon'}
-                        format={'icon'}
+                        $format={'icon'}
                     >
                         <AccountMultiplePlusOutlineIcon size={20}/>
                     </AddParticipantIconButton>
@@ -114,7 +114,7 @@ export const UserList = ({userIds, sizeInPx}: {userIds: string[], sizeInPx: numb
             ))}
             {userIds.length > 6 &&
             // eslint-disable-next-line formatjs/no-literal-string-in-jsx
-            <Rest sizeInPx={sizeInPx}>{'+' + (userIds.length - 6)}</Rest>
+            <Rest $sizeInPx={sizeInPx}>{'+' + (userIds.length - 6)}</Rest>
             }
         </>
     );
@@ -153,61 +153,62 @@ const NoParticipants = styled.div`
 
 const Container = styled.div`
     display: flex;
+    min-height: 40px;
     flex-direction: row;
     align-items: center;
     margin-top: 2px;
-    min-height: 40px;
 `;
 
 const UserRow = styled.div`
-    width: max-content;
     display: flex;
+    width: max-content;
     flex-direction: row;
-
-    margin-left: -4px;
-    margin-right: 2px;
-
-    border-radius: 44px;
     border: 6px solid transparent;
+    border-radius: 44px;
+    margin-right: 2px;
+    margin-left: -4px;
 
-    :hover {
+    &:hover {
         border-color: rgba(var(--center-channel-color-rgb), 0.08);
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
         background-clip: padding-box;
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;
 
 export default RHSParticipants;
 
-const IconWrapper = styled.div<{format: 'icon' | 'icontext'}>`
-    margin-left: 2px;
-    padding: 0 ${(props) => (props.format === 'icontext' ? '8px' : '0')};
-    border-radius: ${(props) => (props.format === 'icontext' ? '15px' : '50%')};
-    border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    width: ${(props) => (props.format === 'icontext' ? 'auto' : '28px')};
-    height: 28px;
-    font-size: 12px;
+const IconWrapper = styled.div<{$format: 'icon' | 'icontext'}>`
     display: flex;
+    width: ${(props) => (props.$format === 'icontext' ? 'auto' : '28px')};
+    height: 28px;
     align-items: center;
     justify-content: center;
+    padding: 0 ${(props) => (props.$format === 'icontext' ? '8px' : '0')};
+    border: 1px dashed rgba(var(--center-channel-color-rgb), 0.56);
+    border-radius: ${(props) => (props.$format === 'icontext' ? '15px' : '50%')};
+    margin-left: 2px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     cursor: pointer;
+    font-size: 12px;
+
     &:hover {
-        color: rgba(var(--center-channel-color-rgb), 0.72);
         border: 1px dashed rgba(var(--center-channel-color-rgb), 0.72);
         background: rgba(var(--center-channel-color-rgb), 0.04);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
 
     }
+
     svg {
-        margin-right: ${(props) => (props.format === 'icontext' ? '4px' : '0')};
+        margin-right: ${(props) => (props.$format === 'icontext' ? '4px' : '0')};
     }
 `;
 
 const AddParticipantIconButton = styled(IconWrapper)`
-    border-radius: 4px;
-    border: 0;
     width: 32px;
     height: 32px;
+    border: 0;
+    border-radius: 4px;
+
     &:hover {
         border: 0;
         background: rgba(var(--center-channel-color-rgb), 0.08);
@@ -217,6 +218,7 @@ const AddParticipantIconButton = styled(IconWrapper)`
 const LinkAddParticipants = styled(Link)`
     display: inline-flex;
     align-items: center;
+
     svg {
         margin-left: 2px;
     }
