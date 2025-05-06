@@ -1,7 +1,8 @@
 {
   "extends": [
     "eslint:recommended",
-    "plugin:react-hooks/recommended"
+    "plugin:react-hooks/recommended",
+    "plugin:react/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "plugins": [
@@ -12,7 +13,8 @@
     "unused-imports",
     "no-relative-import-paths",
     "import-newlines",
-    "header"
+    "header",
+    "@stylistic/eslint-plugin"
   ],
   "env": {
     "browser": true,
@@ -159,7 +161,13 @@
       2,
       3
     ],
-    "indent": 0, // ts handles this
+    "@stylistic/indent": [
+      2,
+      4,
+      {
+        "SwitchCase": 0
+      }
+    ],
     "jsx-quotes": [
       2,
       "prefer-single"
@@ -646,7 +654,7 @@
     "formatjs/no-literal-string-in-jsx": 2,
     "unused-imports/no-unused-imports": 2,
     "no-relative-import-paths/no-relative-import-paths": [
-      "error",
+      2,
       {
         "allowSameFolder": true
       }
@@ -660,8 +668,6 @@
       ],
       "extends": "plugin:@typescript-eslint/recommended",
       "rules": {
-        "@typescript-eslint/ban-ts-ignore": 0,
-        "@typescript-eslint/ban-types": 1,
         "@typescript-eslint/ban-ts-comment": 0,
         "@typescript-eslint/no-unused-vars": [
           2,
@@ -671,17 +677,9 @@
           }
         ],
         "@typescript-eslint/no-var-requires": 0,
-        "@typescript-eslint/prefer-interface": 0,
         "@typescript-eslint/explicit-function-return-type": 0,
         "@typescript-eslint/explicit-module-boundary-types": 0,
         "@typescript-eslint/no-shadow": 2,
-        "@typescript-eslint/indent": [
-          2,
-          4,
-          {
-            "SwitchCase": 0
-          }
-        ],
         "@typescript-eslint/no-use-before-define": [
           2,
           {
@@ -698,7 +696,8 @@
               ".tsx"
             ]
           }
-        ]
+        ],
+        "@typescript-eslint/no-explicit-any": 0 // consider reenabling, `any` not generally recommended
       }
     }
   ]
