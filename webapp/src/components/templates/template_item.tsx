@@ -22,38 +22,39 @@ interface Props {
 }
 
 const HoverPanel = styled.div`
-    background: rgba(var(--button-bg-rgb), 0.32);
-    color: rgba(var(--button-color-rgb), 1);
     position: absolute;
     top: 0;
+    display: grid;
     width: 100%;
     height: 50%;
-    display: grid;
-    place-items: center;
     border-radius: 8px 8px 0 0;
+    background: rgba(var(--button-bg-rgb), 0.32);
+    color: rgba(var(--button-color-rgb), 1);
+    place-items: center;
 `;
 
 const FakeBtn = styled.span`
-    background: rgba(var(--button-bg-rgb), 1);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
-    border-radius: 4px;
     padding: 12px 20px;
-    font-weight: 600;
+    border-radius: 4px;
+    background: rgba(var(--button-bg-rgb), 1);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
     font-size: 14px;
+    font-weight: 600;
     line-height: 14px;
 `;
 
 const Item = styled.div`
     position: relative;
-    cursor: pointer;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    background: var(--center-channel-bg);
-    border-radius: 8px;
-    box-sizing: border-box;
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08);
     max-width: 360px;
     height: 100%;
-    &:not(:hover):not(:focus) {
+    box-sizing: border-box;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 8px;
+    background: var(--center-channel-bg);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
+    cursor: pointer;
+
+    &:not(:hover, :focus) {
         ${HoverPanel} {
             display: none;
         }
@@ -63,53 +64,53 @@ const Item = styled.div`
 type ThumbnailProps = {$color?: string;}
 const Thumbnail = styled.div<ThumbnailProps>`
     display: grid;
-    place-items: center;
-    padding: 15% 0;
-    background: ${({$color}) => $color};
     height: 50%;
+    padding: 15% 0;
     border-radius: 8px 8px 0 0;
+    background: ${({$color}) => $color};
+    place-items: center;
 `;
 
 type LabelProps = {$color?: string;}
 const Label = styled.label<LabelProps>`
-    font-weight: 600;
-    font-size: 10px;
-    line-height: 16px;
     position: absolute;
     top: 9px;
     left: 9px;
-    text-transform: uppercase;
-    background: ${({$color}) => $color?.split('-')[0]};
     padding: 0 4px;
     border-radius: 4px;
+    background: ${({$color}) => $color?.split('-')[0]};
     color: ${({$color}) => $color?.split('-')[1]};
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-transform: uppercase;
 `;
 
 const Author = styled.div`
     position: absolute;
-    left: 20px;
     bottom: 15px;
+    left: 20px;
 `;
 
 const Description = styled.p`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 14px;
     line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const Detail = styled.div`
-    padding: 20px 20px 60px;
     height: auto;
+    padding: 20px 20px 60px;
 `;
 
 const Title = styled.h5`
-    font-family: Metropolis;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
     margin: 0;
     margin-bottom: 2px;
+    color: var(--center-channel-color);
+    font-family: Metropolis;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
 `;
 
 const TemplateItem = ({

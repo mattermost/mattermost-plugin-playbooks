@@ -18,7 +18,7 @@ const Item = styled.div`
     justify-content: space-between;
     padding: 1.5rem 0 2rem;
     margin: 0 2.75rem;
-    box-shadow: 0px 1px 0px rgba(var(--center-channel-color-rgb), 0.08);
+    box-shadow: 0 1px 0 rgba(var(--center-channel-color-rgb), 0.08);
 
     &:last-of-type {
         box-shadow: none;
@@ -32,39 +32,43 @@ const Item = styled.div`
 `;
 
 const Title = styled.h5`
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
     margin-top: 0;
     margin-bottom: 0.25rem;
+    font-family: "Open Sans";
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 20px;
 
     a {
         display: flex;
-        max-width: 100%;
         overflow: hidden;
+        max-width: 100%;
         padding-right: 1rem;
+
         span {
-            white-space: nowrap;
+            display: inline-block;
             overflow: hidden;
             text-overflow: ellipsis;
-            display: inline-block;
+            white-space: nowrap;
         }
+
         svg {
-            opacity: 0;
             flex-shrink: 0;
-            color: rgba(var(--center-channel-color-rgb), 0.72);
             margin: 3px 0 0 3px;
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+            opacity: 0;
             transition: opacity 0.15s ease-out;
         }
     }
+
     .app__body & a:hover,
     .app__body & a:focus {
         svg {
             opacity: 1;
         }
     }
+
     .app__body & a,
     .app__body & a:hover,
     .app__body & a:focus {
@@ -73,47 +77,47 @@ const Title = styled.h5`
 `;
 
 const Sub = styled.span`
-    font-family: Open Sans;
+    margin-bottom: 1rem;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-family: "Open Sans";
     font-size: 12px;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    margin-bottom: 1rem;
 
     .separator {
         margin: 0 0.5rem;
         font-size: 2rem;
+        font-weight: 600;
         line-height: 12px;
         vertical-align: middle;
-        font-weight: 600;
     }
 `;
 
-const Meta = styled.div`
-
-`;
+const Meta = styled.div`/* stylelint-disable no-empty-source */`;
 
 export const MetaItem = styled(PillBox)`
-    font-family: Open Sans;
-    font-weight: 600;
-    font-size: 11px;
-    line-height: 10px;
+    display: inline-flex;
     height: 20px;
+    align-items: center;
     padding: 3px 8px;
+    border-radius: 4px;
     margin-right: 4px;
     margin-bottom: 4px;
-    display: inline-flex;
-    align-items: center;
-    border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-family: "Open Sans";
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 10px;
+
     svg {
         margin-right: 4px;
     }
+
     .separator {
         margin: 0 0.35rem;
         font-size: 2rem;
+        font-weight: 600;
         line-height: 10px;
         vertical-align: middle;
-        font-weight: 600;
     }
 `;
 
@@ -121,9 +125,9 @@ const RunButton = styled(SubtlePrimaryButton)`
     min-width: 7.25rem;
     max-width: 10rem;
     height: 7.25rem;
-    justify-content: center;
     flex-direction: column;
     flex-shrink: 0;
+    justify-content: center;
 
     svg {
         margin-bottom: 0.5rem;

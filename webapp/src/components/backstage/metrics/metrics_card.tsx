@@ -88,7 +88,7 @@ const MetricsCard = ({playbookMetrics, playbookStats, index}: Props) => {
                     </Cell>
                 </SummaryCardInner>
             </Card>
-            <HorizontalSpacer size={16}/>
+            <HorizontalSpacer $size={16}/>
             <Card>
                 <BarGraph
                     title={chartTitle}
@@ -145,19 +145,19 @@ const Container = styled.div`
 `;
 
 const Card = styled.div`
+    width: 533px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
-    box-shadow: 0 2px 3px rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
     background: var(--center-channel-bg);
-    width: 533px;
+    box-shadow: 0 2px 3px rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const SummaryCardInner = styled.div`
     display: grid;
+    padding: 24px;
+    grid-gap: 24px;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
-    grid-gap: 24px;
-    padding: 24px;
 `;
 
 const Cell = styled.div`
@@ -167,16 +167,16 @@ const Cell = styled.div`
 
 const Title = styled.div`
     margin-bottom: 4px;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
 `;
 
 const Value = styled.div`
     font-size: 20px;
-    line-height: 24px;
     font-weight: 600;
+    line-height: 24px;
 `;
 
 const ValueTo = styled.span`
@@ -206,11 +206,11 @@ const percentageChange = (change: NullNumber) => {
 };
 
 const PercentageChange = styled.div`
-    margin-left: 12px;
-    padding-right: 4px;
     display: flex;
     flex-direction: row;
+    padding-right: 4px;
     border-radius: 10px;
+    margin-left: 12px;
     background-color: rgba(var(--online-indicator-rgb), 0.08);
     color: var(--online-indicator);
     font-size: 10px;

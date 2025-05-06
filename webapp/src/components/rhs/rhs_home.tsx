@@ -37,17 +37,17 @@ const WelcomeBlock = styled.div`
 `;
 
 const WelcomeDesc = styled.p`
-    font-size: 14px;
-    line-height: 21px;
-    font-weight: 400;
     margin-bottom: 3rem;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 21px;
 `;
 
 const WelcomeCreateAlt = styled.span`
     display: inline-flex;
     align-items: center;
-    vertical-align: top;
     padding: 1rem 0;
+    vertical-align: top;
 
     > svg {
         margin-left: 0.5em;
@@ -55,9 +55,9 @@ const WelcomeCreateAlt = styled.span`
 `;
 
 const WelcomeButtonCreate = styled(PrimaryButton)`
+    padding: 0 2rem;
     margin-right: 2rem;
     margin-bottom: 1rem;
-    padding: 0 2rem;
 
     > svg {
         margin-right: 0.5rem;
@@ -69,42 +69,41 @@ const WelcomeWarn = styled(WelcomeDesc)`
 `;
 
 const Header = styled.div`
+    display: grid;
     min-height: 13rem;
     margin-bottom: 4rem;
-    display: grid;
 `;
 
 const Heading = styled.h4`
-    font-size: 18px;
-    line-height: 24px;
-    font-weight: 700;
     color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 24px;
 `;
 
 const ListHeading = styled(Heading)`
-    ${SemiBoldHeading} {
-    }
+    ${SemiBoldHeading};
 
     padding-left: 2.75rem;
 `;
 
 const ListSection = styled.div`
+    position: relative;
+    display: grid;
     margin-top: 1rem;
     margin-bottom: 5rem;
-    box-shadow: 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.08);
-    display: grid;
+    box-shadow: 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.08);
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
-    position: relative;
 
     &::after {
-        content: '';
-        display: block;
         position: absolute;
+        bottom: 0;
+        display: block;
         width: 100%;
         height: 1px;
-        bottom: 0;
-        box-shadow: 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.08);
+        box-shadow: 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.08);
+        content: '';
     }
 `;
 

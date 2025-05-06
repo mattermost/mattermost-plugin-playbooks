@@ -7,19 +7,18 @@ import styled from 'styled-components';
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
 export const Button = styled.button`
+    position: relative;
     display: inline-flex;
-    align-items: center;
     height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 4px;
     background: rgba(var(--center-channel-color-rgb), 0.08);
     color: rgba(var(--center-channel-color-rgb), 0.72);
-    border-radius: 4px;
-    border: 0px;
-    font-weight: 600;
     font-size: 14px;
-    padding: 0 20px;
-    position: relative;
-    justify-content: center;
-
+    font-weight: 600;
     transition: all 0.15s ease-out;
 
     &:hover{
@@ -35,8 +34,8 @@ export const Button = styled.button`
     }
 
     &:disabled {
-        color: rgba(var(--center-channel-color-rgb), 0.32);
         background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.32);
     }
 
     i {
@@ -56,36 +55,38 @@ export const PrimaryButton = styled(Button)`
         background: rgba(var(--button-bg-rgb), 0.8);
     }
 
-    &:before {
-        content: '';
-        left: 0;
+    &::before {
+        position: absolute;
         top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
-        transition: all 0.15s ease-out;
-        position: absolute;
-        background: rgba(var(--center-channel-color-rgb), 0.16);
-        opacity: 0;
         border-radius: 4px;
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+        content: '';
+        opacity: 0;
+        transition: all 0.15s ease-out;
     }
 
     &&:hover:not([disabled]) {
-        color: var(--button-color);
         background: var(--button-bg);
-        &:before {
+        color: var(--button-color);
+
+        &::before {
             opacity: 1;
         }
     }
 
     &:disabled {
-        color: rgba(var(--center-channel-color-rgb), 0.32);
         background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.32);
     }
 `;
 
 export const SubtlePrimaryButton = styled(Button)`
     background: rgba(var(--button-bg-rgb), 0.08);
     color: var(--button-bg);
+
     &:hover,
     &:active {
         background: rgba(var(--button-bg-rgb), 0.12);
@@ -94,21 +95,20 @@ export const SubtlePrimaryButton = styled(Button)`
 
 export const TertiaryButton = styled.button`
     display: inline-flex;
+    height: 40px;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    border-radius: 4px;
-    border: 0px;
-    font-weight: 600;
-    font-size: 14px;
     padding: 0 20px;
-
-    color: var(--button-bg);
+    border: 0;
+    border-radius: 4px;
     background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
+    font-size: 14px;
+    font-weight: 600;
 
     &:disabled {
-        color: rgba(var(--center-channel-color-rgb), 0.32);
         background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.32);
     }
 
     &:hover:enabled {
@@ -123,7 +123,7 @@ export const TertiaryButton = styled.button`
         display: flex;
         font-size: 18px;
 
-        &:before {
+        &::before {
             margin: 0 7px 0 0;
         }
     }
@@ -133,36 +133,36 @@ export const InvertedTertiaryButton = styled(Button)`
     transition: all 0.15s ease-out;
 
     && {
-        color: var(--button-bg-rgb);
         background-color: rgba(var(--button-color-rgb), 0.08);
+        color: var(--button-bg-rgb);
     }
 
     &&:hover:not([disabled]) {
-        color: var(--button-bg-rgb);
         background: rgba(var(--button-bg-rgb), 0.12);
+        color: var(--button-bg-rgb);
     }
 
     &&:active:not([disabled]) {
-        color: var(--button-bg-rgb);
         background: rgba(var(--button-bg-rgb), 0.16);
+        color: var(--button-bg-rgb);
     }
 
     &&:focus:not([disabled]) {
-        color: var(--button-bg-rgb);
         background-color: rgba(var(--button-color-rgb), 0.08);
-        box-shadow: inset 0px 0px 0px 2px var(--sidebar-text-active-border-rgb);
+        box-shadow: inset 0 0 0 2px var(--sidebar-text-active-border-rgb);
+        color: var(--button-bg-rgb);
     }
 `;
 
 export const SecondaryButton = styled(TertiaryButton)`
-    background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
+    background: var(--button-color-rgb);
 
 
     &:disabled {
-        color: rgba(var(--center-channel-color-rgb), 0.32);
-        background: transparent;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.32);
+        background: transparent;
+        color: rgba(var(--center-channel-color-rgb), 0.32);
     }
 `;
 
@@ -171,24 +171,20 @@ export const DestructiveButton = styled.button`
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
-    font-weight: 600;
-    font-size: 14px;
-
     padding: 0 20px;
-
+    border: 0;
     border-radius: 4px;
-    border: 0px;
-
     background: var(--dnd-indicator);
     color: var(--button-color);
+    font-size: 14px;
+    font-weight: 600;
 
-    :hover:enabled {
-        background: linear-gradient(0deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)), var(--dnd-indicator);
+    &:hover:enabled {
+        background: linear-gradient(0deg, rgba(0 0 0 / 0.08), rgba(0 0 0 / 0.08)), var(--dnd-indicator);
     }
 
-    :active, :hover:active {
-        background: linear-gradient(0deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)), var(--dnd-indicator);
+    &:active, &:hover:active {
+        background: linear-gradient(0deg, rgba(0 0 0 / 0.16), rgba(0 0 0 / 0.16)), var(--dnd-indicator);
     }
 
     :disabled {
@@ -216,12 +212,16 @@ const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
 `;
 
 export const ButtonIcon = styled.button`
+
+    display: flex;
     width: 28px;
     height: 28px;
+    align-items: center;
+    justify-content: center;
     padding: 0;
     border: none;
-    background: transparent;
     border-radius: 4px;
+    background: transparent;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     fill: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 1.6rem;
@@ -239,8 +239,4 @@ export const ButtonIcon = styled.button`
         color: var(--button-bg);
         fill: var(--button-bg);
     }
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
 `;

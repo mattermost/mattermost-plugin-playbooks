@@ -38,9 +38,9 @@ const Divider = styled.div`
 `;
 
 const ReminderText = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 14px;
     line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const StyledTertiaryButton = styled(TertiaryButton)`

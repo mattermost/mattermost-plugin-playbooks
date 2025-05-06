@@ -46,14 +46,14 @@ const StyledChannelSelector = styled(ChannelSelector)`
     .playbooks-rselect__control {
         padding: 4px 16px 4px 3.2rem;
 
-        &:before {
-            left: 16px;
-            top: 8px;
+        &::before {
             position: absolute;
+            top: 8px;
+            left: 16px;
             color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f0349';
+            font-family: compass-icons, mattermosticons;
             font-size: 18px;
-            font-family: 'compass-icons', mattermosticons;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -77,10 +77,10 @@ const MultiValueRemove = (props: MultiValueRemoveProps) => (
 
 const StyledClearIcon = styled(ClearIcon)`
     color: rgba(var(--center-channel-color-rgb), 0.32);
-    font-size: 14px;
     cursor: pointer;
+    font-size: 14px;
 
-    :hover {
+    &:hover {
         color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;

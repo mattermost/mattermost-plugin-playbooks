@@ -101,8 +101,8 @@ const MetricsRunList = ({
 };
 
 const PlaybookRunList = styled.div`
-    font-family: 'Open Sans', sans-serif;
     color: rgba(var(--center-channel-color-rgb), 0.90);
+    font-family: 'Open Sans', sans-serif;
 `;
 
 const Footer = styled.div`
@@ -111,18 +111,18 @@ const Footer = styled.div`
 `;
 
 const Count = styled.div`
-    padding-top: 8px;
     width: 100%;
-    text-align: center;
+    padding-top: 8px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    text-align: center;
 `;
 
 const SpinnerContainer = styled.div`
+    overflow: visible;
     width: 100%;
     height: 16px;
-    text-align: center;
     margin-top: 10px;
-    overflow: visible;
+    text-align: center;
 `;
 
 const StyledSpinner = styled(LoadingSpinner)`

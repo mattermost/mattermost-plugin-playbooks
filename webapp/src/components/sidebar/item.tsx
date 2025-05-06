@@ -25,7 +25,7 @@ interface ItemProps {
 const Item = (props: ItemProps) => {
     return (
         <ItemContainer
-            isCollapsed={props.isCollapsed}
+            $isCollapsed={props.isCollapsed}
             data-testid={props.display_name}
         >
             {!props.isCollapsed &&
@@ -56,31 +56,30 @@ const Item = (props: ItemProps) => {
 };
 
 export const ItemDisplayLabel = styled.span`
+    overflow: hidden;
     max-width: 100%;
     height: 18px;
+    font-size: 14px;
     line-height: 18px;
     text-align: justify;
-    overflow: hidden;
-    white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 14px;
+    white-space: nowrap;
 `;
 
 export const Icon = styled.i`
-    font-size: 18px;
-    margin: 0 6px 0 -2px
+    margin: 0 6px 0 -2px;
+    font-size: 18px
 `;
 
-export const ItemContainer = styled.li<{isCollapsed?: boolean}>`
+export const ItemContainer = styled.li<{$isCollapsed?: boolean}>`
     display: flex;
-
     height: 32px;
     align-items: center;
     list-style-type: none;
     transition: height 0.18s ease;
 
-    ${(props) => props.isCollapsed && css`
-        height: 0px;
+    ${(props) => props.$isCollapsed && css`
+        height: 0;
     `};
 `;
 
@@ -99,27 +98,28 @@ export const StyledNavLink = styled(NavLink)`
         font-size: 14px;
         text-decoration: none;
 
-        :hover,
-        :focus {
+        &:hover,
+        &:focus {
             text-decoration: none;
         }
 
-        :hover,
-        :focus-visible {
+        &:hover,
+        &:focus-visible {
             background: var(--sidebar-text-hover-bg);
         }
 
         &.active {
-            color: rgba(var(--sidebar-text-rgb), 1);
             background: rgba(var(--sidebar-text-rgb), 0.16);
-            ::before {
+            color: rgba(var(--sidebar-text-rgb), 1);
+
+            &::before {
                 position: absolute;
                 top: 0;
                 left: -2px;
                 width: 4px;
                 height: 100%;
-                background: var(--sidebar-text-active-border);
                 border-radius: 4px;
+                background: var(--sidebar-text-active-border);
                 content: "";
             }
         }
@@ -127,6 +127,7 @@ export const StyledNavLink = styled(NavLink)`
         ${DotMenuButton} {
             opacity: 0;
         }
+
         &:hover {
             padding-right: 32px;
             ${DotMenuButton} {
@@ -137,18 +138,17 @@ export const StyledNavLink = styled(NavLink)`
 `;
 
 const HoverMenu = styled.div`
+    position: absolute;
+    right: 8px;
     display: flex;
     flex-direction: row;
     align-items: center;
-
-    position: absolute;
-    right: 8px;
 `;
 
 const NameIconContainer = styled.div`
     display: flex;
-    align-items: center;
     overflow: hidden;
+    align-items: center;
 `;
 
 export default Item;

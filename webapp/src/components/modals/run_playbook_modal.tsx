@@ -295,7 +295,7 @@ const RunNameSection = ({runName, onSetRunName}: runNameProps) => {
             {formatMessage({defaultMessage: 'Run name'})}{error ? ' *' : ''}
         </RunNameLabel>
         <BaseInput
-            invalid={Boolean(error)}
+            $invalid={Boolean(error)}
             data-testid={'run-name-input'}
             autoFocus={true}
             type={'text'}
@@ -375,7 +375,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                             />
                             <BigText>{formatMessage({defaultMessage: 'Public channel'})}</BigText>
                         </ButtonLabel>
-                        <HorizontalSpacer size={8}/>
+                        <HorizontalSpacer $size={8}/>
                         <ButtonLabel disabled={false}>
                             <RadioInput
                                 data-testid={'create-private-channel-radio'}
@@ -406,17 +406,20 @@ const StyledGenericModal = styled(GenericModal)`
         .modal-header {
             padding: 24px 31px;
             margin-bottom: 0;
-            box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
+            box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
         }
+
         .modal-content {
-            padding: 0px;
+            padding: 0;
         }
+
         .modal-body {
             padding: 24px 31px;
         }
+
         .modal-footer {
-           box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
-           padding: 0 31px 28px 31px;
+           padding: 0 31px 28px;
+           box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
         }
     }
 `;
@@ -434,32 +437,33 @@ const RowContainer = styled.div`
 
 const HeaderTitle = styled.div`
     display: flex;
-    flex-direction: row;
     height: 28px;
+    flex-direction: row;
     align-items: center;
 `;
 
 const IconWrapper = styled.div`
     display: flex;
-    cursor: pointer;
-    flex-direction: column;
     height: 28px;
+    flex-direction: column;
     justify-content: center;
     margin-right: 8px;
+    cursor: pointer;
 `;
 
 const Body = styled.div`
     display: flex;
     flex-direction: column;
+
     & > div, & > input {
         margin-bottom: 12px;
     }
 `;
 
 const ChannelContainer = styled.div`
-    margin-top: 39px;
     display: flex;
     flex-direction: column;
+    margin-top: 39px;
     gap: 16px;
 `;
 
@@ -471,61 +475,60 @@ const StyledRadioInput = styled(RadioInput)`
 
 const ChannelBlock = styled.label`
     display: flex;
-    flex-direction: row;
     width: 350px;
+    flex-direction: row;
     align-items: center;
-    column-gap: 12px;
-    align-self: 'flex-start';
-    font-weight: inherit;
+    align-self: flex-start;
     margin-bottom: 0;
+    column-gap: 12px;
     cursor: pointer;
+    font-weight: inherit;
 `;
 
 const SelectorWrapper = styled.div`
-    margin-left: 28px;
     min-height: 40px;
+    margin-left: 28px;
 `;
 
 const Icon = styled.i<{ active?: boolean, disabled: boolean }>`
+    color: ${({active, disabled}) => (active && !disabled ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
     font-size: 16px;
     line-height: 16px;
-    color: ${({active, disabled}) => (active && !disabled ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
 `;
 
 const BigText = styled.div`
     font-size: 14px;
-    line-height: 20px;
     font-weight: 400;
+    line-height: 20px;
 `;
 
 const HorizontalSplit = styled.div`
     display: block;
-    text-align: left;
     margin-left: 28px;
+    text-align: left;
 `;
 
 const HeaderButtonWrapper = styled.div`
-    margin-left: auto;
     margin-right: 30px;
+    margin-left: auto;
 `;
 const CreatePlaybookButton = styled.button`
     font-family: 'Open Sans';
 `;
 
-const SearchWrapper = styled.div`
-`;
+const SearchWrapper = styled.div`/* stylelint-disable no-empty-source */`;
 
 const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
     color: ${(props) => (props.invalid ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};
 `;
 
 const ErrorMessage = styled.div`
+    margin-top: -8px;
+    margin-bottom: 20px !important;
     color: var(--error-text);
     font-size: 12px;
-    line-height: 16px;
-    margin-top: -8px;
     font-weight: 400;
-    margin-bottom: 20px !important;
+    line-height: 16px;
 `;
 
 const ApolloWrappedModal = (props: Props) => {

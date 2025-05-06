@@ -19,19 +19,20 @@ type Props = {
 
 const HorizontalContainer = styled.div`
 	display: flex;
-	flex-direction: horizontal;
 	height: 70px;
 `;
 
 const BigButton = styled.button`
+	display: flex;
+	flex-basis: 0;
+	flex-grow: 1;
+	align-items: center;
     padding: 16px 12px;
     border: var(--border-default);
+    border-radius: var(--radius-s);
+	margin: 4px;
     background: var(--center-channel-bg);
     box-shadow: var(--elevation-1);
-    border-radius: var(--radius-s);
-	flex-grow: 1;
-	flex-basis: 0;
-	margin: 4px;
 
     &:hover {
         border: var(--border-dark);
@@ -42,10 +43,6 @@ const BigButton = styled.button`
         background: rgba(var(--center-channel-color-rgb), 0.08);
         opacity: 0.6;
     }
-
-	display: flex;
-	flex-direction: horizontal;
-	align-items: center;
 `;
 
 const StackedText = styled.div`
@@ -54,45 +51,45 @@ const StackedText = styled.div`
 `;
 
 const GiantIcon = styled.i<{active?: boolean}>`
-    margin-right: 12px;
     display: flex;
-    align-items: center;
-    justify-content: center;
     width: 40px;
     height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    margin-right: 12px;
+    background: ${(props) => (props.active ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+	color: ${(props) => (props.active ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};
     font-size: 28px;
 	line-height: 28px;
-	color: ${(props) => (props.active ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};
-    background: ${(props) => (props.active ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
-    border-radius: var(--radius-full);
 
-    &:before {
+    &::before {
         margin: 0;
     }
 `;
 
 const CheckIcon = styled.i`
+	color: var(--button-bg);
 	font-size: 24px;
 	line-height: 24px;
-	color: var(--button-bg);
 `;
 
 const BigText = styled.div`
 	font-size: 14px;
-	line-height: 20px;
 	font-weight: 600;
+	line-height: 20px;
 `;
 
 const SmallText = styled.div`
+	color: rgba(var(--center-channel-color-rgb), 0.56);
 	font-size: 12px;
 	line-height: 16px;
-	color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
     margin-left: 8px;
-    vertical-align: sub;
     color: var(--online-indicator);
+    vertical-align: sub;
 `;
 
 const PublicPrivateSelector = (props: Props) => {

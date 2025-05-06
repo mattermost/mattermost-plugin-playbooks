@@ -114,7 +114,7 @@ const PortalLink = styled.a.attrs(() => {
         target: '_blank',
         rel: 'noreferrer',
     };
-})``;
+})`/* stylelint-disable no-empty-source */`;
 
 export const getUpgradeModalCopy = (
     isAdmin: boolean,

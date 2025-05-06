@@ -147,37 +147,33 @@ const Dropdown = styled(MenuWrapper)`
 `;
 
 const Button = styled.button`
-    border-radius: 16px;
-    font-size: 18px;
-
-    background-color: rgba(var(--sidebar-text-rgb), 0.08);
-    color: rgba(var(--sidebar-text-rgb), 0.72);
-
     z-index: 1;
+    display: inline-flex;
+    min-width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
     padding: 0;
     border: none;
+    border-radius: 16px;
     background: transparent;
+    background-color: rgba(var(--sidebar-text-rgb), 0.08);
+    color: rgba(var(--sidebar-text-rgb), 0.72);
+    font-size: 18px;
 
     &:hover:not(.active) {
         background: rgba(var(--sidebar-text-rgb), 0.16);
         color: var(--sidebar-text);
     }
 
-    min-width: 28px;
-    height: 28px;
-    font-size: 18px;
-    justify-content: center;
-    align-items: center;
-    display: inline-flex;
-
     &.disabled {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255 255 255 / 0.08);
     }
 `;
 
 const IconWrapper = styled.div`
+    display: flex;
     margin-right: 7px;
     margin-left: 4px;
-    display: flex;
     justify-items: center;
 `;

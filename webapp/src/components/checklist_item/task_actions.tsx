@@ -31,8 +31,8 @@ const TaskActions = (props: TaskActionsProps) => {
 
     return (
         <TaskActionsContainer
-            editable={props.editable}
-            isPlaceholder={!(lenTasks > 0 && enabledAction)}
+            $editable={props.editable}
+            $isPlaceholder={!(lenTasks > 0 && enabledAction)}
             onClick={() => {
                 if (props.editable) {
                     dispatch(openTaskActionsModal(props.onTaskActionsChange, props.taskActions));
@@ -52,44 +52,42 @@ const TaskActions = (props: TaskActionsProps) => {
 
 export default TaskActions;
 
-const TaskActionsContainer = styled.div<{editable: boolean; isPlaceholder: boolean;}>`
+const TaskActionsContainer = styled.div<{$editable: boolean; $isPlaceholder: boolean;}>`
     align-items: center;
-    background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    background: ${({$isPlaceholder}) => ($isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     border-radius: 13px;
-    border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
-    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
+    border: ${({$isPlaceholder}) => ($isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
+    color: ${({$isPlaceholder}) => ($isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-flow: row wrap;
     height: 24px;
     max-width: 100%;
     padding: 2px 4px;
-    ${({editable}) => editable && css`
-        :hover {
-            cursor: pointer;
+    ${({$editable}) => $editable && css`
+        &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
             color: var(--center-channel-color);
+            cursor: pointer;
         }
     `}
 `;
 
 const ActionIcon = styled.i`
-    align-items: center;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
     display: flex;
-    flex: table;
-    height: 20px;
-    margin-right: 3px;
-    text-align: center;
     width: 20px;
+    height: 20px;
+    align-items: center;
+    margin-right: 3px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    text-align: center;
 `;
 
 const TaskActionsTextContainer = styled.div`
-    align-items: center;
     display: flex;
-    font-size: 12px;
+    align-items: center;
+    padding-bottom:  1px;
     margin-right: 8px;
+    font-size: 12px;
     text-align: center;
     white-space: nowrap;
-    padding-bottom:  1px;
 `;

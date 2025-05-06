@@ -8,11 +8,10 @@ import styled from 'styled-components';
 import PlaybooksSidebar, {playbookLHSQueryDocument} from 'src/components/sidebar/playbooks_sidebar';
 
 const LHSContainer = styled.div`
-    width: 240px;
-    background-color: var(--sidebar-bg);
-
     display: flex;
+    width: 240px;
     flex-direction: column;
+    background-color: var(--sidebar-bg);
 `;
 
 const LHSNavigation = () => {

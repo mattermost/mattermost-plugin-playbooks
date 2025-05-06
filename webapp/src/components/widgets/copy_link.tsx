@@ -50,7 +50,7 @@ const CopyLink = ({
         >
             <AutoSizeCopyIcon
                 onClick={copyLink}
-                clicked={wasCopied}
+                $clicked={wasCopied}
                 {...attrs}
                 className={'icon-link-variant ' + attrs.className}
             />
@@ -58,15 +58,14 @@ const CopyLink = ({
     );
 };
 
-const CopyIcon = styled.button<{clicked: boolean}>`
+const CopyIcon = styled.button<{$clicked: boolean}>`
     display: inline-block;
-
     border-radius: 4px;
     padding: 0;
     width: 1.25em;
     height: 1.25em;
 
-    :before {
+    &::before {
         margin: 0;
         vertical-align: baseline;
     }
@@ -76,14 +75,14 @@ const CopyIcon = styled.button<{clicked: boolean}>`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 
 
-    ${({clicked}) => !clicked && css`
+    ${({$clicked}) => !$clicked && css`
         &:hover {
             background: var(--center-channel-color-08);
             color: var(--center-channel-color-72);
         }
     `}
 
-    ${({clicked}) => clicked && css`
+    ${({$clicked}) => $clicked && css`
         background: var(--button-bg-08);
         color: var(--button-bg);
     `}
@@ -93,4 +92,4 @@ const AutoSizeCopyIcon = styled(CopyIcon)`
     font-size: inherit;
 `;
 
-export default styled(CopyLink)``;
+export default styled(CopyLink)`/* stylelint-disable no-empty-source */`;

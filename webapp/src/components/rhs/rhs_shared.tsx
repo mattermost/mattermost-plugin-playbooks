@@ -5,15 +5,15 @@ import React from 'react';
 import styled from 'styled-components';
 
 export const RHSContainer = styled.div`
-    height: calc(100vh - 119px);
-    display: flex;
-    flex-direction: column;
     position: relative;
+    display: flex;
+    height: calc(100vh - 119px);
+    flex-direction: column;
 `;
 
 export const RHSContent = styled.div`
-    flex: 1 1 auto;
     position: relative;
+    flex: 1 1 auto;
 `;
 
 export function renderView(props: any): JSX.Element {
@@ -21,7 +21,8 @@ export function renderView(props: any): JSX.Element {
         <div
             {...props}
             className='scrollbar--view'
-        />);
+        />
+    );
 }
 
 export function renderThumbHorizontal(props: any): JSX.Element {
@@ -29,7 +30,8 @@ export function renderThumbHorizontal(props: any): JSX.Element {
         <div
             {...props}
             className='scrollbar--horizontal'
-        />);
+        />
+    );
 }
 
 export function renderThumbVertical(props: any): JSX.Element {
@@ -37,7 +39,8 @@ export function renderThumbVertical(props: any): JSX.Element {
         <div
             {...props}
             className='scrollbar--vertical'
-        />);
+        />
+    );
 }
 
 export function renderTrackHorizontal(props: any): JSX.Element {
@@ -46,34 +49,34 @@ export function renderTrackHorizontal(props: any): JSX.Element {
             {...props}
             style={{display: 'none'}}
             className='track-horizontal'
-        />);
+        />
+    );
 }
 
 export const HoverMenu = styled.div`
+    position: absolute;
+    top: -8px;
+    right: 0;
     display: flex;
     padding: 4px;
-    position: absolute;
-    right: 0;
-    top: -8px;
-    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
-    background-color: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
+    background-color: var(--center-channel-bg);
+    box-shadow: 0 2px 3px 0 rgba(0 0 0 / 0.08);
 `;
 
-export const HoverMenuButton = styled.i<{disabled?: boolean}>`
+export const HoverMenuButton = styled.i<{$disabled?: boolean}>`
     display: inline-block;
-    cursor: pointer;
     width: 28px;
     height: 28px;
     padding: 1px 0 0 1px;
+    color: ${(props) => (props.$disabled ? 'rgba(var(--center-channel-color-rgb), 0.32)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    cursor: pointer;
 
     &:hover {
-        color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.32)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-        background-color: ${(props) => (props.disabled ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+        background-color: ${(props) => (props.$disabled ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+        color: ${(props) => (props.$disabled ? 'rgba(var(--center-channel-color-rgb), 0.32)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
     }
-
-    color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.32)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
 `;
 
 export const ChecklistHoverMenuButton = styled(HoverMenuButton)`

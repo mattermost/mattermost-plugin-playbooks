@@ -26,10 +26,10 @@ import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 const NoContentContainer = styled.div`
     display: flex;
-    flex-direction: row;
-    margin: 0 10vw;
     height: 100%;
+    flex-direction: row;
     align-items: center;
+    margin: 0 10vw;
 `;
 
 const NoContentTextContainer = styled.div`
@@ -40,26 +40,26 @@ const NoContentTextContainer = styled.div`
 `;
 
 const NoContentTitle = styled.h2`
-    font-family: Open Sans;
+    color: var(--center-channel-color);
+    font-family: "Open Sans";
+    font-size: 28px;
     font-style: normal;
     font-weight: normal;
-    font-size: 28px;
-    color: var(--center-channel-color);
     text-align: left;
 `;
 
 const NoContentDescription = styled.h5`
-    font-family: Open Sans;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-family: "Open Sans";
+    font-size: 16px;
     font-style: normal;
     font-weight: normal;
-    font-size: 16px;
     line-height: 24px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
     text-align: left;
 `;
 
 const NoContentPlaybookRunSvgContainer = styled.div`
-    @media (max-width: 1000px) {
+    @media (width <= 1000px) {
         display: none;
     }
 `;

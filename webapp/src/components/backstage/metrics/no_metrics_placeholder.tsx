@@ -45,24 +45,24 @@ const InnerContainer = styled.div`
 `;
 
 const Title = styled.div`
+    margin-top: 24px;
     font-size: 22px;
     font-weight: 600;
     line-height: 28px;
-    margin-top: 24px;
 `;
 
 const Text = styled.div`
+    margin: 8px 0 24px;
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-    margin: 8px 0 24px 0;
 `;
 
 const StyledButton = styled(SecondaryButton)`
-    font-weight: 600;
-    font-size: 14px;
-    padding: 0 20px;
     height: 40px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
 `;
 
 export default NoMetricsPlaceholder;

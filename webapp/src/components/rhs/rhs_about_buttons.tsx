@@ -98,8 +98,8 @@ const ExpandCollapseButton = styled(HoverMenuButton)`
 `;
 
 const ThreeDotsIcon = styled(HamburgerButton)`
-    font-size: 18px;
     margin-left: 1px;
+    font-size: 18px;
 `;
 
 const IconWrapper = styled.div`
@@ -114,10 +114,10 @@ const StyledDropdownMenuItem = styled(DropdownMenuItem)`
 
 const Separator = styled.hr`
     display: flex;
+    width: 100%;
     align-content: center;
     border-top: 1px solid var(--center-channel-color-08);
     margin: 5px auto;
-    width: 100%;
 `;
 
 const PlaybookInfo = styled.div`
@@ -126,11 +126,10 @@ const PlaybookInfo = styled.div`
 `;
 
 const PlaybookName = styled.div`
+    overflow: hidden;
+    max-width: 162px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;
-
-    max-width: 162px;
-    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;

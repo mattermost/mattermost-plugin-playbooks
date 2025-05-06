@@ -12,12 +12,12 @@ import {getSiteUrl} from 'src/client';
 import CopyLink from 'src/components/widgets/copy_link';
 
 export const Content = styled.div`
-    background: var(--center-channel-bg);
-    color: var(--center-channel-color);
-    margin: 8px 0 0 0;
     padding: 0 8px 4px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 8px;
+    margin: 8px 0 0;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
 `;
 
 export const ExpandRight = styled.div`
@@ -25,44 +25,40 @@ export const ExpandRight = styled.div`
 `;
 
 export const Badge = styled(StatusBadge)`
-    display: unset;
     position: unset;
+    display: unset;
     height: unset;
     white-space: nowrap;
 `;
 
 export const HelpText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
     margin-top: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
     font-weight: 400;
+    line-height: 16px;
 `;
 
 export const ErrorText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
     margin-top: 4px;
     color: var(--error-text);
+    font-size: 12px;
+    line-height: 16px;
 `;
 
 export const StyledInput = styled(BaseInput)<{error?: boolean}>`
     height: 40px;
     width: 100%;
-
     background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.03)' : 'var(--center-channel-bg)')};
-
-    ${(props) => (
-        props.error && css`
-            box-shadow: inset 0 0 0 1px var(--error-text);
-
-            &:focus {
-                box-shadow: inset 0 0 0 2px var(--error-text);
-            }
-        `
-    )}
-
     scroll-margin-top: 36px;
+
+    ${(props) => props.error && css`
+        box-shadow: inset 0 0 0 1px var(--error-text);
+
+        &:focus {
+            box-shadow: inset 0 0 0 2px var(--error-text);
+        };
+    `};
 `;
 
 interface AnchorLinkTitleProps {
@@ -80,7 +76,7 @@ export const AnchorLinkTitle = (props: AnchorLinkTitleProps) => {
                 id={`section-link-${props.id}`}
                 to={getSiteUrl() + `${url}#${props.id}`}
                 name={props.title}
-                area-hidden={true}
+                aria-hidden={true}
             />
             {props.title}
         </LinkTitle>
@@ -88,15 +84,14 @@ export const AnchorLinkTitle = (props: AnchorLinkTitleProps) => {
 };
 
 const LinkTitle = styled.h3`
+    display: inline-block;
+    padding-left: 8px;
+    margin: 0;
     font-family: Metropolis, sans-serif;
     font-size: 16px;
     font-weight: 600;
     line-height: 24px;
-    padding-left: 8px;
-    margin: 0;
     white-space: nowrap;
-    display: inline-block;
-
     ${CopyLink} {
         margin-left: -1.25em;
         opacity: 1;
@@ -114,8 +109,8 @@ export enum Role {
 
 export const Separator = styled.hr`
     display: flex;
+    width: 100%;
     align-content: center;
     border-top: 1px solid rgba(var(--center-channel-color-rgb),0.08);
     margin: 5px auto;
-    width: 100%;
 `;

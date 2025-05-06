@@ -11,6 +11,6 @@ const ThreeDotsIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['i']>)
 );
 
 export const HamburgerButton = styled(ThreeDotsIcon)`
-    font-size: 24px;
     position: relative;
+    font-size: 24px;
 `;
