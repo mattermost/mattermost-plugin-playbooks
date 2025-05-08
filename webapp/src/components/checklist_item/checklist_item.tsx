@@ -419,31 +419,6 @@ export const CheckboxContainer = styled.div`
     display: flex;
     align-items: flex-start;
 
-    button {
-        width: 53px;
-        height: 29px;
-        box-sizing: border-box;
-        border: 1px solid #166DE0;
-        border-radius: 4px;
-        margin-right: 13px;
-        background: #fff;
-        color: #166DE0;
-        cursor: pointer;
-        font-family: "Open Sans";
-        font-size: 12px;
-        font-style: normal;
-        font-weight: 600;
-        line-height: 17px;
-        text-align: center;
-    }
-
-    button:disabled {
-        border: 0;
-        background: rgba(var(--center-channel-color-rgb), 0.56);
-        color: var(--button-color);
-        cursor: default;
-    }
-
     &:hover {
         .checkbox-container__close {
             opacity: 1;
