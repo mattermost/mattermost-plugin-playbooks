@@ -41,7 +41,7 @@ const NoContentTextContainer = styled.div`
 `;
 
 const NoContentTitle = styled.h2`
-    font-family: Open Sans;
+    font-family: "Open Sans";
     font-style: normal;
     letter-spacing: -0.02em;
     font-size: 28px;

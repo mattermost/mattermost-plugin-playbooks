@@ -49,7 +49,7 @@ const Title = styled.div`
     font-weight: 600;
     line-height: 28px;
     margin-top: 24px;
-    font-family: "Metropolis", sans-serif;
+    font-family: Metropolis, sans-serif;
     letter-spacing: -0.02em;
 `;
 
