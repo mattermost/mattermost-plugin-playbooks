@@ -16,7 +16,7 @@ const Item = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 0 2rem;
+    padding: 1.5rem 0;
     margin: 0 2.75rem;
     box-shadow: 0 1px 0 rgba(var(--center-channel-color-rgb), 0.08);
 

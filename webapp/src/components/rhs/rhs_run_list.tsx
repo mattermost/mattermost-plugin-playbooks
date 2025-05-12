@@ -26,6 +26,7 @@ import appIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {useViewTelemetry} from 'src/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
+import {SemiBoldHeading} from 'src/styles/headings';
 import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
@@ -754,6 +755,7 @@ const NoActiveRunsContainer = styled.div`
     gap: 24px;
 `;
 const NoRunsText = styled.div`
+    ${SemiBoldHeading}
     font-size: 20px;
     font-weight: 600;
     line-height: 28px;
@@ -763,8 +765,8 @@ const ViewOtherRunsButton = styled(TertiaryButton)`
     background: none;
 `;
 const StyledClipboardChecklist = styled(ClipboardChecklist)`
-    width: 98px;
-    height: 98px;
+    width: 189.33px;
+    height: 106.67px;
 `;
 
 interface ContextMenuProps {

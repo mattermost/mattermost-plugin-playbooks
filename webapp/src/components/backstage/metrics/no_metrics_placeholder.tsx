@@ -45,10 +45,12 @@ const InnerContainer = styled.div`
 `;
 
 const Title = styled.div`
-    margin-top: 24px;
     font-size: 22px;
     font-weight: 600;
     line-height: 28px;
+    margin-top: 24px;
+    font-family: Metropolis, sans-serif;
+    letter-spacing: -0.02em;
 `;
 
 const Text = styled.div`

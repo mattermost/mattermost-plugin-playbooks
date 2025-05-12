@@ -63,12 +63,13 @@ const Item = styled.div`
 
 type ThumbnailProps = {$color?: string;}
 const Thumbnail = styled.div<ThumbnailProps>`
-    display: grid;
-    height: 50%;
-    padding: 15% 0;
-    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12.5% 0;
     background: ${({$color}) => $color};
-    place-items: center;
+    height: 50%;
+    border-radius: 8px 8px 0 0;
 `;
 
 type LabelProps = {$color?: string;}
