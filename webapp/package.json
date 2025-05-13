@@ -39,7 +39,7 @@
     "react-select": "4.3.1",
     "react-use": "17.3.2",
     "redux": "4.1.2",
-    "styled-components": "5.3.6",
+    "styled-components": "5.3.7",
     "typescript": "5.6.3"
   },
   "devDependencies": {
