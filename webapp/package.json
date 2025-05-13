@@ -183,7 +183,7 @@
       "^.+\\.(js|jsx|ts|tsx|mjs)$": "babel-jest"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!react-native|react-router|serialize-error)"
+      "node_modules/(?!react-native|react-router|serialize-error|parse-duration)"
     ],
     "setupFiles": [
       "jest-canvas-mock"
