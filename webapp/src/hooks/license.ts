@@ -3,12 +3,12 @@
 
 import {useSelector} from 'react-redux';
 
-import {checkProfessionalLicensed, isEnterpriseLicensedOrDevelopment} from 'src/license';
+import {isEnterpriseLicensedOrDevelopment, isProfessionalLicensedOrDevelopment} from 'src/license';
 
 // useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
 // post to the timeline in the current team
 export function useAllowAddMessageToTimelineInCurrentTeam() {
-    return useSelector(checkProfessionalLicensed);
+    return useSelector(isProfessionalLicensedOrDevelopment);
 }
 
 // useAllowChannelExport returns whether exporting the channel is allowed
@@ -31,7 +31,7 @@ export function useAllowPlaybookAndRunMetrics() {
 // useAllowRetrospectiveAccess returns whether the server is licenced for
 // the retrospective feature.
 export function useAllowRetrospectiveAccess() {
-    return useSelector(checkProfessionalLicensed);
+    return useSelector(isProfessionalLicensedOrDevelopment);
 }
 
 // useAllowPrivatePlaybooks returns whether the server is licenced for
@@ -43,7 +43,7 @@ export function useAllowPrivatePlaybooks() {
 // useAllowSetTaskDueDate returns whether the server is licensed for
 // setting / editing checklist item due date
 export function useAllowSetTaskDueDate() {
-    return useSelector(checkProfessionalLicensed);
+    return useSelector(isProfessionalLicensedOrDevelopment);
 }
 
 // useAllowMakePlaybookPrivate returns whether the server is licenced for
@@ -55,5 +55,5 @@ export function useAllowMakePlaybookPrivate() {
 // useAllowRequestUpdate returns whether the server is licenced for
 // requesting an update
 export function useAllowRequestUpdate() {
-    return useSelector(checkProfessionalLicensed);
+    return useSelector(isProfessionalLicensedOrDevelopment);
 }
