@@ -37,30 +37,25 @@ interface DisabledProps {
 const RoundSwitch = styled.span<DisabledProps>`
     position: relative;
     display: inline-block;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    transition: .4s;
 
-    // Outer rectangle
+    /* Outer rectangle */
     width: 40px;
     height: 24px;
     border-radius: 14px;
     background: rgba(var(--center-channel-color-rgb), ${({disabled}) => (disabled ? '0.08' : '0.24')});
+    inset: 0;
+    transition: .4s;
 
-    // Inner circle
+    /* Inner circle */
     ::before {
         position: absolute;
+        top: calc(50% - 20px/2);
+        left: 2px;
         width: 20px;
         height: 20px;
-        left: 2px;
-        top: calc(50% - 20px/2);
-
         border-radius: 50%;
         background: var(--center-channel-bg);
-        box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
-
+        box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
         content: "";
         transition: .4s;
     }
@@ -82,9 +77,9 @@ const InvisibleInput = styled.input`
 const Label = styled.label<DisabledProps>`
     display: flex;
     align-items: center;
+    margin-bottom: 0;
     column-gap: 12px;
+    cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
     font-weight: inherit;
     line-height: 16px;
-    cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
-    margin-bottom: 0;
 `;

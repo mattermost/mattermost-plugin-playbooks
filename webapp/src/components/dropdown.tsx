@@ -19,9 +19,11 @@ import {
     useRole,
 } from '@floating-ui/react-dom-interactions';
 
-const FloatingContainer = styled.div`
-    min-width: 16rem;
+const FloatingContainer = styled.div<{$styles?: ReturnType<typeof css>}>`
 	z-index: 50;
+    min-width: 16rem;
+
+    ${({$styles}) => $styles};
 
 	.PlaybookRunProfileButton {
 		.Profile {
@@ -35,14 +37,14 @@ const FloatingContainer = styled.div`
     }
 
     .playbook-react-select {
-        border-radius: 4px;
-        -webkit-overflow-scrolling: touch;
-        background-color: var(--center-channel-bg);
-        border: 1px solid var(--center-channel-color-16);
-        max-height: 100%;
-        max-width: 340px;
         overflow: hidden;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        max-width: 340px;
+        max-height: 100%;
+        border: 1px solid var(--center-channel-color-16);
+        border-radius: 4px;
+        background-color: var(--center-channel-bg);
+        box-shadow: 0 8px 24px rgba(0 0 0 / 0.12);
+        -webkit-overflow-scrolling: touch;
     }
 `;
 
@@ -100,9 +102,7 @@ const Dropdown = (props: DropdownProps) => {
                     left: x ?? 0,
                 },
             })}
-            css={`
-                ${props.containerStyles};
-            `}
+            $styles={props.containerStyles}
         >
             {props.children}
         </FloatingContainer>

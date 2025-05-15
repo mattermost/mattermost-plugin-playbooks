@@ -5,15 +5,15 @@ import styled from 'styled-components';
 
 export const AutomationHeader = styled.div`
     display: flex;
-    justify-content: space-between;
-    align-items: center;
     width: 100%;
+    align-items: center;
+    justify-content: space-between;
 `;
 
 export const AutomationTitle = styled.div`
     display: flex;
-    flex-direction: row;
     width: 350px;
+    flex-direction: row;
     align-items: center;
     column-gap: 12px;
 `;
@@ -22,14 +22,14 @@ export const AutomationLabel = styled.label<{disabled?: boolean}>`
     display: flex;
     flex-direction: row;
     align-items: center;
-    column-gap: 12px;
-    font-weight: inherit;
     margin-bottom: 0;
+    column-gap: 12px;
     cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
+    font-weight: inherit;
 `;
 
 export const SelectorWrapper = styled.div`
-    margin: 0;
     width: 300px;
     min-height: 40px;
+    margin: 0;
 `;

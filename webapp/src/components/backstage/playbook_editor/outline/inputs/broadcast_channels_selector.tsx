@@ -150,10 +150,10 @@ const selectStyles: StylesConfig<Channel, boolean> = {
 export default BroadcastChannels;
 
 const StyledReactSelect = styled(ReactSelect)`
-    font-weight: 400;
-    font-size: 14px;
-    line-height: 20px;
     color: var(--center-channel-color);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
 `;
 
 interface ChannelLabelProps {
@@ -180,10 +180,10 @@ const ChannelLabel = (props: ChannelLabelProps) => {
 };
 
 const CheckIcon = styled.i<{disabled: boolean}>`
-    color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb),0.48)' : 'var(--button-bg)')};
-	font-size: 22px;
     position: absolute;
     right: 0;
+    color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb),0.48)' : 'var(--button-bg)')};
+	font-size: 22px;
 `;
 
 const ChannelLabelWrapper = styled.span<{disabled: boolean}>`

@@ -107,20 +107,17 @@ const RetrospectiveTextContainer = styled.div`
 `;
 
 const Card = styled.div`
-    background: var(--center-channel-bg);
-    width: 100%;
-
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
-    box-sizing: border-box;
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
-    border-radius: 4px;
-
-    padding: 16px;
-    padding-left: 11px;
-    padding-right: 20px;
-
     display: flex;
+    width: 100%;
+    box-sizing: border-box;
     flex-direction: column;
+    padding: 16px;
+    padding-right: 20px;
+    padding-left: 11px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
+    border-radius: 4px;
+    background: var(--center-channel-bg);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
 `;
 
 export default SectionRetrospective;

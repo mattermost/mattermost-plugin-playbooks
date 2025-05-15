@@ -94,9 +94,9 @@ const RunsPage = () => {
                 level={2}
                 heading={formatMessage({defaultMessage: 'Runs'})}
                 subtitle={formatMessage({defaultMessage: 'All the runs that you can access will show here'})}
-                css={`
-                    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-                `}
+                style={{
+                    borderBottom: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
+                }}
             />
             <RunList
                 playbookRuns={playbookRuns}

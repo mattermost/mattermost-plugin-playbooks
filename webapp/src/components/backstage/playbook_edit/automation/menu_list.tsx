@@ -8,11 +8,10 @@ import {Scrollbars} from 'react-custom-scrollbars';
 import {MenuListComponentProps, OptionTypeBase} from 'react-select';
 
 const MenuListWrapper = styled.div`
-    background-color: var(--center-channel-bg);
+    max-height: 280px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 4px;
-
-    max-height: 280px;
+    background-color: var(--center-channel-bg);
 `;
 
 const StyledScrollbars = styled(Scrollbars)`
@@ -20,12 +19,12 @@ const StyledScrollbars = styled(Scrollbars)`
 `;
 
 const ThumbVertical = styled.div`
-    background-color: rgba(var(--center-channel-color-rgb), 0.24);
-    border-radius: 2px;
     width: 4px;
     min-height: 45px;
-    margin-left: -2px;
+    border-radius: 2px;
     margin-top: 6px;
+    margin-left: -2px;
+    background-color: rgba(var(--center-channel-color-rgb), 0.24);
 `;
 
 const MenuList = <T extends OptionTypeBase>(props: MenuListComponentProps<T, false>) => {

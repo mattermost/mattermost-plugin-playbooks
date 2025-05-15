@@ -84,31 +84,31 @@ const Container = styled.div`
 const Header = styled.div`
     display: flex;
     flex-direction: row;
-    margin-bottom: 8px;
     align-items: center;
+    margin-bottom: 8px;
 `;
 
 const ProfilePic = styled.img`
     width: 20px;
     height: 20px;
-    margin-right: 8px;
     border-radius: 50%;
+    margin-right: 8px;
 `;
 const Author = styled.span`
+    margin-right: 6px;
+    color: var(--center-channel-color);
     font-size: 14px;
     font-weight: 600;
-    color: var(--center-channel-color);
-    margin-right: 6px;
 `;
 
 const Date = styled.span`
-    font-size: 12px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
 `;
 
 const Body = styled.div`
     color: var(--center-channel-color);
     font-size: 14px;
-    line-height: 20px;
     font-weight: 400;
+    line-height: 20px;
 `;

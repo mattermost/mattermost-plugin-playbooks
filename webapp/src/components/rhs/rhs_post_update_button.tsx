@@ -43,22 +43,21 @@ interface CollapsedProps {
 const PostUpdateButtonCommon = css<CollapsedProps>`
     justify-content: center;
     flex: 1;
-    ${(props) => props.collapsed && css`
+    ${({collapsed}) => collapsed && css`
         font-size: 12px;
-        font-height: 9.5px;
-    `}
+    `};
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)<CollapsedProps>`
-    ${PostUpdateButtonCommon}
+    ${PostUpdateButtonCommon};
 `;
 
 const PostUpdateTertiaryButton = styled(TertiaryButton)<CollapsedProps>`
-    ${PostUpdateButtonCommon}
+    ${PostUpdateButtonCommon};
 `;
 
 const PostUpdateDestructiveButton = styled(DestructiveButton)<CollapsedProps>`
-    ${PostUpdateButtonCommon}
+    ${PostUpdateButtonCommon};
 `;
 
 export default RHSPostUpdateButton;

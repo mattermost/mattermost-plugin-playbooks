@@ -18,9 +18,9 @@ import LHSNavigation from './lhs_navigation';
 import MainBody from './main_body';
 
 const BackstageContainer = styled.div`
+    height: 100%;
     background: var(--center-channel-bg);
     overflow-y: auto;
-    height: 100%;
 `;
 
 const Backstage = () => {
@@ -52,7 +52,7 @@ const Backstage = () => {
     return (
         <BackstageContainer id={BackstageID}>
             <ToastProvider>
-                <MainContainer noContainerScroll={Boolean(noContainerScroll)}>
+                <MainContainer $noContainerScroll={Boolean(noContainerScroll)}>
                     <LHSNavigation/>
                     <MainBody/>
                 </MainContainer>
@@ -62,11 +62,11 @@ const Backstage = () => {
     );
 };
 
-const MainContainer = styled.div<{noContainerScroll: boolean}>`
+const MainContainer = styled.div<{$noContainerScroll: boolean}>`
     display: grid;
     grid-auto-flow: column;
     grid-template-columns: max-content auto;
-    ${({noContainerScroll}) => (noContainerScroll ? css`
+    ${({$noContainerScroll}) => ($noContainerScroll ? css`
         height: 100%;
     ` : css`
         min-height: 100%;

@@ -62,11 +62,11 @@ const PlaceholderText = styled.span`
 
 const commonDescriptionStyle = css`
     border-radius: 5px;
+    color: var(--center-channel-color-72);
     font-size: 12px;
     line-height: 16px;
-    color: var(--center-channel-color-72);
 
-    :hover {
+    &:hover {
         cursor: text;
     }
 
@@ -87,35 +87,36 @@ const StyledMarkdownTextbox = styled(MarkdownTextbox)`
     .textarea-wrapper {
         min-height: auto;
     }
+
     &&& {
         .custom-textarea.custom-textarea {
             ${commonDescriptionStyle}
-
             display: block;
             resize: none;
             width: 100%;
-            padding: 0px;
-
+            padding: 0;
             border: none;
             border-radius: 0;
             box-shadow: none;
             background: none;
+
             &:focus {
                 box-shadow: none;
             }
+
             min-height: auto;
         }
     }
 `;
 
 const ChecklistItemDescriptionContainer = styled.div`
+    padding-right: 8px;
+    margin-left: 36px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 12px;
     font-style: normal;
     font-weight: 400;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    padding-right: 8px;
-    margin-left: 36px;
 `;
 
 export default ChecklistItemDescription;

@@ -1,4 +1,5 @@
 .eslintcache
+.stylelintcache
 report.xml
 bin/
 dist/

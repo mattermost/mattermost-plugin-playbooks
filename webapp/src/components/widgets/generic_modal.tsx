@@ -3,7 +3,7 @@
 
 import styled from 'styled-components';
 import classNames from 'classnames';
-import React from 'react';
+import React, {ComponentType} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
@@ -32,9 +32,10 @@ type Props = {
     footer?: React.ReactNode;
     components?: Partial<{
         Header: typeof Modal.Header;
-        FooterContainer: typeof DefaultFooterContainer;
+        FooterContainer: ComponentType<{children: React.ReactNode}>;
     }>;
     adjustTop?: number;
+    children?: React.ReactNode;
 };
 
 type State = {
@@ -165,9 +166,10 @@ export default class GenericModal extends React.PureComponent<Props, State> {
 export const StyledModal = styled(Modal)`
     &&& {
         display: grid !important;
+        padding: 8px;
         grid-template-rows: 1fr auto 2fr;
         place-content: start center;
-        padding: 8px;
+
         /* content-spacing */
         .modal-body {
             overflow: visible;
@@ -175,8 +177,8 @@ export const StyledModal = styled(Modal)`
         }
 
         .modal-dialog {
-            margin: 0px !important;
             max-width: 100%;
+            margin: 0 !important;
             grid-row: 2;
         }
     }
@@ -188,6 +190,7 @@ export const StyledModal = styled(Modal)`
         .form-control {
             border: none;
         }
+
         input.form-control {
             padding-left: 16px;
         }
@@ -208,34 +211,34 @@ export const DefaultFooterContainer = styled.div`
 `;
 
 export const ModalHeading = styled.h1`
+    margin: 0;
+    color: var(--center-channel-color);
     font-size: 22px;
     line-height: 28px;
-    color: var(--center-channel-color);
-    margin: 0;
 `;
 
 export const ModalSideheading = styled.h6`
+    padding-left: 8px;
+    border-left: solid 1px rgba(var(--center-channel-color-rgb), 0.56);
+    margin: 0 0 0 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 12px;
     line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    padding-left: 8px;
-    margin: 0 0 0 8px;
-    border-left: solid 1px rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 export const ModalSubheading = styled.h6`
-    font-size: 12px;
-    line-height: 16px;
     margin-top: 6px;
     margin-bottom: 0;
-    font-family: 'Open Sans';
     color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-family: 'Open Sans';
+    font-size: 12px;
+    line-height: 16px;
 `;
 
 export const Description = styled.p`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 14px;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
 
     a {
         font-weight: bold;
@@ -243,24 +246,22 @@ export const Description = styled.p`
 `;
 
 export const Label = styled.label`
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--center-channel-color);
     margin-top: 24px;
     margin-bottom: 8px;
+    color: var(--center-channel-color);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
 `;
 
 export const InlineLabel = styled.label`
     z-index: 1;
-
     width: max-content;
-    margin: 0 0 -8px 12px;
     padding: 0 3px;
+    margin: 0 0 -8px 12px;
     background: var(--center-channel-bg);
-
-    font-weight: normal;
-    font-size: 10px;
-    line-height: 14px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 10px;
+    font-weight: normal;
+    line-height: 14px;
 `;

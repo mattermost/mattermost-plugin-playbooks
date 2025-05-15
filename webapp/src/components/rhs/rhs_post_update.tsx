@@ -170,50 +170,45 @@ interface CollapsedProps {
 }
 
 const PostUpdate = styled.div<CollapsedProps>`
+    position: relative;
     display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
+    flex-flow: row nowrap;
     align-items: stretch;
     justify-content: space-between;
     padding: ${(props) => (props.collapsed ? '8px 8px 8px 12px' : '12px')};
-
-    background-color: var(--center-channel-bg);
-
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
-    position: relative;
+    background-color: var(--center-channel-bg);
 `;
 
 const Timer = styled.div`
-    flex-grow: 0;
-    flex-shrink: 0;
     display: flex;
     flex-direction: row;
+    flex-grow: 0;
+    flex-shrink: 0;
     align-items: center;
 `;
 
 const IconWrapper = styled.span<CollapsedProps>`
     display: flex;
-    justify-content: center;
-    align-items: center;
-
     width: ${(props) => (props.collapsed ? '14px' : '48px')};
+    align-items: center;
+    justify-content: center;
 `;
 
 const UpdateNotice = styled.div<CollapsedProps & {isDue: boolean}>`
     display: flex;
     flex-direction: ${(props) => (props.collapsed ? 'row' : 'column')};
-    margin-left: 4px;
     padding: 0;
+    margin-left: 4px;
     color: ${(props) => (props.isDue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
-
     font-size: 12px;
     line-height: 16px;
 `;
 
 const UpdateNoticePretext = styled.div`
-    font-weight: 400;
     margin-right: 3px;
+    font-weight: 400;
 `;
 
 const UpdateNoticeTime = styled.div<CollapsedProps>`
@@ -226,9 +221,9 @@ const UpdateNoticeTime = styled.div<CollapsedProps>`
 `;
 
 const Spacer = styled.div`
+    width: 44px;
     flex-grow: 0;
     flex-shrink: 1;
-    width: 44px;
 `;
 
 export default RHSPostUpdate;

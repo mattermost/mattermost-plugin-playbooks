@@ -99,6 +99,7 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
 const Handle = styled(HoverMenuButton)`
     border-radius: 4px;
     margin-right: 8px;
+
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08)
     }
@@ -108,9 +109,8 @@ const ButtonRow = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
-
-    margin-left: auto;
     margin-right: 8px;
+    margin-left: auto;
 `;
 
 export const DotMenuIcon = styled(HamburgerButton)`
@@ -118,11 +118,10 @@ export const DotMenuIcon = styled(HamburgerButton)`
 `;
 
 export const StyledDotMenuButton = styled(DotMenuButton)`
-    align-items: center;
-    justify-content: center;
-
     width: 28px;
     height: 28px;
+    align-items: center;
+    justify-content: center;
 `;
 
 export const StyledDropdownMenu = styled(DropdownMenu)`
@@ -135,22 +134,24 @@ export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
 
 export const StyledDropdownMenuItemRed = styled(DropdownMenuItem)`
     padding: 8px 0;
+
     && {
         color: #D24B4E;
     }
+
     &&:hover {
         color: #D24B4E;
     }
 `;
 
 export const DropdownIcon = styled.i`
-    color: rgba(var(--center-channel-color-rgb), 0.56);
     margin-right: 11px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 export const DropdownIconRed = styled.i`
-    color: #D24B4E;
     margin-right: 11px;
+    color: #D24B4E;
 `;
 
 export default CollapsibleChecklistHoverMenu;

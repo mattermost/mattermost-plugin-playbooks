@@ -131,7 +131,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                     maxLength={64}
                 />
                 <Error text={titleError}/>
-                <VerticalSpacer size={16}/>
+                <VerticalSpacer $size={16}/>
 
                 <MetricInput
                     id={metric.id}
@@ -146,7 +146,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                         setTargetError('');
                     }}
                 />
-                <VerticalSpacer size={16}/>
+                <VerticalSpacer $size={16}/>
                 <Title>{formatMessage({defaultMessage: 'Description'})}</Title>
                 <StyledTextarea
                     placeholder={formatMessage({defaultMessage: 'Describe what this metric is about'})}
@@ -158,7 +158,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                     }}
                 />
                 <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.'})}</HelpText>
-                <VerticalSpacer size={16}/>
+                <VerticalSpacer $size={16}/>
                 <PrimaryButton onClick={verifyAndSave}>{formatMessage({defaultMessage: 'Save'})}</PrimaryButton>
             </EditContainer>
         </Container>
@@ -172,35 +172,35 @@ const Container = styled.div`
 const EditHeader = styled.div`
     display: flex;
     align-items: center;
+    padding: 12px 24px;
+    border-radius: 4px 4px 0 0;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 14px;
     line-height: 20px;
-    padding: 12px 24px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    background: rgba(var(--center-channel-color-rgb), 0.04);
-    border-radius: 4px 4px 0 0;
 `;
 
 const Button = styled.button`
-    font-size: 18px;
     padding: 4px 1px;
-    background: none;
-    border-radius: 4px;
     border: 0;
+    border-radius: 4px;
     margin-left: auto;
+    background: none;
+    font-size: 18px;
 
-    :hover {
+    &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;
 
 const EditContainer = styled.div`
+    padding: 16px 24px 24px;
+    border-radius: 0 0 4px 4px;
+    margin-bottom: 12px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
     font-size: 14px;
     line-height: 20px;
-    padding: 16px 24px 24px;
-    margin-bottom: 12px;
-    color: var(--center-channel-color);
-    background: var(--center-channel-bg);
-    border-radius: 0 0 4px 4px;
 `;
 
 const Bold = styled.span`
@@ -214,8 +214,8 @@ const Bold = styled.span`
 `;
 
 const Title = styled.div`
+    margin: 0 0 8px;
     font-weight: 600;
-    margin: 0 0 8px 0;
 `;
 
 const Error = ({text}: { text: string }) => (

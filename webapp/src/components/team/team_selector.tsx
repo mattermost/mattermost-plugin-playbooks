@@ -10,18 +10,17 @@ export interface Option {
 }
 
 export const SelectedButton = styled.button`
-    font-weight: 600;
-    height: 40px;
-    padding: 0 4px 0 12px;
-    border-radius: 4px;
-    color: var(--center-channel-color);
-    transition: all 0.15s ease;
-
-    border: none;
-    background-color: unset;
     display: flex;
+    height: 40px;
     align-items: center;
+    padding: 0 4px 0 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: unset;
+    color: var(--center-channel-color);
+    font-weight: 600;
     text-align: center;
+    transition: all 0.15s ease;
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
@@ -35,27 +34,23 @@ export const SelectedButton = styled.button`
         }
 
         &.active {
-            cursor: pointer;
             color: var(--center-channel-color);
+            cursor: pointer;
         }
     }
 
 
     .NoAssignee-button, .Assigned-button {
-        background-color: transparent;
-        border: none;
         padding: 4px;
-        margin-top: 4px;
+        border: none;
         border-radius: 100px;
+        margin-top: 4px;
+        background-color: transparent;
         color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: pointer;
-        font-weight: normal;
         font-size: 12px;
+        font-weight: normal;
         line-height: 16px;
-
-        -webkit-transition: all 0.15s ease;
-        -moz-transition: all 0.15s ease;
-        -o-transition: all 0.15s ease;
         transition: all 0.15s ease;
 
         &:hover {
@@ -73,17 +68,17 @@ export const SelectedButton = styled.button`
         }
 
         .icon-chevron-down {
-            &:before {
+            &::before {
                 margin: 0;
             }
         }
     }
 
     .first-container .Assigned-button {
-        margin-top: 0;
         padding: 2px 0;
+        margin-top: 0;
+        color: var(--center-channel-color);
         font-size: 14px;
         line-height: 20px;
-        color: var(--center-channel-color);
     }
 `;

@@ -103,9 +103,10 @@ const Wrapper = styled.div`
 
     && .textarea-wrapper-preview  {
         .custom-textarea.custom-textarea.textbox-preview-area {
-            display: block!important;
             z-index: 0;
+            display: block!important;
         }
+
         .input-wrapper {
             display: none;
         }
@@ -113,23 +114,20 @@ const Wrapper = styled.div`
 
     && {
         .custom-textarea.custom-textarea {
-            background-color: var(--center-channel-bg);;
-
-            &.textbox-preview-area {
-                background-color: rgba(var(--center-channel-color-rgb), 0.04);
-                display: none!important;
-            }
-
+            overflow: auto;
             height: unset;
             min-height: 104px;
             max-height: 324px;
-            overflow: auto;
             padding: 12px 30px 12px 16px;
-
-            transition: box-shadow ease-in-out .15s;
-            box-shadow: 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-
             border: medium none;
+            background-color: var(--center-channel-bg);
+            box-shadow: 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+            transition: box-shadow ease-in-out .15s;;
+
+            &.textbox-preview-area {
+                display: none!important;
+                background-color: rgba(var(--center-channel-color-rgb), 0.04);
+            }
 
             &:focus:not(.textbox-preview-area) {
                 box-shadow: 0 0 0 2px var(--button-bg);
@@ -215,9 +213,9 @@ function TextboxLinks({
 
 const StyledTextboxLinks = styled(TextboxLinks)`
     display: inline-flex;
+    width: 100%;
     align-items: baseline;
     justify-content: space-between;
-    width: 100%;
 
     a,
     button {
@@ -227,11 +225,11 @@ const StyledTextboxLinks = styled(TextboxLinks)`
     }
 
     .help__format-text {
-        transition: opacity, 0.3s, ease-in, 0.3s;
         font-size: 0.85em;
+        opacity: 1;
+        transition: opacity, 0.3s, ease-in, 0.3s;
         vertical-align: bottom;
         white-space: nowrap;
-        opacity: 1;
 
         .modal & {
             white-space: normal;

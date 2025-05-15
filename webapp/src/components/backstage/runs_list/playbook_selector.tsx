@@ -76,7 +76,7 @@ export default function PlaybookSelector(props: Props) {
     // Whenever the selectedPlaybookId changes we have to set the selected, but we can only do this once we
     // have playbookOptions
     useEffect(() => {
-        if (playbookOptions === []) {
+        if (playbookOptions.length === 0) {
             return;
         }
 
@@ -115,7 +115,7 @@ export default function PlaybookSelector(props: Props) {
     } else {
         target = (
             <FilterButton
-                active={isOpen}
+                $active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -187,9 +187,9 @@ const selectStyles: StylesConfig<Option, boolean> = {
 };
 
 const StyledSpan = styled.span`
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
     max-width: 180px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 

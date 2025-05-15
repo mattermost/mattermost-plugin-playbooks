@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import React, {PropsWithChildren, ReactNode, useRef} from 'react';
+import React, {PropsWithChildren, useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -47,9 +47,9 @@ const ContainerMedium = styled.article`
 `;
 
 const PlaybookListContainer = styled.div`
-    color: rgba(var(--center-channel-color-rgb), 0.9);
     position: relative;
     height: 100%;
+    color: rgba(var(--center-channel-color-rgb), 0.9);
     overflow-y: hidden;
 `;
 
@@ -64,15 +64,14 @@ const TableContainer = styled.div`
 `;
 
 const CreatePlaybookHeader = styled(BackstageSubheader)`
-    margin-top: 4rem;
-    padding: 4rem 0 3.2rem;
     display: grid;
-    justify-items: space-between;
+    padding: 4rem 0 3.2rem;
+    margin-top: 4rem;
 `;
 
 export const Heading = styled.h1`
-    ${RegularHeading} {
-    }
+    ${RegularHeading};
+
     font-size: 2.8rem;
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -81,32 +80,32 @@ export const Heading = styled.h1`
 `;
 
 const Sub = styled.p`
-    font-size: 16px;
-    line-height: 24px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-weight: 400;
     max-width: 650px;
     margin-top: 12px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
 `;
 
 const AltCreatePlaybookHeader = styled(BackstageSubheader)`
-    margin-top: 1rem;
-    padding-top: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-top: 0;
+    margin-top: 1rem;
 `;
 
 export const AltHeading = styled(Heading)`
-    font-weight: 600;
     font-size: 20px;
+    font-weight: 600;
     line-height: 28px;
     text-align: center;
 `;
 
 const AltSub = styled(Sub)`
-    text-align: center;
     margin-bottom: 36px;
+    text-align: center;
 `;
 
 const TitleActions = styled.div`
@@ -116,9 +115,9 @@ const TitleActions = styled.div`
 const ImportSub = styled(Sub)`
     margin-top: 8px;
     margin-bottom: 0;
+    color: inherit;
     font-size: 14px;
     line-height: 20px;
-    color: inherit;
 `;
 
 const ImportLink = styled.a`
@@ -127,8 +126,8 @@ const ImportLink = styled.a`
 
 const PlaybooksListFilters = styled.div`
     display: flex;
-    padding: 16px;
     align-items: center;
+    padding: 16px;
 `;
 
 const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
@@ -244,15 +243,15 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                         onClick={handleImportClick}
                                     />
                                     {inputImportPlaybook}
-                                    <HorizontalSpacer size={12}/>
+                                    <HorizontalSpacer $size={12}/>
                                     <PlaybookModalButton/>
                                 </>
                             )}
                         </TitleActions>
                     )}
-                    css={`
-                        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-                    `}
+                    style={{
+                        borderBottom: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
+                    }}
                 />
                 <PlaybooksListFilters>
                     <SearchInput
@@ -261,14 +260,14 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                         onSearch={setSearchTerm}
                         placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
                     />
-                    <HorizontalSpacer size={12}/>
+                    <HorizontalSpacer $size={12}/>
                     <CheckboxInput
                         testId={'with-archived'}
                         text={formatMessage({defaultMessage: 'With archived'})}
                         checked={params.with_archived}
                         onChange={setWithArchived}
                     />
-                    <HorizontalSpacer size={12}/>
+                    <HorizontalSpacer $size={12}/>
                 </PlaybooksListFilters>
                 <BackstageListHeader $edgeless={true}>
                     <div className='row'>
@@ -352,7 +351,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                         {formatMessage({defaultMessage: 'Choose a template'})}
                                     </AltHeading>
                                     <ImportSub>
-                                        {formatMessage<ReactNode>({defaultMessage: 'or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>'}, {
+                                        {formatMessage({defaultMessage: 'or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>'}, {
                                             ImportPlaybookButton: (chunks) => (
                                                 <ImportLinkButton
                                                     onClick={handleImportClick}

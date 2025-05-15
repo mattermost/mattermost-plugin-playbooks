@@ -73,22 +73,21 @@ const ReportTextArea = ({text, isEditable, onEdit, flushChanges, teamId}: Props)
 };
 
 const StyledTextArea = styled(StyledTextarea)`
-    margin: 8px 0 0 0;
     min-height: 200px;
-    font-size: 12px;
     flex-grow: 1;
+    margin: 8px 0 0;
+    font-size: 12px;
 `;
 
 const PostTextContainer = styled.div<{ published?: boolean}>`
-    background-color: ${(props) => (props.published ? 'rgba(var(--center-channel-color-rgb),0.03)' : 'var(--center-channel-bg)')};
-
-    margin: 8px 0 0 0;
+    flex-grow: 1;
     padding: 10px 25px 0 16px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 8px;
-    flex-grow: 1;
+    margin: 8px 0 0;
+    background-color: ${(props) => (props.published ? 'rgba(var(--center-channel-color-rgb),0.03)' : 'var(--center-channel-bg)')};
 
-    :hover {
+    &:hover {
         cursor: text;
     }
 `;
