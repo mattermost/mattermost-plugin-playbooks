@@ -2476,4 +2476,30 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.63.0"),
+		toVersion:   semver.MustParse("0.64.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Incident")
+				}
+
+				// Set the initial UpdateAt value to be the same as CreateAt
+				if _, err := e.Exec("UPDATE IR_Incident SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting initial UpdateAt values")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Incident")
+				}
+
+				// Set the initial UpdateAt value to be the same as CreateAt
+				if _, err := e.Exec("UPDATE IR_Incident SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting initial UpdateAt values")
+				}
+			}
+			return nil
+		},
+	},
 }
