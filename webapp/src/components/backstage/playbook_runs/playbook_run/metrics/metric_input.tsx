@@ -87,9 +87,9 @@ const InputContainer = styled.div`
 const Title = styled.div`
     font-weight: 600;
 
-    :after {
-        content: attr(data-end);
+    ::after {
         color: red;
+        content: attr(data-end);
     }
 `;
 
@@ -102,8 +102,8 @@ const InputWithIcon = styled.span`
 
     svg {
         position: absolute;
-        left: 14px;
         top: 1px;
+        left: 14px;
         color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 
@@ -115,19 +115,16 @@ const InputWithIcon = styled.span`
 const Header = styled.div`
     display: flex;
     flex: 1;
-
+    margin: 0 0 8px;
     font-size: 14px;
     line-height: 20px;
-    margin: 0 0 8px 0;
 `;
 
 const TargetTitle = styled.div`
-    flex-grow: 1;
     display: flex;
-
+    flex-grow: 1;
     align-items: center;
     justify-content: flex-end;
-
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 

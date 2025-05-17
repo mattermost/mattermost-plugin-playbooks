@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
@@ -28,11 +28,11 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
-    font-weight: 400;
-    font-size: 11px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
     margin: 5px 0;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 16px;
 `;
 
 const NormalText = styled.div`
@@ -41,8 +41,8 @@ const NormalText = styled.div`
 `;
 
 const SmallProfile = styled(Profile)`
-    font-weight: 400;
     font-size: 12px;
+    font-weight: 400;
     line-height: 16px;
 
     > .image {
@@ -52,27 +52,27 @@ const SmallProfile = styled(Profile)`
 `;
 
 const SmallStatusBadge = styled(StatusBadge)`
-    font-size: 10px;
-    line-height: 16px;
     height: 16px;
     padding: 0 4px;
     margin: 0;
+    font-size: 10px;
+    line-height: 16px;
 `;
 
 const RunName = styled.div`
-    font-weight: 600;
     font-size: 14px;
+    font-weight: 600;
     line-height: 16px;
 `;
 
 const PlaybookRunItem = styled.div`
     display: flex;
+    align-items: center;
     padding-top: 8px;
     padding-bottom: 8px;
-    align-items: center;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     margin: 0;
     background-color: var(--center-channel-bg);
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     cursor: pointer;
 
     &:hover {
@@ -212,10 +212,13 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
                     toggleFollow();
                 }}
                 data-testid='unfollow-playbook'
-                css={`
-                    ${iconSplitStyling};
-                    padding: 0px, 18px;
-                `}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    height: '32px',
+                    padding: '0 18px',
+                }}
             >
                 {formatMessage({defaultMessage: 'Following'})}
             </FollowingButton>
@@ -229,21 +232,19 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
                 toggleFollow();
             }}
             data-testid='follow-playbook'
-            css={`${iconSplitStyling}`}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                height: '32px',
+                padding: '0 16px',
+            }}
         >
             <BullhornOutlineIcon size={16}/>
             {formatMessage({defaultMessage: 'Follow'})}
         </FollowButton>
     );
 };
-
-const iconSplitStyling = css`
-     display: flex;
-     align-items: center;
-     gap: 8px;
-     height: 32px;
-     padding: 0 16px;
-`;
 
 const FollowButton = styled(SecondaryButton)`
     border: 1px solid var(--center-channel-color-08);

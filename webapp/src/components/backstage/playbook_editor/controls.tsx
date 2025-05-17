@@ -87,15 +87,15 @@ type StyledProps = {className?: string;};
 
 const StyledLink = styled(Link)`
     a&& {
-        color: rgba(var(--center-channel-color-rgb), 0.56);
-        font-weight: 600;
-        font-size: 14px;
         display: inline-flex;
+        height: 36px;
         flex-shrink: 0;
         align-items: center;
-        border-radius: 4px;
-        height: 36px;
         padding: 0 8px;
+        border-radius: 4px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-size: 14px;
+        font-weight: 600;
 
 
         &:hover,
@@ -125,9 +125,7 @@ export const Back = styled((props: StyledProps) => {
             <FormattedMessage defaultMessage='Back'/>
         </StyledLink>
     );
-})`
-
-`;
+})`/* stylelint-disable no-empty-source */`;
 
 export const Members = (props: {playbookId: string, numMembers: number, refetch: () => void}) => {
     const dispatch = useDispatch();
@@ -148,7 +146,7 @@ export const CopyPlaybook = ({playbook: {title, id}}: ControlProps) => {
             id='copy-playbook-link-tooltip'
             to={getSiteUrl() + '/playbooks/playbooks/' + id}
             name={title}
-            area-hidden={true}
+            aria-hidden={true}
         />
     );
 };
@@ -448,7 +446,11 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                     href={exportHref}
                     download={exportFilename}
                     role={'button'}
-                    css={`${iconSplitStyling}`}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                    }}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
                 >
                     <ExportVariantIcon size={18}/>
@@ -457,7 +459,11 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                 {isEligibleToMakePrivate && (
                     <DropdownMenuItemStyled
                         role={'button'}
-                        css={`${iconSplitStyling}`}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                        }}
                         onClick={() => {
                             telemetryEventForPlaybook(playbook.id, 'playbook_makeprivate');
                             setShowMakePrivateConfirm(true);
@@ -492,7 +498,13 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             <DropdownMenuItem
                                 onClick={() => openDeletePlaybookModal(playbook)}
                             >
-                                <RedText css={`${iconSplitStyling}`}>
+                                <RedText
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                    }}
+                                >
                                     <ArchiveOutlineIcon size={18}/>
                                     <FormattedMessage defaultMessage='Archive'/>
                                 </RedText>
@@ -513,17 +525,16 @@ const DropdownMenuItem = styled(DropdownMenuItemBase)`
     min-width: 220px;
 `;
 
-export const TitleMenu = styled(TitleMenuImpl)`
-`;
+export const TitleMenu = styled(TitleMenuImpl)``;
 
 const buttonCommon = css`
-    padding: 0 16px;
     height: 36px;
+    padding: 0 16px;
     gap: 8px;
 
     i::before {
-        margin-left: 0;
         margin-right: 0;
+        margin-left: 0;
         font-size: 1.05em;
     }
 `;
@@ -537,9 +548,9 @@ export const SecondaryButtonLarger = styled(SecondaryButton)`
 `;
 
 const CheckboxInputStyled = styled(CheckboxInput)`
+    height: 36px;
     padding: 8px 16px;
     font-size: 14px;
-    height: 36px;
 
     &:hover {
         background-color: transparent;
@@ -567,24 +578,26 @@ const SecondaryButtonLargerCheckbox = styled(SecondaryButtonLarger) <{checked: b
 
 const ButtonIconStyled = styled(ButtonIcon)`
     display: inline-flex;
+    width: auto;
+    height: 36px;
     align-items: center;
-    font-size: 14px;
-    line-height: 24px;
-    font-weight: 600;
+    padding: 0 8px;
     border-radius: 4px;
-    padding: 0px 8px;
     margin: 0;
     color: rgba(var(--center-channel-color-rgb),0.56);
-    height: 36px;
-    width: auto;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 24px;
 `;
 
-export const TitleButton = styled.div`
-    padding-left: 16px;
+export const TitleButton = styled.button`
     display: inline-flex;
+    padding-left: 16px;
     border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     fill: rgba(var(--center-channel-color-rgb), 0.64);
+    border: none;
+    background: none;
 
     &:hover {
         background: rgba(var(--link-color-rgb), 0.08);

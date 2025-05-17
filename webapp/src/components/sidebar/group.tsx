@@ -33,7 +33,7 @@ const Group = (props: GroupProps) => {
                 >
                     <Chevron
                         className='icon icon-chevron-down'
-                        isCollapsed={collapsed}
+                        $isCollapsed={collapsed}
                     />
                     <HeaderName>
                         {props.group.display_name}
@@ -65,10 +65,8 @@ const Group = (props: GroupProps) => {
 
 export default Group;
 
-const Chevron = styled.i<{isCollapsed?: boolean}>`
-    ${(props) => props.isCollapsed && css`
-        -webkit-transform: rotate(-90deg);
-        -ms-transform: rotate(-90deg);
+const Chevron = styled.i<{$isCollapsed?: boolean}>`
+    ${({$isCollapsed}) => $isCollapsed && css`
         transform: rotate(-90deg);
         transition: transform 0.15s ease-out; /* should match collapse animation speed */
     `};
@@ -91,7 +89,7 @@ const Header = styled.div`
     align-items: center;
     border: none;
     background-color: var(--sidebar-bg);
-    box-shadow: 0 0 0 0 rgb(0 0 0 / 33%);
+    box-shadow: 0 0 0 0 rgba(0 0 0 / 0.33);
     color: rgba(var(--sidebar-text-rgb), 0.6);
     font-family: "Open Sans", sans-serif;
     text-align: left;
@@ -104,34 +102,33 @@ const HeaderButton = styled.button`
     display: flex;
     flex: 1 1 auto;
     align-items: center;
-    padding: 0;
+    padding: 6px 20px 6px 4px;
     border: none;
     background-color: transparent;
     color: rgba(var(--sidebar-text-rgb), 0.6);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
     text-align: left;
     text-transform: uppercase;
     white-space: nowrap;
-    cursor: pointer;
-    padding: 6px 20p 6px 4px;
-    font-size: 12px;
-    font-weight: 600;
 
-    :hover{
+    &:hover{
         color: var(--sidebar-text);
     }
 `;
 
 const Body = styled.ul`
-    margin: 0px;
-    padding: 0px;
     min-height: 2px;
+    padding: 0;
+    margin: 0;
     margin-bottom: 14px;
 `;
 
 const HeaderName = styled.div`
-    padding-left: 0;
     overflow: hidden;
     width: 100%;
     flex: 0 1 auto;
+    padding-left: 0;
     text-overflow: ellipsis;
 `;

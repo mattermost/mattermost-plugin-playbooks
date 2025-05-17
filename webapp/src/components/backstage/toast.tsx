@@ -60,18 +60,16 @@ export const Toast = (props: ToastProps) => {
 
 const StyledToast = styled.div<{toastStyle: ToastStyle}>`
     display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    padding: 4px 4px 4px 12px;
-    margin: 4px;
     height: 48px;
-
-    background: ${({toastStyle}) => (toastStyle === ToastStyle.Failure ? 'var(--dnd-indicator)' : 'var(--center-channel-color)')};
-    color: ${({toastStyle}) => (toastStyle === ToastStyle.Failure ? 'var(--center-channel-color)' : 'var(--center-channel-bg)')};
-
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 4px 4px 12px;
     border-radius: 4px;
+    margin: 4px;
+    background: ${({toastStyle}) => (toastStyle === ToastStyle.Failure ? 'var(--dnd-indicator)' : 'var(--center-channel-color)')};
+    box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
+    color: ${({toastStyle}) => (toastStyle === ToastStyle.Failure ? 'var(--center-channel-color)' : 'var(--center-channel-bg)')};
 
     &.fade-enter {
         transform: translateY(80px);
@@ -93,18 +91,16 @@ const StyledToast = styled.div<{toastStyle: ToastStyle}>`
 `;
 
 const StyledText = styled.div`
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 16px;
-
     display: flex;
     align-items: center;
-    text-align: left;
-
-    margin: 0px 8px;
+    margin: 0 8px;
     color: var(--center-channel-bg);
+    font-family: "Open Sans";
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: left;
 `;
 
 const StyledIcon = styled.i`
@@ -112,18 +108,18 @@ const StyledIcon = styled.i`
 `;
 
 const StyledClose = styled.i`
-    cursor: pointer;
     color: var(--center-channel-bg-56);
+    cursor: pointer;
 `;
 
 const StyledButton = styled.button`
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    margin: 8px;
     background: rgba(var(--center-channel-bg-rgb), 0.12);
     color: var(--center-channel-bg);
-    border-radius: 4px;
-    padding: 8px 16px;
-    margin: 8px;
-    border: none;
     font-size: 12px;
-    line-height: 16px;
     font-weight: 600;
+    line-height: 16px;
 `;

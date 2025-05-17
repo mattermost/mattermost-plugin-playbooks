@@ -139,7 +139,7 @@ const TaskInbox = () => {
                 </FilterOverdueText>
                 <ExpandRight/>
                 <DotMenu
-                    icon={<FilterWrapper>{formatMessage({defaultMessage: 'Filters'})}</FilterWrapper>}
+                    icon={<div>{formatMessage({defaultMessage: 'Filters'})}</div>}
                     dotMenuButton={FilterButton}
                     dropdownMenu={StyledDropdownMenu}
                     placement='bottom-end'
@@ -173,10 +173,10 @@ const TaskInbox = () => {
                         pageStart={0}
                         loadMore={(page: number) => setCurrentPage(page)}
                         hasMore={(currentPage * ITEMS_PER_PAGE) + ITEMS_PER_PAGE < tasks.length}
-                        loader={<span/>}
+                        loader={<span key='loader'/>}
                         useWindow={false}
                     >
-                        <TaskList>
+                        <TaskList key={'tasklist'}>
                             {visibleTasks.map((task) => (
                                 <Task
                                     key={task.id}
@@ -201,61 +201,58 @@ const Container = styled.div`
 `;
 
 const Filters = styled.div`
+    display: flex;
     height: 56px;
     min-height: 56px;
-    display: flex;
     flex-direction: row;
     align-items: center;
     padding: 0 10px;
-    background-color: rgba(var(--center-channel-color-rgb),0.04);
     border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    background-color: rgba(var(--center-channel-color-rgb),0.04);
 `;
 
 const FilterAssignedText = styled.div`
+    margin: 0 5px;
     font-size: 12px;
     font-weight: 600;
     line-height: 16px;
-    margin: 0 5px;
 `;
 const FilterOverdueText = styled(FilterAssignedText)`
     color: var(--dnd-indicator);
 `;
 
-const FilterWrapper = styled.div``;
-
 const FilterButton = styled(DotMenuButton)`
-    color: var(--button-bg);
-    height: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
+    width: auto;
+    height: 30px;
+    align-items: center;
     padding: 0 10px;
     border: 0;
-    height: 30px;
-    width: auto;
-    align-items: center;
+    color: var(--button-bg);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
 
-    &:before {
+    &::before {
+        margin-right: 3px;
         color: var(--button-bg);
         content: '\f0236';
+        font-family: compass-icons, mattermosticons;
         font-size: 12px;
-        font-family: 'compass-icons', mattermosticons;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        margin-right: 3px;
     }
 
-    :hover {
-        color: var(--button-bg);
+    &:hover {
         background-color: rgba(var(--button-bg-rgb),0.08);
+        color: var(--button-bg);
     }
 `;
 
 const TaskList = styled.div`
     display: flex;
-    flex-direction: column;
     flex: 1;
+    flex-direction: column;
     margin-bottom: 30px;
 `;
 
@@ -268,48 +265,48 @@ export const StyledDropdownMenu = styled(DropdownMenu)`
 `;
 
 export const StyledDropdownMenuItem = styled(DropdownMenuItem)<{checked: boolean}>`
+    display: flex;
     padding: 8px 0;
     font-size: 14px;
-    display: flex;
 
-    &:after {
+    &::after {
         display: ${({checked}) => (checked ? 'block' : 'none')};
+        margin-left: 10px;
         color: var(--button-bg);
         content: '\f012c';
+        font-family: compass-icons, mattermosticons;
         font-size: 14px;
-        font-family: 'compass-icons', mattermosticons;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        margin-left: 10px;
     }
 `;
 
 const ZeroCase = styled.div`
     display: flex;
-    flex-direction: column;
-    flex: 1;
     max-height: 350px;
+    flex: 1;
+    flex-direction: column;
     align-items: center;
     margin: auto;
 `;
 
 const ZeroCaseIconWrapper = styled.div`
-    background-color: rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 100%;
+    display: flex;
     width: 120px;
     height: 120px;
-    margin: 22px;
-    display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 100%;
+    margin: 22px;
+    background-color: rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const ZeroCaseIcon = styled.span`
-    &:after {
+    &::after {
         color: var(--button-bg);
         content: '\f0139';
+        font-family: compass-icons, mattermosticons;
         font-size: 48px;
-        font-family: 'compass-icons', mattermosticons;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
@@ -328,12 +325,13 @@ const ZeroCaseDescription = styled.div`
     display: flex;
     align-items: center;
     padding: 0 30px;
-    text-align: center;
-    word-break: break-word;
     font-size: 14px;
+    text-align: center;
+    /* stylelint-disable-next-line declaration-property-value-keyword-no-deprecated */
+    word-break: break-word;
 `;
 
 const InfiniteScrollContainer = styled.div`
-    height: calc(100vh - 129px);
     overflow: auto;
+    height: calc(100vh - 129px);
 `;

@@ -283,27 +283,27 @@ export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantP
 };
 
 const Container = styled.div`
-    margin: 8px 0 16px 0;
     display: flex;
     flex-direction: column;
+    margin: 8px 0 16px;
 `;
 
 const Content = styled.div<{isShort: boolean}>`
     display: flex;
-    flex-direction: row;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    padding: 12px;
-    border-radius: 4px;
     height: ${({isShort}) => (isShort ? '56px' : 'auto')};
+    flex-direction: row;
     align-items: center;
+    padding: 12px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
 `;
 
 const Header = styled.div`
-    margin-top: 16px;
-    margin-bottom: 4px;
     display: flex;
     flex: 1;
     align-items: center;
+    margin-top: 16px;
+    margin-bottom: 4px;
 `;
 
 const Placeholder = styled.i`
@@ -311,31 +311,31 @@ const Placeholder = styled.i`
 `;
 
 const Kebab = styled.div`
-    margin-left: 8px;
     display: flex;
+    margin-left: 8px;
 `;
 
 const ThreeDotsIcon = styled(HamburgerButton)`
-    font-size: 18px;
     margin-left: 4px;
+    font-size: 18px;
 `;
 
 const DropdownItem = styled(DropdownMenuItemStyled)<{disabled: boolean}>`
-    opacity: ${({disabled}) => (disabled ? '0.50' : '1')};
     cursor: ${({disabled}) => (disabled ? 'not-allowed' : 'pointer')};
+    opacity: ${({disabled}) => (disabled ? '0.50' : '1')};
 `;
 
 const IconWrapper = styled.div`
-    margin-left: 4px;
     display: flex;
+    margin-left: 4px;
 `;
 
 const TextDate = styled.div<{type: dueType}>`
+    display: flex;
     margin: 0 4px;
+    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
     font-size: 14px;
     line-height: 20px;
-    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
-    display: flex;
 `;
 
 const TextDateViewer = styled(TextDate)`
@@ -344,51 +344,44 @@ const TextDateViewer = styled(TextDate)`
 `;
 
 const DueDateParticipant = styled.div<{type: dueType}>`
-    font-size: 14px;
-    line-height:20px;
-    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
-    font-weight: 600;
     display: flex;
     margin-right: 5px;
+    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
+    font-size: 14px;
+    font-weight: 600;
+    line-height:20px;
 `;
 
 const IconClock = styled(Clock)<{type: dueType, size: number}>`
-    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
-    height: ${({size}) => size}px;
     width: ${({size}) => size}px;
+    height: ${({size}) => size}px;
+    color: ${({type}) => (type === dueType.Overdue ? 'var(--dnd-indicator)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
 `;
 
 const DueDateViewer = styled(DueDateParticipant)`
+    margin-right: 10px;
     font-size: 12px;
     line-height: 9.5px;
-    margin-right: 10px;
 
 `;
 
 const RightWrapper = styled.div`
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
     flex: 1;
+    align-items: center;
+    justify-content: flex-end;
 `;
 
 const PostUpdateButton = styled(TertiaryButton)`
-    font-size: 12px;
     height: 32px;
     padding: 0 48px;
+    font-size: 12px;
 `;
 
 const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: boolean, type: 'dotmenu' | 'button', onClick?: () => void}) => {
     const {formatMessage} = useIntl();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const requestUpdateAllowed = useAllowRequestUpdate();
-
-    const commonCss = `
-        position: relative;
-        font-size: 12px;
-        height: 32px;
-        padding: 0 16px;
-    `;
 
     const commonProps = {
         'data-testid': 'request-update-button',
@@ -405,7 +398,12 @@ const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: bo
             </DropdownItem>
         ) : (
             <TertiaryButton
-                css={commonCss}
+                style={{
+                    position: 'relative',
+                    fontSize: '12px',
+                    height: '32px',
+                    padding: '0 16px',
+                }}
                 onClick={onClick}
                 {...commonProps}
             />
@@ -425,7 +423,7 @@ const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: bo
         <Tooltip
             id={'request-update-button-tooltip'}
             placement={'bottom'}
-            content={formatMessage<ReactNode>(
+            content={formatMessage(
                 {defaultMessage: '<title>Professional feature</title>\n<body>This is a paid feature, available with a free 30-day trial</body>'},
                 {
                     title: (el) => <div>{el}</div>,
@@ -446,7 +444,12 @@ const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: bo
                 </DotMenuItem>
             ) : (
                 <UpgradeTertiaryButton
-                    css={commonCss}
+                    style={{
+                        position: 'relative',
+                        fontSize: '12px',
+                        height: '32px',
+                        padding: '0 16px',
+                    }}
                     onClick={() => setShowUpgradeModal(true)}
                     {...commonProps}
                 />
@@ -458,16 +461,17 @@ const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: bo
 };
 
 const ViewAllUpdates = styled.div`
-    margin-top: 9px;
-    font-size: 11px;
-    cursor: pointer;
-    color: var(--button-bg);
-    font-weight: 600;
     width: fit-content;
+    margin-top: 9px;
+    color: var(--button-bg);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
 `;
 
 const DotMenuItem = styled(DropdownItem)`
     display: flex;
+
     svg {
         margin-left: 16px;
     }

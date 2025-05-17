@@ -135,18 +135,17 @@ const StyledPostText = styled(PostText)`
 
 const Separator = styled.hr`
     &&& {
-        border: none;
         height: 1px;
-        background: rgba(var(--center-channel-color-rgb), 0.16);
+        border: none;
         margin: 12px 0;
+        background: rgba(var(--center-channel-color-rgb), 0.16);
         opacity: 1;
     }
 `;
 
 const Badges = styled.div`
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-flow: row wrap;
 `;
 
 interface BadgeProps {
@@ -168,30 +167,26 @@ const Badge = (props: BadgeProps) => {
 };
 
 const BadgeContainer = styled.div`
-    margin-right: 8px;
-
     display: inline-flex;
+    height: 24px;
     align-items: center;
+    margin-right: 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 11px;
+    font-weight: normal;
+    letter-spacing: 0.02em;
+    line-height: 16px;
 
     svg {
         margin-right: 4px;
     }
-
-    font-weight: normal;
-    font-size: 11px;
-    line-height: 16px;
-    letter-spacing: 0.02em;
-
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-
-    height: 24px;
 `;
 
 const BadgeSeparator = styled(BadgeContainer)`
-    font-size: 14px;
     color: rgba(var(--center-channel-color-rgb), 0.24);
+    font-size: 14px;
 
-    :after{
+    ::after{
         content: '•';
     }
 `;

@@ -44,7 +44,7 @@ const Section = ({
                         id={`section-link-${id}`}
                         to={getSiteUrl() + `${url}#${id}`}
                         name={title}
-                        area-hidden={true}
+                        aria-hidden={true}
                     />
                     {title}
                 </Title>
@@ -66,13 +66,14 @@ const Wrapper = styled.div`
 const Header = styled.div<{ $clickable?: boolean; $hoverEffect?: boolean; $hasSubtitle?: boolean; $hideHeaderRight?: boolean; }>`
     ${({$clickable}) => $clickable && css`
         cursor: pointer;
-    `}
+    `};
     ${({$hoverEffect}) => $hoverEffect && css`
         ${HeaderRight} {
             opacity: 0
         }
-        :hover,
-        :focus-within {
+
+        &:hover,
+        &:focus-within {
             background: rgba(var(--center-channel-color-rgb), 0.04);
             ${HeaderRight} {
                 opacity: 1;
@@ -88,23 +89,23 @@ const Header = styled.div<{ $clickable?: boolean; $hoverEffect?: boolean; $hasSu
     padding: 4px 0 4px 8px;
 `;
 
-const HeaderRight = styled.div``;
+const HeaderRight = styled.div`/* stylelint-disable no-empty-source */`;
 
 const Title = styled.h3`
+    position: relative;
+    margin: 0;
     font-family: Metropolis, sans-serif;
     font-size: 20px;
     font-weight: 600;
     line-height: 28px;
     white-space: nowrap;
-    margin: 0;
-    position: relative;
 
     ${CopyLink} {
+        position: absolute;
+        left: -10px;
         margin-left: -1.25em;
         opacity: 1;
         transition: opacity ease 0.15s;
-        position: absolute;
-        left: -10px;
     }
 
     &:not(:hover) ${CopyLink}:not(:hover) {

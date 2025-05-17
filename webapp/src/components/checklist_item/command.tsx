@@ -50,7 +50,7 @@ const Command = (props: CommandProps) => {
 
     const placeholder = (
         <PlaceholderDiv
-            isDisabled={props.disabled}
+            $isDisabled={props.disabled}
             onClick={() => {
                 if (!props.disabled) {
                     setCommandOpen((open) => !open);
@@ -71,7 +71,7 @@ const Command = (props: CommandProps) => {
     const runButton = (
         <Run
             data-testid={'run'}
-            running={running}
+            $running={running}
             onClick={() => {
                 if (!running) {
                     setRunning(true);
@@ -93,7 +93,7 @@ const Command = (props: CommandProps) => {
                     setCommandOpen((open) => !open);
                 }
             }}
-            isDisabled={props.disabled}
+            $isDisabled={props.disabled}
         >
             <TextWithTooltipWhenEllipsis
                 id={`checklist-command-button-tooltip-${props.checklistNum}`}
@@ -124,9 +124,9 @@ const Command = (props: CommandProps) => {
             onOpenChange={setCommandOpen}
             target={(
                 <CommandButton
-                    editing={props.isEditing}
-                    isDisabled={props.disabled}
-                    isPlaceholder={props.command === ''}
+                    $editing={props.isEditing}
+                    $isDisabled={props.disabled}
+                    $isPlaceholder={props.command === ''}
                 >
                     {(props.isEditing || props.command === '') ? editingCommand : notEditingCommand}
                 </CommandButton>
@@ -152,30 +152,29 @@ const Command = (props: CommandProps) => {
     );
 };
 
-const PlaceholderDiv = styled.div<{isDisabled: boolean}>`
+const PlaceholderDiv = styled.div<{$isDisabled: boolean}>`
     display: flex;
     align-items: center;
     flex-direction: row;
 
-    ${({isDisabled}) => !isDisabled && css`
-        :hover {
+    ${({$isDisabled}) => !$isDisabled && css`
+        &:hover {
             cursor: pointer;
         }
     `}
 `;
 
-const CommandButton = styled.div<{editing: boolean, isDisabled: boolean, isPlaceholder: boolean}>`
+const CommandButton = styled.div<{$editing: boolean, $isDisabled: boolean, $isPlaceholder: boolean}>`
     display: flex;
     border-radius: 54px;
-    padding: 0px 4px;
+    padding: 0 4px;
     height: 24px;
     max-width: 100%;
+    background: ${({$isPlaceholder}) => ($isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    border: ${({$isPlaceholder}) => ($isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
+    color: ${({$isPlaceholder}) => ($isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
 
-    background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
-    border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
-    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
-
-    ${({isDisabled}) => (isDisabled ? css`
+    ${({$isDisabled}) => ($isDisabled ? css`
         cursor: default;
     ` : css`
         &:hover {
@@ -186,7 +185,7 @@ const CommandButton = styled.div<{editing: boolean, isDisabled: boolean, isPlace
 `;
 
 interface RunProps {
-    running: boolean;
+    $running: boolean;
 }
 
 const Run = styled.div<RunProps>`
@@ -195,13 +194,13 @@ const Run = styled.div<RunProps>`
     display: inline;
     color: var(--link-color);
     cursor: pointer;
-    margin: 2px 4px 2px 4px;
+    margin: 2px 4px;
 
     &:hover {
         text-decoration: underline;
     }
 
-    ${({running}) => running && css`
+    ${({$running}) => $running && css`
         color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: default;
 
@@ -211,7 +210,8 @@ const Run = styled.div<RunProps>`
     `}
 `;
 
-const CommandText = styled.div<{isDisabled: boolean}>`
+const CommandText = styled.div<{$isDisabled: boolean}>`
+    /* stylelint-disable-next-line declaration-property-value-keyword-no-deprecated */
     word-break: break-word;
     display: inline;
     overflow: hidden;
@@ -221,38 +221,37 @@ const CommandText = styled.div<{isDisabled: boolean}>`
     border-radius: 4px;
     font-size: 12px;
 
-    ${({isDisabled}) => !isDisabled && css`
-        :hover {
+    ${({$isDisabled}) => !$isDisabled && css`
+        &:hover {
             cursor: pointer;
         }
     `}
 `;
 
 const StyledSpinner = styled(LoadingSpinner)`
+    position: relative;
+    bottom: 1px;
     width: 14px;
     height: 14px;
     align-self: center;
     margin: 0 2px;
-    position: relative;
-    bottom: 1px;
 `;
 
 const CommandIcon = styled.i`
+    display: flex;
     width: 20px;
     height: 20px;
-    margin-right: 5px;
-    display: flex;
     align-items: center;
-    text-align: center;
-    flex: table;
+    margin-right: 5px;
     color: rgba(var(--center-channel-color-rgb),0.56);
+    text-align: center;
 `;
 
 const CommandTextContainer = styled.div`
-    font-weight: 400;
-    font-size: 12px;
-    line-height: 15px;
     margin-right: 4px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 15px;
     white-space: nowrap;
 `;
 
@@ -260,20 +259,21 @@ export default Command;
 
 const FormContainer = styled.div`
     display: flex;
-    flex-direction: column;
+    min-width: 340px;
     box-sizing: border-box;
-    box-shadow: 0px 20px 32px rgba(0, 0, 0, 0.12);
+    flex-direction: column;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 8px;
     background: var(--center-channel-bg);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    min-width: 340px;
+    box-shadow: 0 20px 32px rgba(0 0 0 / 0.12);
+
     > * {
         margin-bottom: 10px;
     }
 `;
 
 const CommandInputContainer = styled.div`
-    margin: 16px;
-    border-radius: 4px;
     z-index: 3;
+    border-radius: 4px;
+    margin: 16px;
 `;

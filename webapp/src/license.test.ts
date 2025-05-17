@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {checkE10Licensed, checkE20Licensed} from 'src/license';
+import {checkEnterpriseLicensed, checkProfessionalLicensed} from 'src/license';
 
 describe('license checks', () => {
     const baseLicense = {};
@@ -20,10 +20,9 @@ describe('license checks', () => {
         };
     };
 
-    const withE10Name = withSkuName('E10');
-    const withE20Name = withSkuName('E20');
     const withProfessionalName = withSkuName('professional');
     const withEnterpriseName = withSkuName('enterprise');
+    const withEnterpriseAdvancedName = withSkuName('advanced');
     const withUnknownName = withSkuName('unknown');
 
     const withMessageExportEnabled = withFeature('MessageExport', 'true');
@@ -31,133 +30,108 @@ describe('license checks', () => {
     const withLDAPEnabled = withFeature('LDAP', 'true');
     const withLDAPDisabled = withFeature('LDAP', 'false');
 
-    const e10 = withE10Name(baseLicense);
     const professional = withProfessionalName(baseLicense);
-    const e20 = withE20Name(baseLicense);
     const enterprise = withEnterpriseName(baseLicense);
+    const enterpriseAdvanced = withEnterpriseAdvancedName(baseLicense);
     const unknownSku = withUnknownName(baseLicense);
 
-    describe('check middle tier', () => {
-        it('E10 SKU name', () => {
-            expect(checkE10Licensed(e10)).toBe(true);
-        });
-
-        it('E10 SKU name with LDAP enabled', () => {
-            expect(checkE10Licensed(withLDAPEnabled(e10))).toBe(true);
-        });
-
-        it('E10 SKU name with LDAP disabled', () => {
-            expect(checkE10Licensed(withLDAPDisabled(e10))).toBe(true);
-        });
-
+    describe('check professional tier', () => {
         it('Professional SKU name', () => {
-            expect(checkE10Licensed(professional)).toBe(true);
+            expect(checkProfessionalLicensed(professional)).toBe(true);
         });
 
         it('Professional SKU name with LDAP enabled', () => {
-            expect(checkE10Licensed(withLDAPEnabled(professional))).toBe(true);
+            expect(checkProfessionalLicensed(withLDAPEnabled(professional))).toBe(true);
         });
 
         it('Professional SKU name with LDAP disabled', () => {
-            expect(checkE10Licensed(withLDAPDisabled(professional))).toBe(true);
-        });
-
-        it('E20 SKU name', () => {
-            expect(checkE10Licensed(e20)).toBe(true);
-        });
-
-        it('E20 SKU name with LDAP enabled', () => {
-            expect(checkE10Licensed(withLDAPEnabled(e20))).toBe(true);
-        });
-
-        it('E20 SKU name with LDAP disabled', () => {
-            expect(checkE10Licensed(withLDAPDisabled(e20))).toBe(true);
+            expect(checkProfessionalLicensed(withLDAPDisabled(professional))).toBe(true);
         });
 
         it('Enterprise SKU name', () => {
-            expect(checkE10Licensed(enterprise)).toBe(true);
+            expect(checkProfessionalLicensed(enterprise)).toBe(true);
         });
 
         it('Enterprise SKU name with LDAP enabled', () => {
-            expect(checkE10Licensed(withLDAPEnabled(enterprise))).toBe(true);
+            expect(checkProfessionalLicensed(withLDAPEnabled(enterprise))).toBe(true);
         });
 
         it('Enterprise SKU name with LDAP disabled', () => {
-            expect(checkE10Licensed(withLDAPDisabled(enterprise))).toBe(true);
+            expect(checkProfessionalLicensed(withLDAPDisabled(enterprise))).toBe(true);
+        });
+
+        it('Enterprise Advanced SKU name', () => {
+            expect(checkProfessionalLicensed(enterpriseAdvanced)).toBe(true);
+        });
+
+        it('Enterprise Advanced SKU name with LDAP enabled', () => {
+            expect(checkProfessionalLicensed(withLDAPEnabled(enterpriseAdvanced))).toBe(true);
+        });
+
+        it('Enterprise Advanced SKU name with LDAP disabled', () => {
+            expect(checkProfessionalLicensed(withLDAPDisabled(enterpriseAdvanced))).toBe(true);
         });
 
         it('Unknown SKU name', () => {
-            expect(checkE10Licensed(unknownSku)).toBe(false);
+            expect(checkProfessionalLicensed(unknownSku)).toBe(false);
         });
 
         it('Unknown SKU name with LDAP enabled', () => {
-            expect(checkE10Licensed(withLDAPEnabled(unknownSku))).toBe(true);
+            expect(checkProfessionalLicensed(withLDAPEnabled(unknownSku))).toBe(true);
         });
 
         it('Unknown SKU name with LDAP disabled', () => {
-            expect(checkE10Licensed(withLDAPDisabled(unknownSku))).toBe(false);
+            expect(checkProfessionalLicensed(withLDAPDisabled(unknownSku))).toBe(false);
         });
     });
 
-    describe('check upper tier', () => {
-        it('E10 SKU name', () => {
-            expect(checkE20Licensed(e10)).toBe(false);
-        });
-
-        it('E10 SKU name with LDAP enabled', () => {
-            expect(checkE20Licensed(withMessageExportEnabled(e10))).toBe(false);
-        });
-
-        it('E10 SKU name with LDAP disabled', () => {
-            expect(checkE20Licensed(withMessageExportDisabled(e10))).toBe(false);
-        });
-
+    describe('check enterprise tier', () => {
         it('Professional SKU name', () => {
-            expect(checkE20Licensed(professional)).toBe(false);
+            expect(checkEnterpriseLicensed(professional)).toBe(false);
         });
 
-        it('Professional SKU name with LDAP enabled', () => {
-            expect(checkE20Licensed(withMessageExportEnabled(professional))).toBe(false);
+        it('Professional SKU name with Message Export enabled', () => {
+            expect(checkEnterpriseLicensed(withMessageExportEnabled(professional))).toBe(false);
         });
 
-        it('Professional SKU name with LDAP disabled', () => {
-            expect(checkE20Licensed(withMessageExportDisabled(professional))).toBe(false);
-        });
-
-        it('E20 SKU name', () => {
-            expect(checkE20Licensed(e20)).toBe(true);
-        });
-
-        it('E20 SKU name with Message Export enabled', () => {
-            expect(checkE20Licensed(withMessageExportEnabled(e20))).toBe(true);
-        });
-
-        it('E20 SKU name with Message Export disabled', () => {
-            expect(checkE20Licensed(withMessageExportDisabled(e20))).toBe(true);
+        it('Professional SKU name with Message Export disabled', () => {
+            expect(checkEnterpriseLicensed(withMessageExportDisabled(professional))).toBe(false);
         });
 
         it('Enterprise SKU name', () => {
-            expect(checkE20Licensed(enterprise)).toBe(true);
+            expect(checkEnterpriseLicensed(enterprise)).toBe(true);
         });
 
         it('Enterprise SKU name with Message Export enabled', () => {
-            expect(checkE20Licensed(withMessageExportEnabled(enterprise))).toBe(true);
+            expect(checkEnterpriseLicensed(withMessageExportEnabled(enterprise))).toBe(true);
         });
 
         it('Enterprise SKU name with Message Export disabled', () => {
-            expect(checkE20Licensed(withMessageExportDisabled(enterprise))).toBe(true);
+            expect(checkEnterpriseLicensed(withMessageExportDisabled(enterprise))).toBe(true);
+        });
+
+        it('Enterprise Advanced SKU name', () => {
+            expect(checkEnterpriseLicensed(enterpriseAdvanced)).toBe(true);
+        });
+
+        it('Enterprise Advanced SKU name with Message Export enabled', () => {
+            expect(checkEnterpriseLicensed(withMessageExportEnabled(enterpriseAdvanced))).toBe(true);
+        });
+
+        it('Enterprise Advanced SKU name with Message Export disabled', () => {
+            expect(checkEnterpriseLicensed(withMessageExportDisabled(enterpriseAdvanced))).toBe(true);
         });
 
         it('Unknown SKU name', () => {
-            expect(checkE20Licensed(unknownSku)).toBe(false);
+            expect(checkEnterpriseLicensed(unknownSku)).toBe(false);
         });
 
         it('Unknown SKU name with Message Export enabled', () => {
-            expect(checkE20Licensed(withMessageExportEnabled(unknownSku))).toBe(true);
+            expect(checkEnterpriseLicensed(withMessageExportEnabled(unknownSku))).toBe(true);
         });
 
         it('Unknown SKU name with Message Export disabled', () => {
-            expect(checkE20Licensed(withMessageExportDisabled(unknownSku))).toBe(false);
+            expect(checkEnterpriseLicensed(withMessageExportDisabled(unknownSku))).toBe(false);
         });
     });
 });

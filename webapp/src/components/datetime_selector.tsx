@@ -217,14 +217,14 @@ const Wrapper = styled.div`
     display: flex;
     flex: 1;
     color: var(--center-channel-color);
-    font-weight: 400;
     font-size: 14px;
+    font-weight: 400;
     line-height: 20px;
 `;
 
 const Right = styled.div`
-    flex-grow: 1;
     display: flex;
+    flex-grow: 1;
     justify-content: flex-end;
 `;
 

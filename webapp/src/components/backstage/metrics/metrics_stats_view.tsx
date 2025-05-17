@@ -57,15 +57,15 @@ const MetricHeader = ({metric}: { metric: Metric }) => {
 const Header = styled.div`
     display: flex;
     align-items: center;
+    margin: 24px 0 8px;
+    color: var(--center-channel-color);
     font-size: 16px;
     font-weight: 600;
     line-height: 24px;
-    color: var(--center-channel-color);
-    margin: 24px 0 8px 0;
 
     svg {
-        color: rgba(var(--center-channel-color-rgb), 0.56);
         margin-right: 7px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;
 
@@ -78,10 +78,10 @@ const Title = styled.div`
 `;
 
 const HorizontalLine = styled.div`
-    height: 0;
     width: 100%;
-    margin: 0 0 0 16px;
+    height: 0;
     border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    margin: 0 0 0 16px;
 `;
 
 export default MetricsStatsView;

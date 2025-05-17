@@ -69,7 +69,7 @@ export const useOnFinishRun = (playbookRun: PlaybookRun) => {
             message: confirmationMessage,
             confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
             onConfirm,
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            // eslint-disable-next-line no-empty-function
             onCancel: () => {},
         })));
     };
@@ -108,44 +108,44 @@ const FinishRun = ({playbookRun}: Props) => {
 export default FinishRun;
 
 const Container = styled.div`
-    margin-top: 24px;
     display: flex;
     flex-direction: column;
+    margin-top: 24px;
 `;
 
 const Content = styled.div`
     display: flex;
-    flex-direction: row;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    padding: 12px;
-    border-radius: 4px;
     height: 56px;
+    flex-direction: row;
     align-items: center;
+    padding: 12px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
 `;
 
 const IconWrapper = styled.div`
-    margin-left: 4px;
     display: flex;
+    margin-left: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.32);
 `;
 
 const Text = styled.div`
+    display: flex;
     margin: 0 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 14px;
     line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    display: flex;
 `;
 
 const RightWrapper = styled.div`
     display: flex;
-    justify-content: flex-end;
     flex: 1;
+    justify-content: flex-end;
 `;
 
 const FinishRunButton = styled(TertiaryButton)`
-    font-size: 12px;
     height: 32px;
     padding: 0 48px;
+    font-size: 12px;
 `;
 

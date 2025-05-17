@@ -117,7 +117,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, notEditable, onEdi
 
                     return (
                         <div key={mc.id}>
-                            <VerticalSpacer size={24}/>
+                            <VerticalSpacer $size={24}/>
                             <MetricInput
                                 id={(idPrefix ?? '') + mc.id}
                                 title={mc.title}

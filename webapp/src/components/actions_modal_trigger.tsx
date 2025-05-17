@@ -53,11 +53,10 @@ export const TriggerKeywords = ({editable, keywords, onUpdate, testId}: TriggerK
 };
 
 const Container = styled.fieldset`
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     box-sizing: border-box;
-
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 4px;
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
 
     :first-child {
         margin-top: 28px;
@@ -69,14 +68,12 @@ const Container = styled.fieldset`
 `;
 
 const Header = styled.div`
-    background: rgba(var(--center-channel-color-rgb), 0.04);
-
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
     padding: 12px 20px;
     padding-right: 27px;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
 const Legend = styled.legend`
@@ -87,15 +84,15 @@ const Legend = styled.legend`
 `;
 
 const Label = styled.div`
-    font-size: 11px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 11px;
 `;
 
 const Title = styled.div`
+    margin-top: 2px;
+    color: var(--center-channel-color);
     font-size: 14px;
     font-weight: 600;
-    color: var(--center-channel-color);
-    margin-top: 2px;
 `;
 
 const Body = styled.div`

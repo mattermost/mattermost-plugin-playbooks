@@ -69,7 +69,7 @@ const ChecklistItemTitle = (props: TitleProps) => {
     return (
         <RenderedTitle
             data-testid='rendered-checklist-item-title'
-            clickable={props.clickable}
+            $clickable={props.clickable}
         >
             {props.value ? (
                 <RenderedTitle onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}>
@@ -87,39 +87,38 @@ const PlaceholderText = styled.span`
 `;
 
 const commonTitleStyle = css`
-    color: var(--center-channel-color);
+    padding: 0 4px 0 0;
     border: none;
     background: none;
+    color: var(--center-channel-color);
+    font-size: 14px;
     font-style: normal;
     font-weight: 400;
-    font-size: 14px;
     line-height: 20px;
-    padding: 0 4px 0 0;
 
     p {
         white-space: pre-wrap;
     }
 `;
 
-const RenderedTitle = styled.div<{clickable?: boolean}>`
-    ${commonTitleStyle}
+const RenderedTitle = styled.div<{$clickable?: boolean}>`
+    ${commonTitleStyle};
 
     p:last-child {
         margin-bottom: 0;
     }
 
-    ${({clickable}) => clickable && css`
+    ${({$clickable}) => $clickable && css`
         cursor: pointer;
 
-        :hover {
+        &:hover {
             cursor: pointer;
         }
     `}
 `;
 
 const TitleTextArea = styled.textarea`
-    ${commonTitleStyle} {
-    }
+    ${commonTitleStyle};
 
     display: block;
     resize: none;

@@ -76,7 +76,6 @@
     "yargs": "17.7.2"
   },
   "scripts": {
-    "postinstall": "patch-package",
     "check-types": "tsc -b",
     "cypress:open": "cross-env TZ=Etc/UTC cypress open",
     "cypress:run": "cross-env TZ=Etc/UTC cypress run",
@@ -91,8 +90,5 @@
     "uniq-meta": "grep -r \"^// $META:\" cypress | grep -ow '@\\w*' | sort | uniq",
     "check": "eslint --ext .js,.ts . --quiet --cache",
     "fix": "eslint --ext .js,.ts . --quiet --fix --cache"
-  },
-  "dependencies": {
-    "patch-package": "7.0.0"
   }
 }

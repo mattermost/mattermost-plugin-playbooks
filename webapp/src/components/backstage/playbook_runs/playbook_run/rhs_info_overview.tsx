@@ -119,7 +119,7 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
             } else {
                 refreshLHS();
             }
-        } catch (error) {
+        } catch {
             addToast({
                 content: formatMessage({defaultMessage: 'It was not possible to change the owner'}),
                 toastStyle: ToastStyle.Failure,
@@ -252,18 +252,19 @@ const ItemLink = styled(Link)`
 `;
 
 const ItemContent = styled.div`
-    max-width: 230px;
     display: inline-flex;
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: 230px;
     align-items: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
 const ItemDisabledContent = styled(ItemContent)`
     svg {
         margin-right: 3px;
     }
+
     color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
@@ -273,7 +274,7 @@ const OverviewRow = styled.div<{ onClick?: () => void }>`
     display: flex;
     justify-content: space-between;
 
-    :hover {
+    &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
@@ -300,10 +301,10 @@ const FollowersWrapper = styled.div`
 `;
 
 const RequestJoinButton = styled(TertiaryButton)`
-    font-size: 12px;
     height: 24px;
     padding: 0 10px;
     margin-right: 10px;
+    font-size: 12px;
 `;
 
 const ParticipantsContainer = styled.div`

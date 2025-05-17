@@ -102,7 +102,7 @@ export const DueDateHoverMenuButton = ({
 
     const hoverMenuButton = (
         <ChecklistHoverMenuButton
-            disabled={!dueDateEditAvailable}
+            $disabled={!dueDateEditAvailable}
             title={dueDateEditAvailable ? formatMessage({defaultMessage: 'Add due date'}) : ''}
             className={'icon-calendar-outline icon-12 btn-icon'}
             onClick={licenseControl}
@@ -199,29 +199,29 @@ export const DueDateButton = ({
 
     const dueDateButton = (
         <DueDateContainer
-            overdue={overdue}
-            dueSoon={dueSoon}
-            editable={props.editable}
-            isPlaceholder={!date}
+            $overdue={overdue}
+            $dueSoon={dueSoon}
+            $editable={props.editable}
+            $isPlaceholder={!date}
         >
             <DateTimeSelector
                 placeholder={
                     <PlaceholderDiv
                         onClick={handleButtonClick}
                         data-testid='due-date-info-button'
-                        editable={props.editable}
+                        $editable={props.editable}
                     >
                         <CalendarIcon
                             className={'icon-calendar-outline icon-12 btn-icon'}
-                            overdueOrDueSoon={overdue || dueSoon}
+                            $overdueOrDueSoon={overdue || dueSoon}
                         />
-                        <DueDateTextContainer overdue={overdue}>
+                        <DueDateTextContainer $overdue={overdue}>
                             {label}
                         </DueDateTextContainer>
                         {props.editable && (
                             <SelectorRightIcon
                                 className='icon-chevron-down icon-12'
-                                overdueOrDueSoon={overdue || dueSoon}
+                                $overdueOrDueSoon={overdue || dueSoon}
                             />)
                         }
                     </PlaceholderDiv>
@@ -371,19 +371,19 @@ const isDueSoon = (date?: number) => {
 };
 
 const ControlComponentAnchor = styled.a`
-    display: inline-block;
-    margin: 0 0 8px 12px;
-    font-weight: 600;
-    font-size: 12px;
     position: relative;
     top: -4px;
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
 `;
 
 const LabelRight = styled.div`
-    font-weight: 400;
-    font-size: 12px;
-    line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
 `;
 
 const CheckIcon = styled.i`
@@ -391,68 +391,64 @@ const CheckIcon = styled.i`
 	font-size: 22px;
 `;
 
-const PlaceholderDiv = styled.div<{editable: boolean}>`
+const PlaceholderDiv = styled.div<{$editable: boolean}>`
     display: flex;
-    align-items: center;
     flex-direction: row;
+    align-items: center;
+    cursor: ${({$editable}) => ($editable ? 'pointer' : 'default')};
     white-space: nowrap;
-
-    cursor: ${({editable}) => (editable ? 'pointer' : 'default')};
 `;
 
-const DueDateTextContainer = styled.div<{overdue: boolean}>`
+const DueDateTextContainer = styled.div<{$overdue: boolean}>`
     font-size: 12px;
+    font-weight: ${(props) => (props.$overdue ? '600' : '400')};
     line-height: 15px;
-
-    font-weight: ${(props) => (props.overdue ? '600' : '400')};
 `;
 
-const CalendarIcon = styled.div<{overdueOrDueSoon: boolean}>`
+const CalendarIcon = styled.div<{$overdueOrDueSoon: boolean}>`
     width: 20px;
     height: 20px;
     display: flex;
     align-items: center;
     text-align: center;
-    flex: table;
     margin-right: 5px;
     color: inherit;
     pointer-events: none;
 
-    ${({overdueOrDueSoon}) => !overdueOrDueSoon && `
+    ${({$overdueOrDueSoon}) => !$overdueOrDueSoon && `
         color: rgba(var(--center-channel-color-rgb), 0.56);
     `}
 `;
 
-const SelectorRightIcon = styled.i<{overdueOrDueSoon: boolean}>`
+const SelectorRightIcon = styled.i<{$overdueOrDueSoon: boolean}>`
     font-size: 14px;
+
     &{
         margin-left: 4px;
     }
 
-    ${({overdueOrDueSoon}) => !overdueOrDueSoon && `
+    ${({$overdueOrDueSoon}) => !$overdueOrDueSoon && `
         color: var(--center-channel-color-32);
     `}
 `;
 
-const DueDateContainer = styled.div<{overdue: boolean, dueSoon: boolean, editable: boolean, isPlaceholder: boolean}>`
+const DueDateContainer = styled.div<{$overdue: boolean, $dueSoon: boolean, $editable: boolean, $isPlaceholder: boolean}>`
     display: flex;
     flex-wrap: wrap;
-
     border-radius: 13px;
     padding: 2px 8px;
     max-width: 100%;
+    background: ${({$isPlaceholder}) => ($isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+    border: ${({$isPlaceholder}) => ($isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
+    color: ${({$isPlaceholder}) => ($isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
 
-    background: ${({isPlaceholder}) => (isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
-    border: ${({isPlaceholder}) => (isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
-    color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
-
-    ${({overdue, dueSoon}) => ((overdue || dueSoon) && css`
+    ${({$overdue, $dueSoon}) => (($overdue || $dueSoon) && css`
         background-color: rgba(var(--dnd-indicator-rgb), 0.08);
         color: var(--dnd-indicator);
     `)}
 
-    ${({editable}) => editable && css`
-        :hover {
+    ${({$editable}) => $editable && css`
+        &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
             color: var(--center-channel-color);
         }

@@ -28,17 +28,17 @@ interface Props {
 }
 
 const FollowButton = styled(TertiaryButton)`
-    font-family: 'Open Sans';
-    font-size: 12px;
     height: 24px;
     padding: 0 10px;
+    font-family: 'Open Sans';
+    font-size: 12px;
 `;
 
 const UnfollowButton = styled(SecondaryButton)`
-    font-family: 'Open Sans';
-    font-size: 12px;
     height: 24px;
     padding: 0 10px;
+    font-family: 'Open Sans';
+    font-size: 12px;
 `;
 
 export const FollowUnfollowButton = ({runID, followState, trigger}: Props) => {

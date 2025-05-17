@@ -214,46 +214,43 @@ const BottomRow = styled.div`
 
 const StatCard = styled.div`
     display: flex;
+    max-width: 167px;
+    max-height: 180px;
     flex-direction: column;
     align-items: flex-start;
-    padding: 20px 20px 12px 20px;
-
-    max-height: 180px;
-    max-width: 167px;
-
+    padding: 20px 20px 12px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.32);
     border-radius: 4px;
-
     background-color: var(--center-channel-bg);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.32);
 `;
 
 const StatText = styled.div`
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
     padding-top: 10px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
 `;
 
 const StatNum = styled.div`
+    color: var(--center-channel-color);
     font-size: 44px;
     line-height: 56px;
-    color: var(--center-channel-color);
 `;
 
 const StatNumRow = styled.div`
     display: flex;
-    flex-direction: row;
     width: 100%;
+    flex-direction: row;
 `;
 
 const PercentageChange = styled.div`
-    margin: auto 12px 8px auto;
     display: flex;
     flex-direction: row;
-    border-radius: 10px;
     padding-right: 6px;
+    border-radius: 10px;
+    margin: auto 12px 8px auto;
     background-color: rgba(var(--online-indicator-rgb), 0.08);
     color: var(--online-indicator);
     font-size: 10px;
@@ -265,28 +262,28 @@ const PercentageChange = styled.div`
 `;
 
 const ClipboardsPlayBig = styled(ClipboardsPlay)`
-    height: 32px;
     width: auto;
+    height: 32px;
 `;
 
 const ProfilesBig = styled(Profiles)`
-    height: 32px;
     width: auto;
+    height: 32px;
 `;
 
 const ClipboardsCheckmarkBig = styled(ClipboardsCheckmark)`
-    height: 32px;
     width: auto;
+    height: 32px;
 `;
 
 const GraphBox = styled.div`
-    flex-grow: 1;
     max-width: 532px;
     max-height: 180px;
-    background-color: var(--center-channel-bg);
+    flex-grow: 1;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.32);
     border-radius: 4px;
+    background-color: var(--center-channel-bg);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.32);
 `;
 
 const PillRow = styled.div`

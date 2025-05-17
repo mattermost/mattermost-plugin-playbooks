@@ -71,13 +71,13 @@ const MetricsRunListHeader = ({metricsInfo, fetchParams, setFetchParams}: Props)
 };
 
 const PlaybookRunListHeader = styled.div`
-    font-weight: 600;
-    font-size: 11px;
-    line-height: 36px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    border-radius: 4px;
     padding: 0 1.6rem;
+    border-radius: 4px;
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 36px;
 `;
 
 export default MetricsRunListHeader;

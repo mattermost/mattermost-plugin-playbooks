@@ -519,7 +519,7 @@ func TestPlaybooksSort(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.SetE20Licence()
+	e.SetEnterpriseLicence()
 
 	playbookAID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "A",
@@ -761,7 +761,7 @@ func TestPlaybooksPaging(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.SetE20Licence()
+	e.SetEnterpriseLicence()
 
 	_, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "test1",
@@ -1116,7 +1116,7 @@ func TestPlaybooksConversions(t *testing.T) {
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
 		defer func() {
 			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
-			e.SetE20Licence()
+			e.SetEnterpriseLicence()
 		}()
 		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
@@ -1181,7 +1181,7 @@ func TestPlaybooksDuplicate(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.SetE20Licence()
+	e.SetEnterpriseLicence()
 	e.CreateBasicPlaybook()
 
 	t.Run("Duplicate", func(t *testing.T) {
@@ -1225,7 +1225,7 @@ func TestPlaybookStats(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.SetE20Licence()
+	e.SetEnterpriseLicence()
 	e.CreateBasicPlaybook()
 
 	// Verify that retrieving stats is allowed
@@ -1421,7 +1421,7 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 
 func TestPlaybooksGuests(t *testing.T) {
 	e := Setup(t)
-	e.SetE20Licence()
+	e.SetEnterpriseLicence()
 	e.CreateBasic()
 	e.CreateGuest()
 

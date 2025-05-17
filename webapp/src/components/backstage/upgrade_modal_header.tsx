@@ -29,24 +29,22 @@ const Header = styled.div`
 
 const Title = styled(CenteredRow)`
     display: grid;
-    align-content: center;
     height: 32px;
+    align-content: center;
     margin-bottom: 8px;
-
-    font-weight: 600;
-    font-size: 24px;
     color: rgba(var(--center-channel-color-rgb), 1);
+    font-size: 24px;
+    font-weight: 600;
 `;
 
 const HelpText = styled(CenteredRow)`
     display: grid;
-    align-content: center;
-    text-align: center;
     width: 448px;
-
-    font-weight: 400;
-    font-size: 12px;
+    align-content: center;
     color: var(--center-channel-color);
+    font-size: 12px;
+    font-weight: 400;
+    text-align: center;
 `;
 
 export default UpgradeModalHeader;
