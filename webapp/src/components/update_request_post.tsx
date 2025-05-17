@@ -226,18 +226,17 @@ const SelectWrapper = styled(StyledSelect)`
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
-    justify-content: center;
     flex: 1;
+    justify-content: center;
     margin: 4px;
     white-space: nowrap;
 `;
 
 const Container = styled(CustomPostContainer)`
     display: flex;
-    flex-direction: row;
-    padding: 12px;
-    flex-wrap: wrap;
     max-width: 440px;
+    flex-flow: row wrap;
+    padding: 12px;
 `;
 
 const StyledPostText = styled(PostText)`

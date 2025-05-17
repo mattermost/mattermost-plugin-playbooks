@@ -21,6 +21,7 @@ interface Props {
     extra?: React.ReactNode;
     withoutProfilePic?: boolean;
     withoutName?: boolean;
+    style?: React.CSSProperties;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
 }
 
@@ -31,12 +32,12 @@ const PlaybookRunProfile = styled.div`
 `;
 
 export const ProfileImage = styled.img`
-    margin: 0 8px 0 0;
+    display: inline-block;
     width: 32px;
     height: 32px;
-    background-color: #bbb;
     border-radius: 50%;
-    display: inline-block;
+    margin: 0 8px 0 0;
+    background-color: #bbb;
 
     .image-sm {
         width: 24px;
@@ -44,25 +45,25 @@ export const ProfileImage = styled.img`
     }
 
     .Assigned-button & {
-        margin: 0 4px 0 0;
         width: 20px;
         height: 20px;
+        margin: 0 4px 0 0;
     }
 `;
 
-export const ProfileName = styled.div<{hasExtra: boolean}>`
-    padding: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-height: 18px;
+export const ProfileName = styled.div<{$hasExtra: boolean}>`
     display: flex;
+    overflow: hidden;
+    min-height: 18px;
     align-items: center;
-    padding-right: ${({hasExtra}) => (hasExtra ? '4px' : '8px')};
+    padding: 0;
+    padding-right: ${({$hasExtra}) => ($hasExtra ? '4px' : '8px')};
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
     .description {
-        color: rgba(var(--center-channel-color-rgb), 0.56);
         margin-left: 4px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;
 
@@ -92,6 +93,7 @@ const Profile = (props: Props) => {
         <PlaybookRunProfile
             className={classNames('PlaybookRunProfile', props.classNames, props.className)}
             data-testid={'profile-option-' + user?.username}
+            style={props.style}
         >
             {
                 !props.withoutProfilePic &&
@@ -102,7 +104,7 @@ const Profile = (props: Props) => {
             }
             { !props.withoutName &&
                 <ProfileName
-                    hasExtra={Boolean(props.extra)}
+                    $hasExtra={Boolean(props.extra)}
                     className='name'
                 >{name}</ProfileName>
             }

@@ -17,7 +17,7 @@ export const StyledDropdownMenuItem = styled(DropdownMenuItem)`
 
     svg {
         margin-right: 11px;
-        fill: rgb(var(--center-channel-color-rgb), 0.56);
+        fill: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;
 
@@ -29,7 +29,7 @@ export const StyledDropdownMenuItemRed = styled(StyledDropdownMenuItem)`
             fill: var(--dnd-indicator);
         }
 
-        :hover {
+        &:hover {
             background: var(--dnd-indicator);
             color: var(--button-color);
 

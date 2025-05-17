@@ -159,7 +159,7 @@ export default function ProfileSelector(props: Props) {
     // Whenever the selectedUserId changes we have to set the selected, but we can only do this once we
     // have userOptions
     useEffect(() => {
-        if (userInSubsetOptions === []) {
+        if (userInSubsetOptions.length === 0) {
             return;
         }
         const user = userInSubsetOptions.find((option: Option) => option.user.id === props.selectedUserId);
@@ -217,7 +217,7 @@ export default function ProfileSelector(props: Props) {
     } else {
         target = (
             <FilterButton
-                active={isOpen}
+                $active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -344,7 +344,7 @@ export const formatProfileName = (descriptionSuffix: string) => {
 };
 
 const Description = styled.span`
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 `;

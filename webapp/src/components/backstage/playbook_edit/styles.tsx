@@ -11,8 +11,8 @@ export const Section = styled.div`
 `;
 
 export const SectionTitle = styled.div`
+    margin: 0 0 32px;
     font-weight: 600;
-    margin: 0 0 32px 0;
 `;
 
 export const SidebarBlock = styled.div`

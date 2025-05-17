@@ -115,11 +115,11 @@ const MenuWrapperComponent = styled.div`
     }
 
     *:first-child { 
-        /* stylelint-disable property-no-vendor-prefix*/
+        /* stylelint-disable property-no-vendor-prefix */
         -webkit-user-select: text; /* Chrome all / Safari all */
         -moz-user-select: text; /* Firefox all */
         -ms-user-select: text; /* IE 10+ */
         user-select: text;
-        /* stylelint-enable property-no-vendor-prefix*/
+        /* stylelint-enable property-no-vendor-prefix */
     }
 `;

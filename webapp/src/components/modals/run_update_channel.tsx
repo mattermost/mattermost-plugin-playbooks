@@ -89,18 +89,22 @@ const StyledGenericModal = styled(GenericModal)`
         h1 {
             width:100%;
         }
+
         .modal-header {
-            padding: 24px 31px 5px 31px;
+            padding: 24px 31px 5px;
             margin-bottom: 0;
         }
+
         .modal-content {
-            padding: 0px;
+            padding: 0;
         }
+
         .modal-body {
             padding: 10px 31px;
         }
+
         .modal-footer {
-           padding: 0 31px 28px 31px;
+           padding: 0 31px 28px;
         }
     }
 `;
@@ -113,6 +117,7 @@ const Header = styled.div`
 const Body = styled.div`
     display: flex;
     flex-direction: column;
+
     & > div, & > input {
         margin-bottom: 12px;
     }
@@ -121,17 +126,19 @@ const Body = styled.div`
 export const StyledChannelSelector = styled(ChannelSelector)`
 
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
+
     .playbooks-rselect__control {
-        padding: 4px 16px 4px 3.2rem;
         height: 48px;
-        &:before {
-            left: 16px;
-            top: 13px;
+        padding: 4px 16px 4px 3.2rem;
+
+        &::before {
             position: absolute;
+            top: 13px;
+            left: 16px;
             color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f0349';
+            font-family: compass-icons, mattermosticons;
             font-size: 18px;
-            font-family: 'compass-icons', mattermosticons;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }

@@ -5,16 +5,14 @@ import React from 'react';
 import styled from 'styled-components';
 
 const Component = styled.label`
+    width: fit-content;
     padding: 10px 16px;
     border-radius: 4px;
     margin-bottom: 0;
     cursor: pointer;
-    user-select: none;
-    width: fit-content;
-    white-space: nowrap;
-
-
     transition: background-color 0.2s;
+    user-select: none;
+    white-space: nowrap;
 
     &:hover {
         background-color: rgba(var(--button-bg-rgb), 0.08);
@@ -25,19 +23,16 @@ const Component = styled.label`
     }
 
     input + span::before {
+        width: 16px;
+        height: 16px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+        border-radius: 2px;
+        margin-right: 10px;
+        background-color: var(--center-channel-bg);
+        color: var(--center-channel-bg);
         content: '\f012c';
         font-family: compass-icons;
         font-size: 14px;
-
-        height: 16px;
-        width: 16px;
-        margin-right: 10px;
-
-        border-radius: 2px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
-        background-color: var(--center-channel-bg);
-        color: var(--center-channel-bg);
-
         transition: color 0.2s, background-color 0.2s;
     }
 

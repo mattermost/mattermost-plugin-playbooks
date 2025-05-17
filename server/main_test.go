@@ -184,12 +184,12 @@ func Setup(t *testing.T) *TestEnvironment {
 	err = utils.TranslationsPreInit()
 	require.NoError(t, err)
 
-	e20license := model.NewTestLicense()
-	e20license.SkuShortName = model.LicenseShortSkuE20
+	license := model.NewTestLicense()
+	license.SkuShortName = model.LicenseShortSkuEnterpriseAdvanced
 
 	options := []sapp.Option{
 		sapp.ConfigStore(configStore),
-		sapp.WithLicense(e20license),
+		sapp.WithLicense(license),
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)
@@ -517,15 +517,21 @@ func (e *TestEnvironment) RemoveLicence() {
 	e.Srv.SetLicense(nil)
 }
 
-func (e *TestEnvironment) SetE10Licence() {
+func (e *TestEnvironment) SetProfessoinalLicence() {
 	license := model.NewTestLicense()
-	license.SkuShortName = model.LicenseShortSkuE10
+	license.SkuShortName = model.LicenseShortSkuProfessional
 	e.Srv.SetLicense(license)
 }
 
-func (e *TestEnvironment) SetE20Licence() {
+func (e *TestEnvironment) SetEnterpriseLicence() {
 	license := model.NewTestLicense()
-	license.SkuShortName = model.LicenseShortSkuE20
+	license.SkuShortName = model.LicenseShortSkuEnterprise
+	e.Srv.SetLicense(license)
+}
+
+func (e *TestEnvironment) SetEnterpriseAdvancedLicence() {
+	license := model.NewTestLicense()
+	license.SkuShortName = model.LicenseShortSkuEnterpriseAdvanced
 	e.Srv.SetLicense(license)
 }
 
@@ -534,7 +540,7 @@ func (e *TestEnvironment) CreateBasic() {
 
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.SetE20Licence()
+	e.SetEnterpriseAdvancedLicence()
 	e.CreateBasicPlaybook()
 	e.CreateBasicRun()
 	e.CreateAdditionalPlaybooks()

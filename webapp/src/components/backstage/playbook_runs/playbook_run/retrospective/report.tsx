@@ -40,18 +40,18 @@ const Header = styled.div`
 `;
 
 const ReportContainer = styled.div`
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    margin-top: 24px;
+    margin-bottom: 20px;
     font-size: 12px;
     font-weight: normal;
-    margin-bottom: 20px;
-    margin-top: 24px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
 `;
 
 const Title = styled.div`
-    font-weight: 600;
     font-size: 14px;
+    font-weight: 600;
 `;
 
 export default Report;

@@ -60,6 +60,8 @@ const Button = styled.button`
     width: 100%;
     align-items: center;
     padding: 1px 16px;
+    border: none;
+    background: transparent;
     clear: both;
     color: inherit;
     cursor: pointer;
@@ -68,10 +70,8 @@ const Button = styled.button`
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
-    border: none;
-    background: transparent;
 
-    :hover {
+    &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.1);
     }
 `;
@@ -79,10 +79,10 @@ const Button = styled.button`
 const PrimaryText = styled.span`
     display: inline-flex;
     padding: 5px 0;
-    line-height: 22px;
     color: rgba(var(--center-channel-color-rgb), 0.9);
-    white-space: nowrap;
     cursor: pointer;
     font-weight: normal;
+    line-height: 22px;
     text-align: left;
+    white-space: nowrap;
 `;

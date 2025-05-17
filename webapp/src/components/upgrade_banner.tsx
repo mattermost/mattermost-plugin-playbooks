@@ -40,61 +40,60 @@ const UpgradeWrapper = styled.div`
 `;
 
 const UpgradeContent = styled.div<{
-    vertical?: boolean,
-    verticalAdjustment: number,
-    horizontalAdjustment?: number,
-    svgVerticalAdjustment?: number
+    $vertical?: boolean,
+    $verticalAdjustment: number,
+    $horizontalAdjustment?: number,
+    $svgVerticalAdjustment?: number
 }>`
     height: 100%;
     display: flex;
-    flex-direction: ${(props) => (props.vertical ? 'column' : 'row')};
-    margin-top: -${(props) => props.verticalAdjustment}px;
+    flex-direction: ${(props) => (props.$vertical ? 'column' : 'row')};
+    margin-top: -${(props) => props.$verticalAdjustment}px;
     align-items: center;
     justify-content: center;
 
-    ${(props) => props.horizontalAdjustment && css`
+    ${(props) => props.$horizontalAdjustment && css`
         svg {
-            margin-right: ${props.horizontalAdjustment}px;
+            margin-right: ${props.$horizontalAdjustment}px;
         }
     `}
 
-    ${(props) => props.svgVerticalAdjustment && css`
+    ${(props) => props.$svgVerticalAdjustment && css`
         svg {
-            margin-top: -${props.svgVerticalAdjustment}px;
+            margin-top: -${props.$svgVerticalAdjustment}px;
         }
     `}
 `;
 
-const InfoContainer = styled.div<{ vertical?: boolean }>`
+const InfoContainer = styled.div<{$vertical?: boolean}>`
     display: flex;
-    flex-direction: column;
     max-width: 425px;
-    align-items: ${(props) => (props.vertical ? 'center' : 'flex-start')};
-    text-align: ${(props) => (props.vertical ? 'center' : 'left')};
+    flex-direction: column;
+    align-items: ${(props) => (props.$vertical ? 'center' : 'flex-start')};
+    text-align: ${(props) => (props.$vertical ? 'center' : 'left')};
 `;
 
 const Title = styled.div`
     margin-bottom: 8px;
-    font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
     color: var(--center-channel-color);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
 `;
 
 const HelpText = styled.div`
-    font-weight: 400;
-    font-size: 12px;
-    line-height: 16px;
     color: var(--center-channel-color);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
 `;
 
 const FooterContainer = styled.div`
     margin-top: 18px;
-
-    font-weight: 400;
-    font-size: 11px;
-    line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 16px;
 `;
 
 const StyledUpgradeIllustration = styled(UpgradeIllustrationSvg)`
@@ -192,13 +191,13 @@ const UpgradeBanner = (props: Props) => {
         <UpgradeWrapper>
             {props.background}
             <UpgradeContent
-                vertical={props.vertical}
-                verticalAdjustment={props.verticalAdjustment}
-                horizontalAdjustment={props.horizontalAdjustment}
-                svgVerticalAdjustment={props.svgVerticalAdjustment}
+                $vertical={props.vertical}
+                $verticalAdjustment={props.verticalAdjustment}
+                $horizontalAdjustment={props.horizontalAdjustment}
+                $svgVerticalAdjustment={props.svgVerticalAdjustment}
             >
                 {stateImage}
-                <InfoContainer vertical={props.vertical}>
+                <InfoContainer $vertical={props.vertical}>
                     <UpgradeHeader>
                         <Title>{titleText}</Title>
                         <HelpText>{helpText}</HelpText>

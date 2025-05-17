@@ -80,9 +80,9 @@ const Cell = ({type, value, target}: CellProps) => {
 };
 
 const NAValue = styled.div`
+    color: var(--error-text);
     font-weight: 400;
     line-height: 16px;
-    color: var(--error-text);
 `;
 
 const NormalText = styled.div`
@@ -91,28 +91,28 @@ const NormalText = styled.div`
 `;
 
 const SmallText = styled.div`
-    font-weight: 400;
-    font-size: 11px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
     margin: 5px 0;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 16px;
 `;
 
 const RunName = styled.div`
-    font-weight: 600;
     font-size: 14px;
+    font-weight: 600;
     line-height: 16px;
 `;
 
 const PlaybookRunItem = styled.div`
     display: flex;
+    align-items: center;
     padding-top: 8px;
     padding-bottom: 8px;
-    align-items: center;
-    margin: 0;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    cursor: pointer;
+    margin: 0;
     background: var(--center-channel-bg);
+    cursor: pointer;
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.04);

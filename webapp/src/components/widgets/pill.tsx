@@ -20,18 +20,18 @@ const Pill = (props: Props) => (
 
 export const PillBox = styled.div`
     display: inline-block;
+    padding: 4px 4px 4px 12px;
+    border-radius: 16px;
     background-color: rgba(var(--center-channel-color-rgb), 0.08);
     color: var(--center-channel-color);
-    border-radius: 16px;
-    font-weight: normal;
     font-size: 14px;
+    font-weight: normal;
     line-height: 15px;
-    padding: 4px 4px 4px 12px;
 `;
 
 const CloseIcon = styled(ClearIcon)`
-    height: 18px;
     width: auto;
+    height: 18px;
     margin-left: 7px;
     color: rgba(var(--center-channel-color-rgb), 0.32);
 

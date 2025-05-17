@@ -72,7 +72,7 @@ const PatternedTextArea = (props: Props) => {
                 onBlur={(e) => handleOnBlur(e.target.value)}
                 placeholder={props.placeholderText}
                 maxLength={props.maxLength}
-                invalid={invalid}
+                $invalid={invalid}
                 resize={props.resize}
             />
             <ErrorMessage>
@@ -90,14 +90,14 @@ const isPatternValid = (value: string, pattern: string, delimiter = '\n'): boole
 };
 
 const ErrorMessage = styled.div`
-    color: var(--error-text);
-    margin-left: auto;
     display: none;
+    margin-left: auto;
+    color: var(--error-text);
 `;
 
 interface TextAreaProps {
     disabled: boolean;
-    invalid: boolean;
+    $invalid: boolean;
     resize?: Props['resize'];
 }
 
@@ -109,7 +109,6 @@ const TextArea = styled.textarea<TextAreaProps>`
 
     height: auto;
     width: 100%;
-
     background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
     color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color);')};
     border-radius: 4px;
@@ -119,8 +118,8 @@ const TextArea = styled.textarea<TextAreaProps>`
     padding: 10px 16px;
     resize: ${(props) => (props.disabled && 'none') || props.resize || 'none'};
 
-    ${(props) => props.invalid && !props.disabled && props.value && css`
-        :not(:focus) {
+    ${(props) => props.$invalid && !props.disabled && props.value && css`
+        &:not(:focus) {
             box-shadow: inset 0 0 0 1px var(--error-text);
             & + ${ErrorMessage} {
                 display: inline-block;

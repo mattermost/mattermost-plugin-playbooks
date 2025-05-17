@@ -33,11 +33,11 @@ const ConvertEnterpriseNotice = () => (
 export default ConvertEnterpriseNotice;
 
 const StyledOl = styled.ol`
-    list-style-position: inside;
     margin-left: -16px;
+    list-style-position: inside;
 `;
 
 const Subheader = styled.p`
-    font-weight: 600;
     font-size: 14px;
+    font-weight: 600;
 `;

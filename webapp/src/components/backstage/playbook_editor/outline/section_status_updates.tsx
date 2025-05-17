@@ -140,10 +140,10 @@ const StatusUpdates = ({playbook}: Props) => {
 };
 
 const StatusUpdatesContainer = styled.div`
-    font-weight: 400;
-    font-size: 14px;
-    line-height: 2.5rem;
     color: var(--center-channel-color-72);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 2.5rem;
 `;
 
 const StatusUpdatesTextContainer = styled.div`
@@ -152,11 +152,11 @@ const StatusUpdatesTextContainer = styled.div`
 
 const Picker = styled.span`
     display: inline-block;
-    color: var(--button-bg);
-    background: rgba(var(--button-bg-rgb), 0.08);
-    border-radius: 12px;
-    line-height: 15px;
     padding: 3px 3px 3px 10px;
+    border-radius: 12px;
+    background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
+    line-height: 15px;
 `;
 
 const Template = styled.div`
@@ -179,8 +179,8 @@ export const Placeholder = (props: PlaceholderProps) => {
 
 const PlaceholderDiv = styled.div`
     display: flex;
-    align-items: center;
     flex-direction: row;
+    align-items: center;
     white-space: nowrap;
 
     &:hover {
@@ -189,16 +189,18 @@ const PlaceholderDiv = styled.div`
 `;
 
 const SelectorRightIcon = styled.i`
+
+    color: var(--center-channel-color-32);
     font-size: 14.4px;
+
     &{
         margin-left: 4px;
     }
-    color: var(--center-channel-color-32);
 `;
 
 const TextContainer = styled.span`
-    font-weight: 600;
     font-size: 13px;
+    font-weight: 600;
 `;
 
 export default StatusUpdates;
