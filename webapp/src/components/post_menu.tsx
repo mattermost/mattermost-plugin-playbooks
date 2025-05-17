@@ -103,7 +103,7 @@ export const AttachToPlaybookRunPostMenu = (props: Props) => {
 };
 
 const PositionedKeyVariantCircleIcon = styled(KeyVariantCircleIcon)`
-    margin-left: 16px;
     margin-bottom: -3px;
+    margin-left: 16px;
     color: var(--online-indicator);
 `;

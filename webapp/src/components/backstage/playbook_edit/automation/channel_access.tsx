@@ -72,7 +72,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
         <Container>
             <AutomationHeader id={'link-existing-channel'}>
                 <AutomationTitle
-                    css={{alignSelf: 'flex-start'}}
+                    style={{alignSelf: 'flex-start'}}
                 >
                     <AutomationLabel disabled={archived}>
                         <ChannelModeRadio
@@ -100,7 +100,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 </SelectorWrapper>
             </AutomationHeader>
             <AutomationHeader id={'create-new-channel'}>
-                <AutomationTitle css={{alignSelf: 'flex-start'}} >
+                <AutomationTitle style={{alignSelf: 'flex-start'}} >
                     <AutomationLabel disabled={archived}>
                         <ChannelModeRadio
                             type='radio'
@@ -121,13 +121,13 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                                 onChange={() => handlePublicChange(true)}
                             />
                             <Icon
-                                disabled={playbook.channel_mode === 'link_existing_channel'}
-                                active={playbook.create_public_playbook_run}
+                                $disabled={playbook.channel_mode === 'link_existing_channel'}
+                                $active={playbook.create_public_playbook_run}
                                 className={'icon-globe'}
                             />
                             <BigText>{formatMessage({defaultMessage: 'Public'})}</BigText>
                         </ButtonLabel>
-                        <HorizontalSpacer size={8}/>
+                        <HorizontalSpacer $size={8}/>
                         <ButtonLabel disabled={archived || playbook.channel_mode === 'link_existing_channel'}>
                             <RadioInput
                                 type='radio'
@@ -136,8 +136,8 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                                 onChange={() => handlePublicChange(false)}
                             />
                             <Icon
-                                disabled={playbook.channel_mode === 'link_existing_channel'}
-                                active={!playbook.create_public_playbook_run}
+                                $disabled={playbook.channel_mode === 'link_existing_channel'}
+                                $active={!playbook.create_public_playbook_run}
                                 className={'icon-lock-outline'}
                             />
                             <BigText>{formatMessage({defaultMessage: 'Private'})}</BigText>
@@ -182,48 +182,49 @@ const HorizontalSplit = styled.div`
 `;
 
 export const ButtonLabel = styled.label<{disabled: boolean}>`
+    display: flex;
+    flex-basis: 0;
+    flex-grow: 1;
+    align-items: center;
     padding: 10px 16px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    background: ${({disabled}) => (disabled ? 'rgba(var(--center-channel-color-rgb), 0.04)' : 'var(--center-channel-bg)')};
     border-radius: 4px;
-    flex-grow: 1;
-    flex-basis: 0;
-    margin: 0 0 8px 0;
-    display: flex;
-    align-items: center;
+    margin: 0 0 8px;
+    background: ${({disabled}) => (disabled ? 'rgba(var(--center-channel-color-rgb), 0.04)' : 'var(--center-channel-bg)')};
     cursor: pointer;
 `;
 
-const Icon = styled.i<{ active?: boolean, disabled: boolean }>`
+const Icon = styled.i<{$active?: boolean, $disabled: boolean}>`
+    color: ${({$active, $disabled}) => ($active && !$disabled ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
     font-size: 16px;
     line-height: 16px;
-    color: ${({active, disabled}) => (active && !disabled ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
 `;
 
 const BigText = styled.div`
     font-size: 14px;
-    line-height: 20px;
     font-weight: 400;
+    line-height: 20px;
 `;
 
 const ChannelActionButton = styled(SecondaryButtonLarger)`
-    margin-top: 8px;
     height: 40px;
+    margin-top: 8px;
 `;
 
 export const StyledChannelSelector = styled(ChannelSelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
+
     .playbooks-rselect__control {
         padding: 4px 16px 4px 3.2rem;
 
-        &:before {
-            left: 16px;
-            top: 8px;
+        &::before {
             position: absolute;
+            top: 8px;
+            left: 16px;
             color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f0349';
+            font-family: compass-icons, mattermosticons;
             font-size: 18px;
-            font-family: 'compass-icons', mattermosticons;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }

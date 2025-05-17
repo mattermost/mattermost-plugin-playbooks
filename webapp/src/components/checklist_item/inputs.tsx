@@ -64,6 +64,7 @@ const ChecklistItemInput = styled.input<{readOnly: boolean}>`
 
     ${({readOnly}) => readOnly && css`
         opacity: 0.38;
+
         &&:hover {
             cursor: default;
         }
@@ -89,16 +90,18 @@ export const CollapsibleChecklistItemDescription = (props: {expanded: boolean, c
 };
 
 const ChecklistItemDescription = styled.div<{height: string}>`
+    overflow: hidden;
+    height: ${({height}) => height};
+    padding-right: 8px;
+    margin-left: 36px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 12px;
     font-style: normal;
     font-weight: 400;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
+    transition: height 0.2s ease-in-out;
 
-    margin-left: 36px;
-    padding-right: 8px;
-
-    // Fix default markdown styling in the paragraphs
+    /* Fix default markdown styling in the paragraphs */
     p {
         :last-child {
             margin-bottom: 0;
@@ -106,10 +109,6 @@ const ChecklistItemDescription = styled.div<{height: string}>`
 
         white-space: pre-wrap;
     }
-    height: ${({height}) => height};
-
-    transition: height 0.2s ease-in-out;
-    overflow: hidden;
 `;
 
 export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => void}) => {
@@ -133,24 +132,24 @@ export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => vo
 };
 
 export const CancelSaveContainer = styled.div`
-    text-align: right;
-    padding: 8px;
     z-index: 2;
+    padding: 8px;
+    text-align: right;
     white-space: nowrap;
 `;
 
 const CancelButton = styled(TertiaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin-left: 8px;
     border-radius: 4px;
+    margin-left: 8px;
     font-size: 12px;
 `;
 
 const SaveButton = styled(PrimaryButton)`
     height: 32px;
     padding: 10px 16px;
-    margin-left: 8px;
     border-radius: 4px;
+    margin-left: 8px;
     font-size: 12px;
 `;

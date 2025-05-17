@@ -75,24 +75,24 @@ const RHSRunDetailsTitle = (props: Props) => {
 
 const FollowingWrapper = styled.div`
     display: flex;
-    justify-content: flex-end;
     flex: 1;
+    justify-content: flex-end;
 
-    // override default styles
+    /* override default styles */
     .unfollowButton {
         border: 0;
-        color: var(--button-bg);
         background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
     }
 
     .followButton {
         border: 0;
-        color: rgba(var(--center-channel-color-rgb), 0.56);
         background: transparent;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
 
         &:hover {
-            color: rgba(var(--center-channel-color-rgb), 0.72);
             background: rgba(var(--center-channel-color-rgb), 0.08);
+            color: rgba(var(--center-channel-color-rgb), 0.72);
         }
     }
 `;

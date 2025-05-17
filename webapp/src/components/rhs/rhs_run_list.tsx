@@ -249,16 +249,16 @@ const RHSRunList = (props: Props) => {
 };
 
 const FeedbackWrapper = styled.div`
-    padding: 0px 16px;
-    text-align: center;
-    margin-bottom: 30px;
+    padding: 0 16px;
     margin-top: 10px;
+    margin-bottom: 30px;
+    text-align: center;
 `;
 
 const Container = styled.div`
     display: flex;
-    flex-direction: column;
     height: 100%;
+    flex-direction: column;
 `;
 
 const Header = styled.div`
@@ -271,20 +271,20 @@ const Header = styled.div`
 
 const RunsList = styled.div`
     display: flex;
-    flex-direction: column;
-    padding: 0px 16px;
-    gap: 12px;
     min-height: calc(100% - 65px);
+    flex-direction: column;
+    padding: 0 16px;
+    gap: 12px;
 `;
 const NoRunsWrapper = styled.div`
-    min-height: calc(100% - 123px);
     display: flex;
+    min-height: calc(100% - 123px);
 `;
 
 const FilterMenuTitle = styled.div`
     font-family: Metropolis;
-    font-weight: 600;
     font-size: 16px;
+    font-weight: 600;
     line-height: 24px;
 `;
 
@@ -293,10 +293,10 @@ const Spacer = styled.div`
 `;
 
 const StyledLoadingSpinner = styled(LoadingSpinner)`
-    margin-top: 12px;
     width: 20px;
     height: 20px;
     align-self: center;
+    margin-top: 12px;
 `;
 
 const TitleContainer = styled.div`
@@ -307,18 +307,18 @@ const TitleContainer = styled.div`
 `;
 
 const VerticalLine = styled.div`
-    opacity: 0.16;
-    border-left: 1px solid var(--center-channel-color);
     height: 24px;
+    border-left: 1px solid var(--center-channel-color);
+    opacity: 0.16;
 `;
 
 const ChannelNameText = styled.div`
+    overflow: hidden;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-family: "Open Sans", sans-serif;
-    font-weight: 400;
     font-size: 12px;
+    font-weight: 400;
     line-height: 20px;
-    overflow: hidden;
     text-overflow: ellipsis;
 `;
 
@@ -330,57 +330,56 @@ const ClipboardImage = styled.img`
 
 const StartRunButton = styled(SecondaryButton)`
     display: flex;
-    flex-direction: row;
-    gap: 6px;
-    padding: 8px 16px;
-
-    border: 0;
     height: 100%;
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--button-bg);
+    flex-direction: row;
+    padding: 8px 16px;
+    border: 0;
     background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
+    font-size: 12px;
+    font-weight: 600;
+    gap: 6px;
 `;
 
 const SortDotMenuButton = styled(DotMenuButton)`
-    justify-content: center;
     align-items: center;
+    justify-content: center;
 `;
 
 const SortMenuTitle = styled.div`
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    text-transform: uppercase;
-    font-size: 12px;
-    line-height: 16px;
-    font-weight: 600;
     margin: 5px 18px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    text-transform: uppercase;
 `;
 
 const FilterMenuItem = styled(DropdownMenuItem)`
     display: flex;
+    min-width: 182px;
     flex-direction: row;
     justify-content: space-between;
-    min-width: 182px;
 `;
 
 const StyledDropdownMenuSort = styled(DropdownMenuItem)`
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
     min-width: 190px;
+    flex-direction: row;
     align-items: center;
+    justify-content: space-between;
 `;
 
 const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
     && {
-        font-size: 12px;
-        color: var(--center-channel-color-64);
         width: 100%;
+        color: var(--center-channel-color-64);
+        font-size: 12px;
     }
 
     &&:hover:not([disabled]) {
-        color: var(--center-channel-color-72);
         background-color: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
     }
 
 `;
@@ -411,9 +410,9 @@ const FilterMenuNumericValue = styled.div`
 `;
 
 const BlueCheckmark = styled(CheckIcon)`
-    color: var(--button-bg);
     width: 18px;
     height: 18px;
+    color: var(--button-bg);
 `;
 
 interface RHSRunListCardProps extends RunToDisplay {
@@ -455,7 +454,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                 data-testid='run-list-card'
             >
                 <CardTitleContainer>
-                    <IconWrapper margin='6px'>
+                    <IconWrapper $margin='6px'>
                         {icon}
                     </IconWrapper>
                     <TitleRow>{props.name}</TitleRow>
@@ -541,48 +540,44 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     );
 };
 const CardWrapper = styled.div<{ progress: number }>`
-    margin: 0;
+    position: relative;
     padding:0;
     border-radius: 4px;
-    position: relative;
+    margin: 0;
 
-    &:after {
-        content: '';
-        display: block;
+    &::after {
         position: absolute;
         right: calc(${({progress}) => 100 - progress}% + 1px);
         bottom: 1px;
         left: 1px;
+        display: block;
         border-bottom: 2px solid var(--online-indicator);
         border-bottom-left-radius: inherit;
-        border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')}
+        border-bottom-right-radius: ${({progress}) => (progress < 100 ? 0 : 'inherit')};
+        content: ''
     }
 
     &.removed {
-        -webkit-animation: disapear 0.7s;
-        -webkit-animation-fill-mode: forwards;
         animation: disapear 0.7s;
         animation-fill-mode: forwards;
     }
 
-    @-webkit-keyframes disapear{
+    @keyframes disapear{
         35% {
-            -webkit-transform: translateY(5%);
             transform: translateY(5%);
         }
+
         100% {
-            -webkit-transform: translateY(-1000%);
             transform: translateY(-1000%);
         }
     }
 
     @keyframes disapear{
         35% {
-            -webkit-transform: translateY(5%);
             transform: translateY(5%);
         }
+
         100% {
-            -webkit-transform: translateY(-1000%);
             transform: translateY(-1000%);
         }
     }
@@ -593,18 +588,17 @@ const CardContainer = styled.div`
     flex-direction: column;
     padding: 16px 20px 20px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
+    box-shadow: 0 2px 3px 0 rgba(0 0 0 / 0.08);
+    cursor: pointer;
     gap: 8px;
 
-    cursor: pointer;
-
     &:hover {
-        box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 4px 6px 0 rgba(0 0 0 / 0.12);
     }
 
     &:active {
-        box-shadow: inset 0px 2px 3px rgba(0, 0, 0, 0.08);
+        box-shadow: inset 0 2px 3px rgba(0 0 0 / 0.08);
     }
 `;
 const CardTitleContainer = styled.div`
@@ -614,10 +608,9 @@ const CardTitleContainer = styled.div`
 
 `;
 const TitleRow = styled.div`
+    overflow: hidden;
     font-size: 14px;
     font-weight: 600;
-
-    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;
@@ -632,41 +625,39 @@ const InfoRow = styled.div`
     justify-content: space-between;
 `;
 const LastUpdatedText = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 11px;
     font-weight: 400;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 const PlaybookChip = styled.div`
     display: flex;
+    max-width: 40%;
     flex-direction: row;
     align-items: center;
-    padding: 0px 4px;
-    gap: 4px;
-    max-width: 40%;
-
-    background: rgba(var(--center-channel-color-rgb), 0.08);
+    padding: 0 4px;
     border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    gap: 4px;
 `;
 const PlaybookChipText = styled.span`
+    overflow: hidden;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 10px;
     font-weight: 600;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
 const OwnerProfileChip = styled(Profile)`
     flex-grow: 0;
-
-    font-weight: 400;
-    font-size: 11px;
-    line-height: 15px;
     padding: 2px 10px 2px 2px;
-    background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 12px;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 15px;
 
     > .image {
         width: 16px;
@@ -679,8 +670,8 @@ const ParticipantsProfiles = styled.div`
 `;
 
 const ThreeDotsIcon = styled(HamburgerButton)`
-    font-size: 18px;
     margin-left: 1px;
+    font-size: 18px;
 `;
 
 const StyledBookOutlineIcon = styled(BookOutlineIcon)`
@@ -699,14 +690,14 @@ const StyledDropdownMenuItem = styled(DropdownMenuItem)`
 
 const Separator = styled.hr`
     display: flex;
+    width: 100%;
     align-content: center;
     border-top: 1px solid var(--center-channel-color-08);
     margin: 5px auto;
-    width: 100%;
 `;
 
-const IconWrapper = styled.div<{ margin?: string }>`
-    margin-right: ${({margin}) => (margin || '11px')};
+const IconWrapper = styled.div<{$margin?: string}>`
+    margin-right: ${({$margin}) => ($margin || '11px')};
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
@@ -756,12 +747,12 @@ const NoRuns = (props: NoRunsProps) => {
 
 const NoActiveRunsContainer = styled.div`
     display: flex;
+    max-width: 325px;
     flex-direction: column;
     align-items: center;
     align-self: center;
-    gap: 24px;
-    max-width: 325px;
     margin: auto;
+    gap: 24px;
 `;
 const NoRunsText = styled.div`
     ${SemiBoldHeading}
@@ -897,11 +888,12 @@ const RowContainer = styled.div`
 `;
 
 const MenuItemSubTitle = styled.div`
+    overflow: hidden;
+
+    /* don't let the playbook title make context menu grow too wide */
+    max-width: 220px;
     margin-left: 33px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
-    // don't let the playbook title make context menu grow too wide
-    max-width: 220px;
-    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;

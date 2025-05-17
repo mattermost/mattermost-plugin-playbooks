@@ -185,7 +185,7 @@ const PlaybookRow = (props: PlaybookRowProps) => {
     };
     return (
         <PlaybookItem
-            hasPermission={hasPermission}
+            $hasPermission={hasPermission}
             onClick={hasPermission ? () => props.onSelectPlaybook(playbook.id) : undefined}
         >
             <ItemIcon>
@@ -220,44 +220,47 @@ const WrappedPlaybooksSelector = (props: Props) => {
 export default WrappedPlaybooksSelector;
 
 const Dot = styled.span`
-    font-weight: 600;
     margin: 0 5px;
     font-size: 18px;
-    ::before {
+    font-weight: 600;
+
+    &::before {
         content: '·';
     }
 `;
 
 const Container = styled.div`
     display: flex;
-    flex-direction: column;
     height: 350px;
+    flex-direction: column;
 `;
 const GroupTitle = styled.div`
-    font-size:  12px;
-    line-height: 16px;
-    font-weight: 600;
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size:  12px;
+    font-weight: 600;
+    line-height: 16px;
     text-transform: uppercase;
 `;
 const Group = styled.div`
     display: flex;
     flex-direction: column;
-    margin: 0 0 10px 0;
     padding: 0;
+    margin: 0 0 10px;
 `;
 
-const PlaybookItem = styled.div<{hasPermission: boolean}>`
+const PlaybookItem = styled.div<{$hasPermission: boolean}>`
     display: flex;
     flex-direction: row;
-    ${(props) => props.hasPermission && css`
+    ${(props) => props.$hasPermission && css`
         cursor: pointer;
     `};
     padding: 10px 0;
     margin-right: 10px;
     border-radius: 4px;
+
     &:hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
+
         .modal-list-cta {
             display: block;
         }
@@ -275,39 +278,39 @@ const ItemCenter = styled.div`
 `;
 
 const ItemTitle = styled.div`
-    font-size:  14px;
-    line-height: 20px;
-    font-weight: 400;
-    color: var(--center-channel-color);
     margin-bottom: 4px;
+    color: var(--center-channel-color);
+    font-size:  14px;
+    font-weight: 400;
+    line-height: 20px;
 `;
 const ItemSubTitle = styled.div`
     display: flex;
     align-items: center;
-    font-size:  12px;
-    line-height: 16px;
-    font-weight: 400;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size:  12px;
+    font-weight: 400;
+    line-height: 16px;
 `;
 
 const ButtonWrappper = styled.div`
-    margin-left: auto;
-    margin-right: 10px;
     display: none;
+    margin-right: 10px;
+    margin-left: auto;
 `;
 
 const ErrorContainer = styled(Container)`
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-    gap: 15px;
     max-width: 450px;
+    align-items: center;
+    align-self: center;
+    justify-content: center;
+    gap: 15px;
 `;
 
 const ErrorTitle = styled.div`
+    color: var(--center-channel-color);
     font-size: 18px;
     font-weight: 600;
-    color: var(--center-channel-color);
     text-align: center;
 `;
 
@@ -321,11 +324,11 @@ const Plus = styled(PlusIcon)`
 `;
 
 const ClipboardSvg = styled(ClipboardChecklistSvg)`
-    height:150px;
     width:150px;
+    height:150px;
 `;
 
 const LoadingContainer = styled(Container)`
-    justify-content: center;
     align-items: center;
+    justify-content: center;
 `;

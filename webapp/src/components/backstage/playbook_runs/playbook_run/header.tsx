@@ -151,45 +151,44 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
 };
 
 const Container = styled.div`
-    height: 100%;
-    width: 100%;
     display: flex;
+    width: 100%;
+    height: 100%;
     flex-direction: row;
     align-items: center;
     padding: 0 14px 0 20px;
-
-    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
+    box-shadow: inset 0 -1px 0 rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
 const StyledCopyLink = styled(CopyLink)`
-    border-radius: 4px;
-    font-size: 18px;
+    display: grid;
     width: 28px;
     height: 28px;
+    border-radius: 4px;
     margin-left: 4px;
-    display: grid;
+    font-size: 18px;
     place-items: center;
 `;
 
 const StyledBadge = styled(Badge)`
-    margin-left: 8px;
-    margin-right: 6px;
-    text-transform: uppercase;
-    font-size: 10px;
     padding: 2px 6px;
+    margin-right: 6px;
+    margin-left: 8px;
+    font-size: 10px;
     line-height: 16px;
+    text-transform: uppercase;
 `;
 
 const GetInvolved = styled(PrimaryButton)`
     height: 28px;
     padding: 0 12px;
-    font-size: 12px;
     margin-left: 8px;
+    font-size: 12px;
 `;
 
 const GetInvolvedIcon = styled(AccountPlusOutlineIcon)`
-    height: 14px;
     width: 14px;
+    height: 14px;
     margin-right: 3px;
 `;
 

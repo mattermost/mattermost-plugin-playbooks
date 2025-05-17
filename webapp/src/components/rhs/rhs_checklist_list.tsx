@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
@@ -72,8 +72,8 @@ const RHSGiveFeedbackButton = styled(GiveFeedbackButton)`
     }
 
     &&:hover:not([disabled]) {
-        color: var(--center-channel-color-72);
         background-color: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
     }
 `;
 
@@ -310,17 +310,16 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
 const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
     position: relative;
     z-index: 1;
-
     display: flex;
     flex-direction: column;
 
-    ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && `
-        padding: 0 12px 24px 12px;
+    ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && css`
+        padding: 0 12px 24px;
 
         &:hover {
             background-color: rgba(var(--center-channel-color-rgb), 0.04);
         }
-    `}
+    `};
 
     .pb-tutorial-tour-tip__pulsating-dot-ctr {
         z-index: 1000;
@@ -328,15 +327,14 @@ const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
 `;
 
 const MainTitleBG = styled.div<{numChecklists: number}>`
-    background-color: var(--center-channel-bg);
-    z-index: ${({numChecklists}) => numChecklists + 2};
     position: sticky;
+    z-index: ${({numChecklists}) => numChecklists + 2};
     top: 0;
+    background-color: var(--center-channel-bg);
 `;
 
 const MainTitle = styled.div<{parentContainer?: ChecklistParent}>`
-    ${SemiBoldHeading} {
-    }
+    ${SemiBoldHeading};
 
     font-size: 16px;
     line-height: 24px;
@@ -345,7 +343,7 @@ const MainTitle = styled.div<{parentContainer?: ChecklistParent}>`
 
 const HoverRow = styled(HoverMenu)`
     top: 6px;
-    right: 0px;
+    right: 0;
 `;
 
 const ExpandHoverButton = styled(HoverMenuButton)`
@@ -364,18 +362,18 @@ const IconWrapper = styled.div`
 `;
 
 const OverdueTasksToggle = styled.div<{toggled: boolean}>`
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 16px;
     display: inline-block;
-    margin-left: 5px;
-    padding: 2px 4px;
     align-items: center;
+    padding: 2px 4px;
     border-radius: 4px;
-    user-select: none;
-    cursor: pointer;
+    margin-left: 5px;
     background-color: ${(props) => (props.toggled ? 'var(--dnd-indicator)' : 'rgba(var(--dnd-indicator-rgb), 0.08)')};
     color: ${(props) => (props.toggled ? 'var(--button-color)' : 'var(--dnd-indicator)')};
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    user-select: none;
 `;
 
 export default RHSChecklistList;

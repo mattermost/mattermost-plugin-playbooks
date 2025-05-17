@@ -152,10 +152,10 @@ export const TaskActionsContainer = styled.div`
     display: flex;
     flex-direction: column;
     row-gap: 16px;
-    @media screen and (max-height: 900px) {
+
+    @media screen and (height <= 900px) {
+        overflow: hidden scroll;
         max-height: 500px;
-        overflow-x: hidden;
-        overflow-y: scroll;
     }
 `;
 

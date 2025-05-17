@@ -17,7 +17,7 @@ interface Props {
     onCancel: () => void;
     components?: Partial<{
         Header: typeof Modal.Header;
-        FooterContainer: typeof DefaultFooterContainer;
+        FooterContainer: React.ComponentType<{children: React.ReactNode}>;
     }>;
 }
 
@@ -58,22 +58,21 @@ const ConfirmModal = styled(GenericModal)`
 `;
 
 const ConfirmModalTitle = styled.h1`
+    margin-top: 0;
+    color: var(--center-channel-color);
     font-family: Metropolis;
     font-size: 22px;
     line-height: 28px;
-    margin-top: 0;
     text-align: center;
-    color: var(--center-channel-color);
 `;
 
 const ConfirmModalMessage = styled.div`
-    font-size: 14px;
-    text-align: center;
-
     padding: 0 16px;
     margin: 0;
     margin-top: 8px;
     margin-bottom: 12px;
+    font-size: 14px;
+    text-align: center;
 `;
 
 const ConfirmModalFooter = styled(DefaultFooterContainer)`

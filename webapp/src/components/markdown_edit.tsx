@@ -52,8 +52,8 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
     if (isEditing) {
         return (
             <MarkdownEditContainer
-                dashed={false}
-                editing={true}
+                $dashed={false}
+                $editing={true}
                 className={props.className}
             >
                 <MarkdownTextbox
@@ -83,9 +83,9 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
 
     return (
         <MarkdownEditContainer
-            editing={isEditing}
-            dashed={value === ''}
-            noBorder={props.noBorder}
+            $editing={isEditing}
+            $dashed={value === ''}
+            $noBorder={props.noBorder}
             className={props.className}
             onClick={(e) => {
                 if (props.disabled) {
@@ -127,27 +127,27 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
 };
 
 const HoverMenuContainer = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 0px 8px;
     position: absolute;
-    height: 32px;
-    right: 2px;
-    top: 8px;
     z-index: 1;
+    top: 8px;
+    right: 2px;
+    display: flex;
+    height: 32px;
+    align-items: center;
+    padding: 0 8px;
 `;
 
 const commonTextStyle = css`
     display: block;
     align-items: center;
-    border-radius: var(--markdown-textbox-radius, 4px);
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 400;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
     padding: var(--markdown-textbox-padding, 12px 30px 12px 16px);
+    border-radius: var(--markdown-textbox-radius, 4px);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
 
-    :hover {
+    &:hover {
         cursor: text;
     }
 
@@ -156,7 +156,7 @@ const commonTextStyle = css`
     }
 `;
 
-const MarkdownEditContainer = styled.div<{editing: boolean;dashed: boolean;noBorder?: boolean;}>`
+const MarkdownEditContainer = styled.div<{$editing: boolean; $dashed: boolean; $noBorder?: boolean;}>`
     position: relative;
     box-sizing: border-box;
     border-radius: var(--markdown-textbox-radius, 4px);
@@ -173,19 +173,20 @@ const MarkdownEditContainer = styled.div<{editing: boolean;dashed: boolean;noBor
     ${HoverMenuContainer} {
         opacity: 0
     }
+
     &:hover,
     &:focus-within {
         ${HoverMenuContainer} {
             opacity: 1;
         }
 
-        ${({noBorder}) => noBorder && css`
+        ${({$noBorder}) => $noBorder && css`
             border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
         `}
     }
 
-    border: ${(props) => (props.dashed ? '1px dashed var(--center-channel-color-16)' : '1px solid var(--center-channel-color-08)')};
-    ${({editing, noBorder}) => (editing || noBorder) && css`
+    border: ${(props) => (props.$dashed ? '1px dashed var(--center-channel-color-16)' : '1px solid var(--center-channel-color-08)')};
+    ${({$editing, $noBorder}) => ($editing || $noBorder) && css`
         border-color: transparent;
     `}
 `;
@@ -199,11 +200,11 @@ export const RenderedText = styled.div`
 `;
 
 const PlaceholderText = styled.span`
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 14px;
     font-style: italic;
     font-weight: 400;
-    font-size: 14px;
     line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
-export default styled(MarkdownEdit)``;
+export default styled(MarkdownEdit)`/* stylelint-disable no-empty-source */`;

@@ -41,7 +41,7 @@ const NoContentTextContainer = styled.div`
 `;
 
 const NoContentTitle = styled.h2`
-    font-family: Open Sans;
+    font-family: "Open Sans";
     font-style: normal;
     letter-spacing: -0.02em;
     font-size: 28px;
@@ -50,17 +50,17 @@ const NoContentTitle = styled.h2`
 `;
 
 const NoContentDescription = styled.h5`
-    font-family: Open Sans;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-family: "Open Sans";
+    font-size: 16px;
     font-style: normal;
     font-weight: normal;
-    font-size: 16px;
     line-height: 24px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
     text-align: left;
 `;
 
 const NoContentPlaybookRunSvgContainer = styled.div`
-    @media (max-width: 1000px) {
+    @media (width <= 1000px) {
         display: none;
     }
 `;

@@ -76,18 +76,22 @@ const StyledGenericModal = styled(GenericModal)`
         h1 {
             width:100%;
         }
+
         .modal-header {
-            padding: 24px 31px 5px 31px;
+            padding: 24px 31px 5px;
             margin-bottom: 0;
         }
+
         .modal-content {
-            padding: 0px;
+            padding: 0;
         }
+
         .modal-body {
             padding: 10px 31px;
         }
+
         .modal-footer {
-           padding: 0 31px 28px 31px;
+           padding: 0 31px 28px;
         }
     }
 `;
@@ -100,6 +104,7 @@ const Header = styled.div`
 const Body = styled.div`
     display: flex;
     flex-direction: column;
+
     & > div, & > input {
         margin-bottom: 12px;
     }

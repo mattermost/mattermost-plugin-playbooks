@@ -6,45 +6,45 @@ import Select from 'react-select';
 import Creatable from 'react-select/creatable';
 
 export const Banner = styled.div`
-    color: var(--button-color);
-    background-color: var(--button-bg);
     position: fixed;
+    z-index: 8;
     top: 0;
     left: 0;
-    width: 100%;
-    z-index: 8;
     overflow: hidden;
+    width: 100%;
     padding: 1rem 2.4rem;
+    background-color: var(--button-bg);
+    color: var(--button-color);
     text-align: center;
 `;
 
 export const BackstageSubheader = styled.header`
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
     color: var(--center-channel-color);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
 `;
 
 export const BackstageSubheaderDescription = styled.div`
-    font-weight: normal;
-    font-size: 14px;
-    line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
     margin: 4px 0 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 20px;
 `;
 
 export const StyledTextarea = styled.textarea`
-    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     width: 100%;
-    resize: none;
     height: 160px;
-    background-color: rgb(var(--center-channel-bg-rgb));
-    border: none;
-    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 4px;
     padding: 10px 25px 0 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: rgba(var(--center-channel-bg-rgb));
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
     font-size: 14px;
     line-height: 20px;
+    resize: none;
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
 
     &:focus {
         box-shadow: inset 0 0 0 2px var(--button-bg);
@@ -53,17 +53,17 @@ export const StyledTextarea = styled.textarea`
 
 export const GlobalSelectStyle = createGlobalStyle`
     .playbooks-rselect__control.playbooks-rselect__control {
+        width: 100%;
+        border: none;
+        border-radius: 4px;
+        background-color: transparent;
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+        font-size: 14px;
         transition: all 0.15s ease;
         transition-delay: 0s;
-        background-color: transparent;
-        border-radius: 4px;
-        border: none;
-        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-        width: 100%;
-        font-size: 14px;
 
         &--is-focused {
-            box-shadow: inset 0 0 0px 2px var(--button-bg);
+            box-shadow: inset 0 0 0 2px var(--button-bg);
         }
     }
 
@@ -74,9 +74,9 @@ export const GlobalSelectStyle = createGlobalStyle`
     .playbooks-rselect__control,
     .playbooks-rselect__menu {
         .playbooks-rselect__menu-list {
-            background-color: var(--center-channel-bg);
             border: none;
             border-radius: var(--radius-s);
+            background-color: var(--center-channel-bg);
         }
 
         .playbooks-rselect__input {
@@ -104,10 +104,10 @@ export const GlobalSelectStyle = createGlobalStyle`
 
         .playbooks-rselect__multi-value {
             height: 20px;
-            line-height: 19px;
-            background-color: rgba(var(--center-channel-color-rgb), 0.08);
-            border-radius: 10px;
             padding-left: 8px;
+            border-radius: 10px;
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+            line-height: 19px;
 
             .playbooks-rselect__multi-value__label {
                 padding: 0;
@@ -147,8 +147,8 @@ export const StyledCreatable = styled(Creatable)`
 
     ${({classNamePrefix}) => css`
         .${classNamePrefix}__control {
-            background-color: var(--center-channel-bg);
             border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            background-color: var(--center-channel-bg);
         }
 
         .${classNamePrefix}__input {
@@ -168,9 +168,9 @@ export const StyledCreatable = styled(Creatable)`
         }
 
         .${classNamePrefix}__menu-list {
-            background-color: var(--center-channel-bg);
             border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
             border-radius: 4px;
+            background-color: var(--center-channel-bg);
         }
 
         .${classNamePrefix}__option {
@@ -203,13 +203,13 @@ export const CenteredRow = styled.div`
 `;
 
 export const InfoLine = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 11px;
     font-style: normal;
     font-weight: normal;
-    font-size: 11px;
     line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
-export const FilterButton = styled.button<{active?: boolean;}>`
+export const FilterButton = styled.button<{$active?: boolean;}>`
     display: flex;
     align-items: center;
     border: none;
@@ -224,32 +224,32 @@ export const FilterButton = styled.button<{active?: boolean;}>`
     padding: 0 16px;
     height: 4rem;
 
-    :hover {
+    &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
-    :active {
+    &:active {
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 
     .icon-chevron-down {
-        :before {
+        &::before {
             margin: 0;
         }
     }
 
-    ${(props) => props.active && css`
-        cursor: pointer;
+    ${(props) => props.$active && css`
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
+        cursor: pointer;
     `}
 `;
-export const HorizontalSpacer = styled.div<{ size: number }>`
-    margin-left: ${(props) => props.size}px;
+export const HorizontalSpacer = styled.div<{$size: number}>`
+    margin-left: ${(props) => props.$size}px;
 `;
 
-export const VerticalSpacer = styled.div<{ size: number }>`
-    margin-top: ${(props) => props.size}px;
+export const VerticalSpacer = styled.div<{$size: number}>`
+    margin-top: ${(props) => props.$size}px;
 `;

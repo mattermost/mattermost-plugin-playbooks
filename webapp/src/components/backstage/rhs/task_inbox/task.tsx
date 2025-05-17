@@ -81,35 +81,31 @@ const Task = (props: Props) => {
 export default Task;
 
 const Container = styled.div`
-    padding: 16px 5px 12px 0;
     display: flex;
     flex-direction: column;
+    padding: 16px 5px 12px 0;
 
     &.removed {
-        -webkit-animation: disapear 0.7s;
-        -webkit-animation-fill-mode: forwards;
         animation: disapear 0.7s;
         animation-fill-mode: forwards;
     }
 
-    @-webkit-keyframes disapear{
+    @keyframes disapear{
         50% {
-            -webkit-transform: translateX(-5%);
             transform: translateX(-5%);
         }
+
         100% {
-            -webkit-transform: translateX(200%);
             transform: translateX(200%);
         }
     }
 
     @keyframes disapear{
         50% {
-            -webkit-transform: translateX(-5%);
             transform: translateX(-5%);
         }
+
         100% {
-            -webkit-transform: translateX(200%);
             transform: translateX(200%);
         }
     }
@@ -135,16 +131,17 @@ const Header = styled.div`
 `;
 
 const HeaderText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    max-width: 50%;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-weight: 400;
-    margin: 0 4px;
+    max-width: 50%;
     padding: 4px 0;
+    margin: 0 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     a {
         font-weight: 600;
     }

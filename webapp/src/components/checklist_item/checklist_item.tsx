@@ -296,8 +296,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             ref={props.draggableProvided?.innerRef}
             {...props.draggableProvided?.draggableProps}
             data-testid='checkbox-item-container'
-            editing={isEditing}
-            hoverMenuItemOpen={isHoverMenuItemOpen}
+            $editing={isEditing}
+            $hoverMenuItemOpen={isHoverMenuItemOpen}
             $disabled={props.readOnly || isSkipped()}
         >
             <CheckboxContainer>
@@ -327,8 +327,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                     className={'icon icon-drag-vertical'}
                     {...props.draggableProvided?.dragHandleProps}
-                    isVisible={!props.readOnly}
-                    isDragging={props.dragging}
+                    $isVisible={!props.readOnly}
+                    $isDragging={props.dragging}
                 />
                 <CheckBoxButton
                     readOnly={props.readOnly}
@@ -415,34 +415,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 };
 
 export const CheckboxContainer = styled.div`
-    align-items: flex-start;
-    display: flex;
     position: relative;
-
-    button {
-        width: 53px;
-        height: 29px;
-        border: 1px solid #166DE0;
-        box-sizing: border-box;
-        border-radius: 4px;
-        font-family: Open Sans;
-        font-style: normal;
-        font-weight: 600;
-        font-size: 12px;
-        line-height: 17px;
-        text-align: center;
-        background: #ffffff;
-        color: #166DE0;
-        cursor: pointer;
-        margin-right: 13px;
-    }
-
-    button:disabled {
-        border: 0px;
-        color: var(--button-color);
-        background: rgba(var(--center-channel-color-rgb), 0.56);
-        cursor: default;
-    }
+    display: flex;
+    align-items: flex-start;
 
     &:hover {
         .checkbox-container__close {
@@ -455,43 +430,41 @@ export const CheckboxContainer = styled.div`
     }
 
     input[type="checkbox"] {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background: #ffffff;
-        margin: 0;
-        cursor: pointer;
-        margin-right: 8px;
-        margin-top: 2px;
         display: flex;
-        align-items: center;
-        justify-content: center;
         width: 16px;
         min-width: 16px;
         height: 16px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
         box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
         border-radius: 2px;
+        margin: 0;
+        margin-top: 2px;
+        margin-right: 8px;
+        appearance: none;
+        background: #fff;
+        cursor: pointer;
     }
 
     input[type="checkbox"]:checked {
-        background: var(--button-bg);
-        border: 1px solid var(--button-bg);
         box-sizing: border-box;
+        border: 1px solid var(--button-bg);
+        background: var(--button-bg);
     }
 
     input[type="checkbox"]::before {
-        font-family: 'compass-icons', mattermosticons;
-        text-rendering: auto;
+        position: relative;
+        color: #fff;
+        content: "\f012c";
+        font-family: compass-icons, mattermosticons;
+        font-size: 12px;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        content: "\f012c";
-        font-size: 12px;
         font-weight: bold;
-        color: #ffffff;
-        transition: transform 0.15s;
+        text-rendering: auto;
         transform: scale(0) rotate(90deg);
-        position: relative;
+        transition: transform 0.15s;
     }
 
     input[type="checkbox"]:checked::before {
@@ -503,22 +476,23 @@ export const CheckboxContainer = styled.div`
     }
 
     label {
-        font-weight: normal;
-        word-break: break-word;
         display: inline;
+        flex-grow: 1;
         margin: 0;
         margin-right: 8px;
-        flex-grow: 1;
+        font-weight: normal;
+        /* stylelint-disable-next-line declaration-property-value-keyword-no-deprecated */
+        word-break: break-word;
     }
 `;
 
 const ChecklistItemTitleWrapper = styled.div`
     display: flex;
-    flex-direction: column;
     width: 100%;
+    flex-direction: column;
 `;
 
-const DragButton = styled.i<{isVisible: boolean, isDragging: boolean}>`
+const DragButton = styled.i<{$isVisible: boolean, $isDragging: boolean}>`
     cursor: pointer;
     width: 4px;
     margin-right: 4px;
@@ -526,39 +500,36 @@ const DragButton = styled.i<{isVisible: boolean, isDragging: boolean}>`
     margin-top: 1px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     opacity: 0;
-    ${({isVisible}) => !isVisible && css`
+    ${({$isVisible}) => !$isVisible && css`
         visibility: hidden;
     `}
-    ${({isDragging}) => isDragging && css`
+    ${({$isDragging}) => $isDragging && css`
         opacity: 1;
     `}
 `;
 
 const Row = styled.div`
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-flow: row wrap;
     align-items: center;
-    column-gap: 8px;
-    row-gap: 5px;
-
-    margin-left: 35px;
     margin-top: 8px;
     margin-right: 10px;
+    margin-left: 35px;
+    gap: 5px 8px;
 `;
 
-const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMenuItemOpen: boolean}>`
+const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean}>`
     margin-bottom: 4px;
-    padding: 8px 0px;
+    padding: 8px 0;
 
-    ${({hoverMenuItemOpen}) => !hoverMenuItemOpen && css`
+    ${({$hoverMenuItemOpen}) => !$hoverMenuItemOpen && css`
         ${HoverMenu} {
             opacity: 0;
         }
     `}
 
     .checklists:not(.isDragging) & {
-        // not dragging and hover or focus-within
+        /* not dragging and hover or focus-within */
         &:hover,
         &:focus-within {
             ${DragButton},
@@ -568,11 +539,11 @@ const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMen
         }
     }
 
-    ${({editing}) => editing && css`
+    ${({$editing}) => $editing && css`
         background-color: var(--button-bg-08);
     `}
 
-    ${({$disabled, editing}) => !editing && $disabled && css`
+    ${({$disabled, $editing}) => !$editing && $disabled && css`
         ${ChecklistItemTitleWrapper},
         & > ${Row} {
             opacity: 0.64;
@@ -583,7 +554,7 @@ const ItemContainer = styled.div<{editing: boolean, $disabled: boolean, hoverMen
         }
     `}
 
-    ${({editing, $disabled}) => !editing && !$disabled && css`
+    ${({$editing, $disabled}) => !$editing && !$disabled && css`
         .checklists:not(.isDragging) &:hover {
             background: var(--center-channel-color-04);
         }

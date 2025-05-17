@@ -191,8 +191,8 @@ const Header = styled.div`
 `;
 
 const HeaderButtonsRight = styled.div`
-    flex-grow: 1;
     display: flex;
+    flex-grow: 1;
     align-items: center;
     justify-content: flex-end;
 
@@ -202,28 +202,27 @@ const HeaderButtonsRight = styled.div`
 `;
 
 const TimestampContainer = styled.div`
+    margin-right: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-weight: normal;
-    margin-right: 16px;
 `;
 
 const Container = styled.div`
-    margin-top: 20px;
     display: flex;
     flex-direction: column;
+    margin-top: 20px;
 `;
 
 const BannerWrapper = styled.div`
     display: flex;
     flex-direction: column;
-
     padding: 30px 0;
     margin-top: 8px;
-    box-shadow: rgb(0 0 0 / 5%) 0px 0px 0px 1px;
+    box-shadow: rgba(0 0 0 / 0.05) 0 0 0 1px;
 `;
 
 const PublishButton = styled(TertiaryButton)`
-    font-size: 12px;
     height: 32px;
     padding: 0 16px;
+    font-size: 12px;
 `;
