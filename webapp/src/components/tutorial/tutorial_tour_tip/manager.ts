@@ -195,7 +195,7 @@ export default useTutorialTourTipManager;
 
 export const useTutorialStepper = (category: string, telemetryTag?: string) => {
     const currentUserId = useSelector(getCurrentUserId);
-    const currentStep = useSelector((state: GlobalState) => get(state, category, currentUserId, null));
+    const currentStep = useSelector((state: GlobalState) => get(state, category, currentUserId, ''));
     const dispatch = useDispatch();
 
     return {

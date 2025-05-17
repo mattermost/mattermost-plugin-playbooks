@@ -6,10 +6,10 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
 import {useDispatch, useSelector} from 'react-redux';
-import {getProfilesByIds} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
-import {UserProfile} from 'mattermost-webapp/packages/types/src/users';
-import {sortByUsername} from 'mattermost-webapp/packages/mattermost-redux/src/utils/user_utils';
-import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
+import {getProfilesByIds} from 'mattermost-redux/actions/users';
+import {UserProfile} from '@mattermost/types/users';
+import {sortByUsername} from 'mattermost-redux/utils/user_utils';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
@@ -248,9 +248,7 @@ const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, ch
             <Profile
                 userId={id}
                 nameFormatter={formatProfileName('')}
-                css={`
-                    width: ${(manageMode ? '75%' : '95%')};
-                `}
+                style={{width: manageMode ? '75%' : '95%'}}
             />
             {renderRightButton()}
         </ProfileWrapper>
@@ -263,38 +261,38 @@ const Container = styled.div`
 `;
 
 const ParticipantsNumber = styled.div`
+    margin-right: auto;
     color: var(--center-channel-color);
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
-    margin-right: auto;
 `;
 
 const SectionTitle = styled.div`
+    padding: 0 20px;
+    margin-top: 16px;
     color: rgba(var(--sys-center-channel-color-rgb), 0.56);
     font-size: 12px;
     font-weight: 600;
     line-height: 16px;
     text-transform: uppercase;
-    margin-top: 16px;
-    padding: 0 20px;
 `;
 
 const SearchSection = styled.div`
-    background-color: var(--center-channel-bg);
-    z-index: 2;
     position: sticky;
+    z-index: 2;
     top: 0;
     display: flex;
     flex-direction: column;
-    padding: 16px 20px 0 20px;
+    padding: 16px 20px 0;
+    background-color: var(--center-channel-bg);
 `;
 
 const ListSection = styled.div`
     display: flex;
     flex-direction: column;
-    margin: 8px 4px;
     padding-bottom: 50px;
+    margin: 8px 4px;
 `;
 
 const HoverButtonContainer = styled.div`
@@ -307,16 +305,18 @@ const ProfileWrapper = styled.div<{manageMode: boolean}>`
     flex-direction: row;
     align-items: center;
     padding: 5px 24px;
-    :hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
+
+    &:hover {
         border-radius: 5px;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     ${HoverButtonContainer} {
         opacity: 0;
     }
-    :hover,
-    :focus-within {
+
+    &:hover,
+    &:focus-within {
         background: rgba(var(--center-channel-color-rgb), 0.04);
         ${HoverButtonContainer} {
             opacity: 1;
@@ -327,48 +327,49 @@ const ProfileWrapper = styled.div<{manageMode: boolean}>`
 const HeaderSection = styled.div`
     display: flex;
     flex-direction: row;
-    padding: 20px 20px 0 20px;
-    color: var(--center-channel-color);
     align-items: center;
+    padding: 20px 20px 0;
+    color: var(--center-channel-color);
 `;
 
 const StyledSecondaryButton = styled(TertiaryButton)`
     display: flex;
-    align-items: center;
     height: 32px;
+    align-items: center;
+    margin-right: 8px;
     font-size: 12px;
     line-height: 10px;
-    margin-right: 8px;
 `;
 
 const StyledPrimaryButton = styled(PrimaryButton)`
     display: flex;
-    align-items: center;
     height: 32px;
+    align-items: center;
     font-size: 12px;
     line-height: 10px;
 `;
 
 const AddParticipantIcon = styled(AccountPlusOutlineIcon)`
-    height: 14.4px;
     width: 14.4px;
+    height: 14.4px;
     margin-right: 3px;
 `;
 
-const ParticipantButton = styled.div`
+const ParticipantButton = styled.button`
+
+    position: absolute;
+    right: 20px;
     display: inline-flex;
-    border-radius: 4px;
-    fill: var(--link-color);
     height: 25px;
     align-items: center;
+    border-radius: 4px;
     color: var(--link-color);
+    fill: var(--link-color);
+
     &:hover {
        background: rgba(var(--button-bg-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
-
-    position: absolute;
-    right: 20px;
 `;
 
 const IconWrapper = styled.div`

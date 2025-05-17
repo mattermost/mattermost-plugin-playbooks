@@ -29,74 +29,75 @@ import Tooltip from 'src/components/widgets/tooltip';
 
 const Circle = styled.div`
     position: absolute;
+    top: 5px;
+    left: 21px;
     width: 24px;
     height: 24px;
-    color: var(--button-bg);
-    background: #EFF1F5;
     border-radius: 50%;
-    left: 21px;
-    top: 5px;
+    background: #EFF1F5;
+    color: var(--button-bg);
 
     > .icon {
-        font-size: 14px;
         margin: 5px 0 0 2px;
+        font-size: 14px;
     }
 `;
 
 const TimelineItem = styled.li`
     position: relative;
-    margin: 27px 0 0 0;
+    margin: 27px 0 0;
 `;
 
 const TimeContainer = styled.div<{parent: 'rhs'|'retro'}>`
     position: absolute;
+    bottom: ${({parent}) => (parent === 'rhs' ? '-28px' : 'auto')};
+    left: 4px;
     width: 75px;
     line-height: 16px;
     text-align: left;
-    left: 4px;
-    bottom: ${({parent}) => (parent === 'rhs' ? '-28px' : 'auto')};
 `;
 
 const TimeStamp = styled.time`
+    margin: 0;
     font-size: 11px;
-    margin: 0px;
-    line-height: 1;
     font-weight: 500;
+    line-height: 1;
+
     svg {
-        vertical-align: middle;
-        margin: 0px 3px;
         position: relative;
         top: -1px;
+        margin: 0 3px;
+        vertical-align: middle;
     }
 `;
 
 const TimeBetween = styled.div`
-    font-size: 10px;
     position: absolute;
     top: -23px;
     left: -10px;
-    white-space: nowrap;
-    text-align: right;
     width: 3rem;
+    font-size: 10px;
+    text-align: right;
+    white-space: nowrap;
 
 
     &::after {
-        content: '';
-        background: #EFF1F5;
-        width: 7px;
-        height: 7px;
         position: absolute;
         top: 5px;
         right: -12px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
+        background: #EFF1F5;
+        content: '';
     }
 `;
 
 const SummaryContainer = styled.div`
     position: relative;
+    min-height: 36px;
     padding: 0 5px 0 55px;
     line-height: 16px;
-    min-height: 36px;
 `;
 
 const SummaryTitle = styled.div<{deleted: boolean, postIdExists: boolean}>`
@@ -106,23 +107,22 @@ const SummaryTitle = styled.div<{deleted: boolean, postIdExists: boolean}>`
     ${({deleted, postIdExists}) => (deleted ? css`
         text-decoration: line-through;
     ` : (postIdExists && css`
-        :hover {
+        &:hover {
             cursor: pointer;
         }
-    `))}
-
+    `))};
 `;
 
 const SummaryDeleted = styled.span`
-    font-size: 10px;
-    margin-top: 3px;
     display: inline-block;
+    margin-top: 3px;
+    font-size: 10px;
 `;
 
 const SummaryDetail = styled.div`
-    font-size: 11px;
-    margin: 4px 0 0 0;
+    margin: 4px 0 0;
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 11px;
 `;
 
 const StyledHoverMenu = styled(HoverMenu)<{parent: 'rhs'|'retro'}>`
@@ -339,7 +339,7 @@ const TimelineEventItem = (props: Props) => {
     let parsedDetails;
     try {
         parsedDetails = JSON.parse(props.event.details);
-    } catch (e) {
+    } catch {
         parsedDetails = props.event.details;
     }
 
@@ -359,7 +359,7 @@ const TimelineEventItem = (props: Props) => {
             </Circle>
 
             <SummaryContainer>
-                <TimeStamp dateTime={eventTime.setZone('Etc/UTC').toISO()}>
+                <TimeStamp dateTime={eventTime.setZone('Etc/UTC').toISO() ?? undefined}>
                     {eventTime.setZone('Etc/UTC').toLocaleString(DATETIME_FORMAT)}
                     <Tooltip
                         id={`timeline-${props.event.id}`}

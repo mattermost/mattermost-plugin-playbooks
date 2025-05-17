@@ -27,7 +27,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a run summary…'});
     const [editedValue, setEditedValue] = useState(props.value);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const currentTeam = useSelector<GlobalState, Team | undefined>(getCurrentTeam);
 
     const saveAndClose = () => {
         const newValue = editedValue.trim();
@@ -39,6 +39,10 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     useUpdateEffect(() => {
         setEditedValue(props.value);
     }, [props.value]);
+
+    if (!currentTeam) {
+        return null;
+    }
 
     if (!props.editing) {
         return (
@@ -109,24 +113,20 @@ const PlaceholderText = styled.span`
 `;
 
 const commonDescriptionStyle = css`
-    margin-bottom: 16px;
     padding: 2px 8px;
-
+    border-radius: 5px;
+    margin-bottom: 16px;
+    color: var(--center-channel-color);
+    font-size: 14px;
     line-height: 20px;
 
-    border-radius: 5px;
-
-    :hover {
+    &:hover {
         cursor: text;
     }
 
     p {
         white-space: pre-wrap;
     }
-
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--center-channel-color);
 `;
 
 const RenderedDescription = styled.div`
@@ -138,17 +138,14 @@ const RenderedDescription = styled.div`
 `;
 
 const DescriptionTextArea = styled.textarea`
-    ${commonDescriptionStyle} {
-    }
+    ${commonDescriptionStyle};
 
     display: block;
     resize: none;
     width: 100%;
-
     border: none;
     border-radius: 5px;
     box-shadow: none;
-
     background: rgba(var(--center-channel-color-rgb), 0.04);
 
     &:focus {

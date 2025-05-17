@@ -7,7 +7,7 @@ import {useSelector} from 'react-redux';
 import ReactSelect, {ControlProps} from 'react-select';
 
 import styled from 'styled-components';
-import {ActionFunc} from 'mattermost-redux/types/actions';
+import {ActionFuncAsync} from 'mattermost-redux/types/actions';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -21,8 +21,8 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 interface Props {
     ownerID: string;
     onAddUser: (userid: string) => void;
-    searchProfiles: (term: string) => ActionFunc;
-    getProfiles: () => ActionFunc;
+    searchProfiles: (term: string) => ActionFuncAsync;
+    getProfiles: () => ActionFuncAsync;
     isDisabled: boolean;
 }
 
@@ -115,17 +115,21 @@ const StyledReactSelect = styled(ReactSelect)`
 
     .assign-owner-selector__menu {
         background-color: transparent;
-        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 8px 24px rgba(0 0 0 / 0.12);
     }
 
 
     .assign-owner-selector__option {
-        height: 36px;
-        padding: 6px 21px 6px 12px;
         display: flex;
+        height: 36px;
         flex-direction: row;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
+        padding: 6px 21px 6px 12px;
+
+        &:active {
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+        }
     }
 
     .assign-owner-selector__option--is-selected {
@@ -138,51 +142,41 @@ const StyledReactSelect = styled(ReactSelect)`
     }
 
     .assign-owner-selector__control {
-        -webkit-transition: all 0.15s ease;
-        -webkit-transition-delay: 0s;
-        -moz-transition: all 0.15s ease;
-        -o-transition: all 0.15s ease;
-        transition: all 0.15s ease;
-        transition-delay: 0s;
-        background-color: transparent;
-        border-radius: 4px;
-        border: none;
-        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
         height: 4rem;
-        font-size: 14px;
-        padding-left: 3.2rem;
         padding-right: 16px;
+        padding-left: 3.2rem;
+        border: none;
+        border-radius: 4px;
+        background-color: transparent;
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+        font-size: 14px;
+        transition: all 0.15s ease;
+        transition-delay: 0s;
 
         &--is-focused {
-            box-shadow: inset 0 0 0px 2px var(--button-bg);
+            box-shadow: inset 0 0 0 2px var(--button-bg);
         }
 
-        &:before {
-            left: 16px;
-            top: 8px;
+        &::before {
             position: absolute;
+            top: 8px;
+            left: 16px;
             color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f0349';
+            font-family: compass-icons, mattermosticons;
             font-size: 18px;
-            font-family: 'compass-icons', mattermosticons;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
     }
 
-    .assign-owner-selector__option {
-        &:active {
-            background-color: rgba(var(--center-channel-color-rgb), 0.08);
-        }
-    }
-
     .assign-owner-selector__group-heading {
         height: 32px;
-        padding: 8px 12px 8px;
+        padding: 8px 12px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
         font-size: 12px;
         font-weight: 600;
         line-height: 16px;
-        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;

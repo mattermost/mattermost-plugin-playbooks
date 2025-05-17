@@ -43,11 +43,11 @@ const InlineDiv = styled.div`
 
 const CoverButtonDiv = styled.div`
     position: absolute;
+    z-index: 2;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 2;
 `;
 
 export default ConditionalTooltip;

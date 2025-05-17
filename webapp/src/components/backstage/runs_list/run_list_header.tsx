@@ -10,14 +10,14 @@ import {FetchPlaybookRunsParams} from 'src/types/playbook_run';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 
 const PlaybookRunListHeader = styled.div`
-    font-weight: 600;
-    font-size: 11px;
-    line-height: 36px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
     padding: 0 1.6rem;
     border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 36px;
 `;
 
 interface Props {

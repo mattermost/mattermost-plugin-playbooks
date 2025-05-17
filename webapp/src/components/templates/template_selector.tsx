@@ -5,8 +5,8 @@ import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
-import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
-import {getCurrentTeamId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/teams';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/common';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {savePlaybook, telemetryEventForTemplate} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
@@ -52,10 +52,10 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
 
 const SelectorGrid = styled.div`
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-    gap: 2.5rem;
-    place-items: flex-start center;
     padding: 0 0 100px;
+    gap: 2.5rem;
+	grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    place-items: flex-start center;
 `;
 
 const instantCreatePlaybook = async (template: PresetTemplate, teamID: string, username: string): Promise<string> => {

@@ -6,12 +6,12 @@ import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 const PaginationRowDiv = styled.div`
-    margin: 10px 16px 20px;
-    font-size: 14px;
     display: grid;
     align-items: center;
-    grid-template-columns: minmax(20rem, min-content) auto minmax(20rem, min-content);
     justify-content: space-between;
+    margin: 10px 16px 20px;
+    font-size: 14px;
+    grid-template-columns: minmax(20rem, min-content) auto minmax(20rem, min-content);
 `;
 
 const Count = styled.span`
@@ -51,18 +51,18 @@ export function PaginationRow(props: Props) {
                 <Button
                     className='btn btn-link'
                     onClick={onPrevPage}
-                    css={`
-                        grid-column: 1;
-                        justify-self: start;
-                    `}
+                    style={{
+                        gridColumn: 1,
+                        justifySelf: 'start',
+                    }}
                 >
                     <FormattedMessage defaultMessage='Previous'/>
                 </Button>
             )}
             <Count
-                css={`
-                    grid-column: 2;
-                `}
+                style={{
+                    gridColumn: 2,
+                }}
             >
                 <FormattedMessage
                     defaultMessage='{from, number}–{to, number} of {total, number} total'
@@ -73,10 +73,10 @@ export function PaginationRow(props: Props) {
                 <Button
                     className='btn btn-link'
                     onClick={onNextPage}
-                    css={`
-                        grid-column: 3;
-                        justify-self: end;
-                    `}
+                    style={{
+                        gridColumn: 3,
+                        justifySelf: 'end',
+                    }}
                 >
                     <FormattedMessage defaultMessage='Next'/>
                 </Button>

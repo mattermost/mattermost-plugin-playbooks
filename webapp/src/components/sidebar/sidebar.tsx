@@ -40,7 +40,7 @@ interface SidebarProps {
     headerDropdown: React.ReactNode;
 }
 
-const selectTeam = (teamId: string) => (state: GlobalState): Team => getTeam(state, teamId);
+const selectTeam = (teamId: string) => (state: GlobalState): Team | undefined => getTeam(state, teamId);
 
 const Sidebar = (props: SidebarProps) => {
     const team = useSelector(selectTeam(props.team_id));
@@ -96,9 +96,8 @@ const Sidebar = (props: SidebarProps) => {
 const SidebarComponent = styled.div`
     position: fixed;
     z-index: 16;
-    left: 65;
     display: flex;
-    width: 240px;
+    width: 241px;
     height: 100%;
     flex-direction: column;
     border-right: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
@@ -106,29 +105,29 @@ const SidebarComponent = styled.div`
 `;
 
 const Header = styled.div`
-    height: 52px;
-    padding: 0 16px;
-    gap: 8px;
     display: flex;
+    height: 52px;
     flex: initial;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: space-between;
-    margin: 0px;
+    padding: 0 16px;
+    margin: 0;
+    gap: 8px;
 `;
 
 const TeamName = styled.h1`
     display: inline-block;
-    margin: 0px;
     overflow: hidden;
+    margin: 0;
+    color: var(--sidebar-header-text-color);
+    cursor: pointer;
+    font-family: Metropolis, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--sidebar-header-text-color);
-    font-family: Metropolis, sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    cursor: pointer;
 `;
 
 export default Sidebar;

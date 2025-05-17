@@ -42,7 +42,11 @@ const RHSAbout = (props: Props) => {
     const myUserId = useSelector(getCurrentUserId);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
-    const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channel.id, !collapsed));
+    const toggleCollapsed = () => {
+        if (channel) {
+            dispatch(setRHSAboutCollapsedState(channel.id, !collapsed));
+        }
+    };
     const fetchUsersInTeam = async () => {
         return profilesInTeam;
     };
@@ -163,11 +167,10 @@ const RHSAbout = (props: Props) => {
 const Container = styled.div`
     position: relative;
     z-index: 2;
-
-    margin-top: 3px;
     padding: 16px 12px;
+    margin-top: 3px;
 
-    :hover {
+    &:hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.04);
     }
 `;
@@ -179,12 +182,12 @@ const StyledProfileSelector = styled(ProfileSelector)`
         max-width: 100%;
         height: 28px;
         padding: 2px;
+        border-radius: 100px;
         margin-top: 0;
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
-        border-radius: 100px;
 
-        :hover {
+        &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
         }
 
@@ -198,7 +201,6 @@ const StyledProfileSelector = styled(ProfileSelector)`
 const ButtonsRow = styled(HoverMenu)`
     top: 9px;
     right: 12px;
-
     display: none;
 
     ${Container}:hover & {
@@ -214,15 +216,13 @@ const RenderedTitle = styled(DefaultRenderedTitle)`
 
 const Row = styled.div`
     display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-
+    flex-flow: row nowrap;
     padding: 0 8px;
     margin-bottom: 30px;
 `;
 
 const MemberSection = styled.div`
-    :not(:first-child) {
+    &:not(:first-child) {
         margin-left: 36px;
     }
 `;
@@ -231,15 +231,13 @@ const OwnerSection = styled(MemberSection)`
     max-width: calc(100% - 210px);
 `;
 
-const ParticipantsSection = styled(MemberSection)`
-`;
+const ParticipantsSection = styled(MemberSection)`/* stylelint-disable no-empty-source */`;
 
 const MemberSectionTitle = styled.div`
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 16px;
-
     color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
 `;
 
 export default RHSAbout;

@@ -390,24 +390,20 @@ const ChecklistList = ({
 };
 
 const AddChecklistLink = styled.button`
+    display: flex;
+    width: 100%;
+    height: 44px;
+    flex-direction: row;
+    align-items: center;
+    border: 1px dashed;
+    border-color: var(--center-channel-color-16);
+    border-radius: 4px;
+    background: none;
+    color: var(--center-channel-color-64);
+    cursor: pointer;
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
-    height: 44px;
-    width: 100%;
-
-    background: none;
-    border: none;
-
-    border-radius: 4px;
-    border: 1px dashed;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    cursor: pointer;
-
-    border-color: var(--center-channel-color-16);
-    color: var(--center-channel-color-64);
 
     &:hover:not(:disabled) {
         background-color: var(--button-bg-08);
@@ -416,28 +412,25 @@ const AddChecklistLink = styled.button`
 `;
 
 const NewChecklist = styled.div`
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    z-index: 1;
     position: sticky;
+    z-index: 1;
     top: 0;
-    border-radius: 4px 4px 0px 0px;
-
     display: flex;
     flex-direction: row;
     align-items: center;
+    border-radius: 4px 4px 0 0;
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
 const Icon = styled.i`
     position: relative;
     top: 2px;
     margin: 0 0 0 6px;
-
-    font-size: 18px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 18px;
 `;
 
-const ChecklistsContainer = styled.div`
-`;
+const ChecklistsContainer = styled.div`/* stylelint-disable no-empty-source */`;
 
 const IconWrapper = styled.div`
     padding: 3px 0 0 1px;

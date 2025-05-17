@@ -7,7 +7,7 @@ import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
 
 import styled from 'styled-components';
-import {ActionFunc} from 'mattermost-redux/types/actions';
+import {ActionFuncAsync} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
 import {
     ControlProps,
@@ -23,8 +23,8 @@ export const StyledAsyncSelect = styled(AsyncSelect)`
     background-color: var(--center-channel-bg);
 
     .profile-autocomplete__menu-list {
-        background-color: var(--center-channel-bg);
         border: none;
+        background-color: var(--center-channel-bg);
     }
 
     .profile-autocomplete__input {
@@ -40,26 +40,26 @@ export const StyledAsyncSelect = styled(AsyncSelect)`
     }
 
     .profile-autocomplete__control {
+        width: 100%;
+        border: none;
+        border-radius: 4px;
+        background-color: transparent;
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         transition: all 0.15s ease;
         transition-delay: 0s;
-        background-color: transparent;
-        border-radius: 4px;
-        border: none;
-        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-        width: 100%;
 
         &--is-focused {
-            box-shadow: inset 0 0 0px 2px var(--button-bg);
+            box-shadow: inset 0 0 0 2px var(--button-bg);
         }
 
-        &:before {
-            left: 16px;
-            top: 8px;
+        &::before {
             position: absolute;
+            top: 8px;
+            left: 16px;
             color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f0349';
+            font-family: compass-icons, mattermosticons;
             font-size: 18px;
-            font-family: 'compass-icons', mattermosticons;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -76,8 +76,8 @@ interface Props {
     userIds: string[];
     onAddUser?: (userid: string) => void; // for single select
     setValues?: (values: UserProfile[]) => void; // for multi select
-    searchProfiles: (term: string) => ActionFunc;
-    getProfiles?: () => ActionFunc;
+    searchProfiles: (term: string) => ActionFuncAsync;
+    getProfiles?: () => ActionFuncAsync;
     isDisabled?: boolean;
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
@@ -197,8 +197,8 @@ const StyledProfile = styled(Profile)`
     }
 
     ${ProfileName} {
-        font-weight: 600;
         font-size: 14px;
+        font-weight: 600;
         line-height: 16px;
     }
 

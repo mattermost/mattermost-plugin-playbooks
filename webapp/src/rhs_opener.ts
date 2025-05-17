@@ -5,7 +5,7 @@ import {Store} from 'redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/users';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ApolloClient, NormalizedCacheObject, gql} from '@apollo/client';
 
 import {matchPath} from 'react-router-dom';

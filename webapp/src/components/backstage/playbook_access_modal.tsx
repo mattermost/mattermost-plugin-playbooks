@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {getProfilesInTeam, searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
+import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import React, {ComponentProps, useState} from 'react';
@@ -45,8 +45,8 @@ const HorizontalBlock = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
 
     > i {
-        font-size: 12px;
         margin-left: -3px;
+        font-size: 12px;
     }
 `;
 
@@ -56,11 +56,11 @@ const SubTitle = styled.div`
 `;
 
 const PrivateLink = styled.a`
+	margin-right: 3px;
+	margin-left: 4px;
+	color: var(--link-color);
 	font-size: 12px;
 	line-height: 16px;
-	color: var(--link-color);
-	margin-left: 4px;
-	margin-right: 3px;
 `;
 
 const BlueArrow = styled.i`
@@ -75,7 +75,7 @@ const PlaybookAccessModal = ({
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const [playbook, updatePlaybook] = useEditPlaybook(playbookId, refetch);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
+    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
 

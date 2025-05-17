@@ -171,19 +171,19 @@ const StrikeThrough = styled.text`
 `;
 
 const Border = styled.div`
+    border-radius: 4px;
     margin-bottom: 12px;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    border-radius: 4px;
 `;
 
 const ProgressBackground = styled.div`
     position: relative;
 
-    &:after {
-        border-bottom: 2px solid rgba(var(--center-channel-color-rgb), 0.08);
-        content: '';
+    &::after {
         display: block;
         width: 100%;
+        border-bottom: 2px solid rgba(var(--center-channel-color-rgb), 0.08);
+        content: '';
     }
 `;
 
@@ -191,31 +191,30 @@ const ProgressLine = styled.div<{width: number}>`
     position: absolute;
     width: 100%;
 
-    &:after {
-        border-bottom: 2px solid var(--online-indicator);
-        content: '';
+    &::after {
         display: block;
         width: ${(props) => props.width}%;
+        border-bottom: 2px solid var(--online-indicator);
+        content: '';
     }
 `;
 
 export const HorizontalBG = styled.div<{menuIsOpen: boolean}>`
-    background-color: var(--center-channel-bg);
+    position: sticky;
 
     /* sets a higher z-index to the checklist with open menu */
     z-index: ${({menuIsOpen}) => (menuIsOpen ? '2' : '1')};
-
-    position: sticky;
     top: 0;
+    background-color: var(--center-channel-bg);
 `;
 
 const Horizontal = styled.div`
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    border-radius: 4px 4px 0 0;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     display: flex;
     flex-direction: row;
     align-items: baseline;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px 4px 0 0;
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
     cursor: pointer;
 `;
 
@@ -223,9 +222,8 @@ const Icon = styled.i`
     position: relative;
     top: 2px;
     margin: 0 0 0 6px;
-
-    font-size: 18px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 18px;
 
     ${Horizontal}:hover & {
         color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -233,15 +231,14 @@ const Icon = styled.i`
 `;
 
 const Title = styled.div`
-    margin: 0 6px 0 0;
-
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 44px;
     overflow: hidden;
+    margin: 0 6px 0 0;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 44px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
 
     ${Horizontal}:hover & {
         color: rgba(var(--center-channel-color-rgb), 0.80);
@@ -250,11 +247,10 @@ const Title = styled.div`
 
 export const TitleHelpTextWrapper = styled.div`
     margin-right: 16px;
-
-    font-weight: 600;
-    font-size: 12px;
-    white-space: nowrap;
     color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
 
     ${Horizontal}:hover & {
         color: rgba(var(--center-channel-color-rgb), 0.56);
@@ -320,19 +316,18 @@ export const ChecklistInputComponent = (props: ChecklistInputProps) => {
 };
 
 const ChecklistInput = styled.input`
-    height: 32px;
-    background: var(--center-channel-bg);
-    border: 1px solid var(--center-channel-color-16);
-    box-sizing: border-box;
-    border-radius: 4px;
     width: 100%;
+    height: 32px;
+    box-sizing: border-box;
     padding: 0 10px;
-
-    font-weight: 600;
+    border: 1px solid var(--center-channel-color-16);
+    border-radius: 4px;
+    background: var(--center-channel-bg);
     font-size: 14px;
+    font-weight: 600;
 
     ::placeholder {
-        font-weight: 400;
         font-style: italic;
+        font-weight: 400;
     }
 `;

@@ -25,9 +25,9 @@ const Action = (props: Props) => {
                     e.preventDefault();
                     onChange();
                 }}
-                clickable={props.editable}
+                $clickable={props.editable}
             >
-                <Title clickable={props.editable}>{props.title}</Title>
+                <Title $clickable={props.editable}>{props.title}</Title>
                 <Toggle
                     disabled={!props.editable}
                     isChecked={props.enabled}
@@ -46,17 +46,17 @@ const Wrapper = styled.div`
     flex-direction: column;
 `;
 
-const Container = styled.div<{clickable: boolean}>`
+const Container = styled.div<{$clickable: boolean}>`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    cursor: ${({clickable}) => (clickable ? 'pointer' : 'default')};
+    cursor: ${({$clickable}) => ($clickable ? 'pointer' : 'default')};
 `;
 
-const Title = styled.label<{clickable: boolean}>`
-    font-weight: normal;
+const Title = styled.label<{$clickable: boolean}>`
+    cursor: ${({$clickable}) => ($clickable ? 'pointer' : 'default')};
     font-size: 14px;
-    cursor: ${({clickable}) => (clickable ? 'pointer' : 'default')};
+    font-weight: normal;
 `;
 
 const Toggle = styled(BasicToggle)`

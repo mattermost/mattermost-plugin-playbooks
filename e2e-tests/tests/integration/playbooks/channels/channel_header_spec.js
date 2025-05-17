@@ -87,11 +87,11 @@ describe('channels > channel header', {testIsolation: true}, () => {
 
             // # Hover over the channel header icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').trigger('mouseover');
+                cy.get('#incidentIcon').trigger('mouseenter');
             });
 
             // * Verify tooltip text
-            cy.get('#pluginTooltip').contains('Playbooks');
+            cy.findByRole('tooltip', {name: 'Playbooks'}).should('be.visible');
         });
 
         it('webapp should make the Playbook channel header button active when opened', () => {

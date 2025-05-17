@@ -16,11 +16,11 @@ import {useIntl} from 'react-intl';
 
 import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
-import {fetchMyChannelsAndMembersREST} from 'mattermost-redux/actions/channels';
+import {fetchChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {useDispatch, useSelector} from 'react-redux';
 import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
-import {getCurrentUserId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
@@ -66,7 +66,7 @@ const PlaybookEditor = () => {
         }
 
         dispatch(selectTeam(teamId));
-        dispatch(fetchMyChannelsAndMembersREST(teamId));
+        dispatch(fetchChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, playbook?.team_id, playbookId]);
 
@@ -288,7 +288,7 @@ const PlaybookEditor = () => {
 };
 
 const titleCommon = css`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading};
     font-size: 16px;
     line-height: 24px;
     color: var(--center-channel-color);
@@ -302,44 +302,45 @@ const TitleBar = styled.div`
     position: sticky;
     z-index: 5;
     top: 0;
-    grid-area: title;
-    padding: 0 2rem;
     display: flex;
     justify-content: space-between;
+    padding: 0 2rem;
+    margin-bottom: 1px; /* keeps box-shadow visible */
+    grid-area: title;
+
     > div {
         display: flex;
         align-items: center;
         gap: 8px;
     }
-    margin-bottom: 1px; // keeps box-shadow visible
 
     ${Controls.TitleButton} {
         padding-left: 8px;
     }
 
-    // === blur/cutoff ===
+    /* === blur/cutoff === */
     &::before {
-        width: 100%;
-        height: var(--bar-height);
-        display: block;
-        content: '';
         position: absolute;
         z-index: -1;
-        left: 0;
         top: 0;
+        left: 0;
+        display: block;
+        width: 100%;
+        height: var(--bar-height);
         background-color: var(--center-channel-bg);
+        content: '';
         mask: linear-gradient(black, black, transparent);
     }
 `;
 
 const Header = styled.header`
-    grid-area: header;
     z-index: 4;
+    grid-area: header;
 
     ${CopyLink} {
-        margin-left: -40px;
-        height: 40px;
         width: 40px;
+        height: 40px;
+        margin-left: -40px;
         font-size: 24px;
         opacity: 1;
         transition: opacity ease 0.15s;
@@ -350,6 +351,7 @@ const titleMenuOverrides = css`
     ${Controls.TitleMenu} {
         margin: 0;
         color: var(--center-channel-color);
+
         &:hover,
         &:focus {
             background: rgba(var(--button-bg-rgb), 0.08);
@@ -364,7 +366,6 @@ const Heading = styled.h1`
     font-size: 32px;
     line-height: 40px;
     color: var(--center-channel-color);
-
     min-height: var(--bar-height);
     display: inline-flex;
     align-items: center;
@@ -381,7 +382,6 @@ const Title = styled.h1`
     font-size: 16px;
     line-height: 24px;
     color: var(--center-channel-color);
-
     height: 24px;
     margin: 0;
 
@@ -389,53 +389,53 @@ const Title = styled.h1`
 `;
 
 const Description = styled.div`
-    font-weight: 400;
-    font-size: 14px;
-    line-height: 20px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
 `;
 
 const NavItem = styled(NavLink)`
     display: flex;
     align-items: center;
-    text-align: center;
     padding: 20px 30px;
     font-weight: 600;
+    text-align: center;
 
     && {
         color: rgba(var(--center-channel-color-rgb), 0.64);
 
-        :hover {
+        &:hover {
             color: var(--button-bg);
         }
 
-        :hover,
-        :focus {
+        &:hover,
+        &:focus {
             text-decoration: none;
         }
     }
 
     &.active {
+        box-shadow: inset 0 -3px 0 0 var(--button-bg);
         color: var(--button-bg);
-        box-shadow: inset 0px -3px 0px 0px var(--button-bg);
     }
 `;
 
 const NavBar = styled.nav`
+    z-index: 2;
     display: flex;
     width: 100%;
     justify-content: center;
     grid-area: nav;
-    z-index: 2;
 `;
 
 const NavBackdrop = styled.div`
     position: sticky;
-    top: 0;
     z-index: 2;
+    top: 0;
     background: var(--center-channel-bg);
-    grid-area: nav-left/nav-left/nav-right/nav-right;
     box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
+    grid-area: nav-left/nav-left/nav-right/nav-right;
 `;
 
 const TitleHeaderBackdrop = styled.div`
@@ -451,7 +451,6 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
     --markdown-textbox-radius: 8px;
     --markdown-textbox-padding: 12px 16px;
-
     --bar-height: 60px;
     --content-max-width: 1100px;
 
@@ -474,19 +473,15 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 
     ${ScrollNav} {
-        grid-area: aside;
-        align-self: start;
-        justify-self: end;
-
-        margin-top: 8.25rem;
-        padding-top: 1rem;
-
         position: sticky;
         top: var(--bar-height);
-
         min-width: 145px;
-        margin-left: 1.5rem;
+        padding-top: 1rem;
+        margin-top: 8.25rem;
         margin-right: 1.5rem;
+        margin-left: 1.5rem;
+        grid-area: aside;
+        place-self: start end;
     }
 
 
@@ -513,8 +508,8 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 
     /* === scrolling, condense header/title === */
     ${({$headingVisible}) => !$headingVisible && css`
-        @media screen and (min-width: 769px) {
-            // only on tablet-desktop
+        @media screen and (width >= 769px) {
+            /* // only on tablet-desktop */
             ${TitleBar} {
                 ${Controls.TitleMenu}, .indicator {
                     display: inline-flex;
@@ -529,7 +524,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     `}
 
     /* === mobile === */
-    @media screen and (max-width: 768px) {
+    @media screen and (width <= 768px) {
         --bar-height: 50px;
 
         grid-template:
@@ -581,7 +576,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         }
     }
 
-    @media screen and (max-width: 1266px) {
+    @media screen and (width <= 1266px) {
         ${ScrollNav} {
             display: none;
         }
@@ -589,14 +584,14 @@ const Editor = styled.main<{$headingVisible: boolean}>`
 `;
 
 export const StarButton = styled.button`
-    border-radius: 4px;
-    border: 0;
     display: flex;
-    height: 28px;
     width: 28px;
+    height: 28px;
     align-items: center;
-    background: none;
+    border: 0;
+    border-radius: 4px;
     margin: 0 6px;
+    background: none;
 
     &:hover {
        background: rgba(var(--center-channel-color-rgb), 0.08);

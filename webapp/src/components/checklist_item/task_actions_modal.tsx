@@ -7,7 +7,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {OptionTypeBase, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
-import {searchProfiles} from 'mattermost-webapp/packages/mattermost-redux/src/actions/users';
+import {searchProfiles} from 'mattermost-redux/actions/users';
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
 
 import ActionsModal from 'src/components/actions_modal';
@@ -152,10 +152,10 @@ export const TaskActionsContainer = styled.div`
     display: flex;
     flex-direction: column;
     row-gap: 16px;
-    @media screen and (max-height: 900px) {
+
+    @media screen and (height <= 900px) {
+        overflow: hidden scroll;
         max-height: 500px;
-        overflow-x: hidden;
-        overflow-y: scroll;
     }
 `;
 

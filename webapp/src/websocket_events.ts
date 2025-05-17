@@ -77,6 +77,10 @@ export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispat
 
         const currentTeam = getCurrentTeam(getState());
 
+        if (!currentTeam) {
+            return;
+        }
+
         // Navigate to the newly created channel
         const pathname = `/${currentTeam.name}/channels/${payload.channel_name}`;
         const search = '?forceRHSOpen';
@@ -150,7 +154,7 @@ async function getPlaybookRunFromStatusUpdate(post: Post): Promise<PlaybookRun |
     let playbookRun: PlaybookRun;
     try {
         playbookRun = await fetchPlaybookRunByChannel(post.channel_id);
-    } catch (err) {
+    } catch {
         return null;
     }
 

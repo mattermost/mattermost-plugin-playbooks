@@ -263,30 +263,31 @@ const LegacyActionsEdit = ({playbook}: Props) => {
 export default LegacyActionsEdit;
 
 const StyledSection = styled(Section)`
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     padding: 2rem;
     padding-bottom: 0;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 8px;
     margin: 0;
     margin-bottom: 20px;
-    border-radius: 8px;
 `;
 
 const StyledSectionTitle = styled(SectionTitle)`
-    font-weight: 600;
-    margin: 0 0 24px;
-    font-size: 16px;
     display: flex;
     align-items: center;
+    margin: 0 0 24px;
+    font-size: 16px;
+    font-weight: 600;
     gap: 8px;
+
     svg {
         color: rgba(var(--center-channel-color-rgb), 0.48);
     }
 `;
 
 const Setting = styled.div`
-    margin-bottom: 24px;
     display: flex;
     flex-direction: column;
+    margin-bottom: 24px;
     gap: 8px;
 `;
 

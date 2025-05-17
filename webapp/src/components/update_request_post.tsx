@@ -70,10 +70,10 @@ const firstActiveRunInChannelQuery = graphql(/* GraphQL */`
 const UpdateRequestPost = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
-    const targetUsername = props.post.props.targetUsername ?? '';
-    const playbookRunId = props.post.props.playbookRunId;
+    const channel = useSelector<GlobalState, Channel | undefined>((state) => getChannel(state, props.post.channel_id));
+    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, channel?.team_id ?? ''));
+    const targetUsername = typeof props.post.props.targetUsername === 'string' ? props.post.props.targetUsername : '';
+    const playbookRunId = typeof props.post.props.playbookRunId === 'string' ? props.post.props.playbookRunId : '';
 
     const [run, setRun] = useState<PlaybookRunReminderQuery['run']>(null);
     const {data, loading} = useQuery(playbookRunReminderQuery, {
@@ -121,6 +121,10 @@ const UpdateRequestPost = (props: Props) => {
     }, [rect]);
 
     const makeOption = useMakeOption(Mode.DurationValue);
+
+    if (!team) {
+        return null;
+    }
 
     if (!run) {
         return (
@@ -222,18 +226,17 @@ const SelectWrapper = styled(StyledSelect)`
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
-    justify-content: center;
     flex: 1;
+    justify-content: center;
     margin: 4px;
     white-space: nowrap;
 `;
 
 const Container = styled(CustomPostContainer)`
     display: flex;
-    flex-direction: row;
-    padding: 12px;
-    flex-wrap: wrap;
     max-width: 440px;
+    flex-flow: row wrap;
+    padding: 12px;
 `;
 
 const StyledPostText = styled(PostText)`

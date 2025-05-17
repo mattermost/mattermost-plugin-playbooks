@@ -276,7 +276,7 @@ const UpdateRunStatusModal = ({
                     <WarningIcon/> {warningMessage}
                 </WarningLine>
             }
-            <VerticalSpacer size={8}/>
+            <VerticalSpacer $size={8}/>
         </FormContainer>
     );
 
@@ -473,8 +473,8 @@ const FormContainer = styled.div`
 
     ${Description} {
         span {
-            text-decoration: underline;
             font-weight: bold;
+            text-decoration: underline;
         }
     }
 `;
@@ -484,8 +484,8 @@ const TooltipContent = styled.span`
 `;
 
 const WarningBlock = styled.div`
-    padding: 2rem;
     display: flex;
+    padding: 2rem;
     place-content: center;
 
     span {
@@ -494,8 +494,8 @@ const WarningBlock = styled.div`
 `;
 
 const WarningLine = styled.p`
-    color: var(--error-text);
     margin-top: 0.6rem;
+    color: var(--error-text);
 `;
 
 const FooterContainer = styled.div`

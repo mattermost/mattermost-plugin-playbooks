@@ -87,27 +87,24 @@ const Item = ({data, info, editable, to}: ItemProps) => (
 const Row = styled(Link)`
     display: table-row;
 
-    :hover {
+    &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
-    :hover, :focus {
+    &:hover, &:focus {
         text-decoration: none;
     }
 `;
 
 const Name = styled.div`
     display: table-cell;
-    padding: 8px 0 8px 24px;
-    max-width: 180px;
-
-    font-size: 14px;
-
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-
-    white-space: nowrap;
     overflow: hidden;
+    max-width: 180px;
+    padding: 8px 0 8px 24px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
     text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
 interface ValueProps {

@@ -41,20 +41,16 @@ const UpgradeModalFooter = (props: Props) => {
 };
 
 const FooterContainer = styled.div`
-    min-height: 32px;
+    display: flex;
     width: 362px;
     height: 32px;
-
+    min-height: 32px;
+    align-items: center;
+    margin-top: 18px;
+    color: rgba(var(--center-channel-color, 0.56));
     font-size: 11px;
     line-height: 16px;
-
-    display: flex;
-    align-items: center;
     text-align: center;
-
-    color: rgba(var(--center-channel-color, 0.56));
-
-    margin-top: 18px;
 `;
 
 export default UpgradeModalFooter;

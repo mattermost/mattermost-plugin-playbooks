@@ -7,7 +7,7 @@ import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
-import {selectTeam} from 'mattermost-webapp/packages/mattermost-redux/src/actions/teams';
+import {selectTeam} from 'mattermost-redux/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
@@ -286,33 +286,32 @@ const RowContainer = styled.div`
 
 const Container = styled.div`
     display: grid;
-    grid-auto-flow: column;
     grid-auto-columns: minmax(400px, 2fr) minmax(400px, 1fr);
+    grid-auto-flow: column;
     overflow-y: hidden;
 
-    @media screen and (min-width: 1600px) {
+    @media screen and (width >= 1600px) {
         grid-auto-columns: 2.5fr 500px;
     }
 `;
 
 const MainWrapper = styled.div`
     display: grid;
-    grid-template-rows: 56px 1fr;
-    grid-auto-flow: row;
-    overflow-y: hidden;
     grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
+    grid-template-rows: 56px 1fr;
+    overflow-y: hidden;
 `;
 
 const Main = styled.main`
+    display: grid;
     min-height: 0;
     padding: 0 20px 60px;
-    display: grid;
+    grid-auto-columns: min(780px, 100%);
     overflow-y: auto;
     place-content: start center;
-    grid-auto-columns: min(780px, 100%);
 `;
-const Body = styled(RowContainer)`
-`;
+const Body = styled(RowContainer)`/* stylelint-disable no-empty-source */`;
 
 const Header = styled.header`
     height: 56px;

@@ -63,45 +63,45 @@ interface Props {
 }
 
 const ActionCol = styled.div`
-    margin-left: -8px;
-	width: 16.666667%;
-	float: left;
     position: relative;
+	width: 16.6667%;
 	min-height: 1px;
-	padding-left: 15px;
 	padding-right: 15px;
+	padding-left: 15px;
+    margin-left: -8px;
 	cursor: pointer;
+	float: left;
 `;
 
 const PlaybookItem = styled.div`
-    cursor: pointer;
     display: flex;
+    align-items: center;
     padding-top: 15px;
     padding-bottom: 15px;
-    align-items: center;
-    margin: 0;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    margin: 0;
+    cursor: pointer;
 `;
 
 const PlaybookItemTitle = styled.div`
-    display: flex;
-	font-weight: 600;
-    flex-direction: column;
     position: relative;
-    width: 33.333333%;
+    display: flex;
+    width: 33.3333%;
     min-height: 1px;
+    flex-direction: column;
     padding-right: 15px;
     padding-left: 15px;
 	float: left;
+	font-weight: 600;
 `;
 
 const PlaybookItemRow = styled.div`
-	width: 16.666667%;
-	float: left;
     position: relative;
+	width: 16.6667%;
 	min-height: 1px;
-	padding-left: 15px;
 	padding-right: 15px;
+	padding-left: 15px;
+	float: left;
 `;
 
 export const ArchiveIcon = styled.i`
@@ -136,6 +136,10 @@ const PlaybookListRow = (props: Props) => {
     const isTutorialPlaybook = playbookIsTutorialPlaybook(props.playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, props.playbook);
     const enableRunPlaybook = props.playbook.delete_at === 0 && hasPermissionToRunPlaybook;
+
+    if (!team) {
+        return null;
+    }
 
     const run = async () => {
         if (props.playbook && isTutorialPlaybook) {
@@ -211,10 +215,10 @@ const PlaybookListRow = (props: Props) => {
             <PlaybookItemRow>{props.playbook.active_runs}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
             <ActionCol
-                css={`
-                    display: flex;
-                    gap: 4px;
-                `}
+                style={{
+                    display: 'flex',
+                    gap: '4px',
+                }}
             >
                 {currentUserPlaybookMember ? (
                     <SecondaryButton
@@ -225,12 +229,13 @@ const PlaybookListRow = (props: Props) => {
                         disabled={!enableRunPlaybook}
                         title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
                         data-testid='run-playbook'
-                        css={`
-                            height: 32px;
-                            ${iconSplitStyling};
-                            gap: 2px;
-                            padding: 0 20px;
-                        `}
+                        style={{
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                            padding: '0 20px',
+                        }}
                     >
                         <PlayOutlineIcon size={22}/>
                         {formatMessage({defaultMessage: 'Run'})}
@@ -243,12 +248,13 @@ const PlaybookListRow = (props: Props) => {
                             props.onMembershipChanged(true);
                         }}
                         data-testid='join-playbook'
-                        css={`
-                            height: 32px;
-                            ${iconSplitStyling};
-                            gap: 7px;
-                            padding: 0 20px;
-                        `}
+                        style={{
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '7px',
+                            padding: '0 20px',
+                        }}
                     >
                         <AccountPlusOutlineIcon size={16}/>
                         {formatMessage({defaultMessage: 'Join'})}
@@ -292,7 +298,11 @@ const PlaybookListRow = (props: Props) => {
                         href={exportHref}
                         download={exportFilename}
                         role={'button'}
-                        css={`${iconSplitStyling}`}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                        }}
                         onClick={() => telemetryEventForPlaybook(props.playbook.id, 'playbook_export_clicked_in_playbooks_list')}
                     >
                         <ExportVariantIcon size={18}/>
@@ -322,7 +332,13 @@ const PlaybookListRow = (props: Props) => {
                                 <DropdownMenuItem
                                     onClick={props.onArchive}
                                 >
-                                    <RedText css={`${iconSplitStyling}`}>
+                                    <RedText
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                        }}
+                                    >
                                         <ArchiveOutlineIcon size={18}/>
                                         <FormattedMessage defaultMessage='Archive'/>
                                     </RedText>

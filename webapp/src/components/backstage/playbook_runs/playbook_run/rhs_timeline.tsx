@@ -36,6 +36,10 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
 
     const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
 
+    if (!team) {
+        return null;
+    }
+
     return (
         <Container data-testid='timeline-view'>
             <Filters>
@@ -101,28 +105,28 @@ export default RHSTimeline;
 
 const Container = styled.div`
     display: flex;
-    flex-direction: column;
     flex: 1;
+    flex-direction: column;
 `;
 
 const Filters = styled.div`
     display: flex;
-    flex-direction: row;
     height: 40px;
     min-height: 40px;
-    justify-content: space-between;
+    flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     padding: 0 22px;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const FilterText = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 12px;
     font-weight: 600;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
-const FilterButton = styled.div``;
+const FilterButton = styled.div`/* stylelint-disable no-empty-source */`;
 
 const Body = styled.div`
     display: flex;
@@ -132,29 +136,29 @@ const Body = styled.div`
 `;
 
 export const ItemList = styled.ul`
-    padding: 0 0 40px 0;
-    list-style: none;
     position: relative;
+    padding: 0 0 40px;
+    list-style: none;
 
-    :before {
-        content: '';
+    &::before {
         position: absolute;
         top: 26px;
+        bottom: 50px;
         left: 32px;
         width: 1px;
-        bottom: 50px;
         background: #EFF1F5;
+        content: '';
     }
 `;
 
-const FakeButton = styled.div`
+const FakeButton = styled.button`
     display: inline-flex;
     align-items: center;
-    color: var(--button-bg);
-    background: var(--button-color-rgb);
     padding: 5px 10px;
-    font-weight: 600;
+    background: var(--button-color-rgb);
+    color: var(--button-bg);
     font-size: 11px;
+    font-weight: 600;
     transition: all 0.15s ease-out;
 
     &:hover {
@@ -169,7 +173,7 @@ const FakeButton = styled.div`
         display: flex;
         font-size: 12px;
 
-        &:before {
+        &::before {
             margin: 0 5px 0 0;
         }
     }

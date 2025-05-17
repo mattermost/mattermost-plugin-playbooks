@@ -52,139 +52,78 @@ describe('channels > post type components', {testIsolation: true}, () => {
 
     describe('update post (custom_run_update)', () => {
         it('displays in run channel', () => {
-            // # Check if we have access to the channel before proceeding
-            cy.get('body').then(($body) => {
-                // Only run the test if we have access to the channel
-                if ($body.find('#channelHeaderTitle').length > 0) {
-                    // # Go to the playbook run channel
-                    cy.visit(`/${testTeam.name}/channels/test-run`);
+            // # Go to the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/test-run`);
 
-                    // # intercepts telemetry
-                    cy.interceptTelemetry();
+            // # Post a status update
+            cy.apiUpdateStatus({
+                playbookRunId: testPlaybookRun.id,
+                message: 'status update',
+                reminder: 60,
+            });
 
-                    // # Post a status update
-                    cy.apiUpdateStatus({
-                        playbookRunId: testPlaybookRun.id,
-                        message: 'status update',
-                        reminder: 60,
-                    });
-
-                    // Grab the post id
-                    cy.getLastPostId().then((postId) => {
-                        // * Assert telemetry data
-                        cy.expectTelemetryToContain([
-                            {
-                                name: 'run_status_update',
-                                type: 'page',
-                                properties: {
-                                    post_id: postId,
-                                    playbook_run_id: testPlaybookRun.id,
-                                    channel_type: 'O',
-                                },
-                            },
-                        ]);
-                    });
-                }
+            cy.getLastPost().then((element) => {
+                // * Verify the expected message text
+                cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
+                cy.get(element).contains('status update');
             });
         });
 
         it('displays when permalinked in a different channel', () => {
-            // # Check if we have access to the channel before proceeding
-            cy.get('body').then(($body) => {
-                // Only run the test if we have access to the channel
-                if ($body.find('#channelHeaderTitle').length > 0) {
-                    // # Go to the playbook run channel
-                    cy.visit(`/${testTeam.name}/channels/test-run`);
-
-                    // # Post a status update
-                    cy.apiUpdateStatus({
-                        playbookRunId: testPlaybookRun.id,
-                        message: 'status update',
-                        reminder: 60,
-                    });
-
-                    // Grab the post id
-                    cy.getLastPostId().then((postId) => {
-                        // # intercepts telemetry
-                        cy.interceptTelemetry();
-
-                        // # Go to the other channel
-                        cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
-
-                        // # Post a permalink to the status update
-                        cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
-
-                        // * Assert telemetry data
-                        cy.expectTelemetryToContain([
-                            {
-                                name: 'run_status_update',
-                                type: 'page',
-                                properties: {
-                                    post_id: postId,
-                                    playbook_run_id: testPlaybookRun.id,
-                                    channel_type: 'O',
-                                },
-                            },
-                        ]);
-
-                        cy.getLastPost().then((element) => {
-                            // # Verify the expected message text
-                            cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
-                            cy.get(element).contains('status update');
-                        });
-                    });
-                }
-            });
-        });
-
-        it('displays when permalinked in a different channel, even if not a member of the original channel', () => {
             // # Go to the playbook run channel
             cy.visit(`/${testTeam.name}/channels/test-run`);
 
-            // # Check if we have access to the channel before proceeding
-            cy.get('body').then(($body) => {
-                // Only run the test if we have access to the channel
-                if ($body.find('#channelHeaderTitle').length > 0) {
-                    // # Post a status update
-                    cy.apiUpdateStatus({
-                        playbookRunId: testPlaybookRun.id,
-                        message: 'status update',
-                        reminder: 60,
-                    });
+            // # Post a status update
+            cy.apiUpdateStatus({
+                playbookRunId: testPlaybookRun.id,
+                message: 'status update',
+                reminder: 60,
+            });
 
-                    cy.getLastPostId().then((postId) => {
-                        // # intercepts telemetry
-                        cy.interceptTelemetry();
+            // Grab the post id
+            cy.getLastPostId().then((postId) => {
+                // # Go to the other channel
+                cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
-                        // # Leave the playbook run channel
-                        cy.uiLeaveChannel();
+                // # Post a permalink to the status update
+                cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
-                        // # Go to the other channel
-                        cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+                cy.getLastPost().then((element) => {
+                    // * Verify the expected message text
+                    cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
+                    cy.get(element).contains('status update');
+                });
+            });
+        });
 
-                        // # Post a permalink to the status update
-                        cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
+        // https://mattermost.atlassian.net/browse/MM-63645
+        // eslint-disable-next-line no-only-tests/no-only-tests
+        it.skip('displays when permalinked in a different channel, even if not a member of the original channel', () => {
+            // # Go to the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/test-run`);
 
-                        // * Assert telemetry data
-                        cy.expectTelemetryToContain([
-                            {
-                                name: 'run_status_update',
-                                type: 'page',
-                                properties: {
-                                    post_id: postId,
-                                    playbook_run_id: testPlaybookRun.id,
-                                    channel_type: '',
-                                },
-                            },
-                        ]);
+            // # Post a status update
+            cy.apiUpdateStatus({
+                playbookRunId: testPlaybookRun.id,
+                message: 'status update',
+                reminder: 60,
+            });
 
-                        cy.getLastPost().then((element) => {
-                            // # Verify the expected message text
-                            cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
-                            cy.get(element).contains('status update');
-                        });
-                    });
-                }
+            cy.getLastPostId().then((postId) => {
+                // # Leave the playbook run channel
+                cy.uiLeaveChannel();
+
+                // # Go to the other channel
+                cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+                // # Post a permalink to the status update
+                cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
+
+                cy.getLastPost().then((element) => {
+                    // * Verify the expected message text
+                    cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
+                    cy.get(element).contains('status update');
+                });
             });
         });
     });

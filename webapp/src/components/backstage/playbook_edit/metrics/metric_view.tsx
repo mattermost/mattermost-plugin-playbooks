@@ -65,22 +65,22 @@ const MetricView = ({metric, editClick, deleteClick, disabled}: Props) => {
 };
 
 const ViewContainer = styled.div`
-    flex: 1;
     display: flex;
-    font-size: 14px;
-    line-height: 20px;
+    flex: 1;
     padding: 12px 16px 16px;
-    margin-bottom: 12px;
-    color: var(--center-channel-color);
-    background: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
+    margin-bottom: 12px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-size: 14px;
+    line-height: 20px;
 `;
 
 const Lhs = styled.div`
-    font-size: 18px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
     padding: 0 6px 0 0;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 18px;
 
     svg {
         margin-top: 2px;
@@ -89,11 +89,11 @@ const Lhs = styled.div`
 
 const Centre = styled.div`
     display: flex;
-    flex-direction: column;
     flex: 1;
+    flex-direction: column;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 14px;
     line-height: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const Rhs = styled.div`
@@ -103,14 +103,14 @@ const Rhs = styled.div`
 `;
 
 const Button = styled.button`
-    font-size: 18px;
     padding: 4px 1px;
-    background: none;
-    border-radius: 4px;
     border: 0;
+    border-radius: 4px;
     margin-top: -4px;
+    background: none;
+    font-size: 18px;
 
-    :hover {
+    &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;
@@ -140,8 +140,8 @@ const DescrText = styled.span`
 `;
 
 const Title = styled.div`
-    font-weight: 600;
     color: var(--center-channel-color);
+    font-weight: 600;
 `;
 
 const Bold = styled.span`

@@ -25,10 +25,6 @@ const config = {
         }],
     ],
     plugins: [
-        '@babel/plugin-proposal-class-properties',
-        '@babel/plugin-syntax-dynamic-import',
-        '@babel/proposal-object-rest-spread',
-        '@babel/plugin-proposal-optional-chaining',
         'babel-plugin-typescript-to-proptypes',
         'babel-plugin-add-react-displayname',
         [
@@ -36,6 +32,8 @@ const config = {
             {
                 ssr: false,
                 fileName: false,
+                displayName: true,
+                namespace: 'playbooks',
             },
         ],
         [
@@ -46,6 +44,7 @@ const config = {
             },
         ],
     ],
+    sourceType: 'unambiguous',
 };
 
 const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env

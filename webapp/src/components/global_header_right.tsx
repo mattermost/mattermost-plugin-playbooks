@@ -14,16 +14,16 @@ import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs
 import {OVERLAY_DELAY} from 'src/constants';
 import {backstageRHS, selectHasOverdueTasks} from 'src/selectors';
 
-const IconButtonWrapper = styled.div<{toggled: boolean}>`
+const IconButtonWrapper = styled.div<{$toggled: boolean}>`
     position: relative;
     display: flex;
-    background: ${(props) => (props.toggled ? 'var(--sidebar-text)' : 'transparent')};
-    border-radius: 5px;
     padding: 4px;
+    border-radius: 5px;
+    background: ${({$toggled}) => ($toggled ? 'var(--sidebar-text)' : 'transparent')};
     cursor: pointer;
 `;
 
-const UnreadBadge = styled.div<{toggled: boolean}>`
+const UnreadBadge = styled.div<{$toggled: boolean}>`
     position: absolute;
     z-index: 1;
     top: 4px;
@@ -34,15 +34,15 @@ const UnreadBadge = styled.div<{toggled: boolean}>`
     border-radius: 100%;
     box-shadow: 0 0 0 2px var(--global-header-background);
 
-    ${({toggled}) => toggled && css`
+    ${({$toggled}) => $toggled && css`
         box-shadow: 0 0 0 2px var(--sidebar-text);
     `}
 `;
 
 const GlobalHeaderGiveFeedbackButton = styled(GiveFeedbackButton)`
+    height: 24px;
     padding: 0 5px;
     font-size: 11px;
-    height: 24px;
 `;
 
 const GlobalHeaderRight = () => {
@@ -82,9 +82,9 @@ const GlobalHeaderRight = () => {
                 <IconButtonWrapper
                     data-testid='header-task-inbox-icon'
                     onClick={onClick}
-                    toggled={isTasksOpen}
+                    $toggled={isTasksOpen}
                 >
-                    {hasOverdueTasks ? <UnreadBadge toggled={isTasksOpen}/> : null}
+                    {hasOverdueTasks ? <UnreadBadge $toggled={isTasksOpen}/> : null}
                     <CheckboxMultipleMarkedOutlineIcon
                         size={18}
                         color={isTasksOpen ? 'var(--team-sidebar)' : 'rgba(255,255,255,0.56)'}

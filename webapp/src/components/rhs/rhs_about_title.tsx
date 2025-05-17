@@ -3,7 +3,7 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled, {StyledComponent} from 'styled-components';
+import styled from 'styled-components';
 
 import {GlobalState} from '@mattermost/types/store';
 import General from 'mattermost-redux/constants/general';
@@ -21,7 +21,7 @@ import {PlaybookRunStatus} from 'src/types/playbook_run';
 interface Props {
     onEdit: (newTitle: string) => void;
     value: string;
-    renderedTitle?: StyledComponent<'div', any, {}, never>;
+    renderedTitle?: ReturnType<typeof styled.div>;
     status: PlaybookRunStatus;
 }
 
@@ -30,8 +30,8 @@ const TitleWrapper = styled.div`
 `;
 
 const StatusBadgeWrapper = styled(StatusBadge) `
-    margin-right: 75px;
     top: -3px;
+    margin-right: 75px;
 `;
 
 const RHSAboutTitle = (props: Props) => {
@@ -138,60 +138,49 @@ const TitleInput = styled.input`
     width: calc(100% - 75px);
     height: 30px;
     padding: 4px 8px;
-    margin-bottom: 5px;
-    margin-top: -3px;
-
     border: none;
     border-radius: 5px;
-    box-shadow: none;
-
+    margin-top: -3px;
+    margin-bottom: 5px;
     background: rgba(var(--center-channel-color-rgb), 0.04);
+    box-shadow: none;
+    color: var(--center-channel-color);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 24px;
 
     &:focus {
         box-shadow: none;
     }
-
-    color: var(--center-channel-color);
-    font-size: 18px;
-    line-height: 24px;
-    font-weight: 600;
 `;
 
 const ErrorMessage = styled.div`
-    color: var(--dnd-indicator);
-
-    font-size: 12px;
-    line-height: 16px;
-
     margin-bottom: 12px;
     margin-left: 8px;
+    color: var(--dnd-indicator);
+    font-size: 12px;
+    line-height: 16px;
 `;
 
 export const DefaultRenderedTitle = styled.div`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading};
 
     padding: 0 8px;
-
     max-width: 100%;
-
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-
     height: 30px;
     line-height: 24px;
-
     font-size: 18px;
     font-weight: 600;
-
     color: var(--center-channel-color);
 
-    :hover {
+    &:hover {
         cursor: text;
     }
 
     border-radius: 5px;
-
     margin-bottom: 2px;
 `;
 
