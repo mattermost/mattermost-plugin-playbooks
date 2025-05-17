@@ -6,8 +6,8 @@ import {HashLink as Link} from 'react-router-hash-link';
 import styled, {css} from 'styled-components';
 
 export const Section = styled.section`
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     padding: 24px 0;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 type LinkURL = {to: string, name: string};
@@ -49,37 +49,33 @@ const SectionHeaderContainer = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-
     padding: 0 24px;
     margin-bottom: 8px;
 `;
 
 const SectionTitle = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-family: 'Open Sans';
+    font-size: 12px;
     font-style: normal;
     font-weight: 600;
-    font-size: 12px;
     text-transform: uppercase;
-
-    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const LinkStyle = css`
-    font-weight: 600;
-    font-size: 12px;
     color: var(--button-bg);
     cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity .2s;
 
-    :hover{
+    &:hover{
         text-decoration: underline;
     }
-
-    opacity: 0;
     ${Section}:hover & {
-        opacity: 100%;
+        opacity: 1;
     }
-
-    transition: opacity .2s;
 `;
 
 const StyledLink = styled(Link)`

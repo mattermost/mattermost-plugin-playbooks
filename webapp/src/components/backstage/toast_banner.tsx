@@ -15,12 +15,12 @@ const toastTimeoutMap: Record<number, number> = {};
 
 const ToastContainer = styled.div`
     position: fixed;
-    left: 50%;
-    bottom: 36px;
-    transform: translate(-50%);
     z-index: 1;
+    bottom: 36px;
+    left: 50%;
     width: max-content;
     max-width: 95%;
+    transform: translate(-50%);
 `;
 
 interface Props {

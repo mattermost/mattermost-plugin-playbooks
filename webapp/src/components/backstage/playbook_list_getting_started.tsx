@@ -15,20 +15,20 @@ const Container = styled.div`
 `;
 
 const Title = styled.h2`
+    margin-top: 40px;
+    color: var(--center-channel-color);
     font-family: Metropolis;
     font-size: 32px;
     line-height: 40px;
-    color: var(--center-channel-color);
     text-align: center;
-    margin-top: 40px;
 `;
 
 const Description = styled.p`
+    max-width: 760px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 16px;
     line-height: 24px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
     text-align: center;
-    max-width: 760px;
 `;
 
 const DescriptionWarn = styled(Description)`
@@ -37,31 +37,32 @@ const DescriptionWarn = styled(Description)`
 
 const LinedSeparator = styled.div`
     > span {
-        font-weight: 600;
-        font-size: 12px;
-        line-height: 10px;
-        background: var(--center-channel-bg);
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-        padding: 0 10px;
         display: inline-flex;
         align-items: center;
+        padding: 0 10px;
+        background: var(--center-channel-bg);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
         cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 10px;
     }
+
     display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 0;
     width: 100%;
     max-width: 800px;
+    height: 0;
+    align-items: center;
+    justify-content: center;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     margin-top: 50px;
 `;
 
 const IconArrowDown = styled.i.attrs(() => ({className: 'icon icon-arrow-down'}))`
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-size: 14px;
     width: 14px;
     margin-left: 5px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
 `;
 
 const GettingStarted = (props: {canCreatePlaybooks: boolean, scrollToNext: () => void}) => {

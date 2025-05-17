@@ -11,12 +11,12 @@ import {ChevronDownIcon, ChevronUpIcon} from '@mattermost/compass-icons/componen
 import {getIsRhsExpanded} from 'src/selectors';
 
 interface CollapsibleProps {
-    isCollapsed: boolean;
+    $isCollapsed: boolean;
 }
 
 interface TextContainerProps {
-    isCollapsed: boolean;
-    maxHeight: number;
+    $isCollapsed: boolean;
+    $maxHeight: number;
 }
 
 const OuterContainer = styled.div`
@@ -25,23 +25,24 @@ const OuterContainer = styled.div`
 `;
 
 const TextContainer = styled.div<TextContainerProps>`
-    ${(props) => props.isCollapsed && css`
-        max-height: ${props.maxHeight}px;
+    ${(props) => props.$isCollapsed && css`
+        max-height: ${props.$maxHeight}px;
 
         .all-emoji {
             .emoticon {
-                min-height: 32px;
                 min-width: 32px;
+                min-height: 32px;
                 vertical-align: top;
             }
+
             .emoticon--unicode {
                 font-size: 32px;
                 line-height: 1.1;
 
                 .os--windows & {
-                    font-size: 29px;
-                    left: -4px;
                     position: relative;
+                    left: -4px;
+                    font-size: 29px;
                 }
             }
         }
@@ -52,16 +53,15 @@ const ShowMoreContainer = styled.div<CollapsibleProps>`
     background: var(--center-channel-bg);
     pointer-events: auto;
     padding-bottom: 10px;
-
     display: flex;
     justify-content: center;
     width: 100%;
 
-    ${(props) => props.isCollapsed && css`
+    ${(props) => props.$isCollapsed && css`
         bottom: 10px;
     `}
 
-    ${(props) => !props.isCollapsed && css`
+    ${(props) => !props.$isCollapsed && css`
         position: relative;
         padding-top: 10px;
     `}
@@ -69,28 +69,26 @@ const ShowMoreContainer = styled.div<CollapsibleProps>`
 
 const ShowMoreLine = styled.div`
     display: inline-block;
-    flex-basis: 200px;
     height: 1px;
+    flex-basis: 200px;
     margin-top: 12px;
     background-color: rgba(var(--center-channel-color-rgb), 0.1);
 `;
 
 const ShowMoreButton = styled.button`
-    transition: all 0.15s ease;
-
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
-    border-radius: 2px;
-
+    position: relative;
     display: inline-flex;
     flex-shrink: 0;
+    padding: 0 8px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
+    border-radius: 2px;
+    margin: 0 8px;
+    background: var(--center-channel-bg);
+    color: var(--link-color);
     font-size: 13px;
     font-weight: bold;
     line-height: 24px;
-    margin: 0 8px;
-    padding: 0 8px;
-    position: relative;
-    background: var(--center-channel-bg);
-    color: var(--link-color);
+    transition: all 0.15s ease;
 
 
     &:focus {
@@ -108,17 +106,15 @@ const CollapsibleContainer = styled.div<CollapsibleProps>`
     pointer-events: none;
     position: absolute;
     width: 100%;
-
-    ${(props) => !props.isCollapsed && css`
+    ${(props) => !props.$isCollapsed && css`
         position: relative;
     `}
 `;
 
 const CollapsibleGradient = styled.div<CollapsibleProps>`
-    background: linear-gradient(transparent, var(--center-channel-bg));
     position: relative;
-
-    height: ${(props) => (props.isCollapsed ? '90px' : '0')};
+    height: ${(props) => (props.$isCollapsed ? '90px' : '0')};
+    background: linear-gradient(transparent, var(--center-channel-bg));
 `;
 
 interface Props {
@@ -171,8 +167,8 @@ const ShowMore = (props: Props) => {
         return (
             <OuterContainer>
                 <TextContainer
-                    isCollapsed={isCollapsed}
-                    maxHeight={maxHeight}
+                    $isCollapsed={isCollapsed}
+                    $maxHeight={maxHeight}
                     ref={textContainer}
                 >
                     {props.children}
@@ -191,15 +187,15 @@ const ShowMore = (props: Props) => {
     return (
         <OuterContainer>
             <TextContainer
-                isCollapsed={isCollapsed}
-                maxHeight={maxHeight}
+                $isCollapsed={isCollapsed}
+                $maxHeight={maxHeight}
                 ref={textContainer}
             >
                 {props.children}
             </TextContainer>
-            <CollapsibleContainer isCollapsed={isCollapsed}>
-                <CollapsibleGradient isCollapsed={isCollapsed}/>
-                <ShowMoreContainer isCollapsed={isCollapsed}>
+            <CollapsibleContainer $isCollapsed={isCollapsed}>
+                <CollapsibleGradient $isCollapsed={isCollapsed}/>
+                <ShowMoreContainer $isCollapsed={isCollapsed}>
                     <ShowMoreLine/>
                     <ShowMoreButton onClick={toggleCollapsed}>
                         {showIcon}

@@ -123,22 +123,21 @@ const isPatternValid = (value: string, pattern: string, delimiter = '\n'): boole
 };
 
 const ErrorMessage = styled.div`
-    color: var(--error-text);
     margin-left: auto;
+    color: var(--error-text);
     visibility: hidden;
 `;
 
 const SelectorWrapper = styled.div`
-    margin: 0;
     width: 400px;
     min-height: 40px;
-    padding: 16px;
-
     box-sizing: border-box;
-    box-shadow: 0px 20px 32px rgba(0, 0, 0, 0.12);
-    border-radius: 8px;
-    background: var(--center-channel-bg);
+    padding: 16px;
     border: 1px solid var(--center-channel-color-16);
+    border-radius: 8px;
+    margin: 0;
+    background: var(--center-channel-bg);
+    box-shadow: 0 20px 32px rgba(0 0 0 / 0.12);
 `;
 
 interface TextAreaProps {
@@ -155,23 +154,23 @@ const TextArea = styled.textarea<TextAreaProps>`
     height: auto;
     width: 100%;
     padding: 10px 16px;
-
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
     box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.24);
     border: none;
-    :focus {
+
+    &:focus {
         box-shadow: inset 0 0 0 2px rgba(var(--center-channel-color-rgb), 0.32);
     }
+
     box-sizing: border-box;
     border-radius: 4px;
-
     font-size: 14px;
     line-height: 20px;
     resize: none;
 
     ${(props) => props.invalid && props.value && css`
-        :not(:focus) {
+        &:not(:focus) {
             box-shadow: inset 0 0 0 2px var(--error-text);
             & + ${ErrorMessage} {
                 visibility: visible;
@@ -179,9 +178,9 @@ const TextArea = styled.textarea<TextAreaProps>`
         }
     `}
     ${(props) => props.webhooksDisabled && css`
-        :not(:focus):not(:placeholder-shown) {
-            text-decoration: line-through;
+        &:not(:focus, :placeholder-shown) {
             color: rgba(var(--center-channel-color-rgb), 0.48);
+            text-decoration: line-through;
         }
     `}
 `;

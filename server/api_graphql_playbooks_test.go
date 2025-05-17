@@ -630,7 +630,7 @@ func gqlTestPlaybookUpdateGuest(e *TestEnvironment, t *testing.T, playbookID str
 
 func TestGraphQLPlaybooksGuests(t *testing.T) {
 	e := Setup(t)
-	e.SetE20Licence()
+	e.SetEnterpriseLicence()
 	e.CreateBasic()
 	e.CreateGuest()
 

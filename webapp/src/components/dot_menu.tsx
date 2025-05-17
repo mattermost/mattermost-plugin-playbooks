@@ -12,48 +12,43 @@ import {useUniqueId} from 'src/utils';
 import Dropdown from './dropdown';
 import {PrimaryButton} from './assets/buttons';
 
-export const DotMenuButton = styled.div<{isActive: boolean}>`
+export const DotMenuButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
+    width: 3.2rem;
+    height: 3.2rem;
     padding: 0;
     border: none;
     border-radius: 4px;
-    width: 3.2rem;
-    height: 3.2rem;
-    fill: rgba(var(--center-channel-color-rgb), 0.56);
+    background-color: ${(props) => (props.$isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+    color: ${(props) => (props.$isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
     cursor: pointer;
-
-    color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-    background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+    fill: rgba(var(--center-channel-color-rgb), 0.56);
 
     &:hover {
-        color: ${(props) => (props.isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-        background-color: ${(props) => (props.isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+        background-color: ${(props) => (props.$isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+        color: ${(props) => (props.$isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
     }
 `;
 
 export const DropdownMenu = styled.div`
+    z-index: 12;
     display: flex;
-    flex-direction: column;
-
     width: max-content;
     min-width: 16rem;
-    text-align: left;
-    list-style: none;
-
+    flex-direction: column;
     padding: 10px 0;
-    font-family: Open Sans;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    background: var(--center-channel-bg);
+    box-shadow: 0 8px 24px rgba(0 0 0 / 0.12);
+    color: var(--center-channel-color);
+    font-family: "Open Sans";
+    font-size: 14px;
     font-style: normal;
     font-weight: normal;
-    font-size: 14px;
     line-height: 20px;
-    color: var(--center-channel-color);
-
-    background: var(--center-channel-bg);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
-    border-radius: 4px;
-
-    z-index: 12;
+    list-style: none;
+    text-align: left;
 `;
 
 type DotMenuProps = {
@@ -93,17 +88,15 @@ const DotMenu = ({
     }, [isOpen]);
 
     const button = (
-
-        // @ts-ignore
         <MenuButton
             title={title}
-            isActive={(isActive ?? false) || isOpen}
-            onClick={(e: MouseEvent) => {
+            $isActive={(isActive ?? false) || isOpen}
+            onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 toggleOpen();
             }}
-            onKeyDown={(e: KeyboardEvent) => {
+            onKeyDown={(e) => {
                 // Handle Enter and Space as clicking on the button
                 if (e.key === 'Space' || e.key === 'Enter') {
                     e.stopPropagation();
@@ -143,37 +136,38 @@ const DotMenu = ({
 };
 
 export const DropdownMenuItemStyled = styled.a`
- && {
-    font-family: 'Open Sans';
-    font-style: normal;
-    font-weight: normal;
-    font-size: 14px;
-    color: var(--center-channel-color);
-    padding: 10px 20px;
-    text-decoration: unset;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
+    && {
+        padding: 10px 20px;
         color: var(--center-channel-color);
+        font-family: 'Open Sans';
+        font-size: 14px;
+        font-style: normal;
+        font-weight: normal;
+        text-decoration: unset;
+
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            color: var(--center-channel-color);
+        }
+
+        &:focus {
+            color: inherit;
+            text-decoration: none;
+        }
     }
-    &&:focus {
-        text-decoration: none;
-        color: inherit;
-  }
-}
 `;
 
 export const DisabledDropdownMenuItemStyled = styled.div`
- && {
-    cursor: default;
-    font-family: 'Open Sans';
-    font-style: normal;
-    font-weight: normal;
-    font-size: 14px;
-    color: var(--center-channel-color-40);
-    padding: 8px 20px;
-    text-decoration: unset;
-}
+    && {
+        padding: 8px 20px;
+        color: var(--center-channel-color-40);
+        cursor: default;
+        font-family: 'Open Sans';
+        font-size: 14px;
+        font-style: normal;
+        font-weight: normal;
+        text-decoration: unset;
+    }
 `;
 
 export const iconSplitStyling = css`
@@ -217,17 +211,17 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
 };
 
 // Alternate dot menu button. Use `dotMenuButton={TitleButton}` for this style.
-export const TitleButton = styled.div<{isActive: boolean}>`
-    padding: 2px 2px 2px 6px;
+export const TitleButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
-    border-radius: 4px;
-    color: ${({isActive}) => (isActive ? 'var(--button-bg)' : 'var(--center-channel-color)')};
-    background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'auto')};
-
     min-width: 0;
+    padding: 2px 2px 2px 6px;
+    border-radius: 4px;
+    background: ${({$isActive}) => ($isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'none')};
+    color: ${({$isActive}) => ($isActive ? 'var(--button-bg)' : 'var(--center-channel-color)')};
+    border: none;
 
     &:hover {
-        background: ${({isActive}) => (isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
+        background: ${({$isActive}) => ($isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     }
 `;
 

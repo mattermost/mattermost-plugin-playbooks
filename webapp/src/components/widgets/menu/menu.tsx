@@ -44,32 +44,29 @@ const MenuComponent = styled.div`
 
 const MenuContent = styled.ul`
     position: absolute;
-    transform: translate(0px, 0px);
-    margin-left: 0px;
-    margin-top: 0px;
+    z-index: 1000;
+    left: 0;
+    display: block;
     min-width: 210px;
     max-width: 232px;
-
-    border-color: rgba(var(--center-channel-color-rgb), 0.2);
-    color: var(--center-channel-color-rgb);
-    background: var(--center-channel-bg);
-
-    display: block;
     max-height: 80vh;
     padding: 8px 0;
+    border: 1px solid rgba(0 0 0 / 0.15);
+    border-color: rgba(var(--center-channel-color-rgb), 0.2);
     border-radius: 4px;
-
-    left: 0;
-    z-index: 1000;
-    float: left;
     margin: 2px 0 0;
+    margin-top: 0;
+    margin-left: 0;
+    background: var(--center-channel-bg);
+    box-shadow: 0 6px 12px rgba(0 0 0 / 0.18);
+    color: var(--center-channel-color-rgb);
+    cursor: default;
+    float: left;
     font-size: 14px;
     line-height: 19px;
-    text-align: left;
     list-style: none;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    box-shadow: 0 6px 12px rgb(0 0 0 / 18%);
-    cursor: default;
+    text-align: left;
+    transform: translate(0, 0);
 
     ul {
         padding: 8px 0;

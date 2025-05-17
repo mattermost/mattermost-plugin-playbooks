@@ -10,7 +10,7 @@ const EXT = {target: '_blank', rel: 'noreferrer'};
 const AgreementLink = styled.a.attrs(() => ({
     ...EXT,
     href: 'https://mattermost.com/software-evaluation-agreement/',
-}))``;
+}))`/* stylelint-disable no-empty-source */`;
 
 const PrivacyLink = styled.a.attrs(() => ({
     ...EXT,

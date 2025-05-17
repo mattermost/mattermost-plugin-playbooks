@@ -130,7 +130,7 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
                 {items.map(({id, title}) => (
                     <Item
                         key={id}
-                        active={activeId === id}
+                        $active={activeId === id}
                         onClick={() => scrollToSection(id)}
                     >
                         {title}
@@ -141,28 +141,21 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
     );
 };
 
-const Wrapper = styled.nav`
-
-`;
+const Wrapper = styled.nav`/* stylelint-disable no-empty-source */`;
 
 const Header = styled.div`
-    height: 32px;
-    text-transform: uppercase;
-
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 16px;
-
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-
-    padding-left: 12px;
-    padding-top: 4px;
-
-    margin-bottom: 8px;
-
     display: flex;
+    height: 32px;
     align-items: center;
+    padding-top: 4px;
+    padding-left: 12px;
+    margin-bottom: 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    font-weight: 600;
     gap: .75rem;
+    line-height: 16px;
+    text-transform: uppercase;
 `;
 
 const Items = styled.div`
@@ -171,35 +164,32 @@ const Items = styled.div`
     margin-bottom: 16px;
 `;
 
-const Item = styled.div<{active: boolean}>`
+const Item = styled.div<{$active: boolean}>`
     display: flex;
     flex-direction: row;
     align-items: center;
     padding: 8px 12px;
     padding-right: 30px;
     cursor: pointer;
-
     border-radius: 4px;
-
     margin: 0;
 
-    :not(:last-child) {
+    &:not(:last-child) {
         margin-bottom: 8px;
     }
 
     font-weight: 400;
     font-size: 14px;
     line-height: 14px;
-
     background: transparent;
     color: var(--center-channel-color);
 
-    ${({active}) => active && css`
+    ${({$active}) => $active && css`
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     `}
 
-    :hover {
+    &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 `;

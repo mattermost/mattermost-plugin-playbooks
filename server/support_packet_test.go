@@ -7,6 +7,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"io"
 	"path"
 	"testing"
 
@@ -19,17 +20,23 @@ func TestGenerateSupportData(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	data, _, err := e.ServerAdminClient.GenerateSupportPacket(context.Background())
+	data, _, _, err := e.ServerAdminClient.GenerateSupportPacket(context.Background())
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	dataBytes, err := io.ReadAll(data)
+	require.NoError(t, err)
+	data.Close()
+
+	reader := bytes.NewReader(dataBytes)
+	zr, err := zip.NewReader(reader, int64(len(dataBytes)))
 	require.NoError(t, err)
 	require.NotNil(t, zr)
 
 	f, err := zr.Open(path.Join(manifest.Id, "diagnostics.yaml"))
 	require.NoError(t, err)
 	require.NotNil(t, f)
+	defer f.Close()
 
 	var sp SupportPacket
 	err = yaml.NewDecoder(f).Decode(&sp)

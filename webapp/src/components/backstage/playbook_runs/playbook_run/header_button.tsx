@@ -57,9 +57,9 @@ const Icon = styled.button`
     padding: 0;
     border: none;
     background: transparent;
-    line-height: 24px;
-    cursor: pointer;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    cursor: pointer;
+    line-height: 24px;
 `;
 
 const StyledHeaderIcon = styled(Icon)<{isActive: boolean; size?: number, clicked: boolean}>`
@@ -87,7 +87,7 @@ const StyledHeaderIcon = styled(Icon)<{isActive: boolean; size?: number, clicked
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
 
-        :hover {
+        &:hover {
             background: rgba(var(--button-bg-rgb), 0.16);
             color: var(--button-bg);
         }

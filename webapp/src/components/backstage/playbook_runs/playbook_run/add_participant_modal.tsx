@@ -140,22 +140,21 @@ const Header = styled.div`
 
 const StyledFooterContainer = styled.div`
     display: flex;
+    width: 100%;
     flex-direction: row-reverse;
     align-items: center;
-    width: 100%;
 `;
 
 const FooterExtraInfoContainer = styled.div`
     display: flex;
     flex-direction: row;
-
-    text-align: left;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 20px;
     align-items: center;
     margin-right: auto;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    text-align: left;
 `;
 
 const FooterText = styled.span`
@@ -165,8 +164,8 @@ const FooterText = styled.span`
 const StyledCheckboxInput = styled(CheckboxInput)`
     padding: 10px 16px 10px 0;
     margin-right: auto;
-    white-space: normal;
     font-weight: normal;
+    white-space: normal;
 
     &:hover {
         background-color: transparent;

@@ -141,13 +141,12 @@ const StyledProfileSelector = styled(ProfileSelector)`
         color: var(--center-channel-color);
         border-radius: 100px;
         border: none;
-
         font-weight: 400;
         font-size: 12px;
         line-height: 10px;
 
         ${({enableEdit}) => enableEdit && css`
-            :hover {
+            &:hover {
                 background: rgba(var(--center-channel-color-rgb), 0.16);
             }
         `}
@@ -158,11 +157,11 @@ const StyledProfileSelector = styled(ProfileSelector)`
         }
 
         .icon-chevron-down{
-            font-weight: 400;
-            font-size: 14.4px;
-            line-height: 14px;
             display: flex;
             align-items: center;
+            font-size: 14.4px;
+            font-weight: 400;
+            line-height: 14px;
             text-align: center;
         }
     }
@@ -171,8 +170,8 @@ const StyledProfileSelector = styled(ProfileSelector)`
         padding: 0 6px 0 0;
 
         .image {
-            background: rgba(var(--center-channel-color-rgb),0.08);
             margin: 2px;
+            background: rgba(var(--center-channel-color-rgb),0.08);
         }
     }
 
@@ -182,7 +181,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         color: rgba(var(--center-channel-color-rgb), 0.64);
 
         ${({enableEdit}) => enableEdit && css`
-            :hover {
+            &:hover {
                 color: var(--center-channel-color);
             }
         `}
@@ -191,15 +190,14 @@ const StyledProfileSelector = styled(ProfileSelector)`
 
 const PlaceholderDiv = styled.div`
     display: flex;
-    align-items: center;
     flex-direction: row;
+    align-items: center;
 `;
 
 const AssignToTextContainer = styled.div<{isPlaceholder: boolean, enableEdit: boolean}>`
     color: ${({isPlaceholder}) => (isPlaceholder ? 'rgba(var(--center-channel-color-rgb), 0.64)' : 'var(--center-channel-color)')};
-
      ${({enableEdit}) => enableEdit && css`
-        :hover {
+        &:hover {
             color: var(--center-channel-color);
         }
     `}
@@ -209,14 +207,13 @@ const AssignToTextContainer = styled.div<{isPlaceholder: boolean, enableEdit: bo
 `;
 
 const AssignToIcon = styled.i`
+    display: flex;
     width: 20px;
     height: 20px;
-    margin-right: 5px;
-    display: flex;
     align-items: center;
-    text-align: center;
-    flex: table;
+    margin-right: 5px;
     color: rgba(var(--center-channel-color-rgb),0.56);
+    text-align: center;
 `;
 
 export const AssignToContainer = styled.div`
@@ -224,12 +221,12 @@ export const AssignToContainer = styled.div`
 `;
 
 const ControlComponentAnchor = styled.a`
-    display: inline-block;
-    margin: 0 0 8px 12px;
-    font-weight: 600;
-    font-size: 12px;
     position: relative;
     top: -4px;
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
 `;
 
 export const DropdownArrow = styled.i`

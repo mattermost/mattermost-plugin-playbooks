@@ -60,21 +60,20 @@ const Graphic = styled.div`
 `;
 
 const Title = styled.h1`
+    color: var(--center-channel-color);
     font-family: Metropolis;
     font-size: 22px;
     line-height: 28px;
-
     text-align: center;
-    color: var(--center-channel-color);
 `;
 
 const Desc = styled.div`
-    font-size: 14px;
-    text-align: center;
     padding: 0 16px;
     margin: 0;
     margin-top: 8px;
     margin-bottom: 12px;
+    font-size: 14px;
+    text-align: center;
 `;
 
 const Footer = styled(DefaultFooterContainer)`

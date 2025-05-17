@@ -45,7 +45,7 @@ const Header = styled.div`
 `;
 
 const Name = styled.div`
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 `;

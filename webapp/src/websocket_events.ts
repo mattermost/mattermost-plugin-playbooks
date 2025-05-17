@@ -524,7 +524,7 @@ async function getPlaybookRunFromStatusUpdate(post: Post): Promise<PlaybookRun |
     let playbookRun: PlaybookRun;
     try {
         playbookRun = await fetchPlaybookRunByChannel(post.channel_id);
-    } catch (err) {
+    } catch {
         return null;
     }
 

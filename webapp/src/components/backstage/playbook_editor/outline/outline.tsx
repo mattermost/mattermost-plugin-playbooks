@@ -158,8 +158,7 @@ const Outline = ({playbook, refetch}: Props) => {
     );
 };
 
-export const ScrollNav = styled(ScrollNavBase)`
-`;
+export const ScrollNav = styled(ScrollNavBase)`/* stylelint-disable no-empty-source */`;
 
 type SectionItem = {id: string, title: string};
 
@@ -203,21 +202,21 @@ export const Sections = styled(SectionsImpl)`
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    margin-bottom: 40px;
     padding: 2rem;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 8px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
+    margin-bottom: 40px;
     background: var(--center-channel-bg);
+    box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
 `;
 
 const HoverMenuContainer = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 0px 8px;
     position: relative;
-    height: 32px;
     right: 1px;
+    display: flex;
+    height: 32px;
+    align-items: center;
+    padding: 0 8px;
 `;
 
 export default Outline;

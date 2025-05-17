@@ -32,6 +32,8 @@ const config = {
             {
                 ssr: false,
                 fileName: false,
+                displayName: true,
+                namespace: 'playbooks',
             },
         ],
         [

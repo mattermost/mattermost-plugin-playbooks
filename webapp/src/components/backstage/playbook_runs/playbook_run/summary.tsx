@@ -75,20 +75,18 @@ const Header = styled.div`
 `;
 
 const TimestampContainer = styled.div`
-    flex-grow: 1;
     display: flex;
-    white-space: pre-wrap;
-
+    flex-grow: 1;
     align-items: center;
     justify-content: flex-end;
-
     color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 12px;
+    white-space: pre-wrap;
 `;
 
 const Container = styled.div`
-    width: 100%;
     display: flex;
+    width: 100%;
     flex-direction: column;
     margin-top: 24px;
 `;
