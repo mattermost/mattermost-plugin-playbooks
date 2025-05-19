@@ -1902,6 +1902,16 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	// Parse types= query string parameters as an array.
 	types := u.Query()["types"]
 
+	// Parse since parameter for timestamp-based activity filtering
+	sinceParam := u.Query().Get("since")
+	var activitySince int64
+	if sinceParam != "" {
+		activitySince, err = strconv.ParseInt(sinceParam, 10, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "bad parameter 'since'")
+		}
+	}
+
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
 		Page:                    page,
@@ -1919,6 +1929,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		StartedGTE:              startedGTE,
 		StartedLT:               startedLT,
 		Types:                   types,
+		ActivitySince:           activitySince,
 	}
 
 	options, err = options.Validate()
