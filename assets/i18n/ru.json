@@ -118,5 +118,113 @@
     {
         "id": "app.user.run.request_join_channel",
         "translation": "@{{.Name}} является участником запуска и хочет присоединиться к этому каналу. Любой участник канала может пригласить его.\n"
+    },
+    {
+        "id": "app.user.run.update_status.change_since_last_update",
+        "translation": "Изменения с момента последнего обновления"
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "one": "",
+            "few": "",
+            "many": "Предоставь обновленную информацию заинтересованным сторонам. Этот пост будет транслироваться на каналах {{.Count}}."
+        }
+    },
+    {
+        "id": "app.user.run.update_status.title",
+        "translation": "Обновление статуса"
+    },
+    {
+        "id": "app.user.run.confirm_finish.title",
+        "translation": "Подтверди финишную пробежку"
+    },
+    {
+        "id": "app.user.new_run.intro",
+        "translation": "**Владелец** {{.Имя пользователя}}"
+    },
+    {
+        "id": "app.user.new_run.playbook",
+        "translation": "Пособие"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run",
+        "translation": "Финишный рывок"
+    },
+    {
+        "id": "app.user.run.update_status.finish_run.placeholder",
+        "translation": "Также пометьте выполнение как завершенное"
+    },
+    {
+        "id": "app.user.run.update_status.reminder_for_next_update",
+        "translation": "Напоминание о следующем обновлении"
+    },
+    {
+        "id": "app.user.run.update_status.submit_label",
+        "translation": "Обновление статуса"
+    },
+    {
+        "id": "app.user.new_run.run_name",
+        "translation": "Название бега"
+    },
+    {
+        "id": "app.user.new_run.submit_label",
+        "translation": "Стартовый забег"
+    },
+    {
+        "id": "app.user.new_run.title",
+        "translation": "Запусти сценарий"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.description",
+        "translation": "Описание"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.name",
+        "translation": "Имя"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.submit_label",
+        "translation": "Добавь задание"
+    },
+    {
+        "id": "app.user.run.add_checklist_item.title",
+        "translation": "Добавь новое задание"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.playbook_run",
+        "translation": "Пособие \"Бег"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.submit_label",
+        "translation": "Добавить в график выполнения"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary",
+        "translation": "Резюме"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.help",
+        "translation": "Максимум 64 символа"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.summary.placeholder",
+        "translation": "Краткое содержание, отображаемое на временной шкале"
+    },
+    {
+        "id": "app.user.run.add_to_timeline.title",
+        "translation": "Добавить в график выполнения"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "one": "",
+            "few": "",
+            "many": "Есть **{{.Count}} невыполненных заданий**. Ты уверен, что хочешь завершить забег *{{.RunName}}* для всех участников?"
+        }
+    },
+    {
+        "id": "app.user.run.confirm_finish.submit_label",
+        "translation": "Финишный рывок"
     }
 ]
