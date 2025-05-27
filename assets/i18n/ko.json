@@ -17,7 +17,7 @@
     },
     {
         "id": "app.user.digest.tasks.due_x_days_ago",
-        "translation": "만료 {{.카운트}}일 전"
+        "translation": "만료 {{.Count}}일 전"
     },
     {
         "id": "app.user.digest.tasks.due_yesterday",
