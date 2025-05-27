@@ -32,7 +32,7 @@
     },
     {
         "id": "app.user.digest.tasks.due_x_days_ago",
-        "translation": "Forfall {{.antall}} dager siden"
+        "translation": "Forfall {{.Count}} dager siden"
     },
     {
         "id": "app.user.digest.tasks.due_yesterday",
@@ -46,7 +46,7 @@
         "id": "app.user.digest.tasks.num_assigned",
         "translation": {
             "one": "Du har {{.Count}} tildelt en oppgave:",
-            "other": "Du har {{.count}} totalt tildelte oppgaver:"
+            "other": "Du har {{.Count}} totalt tildelte oppgaver:"
         }
     },
     {
@@ -55,7 +55,7 @@
     },
     {
         "id": "app.user.new_run.intro",
-        "translation": "**Eier** {{.brukernavn}}"
+        "translation": "**Eier** {{.Username}}"
     },
     {
         "id": "app.user.new_run.playbook",
@@ -107,15 +107,15 @@
     },
     {
         "id": "app.user.run.request_join_channel",
-        "translation": "@{{.navn}} er en løpsdeltaker og ønsker å bli med i denne kanalen. Alle medlemmer av kanalen kan invitere dem.\n"
+        "translation": "@{{.Name}} er en løpsdeltaker og ønsker å bli med i denne kanalen. Alle medlemmer av kanalen kan invitere dem.\n"
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@here - @{{.navn}} ba om en statusoppdatering for [{{.runName}}]({{.runURL}}). \n"
+        "translation": "@here - @{{.Name}} ba om en statusoppdatering for [{{.RunName}}]({{.RunURL}}). \n"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.brukernavn}} deaktiverte statusoppdateringene for [{{.runName}}]({{.runURL}})"
+        "translation": "@{{.Username}} deaktiverte statusoppdateringene for [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.update_status.change_since_last_update",
@@ -198,7 +198,7 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{{.brukernavn}} aktiverte statusoppdateringene for [{{.runName}}]({{.runURL}})"
+        "translation": "@{{.Username}} aktiverte statusoppdateringene for [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.update_status.num_channel",
