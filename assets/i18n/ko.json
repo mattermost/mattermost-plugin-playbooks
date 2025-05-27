@@ -13,7 +13,7 @@
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "여기 - @{{{.Name}}}}이 [{{.RunName}}]({{.RunURL}})에 대한 상태 업데이트를 요청했습니다. \n"
+        "translation": "여기 - @{{.Name}}이 [{{.RunName}}]({{.RunURL}})에 대한 상태 업데이트를 요청했습니다. \n"
     },
     {
         "id": "app.user.digest.tasks.due_x_days_ago",
