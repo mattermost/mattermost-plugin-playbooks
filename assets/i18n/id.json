@@ -150,5 +150,53 @@
     {
         "id": "app.user.run.update_status.title",
         "translation": "Pembaruan status"
+    },
+    {
+        "id": "app.user.run.confirm_finish.num_outstanding",
+        "translation": {
+            "other": "There is **{{.Count}} outstanding task**. Are you sure you want to finish the run *{{.RunName}}* for all participants?"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "other": "You have {{.Count}} run currently in progress:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_in_x_days",
+        "translation": {
+            "other": "Due in {{.Count}} day"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.due_after_today",
+        "translation": {
+            "other": "You have **{{.Count}} assigned task due after today**."
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned_due_until_today",
+        "translation": {
+            "other": "You have {{.Count}} assigned task that is now due:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.num_assigned",
+        "translation": {
+            "other": "You have {{.Count}} assigned task:"
+        }
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "other": "You have {{.Count}} run overdue for a status update:"
+        }
+    },
+    {
+        "id": "app.user.run.update_status.num_channel",
+        "translation": {
+            "other": "Provide an update to the stakeholders. This post will be broadcasted to {{.Count}} channel."
+        }
     }
 ]
