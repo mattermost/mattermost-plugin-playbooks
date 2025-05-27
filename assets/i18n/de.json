@@ -225,6 +225,6 @@
     },
     {
         "id": "app.user.new_run.intro",
-        "translation": "**Eigentümer** {{.Benutzername}}"
+        "translation": "**Eigentümer** {{.Username}}"
     }
 ]
