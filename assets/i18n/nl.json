@@ -2,8 +2,8 @@
     {
         "id": "app.user.digest.tasks.due_after_today",
         "translation": {
-            "one": "Je hebt **{{.Count}} taak toegewezen gekregen na vandaag**.Je hebt **{{.Count}} taken toegewezen gekregen na vandaag**.",
-            "other": ""
+            "one": "Je hebt **{{.Count}} taak toegewezen gekregen na vandaag**.",
+            "other": "Je hebt **{{.Count}} taken toegewezen gekregen na vandaag**."
         }
     },
     {
@@ -100,19 +100,19 @@
     },
     {
         "id": "app.user.run.status_enable",
-        "translation": "@{.Username}} heeft de statusupdates voor [{{.RunName}}]({{.RunURL}}) uitgeschakeld"
+        "translation": "@{{.Username}} heeft de statusupdates voor [{{.RunName}}]({{.RunURL}}) uitgeschakeld"
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{.Username}} heeft de statusupdates voor [{{.RunName}}]({{.RunURL}}) uitgeschakeld"
+        "translation": "@{{.Username}} heeft de statusupdates voor [{{.RunName}}]({{.RunURL}}) uitgeschakeld"
     },
     {
         "id": "app.user.run.request_update",
-        "translation": "@hier - @{.Name}} vroeg een statusupdate aan voor [{{.RunName}}]({{.RunURL}}). \n"
+        "translation": "@hier - @{{.Name}} vroeg een statusupdate aan voor [{{.RunName}}]({{.RunURL}}). \n"
     },
     {
         "id": "app.user.run.request_join_channel",
-        "translation": "@{.Name}} is een deelnemer aan de uitvoering en wil lid worden van dit kanaal. Elk lid van het kanaal kan hen uitnodigen.\n"
+        "translation": "@{{.Name}} is een deelnemer aan de uitvoering en wil lid worden van dit kanaal. Elk lid van het kanaal kan hen uitnodigen.\n"
     },
     {
         "id": "app.user.run.confirm_finish.title",
@@ -121,8 +121,8 @@
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Er is **{.Count}} openstaande taak**. Weet je zeker dat je de uitvoering *{.RunName}}* voor alle deelnemer wilt beëindigen?Er zijn **{.Count}} openstaande taak**. Weet je zeker dat je de run *{.RunName}}* voor alle deelnemers wil beëindigen?",
-            "other": "Er is **{.Count}} openstaande taken**. Weet je zeker dat je de uitvoering *{.RunName}}* voor alle deelnemer wilt beëindigen?Er zijn **{.Count}} openstaande taken**. Weet je zeker dat je de run *{.RunName}}* voor alle deelnemers wil beëindigen?"
+            "one": "Er is **{{.Count}} openstaande taak**. Weet je zeker dat je de uitvoering *{{.RunName}}* voor alle deelnemer wilt beëindigen?Er zijn **{{.Count}} openstaande taak**. Weet je zeker dat je de run *{{.RunName}}* voor alle deelnemers wil beëindigen?",
+            "other": "Er is **{{.Count}} openstaande taken**. Weet je zeker dat je de uitvoering *{{.RunName}}* voor alle deelnemer wilt beëindigen?Er zijn **{{.Count}} openstaande taken**. Weet je zeker dat je de run *{{.RunName}}* voor alle deelnemers wil beëindigen?"
         }
     },
     {
