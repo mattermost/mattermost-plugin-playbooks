@@ -170,9 +170,9 @@
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Jest **{.Count}} zaległe zadanie**. Czy na pewno chcesz zakończyć uruchomienie *{.RunName}}* dla wszystkich uczestników?",
-            "few": "Jest **{.Count}} zaległe zadania**. Czy na pewno chcesz zakończyć bieg *{.RunName}}* dla wszystkich uczestników?",
-            "many": "Jest **{.Count}} zaległych zadań**. Czy na pewno chcesz zakończyć bieg *{.RunName}}* dla wszystkich uczestników?"
+            "one": "Jest **{{.Count}} zaległe zadanie**. Czy na pewno chcesz zakończyć uruchomienie *{{.RunName}}* dla wszystkich uczestników?",
+            "few": "Jest **{{.Count}} zaległe zadania**. Czy na pewno chcesz zakończyć bieg *{{.RunName}}* dla wszystkich uczestników?",
+            "many": "Jest **{{.Count}} zaległych zadań**. Czy na pewno chcesz zakończyć bieg *{{.RunName}}* dla wszystkich uczestników?"
         }
     },
     {

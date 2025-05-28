@@ -141,7 +141,7 @@
     },
     {
         "id": "app.user.new_run.intro",
-        "translation": "**Владелец** {{.Имя пользователя}}"
+        "translation": "**Владелец** {{.Username}}"
     },
     {
         "id": "app.user.new_run.playbook",
