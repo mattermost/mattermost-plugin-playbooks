@@ -218,6 +218,25 @@ type UpdateChecklistItem struct {
 	TaskActions      *[]app.TaskAction `json:"task_actions"`
 }
 
+type PropertyOptionInput struct {
+	ID    *string `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color"`
+}
+
+type PropertyFieldAttrsInput struct {
+	Visibility *string                `json:"visibility"`
+	SortOrder  *float64               `json:"sortOrder"`
+	Options    *[]PropertyOptionInput `json:"options"`
+	ParentID   *string                `json:"parentID"`
+}
+
+type PropertyFieldInput struct {
+	Name  string                   `json:"name"`
+	Type  string                   `json:"type"`
+	Attrs *PropertyFieldAttrsInput `json:"attrs"`
+}
+
 func (ci *UpdateChecklistItem) GetAssigneeID() string {
 	return ci.AssigneeID
 }
