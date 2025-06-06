@@ -8,6 +8,9 @@ replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistog
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
+// Keep version locked to prevent Go version requirement bump (see mattermost/mattermost#31021)
+replace github.com/ledongthuc/pdf => github.com/ledongthuc/pdf v0.0.0-20240201131950-da5b75280b06
+
 require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/MicahParks/jwkset v0.5.18
