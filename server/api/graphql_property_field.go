@@ -6,6 +6,8 @@ package api
 import (
 	"context"
 
+	"github.com/mattermost/mattermost/server/public/model"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
@@ -14,7 +16,7 @@ type PropertyFieldResolver struct {
 }
 
 type PropertyOptionResolver struct {
-	option app.PropertyOption
+	option *model.PluginPropertyOption
 }
 
 type PropertyFieldAttrsResolver struct {
@@ -75,7 +77,7 @@ func (r *PropertyFieldAttrsResolver) Options(ctx context.Context) *[]*PropertyOp
 
 	resolvers := make([]*PropertyOptionResolver, len(r.attrs.Options))
 	for i, option := range r.attrs.Options {
-		resolvers[i] = &PropertyOptionResolver{option: app.PropertyOption{PluginPropertyOption: option}}
+		resolvers[i] = &PropertyOptionResolver{option: option}
 	}
 	return &resolvers
 }
