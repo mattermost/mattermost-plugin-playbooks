@@ -50,10 +50,6 @@ type PropertyField struct {
 
 type PropertyValue model.PropertyValue
 
-type PropertyOption struct {
-	*model.PluginPropertyOption
-}
-
 // SupportsOptions checks the PropertyField type and determines if the type
 // supports the use of options
 func (p *PropertyField) SupportsOptions() bool {
