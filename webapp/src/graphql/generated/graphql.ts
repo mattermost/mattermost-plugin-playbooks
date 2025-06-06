@@ -80,15 +80,18 @@ export type Mutation = {
   __typename?: 'Mutation';
   addMetric: Scalars['String'];
   addPlaybookMember: Scalars['String'];
+  addPlaybookPropertyField: Scalars['String'];
   addRunParticipants: Scalars['String'];
   changeRunOwner: Scalars['String'];
   deleteMetric: Scalars['String'];
+  deletePlaybookPropertyField: Scalars['String'];
   removePlaybookMember: Scalars['String'];
   removeRunParticipants: Scalars['String'];
   setRunFavorite: Scalars['String'];
   updateMetric: Scalars['String'];
   updatePlaybook: Scalars['String'];
   updatePlaybookFavorite: Scalars['String'];
+  updatePlaybookPropertyField: Scalars['String'];
   updateRun: Scalars['String'];
   updateRunTaskActions: Scalars['String'];
 };
@@ -109,6 +112,12 @@ export type MutationAddPlaybookMemberArgs = {
 };
 
 
+export type MutationAddPlaybookPropertyFieldArgs = {
+  playbookID: Scalars['String'];
+  propertyField: PropertyFieldInput;
+};
+
+
 export type MutationAddRunParticipantsArgs = {
   forceAddToChannel?: InputMaybe<Scalars['Boolean']>;
   runID: Scalars['String'];
@@ -124,6 +133,12 @@ export type MutationChangeRunOwnerArgs = {
 
 export type MutationDeleteMetricArgs = {
   id: Scalars['String'];
+};
+
+
+export type MutationDeletePlaybookPropertyFieldArgs = {
+  playbookID: Scalars['String'];
+  propertyFieldID: Scalars['String'];
 };
 
 
@@ -162,6 +177,13 @@ export type MutationUpdatePlaybookArgs = {
 export type MutationUpdatePlaybookFavoriteArgs = {
   favorite: Scalars['Boolean'];
   id: Scalars['String'];
+};
+
+
+export type MutationUpdatePlaybookPropertyFieldArgs = {
+  playbookID: Scalars['String'];
+  propertyField: PropertyFieldInput;
+  propertyFieldID: Scalars['String'];
 };
 
 
@@ -289,9 +311,65 @@ export type PlaybookUpdates = {
   webhookOnStatusUpdateURLs?: InputMaybe<Array<Scalars['String']>>;
 };
 
+export type PropertyField = {
+  __typename?: 'PropertyField';
+  attrs: PropertyFieldAttrs;
+  createAt: Scalars['Float'];
+  deleteAt: Scalars['Float'];
+  groupID: Scalars['String'];
+  id: Scalars['String'];
+  name: Scalars['String'];
+  type: PropertyFieldType;
+  updateAt: Scalars['Float'];
+};
+
+export type PropertyFieldAttrs = {
+  __typename?: 'PropertyFieldAttrs';
+  options?: Maybe<Array<PropertyOption>>;
+  parentID?: Maybe<Scalars['String']>;
+  sortOrder: Scalars['Float'];
+  visibility: Scalars['String'];
+};
+
+export type PropertyFieldAttrsInput = {
+  options?: InputMaybe<Array<PropertyOptionInput>>;
+  parentID?: InputMaybe<Scalars['String']>;
+  sortOrder?: InputMaybe<Scalars['Float']>;
+  visibility?: InputMaybe<Scalars['String']>;
+};
+
+export type PropertyFieldInput = {
+  attrs?: InputMaybe<PropertyFieldAttrsInput>;
+  name: Scalars['String'];
+  type: PropertyFieldType;
+};
+
+export enum PropertyFieldType {
+  Date = 'date',
+  Multiselect = 'multiselect',
+  Multiuser = 'multiuser',
+  Select = 'select',
+  Text = 'text',
+  User = 'user'
+}
+
+export type PropertyOption = {
+  __typename?: 'PropertyOption';
+  color?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  name: Scalars['String'];
+};
+
+export type PropertyOptionInput = {
+  color?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['String']>;
+  name: Scalars['String'];
+};
+
 export type Query = {
   __typename?: 'Query';
   playbook?: Maybe<Playbook>;
+  playbookProperty?: Maybe<PropertyField>;
   playbooks: Array<Playbook>;
   run?: Maybe<Run>;
   runs: RunConnection;
@@ -300,6 +378,12 @@ export type Query = {
 
 export type QueryPlaybookArgs = {
   id: Scalars['String'];
+};
+
+
+export type QueryPlaybookPropertyArgs = {
+  playbookID: Scalars['String'];
+  propertyID: Scalars['String'];
 };
 
 
