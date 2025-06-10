@@ -4,18 +4,11 @@
 package app
 
 import (
-	"encoding/gob"
 	"encoding/json"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 )
-
-func init() {
-	// Register types for gob serialization
-	gob.Register([]any{})
-	gob.Register(map[string]any{})
-}
 
 const (
 	// Attributes keys
