@@ -136,6 +136,15 @@ export const CancelSaveContainer = styled.div`
     padding: 8px;
     text-align: right;
     white-space: nowrap;
+    
+    /* Add responsive padding for narrow screens */
+    @media (max-width: 768px) {
+        padding: 8px 16px 8px 8px;
+    }
+    
+    @media (max-width: 480px) {
+        padding: 8px 20px 8px 8px;
+    }
 `;
 
 const CancelButton = styled(TertiaryButton)`
