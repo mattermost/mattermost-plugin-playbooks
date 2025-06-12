@@ -38,9 +38,7 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
             cy.findByText('Today').should('be.visible');
         });
 
-        // https://mattermost.atlassian.net/browse/MM-63692
-        // eslint-disable-next-line no-only-tests/no-only-tests
-        describe.skip('telemetry', () => {
+        describe('telemetry', () => {
             it('track page view', () => {
                 // # intercepts telemetry
                 cy.interceptTelemetry();
@@ -96,7 +94,7 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
                 });
 
                 // # Click the icon
-                cy.getPlaybooksAppBarIcon().should('be.visible').click();
+                cy.getPlaybooksAppBarIcon().click();
             });
 
             it('without pre-populated channel name template', () => {
