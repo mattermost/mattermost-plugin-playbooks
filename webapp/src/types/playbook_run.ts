@@ -15,6 +15,7 @@ export interface PlaybookRun {
     team_id: string;
     channel_id: string;
     create_at: number;
+    update_at: number;
     end_at: number;
     post_id: string;
     playbook_id: string;
