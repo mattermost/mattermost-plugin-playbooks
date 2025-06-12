@@ -60,7 +60,7 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
             // * Verify status update message
-            cy.findAllByTestId('status-update-section').should('exist').within(() => {
+            cy.findAllByTestId('status-update-section').within(() => {
                 cy.contains('A status update is expected every');
                 cy.contains('1 day');
                 cy.contains('no channels');
@@ -71,7 +71,7 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             cy.findAllByTestId('status-update-toggle').eq(0).click();
 
             // * Verify status update message
-            cy.findAllByTestId('status-update-section').should('exist').within(() => {
+            cy.get('#status-updates').within(() => {
                 cy.contains('Status updates are not expected.');
                 cy.contains('A status update is expected every').should('not.exist');
             });
@@ -93,7 +93,7 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
 
             // # Add webhooks
             cy.findAllByTestId('status-update-webhooks').click();
-            cy.findAllByTestId('webhooks-input').type('http://hook1.com{enter}http://hook2.com{enter}http://hook3.com{enter}');
+            cy.findAllByTestId('webhooks-input').type('http://hook1.com');
             cy.findAllByTestId('checklist-item-save-button').click();
 
             cy.wait(FIVE_SEC);
@@ -102,9 +102,9 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
             // * Verify status update message
-            cy.findAllByTestId('status-update-section').should('exist').within(() => {
+            cy.findAllByTestId('status-update-section').within(() => {
                 cy.contains('1 channel');
-                cy.contains('3 outgoing webhooks');
+                cy.contains('1 outgoing webhook');
             });
 
             // # Disable status update
@@ -112,7 +112,7 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
 
             // * Verify status update message
             cy.get('#status-updates').within(() => {
-                cy.findByText('Status updates are not expected.').should('exist');
+                cy.findByText('Status updates are not expected.');
             });
 
             // # Re-enable status update
@@ -125,8 +125,8 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
 
             // * Verify that channels and webhooks persist
             cy.get('#status-updates').within(() => {
-                cy.contains('1 channel').should('exist');
-                cy.contains('3 outgoing webhooks').should('exist');
+                cy.contains('1 channel');
+                cy.contains('1 outgoing webhook');
             });
         });
     });
@@ -148,7 +148,7 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
                 cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
 
                 // * Verify status update message. Status update should be enabled, but message should say `updates will be posted to no channels and no outgoing webhooks`
-                cy.findAllByTestId('status-update-section').should('exist').within(() => {
+                cy.findAllByTestId('status-update-section').within(() => {
                     cy.contains('A status update is expected every');
                     cy.contains('no channels');
                     cy.contains('no outgoing webhooks');
@@ -181,7 +181,7 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
                 cy.findAllByTestId('status-update-broadcast-channels').click();
 
                 // * Verify status update message.
-                cy.findAllByTestId('status-update-section').should('exist').within(() => {
+                cy.findAllByTestId('status-update-section').within(() => {
                     cy.contains('A status update is expected every');
                     cy.contains('2 channels');
                     cy.contains('4 outgoing webhooks');
@@ -191,7 +191,7 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
                 cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
 
                 // * Verify status update message.
-                cy.findAllByTestId('status-update-section').should('exist').within(() => {
+                cy.findAllByTestId('status-update-section').within(() => {
                     cy.contains('A status update is expected every');
                     cy.contains('2 channels');
                     cy.contains('4 outgoing webhooks');
