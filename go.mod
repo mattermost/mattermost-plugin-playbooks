@@ -1,17 +1,12 @@
 module github.com/mattermost/mattermost-plugin-playbooks
 
-go 1.23.0
-
-toolchain go1.23.9
+go 1.24.3
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
 
 replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistogram v1.1.2
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
-
-// Keep version locked to prevent Go version requirement bump (see mattermost/mattermost#31021)
-replace github.com/ledongthuc/pdf => github.com/ledongthuc/pdf v0.0.0-20240201131950-da5b75280b06
 
 require (
 	github.com/Masterminds/squirrel v1.5.2
@@ -29,8 +24,8 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost/server/public v0.1.15-0.20250605221919-585c53fda49e
-	github.com/mattermost/mattermost/server/v8 v8.0.0-20250605221919-585c53fda49e
+	github.com/mattermost/mattermost/server/public v0.1.15
+	github.com/mattermost/mattermost/server/v8 v8.0.0-20250610231028-731bd7c4145f
 	github.com/mattermost/morph v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1

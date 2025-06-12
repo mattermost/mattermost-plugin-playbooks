@@ -25,7 +25,7 @@ func graphQLPlaybooksLoader[V *app.Playbook](ctx context.Context, keys []playboo
 
 	uniquePlaybookIDs := getUniquePlaybookIDs(keys)
 
-	var teamID, userID string = keys[0].TeamID, keys[0].UserID
+	var teamID, userID = keys[0].TeamID, keys[0].UserID
 
 	c, err := getContext(ctx)
 	if err != nil {

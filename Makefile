@@ -164,7 +164,7 @@ apply:
 ## Install go tools
 install-go-tools:
 	@echo Installing go tools
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
 	$(GO) install gotest.tools/gotestsum@v1.7.0
 	$(GO) install github.com/cortesi/modd/cmd/modd@latest

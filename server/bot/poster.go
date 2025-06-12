@@ -77,9 +77,9 @@ func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.
 	return post, nil
 }
 
-func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {
+func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, message string) (*model.Post, error) {
 	post := &model.Post{
-		Message:   fmt.Sprintf(format, args...),
+		Message:   message,
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 		Type:      customType,
@@ -89,6 +89,10 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 		return nil, err
 	}
 	return post, nil
+}
+
+func (b *Bot) PostCustomMessageWithAttachmentsf(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {
+	return b.PostCustomMessageWithAttachments(channelID, customType, attachments, fmt.Sprintf(format, args...))
 }
 
 // DM sends a DM from the plugin bot to the specified user
