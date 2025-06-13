@@ -174,7 +174,7 @@ func convertPropertyFieldInputToPropertyField(input PropertyFieldInput) *app.Pro
 	propertyField := &app.PropertyField{
 		PropertyField: model.PropertyField{
 			Name: input.Name,
-			Type: model.PropertyFieldType(input.Type),
+			Type: input.Type,
 		},
 	}
 
