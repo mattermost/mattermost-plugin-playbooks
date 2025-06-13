@@ -16,14 +16,14 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	t.Run("basic text field with minimal attrs", func(t *testing.T) {
 		input := PropertyFieldInput{
 			Name: "Test Field",
-			Type: "text",
+			Type: model.PropertyFieldTypeText,
 		}
 
 		result := convertPropertyFieldInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Test Field", result.Name)
-		assert.Equal(t, model.PropertyFieldType("text"), result.Type)
+		assert.Equal(t, model.PropertyFieldTypeText, result.Type)
 		assert.Equal(t, app.PropertyFieldVisibilityDefault, result.Attrs.Visibility)
 		assert.Zero(t, result.Attrs.SortOrder)
 		assert.Nil(t, result.Attrs.Options)
@@ -33,7 +33,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	t.Run("basic field with nil attrs", func(t *testing.T) {
 		input := PropertyFieldInput{
 			Name:  "Test Field",
-			Type:  "text",
+			Type:  model.PropertyFieldTypeText,
 			Attrs: nil,
 		}
 
@@ -55,7 +55,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		input := PropertyFieldInput{
 			Name: "Complete Field",
-			Type: "select",
+			Type: model.PropertyFieldTypeSelect,
 			Attrs: &PropertyFieldAttrsInput{
 				Visibility: &visibility,
 				SortOrder:  &sortOrder,
@@ -67,7 +67,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Complete Field", result.Name)
-		assert.Equal(t, model.PropertyFieldType("select"), result.Type)
+		assert.Equal(t, model.PropertyFieldTypeSelect, result.Type)
 		assert.Equal(t, "always", result.Attrs.Visibility)
 		assert.Equal(t, 10.5, result.Attrs.SortOrder)
 		assert.Equal(t, "parent-123", result.Attrs.ParentID)
@@ -89,7 +89,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		input := PropertyFieldInput{
 			Name: "Select Field",
-			Type: "select",
+			Type: model.PropertyFieldTypeSelect,
 			Attrs: &PropertyFieldAttrsInput{
 				Options: &options,
 			},
@@ -205,14 +205,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	t.Run("different field types", func(t *testing.T) {
 		testCases := []struct {
 			name         string
-			fieldType    string
+			fieldType    model.PropertyFieldType
 			expectedType model.PropertyFieldType
 		}{
-			{"text field", "text", model.PropertyFieldType("text")},
-			{"number field", "number", model.PropertyFieldType("number")},
-			{"select field", "select", model.PropertyFieldType("select")},
-			{"date field", "date", model.PropertyFieldType("date")},
-			{"checkbox field", "checkbox", model.PropertyFieldType("checkbox")},
+			{"text field", model.PropertyFieldTypeText, model.PropertyFieldTypeText},
+			{"select field", model.PropertyFieldTypeSelect, model.PropertyFieldTypeSelect},
+			{"multiselect field", model.PropertyFieldTypeMultiselect, model.PropertyFieldTypeMultiselect},
+			{"date field", model.PropertyFieldTypeDate, model.PropertyFieldTypeDate},
+			{"user field", model.PropertyFieldTypeUser, model.PropertyFieldTypeUser},
+			{"multiuser field", model.PropertyFieldTypeMultiuser, model.PropertyFieldTypeMultiuser},
 		}
 
 		for _, tc := range testCases {
@@ -235,7 +236,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		input := PropertyFieldInput{
 			Name: "Partial Attrs Field",
-			Type: "text",
+			Type: model.PropertyFieldTypeText,
 			Attrs: &PropertyFieldAttrsInput{
 				SortOrder: &sortOrder,
 			},
@@ -272,7 +273,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		input := PropertyFieldInput{
 			Name: "Complex Field",
-			Type: "multiselect",
+			Type: model.PropertyFieldTypeMultiselect,
 			Attrs: &PropertyFieldAttrsInput{
 				Visibility: &visibility,
 				SortOrder:  &sortOrder,
@@ -285,7 +286,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Complex Field", result.Name)
-		assert.Equal(t, model.PropertyFieldType("multiselect"), result.Type)
+		assert.Equal(t, model.PropertyFieldTypeMultiselect, result.Type)
 		assert.Equal(t, "edit_only", result.Attrs.Visibility)
 		assert.Equal(t, 15.5, result.Attrs.SortOrder)
 		assert.Equal(t, "complex-parent", result.Attrs.ParentID)
@@ -316,7 +317,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				input := PropertyFieldInput{
 					Name: "Test Field",
-					Type: "text",
+					Type: model.PropertyFieldTypeText,
 					Attrs: &PropertyFieldAttrsInput{
 						Visibility: &tc.visibility,
 					},
@@ -334,7 +335,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		t.Run("empty field name", func(t *testing.T) {
 			input := PropertyFieldInput{
 				Name: "",
-				Type: "text",
+				Type: model.PropertyFieldTypeText,
 			}
 
 			result := convertPropertyFieldInputToPropertyField(input)

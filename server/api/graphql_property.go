@@ -3,6 +3,8 @@
 
 package api
 
+import "github.com/mattermost/mattermost/server/public/model"
+
 type PropertyOptionInput struct {
 	ID    *string `json:"id"`
 	Name  string  `json:"name"`
@@ -18,6 +20,6 @@ type PropertyFieldAttrsInput struct {
 
 type PropertyFieldInput struct {
 	Name  string                   `json:"name"`
-	Type  string                   `json:"type"`
+	Type  model.PropertyFieldType  `json:"type"`
 	Attrs *PropertyFieldAttrsInput `json:"attrs"`
 }
