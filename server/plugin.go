@@ -70,6 +70,7 @@ type Plugin struct {
 	permissions          *app.PermissionsService
 	channelActionService app.ChannelActionService
 	categoryService      app.CategoryService
+	propertyService      app.PropertyService
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
@@ -210,6 +211,11 @@ func (p *Plugin) OnActivate() error {
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
 	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient, p.telemetryClient)
+	propertyService, err := app.NewPropertyService(pluginAPIClient)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create property service")
+	}
+	p.propertyService = propertyService
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -254,6 +260,7 @@ func (p *Plugin) OnActivate() error {
 		p.playbookService,
 		p.playbookRunService,
 		p.categoryService,
+		p.propertyService,
 		pluginAPIClient,
 		p.config,
 		p.permissions,

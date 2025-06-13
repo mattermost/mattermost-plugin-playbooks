@@ -10,6 +10,7 @@ import (
 type RootResolver struct {
 	RunRootResolver
 	PlaybookRootResolver
+	PropertyRootResolver
 }
 
 func addToSetmap[T any](setmap map[string]interface{}, name string, value *T) {
