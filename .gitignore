@@ -21,3 +21,9 @@ server/e2etest.config.json
 .notice-work
 .aider*
 .env
+
+# Claude
+**/CLAUDE.local.md
+.claude
+CLAUDE.md
+.cursorrules
