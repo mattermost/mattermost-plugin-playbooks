@@ -1044,13 +1044,14 @@ func (p *playbookStore) UpdateMetric(id string, setmap map[string]interface{}) e
 func generatePlaybookSchemeRoles(member playbookMember, playbook *app.Playbook) []string {
 	schemeRoles := []string{}
 	for _, role := range strings.Fields(member.Roles) {
-		if role == app.PlaybookRoleAdmin {
+		switch role {
+		case app.PlaybookRoleAdmin:
 			if playbook.DefaultPlaybookAdminRole == "" {
 				schemeRoles = append(schemeRoles, app.PlaybookRoleAdmin)
 			} else {
 				schemeRoles = append(schemeRoles, playbook.DefaultPlaybookAdminRole)
 			}
-		} else if role == app.PlaybookRoleMember {
+		case app.PlaybookRoleMember:
 			if playbook.DefaultPlaybookMemberRole == "" {
 				schemeRoles = append(schemeRoles, app.PlaybookRoleMember)
 			} else {
@@ -1206,13 +1207,14 @@ func insightsQueryBuilder(p *playbookStore, teamID, userID string, opts *app.Ins
 	)`, userID)
 
 	var whereCondition sq.And
-	if queryType == insightsQueryTypeUser {
+	switch queryType {
+	case insightsQueryTypeUser:
 		whereCondition = sq.And{
 			permissionsAndFilter,
 			sq.Eq{"p.TeamID": teamID},
 			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
 		}
-	} else if queryType == insightsQueryTypeTeam {
+	case insightsQueryTypeTeam:
 		whereCondition = sq.And{
 			sq.GtOrEq{"i.CreateAt": opts.StartUnixMilli},
 			sq.Or{
@@ -1221,7 +1223,7 @@ func insightsQueryBuilder(p *playbookStore, teamID, userID string, opts *app.Ins
 			},
 			sq.Eq{"p.TeamID": teamID},
 		}
-	} else {
+	default:
 		whereCondition = sq.And{}
 	}
 	offset := opts.Page * opts.PerPage
