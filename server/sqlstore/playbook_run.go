@@ -540,13 +540,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	// Always ensure UpdateAt is set to current time when updating
-<<<<<<< HEAD
 	playbookRun.UpdateAt = model.GetMillis()
-=======
-	if playbookRun.UpdateAt == 0 {
-		playbookRun.UpdateAt = model.GetMillis()
-	}
->>>>>>> origin/mobile-support/ticket-2-since-param
 
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
@@ -638,11 +632,7 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		SetMap(map[string]interface{}{
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
-<<<<<<< HEAD
 			"UpdateAt":      endAt,
-=======
-			"UpdateAt":      model.GetMillis(),
->>>>>>> origin/mobile-support/ticket-2-since-param
 		}).
 		Where(sq.Eq{"ID": playbookRunID}),
 	); err != nil {
@@ -659,11 +649,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 			"CurrentStatus":      app.StatusInProgress,
 			"EndAt":              0,
 			"LastStatusUpdateAt": restoredAt,
-<<<<<<< HEAD
 			"UpdateAt":           restoredAt,
-=======
-			"UpdateAt":           model.GetMillis(),
->>>>>>> origin/mobile-support/ticket-2-since-param
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)

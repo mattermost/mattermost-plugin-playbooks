@@ -524,6 +524,50 @@ func TestRunRetrieval(t *testing.T) {
 		assert.NoError(t, err2)
 		assert.Len(t, list2.Items, 0)
 	})
+
+	t.Run("filter by channel id", func(t *testing.T) {
+		// Create another run to verify filtering works
+		otherRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Another run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotEqual(t, e.BasicRun.ChannelID, otherRun.ChannelID)
+
+		// We need to make sure the user has permission to the channel to test the filter
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicRun.ChannelID, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		// Test filtering by channel_id
+		list, err := e.PlaybooksClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID:    e.BasicTeam.Id,
+			ChannelID: e.BasicRun.ChannelID,
+		})
+		require.NoError(t, err)
+		require.Len(t, list.Items, 1)
+		require.Equal(t, e.BasicRun.ID, list.Items[0].ID)
+
+		// Skip test with non-existent channel_id as it requires permissions to the channel
+		// which we can't add for a non-existent channel
+
+		// Test channel_id filter with no permission
+		// Make sure user2 is on the team
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicTeam.Id, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		// Try to filter by a channel the user doesn't have access to
+		_, err = e.PlaybooksClient2.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID:    e.BasicTeam.Id,
+			ChannelID: e.BasicPrivateChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		// Clean up to not affect other tests
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), otherRun.ID)
+		require.NoError(t, err)
+	})
 }
 
 func TestRunPostStatusUpdateDialog(t *testing.T) {

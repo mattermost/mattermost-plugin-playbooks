@@ -1231,7 +1231,6 @@ func updateChecklistItemTimestamp(item *ChecklistItem, timestamp int64) {
 	item.UpdateAt = timestamp
 }
 
-<<<<<<< HEAD
 // updateChecklistAndItemTimestamp updates both a checklist item and its parent checklist timestamp
 // This ensures proper synchronization of both the item and its parent checklist
 func updateChecklistAndItemTimestamp(checklist *Checklist, item *ChecklistItem, timestamp int64) {
@@ -1244,8 +1243,6 @@ func updateChecklistAndItemTimestamp(checklist *Checklist, item *ChecklistItem, 
 	checklist.UpdateAt = timestamp
 }
 
-=======
->>>>>>> origin/mobile-support/ticket-2-since-param
 // GraphqlUpdate updates fields based on a setmap
 func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if len(setmap) == 0 {
@@ -1517,11 +1514,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	itemToCheck.State = newState
 	timestamp := model.GetMillis()
 	itemToCheck.StateModified = timestamp
-<<<<<<< HEAD
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
-=======
-	updateChecklistItemTimestamp(&itemToCheck, timestamp)
->>>>>>> origin/mobile-support/ticket-2-since-param
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -1614,11 +1607,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	itemToCheck.AssigneeID = assigneeID
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeModified = timestamp
-<<<<<<< HEAD
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
-=======
-	updateChecklistItemTimestamp(&itemToCheck, timestamp)
->>>>>>> origin/mobile-support/ticket-2-since-param
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -1699,11 +1688,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = 0
 	}
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
-<<<<<<< HEAD
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
-=======
-	updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
->>>>>>> origin/mobile-support/ticket-2-since-param
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
@@ -1726,11 +1711,7 @@ func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, us
 	}
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].TaskActions = taskActions
-<<<<<<< HEAD
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
-=======
-	updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
->>>>>>> origin/mobile-support/ticket-2-since-param
 
 	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -1754,11 +1735,7 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	itemToCheck.DueDate = duedate
-<<<<<<< HEAD
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, 0)
-=======
-	updateChecklistItemTimestamp(&itemToCheck, 0)
->>>>>>> origin/mobile-support/ticket-2-since-param
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	_, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -1833,11 +1810,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	// Record the last (successful) run time.
 	timestamp := model.GetMillis()
 	playbookRun.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = timestamp
-<<<<<<< HEAD
 	updateChecklistAndItemTimestamp(&playbookRun.Checklists[checklistNumber], &playbookRun.Checklists[checklistNumber].Items[itemNumber], timestamp)
-=======
-	updateChecklistItemTimestamp(&playbookRun.Checklists[checklistNumber].Items[itemNumber], timestamp)
->>>>>>> origin/mobile-support/ticket-2-since-param
 
 	_, err = s.store.UpdatePlaybookRun(playbookRun)
 	if err != nil {
