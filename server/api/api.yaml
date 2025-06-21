@@ -109,7 +109,6 @@ paths:
           example: server down
           schema:
             type: string
-<<<<<<< HEAD
         - name: since
           in: query
           description: Return only PlaybookRuns created/modified since the given timestamp (in milliseconds). When provided, the response includes a finished_ids field with info about runs that have finished since this timestamp.
@@ -118,7 +117,6 @@ paths:
           schema:
             type: integer
             format: int64
-=======
         - name: channel_id
           in: query
           description: The returned list will contain only the playbook run associated with this channel ID.
@@ -126,7 +124,6 @@ paths:
           example: r3vk8jdys4rlya46xhdthatoyx
           schema:
             type: string
->>>>>>> origin/mobile-support/ticket-3-channel-id-filter
       x-codeSamples:
         - lang: curl
           source: |
