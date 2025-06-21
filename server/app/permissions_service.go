@@ -212,7 +212,7 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 			oldRoles, memberExisted := oldMemberRoles[member.UserID]
 			userAddedAsMember := !memberExisted && len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember
 			rolesHaveNotChanged := memberExisted && strings.Join(member.Roles, ",") == oldRoles
-			if !(userAddedAsMember || rolesHaveNotChanged) {
+			if !userAddedAsMember && !rolesHaveNotChanged {
 				if err := p.PlaybookManageRoles(userID, oldPlaybook); err != nil {
 					return errors.Wrap(err, "attempted to modify members without permissions")
 				}
