@@ -1442,9 +1442,10 @@ func TestActivitySince(t *testing.T) {
 				foundRun2 := false
 				foundRun3 := false
 				for _, run := range results.Items {
-					if run.ID == run2.ID {
+					switch run.ID {
+					case run2.ID:
 						foundRun2 = true
-					} else if run.ID == run3.ID {
+					case run3.ID:
 						foundRun3 = true
 					}
 				}
