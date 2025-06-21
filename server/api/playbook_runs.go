@@ -1905,6 +1905,16 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	// Parse omit_ended param - default to false for backward compatibility
 	omitEndedParam := u.Query().Get("omit_ended")
 	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
+	
+	// Parse since parameter for timestamp-based activity filtering
+	sinceParam := u.Query().Get("since")
+	var activitySince int64
+	if sinceParam != "" {
+		activitySince, err = strconv.ParseInt(sinceParam, 10, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "bad parameter 'since'")
+		}
+	}
 
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
@@ -1924,6 +1934,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		StartedLT:               startedLT,
 		Types:                   types,
 		OmitEnded:               omitEnded,
+		ActivitySince:           activitySince,
 	}
 
 	options, err = options.Validate()

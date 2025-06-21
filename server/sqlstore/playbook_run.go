@@ -364,6 +364,12 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
 	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
 
+	// Filter by UpdateAt for the activity since parameter
+	if options.ActivitySince > 0 {
+		queryForResults = queryForResults.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
+		queryForTotal = queryForTotal.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
+	}
+
 	queryForResults, err := applyPlaybookRunFilterOptionsSort(queryForResults, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to apply sort options")
@@ -433,13 +439,15 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		addMetricsToPlaybookRuns(metricsData, playbookRuns)
 	}
 
-	return &app.GetPlaybookRunsResults{
+	result := &app.GetPlaybookRunsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
-	}, nil
+	}
+
+	return result, nil
 }
 
 // CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.
@@ -532,7 +540,13 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	// Always ensure UpdateAt is set to current time when updating
+<<<<<<< HEAD
 	playbookRun.UpdateAt = model.GetMillis()
+=======
+	if playbookRun.UpdateAt == 0 {
+		playbookRun.UpdateAt = model.GetMillis()
+	}
+>>>>>>> origin/mobile-support/ticket-2-since-param
 
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
@@ -624,7 +638,11 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		SetMap(map[string]interface{}{
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
+<<<<<<< HEAD
 			"UpdateAt":      endAt,
+=======
+			"UpdateAt":      model.GetMillis(),
+>>>>>>> origin/mobile-support/ticket-2-since-param
 		}).
 		Where(sq.Eq{"ID": playbookRunID}),
 	); err != nil {
@@ -641,7 +659,11 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 			"CurrentStatus":      app.StatusInProgress,
 			"EndAt":              0,
 			"LastStatusUpdateAt": restoredAt,
+<<<<<<< HEAD
 			"UpdateAt":           restoredAt,
+=======
+			"UpdateAt":           model.GetMillis(),
+>>>>>>> origin/mobile-support/ticket-2-since-param
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)

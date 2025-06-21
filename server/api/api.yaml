@@ -109,6 +109,14 @@ paths:
           example: server down
           schema:
             type: string
+        - name: since
+          in: query
+          description: Return only PlaybookRuns created/modified since the given timestamp (in milliseconds). When provided, the response includes a finished_ids field with info about runs that have finished since this timestamp.
+          required: false
+          example: 1643673600000
+          schema:
+            type: integer
+            format: int64
       x-codeSamples:
         - lang: curl
           source: |
@@ -120,7 +128,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlaybookRunList"
+                oneOf:
+                  - $ref: "#/components/schemas/PlaybookRunList"
+                  - $ref: "#/components/schemas/PlaybookRunListWithFinished"
         400:
           $ref: "#/components/responses/400"
         403:
