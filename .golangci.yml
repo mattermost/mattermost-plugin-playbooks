@@ -1,59 +1,77 @@
-service:
-  golangci-lint-version: 1.54.2
-
-run:
-  timeout: 5m
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
+    - copyloopvar
     - errcheck
-    - gofmt
-    - goimports
-    - revive
+    - gocheckcompilerdirectives
     - gosec
-    - gosimple
     - govet
     - ineffassign
-    - copyloopvar
+    - misspell
+    - revive
     - staticcheck
     - unconvert
     - unused
-    - misspell
-    - gocheckcompilerdirectives
-
-linters-settings:
-  gofmt:
-    simplify: true
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-      - unusedwrite
-
-issues:
-  exclude:
-    - G404
-    - 'shadow: declaration of "err" shadows declaration at'
-  exclude-dirs:
-    - build/
-  exclude-files:
-     - example.*.go
-     - server/manifest.go
-  exclude-rules:
-    # Exclude some linters from running on tests files.
-    - path: _test\.go
-      linters:
-        - goconst
-        - unparam
-        - gosec
-    - linters:
-      - revive
-      - gocritic
-      path: "server/bot/logger.go"
-    - linters:
-      - revive
-      text: unused-parameter
-    - linters:
-      - gosec
-      text: G115
+  settings:
+    govet:
+      disable:
+        - fieldalignment
+        - unusedwrite
+      enable-all: true
+    revive:
+      rules:
+        - name: redefines-builtin-id
+          disabled: true
+    staticcheck:
+      checks: ["all", "-QF1008"]
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - goconst
+          - gosec
+          - unparam
+        path: _test\.go
+      - linters:
+          - gocritic
+          - revive
+        path: server/bot/logger.go
+      - linters:
+          - revive
+        text: unused-parameter
+      - linters:
+          - gosec
+        text: G115
+      - path: (.+)\.go$
+        text: G404
+      - path: (.+)\.go$
+        text: 'shadow: declaration of "err" shadows declaration at'
+    paths:
+      - example.*.go
+      - server/manifest.go
+      - build/
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: lax
+    paths:
+      - example.*.go
+      - server/manifest.go
+      - build/
+      - third_party$
+      - builtin$
+      - examples$

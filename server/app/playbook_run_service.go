@@ -1391,7 +1391,7 @@ func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *Playbook
 		customPostType = "custom_retro_rem_first"
 	}
 
-	if _, err := s.poster.PostCustomMessageWithAttachments(playbookRun.ChannelID, customPostType, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
+	if _, err := s.poster.PostCustomMessageWithAttachmentsf(playbookRun.ChannelID, customPostType, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
 		return errors.Wrap(err, "failed to post retro reminder to channel")
 	}
 

@@ -107,7 +107,7 @@
     },
     {
         "id": "app.user.run.status_disable",
-        "translation": "@{{.Användarnamn}} inaktiverade statusuppdateringarna för [{{.RunName}}]({{.RunURL}})"
+        "translation": "@{{.Username}} inaktiverade statusuppdateringarna för [{{.RunName}}]({{.RunURL}})"
     },
     {
         "id": "app.user.run.request_join_channel",
