@@ -74,6 +74,11 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 		return
 	}
 
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
 	attachments := []*model.SlackAttachment{
 		{
 			Actions: []*model.PostAction{
@@ -118,9 +123,11 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	}
 
 	playbookRunToModify.ReminderPostID = post.Id
-	if _, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		logger.WithError(err).Error("error updating with reminder post id")
 	}
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
 }
 
 func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *PlaybookRun, ownerUserName string) (string, error) {
@@ -162,14 +169,14 @@ func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error 
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	playbookRunToModify.PreviousReminder = 0
-
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
-	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run after resetting reminder timer")
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunToModify.ID, withPlaybookRun(playbookRunToModify))
+	playbookRunToModify.PreviousReminder = 0
+
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
 
 	return nil
 }
@@ -206,6 +213,11 @@ func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminde
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
+	}
+
 	// Remove pending reminder (if any)
 	s.RemoveReminder(playbookRunID)
 
@@ -231,8 +243,7 @@ func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminde
 		}
 	}
 
-	s.sendPlaybookRunUpdatedWS(playbookRunToModify.ID, withPlaybookRun(playbookRunToModify))
-
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
 	return nil
 }
 

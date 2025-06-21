@@ -466,11 +466,9 @@ func getPlaybookFavorite(c *client.Client, playbookID string) (bool, error) {
 }
 
 func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
-	testPlaybookMutateQuery := `
-	mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
-	updatePlaybook(id: $id, updates: $updates)
-	}
-		`
+	testPlaybookMutateQuery := `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
+		updatePlaybook(id: $id, updates: $updates)
+	}`
 	var response graphql.Response
 	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testPlaybookMutateQuery,
@@ -609,11 +607,9 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 }
 
 func gqlTestPlaybookUpdateGuest(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
-	testPlaybookMutateQuery := `
-	mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
-	updatePlaybook(id: $id, updates: $updates)
-	}
-		`
+	testPlaybookMutateQuery := `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
+		updatePlaybook(id: $id, updates: $updates)
+	}`
 	var response graphql.Response
 	err := e.PlaybooksClientGuest.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testPlaybookMutateQuery,

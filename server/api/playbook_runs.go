@@ -396,7 +396,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {
+	if err = h.playbookRunService.AddPostToTimeline(playbookRun, userID, post, summary); err != nil {
 		h.HandleError(w, c.logger, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
@@ -1917,7 +1917,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	// Parse omit_ended param - default to false for backward compatibility
 	omitEndedParam := u.Query().Get("omit_ended")
 	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
-	
+
 	// Parse since parameter for timestamp-based activity filtering
 	sinceParam := u.Query().Get("since")
 	var activitySince int64
