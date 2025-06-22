@@ -1471,18 +1471,22 @@ func TestActivitySince(t *testing.T) {
 			require.NoError(t, err)
 			createPlaybookRunChannel(t, store, run3)
 
-			// Update run1 with an older timestamp
+			// Update run1 with an older timestamp by directly updating the database
 			oldUpdateTime := baseTime - 2000
-			run1.UpdateAt = oldUpdateTime
-			run1.Name = "Run 1 - updated older"
-			_, err = playbookRunStore.UpdatePlaybookRun(run1)
+			updateBuilder := store.builder.Update("IR_Incident").
+				Set("UpdateAt", oldUpdateTime).
+				Set("Name", "Run 1 - updated older").
+				Where(sq.Eq{"ID": run1.ID})
+			_, err = store.execBuilder(store.db, updateBuilder)
 			require.NoError(t, err)
 
-			// Update run2 with a newer timestamp
+			// Update run2 with a newer timestamp by directly updating the database
 			newUpdateTime := baseTime - 1000
-			run2.UpdateAt = newUpdateTime
-			run2.Name = "Run 2 - updated newer"
-			_, err = playbookRunStore.UpdatePlaybookRun(run2)
+			updateBuilder = store.builder.Update("IR_Incident").
+				Set("UpdateAt", newUpdateTime).
+				Set("Name", "Run 2 - updated newer").
+				Where(sq.Eq{"ID": run2.ID})
+			_, err = store.execBuilder(store.db, updateBuilder)
 			require.NoError(t, err)
 
 			// Finish run3
