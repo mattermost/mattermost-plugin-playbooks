@@ -4,6 +4,7 @@
 package app
 
 import (
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
 )
@@ -108,6 +109,67 @@ func (s *propertyService) DeletePropertyField(propertyID string) error {
 	err := s.api.Property.DeletePropertyField(s.groupID, propertyID)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete property field")
+	}
+
+	return nil
+}
+
+func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*model.PropertyField, error) {
+	opts := model.PropertyFieldSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: targetType,
+		TargetID:   targetID,
+		PerPage:    20,
+	}
+
+	var allFields []*model.PropertyField
+	for {
+		fields, err := s.api.Property.SearchPropertyFields(s.groupID, targetID, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		allFields = append(allFields, fields...)
+
+		if len(fields) < opts.PerPage {
+			break
+		}
+
+		lastField := fields[len(fields)-1]
+		opts.Cursor = model.PropertyFieldSearchCursor{
+			PropertyFieldID: lastField.ID,
+			CreateAt:        lastField.CreateAt,
+		}
+	}
+
+	return allFields, nil
+}
+
+func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) error {
+	playbookProperties, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get playbook properties")
+	}
+
+	for _, playbookProperty := range playbookProperties {
+		runProperty := &model.PropertyField{
+			GroupID:    s.groupID,
+			Name:       playbookProperty.Name,
+			Type:       playbookProperty.Type,
+			Attrs:      playbookProperty.Attrs,
+			TargetType: PropertyTargetTypeRun,
+			TargetID:   runID,
+		}
+
+		if runProperty.Attrs == nil {
+			runProperty.Attrs = make(model.StringInterface)
+		}
+		runProperty.Attrs[PropertyAttrsParentID] = playbookProperty.ID
+
+		_, err := s.api.Property.CreatePropertyField(runProperty)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create run property field for %s", playbookProperty.Name)
+		}
 	}
 
 	return nil

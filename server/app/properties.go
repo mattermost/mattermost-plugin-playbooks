@@ -27,6 +27,7 @@ const (
 
 	// Target types
 	PropertyTargetTypePlaybook = "playbook"
+	PropertyTargetTypeRun      = "run"
 )
 
 type Attrs struct {
@@ -133,4 +134,5 @@ type PropertyService interface {
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	DeletePropertyField(propertyID string) error
+	CopyPlaybookPropertiesToRun(playbookID, runID string) error
 }
