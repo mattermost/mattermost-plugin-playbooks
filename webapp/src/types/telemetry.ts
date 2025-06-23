@@ -13,6 +13,7 @@ export enum GeneralViewTarget {
 
 export enum PlaybookViewTarget {
     Usage = 'view_playbook_usage',
+    Properties = 'view_playbook_properties',
     Outline = 'view_playbook_outline',
     Reports = 'view_playbook_reports'
 }

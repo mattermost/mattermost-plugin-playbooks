@@ -27,6 +27,7 @@ import {useForceDocumentTitle, useStats} from 'src/hooks';
 import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
+import PlaybookProperties from 'src/components/backstage/playbook_properties';
 import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
@@ -241,6 +242,12 @@ const PlaybookEditor = () => {
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
                 <NavItem
+                    to={generatePath(path, {playbookId, tab: 'properties'})}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_properties_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Properties'})}
+                </NavItem>
+                <NavItem
                     to={generatePath(path, {playbookId, tab: 'outline'})}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
                 >
@@ -261,6 +268,14 @@ const PlaybookEditor = () => {
                     <PlaybookUsage
                         playbookID={playbook.id}
                         stats={stats}
+                    />
+                </Route>
+                <Route
+                    path={generatePath(path, {playbookId, tab: 'properties'})}
+                    exact={true}
+                >
+                    <PlaybookProperties
+                        playbookID={playbook.id}
                     />
                 </Route>
                 <Route
@@ -496,6 +511,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 
     ${PlaybookUsage},
+    ${PlaybookProperties},
     ${PlaybookKeyMetrics} {
         grid-area: aside/aside/aside-right/aside-right;
     }
@@ -543,6 +559,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         }
 
         ${PlaybookUsage},
+        ${PlaybookProperties},
         ${PlaybookKeyMetrics} {
             grid-area: content;
         }
