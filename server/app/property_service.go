@@ -7,6 +7,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -152,27 +153,48 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 	}
 
 	for _, playbookProperty := range playbookProperties {
-		runProperty := &model.PropertyField{
-			GroupID:    s.groupID,
-			Name:       playbookProperty.Name,
-			Type:       playbookProperty.Type,
-			Attrs:      playbookProperty.Attrs,
-			TargetType: PropertyTargetTypeRun,
-			TargetID:   runID,
+		runProperty, err := s.duplicatePropertyFieldForRun(playbookProperty, runID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to duplicate property field %s for run", playbookProperty.Name)
 		}
 
-		if runProperty.Attrs == nil {
-			runProperty.Attrs = make(model.StringInterface)
-		}
-		runProperty.Attrs[PropertyAttrsParentID] = playbookProperty.ID
-
-		_, err := s.api.Property.CreatePropertyField(runProperty)
+		_, err = s.api.Property.CreatePropertyField(runProperty)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create run property field for %s", playbookProperty.Name)
 		}
 	}
 
+	logrus.WithFields(logrus.Fields{
+		"playbook_id":   playbookID,
+		"run_id":        runID,
+		"fields_copied": len(playbookProperties),
+	}).Info("copied playbook properties to run")
+
 	return nil
+}
+
+func (s *propertyService) duplicatePropertyFieldForRun(playbookProperty *model.PropertyField, runID string) (*model.PropertyField, error) {
+	propertyField, err := NewPropertyFieldFromMattermostPropertyField(playbookProperty)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to convert playbook property %s", playbookProperty.Name)
+	}
+
+	propertyField.ID = ""
+	propertyField.TargetType = PropertyTargetTypeRun
+	propertyField.TargetID = runID
+	propertyField.Attrs.ParentID = playbookProperty.ID
+
+	if propertyField.SupportsOptions() {
+		for i := range propertyField.Attrs.Options {
+			propertyField.Attrs.Options[i].SetID("")
+		}
+	}
+
+	if err := propertyField.SanitizeAndValidate(); err != nil {
+		return nil, errors.Wrapf(err, "failed to validate run property field for %s", playbookProperty.Name)
+	}
+
+	return propertyField.ToMattermostPropertyField(), nil
 }
 
 func (s *propertyService) ensurePropertyGroup() (string, error) {

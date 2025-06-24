@@ -47,7 +47,15 @@ type PropertyValue model.PropertyValue
 // SupportsOptions checks the PropertyField type and determines if the type
 // supports the use of options
 func (p *PropertyField) SupportsOptions() bool {
-	return p.Type == model.PropertyFieldTypeSelect || p.Type == model.PropertyFieldTypeMultiselect
+	switch p.Type {
+	case model.PropertyFieldTypeSelect,
+		model.PropertyFieldTypeMultiselect,
+		model.PropertyFieldTypeUser,
+		model.PropertyFieldTypeMultiuser:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *PropertyField) SanitizeAndValidate() error {
