@@ -7,15 +7,16 @@ import {MockedProvider} from '@apollo/client/testing';
 import {GraphQLError} from 'graphql';
 
 import {
-    PlaybookPropertyDocument,
     AddPlaybookPropertyFieldDocument,
-    UpdatePlaybookPropertyFieldDocument,
     DeletePlaybookPropertyFieldDocument,
+    PlaybookPropertyDocument,
     PropertyFieldType,
+    UpdatePlaybookPropertyFieldDocument,
 } from 'src/graphql/generated/graphql';
 
 // Mock hooks that we'll test once they're implemented
-const usePlaybookProperty = (playbookID: string, propertyID: string) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const usePlaybookProperty = (_playbookID: string, _propertyID: string) => {
     // This will be implemented in the next phase
     return {data: null, loading: false, error: null};
 };
@@ -60,7 +61,10 @@ describe('Property Fields Apollo Integration', () => {
 
     const createWrapper = (mocks: any[] = []) => {
         return ({children}: {children: React.ReactNode}) => (
-            <MockedProvider mocks={mocks} addTypename={false}>
+            <MockedProvider
+                mocks={mocks}
+                addTypename={false}
+            >
                 {children}
             </MockedProvider>
         );
@@ -86,7 +90,7 @@ describe('Property Fields Apollo Integration', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result, waitForNextUpdate} = renderHook(
+            const {result} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
                 {wrapper}
             );
@@ -147,6 +151,7 @@ describe('Property Fields Apollo Integration', () => {
             );
 
             expect(result.current.error).toBeNull();
+
             // Note: Once implemented, this will verify network error handling
         });
     });
@@ -215,6 +220,7 @@ describe('Property Fields Apollo Integration', () => {
             const {result} = renderHook(() => useAddPlaybookPropertyField(), {wrapper});
 
             expect(result.current[1].error).toBeNull();
+
             // Note: Once implemented, this will verify mutation error handling
         });
     });
@@ -342,6 +348,7 @@ describe('Property Fields Apollo Integration', () => {
             const {result} = renderHook(() => useDeletePlaybookPropertyField(), {wrapper});
 
             expect(result.current[1].error).toBeNull();
+
             // Note: Once implemented, this will verify deletion error handling
         });
     });
@@ -349,7 +356,7 @@ describe('Property Fields Apollo Integration', () => {
     describe('Variable Validation', () => {
         it('should validate required variables for PlaybookProperty query', () => {
             const requiredVariables = ['playbookID', 'propertyID'];
-            
+
             const mockRequest = {
                 query: PlaybookPropertyDocument,
                 variables: {

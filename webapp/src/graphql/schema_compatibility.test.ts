@@ -4,24 +4,24 @@
 import {print} from 'graphql';
 
 import {
-    PlaybookPropertyDocument,
     AddPlaybookPropertyFieldDocument,
-    UpdatePlaybookPropertyFieldDocument,
     DeletePlaybookPropertyFieldDocument,
+    PlaybookPropertyDocument,
+    UpdatePlaybookPropertyFieldDocument,
 } from 'src/graphql/generated/graphql';
 
 describe('GraphQL Schema Compatibility', () => {
     describe('Query Syntax Validation', () => {
         it('PlaybookProperty query should have valid GraphQL syntax', () => {
             const queryString = print(PlaybookPropertyDocument);
-            
+
             expect(queryString).toContain('query PlaybookProperty');
             expect(queryString).toContain('$playbookID: String!');
             expect(queryString).toContain('$propertyID: String!');
             expect(queryString).toContain('playbookProperty(');
             expect(queryString).toContain('playbookID: $playbookID');
             expect(queryString).toContain('propertyID: $propertyID');
-            
+
             // Verify all expected fields are selected
             expect(queryString).toContain('id');
             expect(queryString).toContain('name');
@@ -41,7 +41,7 @@ describe('GraphQL Schema Compatibility', () => {
     describe('Mutation Syntax Validation', () => {
         it('AddPlaybookPropertyField mutation should have valid GraphQL syntax', () => {
             const mutationString = print(AddPlaybookPropertyFieldDocument);
-            
+
             expect(mutationString).toContain('mutation AddPlaybookPropertyField');
             expect(mutationString).toContain('$playbookID: String!');
             expect(mutationString).toContain('$propertyField: PropertyFieldInput!');
@@ -52,7 +52,7 @@ describe('GraphQL Schema Compatibility', () => {
 
         it('UpdatePlaybookPropertyField mutation should have valid GraphQL syntax', () => {
             const mutationString = print(UpdatePlaybookPropertyFieldDocument);
-            
+
             expect(mutationString).toContain('mutation UpdatePlaybookPropertyField');
             expect(mutationString).toContain('$playbookID: String!');
             expect(mutationString).toContain('$propertyFieldID: String!');
@@ -65,7 +65,7 @@ describe('GraphQL Schema Compatibility', () => {
 
         it('DeletePlaybookPropertyField mutation should have valid GraphQL syntax', () => {
             const mutationString = print(DeletePlaybookPropertyFieldDocument);
-            
+
             expect(mutationString).toContain('mutation DeletePlaybookPropertyField');
             expect(mutationString).toContain('$playbookID: String!');
             expect(mutationString).toContain('$propertyFieldID: String!');
@@ -78,15 +78,15 @@ describe('GraphQL Schema Compatibility', () => {
     describe('Field Selection Compatibility', () => {
         it('should select fields that match backend GraphQL schema', () => {
             const queryString = print(PlaybookPropertyDocument);
-            
+
             // These field selections should match the backend PropertyField type
             const expectedFields = [
                 'id',
-                'name', 
+                'name',
                 'type',
                 'group_id: groupID', // Snake case alias for camelCase backend field
                 'create_at: createAt',
-                'update_at: updateAt', 
+                'update_at: updateAt',
                 'delete_at: deleteAt',
             ];
 
@@ -99,7 +99,7 @@ describe('GraphQL Schema Compatibility', () => {
             expect(queryString).toContain('visibility');
             expect(queryString).toContain('sort_order: sortOrder');
             expect(queryString).toContain('parent_id: parentID');
-            
+
             // Check nested options selection
             expect(queryString).toContain('options {');
             expect(queryString).toContain('color');
@@ -107,15 +107,15 @@ describe('GraphQL Schema Compatibility', () => {
 
         it('should use correct field aliases for backend compatibility', () => {
             const queryString = print(PlaybookPropertyDocument);
-            
+
             // Verify aliases match backend field naming
             const aliasMap = {
-                'group_id': 'groupID',
-                'create_at': 'createAt',
-                'update_at': 'updateAt',
-                'delete_at': 'deleteAt',
-                'sort_order': 'sortOrder',
-                'parent_id': 'parentID',
+                group_id: 'groupID',
+                create_at: 'createAt',
+                update_at: 'updateAt',
+                delete_at: 'deleteAt',
+                sort_order: 'sortOrder',
+                parent_id: 'parentID',
             };
 
             Object.entries(aliasMap).forEach(([alias, backendField]) => {
@@ -135,20 +135,20 @@ describe('GraphQL Schema Compatibility', () => {
 
             queries.forEach((query) => {
                 const queryString = print(query);
-                
+
                 // All mutations should expect String! for IDs
                 if (queryString.includes('playbookID')) {
                     expect(queryString).toContain('$playbookID: String!');
                 }
-                
+
                 if (queryString.includes('propertyID')) {
                     expect(queryString).toContain('$propertyID: String!');
                 }
-                
+
                 if (queryString.includes('propertyFieldID')) {
                     expect(queryString).toContain('$propertyFieldID: String!');
                 }
-                
+
                 // Only check for PropertyFieldInput if it's actually in a mutation that uses it
                 if (queryString.includes('$propertyField: PropertyFieldInput!')) {
                     expect(queryString).toContain('$propertyField: PropertyFieldInput!');
@@ -172,7 +172,7 @@ describe('GraphQL Schema Compatibility', () => {
             });
 
             // Verify names are unique
-            const names = operations.map(op => op.name);
+            const names = operations.map((op) => op.name);
             const uniqueNames = new Set(names);
             expect(uniqueNames.size).toBe(names.length);
         });
@@ -181,13 +181,13 @@ describe('GraphQL Schema Compatibility', () => {
     describe('Required Fields', () => {
         it('should request all essential fields for property field operations', () => {
             const queryString = print(PlaybookPropertyDocument);
-            
+
             // Essential fields for property field functionality
             const essentialFields = [
-                'id',        // Required for updates/deletes
-                'name',      // Required for display
-                'type',      // Required for field type handling
-                'attrs',     // Required for field configuration
+                'id', // Required for updates/deletes
+                'name', // Required for display
+                'type', // Required for field type handling
+                'attrs', // Required for field configuration
             ];
 
             essentialFields.forEach((field) => {
@@ -197,11 +197,11 @@ describe('GraphQL Schema Compatibility', () => {
 
         it('should request proper option fields for select/multiselect types', () => {
             const queryString = print(PlaybookPropertyDocument);
-            
+
             // Option fields needed for select/multiselect types
             expect(queryString).toContain('options {');
-            expect(queryString).toContain('id');    // Required for option identification
-            expect(queryString).toContain('name');  // Required for option display
+            expect(queryString).toContain('id'); // Required for option identification
+            expect(queryString).toContain('name'); // Required for option display
             expect(queryString).toContain('color'); // Required for option styling
         });
     });
@@ -209,7 +209,7 @@ describe('GraphQL Schema Compatibility', () => {
     describe('Nested Field Structure', () => {
         it('should properly structure nested attrs field', () => {
             const queryString = print(PlaybookPropertyDocument);
-            
+
             // Check attrs structure - allow multiline and nested content
             expect(queryString).toMatch(/attrs\s*\{[\s\S]*visibility[\s\S]*\}/);
             expect(queryString).toMatch(/attrs\s*\{[\s\S]*sort_order[\s\S]*\}/);
@@ -219,7 +219,7 @@ describe('GraphQL Schema Compatibility', () => {
 
         it('should properly structure nested options field', () => {
             const queryString = print(PlaybookPropertyDocument);
-            
+
             // Check options structure within attrs
             expect(queryString).toMatch(/options\s*\{[^}]*id[^}]*\}/);
             expect(queryString).toMatch(/options\s*\{[^}]*name[^}]*\}/);
@@ -232,19 +232,19 @@ describe('GraphQL Schema Compatibility', () => {
             // Test that our queries don't break the existing backend
             // by checking for deprecated or renamed fields
             const queryString = print(PlaybookPropertyDocument);
-            
+
             // These fields should NOT be present (old/deprecated names)
             const deprecatedFields = [
-                'created_at',  // Should be createAt
-                'updated_at',  // Should be updateAt  
-                'deleted_at',  // Should be deleteAt
-                'groupId',     // Should be groupID (note: sortOrder and parentID are backend field names, not deprecated)
+                'created_at', // Should be createAt
+                'updated_at', // Should be updateAt
+                'deleted_at', // Should be deleteAt
+                'groupId', // Should be groupID (note: sortOrder and parentID are backend field names, not deprecated)
             ];
 
             deprecatedFields.forEach((field) => {
                 expect(queryString).not.toContain(field);
             });
-            
+
             // Verify we're using the correct alias pattern (alias: backendField)
             expect(queryString).toContain('sort_order: sortOrder');
             expect(queryString).toContain('parent_id: parentID');

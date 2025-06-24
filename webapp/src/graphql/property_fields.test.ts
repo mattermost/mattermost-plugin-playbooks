@@ -2,14 +2,14 @@
 // See LICENSE.txt for license information.
 
 import {
-    PlaybookPropertyDocument,
     AddPlaybookPropertyFieldDocument,
-    UpdatePlaybookPropertyFieldDocument,
     DeletePlaybookPropertyFieldDocument,
-    PropertyFieldType,
-    PropertyFieldInput,
+    PlaybookPropertyDocument,
     PropertyFieldAttrsInput,
+    PropertyFieldInput,
+    PropertyFieldType,
     PropertyOptionInput,
+    UpdatePlaybookPropertyFieldDocument,
 } from 'src/graphql/generated/graphql';
 
 describe('Property Fields GraphQL Operations', () => {
@@ -18,12 +18,12 @@ describe('Property Fields GraphQL Operations', () => {
             expect(PlaybookPropertyDocument).toBeDefined();
             expect(PlaybookPropertyDocument.kind).toBe('Document');
             expect(PlaybookPropertyDocument.definitions).toHaveLength(1);
-            
+
             const operation = PlaybookPropertyDocument.definitions[0] as any;
             expect(operation.kind).toBe('OperationDefinition');
             expect(operation.operation).toBe('query');
             expect(operation.name?.value).toBe('PlaybookProperty');
-            
+
             // Check variables
             expect(operation.variableDefinitions).toHaveLength(2);
             const variables = operation.variableDefinitions!.map((v: any) => v.variable.name.value);
@@ -35,7 +35,7 @@ describe('Property Fields GraphQL Operations', () => {
             const operation = PlaybookPropertyDocument.definitions[0] as any;
             const selectionSet = operation.selectionSet.selections[0].selectionSet;
             const fieldNames = selectionSet.selections.map((s: any) => s.alias?.value || s.name.value);
-            
+
             // Check that all expected fields are requested
             expect(fieldNames).toContain('id');
             expect(fieldNames).toContain('name');
@@ -52,12 +52,12 @@ describe('Property Fields GraphQL Operations', () => {
         it('AddPlaybookPropertyFieldDocument should have correct structure', () => {
             expect(AddPlaybookPropertyFieldDocument).toBeDefined();
             expect(AddPlaybookPropertyFieldDocument.kind).toBe('Document');
-            
+
             const operation = AddPlaybookPropertyFieldDocument.definitions[0] as any;
             expect(operation.kind).toBe('OperationDefinition');
             expect(operation.operation).toBe('mutation');
             expect(operation.name?.value).toBe('AddPlaybookPropertyField');
-            
+
             // Check variables
             const variables = operation.variableDefinitions!.map((v: any) => v.variable.name.value);
             expect(variables).toContain('playbookID');
@@ -66,11 +66,11 @@ describe('Property Fields GraphQL Operations', () => {
 
         it('UpdatePlaybookPropertyFieldDocument should have correct structure', () => {
             expect(UpdatePlaybookPropertyFieldDocument).toBeDefined();
-            
+
             const operation = UpdatePlaybookPropertyFieldDocument.definitions[0] as any;
             expect(operation.operation).toBe('mutation');
             expect(operation.name?.value).toBe('UpdatePlaybookPropertyField');
-            
+
             // Check variables
             const variables = operation.variableDefinitions!.map((v: any) => v.variable.name.value);
             expect(variables).toContain('playbookID');
@@ -80,11 +80,11 @@ describe('Property Fields GraphQL Operations', () => {
 
         it('DeletePlaybookPropertyFieldDocument should have correct structure', () => {
             expect(DeletePlaybookPropertyFieldDocument).toBeDefined();
-            
+
             const operation = DeletePlaybookPropertyFieldDocument.definitions[0] as any;
             expect(operation.operation).toBe('mutation');
             expect(operation.name?.value).toBe('DeletePlaybookPropertyField');
-            
+
             // Check variables
             const variables = operation.variableDefinitions!.map((v: any) => v.variable.name.value);
             expect(variables).toContain('playbookID');
@@ -133,6 +133,7 @@ describe('Property Fields GraphQL Operations', () => {
             const minimalInput: PropertyFieldInput = {
                 name: 'Minimal Field',
                 type: PropertyFieldType.Text,
+
                 // attrs is optional
             };
 
@@ -156,7 +157,7 @@ describe('Property Fields GraphQL Operations', () => {
 
             expect(newOption.id).toBeUndefined();
             expect(newOption.name).toBe('New Option');
-            
+
             expect(existingOption.id).toBe('option-123');
             expect(existingOption.name).toBe('Existing Option');
         });
@@ -186,9 +187,9 @@ describe('Property Fields GraphQL Operations', () => {
                     visibility: 'always',
                     sortOrder: 1,
                     options: [
-                        { name: 'High', color: 'red' },
-                        { name: 'Medium', color: 'yellow' },
-                        { name: 'Low', color: 'green' },
+                        {name: 'High', color: 'red'},
+                        {name: 'Medium', color: 'yellow'},
+                        {name: 'Low', color: 'green'},
                     ],
                 },
             };
@@ -206,9 +207,9 @@ describe('Property Fields GraphQL Operations', () => {
                     visibility: 'always',
                     sortOrder: 3,
                     options: [
-                        { name: 'Frontend', color: 'blue' },
-                        { name: 'Backend', color: 'purple' },
-                        { name: 'DevOps', color: 'orange' },
+                        {name: 'Frontend', color: 'blue'},
+                        {name: 'Backend', color: 'purple'},
+                        {name: 'DevOps', color: 'orange'},
                     ],
                 },
             };
@@ -263,13 +264,13 @@ describe('Property Fields GraphQL Operations', () => {
     describe('Visibility Options', () => {
         it('should accept valid visibility values', () => {
             const visibilityOptions = ['always', 'when_set', 'hidden'];
-            
+
             visibilityOptions.forEach((visibility) => {
                 const attrs: PropertyFieldAttrsInput = {
                     visibility,
                     sortOrder: 1,
                 };
-                
+
                 expect(attrs.visibility).toBe(visibility);
             });
         });
@@ -288,6 +289,7 @@ describe('Property Fields GraphQL Operations', () => {
         it('should allow undefined sort order', () => {
             const attrs: PropertyFieldAttrsInput = {
                 visibility: 'always',
+
                 // sortOrder is optional
             };
 
@@ -322,6 +324,7 @@ describe('Property Fields GraphQL Operations', () => {
 
             const optionWithoutColor: PropertyOptionInput = {
                 name: 'Plain Option',
+
                 // color is optional
             };
 

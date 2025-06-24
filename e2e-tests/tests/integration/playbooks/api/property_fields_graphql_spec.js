@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+/* eslint-disable no-underscore-dangle */ // Allow GraphQL introspection fields (__schema, __type)
+
 describe('api > property_fields_graphql', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -17,7 +19,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
     before(() => {
         cy.apiInitSetup({
             promoteNewUserAsAdmin: true,
-            userPrefix: 'property-test-admin'
+            userPrefix: 'property-test-admin',
         }).then(({team, user}) => {
             testTeam = team;
             testUser = user;
@@ -42,7 +44,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
     describe('GraphQL Schema Introspection', () => {
         it('should verify GraphQL schema includes property field operations', () => {
             cy.task('log', '🔍 Testing GraphQL Property Field Operations Schema');
-            
+
             // # Test GraphQL introspection to verify operations exist
             cy.request({
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -64,31 +66,31 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
                                 }
                             }
                         }
-                    `
+                    `,
                 },
                 method: 'POST',
             }).then((response) => {
                 // * Verify the GraphQL endpoint is working
                 expect(response.status).to.equal(200);
                 expect(response.body).to.exist;
-                
+
                 if (!response.body.data || !response.body.data.__schema) {
                     cy.task('log', '⚠️ Introspection might be disabled. Skipping introspection tests.');
                     return;
                 }
-                
+
                 expect(response.body.data).to.exist;
                 expect(response.body.data.__schema).to.exist;
-                
-                const queryFields = response.body.data.__schema.queryType.fields.map(f => f.name);
-                const mutationFields = response.body.data.__schema.mutationType.fields.map(f => f.name);
-                
+
+                const queryFields = response.body.data.__schema.queryType.fields.map((f) => f.name);
+                const mutationFields = response.body.data.__schema.mutationType.fields.map((f) => f.name);
+
                 // * Verify that property field operations exist in the schema
                 expect(queryFields).to.include('playbookProperty');
                 expect(mutationFields).to.include('addPlaybookPropertyField');
                 expect(mutationFields).to.include('updatePlaybookPropertyField');
                 expect(mutationFields).to.include('deletePlaybookPropertyField');
-                
+
                 cy.task('log', '✅ PlaybookProperty query found in schema');
                 cy.task('log', '✅ addPlaybookPropertyField mutation found in schema');
                 cy.task('log', '✅ updatePlaybookPropertyField mutation found in schema');
@@ -98,7 +100,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
 
         it('should verify PropertyFieldType enum exists and has correct values', () => {
             cy.task('log', '🔍 Testing PropertyFieldType enum');
-            
+
             // # Test PropertyFieldType enum values
             cy.request({
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -115,25 +117,25 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
                                 }
                             }
                         }
-                    `
+                    `,
                 },
                 method: 'POST',
             }).then((response) => {
                 // * Verify PropertyFieldType enum exists and has expected values
                 expect(response.status).to.equal(200);
-                
+
                 if (!response.body.data || !response.body.data.__type) {
                     cy.task('log', '⚠️ Introspection might be disabled. Skipping enum validation.');
                     return;
                 }
-                
+
                 expect(response.body.data.__type).to.exist;
                 expect(response.body.data.__type.name).to.equal('PropertyFieldType');
-                
-                const enumValues = response.body.data.__type.enumValues.map(v => v.name);
+
+                const enumValues = response.body.data.__type.enumValues.map((v) => v.name);
                 const expectedTypes = ['text', 'select', 'multiselect', 'date', 'user', 'multiuser'];
-                
-                expectedTypes.forEach(type => {
+
+                expectedTypes.forEach((type) => {
                     expect(enumValues).to.include(type);
                     cy.task('log', `✅ PropertyFieldType.${type} found in enum`);
                 });
@@ -142,7 +144,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
 
         it('should verify PropertyFieldInput type structure', () => {
             cy.task('log', '🔍 Testing PropertyFieldInput input types');
-            
+
             // # Test input type structure via introspection
             cy.request({
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -162,25 +164,25 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
                                 }
                             }
                         }
-                    `
+                    `,
                 },
                 method: 'POST',
             }).then((response) => {
                 // * Verify PropertyFieldInput type exists with correct fields
                 expect(response.status).to.equal(200);
-                
+
                 if (!response.body.data || !response.body.data.__type) {
                     cy.task('log', '⚠️ Introspection might be disabled. Skipping input type validation.');
                     return;
                 }
-                
+
                 expect(response.body.data.__type).to.exist;
                 expect(response.body.data.__type.name).to.equal('PropertyFieldInput');
-                
-                const inputFields = response.body.data.__type.inputFields.map(f => f.name);
+
+                const inputFields = response.body.data.__type.inputFields.map((f) => f.name);
                 const expectedFields = ['name', 'type', 'attrs'];
-                
-                expectedFields.forEach(field => {
+
+                expectedFields.forEach((field) => {
                     expect(inputFields).to.include(field);
                     cy.task('log', `✅ PropertyFieldInput.${field} field found`);
                 });
@@ -191,7 +193,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
     describe('GraphQL Operation Validation', () => {
         it('should validate PlaybookProperty query structure', () => {
             cy.task('log', '🔍 Testing PlaybookProperty query syntax');
-            
+
             // # Test the PlaybookProperty query structure (will fail for non-existent data but syntax should be valid)
             cy.request({
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -223,16 +225,16 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
                     `,
                     variables: {
                         playbookID: testPlaybook.id,
-                        propertyID: 'test-property-id'
-                    }
+                        propertyID: 'test-property-id',
+                    },
                 },
                 method: 'POST',
-                failOnStatusCode: false
+                failOnStatusCode: false,
             }).then((response) => {
                 // * Verify the GraphQL query structure is valid
                 expect(response.status).to.equal(200);
                 expect(response.body).to.have.property('data');
-                
+
                 // * Should return null for non-existent data, but no syntax errors
                 if (response.body.errors) {
                     const error = response.body.errors[0];
@@ -248,7 +250,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
 
         it('should validate AddPlaybookPropertyField mutation structure', () => {
             cy.task('log', '🔍 Testing AddPlaybookPropertyField mutation syntax');
-            
+
             // # Test the AddPlaybookPropertyField mutation structure
             cy.request({
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -270,21 +272,22 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
                                 sortOrder: 1,
                                 options: [
                                     {name: 'High', color: 'red'},
-                                    {name: 'Low', color: 'green'}
-                                ]
-                            }
-                        }
-                    }
+                                    {name: 'Low', color: 'green'},
+                                ],
+                            },
+                        },
+                    },
                 },
                 method: 'POST',
-                failOnStatusCode: false
+                failOnStatusCode: false,
             }).then((response) => {
                 // * Verify the GraphQL mutation structure is valid
                 expect(response.status).to.equal(200);
                 expect(response.body).to.have.property('data');
-                
+
                 if (response.body.errors) {
                     const error = response.body.errors[0];
+
                     // * Should not be syntax errors - might be permission/data errors
                     expect(error.message).to.not.include('syntax');
                     expect(error.message).to.not.include('Unknown field');
@@ -300,7 +303,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
 
         it('should validate mutation argument structures', () => {
             cy.task('log', '🔍 Testing mutation argument validation');
-            
+
             // # Test mutation syntax by querying mutation type structure
             cy.request({
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -322,35 +325,35 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
                                 }
                             }
                         }
-                    `
+                    `,
                 },
                 method: 'POST',
             }).then((response) => {
                 // * Find property field mutations in the schema
                 expect(response.status).to.equal(200);
-                
+
                 if (!response.body.data || !response.body.data.__type) {
                     cy.task('log', '⚠️ Introspection might be disabled. Skipping mutation validation.');
                     return;
                 }
-                
+
                 const mutationFields = response.body.data.__type.fields;
-                
-                const propertyMutations = mutationFields.filter(f => 
+
+                const propertyMutations = mutationFields.filter((f) =>
                     f.name.includes('PlaybookPropertyField') || f.name === 'addPlaybookPropertyField' ||
-                    f.name === 'updatePlaybookPropertyField' || f.name === 'deletePlaybookPropertyField'
+                    f.name === 'updatePlaybookPropertyField' || f.name === 'deletePlaybookPropertyField',
                 );
-                
+
                 // * Verify mutations exist and have correct argument structure
                 expect(propertyMutations.length).to.be.greaterThan(0);
-                
-                propertyMutations.forEach(mutation => {
+
+                propertyMutations.forEach((mutation) => {
                     cy.task('log', `✅ ${mutation.name} mutation found with ${mutation.args.length} arguments`);
-                    
+
                     // Check common arguments
-                    const argNames = mutation.args.map(arg => arg.name);
+                    const argNames = mutation.args.map((arg) => arg.name);
                     expect(argNames).to.include('playbookID');
-                    
+
                     if (mutation.name.includes('add') || mutation.name.includes('update')) {
                         expect(argNames).to.include('propertyField');
                     }
@@ -365,17 +368,17 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
     describe('PropertyField Type System', () => {
         it('should support all PropertyFieldType enum values', () => {
             cy.task('log', '🔍 Testing all PropertyFieldType values');
-            
+
             const propertyFieldTypes = [
                 {type: 'text', name: 'Text Field'},
                 {type: 'select', name: 'Select Field', options: [{name: 'Option 1', color: 'blue'}]},
                 {type: 'multiselect', name: 'Multi-Select Field', options: [{name: 'Tag 1'}, {name: 'Tag 2'}]},
                 {type: 'date', name: 'Date Field'},
                 {type: 'user', name: 'User Field'},
-                {type: 'multiuser', name: 'Multi-User Field'}
+                {type: 'multiuser', name: 'Multi-User Field'},
             ];
 
-            propertyFieldTypes.forEach(fieldDef => {
+            propertyFieldTypes.forEach((fieldDef) => {
                 // # Test each property field type in a mutation structure
                 cy.request({
                     headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -395,26 +398,27 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
                                 attrs: {
                                     visibility: 'always',
                                     sortOrder: 1,
-                                    ...(fieldDef.options && {options: fieldDef.options})
-                                }
-                            }
-                        }
+                                    ...(fieldDef.options && {options: fieldDef.options}),
+                                },
+                            },
+                        },
                     },
                     method: 'POST',
-                    failOnStatusCode: false
+                    failOnStatusCode: false,
                 }).then((response) => {
                     // * Verify the type is accepted (structure validation, not execution)
                     expect(response.status).to.equal(200);
                     expect(response.body).to.have.property('data');
-                    
+
                     if (response.body.errors) {
                         const error = response.body.errors[0];
+
                         // * Should not be type validation errors
                         expect(error.message).to.not.include('Invalid value');
                         expect(error.message).to.not.include('Expected type');
                         expect(error.message).to.not.include('Unknown enum value');
                     }
-                    
+
                     cy.task('log', `✅ PropertyFieldType.${fieldDef.type} is valid and accepted`);
                 });
             });
@@ -438,7 +442,7 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
             cy.task('log', '');
             cy.task('log', '🚀 Commit 27c2c07 property fields changes are verified!');
             cy.task('log', '====================================================');
-            
+
             // * Final assertion
             expect(true).to.be.true;
         });
