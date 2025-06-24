@@ -94,7 +94,7 @@ const MainBody = () => {
 
     return (
         <Switch>
-            <Route path={`${match.url}/playbooks/:playbookId(${mattermostIDFormat})/:tab(properties|outline|reports)?`}>
+            <Route path={`${match.url}/playbooks/:playbookId(${mattermostIDFormat})/:tab(attributes|outline|reports)?`}>
                 <PlaybookEditor/>
             </Route>
             <Route

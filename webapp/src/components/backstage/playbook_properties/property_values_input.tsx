@@ -104,9 +104,7 @@ const PropertyValuesInput = ({
     if (field.type !== 'multiselect' && field.type !== 'select') {
         return (
             <Container>
-                <DisabledText>
-                    <MinusIcon size={16}/>
-                </DisabledText>
+                <MinusIcon size={16}/>
             </Container>
         );
     }
@@ -147,7 +145,6 @@ const PropertyValuesInput = ({
                 onKeyDown={handleKeyDown}
                 onBlur={handleOnBlur}
                 placeholder={formatMessage({
-                    id: 'playbook.properties.values.placeholder',
                     defaultMessage: 'Add values…',
                 })}
                 value={field.attrs.options?.map((option) => ({
@@ -160,7 +157,6 @@ const PropertyValuesInput = ({
             {!isQueryValid && (
                 <ErrorText>
                     <FormattedMessage
-                        id='playbook.properties.values.duplicate_error'
                         defaultMessage='Values must be unique.'
                     />
                 </ErrorText>
@@ -168,7 +164,6 @@ const PropertyValuesInput = ({
             {showLastOptionError && (
                 <ErrorText>
                     <FormattedMessage
-                        id='playbook.properties.values.last_option_error'
                         defaultMessage='Cannot remove the last option. Add another option first.'
                     />
                 </ErrorText>
@@ -249,11 +244,6 @@ const Container = styled.div`
     flex-direction: column;
     justify-content: center;
     padding: 8px 12px;
-`;
-
-const DisabledText = styled.span`
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    font-size: 14px;
 `;
 
 const ErrorText = styled.div`

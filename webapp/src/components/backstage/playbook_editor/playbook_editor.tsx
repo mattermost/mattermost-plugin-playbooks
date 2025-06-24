@@ -242,10 +242,10 @@ const PlaybookEditor = () => {
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
                 <NavItem
-                    to={generatePath(path, {playbookId, tab: 'properties'})}
+                    to={generatePath(path, {playbookId, tab: 'attributes'})}
                     onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_properties_tab_clicked')}
                 >
-                    {formatMessage({defaultMessage: 'Properties'})}
+                    {formatMessage({defaultMessage: 'Attributes'})}
                 </NavItem>
                 <NavItem
                     to={generatePath(path, {playbookId, tab: 'outline'})}
@@ -271,7 +271,7 @@ const PlaybookEditor = () => {
                     />
                 </Route>
                 <Route
-                    path={generatePath(path, {playbookId, tab: 'properties'})}
+                    path={generatePath(path, {playbookId, tab: 'attributes'})}
                     exact={true}
                 >
                     <PlaybookProperties

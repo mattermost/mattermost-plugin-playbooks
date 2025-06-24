@@ -1,56 +1,46 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 import {
-    CheckIcon,
     ContentCopyIcon,
     DotsHorizontalIcon,
-    EyeOutlineIcon,
+    FormatListBulletedIcon,
+    PencilOutlineIcon,
     TrashCanOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
 import DotMenu, {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
-import {Separator} from 'src/components/backstage/playbook_runs/shared';
 import type {PropertyField} from 'src/types/property_field';
-import GenericModal from 'src/components/widgets/generic_modal';
 
 type Props = {
     field: PropertyField;
-    onVisibility?: (field: PropertyField) => void;
+    onRename?: (field: PropertyField) => void;
+    onEditType?: (field: PropertyField) => void;
     onDelete?: (field: PropertyField) => void;
     onDuplicate?: (field: PropertyField) => void;
 };
 
 const PropertyDotMenu = ({
     field,
-    onVisibility,
+    onRename,
+    onEditType,
     onDelete,
     onDuplicate,
 }: Props) => {
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const handleRename = () => {
+        onRename?.(field);
+    };
 
-    // Default to "when_set" (Hide when empty) if no visibility is set
-    const currentVisibility = field.attrs.visibility || 'when_set';
-
-    const handleVisibility = (visibility: 'hidden' | 'when_set' | 'always') => {
-        onVisibility?.({...field, attrs: {...field.attrs, visibility}});
+    const handleEditType = () => {
+        onEditType?.(field);
     };
 
     const handleDeleteClick = () => {
-        setShowDeleteModal(true);
-    };
-
-    const handleConfirmDelete = () => {
         onDelete?.(field);
-        setShowDeleteModal(false);
-    };
-
-    const handleCancelDelete = () => {
-        setShowDeleteModal(false);
     };
 
     const handleDuplicate = () => {
@@ -65,73 +55,32 @@ const PropertyDotMenu = ({
                 dropdownMenu={CustomDropdownMenu}
                 icon={<DotsHorizontalIcon size={16}/>}
             >
-                <MenuTitle>
+                <DropdownMenuItem onClick={handleRename}>
                     <MenuItemContent>
                         <MenuItemLeft>
-                            <EyeOutlineIcon size={16}/>
+                            <PencilOutlineIcon size={16}/>
                             <FormattedMessage
-                                id='playbook.properties.menu.visibility'
-                                defaultMessage='Visibility'
+                                defaultMessage='Rename'
                             />
                         </MenuItemLeft>
-                    </MenuItemContent>
-                </MenuTitle>
-                <DropdownMenuItem onClick={() => handleVisibility('always')}>
-                    <MenuItemContent>
-                        <MenuItemLeft>
-                            <FormattedMessage
-                                id='playbook.properties.menu.visibility.always'
-                                defaultMessage='Always show'
-                            />
-                        </MenuItemLeft>
-                        {currentVisibility === 'always' && (
-                            <CheckIcon
-                                size={16}
-                                color='var(--button-bg, #1c58d9)'
-                            />
-                        )}
                     </MenuItemContent>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleVisibility('when_set')}>
+                <DropdownMenuItem onClick={handleEditType}>
                     <MenuItemContent>
                         <MenuItemLeft>
+                            <FormatListBulletedIcon size={16}/>
                             <FormattedMessage
-                                id='playbook.properties.menu.visibility.when_set'
-                                defaultMessage='Hide when empty'
+                                defaultMessage='Edit property type'
                             />
                         </MenuItemLeft>
-                        {currentVisibility === 'when_set' && (
-                            <CheckIcon
-                                size={16}
-                                color='var(--button-bg, #1c58d9)'
-                            />
-                        )}
                     </MenuItemContent>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleVisibility('hidden')}>
-                    <MenuItemContent>
-                        <MenuItemLeft>
-                            <FormattedMessage
-                                id='playbook.properties.menu.visibility.hidden'
-                                defaultMessage='Always hide'
-                            />
-                        </MenuItemLeft>
-                        {currentVisibility === 'hidden' && (
-                            <CheckIcon
-                                size={16}
-                                color='var(--button-bg, #1c58d9)'
-                            />
-                        )}
-                    </MenuItemContent>
-                </DropdownMenuItem>
-                <Separator/>
                 <DropdownMenuItem onClick={handleDuplicate}>
                     <MenuItemContent>
                         <MenuItemLeft>
                             <ContentCopyIcon size={16}/>
                             <FormattedMessage
-                                id='playbook.properties.menu.duplicate'
-                                defaultMessage='Duplicate'
+                                defaultMessage='Duplicate property'
                             />
                         </MenuItemLeft>
                     </MenuItemContent>
@@ -141,51 +90,12 @@ const PropertyDotMenu = ({
                         <MenuItemLeft>
                             <DangerIcon><TrashCanOutlineIcon size={16}/></DangerIcon>
                             <FormattedMessage
-                                id='playbook.properties.menu.delete'
-                                defaultMessage='Delete'
+                                defaultMessage='Delete property'
                             />
                         </MenuItemLeft>
                     </MenuItemContent>
                 </DangerDropdownMenuItem>
             </DotMenu>
-            {showDeleteModal && (
-                <GenericModal
-                    id='confirm-property-delete-modal'
-                    modalHeaderText={
-                        <FormattedMessage
-                            id='playbook.properties.delete.confirm.title'
-                            defaultMessage='Delete Property'
-                        />
-                    }
-                    show={showDeleteModal}
-                    onHide={handleCancelDelete}
-                    handleConfirm={handleConfirmDelete}
-                    handleCancel={handleCancelDelete}
-                    confirmButtonText={
-                        <FormattedMessage
-                            id='playbook.properties.delete.confirm.delete'
-                            defaultMessage='Delete'
-                        />
-                    }
-                    cancelButtonText={
-                        <FormattedMessage
-                            id='playbook.properties.delete.confirm.cancel'
-                            defaultMessage='Cancel'
-                        />
-                    }
-                    isConfirmDestructive={true}
-                >
-                    <p>
-                        <FormattedMessage
-                            id='playbook.properties.delete.confirm.warning'
-                            defaultMessage='Are you sure you want to delete the property "{propertyName}"? This action cannot be undone.'
-                            values={{
-                                propertyName: field.name,
-                            }}
-                        />
-                    </p>
-                </GenericModal>
-            )}
         </MenuContainer>
     );
 };
@@ -232,21 +142,6 @@ const MenuItemLeft = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
-`;
-
-const MenuTitle = styled.div`
-    padding: 10px 20px;
-    background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-weight: 600;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: default;
-    
-    &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    }
 `;
 
 const DangerDropdownMenuItem = styled(DropdownMenuItem)`
