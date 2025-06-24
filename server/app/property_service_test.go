@@ -101,7 +101,7 @@ func TestPropertyService_duplicatePropertyFieldForRun(t *testing.T) {
 
 		require.Equal(t, originalOptions[0].GetName(), runOptions[0].GetName())
 		require.Equal(t, originalOptions[1].GetName(), runOptions[1].GetName())
-		
+
 		require.NotEqual(t, originalOptions[0].GetID(), runOptions[0].GetID())
 		require.NotEqual(t, originalOptions[1].GetID(), runOptions[1].GetID())
 		require.NotEqual(t, runOptions[0].GetID(), runOptions[1].GetID())
