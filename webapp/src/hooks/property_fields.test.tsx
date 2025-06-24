@@ -22,17 +22,17 @@ const usePlaybookProperty = (playbookID: string, propertyID: string) => {
 
 const useAddPlaybookPropertyField = () => {
     // This will be implemented in the next phase
-    return [jest.fn(), {loading: false, error: null}];
+    return [jest.fn(), {loading: false, error: null}] as const;
 };
 
 const useUpdatePlaybookPropertyField = () => {
     // This will be implemented in the next phase
-    return [jest.fn(), {loading: false, error: null}];
+    return [jest.fn(), {loading: false, error: null}] as const;
 };
 
 const useDeletePlaybookPropertyField = () => {
     // This will be implemented in the next phase
-    return [jest.fn(), {loading: false, error: null}];
+    return [jest.fn(), {loading: false, error: null}] as const;
 };
 
 describe('Property Fields Apollo Integration', () => {

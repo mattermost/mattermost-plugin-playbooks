@@ -19,7 +19,7 @@ describe('Property Fields GraphQL Operations', () => {
             expect(PlaybookPropertyDocument.kind).toBe('Document');
             expect(PlaybookPropertyDocument.definitions).toHaveLength(1);
             
-            const operation = PlaybookPropertyDocument.definitions[0];
+            const operation = PlaybookPropertyDocument.definitions[0] as any;
             expect(operation.kind).toBe('OperationDefinition');
             expect(operation.operation).toBe('query');
             expect(operation.name?.value).toBe('PlaybookProperty');
