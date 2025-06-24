@@ -9,7 +9,7 @@ import React, {
     useRef,
 } from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import GroupBase, {components} from 'react-select';
+import {components} from 'react-select';
 import CreatableSelect, {type CreatableProps} from 'react-select/creatable';
 import styled from 'styled-components';
 
@@ -23,7 +23,10 @@ type Props = {
 };
 
 type Option = {label: string; id: string; value: string};
-type SelectProps = CreatableProps<Option, true, GroupBase<Option>>;
+type SelectProps = CreatableProps<Option, true> & {
+    components?: any;
+    styles?: any;
+};
 
 const PropertyValuesInput = ({
     field,
@@ -111,13 +114,17 @@ const PropertyValuesInput = ({
 
     return (
         <Container>
-            <CreatableSelect<Option, true, GroupBase<Option>>
+            <CreatableSelect<Option, true>
                 components={customComponents}
                 inputValue={query}
                 isClearable={true}
                 isMulti={true}
                 menuIsOpen={false}
                 onChange={(newValues) => {
+                    if (!newValues) {
+                        return;
+                    }
+
                     // Prevent removing the last option
                     if (newValues.length === 0 && (field.attrs.options?.length || 0) > 0) {
                         setShowLastOptionError(true);
@@ -180,7 +187,7 @@ const customComponents: SelectProps['components'] = {
     DropdownIndicator: undefined,
     ClearIndicator: undefined,
     IndicatorsContainer: () => null,
-    Input: (props) => {
+    Input: (props: any) => {
         return (
             <components.Input
                 {...props}
@@ -191,7 +198,7 @@ const customComponents: SelectProps['components'] = {
 };
 
 const styles: SelectProps['styles'] = {
-    multiValue: (base) => ({
+    multiValue: (base: any) => ({
         ...base,
         borderRadius: '12px',
         paddingLeft: '6px',
@@ -199,7 +206,7 @@ const styles: SelectProps['styles'] = {
         paddingBottom: '1px',
         backgroundColor: 'rgba(var(--center-channel-color-rgb), 0.08)',
     }),
-    multiValueLabel: (base) => ({
+    multiValueLabel: (base: any) => ({
         ...base,
         color: 'var(--center-channel-color)',
         fontFamily: 'Open Sans',
@@ -208,7 +215,7 @@ const styles: SelectProps['styles'] = {
         fontWeight: 600,
         lineHeight: '16px',
     }),
-    multiValueRemove: (base) => ({
+    multiValueRemove: (base: any) => ({
         ...base,
         cursor: 'pointer',
         color: 'var(--center-channel-color)',
@@ -218,7 +225,7 @@ const styles: SelectProps['styles'] = {
             color: 'var(--center-channel-color)',
         },
     }),
-    control: (base, props) => ({
+    control: (base: any, props: any) => ({
         ...base,
         minHeight: '40px',
         overflowY: 'auto',

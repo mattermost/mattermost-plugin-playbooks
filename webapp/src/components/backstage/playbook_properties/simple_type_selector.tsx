@@ -33,7 +33,7 @@ type TypeOption = {
 
 const TYPE_OPTIONS: Array<{
     type: PropertyType;
-    icon: React.ComponentType;
+    icon: React.ComponentType<{size?: number}>;
     label: string;
 }> = [
     {
@@ -54,7 +54,7 @@ const TYPE_OPTIONS: Array<{
 ];
 
 const SimpleTypeSelector = ({field, updateField, onClose, isOpen, onOpenChange, target}: Props) => {
-    const handleTypeSelect = (option: TypeOption | null) => {
+    const handleTypeSelect = (option: TypeOption | null | undefined) => {
         if (!option) {
             return;
         }

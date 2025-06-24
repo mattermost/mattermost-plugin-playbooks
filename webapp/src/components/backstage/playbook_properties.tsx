@@ -551,4 +551,4 @@ const AddPropertyButton = styled.button`
     }
 `;
 
-export default PlaybookProperties;
+export default styled(PlaybookProperties)`/* stylelint-disable no-empty-source */`;
