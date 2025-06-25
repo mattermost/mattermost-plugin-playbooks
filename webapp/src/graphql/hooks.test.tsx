@@ -14,29 +14,14 @@ import {
     UpdatePlaybookPropertyFieldDocument,
 } from 'src/graphql/generated/graphql';
 
-// Mock hooks that we'll test once they're implemented
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const usePlaybookProperty = (_playbookID: string, _propertyID: string) => {
-    // This will be implemented in the next phase
-    return {data: null, loading: false, error: null};
-};
+import {
+    useAddPlaybookPropertyField,
+    useDeletePlaybookPropertyField,
+    usePlaybookProperty,
+    useUpdatePlaybookPropertyField,
+} from './hooks';
 
-const useAddPlaybookPropertyField = () => {
-    // This will be implemented in the next phase
-    return [jest.fn(), {loading: false, error: null}] as const;
-};
-
-const useUpdatePlaybookPropertyField = () => {
-    // This will be implemented in the next phase
-    return [jest.fn(), {loading: false, error: null}] as const;
-};
-
-const useDeletePlaybookPropertyField = () => {
-    // This will be implemented in the next phase
-    return [jest.fn(), {loading: false, error: null}] as const;
-};
-
-describe('Property Fields Apollo Integration', () => {
+describe('GraphQL Hooks Integration Tests', () => {
     const mockPlaybookID = 'playbook-123';
     const mockPropertyID = 'property-456';
 
@@ -90,17 +75,21 @@ describe('Property Fields Apollo Integration', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result} = renderHook(
+            const {result, waitForNextUpdate} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
                 {wrapper}
             );
 
-            expect(result.current.loading).toBe(false);
-            expect(result.current.data).toBeNull();
-            expect(result.current.error).toBeNull();
+            // Initially loading
+            expect(result.current[1].loading).toBe(true);
+            expect(result.current[0]).toBeUndefined();
 
-            // Note: Once the actual hook is implemented, this test will verify
-            // that it correctly handles the mocked response
+            await waitForNextUpdate();
+
+            // After loading completes
+            expect(result.current[1].loading).toBe(false);
+            expect(result.current[0]).toEqual(mockPropertyField);
+            expect(result.current[1].error).toBeUndefined();
         });
 
         it('should handle query errors', async () => {
@@ -118,16 +107,20 @@ describe('Property Fields Apollo Integration', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result} = renderHook(
+            const {result, waitForNextUpdate} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
                 {wrapper}
             );
 
-            expect(result.current.loading).toBe(false);
-            expect(result.current.data).toBeNull();
-            expect(result.current.error).toBeNull();
+            // Initially loading
+            expect(result.current[1].loading).toBe(true);
 
-            // Note: Once the actual hook is implemented, this will verify error handling
+            await waitForNextUpdate();
+
+            // After error occurs
+            expect(result.current[1].loading).toBe(false);
+            expect(result.current[0]).toBeUndefined();
+            expect(result.current[1].error).toBeDefined();
         });
 
         it('should handle network errors', async () => {
@@ -145,14 +138,20 @@ describe('Property Fields Apollo Integration', () => {
             ];
 
             const wrapper = createWrapper(mocks);
-            const {result} = renderHook(
+            const {result, waitForNextUpdate} = renderHook(
                 () => usePlaybookProperty(mockPlaybookID, mockPropertyID),
                 {wrapper}
             );
 
-            expect(result.current.error).toBeNull();
+            // Initially loading
+            expect(result.current[1].loading).toBe(true);
 
-            // Note: Once implemented, this will verify network error handling
+            await waitForNextUpdate();
+
+            // After network error occurs
+            expect(result.current[1].loading).toBe(false);
+            expect(result.current[0]).toBeUndefined();
+            expect(result.current[1].error).toBeDefined();
         });
     });
 
@@ -193,10 +192,25 @@ describe('Property Fields Apollo Integration', () => {
             const [mutate, {loading, error}] = result.current;
 
             expect(loading).toBe(false);
-            expect(error).toBeNull();
+            expect(error).toBeUndefined();
             expect(typeof mutate).toBe('function');
 
-            // Note: Once implemented, this will test the actual mutation execution
+            // Test the actual mutation execution
+            const mutationPromise = mutate(mockPlaybookID, {
+                name: 'New Priority Field',
+                type: PropertyFieldType.Select,
+                attrs: {
+                    visibility: 'always',
+                    sortOrder: 1,
+                    options: [
+                        {name: 'High', color: 'red'},
+                        {name: 'Low', color: 'green'},
+                    ],
+                },
+            });
+
+            expect(mutationPromise).toBeDefined();
+            await expect(mutationPromise).resolves.toBeDefined();
         });
 
         it('should handle mutation errors', async () => {
@@ -219,9 +233,16 @@ describe('Property Fields Apollo Integration', () => {
             const wrapper = createWrapper(mocks);
             const {result} = renderHook(() => useAddPlaybookPropertyField(), {wrapper});
 
-            expect(result.current[1].error).toBeNull();
+            expect(result.current[1].error).toBeUndefined();
 
-            // Note: Once implemented, this will verify mutation error handling
+            // Test error handling
+            const [mutate] = result.current;
+            const mutationPromise = mutate(mockPlaybookID, {
+                name: 'Invalid Field',
+                type: PropertyFieldType.Select,
+            });
+
+            await expect(mutationPromise).rejects.toBeDefined();
         });
     });
 
@@ -258,8 +279,21 @@ describe('Property Fields Apollo Integration', () => {
             const [mutate, {loading, error}] = result.current;
 
             expect(loading).toBe(false);
-            expect(error).toBeNull();
+            expect(error).toBeUndefined();
             expect(typeof mutate).toBe('function');
+
+            // Test the actual mutation execution
+            const mutationPromise = mutate(mockPlaybookID, mockPropertyID, {
+                name: 'Updated Priority Field',
+                type: PropertyFieldType.Select,
+                attrs: {
+                    visibility: 'when_set',
+                    sortOrder: 2,
+                },
+            });
+
+            expect(mutationPromise).toBeDefined();
+            await expect(mutationPromise).resolves.toBeDefined();
         });
 
         it('should handle update with option changes', async () => {
@@ -297,7 +331,26 @@ describe('Property Fields Apollo Integration', () => {
             const {result} = renderHook(() => useUpdatePlaybookPropertyField(), {wrapper});
 
             expect(result.current[1].loading).toBe(false);
-            expect(result.current[1].error).toBeNull();
+            expect(result.current[1].error).toBeUndefined();
+
+            // Test the actual mutation execution with option changes
+            const [mutate] = result.current;
+            const mutationPromise = mutate(mockPlaybookID, mockPropertyID, {
+                name: 'Priority with New Options',
+                type: PropertyFieldType.Select,
+                attrs: {
+                    visibility: 'always',
+                    sortOrder: 1,
+                    options: [
+                        {id: 'option-1', name: 'Critical', color: 'red'},
+                        {name: 'Normal', color: 'blue'}, // New option
+                        {id: 'option-2', name: 'Low', color: 'green'},
+                    ],
+                },
+            });
+
+            expect(mutationPromise).toBeDefined();
+            await expect(mutationPromise).resolves.toBeDefined();
         });
     });
 
@@ -326,8 +379,14 @@ describe('Property Fields Apollo Integration', () => {
             const [mutate, {loading, error}] = result.current;
 
             expect(loading).toBe(false);
-            expect(error).toBeNull();
+            expect(error).toBeUndefined();
             expect(typeof mutate).toBe('function');
+
+            // Test the actual mutation execution
+            const mutationPromise = mutate(mockPlaybookID, mockPropertyID);
+
+            expect(mutationPromise).toBeDefined();
+            await expect(mutationPromise).resolves.toBeDefined();
         });
 
         it('should handle deletion errors', async () => {
@@ -347,9 +406,13 @@ describe('Property Fields Apollo Integration', () => {
             const wrapper = createWrapper(mocks);
             const {result} = renderHook(() => useDeletePlaybookPropertyField(), {wrapper});
 
-            expect(result.current[1].error).toBeNull();
+            expect(result.current[1].error).toBeUndefined();
 
-            // Note: Once implemented, this will verify deletion error handling
+            // Test error handling
+            const [mutate] = result.current;
+            const mutationPromise = mutate(mockPlaybookID, 'non-existent-field');
+
+            await expect(mutationPromise).rejects.toBeDefined();
         });
     });
 

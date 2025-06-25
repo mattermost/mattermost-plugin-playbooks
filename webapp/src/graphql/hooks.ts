@@ -7,12 +7,22 @@ import {QueryResult, useMutation, useQuery} from '@apollo/client';
 
 import {
     AddPlaybookMemberDocument,
+    AddPlaybookPropertyFieldDocument,
+    AddPlaybookPropertyFieldMutation,
+    AddPlaybookPropertyFieldMutationVariables,
     AddRunParticipantsDocument,
     ChangeRunOwnerDocument,
+    DeletePlaybookPropertyFieldDocument,
+    DeletePlaybookPropertyFieldMutation,
+    DeletePlaybookPropertyFieldMutationVariables,
     PlaybookDocument,
     PlaybookLhsDocument,
+    PlaybookPropertyDocument,
+    PlaybookPropertyQuery,
+    PlaybookPropertyQueryVariables,
     PlaybookQuery,
     PlaybookUpdates,
+    PropertyFieldInput,
     RemovePlaybookMemberDocument,
     RemoveRunParticipantsDocument,
     RhsRunsDocument,
@@ -21,6 +31,9 @@ import {
     TaskActionUpdates,
     UpdatePlaybookDocument,
     UpdatePlaybookFavoriteDocument,
+    UpdatePlaybookPropertyFieldDocument,
+    UpdatePlaybookPropertyFieldMutation,
+    UpdatePlaybookPropertyFieldMutationVariables,
     UpdateRunDocument,
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
@@ -28,6 +41,8 @@ import {
 import {autoFollowPlaybook} from 'src/client';
 
 export type FullPlaybook = PlaybookQuery['playbook']
+
+export type PlaybookPropertyField = PlaybookPropertyQuery['playbookProperty']
 
 export type Loaded<T> = Exclude<T, undefined | null>
 
@@ -196,4 +211,120 @@ export const useUpdateRunItemTaskActions = (runID?: string) => {
     }, [runID, updateTaskActions]);
 
     return {updateRunTaskActions};
+};
+
+/**
+ * Hook to fetch a single property field for a playbook
+ * @param playbookID - The ID of the playbook
+ * @param propertyID - The ID of the property field
+ * @returns Tuple of [data, queryResult] where data is the property field or undefined
+ */
+export const usePlaybookProperty = (
+    playbookID: string,
+    propertyID: string
+): [PlaybookPropertyField, QueryResult<PlaybookPropertyQuery, PlaybookPropertyQueryVariables>] => {
+    const result = useQuery(PlaybookPropertyDocument, {
+        variables: {
+            playbookID,
+            propertyID,
+        },
+        fetchPolicy: 'cache-first',
+        errorPolicy: 'all', // Allow partial data and errors to be returned
+    });
+
+    let propertyField: PlaybookPropertyField = result.data?.playbookProperty;
+    propertyField = propertyField === null ? undefined : propertyField;
+
+    return [propertyField, result];
+};
+
+/**
+ * Hook to add a new property field to a playbook
+ * @returns Tuple of [mutationFunction, mutationResult]
+ */
+export const useAddPlaybookPropertyField = () => {
+    const [innerAddPropertyField, result] = useMutation<
+        AddPlaybookPropertyFieldMutation,
+        AddPlaybookPropertyFieldMutationVariables
+    >(AddPlaybookPropertyFieldDocument, {
+        errorPolicy: 'all',
+
+        // Note: Consider adding refetchQueries if there are lists that need updating
+        // refetchQueries: [PlaybookDocument, PlaybookLhsDocument],
+    });
+
+    const addPropertyField = useCallback(
+        (playbookID: string, propertyField: PropertyFieldInput) => {
+            return innerAddPropertyField({
+                variables: {
+                    playbookID,
+                    propertyField,
+                },
+            });
+        },
+        [innerAddPropertyField]
+    );
+
+    return [addPropertyField, result] as const;
+};
+
+/**
+ * Hook to update an existing property field in a playbook
+ * @returns Tuple of [mutationFunction, mutationResult]
+ */
+export const useUpdatePlaybookPropertyField = () => {
+    const [innerUpdatePropertyField, result] = useMutation<
+        UpdatePlaybookPropertyFieldMutation,
+        UpdatePlaybookPropertyFieldMutationVariables
+    >(UpdatePlaybookPropertyFieldDocument, {
+        errorPolicy: 'all',
+
+        // Note: refetchQueries can be added when specific cache invalidation is needed
+        // refetchQueries: ['PlaybookProperty'],
+    });
+
+    const updatePropertyField = useCallback(
+        (playbookID: string, propertyFieldID: string, propertyField: PropertyFieldInput) => {
+            return innerUpdatePropertyField({
+                variables: {
+                    playbookID,
+                    propertyFieldID,
+                    propertyField,
+                },
+            });
+        },
+        [innerUpdatePropertyField]
+    );
+
+    return [updatePropertyField, result] as const;
+};
+
+/**
+ * Hook to delete a property field from a playbook
+ * @returns Tuple of [mutationFunction, mutationResult]
+ */
+export const useDeletePlaybookPropertyField = () => {
+    const [innerDeletePropertyField, result] = useMutation<
+        DeletePlaybookPropertyFieldMutation,
+        DeletePlaybookPropertyFieldMutationVariables
+    >(DeletePlaybookPropertyFieldDocument, {
+        errorPolicy: 'all',
+
+        // Note: Consider adding refetchQueries if there are lists that need updating
+        // refetchQueries: [PlaybookDocument, PlaybookLhsDocument],
+    });
+
+    const deletePropertyField = useCallback(
+        (playbookID: string, propertyFieldID: string) => {
+            return innerDeletePropertyField({
+                variables: {
+                    playbookID,
+                    propertyFieldID,
+                },
+            });
+        },
+        [innerDeletePropertyField]
+    );
+
+    return [deletePropertyField, result] as const;
 };
