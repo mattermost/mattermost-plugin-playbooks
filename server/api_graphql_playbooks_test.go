@@ -202,8 +202,8 @@ func TestGraphQLPlaybooks(t *testing.T) {
 		})
 		require.NoError(t, err)
 	})
-
 }
+
 func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -445,7 +445,6 @@ func getPlaybookFavorite(c *client.Client, playbookID string) (bool, error) {
 			"id": playbookID,
 		},
 	}, &response)
-
 	if err != nil {
 		return false, err
 	}
@@ -477,7 +476,6 @@ func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, 
 		OperationName: "UpdatePlaybook",
 		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
 	}, &response)
-
 	if err != nil {
 		return errors.Wrapf(err, "gqlTestPlaybookUpdate graphql failure")
 	}
@@ -503,8 +501,7 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 				}
 			}
 		}
-		testPlaybookQuery :=
-			`
+		testPlaybookQuery := `
 	query Playbook($id: String!) {
 		playbook(id: $id) {
 			id
@@ -620,7 +617,6 @@ func gqlTestPlaybookUpdateGuest(e *TestEnvironment, t *testing.T, playbookID str
 		OperationName: "UpdatePlaybook",
 		Variables:     map[string]interface{}{"id": playbookID, "updates": updates},
 	}, &response)
-
 	if err != nil {
 		return errors.Wrapf(err, "gqlTestPlaybookUpdate graphql failure")
 	}
@@ -687,5 +683,4 @@ func TestGraphQLPlaybooksGuests(t *testing.T) {
 
 		assert.Len(t, pbResultTest.Data.Playbooks, 0)
 	})
-
 }
