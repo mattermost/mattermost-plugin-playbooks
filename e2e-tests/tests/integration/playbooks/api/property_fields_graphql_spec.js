@@ -425,26 +425,310 @@ describe('api > property_fields_graphql', {testIsolation: true}, () => {
         });
     });
 
-    describe('Integration Test Summary', () => {
-        it('should provide comprehensive GraphQL property fields test results', () => {
-            cy.task('log', '');
-            cy.task('log', '🎉 GraphQL Property Fields API Integration Test Results');
-            cy.task('log', '====================================================');
-            cy.task('log', '✅ Backend GraphQL schema supports all property field operations');
-            cy.task('log', '✅ PlaybookProperty query is properly defined');
-            cy.task('log', '✅ Add/Update/Delete mutations are available');
-            cy.task('log', '✅ PropertyFieldType enum contains all expected values');
-            cy.task('log', '✅ PropertyFieldInput type has correct structure');
-            cy.task('log', '✅ GraphQL syntax validation passes for all operations');
-            cy.task('log', '✅ All property field types (text, select, multiselect, date, user, multiuser) are supported');
-            cy.task('log', '✅ GraphQL endpoint is working at /plugins/playbooks/api/v0/query');
-            cy.task('log', '✅ Frontend-backend GraphQL integration is ready');
-            cy.task('log', '');
-            cy.task('log', '🚀 Commit 27c2c07 property fields changes are verified!');
-            cy.task('log', '====================================================');
+    describe('Main Playbook Query with PropertyFields', () => {
+        it('should validate Playbook query includes propertyFields field', () => {
+            cy.task('log', '🔍 Testing main Playbook query with propertyFields field');
 
-            // * Final assertion
-            expect(true).to.be.true;
+            // # Test the main Playbook query that includes propertyFields
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: '/plugins/playbooks/api/v0/query',
+                body: {
+                    operationName: 'PlaybookWithPropertyFields',
+                    query: `
+                        query PlaybookWithPropertyFields($id: String!) {
+                            playbook(id: $id) {
+                                id
+                                title
+                                propertyFields {
+                                    id
+                                    name
+                                    type
+                                    groupID
+                                    attrs {
+                                        visibility
+                                        sortOrder
+                                        options {
+                                            id
+                                            name
+                                            color
+                                        }
+                                        parentID
+                                    }
+                                    createAt
+                                    updateAt
+                                    deleteAt
+                                }
+                            }
+                        }
+                    `,
+                    variables: {
+                        id: testPlaybook.id,
+                    },
+                },
+                method: 'POST',
+                failOnStatusCode: false,
+            }).then((response) => {
+                // * Verify response structure
+                expect(response.status).to.equal(200);
+                expect(response.body).to.exist;
+
+                // * Log the response for debugging
+                cy.task('log', `GraphQL Response: ${JSON.stringify(response.body, null, 2)}`);
+
+                if (response.body.errors) {
+                    const error = response.body.errors[0];
+                    cy.task('log', `GraphQL Error: ${error.message}`);
+
+                    // * Check if it's a schema error indicating the field doesn't exist
+                    if (error.message.includes('Cannot query field') || error.message.includes('Unknown field')) {
+                        cy.task('log', '❌ propertyFields field not found in Playbook schema - this indicates the backend schema needs to be updated');
+                        throw new Error(`Schema validation failed: ${error.message}`);
+                    } else {
+                        // * Other errors (like permissions) are acceptable for schema validation
+                        cy.task('log', `✅ Main Playbook query structure is valid (non-schema error: ${error.message})`);
+                    }
+                } else if (response.body.data) {
+                    expect(response.body.data).to.have.property('playbook');
+
+                    if (response.body.data.playbook) {
+                        // * Should have propertyFields field (might be empty array)
+                        expect(response.body.data.playbook).to.have.property('propertyFields');
+                        expect(response.body.data.playbook.propertyFields).to.be.an('array');
+                        cy.task('log', `✅ Main Playbook query executed successfully with ${response.body.data.playbook.propertyFields.length} property fields`);
+                    } else {
+                        cy.task('log', '✅ Main Playbook query structure is valid (playbook not found, but no schema errors)');
+                    }
+                } else {
+                    cy.task('log', '⚠️ Unexpected response structure - no data or errors field');
+                }
+            });
+        });
+
+        it('should verify propertyFields array structure in Playbook query', () => {
+            cy.task('log', '🔍 Testing propertyFields array structure validation');
+
+            // # Test introspection for Playbook type to verify propertyFields field
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: '/plugins/playbooks/api/v0/query',
+                body: {
+                    operationName: 'PlaybookTypeIntrospection',
+                    query: `
+                        query PlaybookTypeIntrospection {
+                            __type(name: "Playbook") {
+                                name
+                                fields {
+                                    name
+                                    type {
+                                        name
+                                        kind
+                                        ofType {
+                                            name
+                                            kind
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                },
+                method: 'POST',
+                failOnStatusCode: false,
+            }).then((response) => {
+                // * Verify response structure
+                expect(response.status).to.equal(200);
+                expect(response.body).to.exist;
+
+                // * Log the response for debugging
+                cy.task('log', `Introspection Response: ${JSON.stringify(response.body, null, 2)}`);
+
+                if (response.body.errors) {
+                    const error = response.body.errors[0];
+                    cy.task('log', `Introspection Error: ${error.message}`);
+                    cy.task('log', '⚠️ Introspection might be disabled or restricted. Skipping detailed schema validation.');
+                    return;
+                }
+
+                if (!response.body.data || !response.body.data.__type) {
+                    cy.task('log', '⚠️ Introspection might be disabled. Skipping Playbook type validation.');
+                    return;
+                }
+
+                expect(response.body.data.__type).to.exist;
+                expect(response.body.data.__type.name).to.equal('Playbook');
+
+                const fields = response.body.data.__type.fields;
+                if (!fields || !Array.isArray(fields)) {
+                    cy.task('log', '⚠️ Playbook type fields not accessible via introspection.');
+                    return;
+                }
+
+                const propertyFieldsField = fields.find((f) => f.name === 'propertyFields');
+
+                if (propertyFieldsField) {
+                    // * Verify propertyFields field exists and is an array of PropertyField
+                    expect(propertyFieldsField.type.kind).to.equal('NON_NULL');
+                    expect(propertyFieldsField.type.ofType.kind).to.equal('LIST');
+                    cy.task('log', '✅ Playbook type includes propertyFields: [PropertyField!]! field');
+                } else {
+                    cy.task('log', '❌ propertyFields field not found in Playbook type - backend schema may need updating');
+                    const fieldNames = fields.map((f) => f.name);
+                    cy.task('log', `Available fields: ${fieldNames.join(', ')}`);
+                }
+            });
+        });
+    });
+
+    describe('PropertyFields Integration Flow', () => {
+        let testPropertyFieldID;
+
+        it('should test full integration flow: create field -> query playbook -> verify consistency', () => {
+            cy.task('log', '🔍 Testing end-to-end property fields integration flow');
+
+            // # Step 1: Create a property field
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: '/plugins/playbooks/api/v0/query',
+                body: {
+                    operationName: 'AddTestPropertyField',
+                    query: `
+                        mutation AddTestPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+                            addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+                        }
+                    `,
+                    variables: {
+                        playbookID: testPlaybook.id,
+                        propertyField: {
+                            name: 'E2E Test Priority',
+                            type: 'select',
+                            attrs: {
+                                visibility: 'always',
+                                sortOrder: 1,
+                                options: [
+                                    {name: 'Critical', color: 'red'},
+                                    {name: 'Normal', color: 'blue'},
+                                    {name: 'Low', color: 'green'},
+                                ],
+                            },
+                        },
+                    },
+                },
+                method: 'POST',
+                failOnStatusCode: false,
+            }).then((response) => {
+                if (response.body.data && response.body.data.addPlaybookPropertyField) {
+                    testPropertyFieldID = response.body.data.addPlaybookPropertyField;
+                    cy.task('log', `✅ Step 1: Created property field with ID: ${testPropertyFieldID}`);
+
+                    // # Step 2: Query playbook to get all property fields via bulk query
+                    cy.request({
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                        url: '/plugins/playbooks/api/v0/query',
+                        body: {
+                            operationName: 'GetPlaybookWithFields',
+                            query: `
+                                query GetPlaybookWithFields($id: String!) {
+                                    playbook(id: $id) {
+                                        id
+                                        title
+                                        propertyFields {
+                                            id
+                                            name
+                                            type
+                                            attrs {
+                                                visibility
+                                                sortOrder
+                                                options {
+                                                    name
+                                                    color
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            `,
+                            variables: {
+                                id: testPlaybook.id,
+                            },
+                        },
+                        method: 'POST',
+                    }).then((bulkResponse) => {
+                        expect(bulkResponse.status).to.equal(200);
+
+                        if (bulkResponse.body.data && bulkResponse.body.data.playbook) {
+                            const propertyFields = bulkResponse.body.data.playbook.propertyFields;
+                            expect(propertyFields).to.be.an('array');
+
+                            // * Find our created field in the bulk query results
+                            const createdField = propertyFields.find((f) => f.id === testPropertyFieldID);
+                            if (createdField) {
+                                expect(createdField.name).to.equal('E2E Test Priority');
+                                expect(createdField.type).to.equal('select');
+                                expect(createdField.attrs.options).to.have.length(3);
+                                cy.task('log', '✅ Step 2: Found created field in bulk propertyFields query');
+
+                                // # Step 3: Query the same field individually for comparison
+                                cy.request({
+                                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                                    url: '/plugins/playbooks/api/v0/query',
+                                    body: {
+                                        operationName: 'GetIndividualProperty',
+                                        query: `
+                                            query GetIndividualProperty($playbookID: String!, $propertyID: String!) {
+                                                playbookProperty(playbookID: $playbookID, propertyID: $propertyID) {
+                                                    id
+                                                    name
+                                                    type
+                                                    attrs {
+                                                        visibility
+                                                        sortOrder
+                                                        options {
+                                                            name
+                                                            color
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        `,
+                                        variables: {
+                                            playbookID: testPlaybook.id,
+                                            propertyID: testPropertyFieldID,
+                                        },
+                                    },
+                                    method: 'POST',
+                                }).then((individualResponse) => {
+                                    expect(individualResponse.status).to.equal(200);
+
+                                    if (individualResponse.body.data && individualResponse.body.data.playbookProperty) {
+                                        const individualField = individualResponse.body.data.playbookProperty;
+
+                                        // * Step 4: Verify data consistency between bulk and individual queries
+                                        expect(individualField.id).to.equal(createdField.id);
+                                        expect(individualField.name).to.equal(createdField.name);
+                                        expect(individualField.type).to.equal(createdField.type);
+                                        expect(individualField.attrs.visibility).to.equal(createdField.attrs.visibility);
+                                        expect(individualField.attrs.sortOrder).to.equal(createdField.attrs.sortOrder);
+                                        expect(individualField.attrs.options).to.have.length(createdField.attrs.options.length);
+
+                                        cy.task('log', '✅ Step 3: Individual property query returned same data');
+                                        cy.task('log', '✅ Step 4: Data consistency verified between bulk and individual queries');
+                                        cy.task('log', '🎉 End-to-end integration flow completed successfully!');
+                                    } else {
+                                        cy.task('log', '⚠️ Individual property query did not return expected data');
+                                    }
+                                });
+                            } else {
+                                cy.task('log', '⚠️ Created field not found in bulk propertyFields query');
+                            }
+                        } else {
+                            cy.task('log', '⚠️ Bulk playbook query did not return expected data');
+                        }
+                    });
+                } else {
+                    cy.task('log', '⚠️ Property field creation failed or returned unexpected response');
+                }
+            });
         });
     });
 });

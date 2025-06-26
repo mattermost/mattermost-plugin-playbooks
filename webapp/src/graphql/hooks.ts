@@ -248,9 +248,7 @@ export const useAddPlaybookPropertyField = () => {
         AddPlaybookPropertyFieldMutationVariables
     >(AddPlaybookPropertyFieldDocument, {
         errorPolicy: 'all',
-
-        // Note: Consider adding refetchQueries if there are lists that need updating
-        // refetchQueries: [PlaybookDocument, PlaybookLhsDocument],
+        refetchQueries: [PlaybookDocument, PlaybookLhsDocument],
     });
 
     const addPropertyField = useCallback(
@@ -278,9 +276,7 @@ export const useUpdatePlaybookPropertyField = () => {
         UpdatePlaybookPropertyFieldMutationVariables
     >(UpdatePlaybookPropertyFieldDocument, {
         errorPolicy: 'all',
-
-        // Note: refetchQueries can be added when specific cache invalidation is needed
-        // refetchQueries: ['PlaybookProperty'],
+        refetchQueries: [PlaybookDocument, PlaybookLhsDocument],
     });
 
     const updatePropertyField = useCallback(
@@ -309,9 +305,7 @@ export const useDeletePlaybookPropertyField = () => {
         DeletePlaybookPropertyFieldMutationVariables
     >(DeletePlaybookPropertyFieldDocument, {
         errorPolicy: 'all',
-
-        // Note: Consider adding refetchQueries if there are lists that need updating
-        // refetchQueries: [PlaybookDocument, PlaybookLhsDocument],
+        refetchQueries: [PlaybookDocument, PlaybookLhsDocument],
     });
 
     const deletePropertyField = useCallback(
