@@ -1155,6 +1155,12 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 		playbookRun.StatusUpdateBroadcastChannelsEnabled = false
 	}
 
+	playbookRun.SortOrder = playbookRun.GetSortOrder()
+
+	for i := range playbookRun.Checklists {
+		playbookRun.Checklists[i].SortOrder = playbookRun.Checklists[i].GetSortOrder()
+	}
+
 	return &playbookRun, nil
 }
 

@@ -102,8 +102,15 @@ func TestCreateAndGetPlaybookRun(t *testing.T) {
 
 				createPlaybookRunChannel(t, store, testCase.PlaybookRun)
 
-				_, err = playbookRunStore.GetPlaybookRun(expectedPlaybookRun.ID)
+				run, err := playbookRunStore.GetPlaybookRun(expectedPlaybookRun.ID)
 				require.NoError(t, err)
+
+				for i, checklist := range run.Checklists {
+					require.Equal(t, checklist.ID, run.SortOrder[i])
+					for j, item := range checklist.Items {
+						require.Equal(t, item.ID, checklist.SortOrder[j])
+					}
+				}
 			})
 		}
 	}

@@ -2412,6 +2412,8 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 	copy(playbookRunToModify.Checklists[destChecklistIdx+1:], playbookRunToModify.Checklists[destChecklistIdx:])
 	playbookRunToModify.Checklists[destChecklistIdx] = checklistMoved
 
+	playbookRunToModify.SortOrder = playbookRunToModify.GetSortOrder()
+
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -2470,11 +2472,14 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 	if sourceChecklistIdx == destChecklistIdx {
 		playbookRunToModify.Checklists[sourceChecklistIdx].Items = destChecklist
 		playbookRunToModify.Checklists[sourceChecklistIdx].UpdateAt = timestamp
+		playbookRunToModify.Checklists[sourceChecklistIdx].SortOrder = playbookRunToModify.Checklists[sourceChecklistIdx].GetSortOrder()
 	} else {
 		playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist
 		playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
 		playbookRunToModify.Checklists[sourceChecklistIdx].UpdateAt = timestamp
 		playbookRunToModify.Checklists[destChecklistIdx].UpdateAt = timestamp
+		playbookRunToModify.Checklists[sourceChecklistIdx].SortOrder = playbookRunToModify.Checklists[sourceChecklistIdx].GetSortOrder()
+		playbookRunToModify.Checklists[destChecklistIdx].SortOrder = playbookRunToModify.Checklists[destChecklistIdx].GetSortOrder()
 	}
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)

@@ -496,6 +496,50 @@ func TestDetectChangedFields(t *testing.T) {
 		require.True(t, ok)
 		require.Empty(t, invitedUsers)
 	})
+
+	t.Run("sort order changes", func(t *testing.T) {
+		prev := &PlaybookRun{
+			ID:        "run1",
+			SortOrder: []string{"checklist1", "checklist2"},
+		}
+
+		curr := &PlaybookRun{
+			ID:        "run1",
+			SortOrder: []string{"checklist2", "checklist1"},
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		require.Equal(t, []string{"checklist2", "checklist1"}, changes["sort_order"])
+
+		prev.SortOrder = curr.SortOrder
+		changes = DetectChangedFields(prev, curr)
+		require.Empty(t, changes)
+	})
+
+	t.Run("checklist sort order changes", func(t *testing.T) {
+		prev := &PlaybookRun{
+			ID: "run1",
+			Checklists: []Checklist{
+				{ID: "checklist1", SortOrder: []string{"item1", "item2"}},
+			},
+		}
+
+		curr := &PlaybookRun{
+			ID: "run1",
+			Checklists: []Checklist{
+				{ID: "checklist1", SortOrder: []string{"item2", "item1"}},
+			},
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		require.Equal(t, []string{"item2", "item1"}, changes["checklists"].([]ChecklistUpdate)[0].Fields["sort_order"])
+
+		prev.Checklists[0].SortOrder = curr.Checklists[0].SortOrder
+		changes = DetectChangedFields(prev, curr)
+		require.Empty(t, changes)
+	})
 }
 
 func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
@@ -896,4 +940,47 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 		require.True(t, itemStateChanged, "Failed to detect item state change")
 		require.True(t, checklistAdded, "Failed to detect checklist addition")
 	})
+}
+
+func TestPlaybookRun_GetSortOrder(t *testing.T) {
+	playbookRun := &PlaybookRun{
+		Checklists: []Checklist{
+			{ID: "checklist1"},
+			{ID: "checklist2"},
+		},
+	}
+
+	sortOrder := playbookRun.GetSortOrder()
+	require.Equal(t, []string{"checklist1", "checklist2"}, sortOrder)
+
+	playbookRun.Checklists = []Checklist{
+		{ID: "checklist2"},
+		{ID: "checklist1"},
+	}
+
+	sortOrder = playbookRun.GetSortOrder()
+	require.Equal(t, []string{"checklist2", "checklist1"}, sortOrder)
+
+	playbookRun.Checklists = []Checklist{}
+	sortOrder = playbookRun.GetSortOrder()
+	require.Equal(t, []string{}, sortOrder)
+}
+
+func TestPlaybookRun_CompareSortOrder(t *testing.T) {
+	prev := []string{"checklist1", "checklist2"}
+	curr := []string{"checklist2", "checklist1"}
+
+	require.False(t, compareSortOrder(prev, curr))
+
+	prev = []string{"checklist1", "checklist2"}
+	curr = []string{"checklist1", "checklist2"}
+	require.True(t, compareSortOrder(prev, curr))
+
+	prev = []string{"checklist1", "checklist2"}
+	curr = []string{"checklist1", "checklist2", "checklist3"}
+	require.False(t, compareSortOrder(prev, curr))
+
+	prev = []string{"checklist1", "checklist2", "checklist3"}
+	curr = []string{"checklist1", "checklist2"}
+	require.False(t, compareSortOrder(prev, curr))
 }

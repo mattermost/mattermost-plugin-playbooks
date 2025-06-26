@@ -221,6 +221,9 @@ type Checklist struct {
 
 	// UpdateAt is when this checklist was last modified
 	UpdateAt int64 `json:"update_at" export:"-"`
+
+	// Sort order of the checklist items
+	SortOrder []string `json:"sort_order"`
 }
 
 func (c Checklist) GetItems() []ChecklistItemCommon {
@@ -229,6 +232,14 @@ func (c Checklist) GetItems() []ChecklistItemCommon {
 		items[i] = &c.Items[i]
 	}
 	return items
+}
+
+func (c Checklist) GetSortOrder() []string {
+	sortOrder := make([]string, len(c.Items))
+	for i, item := range c.Items {
+		sortOrder[i] = item.ID
+	}
+	return sortOrder
 }
 
 func (c Checklist) Clone() Checklist {

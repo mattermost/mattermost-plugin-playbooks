@@ -200,6 +200,17 @@ type PlaybookRun struct {
 	// Type determines a type of a run.
 	// It can be RunTypePlaybook ("playbook") or RunTypeChannelChecklist ("channel")
 	Type string `json:"type"`
+
+	// Sort order of the checklists
+	SortOrder []string `json:"sort_order"`
+}
+
+func (p PlaybookRun) GetSortOrder() []string {
+	sortOrder := make([]string, len(p.Checklists))
+	for i, checklist := range p.Checklists {
+		sortOrder[i] = checklist.ID
+	}
+	return sortOrder
 }
 
 // PlaybookRunUpdate represents an incremental update to a playbook run
@@ -251,6 +262,18 @@ type ChecklistItemUpdate struct {
 
 	// Fields contains the changed fields of the checklist item
 	Fields map[string]interface{} `json:"fields"`
+}
+
+func compareSortOrder(prevSortOrder, currSortOrder []string) bool {
+	if len(prevSortOrder) != len(currSortOrder) {
+		return false
+	}
+	for i, id := range prevSortOrder {
+		if id != currSortOrder[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // DetectChangedFields compares two playbook runs and returns a map of changed fields
@@ -348,6 +371,10 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	}
 	if previous.Type != current.Type {
 		changes["type"] = current.Type
+	}
+
+	if !compareSortOrder(previous.SortOrder, current.SortOrder) {
+		changes["sort_order"] = current.SortOrder
 	}
 
 	// Check array fields where order doesn't matter (unordered sets)
@@ -473,6 +500,11 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 			if prev.Title != checklist.Title {
 				fields["title"] = checklist.Title
 			}
+
+			if !compareSortOrder(prev.SortOrder, checklist.SortOrder) {
+				fields["sort_order"] = checklist.SortOrder
+			}
+
 			update.Fields = fields
 
 			// Get item updates
