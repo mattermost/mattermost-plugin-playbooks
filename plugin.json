@@ -41,6 +41,13 @@
         "type": "bool",
         "display_name": "Enable Experimental Features:",
         "help_text": "Enable experimental features that come with in-progress UI, bugs, and cool stuff."
+      },
+      {
+        "key": "EnableIncrementalUpdates",
+        "type": "bool",
+        "display_name": "Enable Incremental Updates",
+        "help_text": "When enabled, sends incremental WebSocket updates instead of full playbook run objects for better performance.",
+        "default": false
       }
     ]
   }

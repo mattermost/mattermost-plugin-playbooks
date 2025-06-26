@@ -396,7 +396,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {
+	if err = h.playbookRunService.AddPostToTimeline(playbookRun, userID, post, summary); err != nil {
 		h.HandleError(w, c.logger, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
@@ -541,6 +541,15 @@ func (h *PlaybookRunHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, 
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Bad parameter", err)
 		return
+	}
+
+	// Add channel permission check if channel_id filter is used
+	if filterOptions.ChannelID != "" {
+		hasPermission := h.pluginAPI.User.HasPermissionToChannel(userID, filterOptions.ChannelID, model.PermissionReadChannel)
+		if !hasPermission {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "No permission to access this channel", nil)
+			return
+		}
 	}
 
 	requesterInfo, err := h.getRequesterInfo(userID)
@@ -1875,6 +1884,9 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 
 	playbookID := u.Query().Get("playbook_id")
 
+	// Get channel_id parameter from URL query
+	channelID := u.Query().Get("channel_id")
+
 	activeGTEParam := u.Query().Get("active_gte")
 	if activeGTEParam == "" {
 		activeGTEParam = "0"
@@ -1902,6 +1914,20 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	// Parse types= query string parameters as an array.
 	types := u.Query()["types"]
 
+	// Parse omit_ended param - default to false for backward compatibility
+	omitEndedParam := u.Query().Get("omit_ended")
+	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
+
+	// Parse since parameter for timestamp-based activity filtering
+	sinceParam := u.Query().Get("since")
+	var activitySince int64
+	if sinceParam != "" {
+		activitySince, err = strconv.ParseInt(sinceParam, 10, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "bad parameter 'since'")
+		}
+	}
+
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
 		Page:                    page,
@@ -1914,11 +1940,14 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		ParticipantID:           participantID,
 		ParticipantOrFollowerID: participantOrFollowerID,
 		PlaybookID:              playbookID,
+		ChannelID:               channelID,
 		ActiveGTE:               activeGTE,
 		ActiveLT:                activeLT,
 		StartedGTE:              startedGTE,
 		StartedLT:               startedLT,
 		Types:                   types,
+		OmitEnded:               omitEnded,
+		ActivitySince:           activitySince,
 	}
 
 	options, err = options.Validate()
