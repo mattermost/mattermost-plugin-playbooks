@@ -66,7 +66,7 @@ export interface PlaybookWithChecklist extends Playbook {
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
     webhook_on_creation_enabled: boolean;
-    
+
     // Property fields from GraphQL
     propertyFields: PropertyField[];
 }
