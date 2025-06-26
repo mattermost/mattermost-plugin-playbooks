@@ -66,9 +66,12 @@ export interface PlaybookWithChecklist extends Playbook {
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
     webhook_on_creation_enabled: boolean;
+    
+    // Property fields from GraphQL
+    propertyFields: PropertyField[];
 }
 
-import {MetricType} from 'src/graphql/generated/graphql';
+import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
 
 export {MetricType};
 
@@ -205,6 +208,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        propertyFields: [],
     };
 }
 
