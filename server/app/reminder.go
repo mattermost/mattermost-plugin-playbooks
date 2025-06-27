@@ -162,25 +162,6 @@ func (s *PlaybookRunServiceImpl) RemoveReminder(playbookRunID string) {
 	s.scheduler.Cancel(playbookRunID)
 }
 
-// resetReminderTimer sets the previous reminder timer to 0.
-func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve playbook run")
-	}
-
-	var originalRun *PlaybookRun
-	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToModify.Clone()
-	}
-
-	playbookRunToModify.PreviousReminder = 0
-
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-
-	return nil
-}
-
 // ResetReminder creates a timeline event for a reminder being reset and then creates a new reminder
 func (s *PlaybookRunServiceImpl) ResetReminder(playbookRunID string, newReminder time.Duration) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
