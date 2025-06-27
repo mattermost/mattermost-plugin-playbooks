@@ -285,6 +285,10 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	changes := make(map[string]interface{})
 
 	// Compare scalar fields
+	if previous.UpdateAt != current.UpdateAt {
+		changes["update_at"] = current.UpdateAt
+	}
+
 	if previous.Name != current.Name {
 		changes["name"] = current.Name
 	}
@@ -482,21 +486,23 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 
 	var updates []ChecklistUpdate
 
-	// Create a single timestamp for all updates in this batch
-	now := model.GetMillis()
-
 	// Process current checklists - update or add
 	for i, checklist := range current {
 		update := ChecklistUpdate{
 			ID:        checklist.ID,
 			Index:     i,
-			UpdatedAt: now,
+			UpdatedAt: checklist.UpdateAt,
 		}
 
 		// Check if checklist exists in previous state
 		if prev, exists := prevMap[checklist.ID]; exists {
 			// Compare fields
 			fields := make(map[string]interface{})
+
+			if prev.UpdateAt != checklist.UpdateAt {
+				fields["update_at"] = checklist.UpdateAt
+			}
+
 			if prev.Title != checklist.Title {
 				fields["title"] = checklist.Title
 			}
@@ -537,6 +543,7 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 		}
 	}
 
+	now := model.GetMillis()
 	// Process deleted checklists
 	for id := range prevMap {
 		update := ChecklistUpdate{
@@ -576,6 +583,11 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 		if prev, exists := prevMap[item.ID]; exists {
 			// Compare fields
 			fields := make(map[string]interface{})
+
+			if prev.UpdateAt != item.UpdateAt {
+				fields["update_at"] = item.UpdateAt
+			}
+
 			if prev.Title != item.Title {
 				fields["title"] = item.Title
 			}
@@ -612,7 +624,7 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 				result.Updates = append(result.Updates, ChecklistItemUpdate{
 					ID:        item.ID,
 					Index:     i,
-					UpdatedAt: model.GetMillis(),
+					UpdatedAt: item.UpdateAt,
 					Fields:    fields,
 				})
 			}
