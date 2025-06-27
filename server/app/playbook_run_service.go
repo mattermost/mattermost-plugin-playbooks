@@ -43,20 +43,6 @@ const (
 	noAssigneeName = "No Assignee"
 )
 
-// getUniqueRecipientUserIDs returns a unique list of user IDs to send WebSocket updates to,
-// including the playbook run owner, participants, and any additional user IDs provided.
-func (s *PlaybookRunServiceImpl) getUniqueRecipientUserIDs(playbookRun *PlaybookRun, additionalUserIDs ...string) map[string]bool {
-	uniqueUserIDs := make(map[string]bool, len(additionalUserIDs)+len(playbookRun.ParticipantIDs)+1)
-	uniqueUserIDs[playbookRun.OwnerUserID] = true
-	for _, userID := range additionalUserIDs {
-		uniqueUserIDs[userID] = true
-	}
-	for _, userID := range playbookRun.ParticipantIDs {
-		uniqueUserIDs[userID] = true
-	}
-	return uniqueUserIDs
-}
-
 // sendPlaybookRunObjectUpdatedWS sends updates for a playbook run object to all participants.
 // If incremental updates are enabled, it compares the previous and current states once
 // and sends granular update events with only the changed fields. It also sends more

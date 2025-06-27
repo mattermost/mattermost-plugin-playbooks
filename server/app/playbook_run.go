@@ -205,9 +205,9 @@ type PlaybookRun struct {
 	SortOrder []string `json:"sort_order"`
 }
 
-func (p PlaybookRun) GetSortOrder() []string {
-	sortOrder := make([]string, len(p.Checklists))
-	for i, checklist := range p.Checklists {
+func (r *PlaybookRun) GetSortOrder() []string {
+	sortOrder := make([]string, len(r.Checklists))
+	for i, checklist := range r.Checklists {
 		sortOrder[i] = checklist.ID
 	}
 	return sortOrder
