@@ -14,8 +14,8 @@ import {
 } from './websocket_events';
 
 import {PlaybookRun, PlaybookRunStatus} from './types/playbook_run';
-import {PlaybookRunUpdate} from './types/websocket_events';
-import {TimelineEventType} from './types/rhs';
+import {ChecklistUpdate, PlaybookRunUpdate} from './types/websocket_events';
+import {TimelineEvent, TimelineEventType} from './types/rhs';
 import {PlaybookRunType} from './graphql/generated/graphql';
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
@@ -258,8 +258,7 @@ describe('incremental updates', () => {
                     broadcast_channel_ids: ['channel_1', 'channel_2'],
                     metrics_data: [
                         {
-                            id: 'metric_1',
-                            title: 'Metric 1',
+                            metric_config_id: 'metric_1',
                             value: 42,
                         },
                     ],
@@ -302,7 +301,7 @@ describe('incremental updates', () => {
             testPlaybookRun.checklists[0].items[1].position = 1;
 
             // Create an incremental update for the checklist
-            const checklistUpdates = [
+            const checklistUpdates: ChecklistUpdate[] = [
                 {
                     id: 'checklist_1',
                     index: 0,
@@ -314,6 +313,7 @@ describe('incremental updates', () => {
                         {
                             id: 'item_1',
                             index: 0,
+                            updated_at: 1000,
                             fields: {
                                 state: 'Closed',
                                 assignee_id: 'user_2',
@@ -323,6 +323,7 @@ describe('incremental updates', () => {
                         {
                             id: 'item_2',
                             index: 1,
+                            updated_at: 1000,
                             fields: {
                                 position: 0, // Move to position 0
                             },
@@ -392,6 +393,7 @@ describe('incremental updates', () => {
                                 {
                                     id: 'item_1',
                                     index: 0,
+                                    updated_at: 1000,
                                     fields: {
                                         state: 'Closed',
                                         assignee_id: 'user_3',
@@ -488,6 +490,7 @@ describe('incremental updates', () => {
                                 {
                                     id: 'item_1',
                                     index: 0,
+                                    updated_at: 1000,
                                     fields: {
                                         position: 2, // Move first item to the end
                                     },
@@ -495,6 +498,7 @@ describe('incremental updates', () => {
                                 {
                                     id: 'item_3',
                                     index: 2,
+                                    updated_at: 1000,
                                     fields: {
                                         position: 0, // Move last item to the start
                                     },
@@ -608,6 +612,7 @@ describe('incremental updates', () => {
                                 {
                                     id: 'item_5',
                                     index: 4,
+                                    updated_at: 1000,
                                     fields: {
                                         position: 0, // Move to the start
                                     },
@@ -615,6 +620,7 @@ describe('incremental updates', () => {
                                 {
                                     id: 'item_3',
                                     index: 2,
+                                    updated_at: 1000,
                                     fields: {
                                         position: 0, // Also wants position 0
                                     },
@@ -622,6 +628,7 @@ describe('incremental updates', () => {
                                 {
                                     id: 'item_1',
                                     index: 0,
+                                    updated_at: 1000,
                                     fields: {
                                         position: 4, // Move to the end
                                     },
@@ -1222,17 +1229,18 @@ describe('incremental updates', () => {
             const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
             // Create a new timeline event to add to the existing ones
-            const newEvent = {
+            const newEvent: TimelineEvent = {
                 id: 'event_3',
                 playbook_run_id: testPlaybookRun.id,
                 create_at: 3000,
                 delete_at: 0,
                 event_at: 3000,
-                event_type: 'status_updated',
+                event_type: TimelineEventType.StatusUpdated,
                 summary: 'Status updated',
                 details: 'Status was updated to "In progress"',
                 subject_user_id: 'user_1',
                 creator_user_id: 'user_1',
+                post_id: '',
             };
 
             // Create an update with the timeline_events field including the new event
@@ -1414,17 +1422,18 @@ describe('incremental updates', () => {
             });
 
             // Create a new event to add
-            const newEvent = {
+            const newEvent: TimelineEvent = {
                 id: 'event_4',
                 playbook_run_id: testPlaybookRun.id,
                 create_at: 1500, // This timestamp is between events 1 and 2
                 delete_at: 0,
                 event_at: 1500,
-                event_type: 'ran_slash_command',
+                event_type: TimelineEventType.RanSlashCommand,
                 summary: 'Slash command executed',
                 details: 'User ran a slash command',
                 subject_user_id: 'user_1',
                 creator_user_id: 'user_1',
+                post_id: '',
             };
 
             // Modified version of event 2
@@ -1522,18 +1531,19 @@ describe('incremental updates', () => {
             const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
             // New timeline events to add
-            const newEvents = [
+            const newEvents: TimelineEvent[] = [
                 {
                     id: 'event_1',
                     playbook_run_id: runWithoutTimeline.id,
                     create_at: 1000,
                     delete_at: 0,
                     event_at: 1000,
-                    event_type: 'incident_created',
+                    event_type: TimelineEventType.RunCreated,
                     summary: 'Playbook run created',
                     details: 'Run was created',
                     subject_user_id: 'user_1',
                     creator_user_id: 'user_1',
+                    post_id: '',
                 },
             ];
 
@@ -1571,17 +1581,18 @@ describe('incremental updates', () => {
             const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
             // Create a new timeline event
-            const newEvent = {
+            const newEvent: TimelineEvent = {
                 id: 'event_3',
                 playbook_run_id: testPlaybookRun.id,
                 create_at: 3000,
                 delete_at: 0,
                 event_at: 3000,
-                event_type: 'status_updated',
+                event_type: TimelineEventType.StatusUpdated,
                 summary: 'Status updated',
                 details: 'Status was updated to "In progress"',
                 subject_user_id: 'user_1',
                 creator_user_id: 'user_1',
+                post_id: '',
             };
 
             // Create an update with both timeline_events and other field changes
