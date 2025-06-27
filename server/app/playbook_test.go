@@ -184,3 +184,27 @@ func TestPlaybookFilterOptions_Validate(t *testing.T) {
 		require.Equal(t, options, validOptions)
 	})
 }
+
+func TestChecklist_GetSortOrder(t *testing.T) {
+	checklist := Checklist{
+		Items: []ChecklistItem{
+			{ID: "item1"},
+			{ID: "item2"},
+		},
+	}
+
+	sortOrder := checklist.GetSortOrder()
+	require.Equal(t, []string{"item1", "item2"}, sortOrder)
+
+	checklist.Items = []ChecklistItem{
+		{ID: "item2"},
+		{ID: "item1"},
+	}
+
+	sortOrder = checklist.GetSortOrder()
+	require.Equal(t, []string{"item2", "item1"}, sortOrder)
+
+	checklist.Items = []ChecklistItem{}
+	sortOrder = checklist.GetSortOrder()
+	require.Equal(t, []string{}, sortOrder)
+}
