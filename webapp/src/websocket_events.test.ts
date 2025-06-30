@@ -301,10 +301,6 @@ describe('incremental updates', () => {
             // Create a handler with our mocks
             const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
-            // Add position values to current items for sorting
-            testPlaybookRun.checklists[0].items[0].position = 0;
-            testPlaybookRun.checklists[0].items[1].position = 1;
-
             // Create an incremental update for the checklist
             const checklistUpdates: ChecklistUpdate[] = [
                 {
@@ -322,16 +318,13 @@ describe('incremental updates', () => {
                             fields: {
                                 state: 'Closed',
                                 assignee_id: 'user_2',
-                                position: 1, // Move to position 1
                             },
                         },
                         {
                             id: 'item_2',
                             index: 1,
                             updated_at: 1000,
-                            fields: {
-                                position: 0, // Move to position 0
-                            },
+                            fields: {},
                         },
                     ],
                 },
@@ -365,15 +358,12 @@ describe('incremental updates', () => {
             const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
             expect(updatedChecklist.title).toBe('Updated Checklist Title');
 
-            // Items should be sorted by position
             expect(updatedChecklist.items.length).toBe(2);
-            expect(updatedChecklist.items[0].id).toBe('item_2');
-            expect(updatedChecklist.items[0].position).toBe(0);
+            expect(updatedChecklist.items[0].id).toBe('item_1');
+            expect(updatedChecklist.items[0].state).toBe('Closed');
+            expect(updatedChecklist.items[0].assignee_id).toBe('user_2');
 
-            expect(updatedChecklist.items[1].id).toBe('item_1');
-            expect(updatedChecklist.items[1].position).toBe(1);
-            expect(updatedChecklist.items[1].state).toBe('Closed');
-            expect(updatedChecklist.items[1].assignee_id).toBe('user_2');
+            expect(updatedChecklist.items[1].id).toBe('item_2');
         });
 
         it('handles incremental checklist updates', () => {
@@ -437,255 +427,6 @@ describe('incremental updates', () => {
             expect(updatedChecklist.items[0].id).toBe('item_1'); // Should have the first item
             expect(updatedChecklist.items[0].state).toBe('Closed'); // With updated state
             expect(updatedChecklist.items[0].assignee_id).toBe('user_3'); // And updated assignee
-        });
-
-        it('handles multiple position changes in incremental updates', () => {
-            // Create a handler with our mocks
-            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
-
-            // Set up test data with 3 items
-            const clonedRun = JSON.parse(JSON.stringify(basePlaybookRun));
-
-            // Add a third item to the checklist
-            clonedRun.checklists[0].items.push({
-                id: 'item_3',
-                title: 'Item 3',
-                state: 'Open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                description: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                position: 2,
-            });
-
-            // Add position fields to existing items
-            clonedRun.checklists[0].items[0].position = 0;
-            clonedRun.checklists[0].items[1].position = 1;
-
-            // Update the test state with our modified run
-            testGetState = jest.fn(() => {
-                return {
-                    entities: {
-                        playbookRuns: {
-                            runs: {
-                                [clonedRun.id]: clonedRun,
-                            },
-                        },
-                    },
-                    'plugins-playbooks': {
-                        myPlaybookRunsByTeam: {
-                            [clonedRun.team_id]: {
-                                [clonedRun.channel_id]: clonedRun,
-                            },
-                        },
-                    },
-                } as any;
-            });
-
-            // Create an update with position updates to test our sort approach
-            const update: PlaybookRunUpdate = {
-                id: clonedRun.id,
-                updated_at: 1000,
-                changed_fields: {
-                    checklists: [
-                        {
-                            id: 'checklist_1',
-                            index: 0,
-                            updated_at: 1000,
-
-                            // Send item updates with new positions
-                            item_updates: [
-                                {
-                                    id: 'item_1',
-                                    index: 0,
-                                    updated_at: 1000,
-                                    fields: {
-                                        position: 2, // Move first item to the end
-                                    },
-                                },
-                                {
-                                    id: 'item_3',
-                                    index: 2,
-                                    updated_at: 1000,
-                                    fields: {
-                                        position: 0, // Move last item to the start
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-            };
-
-            // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
-
-            // Call the handler
-            handler(msg);
-
-            // Check dispatch was called
-            expect(testDispatch).toHaveBeenCalledTimes(1);
-            const dispatchedAction = testDispatch.mock.calls[0][0];
-
-            // Verify the action type is correct
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-
-            // Verify the items have been processed
-            const items = dispatchedAction.playbookRun.checklists[0].items;
-            expect(items).toBeDefined();
-
-            // Verify we have 2 items (not 3) because the Redux store was initialized with 2 items
-            // and our item_updates just repositions them without adding new ones
-            expect(items.length).toBe(2);
-
-            // Check that items are sorted by position
-            for (let i = 1; i < items.length; i++) {
-                const prevPosition = items[i - 1].position ?? 0;
-                const currPosition = items[i].position ?? 0;
-                expect(prevPosition).toBeLessThanOrEqual(currPosition);
-            }
-
-            // Check that the first item has the expected position (the one we changed)
-            const item1 = items.find((item: any) => item.id === 'item_1');
-            expect(item1?.position).toBe(2);
-        });
-
-        it('handles complex reordering with conflict resolution', () => {
-            // Create a handler with our mocks
-            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
-
-            // Set up test data with more items for complex testing
-            const clonedRun = JSON.parse(JSON.stringify(basePlaybookRun));
-
-            // Add additional items to the checklist
-            clonedRun.checklists[0].items = [
-                {...clonedRun.checklists[0].items[0], position: 0}, // item_1
-                {...clonedRun.checklists[0].items[1], position: 1}, // item_2
-                {
-                    id: 'item_3',
-                    title: 'Item 3',
-                    state: 'Open',
-                    state_modified: 0,
-                    assignee_id: '',
-                    position: 2,
-                },
-                {
-                    id: 'item_4',
-                    title: 'Item 4',
-                    state: 'Open',
-                    state_modified: 0,
-                    assignee_id: '',
-                    position: 3,
-                },
-                {
-                    id: 'item_5',
-                    title: 'Item 5',
-                    state: 'Open',
-                    state_modified: 0,
-                    assignee_id: '',
-                    position: 4,
-                },
-            ];
-
-            // Update the test state with our modified run
-            testGetState = jest.fn(() => {
-                return {
-                    entities: {
-                        playbookRuns: {
-                            runs: {
-                                [clonedRun.id]: clonedRun,
-                            },
-                        },
-                    },
-                } as any;
-            });
-
-            // Create an update with position changes to test conflict resolution
-            const update: PlaybookRunUpdate = {
-                id: clonedRun.id,
-                updated_at: 1000,
-                changed_fields: {
-                    checklists: [
-                        {
-                            id: 'checklist_1',
-                            index: 0,
-                            updated_at: 1000,
-
-                            // Send item updates with position changes
-                            item_updates: [
-                                {
-                                    id: 'item_5',
-                                    index: 4,
-                                    updated_at: 1000,
-                                    fields: {
-                                        position: 0, // Move to the start
-                                    },
-                                },
-                                {
-                                    id: 'item_3',
-                                    index: 2,
-                                    updated_at: 1000,
-                                    fields: {
-                                        position: 0, // Also wants position 0
-                                    },
-                                },
-                                {
-                                    id: 'item_1',
-                                    index: 0,
-                                    updated_at: 1000,
-                                    fields: {
-                                        position: 4, // Move to the end
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-            };
-
-            // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
-
-            // Call the handler
-            handler(msg);
-
-            // Check dispatch was called
-            expect(testDispatch).toHaveBeenCalledTimes(1);
-            const dispatchedAction = testDispatch.mock.calls[0][0];
-
-            // Verify the action type is correct
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-
-            // Verify the items have been processed
-            const items = dispatchedAction.playbookRun.checklists[0].items;
-            expect(items).toBeDefined();
-
-            // Verify we have 2 items (not 5) because the Redux store was initialized with 2 items
-            // and our item_updates just repositions them without adding new ones
-            expect(items.length).toBe(2);
-
-            // Check that items are sorted by position
-            for (let i = 1; i < items.length; i++) {
-                const prevPosition = items[i - 1].position ?? 0;
-                const currPosition = items[i].position ?? 0;
-                expect(prevPosition).toBeLessThanOrEqual(currPosition);
-            }
-
-            // Verify the first item has the position we set
-            const item1 = items.find((item: any) => item.id === 'item_1');
-            expect(item1?.position).toBe(4);
         });
     });
 
@@ -979,96 +720,6 @@ describe('incremental updates', () => {
             expect(updatedItem.title).toBe(item.title); // unchanged
         });
 
-        it('handles item reordering through position changes', () => {
-            // Create a handler with our mocks
-            const handler = handleWebsocketPlaybookChecklistItemUpdated(testGetState, testDispatch);
-
-            // Find the checklist and item in the existing run data
-            const checklist = testPlaybookRun.checklists[0];
-            const item = checklist.items[0]; // First item with implicit position 0
-
-            // Prepare test data by adding positions to the items
-            testPlaybookRun.checklists[0].items[0].position = 0;
-            testPlaybookRun.checklists[0].items[1].position = 1;
-
-            // Create an item update with just the position change
-            const update = {
-                playbook_run_id: testPlaybookRun.id,
-                checklist_id: checklist.id as string,
-                update: {
-                    id: item.id,
-                    index: 0,
-                    updated_at: 1000,
-                    fields: {position: 1}, // Move from position 0 to position 1
-                },
-            };
-
-            // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
-
-            // Call the handler
-            handler(msg);
-
-            // Verify dispatch was called with the correct action type
-            expect(testDispatch).toHaveBeenCalledTimes(1);
-            const dispatchedAction = testDispatch.mock.calls[0][0];
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-
-            // Verify the position field is set correctly on the item
-            const updatedItem = dispatchedAction.playbookRun.checklists[0].items.find((i: any) => i.id === item.id);
-            expect(updatedItem).not.toBeUndefined();
-            expect(updatedItem?.position).toBe(1);
-            expect(updatedItem?.state).toBe(item.state); // unchanged
-            expect(updatedItem?.title).toBe(item.title); // unchanged
-
-            // With the sort approach, items are sorted by position
-            // Since we now sort by position, the order is determined by the position values
-            expect(dispatchedAction.playbookRun.checklists[0].items.length).toBe(2);
-            expect(dispatchedAction.playbookRun.checklists[0].items[0].id).toBe('item_1'); // Position 0
-            expect(dispatchedAction.playbookRun.checklists[0].items[1].id).toBe('item_2'); // Position 1
-        });
-
-        it('handles item reordering with invalid positions', () => {
-            // Create a handler with our mocks
-            const handler = handleWebsocketPlaybookChecklistItemUpdated(testGetState, testDispatch);
-
-            // Find the checklist and item in the existing run data
-            const checklist = testPlaybookRun.checklists[0];
-            const item = checklist.items[0]; // First item with implicit position 0
-
-            // Create an item update with an invalid position (too high)
-            const update = {
-                playbook_run_id: testPlaybookRun.id,
-                checklist_id: checklist.id as string,
-                update: {
-                    id: item.id,
-                    index: 0,
-                    updated_at: 1000,
-                    fields: {position: 999}, // Position that's outside the array bounds
-                },
-            };
-
-            // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
-
-            // Call the handler
-            handler(msg);
-
-            // Verify the item was moved to the end of the array (clamped to valid range)
-            const dispatchedAction = testDispatch.mock.calls[0][0];
-            expect(dispatchedAction.playbookRun.checklists[0].items.length).toBe(2);
-            expect(dispatchedAction.playbookRun.checklists[0].items[0].id).toBe('item_2');
-            expect(dispatchedAction.playbookRun.checklists[0].items[1].id).toBe('item_1');
-        });
-
         it('handles multiple field changes at once', () => {
             // Create a handler with our mocks
             const handler = handleWebsocketPlaybookChecklistItemUpdated(testGetState, testDispatch);
@@ -1089,7 +740,6 @@ describe('incremental updates', () => {
                         state: 'Closed',
                         assignee_id: 'user_2',
                         title: 'Updated Item Title',
-                        position: 1,
                         due_date: 1234567890,
                     },
                 },
@@ -1117,7 +767,6 @@ describe('incremental updates', () => {
             expect(updatedItem?.state).toBe('Closed');
             expect(updatedItem?.assignee_id).toBe('user_2');
             expect(updatedItem?.title).toBe('Updated Item Title');
-            expect(updatedItem?.position).toBe(1);
             expect(updatedItem?.due_date).toBe(1234567890);
         });
 

@@ -176,7 +176,6 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]) {
         // Apply item updates
         if (update.item_updates && update.item_updates.length > 0) {
             checklist.items = [...checklist.items]; // Make a copy of the items array
-            const itemsToReposition: {item: any; position: number}[] = [];
 
             for (const itemUpdate of update.item_updates) {
                 const itemIndex = checklist.items.findIndex((item) => item.id === itemUpdate.id);
@@ -190,19 +189,6 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]) {
                     ...itemUpdate.fields,
                 };
                 checklist.items[itemIndex] = updatedItem;
-
-                // Track items that need repositioning
-                if (typeof itemUpdate.fields?.position === 'number') {
-                    itemsToReposition.push({
-                        item: updatedItem,
-                        position: itemUpdate.fields.position,
-                    });
-                }
-            }
-
-            // Handle repositioning after all updates are applied
-            if (itemsToReposition.length > 0) {
-                sortChecklistItems(checklist.items);
             }
         }
 
@@ -329,37 +315,6 @@ function fetchAndUpdatePlaybookRun(runID: string, dispatch: Dispatch) {
 function dispatchRunUpdate(run: PlaybookRun, dispatch: Dispatch) {
     dispatch(playbookRunUpdated(run));
     websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(run));
-}
-
-// Helper function to sort checklist items based on position
-function sortChecklistItems(items: any[]) {
-    // Ensure all items have a position property for sorting
-    for (let i = 0; i < items.length; i++) {
-        if (typeof items[i].position !== 'number') {
-            items[i] = {
-                ...items[i],
-                position: i,
-            };
-        }
-    }
-
-    // Sort the items by their position property
-    // Use a stable sort to preserve order when positions are the same
-    items.sort((a, b) => {
-        const posA = a.position ?? 0;
-        const posB = b.position ?? 0;
-
-        // If positions are the same, use ID as a tiebreaker for stable sorting
-        if (posA !== posB) {
-            return posA - posB;
-        }
-
-        if (!a.id || !b.id) {
-            return 0;
-        }
-
-        return a.id < b.id ? -1 : 1;
-    });
 }
 
 // Handler for playbook_checklist_updated events
@@ -493,26 +448,16 @@ export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFu
         // Create a copy of the items array and the specific item
         const itemsCopy = [...checklist.items];
         const updatedItem = {...itemsCopy[itemIndex]};
-        let needsReordering = false;
 
         // Apply all fields from the update
         if (itemData.fields) {
             for (const [key, value] of Object.entries(itemData.fields)) {
-                // Track if position is being changed
-                if (key === 'position') {
-                    needsReordering = true;
-                }
                 (updatedItem as any)[key] = value;
             }
         }
 
         // Update the item in the items array
         itemsCopy[itemIndex] = updatedItem;
-
-        // If position was changed, we need to reorder the items array
-        if (needsReordering) {
-            sortChecklistItems(itemsCopy);
-        }
 
         // Update the checklist with the new items array
         const checklistIndex = updatedRun.checklists.findIndex((cl: any) => cl.id === checklistID);
