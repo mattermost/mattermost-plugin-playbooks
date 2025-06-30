@@ -3397,6 +3397,12 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrapf(err, "users `%+v` failed to participate in run `%s`", usersToInvite, playbookRun.ID)
 	}
 
+	// Refresh the playbook run to get the updated participant_ids from the database
+	playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get updated run %s", playbookRunID)
+	}
+
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("failed to get channel")
