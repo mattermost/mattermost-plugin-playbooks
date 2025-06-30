@@ -442,7 +442,7 @@
     "ZSa3cf": "@{targetUsername}, vennligst gi en statusoppdatering for [{runName}]({playbookURL}).",
     "ZWtlyd": "Kjøring gjenopprettet av {name}",
     "/HtNUp": "Select or specify a {mode, select, DurationValue {time span (\"4 hours\", \"7 days\"...)} DateTimeValue {time (\"in 4 hours\", \"May 1\", \"Tomorrow at 1 PM\"...)} other {time or time span}}",
-    "1MQ3XZ": "{numActiveRuns, plural, =0 {no active runs} =1 {# active run} other {# active runs}}",
+    "1MQ3XZ": "{numActiveRuns, plural, =0 {ingen aktive kjøringer} =1 {# aktiv kjøring} other {# aktive kjøringer}}",
     "28FTjr": "Kjør handlinger slik at du kan automatisere aktiviteter for denne kanalen",
     "5b1zuB": "Legg dem til i kjørekanalen",
     "5j6GD/": "{numParticipants, plural, =0 {ingen deltakere} =1 {# deltaker} other {# deltakere}}",
