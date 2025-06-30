@@ -2076,7 +2076,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	timestamp := model.GetMillis()
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = timestamp
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
-	updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
@@ -2099,7 +2099,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 	}
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
-	updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
@@ -2123,7 +2123,7 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
-	updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
