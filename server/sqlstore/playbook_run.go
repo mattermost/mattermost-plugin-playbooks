@@ -1525,7 +1525,20 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
 	}
 
+	if err = s.touchPlaybookRun(playbookRunID); err != nil {
+		return errors.Wrapf(err, "failed to touch playbook run '%s'", playbookRunID)
+	}
+
 	return nil
+}
+
+func (s *playbookRunStore) touchPlaybookRun(playbookRunID string) error {
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookRunID}))
+
+	return err
 }
 
 // GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
