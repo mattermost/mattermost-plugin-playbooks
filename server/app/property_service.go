@@ -153,7 +153,7 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 	}
 
 	for _, playbookProperty := range playbookProperties {
-		runProperty, err := s.duplicatePropertyFieldForRun(playbookProperty, runID)
+		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to duplicate property field %s for run", playbookProperty.Name)
 		}
@@ -173,7 +173,7 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 	return nil
 }
 
-func (s *propertyService) duplicatePropertyFieldForRun(playbookProperty *model.PropertyField, runID string) (*model.PropertyField, error) {
+func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.PropertyField, runID string) (*model.PropertyField, error) {
 	propertyField, err := NewPropertyFieldFromMattermostPropertyField(playbookProperty)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to convert playbook property %s", playbookProperty.Name)
