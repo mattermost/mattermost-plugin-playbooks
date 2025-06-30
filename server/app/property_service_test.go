@@ -27,7 +27,7 @@ func TestPropertyService_duplicatePropertyFieldForRun(t *testing.T) {
 			},
 		}
 
-		runProperty, err := s.duplicatePropertyFieldForRun(playbookProperty, runID)
+		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
 		require.NoError(t, err)
 
 		require.NotEqual(t, playbookProperty.ID, runProperty.ID)
@@ -52,7 +52,7 @@ func TestPropertyService_duplicatePropertyFieldForRun(t *testing.T) {
 			},
 		}
 
-		runProperty, err := s.duplicatePropertyFieldForRun(playbookProperty, runID)
+		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
 		require.NoError(t, err)
 
 		require.NotEqual(t, playbookProperty.ID, runProperty.ID)
@@ -84,7 +84,7 @@ func TestPropertyService_duplicatePropertyFieldForRun(t *testing.T) {
 			},
 		}
 
-		runProperty, err := s.duplicatePropertyFieldForRun(playbookProperty, runID)
+		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
 		require.NoError(t, err)
 
 		require.NotEqual(t, playbookProperty.ID, runProperty.ID)
