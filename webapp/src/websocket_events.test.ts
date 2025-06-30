@@ -166,6 +166,13 @@ describe('incremental updates', () => {
                             },
                         },
                     },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [testPlaybookRun.team_id]: {
+                                [testPlaybookRun.channel_id]: testPlaybookRun,
+                            },
+                        },
+                    },
                 } as any;
             });
         });
@@ -284,8 +291,7 @@ describe('incremental updates', () => {
             expect(dispatchedAction.playbookRun.broadcast_channel_ids).toEqual(['channel_1', 'channel_2']);
             expect(dispatchedAction.playbookRun.metrics_data).toEqual([
                 {
-                    id: 'metric_1',
-                    title: 'Metric 1',
+                    metric_config_id: 'metric_1',
                     value: 42,
                 },
             ]);
@@ -467,6 +473,13 @@ describe('incremental updates', () => {
                         playbookRuns: {
                             runs: {
                                 [clonedRun.id]: clonedRun,
+                            },
+                        },
+                    },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [clonedRun.team_id]: {
+                                [clonedRun.channel_id]: clonedRun,
                             },
                         },
                     },
@@ -699,6 +712,13 @@ describe('incremental updates', () => {
                             },
                         },
                     },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [testPlaybookRun.team_id]: {
+                                [testPlaybookRun.channel_id]: testPlaybookRun,
+                            },
+                        },
+                    },
                 } as any;
             });
         });
@@ -709,8 +729,8 @@ describe('incremental updates', () => {
 
             // Create a checklist update with only title change
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
                     id: 'checklist_1',
                     index: 0,
                     updated_at: 1000,
@@ -750,8 +770,8 @@ describe('incremental updates', () => {
 
             // Create a checklist update with item deletion
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
                     id: 'checklist_1',
                     index: 0,
                     updated_at: 1000,
@@ -798,8 +818,8 @@ describe('incremental updates', () => {
 
             // Create a checklist update with item insertion
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
                     id: 'checklist_1',
                     index: 0,
                     updated_at: 1000,
@@ -863,6 +883,13 @@ describe('incremental updates', () => {
                             },
                         },
                     },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [testPlaybookRun.team_id]: {
+                                [testPlaybookRun.channel_id]: testPlaybookRun,
+                            },
+                        },
+                    },
                 } as any;
             });
         });
@@ -877,9 +904,9 @@ describe('incremental updates', () => {
 
             // Create an item update with just the assignee change
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                ChecklistID: checklist.id as string,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: checklist.id as string,
+                update: {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
@@ -920,9 +947,9 @@ describe('incremental updates', () => {
 
             // Create an item update with just the state change
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                ChecklistID: checklist.id as string,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: checklist.id as string,
+                update: {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
@@ -966,9 +993,9 @@ describe('incremental updates', () => {
 
             // Create an item update with just the position change
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                ChecklistID: checklist.id as string,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: checklist.id as string,
+                update: {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
@@ -1015,9 +1042,9 @@ describe('incremental updates', () => {
 
             // Create an item update with an invalid position (too high)
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                ChecklistID: checklist.id as string,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: checklist.id as string,
+                update: {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
@@ -1052,9 +1079,9 @@ describe('incremental updates', () => {
 
             // Create an item update with multiple field changes
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                ChecklistID: checklist.id as string,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: checklist.id as string,
+                update: {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
@@ -1104,9 +1131,9 @@ describe('incremental updates', () => {
 
             // Create an item update without updated_at field (for backward compatibility)
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                ChecklistID: checklist.id as string,
-                Update: {
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: checklist.id as string,
+                update: {
                     id: item.id,
                     index: 0,
                     fields: {assignee_id: 'user_2'},
@@ -1140,10 +1167,10 @@ describe('incremental updates', () => {
 
             // Create a malformed update without Update field
             const update = {
-                PlaybookRunID: testPlaybookRun.id,
-                ChecklistID: 'checklist_1',
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: 'checklist_1',
 
-                // Missing Update field
+                // Missing update field
             };
 
             // Create the WebSocket message
@@ -1216,6 +1243,13 @@ describe('incremental updates', () => {
                         playbookRuns: {
                             runs: {
                                 [testPlaybookRun.id]: testPlaybookRun,
+                            },
+                        },
+                    },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [testPlaybookRun.team_id]: {
+                                [testPlaybookRun.channel_id]: testPlaybookRun,
                             },
                         },
                     },
@@ -1523,6 +1557,13 @@ describe('incremental updates', () => {
                             },
                         },
                     },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [runWithoutTimeline.team_id]: {
+                                [runWithoutTimeline.channel_id]: runWithoutTimeline,
+                            },
+                        },
+                    },
                 } as any;
             });
 
@@ -1647,6 +1688,13 @@ describe('incremental updates', () => {
                             },
                         },
                     },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [basePlaybookRun.team_id]: {
+                                [basePlaybookRun.channel_id]: basePlaybookRun,
+                            },
+                        },
+                    },
                 } as any;
             });
 
@@ -1693,6 +1741,13 @@ describe('incremental updates', () => {
                             },
                         },
                     },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {
+                            [basePlaybookRun.team_id]: {
+                                [basePlaybookRun.channel_id]: JSON.parse(JSON.stringify(basePlaybookRun)),
+                            },
+                        },
+                    },
                 } as any;
             });
 
@@ -1700,8 +1755,8 @@ describe('incremental updates', () => {
 
             // Create an update with a non-existent item ID but with valid checklist ID
             const update = {
-                PlaybookRunID: basePlaybookRun.id,
-                Update: {
+                playbook_run_id: basePlaybookRun.id,
+                update: {
                     id: basePlaybookRun.checklists[0].id,
                     index: 0,
                     updated_at: 1000,
