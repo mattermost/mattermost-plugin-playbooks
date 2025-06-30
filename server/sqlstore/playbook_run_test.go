@@ -227,6 +227,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				PlaybookRun: NewBuilder(t).WithChecklists([]int{1}).ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
 					old.Checklists[0].Items = nil
+					old.Checklists[0].ItemsOrder = []string{}
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1345,6 +1346,7 @@ func NewBuilder(t testing.TB) *PlaybookRunBuilder {
 			Checklists:    nil,
 			CurrentStatus: "InProgress",
 			Type:          app.RunTypePlaybook,
+			ItemsOrder:    []string{},
 		},
 	}
 }
