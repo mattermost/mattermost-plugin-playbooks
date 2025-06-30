@@ -447,14 +447,14 @@ func TestDetectChangedFields(t *testing.T) {
 		prev := &PlaybookRun{
 			ID: "run1",
 			Checklists: []Checklist{
-				{ID: "checklist1", Title: "Checklist 1", Items: items1},
+				{ID: "checklist1", Title: "Checklist 1", Items: items1, ItemsOrder: []string{"item1", "item2"}},
 			},
 		}
 
 		curr := &PlaybookRun{
 			ID: "run1",
 			Checklists: []Checklist{
-				{ID: "checklist1", Title: "Checklist 1", Items: items2},
+				{ID: "checklist1", Title: "Checklist 1", Items: items2, ItemsOrder: []string{"item2", "item1"}},
 			},
 		}
 
@@ -495,6 +495,53 @@ func TestDetectChangedFields(t *testing.T) {
 		invitedUsers, ok := changes["invited_user_ids"].([]string)
 		require.True(t, ok)
 		require.Empty(t, invitedUsers)
+	})
+
+	t.Run("items order changes", func(t *testing.T) {
+		prev := &PlaybookRun{
+			ID:         "run1",
+			ItemsOrder: []string{"checklist1", "checklist2"},
+		}
+
+		curr := &PlaybookRun{
+			ID:         "run1",
+			ItemsOrder: []string{"checklist2", "checklist1"},
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		require.Equal(t, []string{"checklist2", "checklist1"}, changes["items_order"])
+
+		prev.ItemsOrder = curr.ItemsOrder
+		changes = DetectChangedFields(prev, curr)
+		require.Empty(t, changes)
+	})
+
+	t.Run("checklist items order changes", func(t *testing.T) {
+		prev := &PlaybookRun{
+			ID: "run1",
+			Checklists: []Checklist{
+				{ID: "checklist1", ItemsOrder: []string{"item1", "item2"}},
+			},
+		}
+
+		curr := &PlaybookRun{
+			ID: "run1",
+			Checklists: []Checklist{
+				{ID: "checklist1", ItemsOrder: []string{"item2", "item1"}},
+			},
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		checklistUpdates, ok := changes["checklists"].([]ChecklistUpdate)
+		require.True(t, ok)
+		require.Len(t, checklistUpdates, 1)
+		require.Equal(t, []string{"item2", "item1"}, checklistUpdates[0].ItemsOrder)
+
+		prev.Checklists[0].ItemsOrder = curr.Checklists[0].ItemsOrder
+		changes = DetectChangedFields(prev, curr)
+		require.Empty(t, changes)
 	})
 }
 
@@ -896,4 +943,47 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 		require.True(t, itemStateChanged, "Failed to detect item state change")
 		require.True(t, checklistAdded, "Failed to detect checklist addition")
 	})
+}
+
+func TestPlaybookRun_GetItemsOrder(t *testing.T) {
+	playbookRun := &PlaybookRun{
+		Checklists: []Checklist{
+			{ID: "checklist1"},
+			{ID: "checklist2"},
+		},
+	}
+
+	itemsOrder := playbookRun.GetItemsOrder()
+	require.Equal(t, []string{"checklist1", "checklist2"}, itemsOrder)
+
+	playbookRun.Checklists = []Checklist{
+		{ID: "checklist2"},
+		{ID: "checklist1"},
+	}
+
+	itemsOrder = playbookRun.GetItemsOrder()
+	require.Equal(t, []string{"checklist2", "checklist1"}, itemsOrder)
+
+	playbookRun.Checklists = []Checklist{}
+	itemsOrder = playbookRun.GetItemsOrder()
+	require.Equal(t, []string{}, itemsOrder)
+}
+
+func TestPlaybookRun_CompareItemsOrder(t *testing.T) {
+	prev := []string{"checklist1", "checklist2"}
+	curr := []string{"checklist2", "checklist1"}
+
+	require.False(t, compareItemsOrder(prev, curr))
+
+	prev = []string{"checklist1", "checklist2"}
+	curr = []string{"checklist1", "checklist2"}
+	require.True(t, compareItemsOrder(prev, curr))
+
+	prev = []string{"checklist1", "checklist2"}
+	curr = []string{"checklist1", "checklist2", "checklist3"}
+	require.False(t, compareItemsOrder(prev, curr))
+
+	prev = []string{"checklist1", "checklist2", "checklist3"}
+	curr = []string{"checklist1", "checklist2"}
+	require.False(t, compareItemsOrder(prev, curr))
 }

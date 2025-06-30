@@ -197,6 +197,17 @@ type PlaybookRun struct {
 	// Type determines a type of a run.
 	// It can be RunTypePlaybook ("playbook") or RunTypeChannelChecklist ("channel")
 	Type string `json:"type"`
+
+	// ItemsOrder is the sort order of the checklists
+	ItemsOrder []string `json:"items_order"`
+}
+
+func (r PlaybookRun) GetItemsOrder() []string {
+	itemsOrder := make([]string, len(r.Checklists))
+	for i, checklist := range r.Checklists {
+		itemsOrder[i] = checklist.ID
+	}
+	return itemsOrder
 }
 
 // PlaybookRunUpdate represents an incremental update to a playbook run
@@ -216,9 +227,6 @@ type ChecklistUpdate struct {
 	// ID is the unique identifier of the checklist
 	ID string `json:"id"`
 
-	// Index is the position of the checklist in the playbook run
-	Index int `json:"index"`
-
 	// UpdatedAt is the timestamp of when the update occurred
 	UpdatedAt int64 `json:"updated_at"`
 
@@ -233,6 +241,9 @@ type ChecklistUpdate struct {
 
 	// ItemInserts contains new checklist items
 	ItemInserts []ChecklistItem `json:"item_inserts,omitempty"`
+
+	// ItemsOrder contains the updated sort order of checklist items
+	ItemsOrder []string `json:"items_order,omitempty"`
 }
 
 // ChecklistItemUpdate represents changes to a specific checklist item
@@ -240,14 +251,23 @@ type ChecklistItemUpdate struct {
 	// ID is the unique identifier of the checklist item
 	ID string `json:"id"`
 
-	// Index is the position of the item in the checklist
-	Index int `json:"index"`
-
 	// UpdatedAt is the timestamp of when the update occurred
 	UpdatedAt int64 `json:"updated_at"`
 
 	// Fields contains the changed fields of the checklist item
 	Fields map[string]interface{} `json:"fields"`
+}
+
+func compareItemsOrder(prevItemsOrder, currItemsOrder []string) bool {
+	if len(prevItemsOrder) != len(currItemsOrder) {
+		return false
+	}
+	for i, id := range prevItemsOrder {
+		if id != currItemsOrder[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // DetectChangedFields compares two playbook runs and returns a map of changed fields
@@ -345,6 +365,10 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	}
 	if previous.Type != current.Type {
 		changes["type"] = current.Type
+	}
+
+	if !compareItemsOrder(previous.ItemsOrder, current.ItemsOrder) {
+		changes["items_order"] = current.ItemsOrder
 	}
 
 	// Check array fields where order doesn't matter (unordered sets)
@@ -456,10 +480,9 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 	now := model.GetMillis()
 
 	// Process current checklists - update or add
-	for i, checklist := range current {
+	for _, checklist := range current {
 		update := ChecklistUpdate{
 			ID:        checklist.ID,
-			Index:     i,
 			UpdatedAt: now,
 		}
 
@@ -471,6 +494,10 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 				fields["title"] = checklist.Title
 			}
 			update.Fields = fields
+
+			if !compareItemsOrder(prev.ItemsOrder, checklist.ItemsOrder) {
+				update.ItemsOrder = checklist.ItemsOrder
+			}
 
 			// Get item updates
 			itemUpdates := GetChecklistItemUpdates(prev.Items, checklist.Items)
@@ -485,7 +512,7 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 			}
 
 			// Only add update if there are changes
-			if len(update.Fields) > 0 || len(update.ItemUpdates) > 0 || len(update.ItemDeletes) > 0 || len(update.ItemInserts) > 0 {
+			if len(update.Fields) > 0 || len(update.ItemUpdates) > 0 || len(update.ItemDeletes) > 0 || len(update.ItemInserts) > 0 || len(update.ItemsOrder) > 0 {
 				updates = append(updates, update)
 			}
 
@@ -506,7 +533,6 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 	for id := range prevMap {
 		update := ChecklistUpdate{
 			ID:        id,
-			Index:     -1,  // Indicate deletion
 			UpdatedAt: now, // Use the same timestamp for consistency
 		}
 		updates = append(updates, update)
@@ -528,15 +554,12 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 
 	// Map previous items by ID for quick lookup
 	prevMap := make(map[string]ChecklistItem)
-	// Also track the original position of each item
-	prevPositions := make(map[string]int)
-	for i, item := range previous {
+	for _, item := range previous {
 		prevMap[item.ID] = item
-		prevPositions[item.ID] = i // Store original position
 	}
 
 	// Process current items - update or add
-	for i, item := range current {
+	for _, item := range current {
 		// Check if item exists in previous state
 		if prev, exists := prevMap[item.ID]; exists {
 			// Compare fields
@@ -566,17 +589,10 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 				fields["due_date"] = item.DueDate
 			}
 
-			// Check for position changes
-			prevPos, ok := prevPositions[item.ID]
-			if ok && prevPos != i {
-				fields["position"] = i
-			}
-
-			// Only add update if there are changes (including position changes)
+			// Only add update if there are changes
 			if len(fields) > 0 {
 				result.Updates = append(result.Updates, ChecklistItemUpdate{
 					ID:        item.ID,
-					Index:     i,
 					UpdatedAt: model.GetMillis(),
 					Fields:    fields,
 				})
@@ -653,6 +669,9 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []ChecklistItem{}
 		}
+		if cl.ItemsOrder == nil {
+			old.Checklists[j].ItemsOrder = []string{}
+		}
 	}
 	if old.StatusPosts == nil {
 		old.StatusPosts = []StatusPost{}
@@ -680,6 +699,9 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.MetricsData == nil {
 		old.MetricsData = []RunMetricData{}
+	}
+	if old.ItemsOrder == nil {
+		old.ItemsOrder = []string{}
 	}
 
 	return json.Marshal(old)

@@ -166,6 +166,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []ChecklistItem{}
 		}
+		if cl.ItemsOrder == nil {
+			old.Checklists[j].ItemsOrder = []string{}
+		}
 	}
 	if old.Members == nil {
 		old.Members = []PlaybookMember{}
@@ -217,6 +220,9 @@ type Checklist struct {
 
 	// Items is an array of all the items in the checklist.
 	Items []ChecklistItem `json:"items" export:"-"`
+
+	// ItemsOrder is the sort order of the checklist items
+	ItemsOrder []string `json:"items_order" export:"-"`
 }
 
 func (c Checklist) GetItems() []ChecklistItemCommon {
@@ -227,9 +233,20 @@ func (c Checklist) GetItems() []ChecklistItemCommon {
 	return items
 }
 
+func (c Checklist) GetItemsOrder() []string {
+	itemsOrder := make([]string, len(c.Items))
+	for i, item := range c.Items {
+		itemsOrder[i] = item.ID
+	}
+	return itemsOrder
+}
+
 func (c Checklist) Clone() Checklist {
 	newChecklist := c
 	newChecklist.Items = append([]ChecklistItem(nil), c.Items...)
+	if len(c.ItemsOrder) != 0 {
+		newChecklist.ItemsOrder = append([]string(nil), c.ItemsOrder...)
+	}
 	return newChecklist
 }
 
