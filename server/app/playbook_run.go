@@ -216,7 +216,7 @@ type PlaybookRunUpdate struct {
 	ID string `json:"id"`
 
 	// UpdatedAt is the timestamp of when the update occurred
-	UpdatedAt int64 `json:"updated_at"`
+	PlaybookRunUpdatedAt int64 `json:"playbook_run_updated_at"`
 
 	// ChangedFields contains only the fields that have changed in the playbook run
 	ChangedFields map[string]interface{} `json:"changed_fields"`
@@ -227,8 +227,8 @@ type ChecklistUpdate struct {
 	// ID is the unique identifier of the checklist
 	ID string `json:"id"`
 
-	// UpdatedAt is the timestamp of when the update occurred
-	UpdatedAt int64 `json:"updated_at"`
+	// ChecklistUpdatedAt is the timestamp of when the checklist update occurred
+	ChecklistUpdatedAt int64 `json:"checklist_updated_at"`
 
 	// Fields contains changes to the checklist properties
 	Fields map[string]interface{} `json:"fields,omitempty"`
@@ -251,8 +251,8 @@ type ChecklistItemUpdate struct {
 	// ID is the unique identifier of the checklist item
 	ID string `json:"id"`
 
-	// UpdatedAt is the timestamp of when the update occurred
-	UpdatedAt int64 `json:"updated_at"`
+	// ChecklistItemUpdatedAt is the timestamp of when the checklist item update occurred
+	ChecklistItemUpdatedAt int64 `json:"checklist_item_updated_at"`
 
 	// Fields contains the changed fields of the checklist item
 	Fields map[string]interface{} `json:"fields"`
@@ -482,8 +482,8 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 	// Process current checklists - update or add
 	for _, checklist := range current {
 		update := ChecklistUpdate{
-			ID:        checklist.ID,
-			UpdatedAt: now,
+			ID:                 checklist.ID,
+			ChecklistUpdatedAt: model.GetMillis(), // checklist.UpdateAt,
 		}
 
 		// Check if checklist exists in previous state
@@ -532,8 +532,8 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 	// Process deleted checklists
 	for id := range prevMap {
 		update := ChecklistUpdate{
-			ID:        id,
-			UpdatedAt: now, // Use the same timestamp for consistency
+			ID:                 id,
+			ChecklistUpdatedAt: now, // Use the same timestamp for consistency
 		}
 		updates = append(updates, update)
 	}
@@ -592,9 +592,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			// Only add update if there are changes
 			if len(fields) > 0 {
 				result.Updates = append(result.Updates, ChecklistItemUpdate{
-					ID:        item.ID,
-					UpdatedAt: model.GetMillis(),
-					Fields:    fields,
+					ID:                     item.ID,
+					ChecklistItemUpdatedAt: model.GetMillis(), // item.UpdateAt,
+					Fields:                 fields,
 				})
 			}
 

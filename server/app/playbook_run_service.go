@@ -98,9 +98,9 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	// Prepare the update data
 	update := PlaybookRunUpdate{
-		ID:            currentRun.ID,
-		UpdatedAt:     model.GetMillis(),
-		ChangedFields: changedFields,
+		ID:                   currentRun.ID,
+		PlaybookRunUpdatedAt: model.GetMillis(), // currentRun.UpdateAt,
+		ChangedFields:        changedFields,
 	}
 
 	// Extract checklist updates if they exist
@@ -1360,10 +1360,17 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	if len(setmap) == 0 {
 		return nil
 	}
+
+	originalRun, err := s.store.GetPlaybookRun(id)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
 	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
 		return err
 	}
-	s.sendPlaybookRunUpdatedWS(id)
+
+	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, nil)
 	return nil
 }
 
@@ -2967,12 +2974,6 @@ type RunWSOptions struct {
 }
 type RunWSOption func(options *RunWSOptions)
 
-func withAdditionalUserIDs(additionalUserIDs []string) RunWSOption {
-	return func(options *RunWSOptions) {
-		options.AdditionalUserIDs = append(options.AdditionalUserIDs, additionalUserIDs...)
-	}
-}
-
 func withRunWSOptions(options *RunWSOptions) RunWSOption {
 	return func(o *RunWSOptions) {
 		o.AdditionalUserIDs = append(o.AdditionalUserIDs, options.AdditionalUserIDs...)
@@ -3554,6 +3555,11 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 
 // Follow method lets user follow a specific playbook run
 func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
+	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
 	if err := s.store.Follow(playbookRunID, userID); err != nil {
 		return errors.Wrapf(err, "user `%s` failed to follow the run `%s`", userID, playbookRunID)
 	}
@@ -3563,13 +3569,18 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 	s.telemetry.Follow(playbookRun, userID)
-	s.sendPlaybookRunUpdatedWS(playbookRunID, withAdditionalUserIDs([]string{userID}))
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
 	return nil
 }
 
 // UnFollow method lets user unfollow a specific playbook run
 func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
+	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
 	if err := s.store.Unfollow(playbookRunID, userID); err != nil {
 		return errors.Wrapf(err, "user `%s` failed to unfollow the run `%s`", userID, playbookRunID)
 	}
@@ -3580,7 +3591,7 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	}
 	s.telemetry.Unfollow(playbookRun, userID)
 
-	s.sendPlaybookRunUpdatedWS(playbookRunID, withAdditionalUserIDs([]string{userID}))
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
 	return nil
 }
