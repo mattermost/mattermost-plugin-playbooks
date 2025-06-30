@@ -1212,8 +1212,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 }
 
 // updateChecklistItemTimestamps sets the UpdateAt field for all checklist items in the given checklists
-func updateChecklistItemTimestamps(checklists []Checklist) {
-	now := model.GetMillis()
+func updateChecklistItemTimestamps(checklists []Checklist, now int64) {
 	for i := range checklists {
 		checklists[i].UpdateAt = now
 		for j := range checklists[i].Items {
@@ -1249,10 +1248,13 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		return nil
 	}
 
+	now := model.GetMillis()
 	// Update checklist timestamps if checklists are being modified
 	if checklists, ok := setmap["Checklists"].([]Checklist); ok {
-		updateChecklistItemTimestamps(checklists)
+		updateChecklistItemTimestamps(checklists, now)
 	}
+
+	setmap["UpdateAt"] = now
 
 	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
 		return err
