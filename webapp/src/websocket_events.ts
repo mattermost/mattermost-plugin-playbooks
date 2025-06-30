@@ -338,9 +338,9 @@ export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, 
             return;
         }
 
-        // Skip if missing updated_at field (for backward compatibility)
-        if (!updateData.updated_at) {
-            updateData.updated_at = Date.now();
+        // Skip if missing checklist_updated_at field (for backward compatibility)
+        if (!updateData.checklist_updated_at) {
+            updateData.checklist_updated_at = Date.now();
         }
 
         const state = getState();
