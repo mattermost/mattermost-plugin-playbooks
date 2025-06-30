@@ -141,6 +141,7 @@ describe('incremental updates', () => {
         summary_modified_at: 0,
         current_status: PlaybookRunStatus.InProgress,
         type: PlaybookRunType.Playbook,
+        items_order: ['checklist_1'],
     };
 
     describe('handleWebsocketPlaybookRunUpdatedIncremental', () => {
@@ -185,6 +186,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 1000,
+                playbook_run_updated_at: 1000,
                 changed_fields: {
                     name: 'Updated Name',
                 },
@@ -221,6 +223,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 1000,
+                playbook_run_updated_at: 1000,
                 changed_fields: {
                     name: 'Updated Name',
                     owner_user_id: 'user_2',
@@ -258,6 +261,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 1000,
+                playbook_run_updated_at: 1000,
                 changed_fields: {
                     name: 'Updated Name',
                     status_update_enabled: true,
@@ -307,6 +311,7 @@ describe('incremental updates', () => {
                     id: 'checklist_1',
                     index: 0,
                     updated_at: 1000,
+                    checklist_updated_at: 1000,
                     fields: {
                         title: 'Updated Checklist Title',
                     },
@@ -315,6 +320,7 @@ describe('incremental updates', () => {
                             id: 'item_1',
                             index: 0,
                             updated_at: 1000,
+                            checklist_item_updated_at: 1000,
                             fields: {
                                 state: 'Closed',
                                 assignee_id: 'user_2',
@@ -324,15 +330,18 @@ describe('incremental updates', () => {
                             id: 'item_2',
                             index: 1,
                             updated_at: 1000,
+                            checklist_item_updated_at: 1000,
                             fields: {},
                         },
                     ],
+                    items_order: ['item_1', 'item_2'],
                 },
             ];
 
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 1000,
+                playbook_run_updated_at: 1000,
                 changed_fields: {
 
                     // Sending incremental updates
@@ -374,6 +383,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 1000,
+                playbook_run_updated_at: 1000,
                 changed_fields: {
                     name: 'Updated Name', // Some other field update
                     checklists: [
@@ -381,6 +391,7 @@ describe('incremental updates', () => {
                             id: 'checklist_1',
                             index: 0,
                             updated_at: 1000,
+                            checklist_updated_at: 1000,
                             fields: {
                                 title: 'Updated Checklist Title via updates',
                             },
@@ -389,6 +400,7 @@ describe('incremental updates', () => {
                                     id: 'item_1',
                                     index: 0,
                                     updated_at: 1000,
+                                    checklist_item_updated_at: 1000,
                                     fields: {
                                         state: 'Closed',
                                         assignee_id: 'user_3',
@@ -396,6 +408,7 @@ describe('incremental updates', () => {
                                 },
                             ],
                             item_deletes: ['item_2'], // Delete the second item
+                            items_order: ['item_1'], // Updated order after deletion
                         },
                     ],
                 },
@@ -427,6 +440,86 @@ describe('incremental updates', () => {
             expect(updatedChecklist.items[0].id).toBe('item_1'); // Should have the first item
             expect(updatedChecklist.items[0].state).toBe('Closed'); // With updated state
             expect(updatedChecklist.items[0].assignee_id).toBe('user_3'); // And updated assignee
+        });
+
+        it('handles playbook run items_order field updates', () => {
+            // Add a second checklist to test order changes
+            testPlaybookRun.checklists.push({
+                id: 'checklist_2',
+                title: 'Checklist 2',
+                items: [],
+            });
+            testPlaybookRun.items_order = ['checklist_1', 'checklist_2'];
+
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Create an update that changes the items_order (reverse the order)
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                updated_at: 1000,
+                playbook_run_updated_at: 1000,
+                changed_fields: {
+                    items_order: ['checklist_2', 'checklist_1'], // Reverse the order
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify the items_order was updated
+            expect(dispatchedAction.playbookRun.items_order).toEqual(['checklist_2', 'checklist_1']);
+
+            // Verify other fields remain unchanged
+            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
+            expect(dispatchedAction.playbookRun.name).toBe(testPlaybookRun.name);
+        });
+
+        it('handles playbook_run_updated_at field', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Create an update with playbook_run_updated_at field
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                updated_at: 1000,
+                playbook_run_updated_at: 1500,
+                changed_fields: {
+                    name: 'Updated Name with Timestamp',
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify the name was updated
+            expect(dispatchedAction.playbookRun.name).toBe('Updated Name with Timestamp');
+
+            // Verify other fields remain unchanged
+            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
+            expect(dispatchedAction.playbookRun.owner_user_id).toBe(testPlaybookRun.owner_user_id);
         });
     });
 
@@ -475,6 +568,7 @@ describe('incremental updates', () => {
                     id: 'checklist_1',
                     index: 0,
                     updated_at: 1000,
+                    checklist_updated_at: 1000,
                     fields: {
                         title: 'Updated Checklist Title',
                     },
@@ -516,7 +610,9 @@ describe('incremental updates', () => {
                     id: 'checklist_1',
                     index: 0,
                     updated_at: 1000,
+                    checklist_updated_at: 1000,
                     item_deletes: ['item_1'], // Delete the first item
+                    items_order: ['item_2'], // Updated order after deletion
                 },
             };
 
@@ -564,7 +660,9 @@ describe('incremental updates', () => {
                     id: 'checklist_1',
                     index: 0,
                     updated_at: 1000,
+                    checklist_updated_at: 1000,
                     item_inserts: [newItem],
+                    items_order: ['item_1', 'item_2', 'item_3'], // Updated order with new item
                 },
             };
 
@@ -593,6 +691,47 @@ describe('incremental updates', () => {
             // Verify dispatch was called with the correct action type and run ID
             expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
             expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
+        });
+
+        it('handles items_order field updates', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookChecklistUpdated(testGetState, testDispatch);
+
+            // Create a checklist update that only changes the items order
+            const update = {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
+                    id: 'checklist_1',
+                    index: 0,
+                    updated_at: 1000,
+                    checklist_updated_at: 1000,
+                    items_order: ['item_2', 'item_1'], // Reverse the order
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was called
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            // Verify the action type and run ID
+            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
+            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
+
+            // Items should still be present
+            const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
+            expect(updatedChecklist.items.length).toBe(2);
+            expect(updatedChecklist.items[0].id).toBe('item_1');
+            expect(updatedChecklist.items[1].id).toBe('item_2');
         });
 
         // Note: We're not testing the "missing run in store" case here since that would
@@ -651,6 +790,7 @@ describe('incremental updates', () => {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
+                    checklist_item_updated_at: 1000,
                     fields: {assignee_id: 'user_2'},
                 },
             };
@@ -694,6 +834,7 @@ describe('incremental updates', () => {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
+                    checklist_item_updated_at: 1000,
                     fields: {state: 'Closed'},
                 },
             };
@@ -736,6 +877,7 @@ describe('incremental updates', () => {
                     id: item.id,
                     index: 0,
                     updated_at: 1000,
+                    checklist_item_updated_at: 1000,
                     fields: {
                         state: 'Closed',
                         assignee_id: 'user_2',
@@ -808,6 +950,48 @@ describe('incremental updates', () => {
             // Verify assignee was updated
             const updatedItem = dispatchedAction.playbookRun.checklists[0].items[0];
             expect(updatedItem.assignee_id).toBe('user_2');
+        });
+
+        it('handles checklist_item_updated_at field', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookChecklistItemUpdated(testGetState, testDispatch);
+
+            // Find the checklist and item in the existing run data
+            const checklist = testPlaybookRun.checklists[0];
+            const item = checklist.items[0];
+
+            // Create an item update with checklist_item_updated_at field
+            const update = {
+                playbook_run_id: testPlaybookRun.id,
+                checklist_id: checklist.id as string,
+                update: {
+                    id: item.id,
+                    index: 0,
+                    updated_at: 1000,
+                    checklist_item_updated_at: 1500,
+                    fields: {title: 'Updated Title'},
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Verify dispatch was called with the correct action type and run ID
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
+            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
+
+            // Verify the title was updated
+            const updatedItem = dispatchedAction.playbookRun.checklists[0].items[0];
+            expect(updatedItem.title).toBe('Updated Title');
         });
 
         it('handles missing input data', () => {
@@ -929,6 +1113,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 3000,
+                playbook_run_updated_at: 3000,
                 changed_fields: {
                     timeline_events: [...testPlaybookRun.timeline_events, newEvent],
                 },
@@ -992,6 +1177,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 3000,
+                playbook_run_updated_at: 3000,
                 changed_fields: {
                     timeline_events: modifiedEvents,
                 },
@@ -1044,6 +1230,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 3000,
+                playbook_run_updated_at: 3000,
                 changed_fields: {
                     timeline_events: [
                         deletedEvent,
@@ -1135,6 +1322,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 4000,
+                playbook_run_updated_at: 4000,
                 changed_fields: {
                     timeline_events: [
                         testPlaybookRun.timeline_events[0], // Unchanged
@@ -1240,6 +1428,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: runWithoutTimeline.id,
                 updated_at: 1000,
+                playbook_run_updated_at: 1000,
                 changed_fields: {
                     timeline_events: newEvents,
                 },
@@ -1288,6 +1477,7 @@ describe('incremental updates', () => {
             const update: PlaybookRunUpdate = {
                 id: testPlaybookRun.id,
                 updated_at: 3000,
+                playbook_run_updated_at: 3000,
                 changed_fields: {
                     name: 'Updated Run Name',
                     owner_user_id: 'user_2',
