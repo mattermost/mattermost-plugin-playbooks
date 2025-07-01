@@ -1850,7 +1850,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	checklistItem.ID = ""
-	updateChecklistItemTimestamp(&checklistItem, 0)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &checklistItem, 0)
 
 	playbookRunToModify.Checklists[checklistNumber].Items = append(
 		playbookRunToModify.Checklists[checklistNumber].Items[:itemNumber+1],
@@ -1875,13 +1875,8 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	// Set the checklist's UpdateAt timestamp
 	timestamp := model.GetMillis()
-	checklist.UpdateAt = timestamp
-
-	for i := range checklist.Items {
-		updateChecklistItemTimestamp(&checklist.Items[i], timestamp)
-	}
+	updateChecklistItemTimestamps([]Checklist{checklist}, timestamp)
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, checklist)
 
@@ -1906,11 +1901,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
 
 	timestamp := model.GetMillis()
-	duplicate.UpdateAt = timestamp
-
-	for i := range duplicate.Items {
-		updateChecklistItemTimestamp(&duplicate.Items[i], timestamp)
-	}
+	updateChecklistItemTimestamps([]Checklist{duplicate}, timestamp)
 
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, duplicate)
 
@@ -1975,7 +1966,7 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 		return err
 	}
 
-	updateChecklistItemTimestamp(&checklistItem, 0)
+	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &checklistItem, 0)
 	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2026,8 +2017,8 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 	for itemNumber := 0; itemNumber < len(playbookRunToModify.Checklists[checklistNumber].Items); itemNumber++ {
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = timestamp
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
-		updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
 	}
+	updateChecklistItemTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
 
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
@@ -2052,8 +2043,8 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 	timestamp := model.GetMillis()
 	for itemNumber := 0; itemNumber < len(playbookRunToModify.Checklists[checklistNumber].Items); itemNumber++ {
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
-		updateChecklistItemTimestamp(&playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
 	}
+	updateChecklistItemTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
 
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
