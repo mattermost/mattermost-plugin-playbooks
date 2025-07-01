@@ -535,9 +535,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	}
 
 	// Always ensure UpdateAt is set to current time when updating
-	if playbookRun.UpdateAt == 0 {
-		playbookRun.UpdateAt = model.GetMillis()
-	}
+	playbookRun.UpdateAt = model.GetMillis()
 
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
@@ -629,7 +627,7 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		SetMap(map[string]interface{}{
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
-			"UpdateAt":      model.GetMillis(),
+			"UpdateAt":      endAt,
 		}).
 		Where(sq.Eq{"ID": playbookRunID}),
 	); err != nil {
@@ -646,7 +644,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 			"CurrentStatus":      app.StatusInProgress,
 			"EndAt":              0,
 			"LastStatusUpdateAt": restoredAt,
-			"UpdateAt":           model.GetMillis(),
+			"UpdateAt":           restoredAt,
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)
@@ -1535,7 +1533,20 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
 	}
 
+	if err = s.touchPlaybookRun(playbookRunID); err != nil {
+		return errors.Wrapf(err, "failed to touch playbook run '%s'", playbookRunID)
+	}
+
 	return nil
+}
+
+func (s *playbookRunStore) touchPlaybookRun(playbookRunID string) error {
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookRunID}))
+
+	return err
 }
 
 // GetPlaybookRunIDsForUser returns run ids where user is a participant or is following

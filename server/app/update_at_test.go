@@ -40,6 +40,53 @@ func TestUpdateChecklistItemTimestamps(t *testing.T) {
 		assert.LessOrEqual(t, checklistItem.UpdateAt, after)
 	})
 
+	t.Run("updateChecklistAndItemTimestamp sets both checklist and item timestamps", func(t *testing.T) {
+		checklist := Checklist{
+			ID:       "checklist-id",
+			Title:    "Test Checklist",
+			UpdateAt: 1000,
+		}
+
+		checklistItem := ChecklistItem{
+			ID:       "item-id",
+			Title:    "Test Item",
+			UpdateAt: 1000,
+		}
+
+		timestamp := int64(12345)
+		updateChecklistAndItemTimestamp(&checklist, &checklistItem, timestamp)
+
+		// Verify both timestamps are updated
+		assert.Equal(t, timestamp, checklist.UpdateAt)
+		assert.Equal(t, timestamp, checklistItem.UpdateAt)
+	})
+
+	t.Run("updateChecklistAndItemTimestamp with zero timestamp sets current time", func(t *testing.T) {
+		checklist := Checklist{
+			ID:       "checklist-id",
+			Title:    "Test Checklist",
+			UpdateAt: 1000,
+		}
+
+		checklistItem := ChecklistItem{
+			ID:       "item-id",
+			Title:    "Test Item",
+			UpdateAt: 1000,
+		}
+
+		before := model.GetMillis()
+		updateChecklistAndItemTimestamp(&checklist, &checklistItem, 0)
+		after := model.GetMillis()
+
+		// Verify both timestamps are updated to a current time
+		assert.GreaterOrEqual(t, checklist.UpdateAt, before)
+		assert.LessOrEqual(t, checklist.UpdateAt, after)
+		assert.GreaterOrEqual(t, checklistItem.UpdateAt, before)
+		assert.LessOrEqual(t, checklistItem.UpdateAt, after)
+		// Verify both got the same timestamp
+		assert.Equal(t, checklist.UpdateAt, checklistItem.UpdateAt)
+	})
+
 	t.Run("updating an existing item with a state change", func(t *testing.T) {
 		checklistItem := ChecklistItem{
 			ID:            "test-id",
@@ -129,8 +176,9 @@ func TestUpdateAt_ModifyCheckedState(t *testing.T) {
 			ID: "playbook1",
 			Checklists: []Checklist{
 				{
-					ID:    "checklist1",
-					Title: "Test Checklist",
+					ID:       "checklist1",
+					Title:    "Test Checklist",
+					UpdateAt: 1000,
 					Items: []ChecklistItem{
 						{
 							ID:            "item1",
@@ -148,20 +196,24 @@ func TestUpdateAt_ModifyCheckedState(t *testing.T) {
 
 		// Directly modify the state and update timestamps - simulating what ModifyCheckedState does
 		playbookRun.Checklists[0].Items[0].State = ChecklistItemStateClosed
-		playbookRun.Checklists[0].Items[0].StateModified = model.GetMillis()
-		updateChecklistItemTimestamp(&playbookRun.Checklists[0].Items[0], playbookRun.Checklists[0].Items[0].StateModified)
+		timestamp := model.GetMillis()
+		playbookRun.Checklists[0].Items[0].StateModified = timestamp
+		updateChecklistAndItemTimestamp(&playbookRun.Checklists[0], &playbookRun.Checklists[0].Items[0], timestamp)
 
 		after := model.GetMillis()
 
 		// Check that the state was updated
 		assert.Equal(t, ChecklistItemStateClosed, playbookRun.Checklists[0].Items[0].State)
 
-		// Check that UpdateAt was set to a recent timestamp
+		// Check that item UpdateAt was set to a recent timestamp
 		assert.GreaterOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, before)
 		assert.LessOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, after)
 
 		// Check that StateModified and UpdateAt match
 		assert.Equal(t, playbookRun.Checklists[0].Items[0].StateModified, playbookRun.Checklists[0].Items[0].UpdateAt)
+
+		// Check that parent checklist UpdateAt was also updated
+		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
 	})
 }
 
@@ -171,8 +223,9 @@ func TestUpdateAt_SetAssignee(t *testing.T) {
 			ID: "playbook1",
 			Checklists: []Checklist{
 				{
-					ID:    "checklist1",
-					Title: "Test Checklist",
+					ID:       "checklist1",
+					Title:    "Test Checklist",
+					UpdateAt: 1000,
 					Items: []ChecklistItem{
 						{
 							ID:               "item1",
@@ -190,20 +243,24 @@ func TestUpdateAt_SetAssignee(t *testing.T) {
 
 		// Directly set assignee and update timestamps - simulating what SetAssignee does
 		playbookRun.Checklists[0].Items[0].AssigneeID = "user123"
-		playbookRun.Checklists[0].Items[0].AssigneeModified = model.GetMillis()
-		updateChecklistItemTimestamp(&playbookRun.Checklists[0].Items[0], playbookRun.Checklists[0].Items[0].AssigneeModified)
+		timestamp := model.GetMillis()
+		playbookRun.Checklists[0].Items[0].AssigneeModified = timestamp
+		updateChecklistAndItemTimestamp(&playbookRun.Checklists[0], &playbookRun.Checklists[0].Items[0], timestamp)
 
 		after := model.GetMillis()
 
 		// Check that the assignee was updated
 		assert.Equal(t, "user123", playbookRun.Checklists[0].Items[0].AssigneeID)
 
-		// Check that UpdateAt was set to a recent timestamp
+		// Check that item UpdateAt was set to a recent timestamp
 		assert.GreaterOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, before)
 		assert.LessOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, after)
 
 		// Check that AssigneeModified and UpdateAt match
 		assert.Equal(t, playbookRun.Checklists[0].Items[0].AssigneeModified, playbookRun.Checklists[0].Items[0].UpdateAt)
+
+		// Check that parent checklist UpdateAt was also updated
+		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
 	})
 }
 
@@ -213,8 +270,9 @@ func TestUpdateAt_RunChecklistItemSlashCommand(t *testing.T) {
 			ID: "playbook1",
 			Checklists: []Checklist{
 				{
-					ID:    "checklist1",
-					Title: "Test Checklist",
+					ID:       "checklist1",
+					Title:    "Test Checklist",
+					UpdateAt: 1000,
 					Items: []ChecklistItem{
 						{
 							ID:             "item1",
@@ -231,21 +289,24 @@ func TestUpdateAt_RunChecklistItemSlashCommand(t *testing.T) {
 		before := model.GetMillis()
 
 		// Directly update command run timestamp - simulating what RunChecklistItemSlashCommand does
-		now := model.GetMillis()
-		playbookRun.Checklists[0].Items[0].CommandLastRun = now
-		updateChecklistItemTimestamp(&playbookRun.Checklists[0].Items[0], now)
+		timestamp := model.GetMillis()
+		playbookRun.Checklists[0].Items[0].CommandLastRun = timestamp
+		updateChecklistAndItemTimestamp(&playbookRun.Checklists[0], &playbookRun.Checklists[0].Items[0], timestamp)
 
 		after := model.GetMillis()
 
 		// Check that CommandLastRun was updated
 		assert.NotEqual(t, 0, playbookRun.Checklists[0].Items[0].CommandLastRun)
 
-		// Check that UpdateAt was set to a recent timestamp
+		// Check that item UpdateAt was set to a recent timestamp
 		assert.GreaterOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, before)
 		assert.LessOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, after)
 
 		// Check that CommandLastRun and UpdateAt match
 		assert.Equal(t, playbookRun.Checklists[0].Items[0].CommandLastRun, playbookRun.Checklists[0].Items[0].UpdateAt)
+
+		// Check that parent checklist UpdateAt was also updated
+		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
 	})
 }
 
@@ -255,8 +316,9 @@ func TestUpdateAt_SetCommandToChecklistItem(t *testing.T) {
 			ID: "playbook1",
 			Checklists: []Checklist{
 				{
-					ID:    "checklist1",
-					Title: "Test Checklist",
+					ID:       "checklist1",
+					Title:    "Test Checklist",
+					UpdateAt: 1000,
 					Items: []ChecklistItem{
 						{
 							ID:             "item1",
@@ -273,10 +335,10 @@ func TestUpdateAt_SetCommandToChecklistItem(t *testing.T) {
 		before := model.GetMillis()
 
 		// Directly set command and update timestamps - simulating what SetCommandToChecklistItem does
-		now := model.GetMillis()
+		timestamp := model.GetMillis()
 		playbookRun.Checklists[0].Items[0].Command = "/new-command"
 		playbookRun.Checklists[0].Items[0].CommandLastRun = 0
-		updateChecklistItemTimestamp(&playbookRun.Checklists[0].Items[0], now)
+		updateChecklistAndItemTimestamp(&playbookRun.Checklists[0], &playbookRun.Checklists[0].Items[0], timestamp)
 
 		after := model.GetMillis()
 
@@ -289,6 +351,9 @@ func TestUpdateAt_SetCommandToChecklistItem(t *testing.T) {
 
 		// Check that CommandLastRun is reset to 0
 		assert.Equal(t, int64(0), playbookRun.Checklists[0].Items[0].CommandLastRun)
+
+		// Check that parent checklist UpdateAt was also updated
+		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
 	})
 }
 
@@ -298,8 +363,9 @@ func TestUpdateAt_SetDueDate(t *testing.T) {
 			ID: "playbook1",
 			Checklists: []Checklist{
 				{
-					ID:    "checklist1",
-					Title: "Test Checklist",
+					ID:       "checklist1",
+					Title:    "Test Checklist",
+					UpdateAt: 1000,
 					Items: []ChecklistItem{
 						{
 							ID:       "item1",
@@ -316,9 +382,9 @@ func TestUpdateAt_SetDueDate(t *testing.T) {
 
 		// Directly set due date - simulating what SetDueDate does
 		newDueDate := model.GetMillis() + (24 * 60 * 60 * 1000) // 1 day in the future
-		now := model.GetMillis()
+		timestamp := model.GetMillis()
 		playbookRun.Checklists[0].Items[0].DueDate = newDueDate
-		updateChecklistItemTimestamp(&playbookRun.Checklists[0].Items[0], now)
+		updateChecklistAndItemTimestamp(&playbookRun.Checklists[0], &playbookRun.Checklists[0].Items[0], timestamp)
 
 		after := model.GetMillis()
 
@@ -328,6 +394,9 @@ func TestUpdateAt_SetDueDate(t *testing.T) {
 		// Check that UpdateAt was set to a recent timestamp
 		assert.GreaterOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, before)
 		assert.LessOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, after)
+
+		// Check that parent checklist UpdateAt was also updated
+		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
 	})
 }
 
@@ -337,8 +406,9 @@ func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 			ID: "playbook1",
 			Checklists: []Checklist{
 				{
-					ID:    "checklist1",
-					Title: "Test Checklist",
+					ID:       "checklist1",
+					Title:    "Test Checklist",
+					UpdateAt: 1000,
 					Items: []ChecklistItem{
 						{
 							ID:          "item1",
@@ -354,7 +424,7 @@ func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 		before := model.GetMillis()
 
 		// Directly set task actions - simulating what SetTaskActionsToChecklistItem does
-		now := model.GetMillis()
+		timestamp := model.GetMillis()
 		taskActions := []TaskAction{
 			{
 				Trigger: Trigger{
@@ -370,7 +440,7 @@ func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 			},
 		}
 		playbookRun.Checklists[0].Items[0].TaskActions = taskActions
-		updateChecklistItemTimestamp(&playbookRun.Checklists[0].Items[0], now)
+		updateChecklistAndItemTimestamp(&playbookRun.Checklists[0], &playbookRun.Checklists[0].Items[0], timestamp)
 
 		after := model.GetMillis()
 
@@ -381,6 +451,9 @@ func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 		// Check that UpdateAt was set to a recent timestamp
 		assert.GreaterOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, before)
 		assert.LessOrEqual(t, playbookRun.Checklists[0].Items[0].UpdateAt, after)
+
+		// Check that parent checklist UpdateAt was also updated
+		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
 	})
 }
 

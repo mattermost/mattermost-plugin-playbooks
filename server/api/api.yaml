@@ -130,7 +130,6 @@ paths:
               schema:
                 oneOf:
                   - $ref: "#/components/schemas/PlaybookRunList"
-                  - $ref: "#/components/schemas/PlaybookRunListWithFinished"
         400:
           $ref: "#/components/responses/400"
         403:
