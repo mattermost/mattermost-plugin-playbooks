@@ -171,6 +171,7 @@ type Playbook {
 	defaultRunAdminRole: String!
 	defaultRunMemberRole: String!
 	metrics: [PlaybookMetricConfig!]!
+	propertyFields: [PropertyField!]!
 	isFavorite: Boolean!
 	createChannelMemberOnNewParticipant: Boolean!
 	removeChannelMemberOnRemovedParticipant: Boolean!
