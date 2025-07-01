@@ -232,10 +232,7 @@ export const usePlaybookProperty = (
         errorPolicy: 'all', // Allow partial data and errors to be returned
     });
 
-    let propertyField: PlaybookPropertyField = result.data?.playbookProperty;
-    propertyField = propertyField === null ? undefined : propertyField;
-
-    return [propertyField, result];
+    return [result.data?.playbookProperty ?? undefined, result] as const;
 };
 
 /**
