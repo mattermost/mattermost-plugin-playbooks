@@ -1132,11 +1132,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
 
-	err = s.resetReminderTimer(playbookRunID)
-	if err != nil {
-		logger.WithError(err).Error("failed to reset the reminder timer when updating status to Archived")
-	}
-
 	// We are resolving the playbook run. Send the reminder to fill out the retrospective
 	// Also start the recurring reminder if enabled.
 	if s.licenseChecker.RetrospectiveAllowed() {
