@@ -8,7 +8,7 @@ import React, {
     useMemo,
     useRef,
 } from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 import {components} from 'react-select';
 import CreatableSelect, {type CreatableProps} from 'react-select/creatable';
 import styled from 'styled-components';
@@ -32,8 +32,6 @@ const PropertyValuesInput = ({
     field,
     updateField,
 }: Props) => {
-    const {formatMessage} = useIntl();
-
     const [query, setQuery] = React.useState('');
     const [showLastOptionError, setShowLastOptionError] = React.useState(false);
     const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -151,9 +149,7 @@ const PropertyValuesInput = ({
                 onInputChange={(newValue) => setQuery(newValue)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleOnBlur}
-                placeholder={formatMessage({
-                    defaultMessage: 'Add values…',
-                })}
+                placeholder='Add values…'
                 value={field.attrs.options?.map((option) => ({
                     label: option.name,
                     value: option.name,
@@ -250,7 +246,6 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 8px 12px;
 `;
 
 const ErrorText = styled.div`

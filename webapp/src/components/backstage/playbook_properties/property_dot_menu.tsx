@@ -106,7 +106,6 @@ const MenuContainer = styled.div`
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 8px 12px;
 `;
 
 const CustomDropdownMenu = styled(DropdownMenu)`
@@ -118,13 +117,12 @@ const FullWidthActionsButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    padding: 12px;
     border: none;
-    border-radius: 4px;
+    border-radius: 0;
     background-color: ${(props) => (props.$isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
     color: ${(props) => (props.$isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
-    cursor: pointer;
-    
+
     &:hover {
         background-color: ${(props) => (props.$isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     }

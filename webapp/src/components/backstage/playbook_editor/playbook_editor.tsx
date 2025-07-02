@@ -27,7 +27,7 @@ import {useForceDocumentTitle, useStats} from 'src/hooks';
 import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
-import PlaybookProperties from 'src/components/backstage/playbook_properties';
+import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
 import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';

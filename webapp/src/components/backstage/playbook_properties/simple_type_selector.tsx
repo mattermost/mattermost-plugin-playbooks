@@ -90,7 +90,7 @@ const SimpleTypeSelector = ({field, updateField, onClose, isOpen, onOpenChange, 
                 <ItemContent>
                     <ItemLeft>
                         <Icon size={16}/>
-                        <span>{option.label}</span>
+                        {option.label}
                     </ItemLeft>
                     {field.type === option.type && (
                         <CheckIcon
@@ -142,7 +142,7 @@ const ItemLeft = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
-    
+
     span {
         font-size: 14px;
         color: var(--center-channel-color);

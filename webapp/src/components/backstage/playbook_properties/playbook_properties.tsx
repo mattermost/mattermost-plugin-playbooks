@@ -17,7 +17,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {ChevronDownCircleOutlineIcon, FormatListBulletedIcon, MenuVariantIcon} from '@mattermost/compass-icons/components';
 
 import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
@@ -26,11 +26,11 @@ import {PropertyField} from 'src/types/property_field';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 
-import PropertyValuesInput from './playbook_properties/property_values_input';
-import PropertyDotMenu from './playbook_properties/property_dot_menu';
-import SimpleTypeSelector from './playbook_properties/simple_type_selector';
-import EmptyState from './playbook_properties/empty_state';
-import PropertyNameInput, {PropertyNameInputRef} from './playbook_properties/property_name_input';
+import PropertyValuesInput from './property_values_input';
+import PropertyDotMenu from './property_dot_menu';
+import SimpleTypeSelector from './simple_type_selector';
+import EmptyState from './empty_state';
+import PropertyNameInput, {PropertyNameInputRef} from './property_name_input';
 
 interface Props {
     playbookID: string;
@@ -107,9 +107,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
         const newProperty: PropertyField = {
             id: newId,
             group_id: 'playbooks',
-            name: formatMessage({
-                defaultMessage: 'Attribute {count}',
-            }, {count: properties.length + 1}),
+            name: `Attribute ${properties.length + 1}`,
             type: 'text',
             attrs: {
                 visibility: 'when_set',
@@ -164,9 +162,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
             }),
             columnHelper.display({
                 id: 'property',
-                header: formatMessage({
-                    defaultMessage: 'Attribute',
-                }),
+                header: () => (
+                    <FormattedMessage defaultMessage='Attribute'/>
+                ),
                 size: 130,
                 cell: (info) => {
                     const TypeIcon = () => {
@@ -220,9 +218,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
             }),
             columnHelper.display({
                 id: 'values',
-                header: formatMessage({
-                    defaultMessage: 'Values',
-                }),
+                header: () => (
+                    <FormattedMessage defaultMessage='Values'/>
+                ),
                 size: 300,
                 cell: (info) => (
                     <PropertyValuesInput
@@ -233,7 +231,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
             }),
             columnHelper.display({
                 id: 'actions',
-                header: '',
+                header: () => (
+                    <FormattedMessage defaultMessage='Actions'/>
+                ),
                 size: 40,
                 cell: (info) => (
                     <PropertyDotMenu
@@ -254,7 +254,6 @@ const PlaybookProperties = ({playbookID}: Props) => {
                         onDuplicate={(field) => {
                             const duplicatedField = {
                                 ...field,
-                                id: (Math.max(...properties.map((p) => parseInt(p.id, 10)).filter(Boolean)) + 1).toString(),
                                 name: `${field.name} Copy`,
                             };
                             console.debug('Would call server create attribute', duplicatedField);
@@ -278,15 +277,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
             <OuterContainer>
                 <InnerContainer>
                     <EmptyState
-                        title={formatMessage({
-                            defaultMessage: 'No attributes yet',
-                        })}
-                        description={formatMessage({
-                            defaultMessage: 'Add custom attributes to capture additional information about your playbook runs.',
-                        })}
-                        buttonText={formatMessage({
-                            defaultMessage: 'Add your first attribute',
-                        })}
+                        title={<FormattedMessage defaultMessage='No attributes yet'/>}
+                        description={<FormattedMessage defaultMessage='Add custom attributes to capture additional information about your playbook runs.'/>}
+                        buttonText={<FormattedMessage defaultMessage='Add your first attribute'/>}
                         onButtonClick={addProperty}
                     />
                 </InnerContainer>
@@ -362,17 +355,13 @@ const PlaybookProperties = ({playbookID}: Props) => {
 
                 <AddPropertyButton onClick={addProperty}>
                     <i className='icon-plus'/>
-                    {formatMessage({
-                        defaultMessage: 'Add attribute',
-                    })}
+                    <FormattedMessage defaultMessage='Add attribute'/>
                 </AddPropertyButton>
 
                 {deletingProperty && (
                     <GenericModal
                         id='confirm-property-delete-modal'
-                        modalHeaderText={formatMessage({
-                            defaultMessage: 'Delete Attribute',
-                        })}
+                        modalHeaderText={<FormattedMessage defaultMessage='Delete Attribute'/>}
                         show={Boolean(deletingProperty)}
                         onHide={() => setDeletingProperty(null)}
                         handleConfirm={() => {
@@ -380,20 +369,17 @@ const PlaybookProperties = ({playbookID}: Props) => {
                             setDeletingProperty(null);
                         }}
                         handleCancel={() => setDeletingProperty(null)}
-                        confirmButtonText={formatMessage({
-                            defaultMessage: 'Delete',
-                        })}
-                        cancelButtonText={formatMessage({
-                            defaultMessage: 'Cancel',
-                        })}
+                        confirmButtonText={<FormattedMessage defaultMessage='Delete'/>}
+                        cancelButtonText={<FormattedMessage defaultMessage='Cancel'/>}
                         isConfirmDestructive={true}
                     >
                         <p>
-                            {formatMessage({
-                                defaultMessage: 'Are you sure you want to delete the attribute "{propertyName}"? This action cannot be undone.',
-                            }, {
-                                propertyName: deletingProperty.name,
-                            })}
+                            <FormattedMessage
+                                defaultMessage='Are you sure you want to delete the attribute "{propertyName}"? This action cannot be undone.'
+                                values={{
+                                    propertyName: deletingProperty.name,
+                                }}
+                            />
                         </p>
                     </GenericModal>
                 )}
@@ -443,6 +429,8 @@ const TableBody = styled.tbody`
 `;
 
 const TableRow = styled.tr`
+    height: 40px;
+
     &:not(:last-child) {
         border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
     }
@@ -461,7 +449,7 @@ const TableHeaderCell = styled.th`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    
+
     &:first-child {
         padding: 0;
     }
@@ -479,9 +467,7 @@ const DragHandle = styled.div`
     cursor: grab;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     height: 100%;
-    width: 100%;
-    max-width: 18px;
-    min-height: 48px;
+    width: 18px;
 
     &:hover {
         color: var(--center-channel-color);
@@ -501,9 +487,8 @@ const PropertyCellContent = styled.div`
     align-items: center;
     width: 100%;
     height: 100%;
-    min-height: 48px;
-    padding: 12px 16px;
-    gap: 12px;
+    padding: 0 10px;
+    gap: 2px;
 `;
 
 const TypeIconButton = styled.button`
@@ -514,7 +499,9 @@ const TypeIconButton = styled.button`
     border: none;
     cursor: pointer;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: 0;
+    width: 40px;
+    height: 40px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
     &:hover {

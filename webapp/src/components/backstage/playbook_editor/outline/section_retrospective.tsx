@@ -43,8 +43,15 @@ const convertToPlaybookWithChecklist = (playbook: FullPlaybook): PlaybookWithChe
             updateAt: field.update_at,
             deleteAt: field.delete_at,
             groupID: field.group_id,
+            attrs: {
+                ...field.attrs,
+                sortOrder: field.attrs?.sort_order ?? 0,
+                parentID: field.attrs?.parent_id ?? null,
+                options: field.attrs?.options ?? [],
+                visibility: field.attrs?.visibility ?? '',
+            },
         })),
-    } as unknown as PlaybookWithChecklist;
+    } satisfies PlaybookWithChecklist;
 };
 
 interface Props {

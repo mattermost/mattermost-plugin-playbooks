@@ -139,8 +139,9 @@ const StyledInput = styled.input<{$hasError?: boolean}>`
     line-height: 20px;
     color: var(--center-channel-color);
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
+    min-height: 40px;
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
@@ -149,8 +150,7 @@ const StyledInput = styled.input<{$hasError?: boolean}>`
 
     &:focus {
         outline: none;
-        background: var(--center-channel-bg);
-        box-shadow: inset 0 0 0 1px ${(props) => (props.$hasError ? '#D24B4E' : 'var(--button-bg)')};
+        background: rgba(var(--button-bg-rgb), 0.08);
         cursor: text;
     }
 
