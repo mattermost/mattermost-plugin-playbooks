@@ -790,7 +790,7 @@
     "t6lwwM": "{requester} eltávolította a {users} a futásból",
     "u/yGzS": "{name} hozzáadva @{user} a futáshoz",
     "fBG/Ge": "Költségek",
-    "zscc/+": "Vannak {kiemelkedő, többes szám, =1 {a # kiemelkedő feladat} más {a # kiemelkedő feladatok}}. Biztos, hogy be akarja fejezni a futást <i>{runName}</i> minden résztvevő számára?",
+    "zscc/+": "There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run <i>{runName}</i> for all participants?",
     "bEoDyV": "@{authorUsername} egy frissítést tett közzé [{runName}]({overviewURL}) számára.",
     "bCmvTY": "Adjon visszajelzést",
     "ZSa3cf": "@{targetUsername}, kérjük, adjon helyzetjelentést a [{runName}]({playbookURL}) számára.",
