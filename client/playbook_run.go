@@ -24,6 +24,7 @@ type PlaybookRun struct {
 	TeamID                                  string          `json:"team_id"`
 	ChannelID                               string          `json:"channel_id"`
 	CreateAt                                int64           `json:"create_at"`
+	UpdateAt                                int64           `json:"update_at"`
 	EndAt                                   int64           `json:"end_at"`
 	DeleteAt                                int64           `json:"delete_at"`
 	ActiveStage                             int             `json:"active_stage"`
@@ -230,6 +231,10 @@ type PlaybookRunListOptions struct {
 	// Defaults to blank (no filter).
 	PlaybookID string `url:"playbook_id,omitempty"`
 
+	// ChannelID filters playbook runs associated with the given channel ID.
+	// Defaults to blank (no filter).
+	ChannelID string `url:"channel_id,omitempty"`
+
 	// ActiveGTE filters playbook runs that were active after (or equal) to the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	ActiveGTE int64 `url:"active_gte,omitempty"`
@@ -245,6 +250,12 @@ type PlaybookRunListOptions struct {
 	// StartedLT filters playbook runs that were started before the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	StartedLT int64 `url:"started_lt,omitempty"`
+	
+	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
+	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
+	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
+	// This is sent as the "since" URL parameter.
+	ActivitySince int64 `url:"since,omitempty"`
 }
 
 // PlaybookRunList contains the paginated result.
@@ -264,10 +275,10 @@ const (
 )
 
 type GetPlaybookRunsResults struct {
-	TotalCount int           `json:"total_count"`
-	PageCount  int           `json:"page_count"`
-	HasMore    bool          `json:"has_more"`
-	Items      []PlaybookRun `json:"items"`
+	TotalCount  int           `json:"total_count"`
+	PageCount   int           `json:"page_count"`
+	HasMore     bool          `json:"has_more"`
+	Items       []PlaybookRun `json:"items"`
 }
 
 // StatusUpdateOptions are the fields required to update a playbook run's status
