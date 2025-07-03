@@ -227,6 +227,7 @@ jobs:
           CI_INBUCKET_PORT: 10080
           CI_MINIO_HOST: minio
           IS_CI: true
+          MM_LICENSE: "${{ secrets.MM_E2E_TEST_LICENSE_ONPREM_ENT }}"
           MM_CLUSTERSETTINGS_READONLYCONFIG: false
           MM_EMAILSETTINGS_SMTPSERVER: inbucket
           MM_EMAILSETTINGS_SMTPPORT: 10025
