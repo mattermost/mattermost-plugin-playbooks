@@ -1378,18 +1378,22 @@ func TestActivitySince(t *testing.T) {
 			require.NoError(t, err)
 			createPlaybookRunChannel(t, store, run3)
 
-			// Update run1 with an older timestamp
+			// Update run1 with an older timestamp (use direct SQL to control UpdateAt)
 			oldUpdateTime := baseTime - 2000
-			run1.UpdateAt = oldUpdateTime
-			run1.Name = "Run 1 - updated older"
-			_, err = playbookRunStore.UpdatePlaybookRun(run1)
+			_, err = store.execBuilder(store.db, sq.
+				Update("IR_Incident").
+				Set("Name", "Run 1 - updated older").
+				Set("UpdateAt", oldUpdateTime).
+				Where(sq.Eq{"ID": run1.ID}))
 			require.NoError(t, err)
 
-			// Update run2 with a newer timestamp
+			// Update run2 with a newer timestamp (use direct SQL to control UpdateAt)
 			newUpdateTime := baseTime - 1000
-			run2.UpdateAt = newUpdateTime
-			run2.Name = "Run 2 - updated newer"
-			_, err = playbookRunStore.UpdatePlaybookRun(run2)
+			_, err = store.execBuilder(store.db, sq.
+				Update("IR_Incident").
+				Set("Name", "Run 2 - updated newer").
+				Set("UpdateAt", newUpdateTime).
+				Where(sq.Eq{"ID": run2.ID}))
 			require.NoError(t, err)
 
 			// Finish run3
@@ -1399,7 +1403,7 @@ func TestActivitySince(t *testing.T) {
 
 			// Test cases
 			t.Run("get runs updated since a specific time", func(t *testing.T) {
-				// Get runs updated since oldUpdateTime - should include run1, run2, and run3 (run3 is included because finishing it updates UpdateAt to current time)
+				// Get runs updated since oldUpdateTime - should include run1, run2, and run3 (run3 is included because finishing it updates UpdateAt to finishTime)
 				results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
 					UserID:  "testID",
 					IsAdmin: true,
@@ -1426,7 +1430,7 @@ func TestActivitySince(t *testing.T) {
 			})
 
 			t.Run("get runs updated since a later time", func(t *testing.T) {
-				// Get runs updated since newUpdateTime - should include run2 and run3 (run3 is included because finishing it updates UpdateAt to current time)
+				// Get runs updated since newUpdateTime - should include run2 and run3 (run3 is included because finishing it updates UpdateAt to finishTime)
 				results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
 					UserID:  "testID",
 					IsAdmin: true,
