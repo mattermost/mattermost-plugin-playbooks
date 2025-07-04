@@ -21,6 +21,8 @@ type Query {
 		after: String,
 		types: [PlaybookRunType!] = [],
 	): RunConnection!
+
+	playbookProperty(playbookID: String!, propertyID: String!): PropertyField
 }
 
 type Mutation {
@@ -33,6 +35,10 @@ type Mutation {
 
 	addPlaybookMember(playbookID: String!, userID: String!): String!
 	removePlaybookMember(playbookID: String!, userID: String!): String!
+
+	addPlaybookPropertyField(playbookID: String!, propertyField: PropertyFieldInput!): String!
+	updatePlaybookPropertyField(playbookID: String!, propertyFieldID: String!, propertyField: PropertyFieldInput!): String!
+	deletePlaybookPropertyField(playbookID: String!, propertyFieldID: String!): String!
 
 	setRunFavorite(id: String!, fav: Boolean!): String!
 	updateRun(id: String!, updates: RunUpdates!): String!
@@ -321,4 +327,56 @@ input RunUpdates {
 	broadcastChannelIDs: [String!]
 	webhookOnStatusUpdateURLs: [String!]
 	channelID: String
+}
+
+enum PropertyFieldType {
+	text
+	select
+	multiselect
+	date
+	user
+	multiuser
+}
+
+input PropertyOptionInput {
+	id: String
+	name: String!
+	color: String
+}
+
+input PropertyFieldAttrsInput {
+	visibility: String
+	sortOrder: Float
+	options: [PropertyOptionInput!]
+	parentID: String
+}
+
+input PropertyFieldInput {
+	name: String!
+	type: PropertyFieldType!
+	attrs: PropertyFieldAttrsInput
+}
+
+type PropertyOption {
+	id: String!
+	name: String!
+	color: String
+}
+
+type PropertyFieldAttrs {
+	visibility: String!
+	sortOrder: Float!
+	options: [PropertyOption!]
+	parentID: String
+}
+
+type PropertyField {
+	id: String!
+	name: String!
+	type: PropertyFieldType!
+	groupID: String!
+	attrs: PropertyFieldAttrs!
+	createAt: Float!
+	updateAt: Float!
+	deleteAt: Float!
 }
