@@ -227,6 +227,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				PlaybookRun: NewBuilder(t).WithChecklists([]int{1}).ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
 					old.Checklists[0].Items = nil
+					old.Checklists[0].ItemsOrder = []string{}
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1345,6 +1346,7 @@ func NewBuilder(t testing.TB) *PlaybookRunBuilder {
 			Checklists:    nil,
 			CurrentStatus: "InProgress",
 			Type:          app.RunTypePlaybook,
+			ItemsOrder:    []string{},
 		},
 	}
 }
@@ -1386,23 +1388,31 @@ func (ib *PlaybookRunBuilder) WithCreateAt(createAt int64) *PlaybookRunBuilder {
 
 func (ib *PlaybookRunBuilder) WithChecklists(itemsPerChecklist []int) *PlaybookRunBuilder {
 	ib.playbookRun.Checklists = make([]app.Checklist, len(itemsPerChecklist))
+	var checklistIDs []string
 
 	for i, numItems := range itemsPerChecklist {
 		var items []app.ChecklistItem
+		var itemIDs []string
 		for j := 0; j < numItems; j++ {
+			itemID := model.NewId()
 			items = append(items, app.ChecklistItem{
-				ID:    model.NewId(),
+				ID:    itemID,
 				Title: fmt.Sprint("Checklist ", i, " - item ", j),
 			})
+			itemIDs = append(itemIDs, itemID)
 		}
 
+		checklistID := model.NewId()
 		ib.playbookRun.Checklists[i] = app.Checklist{
-			ID:    model.NewId(),
-			Title: fmt.Sprint("Checklist ", i),
-			Items: items,
+			ID:         checklistID,
+			Title:      fmt.Sprint("Checklist ", i),
+			Items:      items,
+			ItemsOrder: itemIDs,
 		}
+		checklistIDs = append(checklistIDs, checklistID)
 	}
 
+	ib.playbookRun.ItemsOrder = checklistIDs
 	return ib
 }
 
