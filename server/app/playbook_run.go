@@ -200,6 +200,17 @@ type PlaybookRun struct {
 	// Type determines a type of a run.
 	// It can be RunTypePlaybook ("playbook") or RunTypeChannelChecklist ("channel")
 	Type string `json:"type"`
+
+	// Sort order of the checklists
+	SortOrder []string `json:"sort_order"`
+}
+
+func (r *PlaybookRun) GetSortOrder() []string {
+	sortOrder := make([]string, len(r.Checklists))
+	for i, checklist := range r.Checklists {
+		sortOrder[i] = checklist.ID
+	}
+	return sortOrder
 }
 
 // PlaybookRunUpdate represents an incremental update to a playbook run
@@ -253,6 +264,18 @@ type ChecklistItemUpdate struct {
 	Fields map[string]interface{} `json:"fields"`
 }
 
+func compareSortOrder(prevSortOrder, currSortOrder []string) bool {
+	if len(prevSortOrder) != len(currSortOrder) {
+		return false
+	}
+	for i, id := range prevSortOrder {
+		if id != currSortOrder[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // DetectChangedFields compares two playbook runs and returns a map of changed fields
 func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} {
 	if previous == nil || current == nil {
@@ -262,6 +285,10 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	changes := make(map[string]interface{})
 
 	// Compare scalar fields
+	if previous.UpdateAt != current.UpdateAt {
+		changes["update_at"] = current.UpdateAt
+	}
+
 	if previous.Name != current.Name {
 		changes["name"] = current.Name
 	}
@@ -348,6 +375,10 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	}
 	if previous.Type != current.Type {
 		changes["type"] = current.Type
+	}
+
+	if !compareSortOrder(previous.SortOrder, current.SortOrder) {
+		changes["sort_order"] = current.SortOrder
 	}
 
 	// Check array fields where order doesn't matter (unordered sets)
@@ -455,24 +486,31 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 
 	var updates []ChecklistUpdate
 
-	// Create a single timestamp for all updates in this batch
-	now := model.GetMillis()
-
 	// Process current checklists - update or add
 	for i, checklist := range current {
 		update := ChecklistUpdate{
 			ID:        checklist.ID,
 			Index:     i,
-			UpdatedAt: now,
+			UpdatedAt: checklist.UpdateAt,
 		}
 
 		// Check if checklist exists in previous state
 		if prev, exists := prevMap[checklist.ID]; exists {
 			// Compare fields
 			fields := make(map[string]interface{})
+
+			if prev.UpdateAt != checklist.UpdateAt {
+				fields["update_at"] = checklist.UpdateAt
+			}
+
 			if prev.Title != checklist.Title {
 				fields["title"] = checklist.Title
 			}
+
+			if !compareSortOrder(prev.SortOrder, checklist.SortOrder) {
+				fields["sort_order"] = checklist.SortOrder
+			}
+
 			update.Fields = fields
 
 			// Get item updates
@@ -505,6 +543,7 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 		}
 	}
 
+	now := model.GetMillis()
 	// Process deleted checklists
 	for id := range prevMap {
 		update := ChecklistUpdate{
@@ -544,6 +583,11 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 		if prev, exists := prevMap[item.ID]; exists {
 			// Compare fields
 			fields := make(map[string]interface{})
+
+			if prev.UpdateAt != item.UpdateAt {
+				fields["update_at"] = item.UpdateAt
+			}
+
 			if prev.Title != item.Title {
 				fields["title"] = item.Title
 			}
@@ -580,7 +624,7 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 				result.Updates = append(result.Updates, ChecklistItemUpdate{
 					ID:        item.ID,
 					Index:     i,
-					UpdatedAt: model.GetMillis(),
+					UpdatedAt: item.UpdateAt,
 					Fields:    fields,
 				})
 			}
