@@ -48,7 +48,7 @@ const (
 // and sends granular update events with only the changed fields. It also sends more
 // specific events for checklist and checklist item changes. If incremental updates are
 // disabled, it sends full update events for backward compatibility.
-func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID string, previousRun, currentRun *PlaybookRun) {
+func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID string, previousRun, currentRun *PlaybookRun, additionalUserIDs ...string) {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	// Determine if incremental updates are enabled
@@ -57,7 +57,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	if !incrementalUpdatesEnabled {
 		// If incremental updates are disabled, fall back to the standard WS update
 		sendWSOptions := RunWSOptions{
-			PlaybookRun: currentRun,
+			PlaybookRun:       currentRun,
+			AdditionalUserIDs: additionalUserIDs,
 		}
 		s.sendPlaybookRunUpdatedWS(playbookRunID, withRunWSOptions(&sendWSOptions))
 		return
@@ -96,6 +97,14 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	// Send the incremental update
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
 
+	// Send updates to additional users who are not in the channel
+	if len(additionalUserIDs) > 0 {
+		nonMemberIDs := s.getNonMembersIDs(currentRun.ChannelID, additionalUserIDs)
+		for _, userID := range nonMemberIDs {
+			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, userID)
+		}
+	}
+
 	// Send more granular checklist and item updates if any exist
 	for _, checklistUpdate := range checklistUpdates {
 		// For each checklist update, send a dedicated checklist update event
@@ -108,6 +117,14 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		}
 
 		s.poster.PublishWebsocketEventToChannel(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, currentRun.ChannelID)
+
+		// Send checklist updates to additional users who are not in the channel
+		if len(additionalUserIDs) > 0 {
+			nonMemberIDs := s.getNonMembersIDs(currentRun.ChannelID, additionalUserIDs)
+			for _, userID := range nonMemberIDs {
+				s.poster.PublishWebsocketEventToUser(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, userID)
+			}
+		}
 
 		// Send more granular events for individual checklist items if needed
 		if len(checklistUpdate.ItemUpdates) > 0 {
@@ -123,6 +140,14 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 				}
 
 				s.poster.PublishWebsocketEventToChannel(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, currentRun.ChannelID)
+
+				// Send checklist item updates to additional users who are not in the channel
+				if len(additionalUserIDs) > 0 {
+					nonMemberIDs := s.getNonMembersIDs(currentRun.ChannelID, additionalUserIDs)
+					for _, userID := range nonMemberIDs {
+						s.poster.PublishWebsocketEventToUser(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, userID)
+					}
+				}
 			}
 		}
 	}
@@ -2942,7 +2967,8 @@ func (s *PlaybookRunServiceImpl) newAddToTimelineDialog(playbookRuns []PlaybookR
 
 // structure to handle optional parameters for sendPlaybookRunUpdatedWS
 type RunWSOptions struct {
-	PlaybookRun *PlaybookRun
+	PlaybookRun       *PlaybookRun
+	AdditionalUserIDs []string
 }
 type RunWSOption func(options *RunWSOptions)
 
@@ -2951,7 +2977,33 @@ func withRunWSOptions(options *RunWSOptions) RunWSOption {
 		if options.PlaybookRun != nil {
 			o.PlaybookRun = options.PlaybookRun
 		}
+		if options.AdditionalUserIDs != nil {
+			o.AdditionalUserIDs = options.AdditionalUserIDs
+		}
 	}
+}
+
+func (s *PlaybookRunServiceImpl) getNonMembersIDs(channelID string, userIDs []string) []string {
+	members, err := s.pluginAPI.Channel.ListMembersByIDs(channelID, userIDs)
+	if err != nil {
+		return userIDs
+	}
+
+	membersMap := make(map[string]bool, len(members))
+	for _, member := range members {
+		membersMap[member.UserId] = true
+	}
+
+	addedUsers := make(map[string]bool, len(members))
+	nonMembers := make([]string, 0, len(userIDs))
+	for _, userID := range userIDs {
+		if !membersMap[userID] && !addedUsers[userID] {
+			addedUsers[userID] = true
+			nonMembers = append(nonMembers, userID)
+		}
+	}
+
+	return nonMembers
 }
 
 // Individual Websocket messages will be sent to the owner/participants and users
@@ -2975,6 +3027,14 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 	}
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
+
+	// Send updates to additional users who are not in the channel
+	if len(sendWSOptions.AdditionalUserIDs) > 0 {
+		nonMemberIDs := s.getNonMembersIDs(playbookRun.ChannelID, sendWSOptions.AdditionalUserIDs)
+		for _, userID := range nonMemberIDs {
+			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedWSEvent, playbookRun, userID)
+		}
+	}
 }
 
 func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, newRetrospective RetrospectiveUpdate) error {
@@ -3288,7 +3348,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userIDs...)
 
 	return nil
 }
@@ -3410,7 +3470,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 			return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
 		}
 
-		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun)
+		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, usersToInvite...)
 	}
 
 	return nil
@@ -3542,7 +3602,7 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 	s.telemetry.Follow(playbookRun, userID)
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
 	return nil
 }
@@ -3564,7 +3624,7 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	}
 	s.telemetry.Unfollow(playbookRun, userID)
 
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
 	return nil
 }
