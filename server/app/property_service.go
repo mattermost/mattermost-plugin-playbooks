@@ -71,17 +71,9 @@ func (s *propertyService) GetPropertyField(propertyID string) (*PropertyField, e
 }
 
 func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField, error) {
-	searchOpts := model.PropertyFieldSearchOpts{
-		GroupID:        s.groupID,
-		TargetType:     PropertyTargetTypePlaybook,
-		TargetID:       playbookID,
-		IncludeDeleted: false,
-		PerPage:        1000, // Set a reasonable limit
-	}
-
-	mmPropertyFields, err := s.api.Property.SearchPropertyFields(s.groupID, playbookID, searchOpts)
+	mmPropertyFields, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, playbookID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to search property fields")
+		return nil, errors.Wrap(err, "failed to get property fields")
 	}
 
 	propertyFields := make([]PropertyField, 0, len(mmPropertyFields))
@@ -89,6 +81,24 @@ func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField,
 		propertyField, err := NewPropertyFieldFromMattermostPropertyField(mmField)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to convert property field")
+		}
+		propertyFields = append(propertyFields, *propertyField)
+	}
+
+	return propertyFields, nil
+}
+
+func (s *propertyService) GetRunPropertyFields(runID string) ([]PropertyField, error) {
+	mmPropertyFields, err := s.getAllPropertyFields(PropertyTargetTypePlaybookRun, runID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get run property fields")
+	}
+
+	propertyFields := make([]PropertyField, 0, len(mmPropertyFields))
+	for _, mmField := range mmPropertyFields {
+		propertyField, err := NewPropertyFieldFromMattermostPropertyField(mmField)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert run property field")
 		}
 		propertyFields = append(propertyFields, *propertyField)
 	}
@@ -138,6 +148,37 @@ func (s *propertyService) DeletePropertyField(propertyID string) error {
 	}
 
 	return nil
+}
+
+func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*model.PropertyField, error) {
+	opts := model.PropertyFieldSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: targetType,
+		TargetID:   targetID,
+		PerPage:    20,
+	}
+
+	var allFields []*model.PropertyField
+	for {
+		fields, err := s.api.Property.SearchPropertyFields(s.groupID, targetID, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to search property fields")
+		}
+
+		allFields = append(allFields, fields...)
+
+		if len(fields) < opts.PerPage {
+			break
+		}
+
+		lastField := fields[len(fields)-1]
+		opts.Cursor = model.PropertyFieldSearchCursor{
+			PropertyFieldID: lastField.ID,
+			CreateAt:        lastField.CreateAt,
+		}
+	}
+
+	return allFields, nil
 }
 
 func (s *propertyService) ensurePropertyGroup() (string, error) {
