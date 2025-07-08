@@ -128,8 +128,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: "#/components/schemas/PlaybookRunList"
+                $ref: "#/components/schemas/PlaybookRunList"
         400:
           $ref: "#/components/responses/400"
         403:
