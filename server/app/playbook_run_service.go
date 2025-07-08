@@ -101,6 +101,11 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 	// Send the incremental update
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedIncrementalWSEvent, update, currentRun.ChannelID)
+	if len(nonMembers) > 0 {
+		for _, nonMember := range nonMembers {
+			s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
+		}
+	}
 
 	// Send more granular checklist and item updates if any exist
 	for _, checklistUpdate := range checklistUpdates {
@@ -119,6 +124,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 				s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
 			}
 		}
+
 		// Send more granular events for individual checklist items if needed
 		if len(checklistUpdate.ItemUpdates) > 0 {
 			for _, itemUpdate := range checklistUpdate.ItemUpdates {
