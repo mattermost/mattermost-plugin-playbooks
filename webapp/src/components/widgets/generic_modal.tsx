@@ -164,7 +164,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
 }
 
 export const StyledModal = styled(Modal)`
-    &&& {
+    &&&& {
         display: grid !important;
         padding: 8px;
         grid-template-rows: 1fr auto 2fr;
@@ -181,11 +181,7 @@ export const StyledModal = styled(Modal)`
             margin: 0 !important;
             grid-row: 2;
         }
-    }
 
-    z-index: 1040;
-
-    &&&& {
         /* control correction-overrides */
         .form-control {
             border: none;
