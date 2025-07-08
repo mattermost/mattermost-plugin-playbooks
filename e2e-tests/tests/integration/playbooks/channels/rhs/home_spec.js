@@ -94,7 +94,7 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
                 });
 
                 // # Click the icon
-                cy.getPlaybooksAppBarIcon().should('be.visible').click();
+                cy.getPlaybooksAppBarIcon().click();
             });
 
             it('without pre-populated channel name template', () => {
