@@ -26,7 +26,8 @@ const (
 	PropertyOptionColorMaxLength = 128
 
 	// Target types
-	PropertyTargetTypePlaybook = "playbook"
+	PropertyTargetTypePlaybook    = "playbook"
+	PropertyTargetTypePlaybookRun = "playbook_run"
 )
 
 type Attrs struct {
@@ -132,6 +133,7 @@ type PropertyService interface {
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
+	GetRunPropertyFields(runID string) ([]PropertyField, error)
 	UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	DeletePropertyField(propertyID string) error
 }

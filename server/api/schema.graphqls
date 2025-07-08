@@ -286,6 +286,8 @@ type Run {
 	numTasks: Int!
 	numTasksClosed: Int!
 
+	propertyFields: [PropertyField!]!
+
 	type: PlaybookRunType!
 }
 
