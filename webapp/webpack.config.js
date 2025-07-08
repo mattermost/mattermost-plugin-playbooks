@@ -5,6 +5,8 @@ const exec = require('child_process').exec;
 
 const path = require('path');
 
+const webpack = require('webpack');
+
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
 const PLUGIN_ID = require('../plugin.json').id;
@@ -18,7 +20,11 @@ if (NPM_TARGET === 'debug' || NPM_TARGET === 'debug:watch' || targetIsDevServer)
     devtool = 'eval-cheap-module-source-map';
 }
 
-const plugins = [];
+const plugins = [
+    new webpack.ProvidePlugin({
+        process: 'process/browser.js',
+    }),
+];
 if (NPM_TARGET === 'build:watch' || NPM_TARGET === 'debug:watch') {
     plugins.push({
         apply: (compiler) => {
@@ -115,7 +121,6 @@ let config = {
         'react-bootstrap': 'ReactBootstrap',
         'react-router-dom': 'ReactRouterDom',
         'react-intl': 'ReactIntl',
-        'styled-components': 'StyledComponents',
     },
     output: {
         devtoolNamespace: PLUGIN_ID,
