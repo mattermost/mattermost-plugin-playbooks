@@ -211,6 +211,7 @@ export const ModalHeading = styled.h1`
     color: var(--center-channel-color);
     font-size: 22px;
     line-height: 28px;
+    align-self: center;
 `;
 
 export const ModalSideheading = styled.h6`
