@@ -109,7 +109,6 @@ paths:
           example: server down
           schema:
             type: string
-<<<<<<< HEAD
         - name: channel_id
           in: query
           description: The returned list will contain only the playbook runs associated with this channel ID.
@@ -117,7 +116,6 @@ paths:
           example: r3vk8jdys4rlya46xhdthatoyx
           schema:
             type: string
-=======
         - name: omit_ended
           in: query
           description: When set to true, only active runs (with EndAt = 0) are returned. When false or omitted, both active and ended runs are returned.
@@ -126,7 +124,6 @@ paths:
           schema:
             type: boolean
             default: false
->>>>>>> master
       x-codeSamples:
         - lang: curl
           source: |
