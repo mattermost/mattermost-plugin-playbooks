@@ -67,6 +67,9 @@ type PlaybookRun struct {
 	// CreateAt is the timestamp, in milliseconds since epoch, of when the playbook run was created.
 	CreateAt int64 `json:"create_at"`
 
+	// UpdateAt is the timestamp, in milliseconds since epoch, of when the playbook run was last modified.
+	UpdateAt int64 `json:"update_at"`
+
 	// EndAt is the timestamp, in milliseconds since epoch, of when the playbook run was ended.
 	// If 0, the run is still ongoing.
 	EndAt int64 `json:"end_at"`

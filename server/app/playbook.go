@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 )
@@ -223,6 +224,9 @@ type Checklist struct {
 
 	// ItemsOrder is the sort order of the checklist items
 	ItemsOrder []string `json:"items_order" export:"-"`
+
+	// UpdateAt is when this checklist was last modified
+	UpdateAt int64 `json:"update_at" export:"-"`
 }
 
 func (c Checklist) GetItems() []ChecklistItemCommon {
@@ -304,6 +308,9 @@ type ChecklistItem struct {
 
 	// TaskActions is an array of all the task actions associated with this task.
 	TaskActions []TaskAction `json:"task_actions" export:"-"`
+
+	// UpdateAt is when this checklist item was last modified
+	UpdateAt int64 `json:"update_at" export:"-"`
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
@@ -312,18 +319,22 @@ func (ci *ChecklistItem) GetAssigneeID() string {
 
 func (ci *ChecklistItem) SetAssigneeModified(modified int64) {
 	ci.AssigneeModified = modified
+	ci.UpdateAt = modified
 }
 
 func (ci *ChecklistItem) SetState(state string) {
 	ci.State = state
+	ci.UpdateAt = model.GetMillis()
 }
 
 func (ci *ChecklistItem) SetStateModified(modified int64) {
 	ci.StateModified = modified
+	ci.UpdateAt = modified
 }
 
 func (ci *ChecklistItem) SetCommandLastRun(lastRun int64) {
 	ci.CommandLastRun = lastRun
+	ci.UpdateAt = lastRun
 }
 
 type GetPlaybooksResults struct {
