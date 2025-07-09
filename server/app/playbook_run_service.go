@@ -2460,6 +2460,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 	// are the same, we only need to update the checklist to its final state (destChecklist)
 	if sourceChecklistIdx == destChecklistIdx {
 		playbookRunToModify.Checklists[sourceChecklistIdx].Items = destChecklist
+		playbookRunToModify.Checklists[sourceChecklistIdx].UpdateAt = timestamp
 		playbookRunToModify.Checklists[sourceChecklistIdx].ItemsOrder = playbookRunToModify.Checklists[sourceChecklistIdx].GetItemsOrder()
 	} else {
 		playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist

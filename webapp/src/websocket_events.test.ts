@@ -112,6 +112,7 @@ describe('incremental updates', () => {
 
         // Other required fields with default values
         create_at: 1,
+        update_at: 1,
         end_at: 0,
         post_id: '',
         participant_ids: [],
