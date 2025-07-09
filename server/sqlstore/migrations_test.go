@@ -217,6 +217,7 @@ func TestDBSchema(t *testing.T) {
 				// compare table schemas
 				dbSchemaMorph, err := getDBSchemaInfo(store)
 				require.NoError(t, err)
+
 				// For migration 0.63.0 > 0.64.0 that adds the UpdateAt column to IR_Incident
 				// we do a special check since the order of columns in the test doesn't match
 				if migration.Name == "0.63.0 > 0.64.0" {

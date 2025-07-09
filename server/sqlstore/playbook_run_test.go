@@ -386,6 +386,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 
 		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
 		require.NoError(t, err)
+
 		// UpdateAt field is now set automatically by the migration, so we need to copy it
 		// to our expected object to make the test pass
 		finalPlaybookRun.UpdateAt = actual.UpdateAt

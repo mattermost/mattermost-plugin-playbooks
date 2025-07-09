@@ -1995,6 +1995,7 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	)
 
 	playbookRunToModify.Checklists[checklistNumber].UpdateAt = model.GetMillis()
+
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -2018,9 +2019,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = timestamp
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
 	}
-
 	updateAllChecklistsAndItemsTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
-
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2045,9 +2044,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 	for itemNumber := 0; itemNumber < len(playbookRunToModify.Checklists[checklistNumber].Items); itemNumber++ {
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
 	}
-
 	updateAllChecklistsAndItemsTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
-
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
