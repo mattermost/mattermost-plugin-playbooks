@@ -7,6 +7,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -138,6 +139,88 @@ func (s *propertyService) DeletePropertyField(propertyID string) error {
 	}
 
 	return nil
+}
+
+func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*model.PropertyField, error) {
+	opts := model.PropertyFieldSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: targetType,
+		TargetID:   targetID,
+		PerPage:    20,
+	}
+
+	var allFields []*model.PropertyField
+	for {
+		fields, err := s.api.Property.SearchPropertyFields(s.groupID, targetID, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		allFields = append(allFields, fields...)
+
+		if len(fields) < opts.PerPage {
+			break
+		}
+
+		lastField := fields[len(fields)-1]
+		opts.Cursor = model.PropertyFieldSearchCursor{
+			PropertyFieldID: lastField.ID,
+			CreateAt:        lastField.CreateAt,
+		}
+	}
+
+	return allFields, nil
+}
+
+func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) error {
+	playbookProperties, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get playbook properties")
+	}
+
+	for _, playbookProperty := range playbookProperties {
+		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to duplicate property field %s for run", playbookProperty.Name)
+		}
+
+		_, err = s.api.Property.CreatePropertyField(runProperty)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create run property field for %s", playbookProperty.Name)
+		}
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"playbook_id":   playbookID,
+		"run_id":        runID,
+		"fields_copied": len(playbookProperties),
+	}).Info("copied playbook properties to run")
+
+	return nil
+}
+
+func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.PropertyField, runID string) (*model.PropertyField, error) {
+	propertyField, err := NewPropertyFieldFromMattermostPropertyField(playbookProperty)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to convert playbook property %s", playbookProperty.Name)
+	}
+
+	propertyField.ID = ""
+	propertyField.TargetType = PropertyTargetTypeRun
+	propertyField.TargetID = runID
+	propertyField.Attrs.ParentID = playbookProperty.ID
+
+	if propertyField.SupportsOptions() {
+		for i := range propertyField.Attrs.Options {
+			propertyField.Attrs.Options[i].SetID("")
+		}
+	}
+
+	if err := propertyField.SanitizeAndValidate(); err != nil {
+		return nil, errors.Wrapf(err, "failed to validate run property field for %s", playbookProperty.Name)
+	}
+
+	return propertyField.ToMattermostPropertyField(), nil
 }
 
 func (s *propertyService) ensurePropertyGroup() (string, error) {
