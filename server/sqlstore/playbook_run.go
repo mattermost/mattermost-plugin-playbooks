@@ -332,6 +332,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
 	}
 
+	if options.OmitEnded {
+		queryForResults = queryForResults.Where(sq.Eq{"i.EndAt": 0})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
+	}
+
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		column := "i.Name"

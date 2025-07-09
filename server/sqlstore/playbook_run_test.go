@@ -396,6 +396,98 @@ func TestRestorePlaybookRun(t *testing.T) {
 	}
 }
 
+// TestGetPlaybookRunsWithOmitEnded verifies that the OmitEnded filter option works correctly.
+func TestGetPlaybookRunsWithOmitEnded(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		store := setupSQLStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		setupChannelsTable(t, db)
+		setupPostsTable(t, db)
+		setupTeamMembersTable(t, db)
+
+		// Create team
+		teamID := model.NewId()
+		team := model.Team{
+			Id:   teamID,
+			Name: "test-team",
+		}
+		createTeams(t, store, []model.Team{team})
+
+		// Create user with admin permissions
+		userID := model.NewId()
+		user := userInfo{
+			ID:   userID,
+			Name: "test-user",
+		}
+		addUsers(t, store, []userInfo{user})
+		addUsersToTeam(t, store, []userInfo{user}, teamID)
+
+		// Create an active run with EndAt = 0
+		activeRun := NewBuilder(t).
+			WithTeamID(teamID).
+			WithName("active").
+			WithCurrentStatus(app.StatusInProgress).
+			ToPlaybookRun()
+		activeRun, err := playbookRunStore.CreatePlaybookRun(activeRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, activeRun)
+
+		// Create a run that will be finished
+		finishedRun := NewBuilder(t).
+			WithName("finished").
+			WithTeamID(teamID).
+			WithOwnerUserID(userID).
+			ToPlaybookRun()
+		finishedRun, err = playbookRunStore.CreatePlaybookRun(finishedRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, finishedRun)
+
+		// Finish the run using the store API (sets EndAt > 0 and status to Finished)
+		endAt := model.GetMillis()
+		err = playbookRunStore.FinishPlaybookRun(finishedRun.ID, endAt)
+		require.NoError(t, err)
+
+		// Verify the runs were created with the expected statuses
+		verifyActiveRun, err := playbookRunStore.GetPlaybookRun(activeRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusInProgress, verifyActiveRun.CurrentStatus)
+		require.Equal(t, int64(0), verifyActiveRun.EndAt)
+
+		verifyFinishedRun, err := playbookRunStore.GetPlaybookRun(finishedRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusFinished, verifyFinishedRun.CurrentStatus)
+		require.NotEqual(t, int64(0), verifyFinishedRun.EndAt)
+
+		// Setup requester with admin permissions to bypass permissions checks
+		requesterInfo := app.RequesterInfo{
+			UserID:  userID,
+			IsAdmin: true,
+		}
+
+		// Test 1: With OmitEnded = false, both runs should be returned
+		options := app.PlaybookRunFilterOptions{
+			OmitEnded: false,
+			TeamID:    teamID,
+			Sort:      app.SortByID,
+			Direction: app.DirectionAsc,
+			Page:      0,
+			PerPage:   10,
+		}
+
+		results, err := playbookRunStore.GetPlaybookRuns(requesterInfo, options)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(results.Items), "Should include both active and finished runs")
+
+		// Test 2: With OmitEnded = true, only active run should be returned
+		options.OmitEnded = true
+		results, err = playbookRunStore.GetPlaybookRuns(requesterInfo, options)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(results.Items), "Should only include active runs")
+		require.Equal(t, activeRun.ID, results.Items[0].ID, "Should be the active run")
+	}
+}
+
 // intended to catch problems with the code assembling StatusPosts
 func TestStressTestGetPlaybookRuns(t *testing.T) {
 	// Change these to larger numbers to stress test. Keep them low for CI.
