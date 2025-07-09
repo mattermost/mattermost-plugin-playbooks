@@ -386,6 +386,11 @@ func TestRestorePlaybookRun(t *testing.T) {
 
 		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
 		require.NoError(t, err)
+
+		// UpdateAt field is now set automatically by RestorePlaybookRun using model.GetMillis(),
+		// so we need to copy the actual value to our expected object to make the test pass
+		finalPlaybookRun.UpdateAt = actual.UpdateAt
+
 		require.Equal(t, &finalPlaybookRun, actual)
 	}
 }
@@ -497,9 +502,11 @@ func createPlaybookRunsAndPosts(t testing.TB, store *SQLStore, playbookRunStore 
 		}
 		savePosts(t, store, posts)
 
+		createAt := int64(100000 + i)
 		inc := NewBuilder(t).
 			WithTeamID(teamID).
-			WithCreateAt(int64(100000 + i)).
+			WithCreateAt(createAt).
+			WithUpdateAt(createAt). // Set UpdateAt to match CreateAt
 			WithName(fmt.Sprintf("playbook run %d", i)).
 			WithChecklists([]int{1}).
 			ToPlaybookRun()
@@ -1380,6 +1387,12 @@ func (ib *PlaybookRunBuilder) ToPlaybookRun() *app.PlaybookRun {
 
 func (ib *PlaybookRunBuilder) WithCreateAt(createAt int64) *PlaybookRunBuilder {
 	ib.playbookRun.CreateAt = createAt
+
+	return ib
+}
+
+func (ib *PlaybookRunBuilder) WithUpdateAt(updateAt int64) *PlaybookRunBuilder {
+	ib.playbookRun.UpdateAt = updateAt
 
 	return ib
 }
