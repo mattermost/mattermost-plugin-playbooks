@@ -364,6 +364,12 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
 	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
 
+	// Filter by UpdateAt for the activity since parameter
+	if options.ActivitySince > 0 {
+		queryForResults = queryForResults.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
+		queryForTotal = queryForTotal.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
+	}
+
 	queryForResults, err := applyPlaybookRunFilterOptionsSort(queryForResults, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to apply sort options")
@@ -433,13 +439,15 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		addMetricsToPlaybookRuns(metricsData, playbookRuns)
 	}
 
-	return &app.GetPlaybookRunsResults{
+	result := &app.GetPlaybookRunsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
-	}, nil
+	}
+
+	return result, nil
 }
 
 // CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.

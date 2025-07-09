@@ -124,6 +124,14 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: since
+          in: query
+          description: Return only PlaybookRuns created/modified since the given timestamp (in milliseconds).
+          required: false
+          example: 1643673600000
+          schema:
+            type: integer
+            format: int64
       x-codeSamples:
         - lang: curl
           source: |
