@@ -1912,6 +1912,10 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		}
 	}
 
+	// Parse omit_ended param - default to false for backward compatibility
+	omitEndedParam := u.Query().Get("omit_ended")
+	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
+
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
 		Page:                    page,
@@ -1930,6 +1934,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		StartedLT:               startedLT,
 		Types:                   types,
 		ActivitySince:           activitySince,
+		OmitEnded:               omitEnded,
 	}
 
 	options, err = options.Validate()
