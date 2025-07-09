@@ -119,7 +119,7 @@ paths:
             default: false
         - name: since
           in: query
-          description: Return only PlaybookRuns created/modified since the given timestamp (in milliseconds). When provided, the response includes a finished_ids field with info about runs that have finished since this timestamp.
+          description: Return only PlaybookRuns created/modified since the given timestamp (in milliseconds).
           required: false
           example: 1643673600000
           schema:
