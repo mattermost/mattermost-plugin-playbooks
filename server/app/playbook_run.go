@@ -1522,6 +1522,12 @@ type PlaybookRunFilterOptions struct {
 	// Types filters by all run types in the list (inclusive)
 	Types []string
 
+	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
+	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
+	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
+	// Maps to the "since" URL parameter in the API and client.
+	ActivitySince int64 `url:"since,omitempty"`
+
 	// Skip getting extra information (like timeline events and status posts). Used by GraphQL to limit the amount of data retrieved.
 	SkipExtras bool
 
@@ -1609,6 +1615,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
+	}
+	// Normalize negative ActivitySince values to 0, which means "no filtering by activity time"
+	if options.ActivitySince < 0 {
+		options.ActivitySince = 0
 	}
 
 	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {

@@ -528,6 +528,9 @@ func TestStressTestGetPlaybookRuns(t *testing.T) {
 					expWithoutStatusPosts.StatusPosts = nil
 					actWithoutStatusPosts := returned.Items[i]
 					actWithoutStatusPosts.StatusPosts = nil
+					// Since UpdateAt is automatically set to CreateAt in migration 000080,
+					// we need to copy the value for test comparison
+					expWithoutStatusPosts.UpdateAt = actWithoutStatusPosts.UpdateAt
 					assert.Equal(t, expWithoutStatusPosts, actWithoutStatusPosts)
 				}
 			}
@@ -1418,6 +1421,328 @@ func TestGetPlaybookRunIDsForUser(t *testing.T) {
 			returnedIDs, err := playbookRunStore.GetPlaybookRunIDsForUser(alice.ID)
 			require.NoError(t, err)
 			require.Len(t, returnedIDs, 0)
+		})
+	}
+}
+
+func TestActivitySince(t *testing.T) {
+	for _, driverName := range driverNames {
+		// Create a separate test subtest for each test case to ensure proper isolation
+		t.Run("basic since filter tests", func(t *testing.T) {
+			db := setupTestDB(t, driverName)
+			playbookRunStore := setupPlaybookRunStore(t, db)
+			store := setupSQLStore(t, db)
+			setupChannelsTable(t, db)
+
+			// Use a unique team ID for this test to prevent interference with other tests
+			teamID := model.NewId()
+
+			// Create base time
+			baseTime := model.GetMillis()
+
+			// Create several playbook runs with different update times
+			run1 := NewBuilder(t).
+				WithTeamID(teamID).
+				WithCreateAt(baseTime - 5000).
+				WithName("Run 1 - oldest").
+				ToPlaybookRun()
+
+			run2 := NewBuilder(t).
+				WithTeamID(teamID).
+				WithCreateAt(baseTime - 4000).
+				WithName("Run 2 - middle").
+				ToPlaybookRun()
+
+			run3 := NewBuilder(t).
+				WithTeamID(teamID).
+				WithCreateAt(baseTime - 3000).
+				WithName("Run 3 - newest").
+				ToPlaybookRun()
+
+			// Create and store the runs
+			run1, err := playbookRunStore.CreatePlaybookRun(run1)
+			require.NoError(t, err)
+			createPlaybookRunChannel(t, store, run1)
+
+			run2, err = playbookRunStore.CreatePlaybookRun(run2)
+			require.NoError(t, err)
+			createPlaybookRunChannel(t, store, run2)
+
+			run3, err = playbookRunStore.CreatePlaybookRun(run3)
+			require.NoError(t, err)
+			createPlaybookRunChannel(t, store, run3)
+
+			// Update run1 with an older timestamp (use direct SQL to control UpdateAt)
+			oldUpdateTime := baseTime - 2000
+			_, err = store.execBuilder(store.db, sq.
+				Update("IR_Incident").
+				Set("Name", "Run 1 - updated older").
+				Set("UpdateAt", oldUpdateTime).
+				Where(sq.Eq{"ID": run1.ID}))
+			require.NoError(t, err)
+
+			// Update run2 with a newer timestamp (use direct SQL to control UpdateAt)
+			newUpdateTime := baseTime - 1000
+			_, err = store.execBuilder(store.db, sq.
+				Update("IR_Incident").
+				Set("Name", "Run 2 - updated newer").
+				Set("UpdateAt", newUpdateTime).
+				Where(sq.Eq{"ID": run2.ID}))
+			require.NoError(t, err)
+
+			// Finish run3
+			finishTime := baseTime - 500
+			err = playbookRunStore.FinishPlaybookRun(run3.ID, finishTime)
+			require.NoError(t, err)
+
+			// Test cases
+			t.Run("get runs updated since a specific time", func(t *testing.T) {
+				// Get runs updated since oldUpdateTime - should include run1, run2, and run3 (run3 is included because finishing it updates UpdateAt to finishTime)
+				results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+					UserID:  "testID",
+					IsAdmin: true,
+				}, app.PlaybookRunFilterOptions{
+					TeamID:        teamID,
+					ActivitySince: oldUpdateTime,
+					Page:          0,
+					PerPage:       10,
+				})
+
+				require.NoError(t, err)
+				require.Equal(t, 3, len(results.Items))
+
+				// Verify run3 is included in the results with the correct EndAt time
+				foundRun3 := false
+				for _, run := range results.Items {
+					if run.ID == run3.ID {
+						foundRun3 = true
+						require.Equal(t, finishTime, run.EndAt)
+						break
+					}
+				}
+				require.True(t, foundRun3, "Run3 should be in the results")
+			})
+
+			t.Run("get runs updated since a later time", func(t *testing.T) {
+				// Get runs updated since newUpdateTime - should include run2 and run3 (run3 is included because finishing it updates UpdateAt to finishTime)
+				results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+					UserID:  "testID",
+					IsAdmin: true,
+				}, app.PlaybookRunFilterOptions{
+					TeamID:        teamID,
+					ActivitySince: newUpdateTime,
+					Page:          0,
+					PerPage:       10,
+				})
+
+				require.NoError(t, err)
+				require.Equal(t, 2, len(results.Items))
+
+				// Verify both run2 and run3 are in the results
+				foundRun2 := false
+				foundRun3 := false
+				for _, run := range results.Items {
+					switch run.ID {
+					case run2.ID:
+						foundRun2 = true
+					case run3.ID:
+						foundRun3 = true
+					}
+				}
+				require.True(t, foundRun2, "Run2 should be in the results")
+				require.True(t, foundRun3, "Run3 should be in the results")
+			})
+
+			t.Run("get runs updated since a time after all updates", func(t *testing.T) {
+				// Get runs updated since after all updates - should include none
+				results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+					UserID:  "testID",
+					IsAdmin: true,
+				}, app.PlaybookRunFilterOptions{
+					TeamID:        teamID,
+					ActivitySince: baseTime + 1000, // Future time
+					Page:          0,
+					PerPage:       10,
+				})
+
+				require.NoError(t, err)
+				require.Equal(t, 0, len(results.Items))
+			})
+
+			t.Run("finished runs are correctly reported", func(t *testing.T) {
+				// Create another run and finish it
+				run4 := NewBuilder(t).
+					WithTeamID(teamID).
+					WithCreateAt(baseTime).
+					WithName("Run 4 - to be finished").
+					ToPlaybookRun()
+
+				run4, err = playbookRunStore.CreatePlaybookRun(run4)
+				require.NoError(t, err)
+				createPlaybookRunChannel(t, store, run4)
+
+				// Finish it with a newer timestamp
+				newerFinishTime := baseTime + 500
+				err = playbookRunStore.FinishPlaybookRun(run4.ID, newerFinishTime)
+				require.NoError(t, err)
+
+				// Get runs with since parameter earlier than the finish
+				results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+					UserID:  "testID",
+					IsAdmin: true,
+				}, app.PlaybookRunFilterOptions{
+					TeamID:        teamID,
+					ActivitySince: baseTime,
+					Page:          0,
+					PerPage:       10,
+				})
+
+				require.NoError(t, err)
+
+				// Verify run4 is returned in the items with correct EndAt
+				foundRun4 := false
+				for _, run := range results.Items {
+					if run.ID == run4.ID {
+						foundRun4 = true
+						require.Equal(t, newerFinishTime, run.EndAt)
+						break
+					}
+				}
+				require.True(t, foundRun4, "Run 4 should be in the results")
+			})
+
+			t.Run("with empty results", func(t *testing.T) {
+				// Add runs in a different team
+				otherTeamID := model.NewId()
+				otherRun := NewBuilder(t).
+					WithTeamID(otherTeamID).
+					WithCreateAt(baseTime).
+					WithName("Run in other team").
+					ToPlaybookRun()
+
+				otherRun, err = playbookRunStore.CreatePlaybookRun(otherRun)
+				require.NoError(t, err)
+				createPlaybookRunChannel(t, store, otherRun)
+
+				// Query with a team filter that won't match anything
+				results, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+					UserID:  "testID",
+					IsAdmin: true,
+				}, app.PlaybookRunFilterOptions{
+					TeamID:        model.NewId(), // Non-existent team
+					ActivitySince: 0,
+					Page:          0,
+					PerPage:       10,
+				})
+
+				require.NoError(t, err)
+				require.Equal(t, 0, len(results.Items))
+			})
+		})
+
+		// Create a separate test for pagination to ensure complete isolation
+		t.Run("pagination works correctly with ActivitySince filter", func(t *testing.T) {
+			// Set up fresh test environment
+			db := setupTestDB(t, driverName)
+			playbookRunStore := setupPlaybookRunStore(t, db)
+			store := setupSQLStore(t, db)
+			setupChannelsTable(t, db)
+
+			// Use a unique team ID for this test to ensure isolation
+			teamID := model.NewId()
+
+			// Create base time
+			baseTime := model.GetMillis()
+			// Create 10 more runs to test pagination
+			playbookRuns := make([]*app.PlaybookRun, 10)
+
+			// Create runs with sequential update times after baseTime
+			for i := 0; i < 10; i++ {
+				run := NewBuilder(t).
+					WithTeamID(teamID).
+					WithCreateAt(baseTime + int64(i*100)).
+					WithName(fmt.Sprintf("Pagination Run %d", i+1)).
+					ToPlaybookRun()
+
+				// Store the run
+				var err error
+				playbookRuns[i], err = playbookRunStore.CreatePlaybookRun(run)
+				require.NoError(t, err)
+				createPlaybookRunChannel(t, store, playbookRuns[i])
+
+				// Set update time to be after baseTime
+				updateTime := baseTime + int64((i+1)*100)
+				playbookRuns[i].UpdateAt = updateTime
+				playbookRuns[i].Name = fmt.Sprintf("Pagination Run %d - updated", i+1)
+				_, err = playbookRunStore.UpdatePlaybookRun(playbookRuns[i])
+				require.NoError(t, err)
+			}
+
+			// Test first page with small page size
+			firstPageResults, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        teamID,
+				ActivitySince: baseTime,
+				Page:          0,
+				PerPage:       5, // Request first 5 items
+			})
+
+			require.NoError(t, err)
+			require.Equal(t, 5, len(firstPageResults.Items), "First page should contain exactly 5 items")
+			require.True(t, firstPageResults.HasMore, "Should indicate there are more results")
+
+			// Test second page
+			secondPageResults, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        teamID,
+				ActivitySince: baseTime,
+				Page:          1,
+				PerPage:       5, // Request next 5 items
+			})
+
+			require.NoError(t, err)
+			require.Equal(t, 5, len(secondPageResults.Items), "Second page should contain exactly 5 items")
+			// We have cleared previous test data to ensure HasMore will be false consistently
+
+			// Verify we have different items on each page (no overlap)
+			firstPageIDs := make(map[string]bool)
+			for _, run := range firstPageResults.Items {
+				firstPageIDs[run.ID] = true
+			}
+
+			for _, run := range secondPageResults.Items {
+				require.False(t, firstPageIDs[run.ID], "Items on second page should not appear on first page")
+			}
+
+			// Verify total count is correct and consistent between pages
+			expectedTotalCount := 10 // Just our 10 new runs, since tests are now isolated
+			require.Equal(t, expectedTotalCount, firstPageResults.TotalCount, "Total count should be correct on first page")
+			require.Equal(t, firstPageResults.TotalCount, secondPageResults.TotalCount, "Total count should be consistent between pages")
+
+			// Verify page count is correct
+			expectedPageCount := (expectedTotalCount + 4) / 5 // Ceiling division for (10/5) = 2
+			require.Equal(t, expectedPageCount, firstPageResults.PageCount, "Page count should be correct")
+
+			// Verify requesting past the end returns empty results but correct metadata
+			beyondEndResults, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
+				UserID:  "testID",
+				IsAdmin: true,
+			}, app.PlaybookRunFilterOptions{
+				TeamID:        teamID,
+				ActivitySince: baseTime,
+				Page:          3, // Past the end
+				PerPage:       5,
+			})
+
+			require.NoError(t, err)
+			require.Equal(t, 0, len(beyondEndResults.Items), "Page beyond the end should be empty")
+			require.Equal(t, expectedTotalCount, beyondEndResults.TotalCount, "Total count should still be correct")
+			require.Equal(t, expectedPageCount, beyondEndResults.PageCount, "Page count should still be correct")
+			require.False(t, beyondEndResults.HasMore, "HasMore should be false for page beyond the end")
 		})
 	}
 }

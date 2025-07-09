@@ -1912,6 +1912,16 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	// Parse types= query string parameters as an array.
 	types := u.Query()["types"]
 
+	// Parse since parameter for timestamp-based activity filtering
+	sinceParam := u.Query().Get("since")
+	var activitySince int64
+	if sinceParam != "" {
+		activitySince, err = strconv.ParseInt(sinceParam, 10, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "bad parameter 'since'")
+		}
+	}
+
 	// Parse omit_ended param - default to false for backward compatibility
 	omitEndedParam := u.Query().Get("omit_ended")
 	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
@@ -1934,6 +1944,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		StartedGTE:              startedGTE,
 		StartedLT:               startedLT,
 		Types:                   types,
+		ActivitySince:           activitySince,
 		OmitEnded:               omitEnded,
 	}
 
