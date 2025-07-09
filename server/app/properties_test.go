@@ -37,14 +37,14 @@ func TestPropertyField_SupportsOptions(t *testing.T) {
 			expectResult: false,
 		},
 		{
-			name:         "user type does not support options",
+			name:         "user type supports options",
 			fieldType:    model.PropertyFieldTypeUser,
-			expectResult: false,
+			expectResult: true,
 		},
 		{
-			name:         "multiuser type does not support options",
+			name:         "multiuser type supports options",
 			fieldType:    model.PropertyFieldTypeMultiuser,
-			expectResult: false,
+			expectResult: true,
 		},
 	}
 
