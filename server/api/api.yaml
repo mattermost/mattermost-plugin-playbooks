@@ -109,6 +109,14 @@ paths:
           example: server down
           schema:
             type: string
+        - name: omit_ended
+          in: query
+          description: When set to true, only active runs (with EndAt = 0) are returned. When false or omitted, both active and ended runs are returned.
+          required: false
+          example: true
+          schema:
+            type: boolean
+            default: false
       x-codeSamples:
         - lang: curl
           source: |
