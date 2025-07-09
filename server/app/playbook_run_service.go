@@ -1811,7 +1811,6 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 
 	// Record the last (successful) run time.
 	timestamp := model.GetMillis()
-
 	playbookRun.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = timestamp
 	updateChecklistAndItemTimestamp(&playbookRun.Checklists[checklistNumber], &playbookRun.Checklists[checklistNumber].Items[itemNumber], timestamp)
 
@@ -2020,6 +2019,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
 	}
 	updateAllChecklistsAndItemsTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
+
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2045,6 +2045,7 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
 	}
 	updateAllChecklistsAndItemsTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
+
 	checklist := playbookRunToModify.Checklists[checklistNumber]
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)

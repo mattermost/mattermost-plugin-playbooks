@@ -11,4 +11,6 @@ SET @preparedStatement = (SELECT IF(
 
 PREPARE addColumnIfNotExists FROM @preparedStatement;
 EXECUTE addColumnIfNotExists;
-DEALLOCATE PREPARE addColumnIfNotExists;UPDATE IR_Incident SET UpdateAt = CreateAt;
+DEALLOCATE PREPARE addColumnIfNotExists;
+
+UPDATE IR_Incident SET UpdateAt = CreateAt;
