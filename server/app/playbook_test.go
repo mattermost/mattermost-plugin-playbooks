@@ -67,7 +67,7 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				WebhookOnStatusUpdateURLs:    []string{"testurl"},
 				WebhookOnStatusUpdateEnabled: true,
 			},
-			expected: []byte(`"checklists":[{"id":"checklist1","title":"checklist 1","items":[],"items_order":[]}]`),
+			expected: []byte(`"checklists":[{"id":"checklist1","title":"checklist 1","items":[],"items_order":[],"update_at":0}]`),
 			wantErr:  false,
 		},
 	}
