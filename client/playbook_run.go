@@ -231,6 +231,10 @@ type PlaybookRunListOptions struct {
 	// Defaults to blank (no filter).
 	PlaybookID string `url:"playbook_id,omitempty"`
 
+	// ChannelID filters playbook runs associated with the given channel ID.
+	// Defaults to blank (no filter).
+	ChannelID string `url:"channel_id,omitempty"`
+
 	// ActiveGTE filters playbook runs that were active after (or equal) to the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	ActiveGTE int64 `url:"active_gte,omitempty"`
