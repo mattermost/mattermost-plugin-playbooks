@@ -47,7 +47,7 @@
         "type": "bool",
         "display_name": "Enable Incremental Updates",
         "help_text": "When enabled, sends incremental WebSocket updates instead of full playbook run objects for better performance.",
-        "default": false
+        "default": true
       }
     ]
   }
