@@ -33,6 +33,10 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
             // # Navigate to the application, starting in a non-run channel.
             cy.visit(`/${testTeam.name}/`);
 
+            // # Wait for page to fully load and settle
+            // With incremental updates enabled, UI rendering may take additional time
+            cy.wait(1000);
+
             // * Check time bar in the channel section
             // * as an indicator of page stability / end of rendering
             cy.findByText('Today').should('be.visible');
