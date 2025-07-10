@@ -194,6 +194,11 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # Mark the run as finished
             cy.apiFinishRun(finishedPlaybookRun.id);
 
+            // # Wait for incremental update to propagate
+            // When incremental updates are enabled, the WebSocket update takes time to process
+            // This ensures the run status change has been applied before testing read-only behavior
+            cy.wait(2000);
+
             // # click on the field
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').click();
 
