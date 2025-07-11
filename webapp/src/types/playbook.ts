@@ -101,6 +101,7 @@ export interface Checklist {
     title: string;
     items: ChecklistItem[];
     id?: string; // Added to support find/filter operations by ID
+    update_at?: number; // Timestamp for idempotency checks
 }
 
 export enum ChecklistItemState {
@@ -122,6 +123,7 @@ export interface ChecklistItem {
     command_last_run: number;
     due_date: number;
     task_actions: TaskAction[];
+    update_at?: number; // Timestamp for idempotency checks
 }
 
 export interface TaskAction {

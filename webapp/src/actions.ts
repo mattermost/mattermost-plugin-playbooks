@@ -74,6 +74,12 @@ import {
     ShowPlaybookActionsModal,
     ShowPostMenuModal,
     ShowRunActionsModal,
+    WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED,
+    WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED,
+    WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
+    WebsocketPlaybookChecklistItemUpdateReceived,
+    WebsocketPlaybookChecklistUpdateReceived,
+    WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
@@ -369,4 +375,20 @@ export const openBackstageRHS = (section: BackstageRHSSection, viewMode: Backsta
 export const publishTemplates = (templates: PresetTemplate[]): PublishTemplates => ({
     type: PUBLISH_TEMPLATES,
     templates,
+});
+
+// Granular websocket event action creators
+export const websocketPlaybookRunIncrementalUpdateReceived = (data: import('src/types/websocket_events').PlaybookRunUpdate): WebsocketPlaybookRunIncrementalUpdateReceived => ({
+    type: WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
+    data,
+});
+
+export const websocketPlaybookChecklistUpdateReceived = (data: import('src/types/websocket_events').ChecklistUpdatePayload): WebsocketPlaybookChecklistUpdateReceived => ({
+    type: WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED,
+    data,
+});
+
+export const websocketPlaybookChecklistItemUpdateReceived = (data: import('src/types/websocket_events').ChecklistItemUpdatePayload): WebsocketPlaybookChecklistItemUpdateReceived => ({
+    type: WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED,
+    data,
 });

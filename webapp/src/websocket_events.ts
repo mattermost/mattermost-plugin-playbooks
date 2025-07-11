@@ -20,17 +20,13 @@ import {
     playbookRunUpdated,
     receivedTeamPlaybookRuns,
     removedFromPlaybookRunChannel,
+    websocketPlaybookChecklistItemUpdateReceived,
+    websocketPlaybookChecklistUpdateReceived,
+    websocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/actions';
-import {fetchPlaybookRun, fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
-import {clientId, getRun, myPlaybookRunsMap} from 'src/selectors';
-import {
-    ChecklistItemUpdatePayload,
-    ChecklistUpdate,
-    ChecklistUpdatePayload,
-    PlaybookRunUpdate,
-} from 'src/types/websocket_events';
-
-import {Checklist} from './types/playbook';
+import {fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
+import {clientId, myPlaybookRunsMap} from 'src/selectors';
+import {ChecklistItemUpdatePayload, ChecklistUpdatePayload, PlaybookRunUpdate} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
@@ -66,149 +62,15 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
     };
 }
 
-// Separate handler for incremental updates
+// Simplified handler for incremental updates - just dispatch the action
 export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
         const data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
-
-        // This is an incremental update
-        const update = data;
-        const state = getState();
-        const currentRun = getRun(update.id)(state);
-
-        if (!currentRun) {
-            // If we don't have the current state, we need to fetch the full playbook run
-            // This should be rare but can happen if client state gets out of sync
-            fetchAndUpdatePlaybookRun(update.id, dispatch);
-            return;
-        }
-
-        // Clone the current run to create an updated version
-        const updatedRun = {...currentRun};
-
-        // Apply the changed fields to the run
-        applyChangedFields(updatedRun, update.changed_fields);
-
-        // Dispatch the updated run
-        dispatchRunUpdate(updatedRun, dispatch);
+        dispatch(websocketPlaybookRunIncrementalUpdateReceived(data));
     };
-}
-
-// Helper function to apply changed fields to a playbook run
-function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['changed_fields']) {
-    // Apply simple field changes first
-    for (const [field, value] of Object.entries(changedFields)) {
-        // Skip special fields that need custom handling
-        if (field === 'checklists' || field === 'timeline_events') {
-            continue;
-        }
-
-        // Apply the change to the run
-        (run as any)[field] = value;
-    }
-
-    // Handle timeline events specially by merging them with existing events
-    if (changedFields.timeline_events) {
-        applyTimelineUpdates(run, changedFields.timeline_events);
-    }
-
-    // Apply checklist updates if provided by the server
-    if (changedFields.checklists) {
-        // The 'checklists' field contains updates that need to be applied
-        // to the existing checklists
-        applyChecklistUpdates(run, changedFields.checklists);
-    }
-}
-
-// Helper function to apply timeline updates
-function applyTimelineUpdates(run: PlaybookRun, timelineEvents: any[]) {
-    // If we don't have any existing timeline events, just set them
-    if (!run.timeline_events || !Array.isArray(run.timeline_events)) {
-        run.timeline_events = timelineEvents;
-    } else {
-        // Merge new timeline events with existing ones
-        // Create a map of existing events by ID for quick lookup
-        const existingEventsMap = new Map();
-        run.timeline_events.forEach((event) => {
-            if (event && event.id) {
-                existingEventsMap.set(event.id, event);
-            }
-        });
-
-        // Process each event from the update
-        timelineEvents.forEach((newEvent) => {
-            if (newEvent && newEvent.id) {
-                // If an event with this ID already exists, replace it
-                // Otherwise, it's a new event to add
-                existingEventsMap.set(newEvent.id, newEvent);
-            }
-        });
-
-        // Convert the map back to an array and sort by create_at if available
-        run.timeline_events = Array.from(existingEventsMap.values());
-        run.timeline_events.sort((a, b) => (a.create_at || 0) - (b.create_at || 0));
-    }
-}
-
-// Helper function to apply checklist updates
-function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]) {
-    for (const update of updates) {
-        // Find the checklist to update
-        const checklistIndex = run.checklists.findIndex((cl: Checklist) => cl.id === update.id);
-        if (checklistIndex === -1) {
-            continue;
-        }
-
-        // Make a copy of the checklist
-        const updatedChecklists = [...run.checklists];
-        const checklist = {...run.checklists[checklistIndex]};
-
-        // Apply checklist field updates
-        if (update.fields) {
-            for (const [field, value] of Object.entries(update.fields)) {
-                (checklist as any)[field] = value;
-            }
-        }
-
-        // Apply item updates
-        if (update.item_updates && update.item_updates.length > 0) {
-            checklist.items = [...checklist.items]; // Make a copy of the items array
-
-            for (const itemUpdate of update.item_updates) {
-                const itemIndex = checklist.items.findIndex((item) => item.id === itemUpdate.id);
-                if (itemIndex === -1) {
-                    continue;
-                }
-
-                // Update the item with changed fields
-                const updatedItem = {
-                    ...checklist.items[itemIndex],
-                    ...itemUpdate.fields,
-                };
-                checklist.items[itemIndex] = updatedItem;
-            }
-        }
-
-        // Apply item deletions
-        if (update.item_deletes && update.item_deletes.length > 0) {
-            checklist.items = checklist.items.filter((item: any) => {
-                // Don't include items whose IDs are in the item_deletes array
-                return !update.item_deletes?.includes(item.id as string);
-            });
-        }
-
-        // Apply item insertions
-        if (update.item_inserts && update.item_inserts.length > 0) {
-            checklist.items = [...checklist.items, ...update.item_inserts];
-        }
-
-        // Update the checklist in the run
-        updatedChecklists[checklistIndex] = checklist;
-        run.checklists = updatedChecklists;
-    }
 }
 
 export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispatch: Dispatch) {
@@ -301,174 +163,25 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
     };
 }
 
-// Helper function to fetch and update a playbook run - used when state is not available
-function fetchAndUpdatePlaybookRun(runID: string, dispatch: Dispatch) {
-    fetchPlaybookRun(runID).then((fullRun) => {
-        dispatchRunUpdate(fullRun, dispatch);
-    }).catch((error) => {
-        // eslint-disable-next-line no-console
-        console.error('Error fetching playbook run:', error);
-    });
-}
-
-// Helper function to dispatch run updates and notify subscribers
-function dispatchRunUpdate(run: PlaybookRun, dispatch: Dispatch) {
-    dispatch(playbookRunUpdated(run));
-    websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(run));
-}
-
-// Handler for playbook_checklist_updated events
+// Simplified handler for checklist updates - just dispatch the action
 export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
-
-        const data = JSON.parse(msg.data.payload);
-
-        // Get the update data from the payload which contains PlaybookRunID and Update
-        const fullUpdateData = data as ChecklistUpdatePayload;
-        const runID = fullUpdateData.playbook_run_id;
-        const updateData = fullUpdateData.update;
-
-        // Initialize updateData if it's undefined
-        if (!updateData) {
-            // eslint-disable-next-line no-console
-            console.error('Update data missing in checklist update event');
-            return;
-        }
-
-        // Skip if missing checklist_updated_at field (for backward compatibility)
-        if (!updateData.checklist_updated_at) {
-            updateData.checklist_updated_at = Date.now();
-        }
-
-        const state = getState();
-        const currentRun = getRun(fullUpdateData.playbook_run_id)(state);
-
-        if (!currentRun) {
-            // If we don't have the current state, fetch the full playbook run
-            fetchAndUpdatePlaybookRun(runID, dispatch);
-            return;
-        }
-
-        // Clone the current run to create an updated version
-        const updatedRun = {...currentRun};
-        const updatedChecklists = [...updatedRun.checklists];
-
-        // Find the checklist to update
-        const checklistIndex = updatedRun.checklists.findIndex((cl: any) => cl.id === updateData.id);
-        if (checklistIndex === -1) {
-            return;
-        }
-
-        // Make a copy of the checklist
-        const checklist = {...updatedRun.checklists[checklistIndex]};
-
-        // Apply checklist field updates
-        if (updateData.fields) {
-            for (const [field, value] of Object.entries(updateData.fields)) {
-                (checklist as any)[field] = value;
-            }
-        }
-
-        // Apply item deletions
-        if (updateData.item_deletes && updateData.item_deletes.length > 0) {
-            checklist.items = checklist.items.filter((item: any) => {
-                // Don't include items whose IDs are in the item_deletes array
-                return !updateData.item_deletes?.includes(item.id as string);
-            });
-        }
-
-        // Apply item insertions
-        if (updateData.item_inserts && updateData.item_inserts.length > 0) {
-            checklist.items = [...checklist.items, ...updateData.item_inserts];
-        }
-
-        // Update the checklist in the run
-        updatedChecklists[checklistIndex] = checklist;
-        updatedRun.checklists = updatedChecklists;
-
-        // Dispatch the updated run
-        dispatchRunUpdate(updatedRun, dispatch);
+        const data = JSON.parse(msg.data.payload) as ChecklistUpdatePayload;
+        dispatch(websocketPlaybookChecklistUpdateReceived(data));
     };
 }
 
-// Handler for playbook_checklist_item_updated events
+// Simplified handler for checklist item updates - just dispatch the action
 export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
-
         const data = JSON.parse(msg.data.payload) as ChecklistItemUpdatePayload;
-
-        // Initialize update data if it's undefined
-        if (!data.update) {
-            // eslint-disable-next-line no-console
-            console.error('Update data missing in checklist item update event');
-            return;
-        }
-
-        const itemData = data.update;
-        const runID = data.playbook_run_id;
-        const checklistID = data.checklist_id;
-
-        if (!itemData.id || !runID || !checklistID) {
-            // eslint-disable-next-line no-console
-            console.error('Missing required fields in checklist item update event');
-            return;
-        }
-
-        const state = getState();
-        const currentRun = getRun(runID)(state);
-
-        if (!currentRun) {
-            // If we don't have the current state, fetch the full playbook run
-            fetchAndUpdatePlaybookRun(runID, dispatch);
-            return;
-        }
-
-        // Clone the current run to create an updated version
-        const updatedRun = {...currentRun};
-        const updatedChecklists = [...updatedRun.checklists];
-
-        // Find the checklist that contains the item
-        const checklist = updatedRun.checklists.find((cl: any) => cl.id === checklistID);
-        if (!checklist) {
-            return;
-        }
-
-        // Find the item to update
-        const itemIndex = checklist.items.findIndex((item: any) => item.id === itemData.id);
-        if (itemIndex === -1) {
-            return;
-        }
-
-        // Create a copy of the items array and the specific item
-        const itemsCopy = [...checklist.items];
-        const updatedItem = {...itemsCopy[itemIndex]};
-
-        // Apply all fields from the update
-        if (itemData.fields) {
-            for (const [key, value] of Object.entries(itemData.fields)) {
-                (updatedItem as any)[key] = value;
-            }
-        }
-
-        // Update the item in the items array
-        itemsCopy[itemIndex] = updatedItem;
-
-        // Update the checklist with the new items array
-        const checklistIndex = updatedRun.checklists.findIndex((cl: any) => cl.id === checklistID);
-        updatedChecklists[checklistIndex] = {
-            ...checklist,
-            items: itemsCopy,
-        };
-        updatedRun.checklists = updatedChecklists;
-
-        // Dispatch the updated run
-        dispatchRunUpdate(updatedRun, dispatch);
+        dispatch(websocketPlaybookChecklistItemUpdateReceived(data));
     };
 }
 

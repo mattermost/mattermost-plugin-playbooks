@@ -12,6 +12,7 @@ import {
     handleWebsocketPlaybookChecklistUpdated,
     handleWebsocketPlaybookRunUpdatedIncremental,
 } from './websocket_events';
+import {WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED, WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED, WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
 
 import {PlaybookRun, PlaybookRunStatus} from './types/playbook_run';
 import {ChecklistUpdate, PlaybookRunUpdate} from './types/websocket_events';
@@ -179,7 +180,7 @@ describe('incremental updates', () => {
             });
         });
 
-        it('handles single scalar field update', () => {
+        it('dispatches the correct action with update data', () => {
             // Create a handler with our mocks
             const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
@@ -202,54 +203,29 @@ describe('incremental updates', () => {
             // Call the handler
             handler(msg);
 
-            // Check dispatch was called with the updated playbook run
+            // Check dispatch was called with the correct action
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Check that only the name was updated
-            expect(dispatchedAction.playbookRun.name).toBe('Updated Name');
-            expect(dispatchedAction.playbookRun.owner_user_id).toBe(testPlaybookRun.owner_user_id); // unchanged
-
-            // Make sure other fields weren't changed
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-            expect(dispatchedAction.playbookRun.team_id).toBe(testPlaybookRun.team_id);
+            // Verify action type and data
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
         });
 
-        it('handles multiple scalar field updates', () => {
+        it('handles missing payload gracefully', () => {
             // Create a handler with our mocks
             const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
-            // Create an update with multiple field changes
-            const update: PlaybookRunUpdate = {
-                id: testPlaybookRun.id,
-                playbook_run_updated_at: 1000,
-                changed_fields: {
-                    name: 'Updated Name',
-                    owner_user_id: 'user_2',
-                },
-            };
-
-            // Create the WebSocket message
+            // Create a WebSocket message without payload
             const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
+                data: {},
             } as WebSocketMessage<{payload: string}>;
 
             // Call the handler
             handler(msg);
 
-            // Check dispatch was called with the updated playbook run
-            expect(testDispatch).toHaveBeenCalledTimes(1);
-            const dispatchedAction = testDispatch.mock.calls[0][0];
-
-            // Check that all updates were applied correctly
-            expect(dispatchedAction.playbookRun.name).toBe('Updated Name');
-            expect(dispatchedAction.playbookRun.owner_user_id).toBe('user_2');
-
-            // Make sure other fields weren't changed
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-            expect(dispatchedAction.playbookRun.team_id).toBe(testPlaybookRun.team_id);
+            // Check dispatch was not called
+            expect(testDispatch).not.toHaveBeenCalled();
         });
 
         it('handles nested field updates', () => {
@@ -287,11 +263,13 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Check that all updates were applied correctly
-            expect(dispatchedAction.playbookRun.name).toBe('Updated Name');
-            expect(dispatchedAction.playbookRun.status_update_enabled).toBe(true);
-            expect(dispatchedAction.playbookRun.broadcast_channel_ids).toEqual(['channel_1', 'channel_2']);
-            expect(dispatchedAction.playbookRun.metrics_data).toEqual([
+            // Verify action type and that data contains the update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name');
+            expect(dispatchedAction.data.changed_fields.status_update_enabled).toBe(true);
+            expect(dispatchedAction.data.changed_fields.broadcast_channel_ids).toEqual(['channel_1', 'channel_2']);
+            expect(dispatchedAction.data.changed_fields.metrics_data).toEqual([
                 {
                     metric_config_id: 'metric_1',
                     value: 42,
@@ -546,7 +524,7 @@ describe('incremental updates', () => {
             });
         });
 
-        it('handles single field update (title)', () => {
+        it('dispatches the correct checklist update action', () => {
             // Create a handler with our mocks
             const handler = handleWebsocketPlaybookChecklistUpdated(testGetState, testDispatch);
 
@@ -573,18 +551,13 @@ describe('incremental updates', () => {
             // Call the handler
             handler(msg);
 
-            // Check dispatch was called
+            // Check dispatch was called with the correct action
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Check that only the title was updated
-            const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
-            expect(updatedChecklist.title).toBe('Updated Checklist Title');
-
-            // Make sure items were preserved unchanged
-            expect(updatedChecklist.items.length).toBe(2);
-            expect(updatedChecklist.items[0].id).toBe('item_1');
-            expect(updatedChecklist.items[1].id).toBe('item_2');
+            // Verify action type and data
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
         });
 
         it('handles item deletions', () => {
@@ -759,7 +732,7 @@ describe('incremental updates', () => {
             });
         });
 
-        it('handles single field updates (assignee)', () => {
+        it('dispatches the correct checklist item update action', () => {
             // Create a handler with our mocks
             const handler = handleWebsocketPlaybookChecklistItemUpdated(testGetState, testDispatch);
 
@@ -789,17 +762,13 @@ describe('incremental updates', () => {
             // Call the handler
             handler(msg);
 
-            // Verify dispatch was called with the correct action type and run ID
+            // Verify dispatch was called with the correct action
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
 
-            // Verify only the assignee was updated
-            const updatedItem = dispatchedAction.playbookRun.checklists[0].items[0];
-            expect(updatedItem.assignee_id).toBe('user_2');
-            expect(updatedItem.state).toBe(item.state); // unchanged
-            expect(updatedItem.title).toBe(item.title); // unchanged
+            // Verify action type and data
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
         });
 
         it('handles single field updates (state)', () => {

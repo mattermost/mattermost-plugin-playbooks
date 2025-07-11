@@ -44,6 +44,11 @@ export const SET_CHECKLIST_ITEMS_FILTER = manifest.id + '_set_checklist_items_fi
 export const OPEN_BACKSTAGE_RHS = manifest.id + '_open_backstage_rhs';
 export const CLOSE_BACKSTAGE_RHS = manifest.id + '_close_backstage_rhs';
 
+// Granular websocket event actions
+export const WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED = manifest.id + '_ws_run_incremental_update_received';
+export const WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED = manifest.id + '_ws_checklist_update_received';
+export const WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED = manifest.id + '_ws_checklist_item_update_received';
+
 // This action is meant to be used by mattermost-webapp
 // so we respect their naming convention (all caps)
 export const PUBLISH_TEMPLATES = (manifest.id + '_PUBLISH_TEMPLATES').toUpperCase();
@@ -195,6 +200,22 @@ export interface OpenBackstageRHS {
 
 export interface CloseBackstageRHS {
     type: typeof CLOSE_BACKSTAGE_RHS;
+}
+
+// Granular websocket event action interfaces
+export interface WebsocketPlaybookRunIncrementalUpdateReceived {
+    type: typeof WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED;
+    data: import('./websocket_events').PlaybookRunUpdate;
+}
+
+export interface WebsocketPlaybookChecklistUpdateReceived {
+    type: typeof WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED;
+    data: import('./websocket_events').ChecklistUpdatePayload;
+}
+
+export interface WebsocketPlaybookChecklistItemUpdateReceived {
+    type: typeof WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED;
+    data: import('./websocket_events').ChecklistItemUpdatePayload;
 }
 
 export interface PublishTemplates {
