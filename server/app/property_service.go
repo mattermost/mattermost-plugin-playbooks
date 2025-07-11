@@ -71,6 +71,32 @@ func (s *propertyService) GetPropertyField(propertyID string) (*PropertyField, e
 	return resultField, nil
 }
 
+func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField, error) {
+	searchOpts := model.PropertyFieldSearchOpts{
+		GroupID:        s.groupID,
+		TargetType:     PropertyTargetTypePlaybook,
+		TargetID:       playbookID,
+		IncludeDeleted: false,
+		PerPage:        1000, // Set a reasonable limit
+	}
+
+	mmPropertyFields, err := s.api.Property.SearchPropertyFields(s.groupID, playbookID, searchOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to search property fields")
+	}
+
+	propertyFields := make([]PropertyField, 0, len(mmPropertyFields))
+	for _, mmField := range mmPropertyFields {
+		propertyField, err := NewPropertyFieldFromMattermostPropertyField(mmField)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert property field")
+		}
+		propertyFields = append(propertyFields, *propertyField)
+	}
+
+	return propertyFields, nil
+}
+
 func (s *propertyService) UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "invalid property field")
