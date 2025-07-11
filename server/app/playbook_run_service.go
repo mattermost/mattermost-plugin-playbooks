@@ -121,7 +121,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		s.poster.PublishWebsocketEventToChannel(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, currentRun.ChannelID)
 		if len(nonMembers) > 0 {
 			for _, nonMember := range nonMembers {
-				s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
+				s.poster.PublishWebsocketEventToUser(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, nonMember)
 			}
 		}
 
@@ -141,7 +141,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 				s.poster.PublishWebsocketEventToChannel(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, currentRun.ChannelID)
 				if len(nonMembers) > 0 {
 					for _, nonMember := range nonMembers {
-						s.poster.PublishWebsocketEventToUser(playbookRunUpdatedIncrementalWSEvent, update, nonMember)
+						s.poster.PublishWebsocketEventToUser(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, nonMember)
 					}
 				}
 			}
