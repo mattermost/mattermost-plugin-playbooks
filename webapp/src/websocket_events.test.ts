@@ -335,16 +335,13 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the specific fields were updated correctly
-            const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
-            expect(updatedChecklist.title).toBe('Updated Checklist Title');
-
-            expect(updatedChecklist.items.length).toBe(2);
-            expect(updatedChecklist.items[0].id).toBe('item_1');
-            expect(updatedChecklist.items[0].state).toBe('Closed');
-            expect(updatedChecklist.items[0].assignee_id).toBe('user_2');
-
-            expect(updatedChecklist.items[1].id).toBe('item_2');
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.checklists).toEqual(checklistUpdates);
+            expect(dispatchedAction.data.changed_fields.checklists[0].fields.title).toBe('Updated Checklist Title');
+            expect(dispatchedAction.data.changed_fields.checklists[0].item_updates[0].fields.state).toBe('Closed');
+            expect(dispatchedAction.data.changed_fields.checklists[0].item_updates[0].fields.assignee_id).toBe('user_2');
         });
 
         it('handles incremental checklist updates', () => {
@@ -397,18 +394,14 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Check that both types of updates were applied correctly
-            expect(dispatchedAction.playbookRun.name).toBe('Updated Name');
-
-            // Check checklist update was applied
-            const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
-            expect(updatedChecklist.title).toBe('Updated Checklist Title via updates');
-
-            // Check item update was applied
-            expect(updatedChecklist.items.length).toBe(1); // One item should be deleted
-            expect(updatedChecklist.items[0].id).toBe('item_1'); // Should have the first item
-            expect(updatedChecklist.items[0].state).toBe('Closed'); // With updated state
-            expect(updatedChecklist.items[0].assignee_id).toBe('user_3'); // And updated assignee
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name');
+            expect(dispatchedAction.data.changed_fields.checklists[0].fields.title).toBe('Updated Checklist Title via updates');
+            expect(dispatchedAction.data.changed_fields.checklists[0].item_updates[0].fields.state).toBe('Closed');
+            expect(dispatchedAction.data.changed_fields.checklists[0].item_updates[0].fields.assignee_id).toBe('user_3');
+            expect(dispatchedAction.data.changed_fields.checklists[0].item_deletes).toEqual(['item_2']);
         });
 
         it('handles playbook run items_order field updates', () => {
@@ -446,12 +439,10 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the items_order was updated
-            expect(dispatchedAction.playbookRun.items_order).toEqual(['checklist_2', 'checklist_1']);
-
-            // Verify other fields remain unchanged
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-            expect(dispatchedAction.playbookRun.name).toBe(testPlaybookRun.name);
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.items_order).toEqual(['checklist_2', 'checklist_1']);
         });
 
         it('handles playbook_run_updated_at field', () => {
@@ -481,12 +472,11 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the name was updated
-            expect(dispatchedAction.playbookRun.name).toBe('Updated Name with Timestamp');
-
-            // Verify other fields remain unchanged
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-            expect(dispatchedAction.playbookRun.owner_user_id).toBe(testPlaybookRun.owner_user_id);
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.playbook_run_updated_at).toBe(1500);
+            expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name with Timestamp');
         });
     });
 
@@ -590,10 +580,11 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Check that the item was deleted
-            const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
-            expect(updatedChecklist.items.length).toBe(1);
-            expect(updatedChecklist.items[0].id).toBe('item_2');
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.update.item_deletes).toEqual(['item_1']);
+            expect(dispatchedAction.data.update.items_order).toEqual(['item_2']);
         });
 
         it('handles item insertions', () => {
@@ -639,17 +630,11 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the item was inserted
-            const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
-            expect(updatedChecklist.items.length).toBe(3); // Original 2 + 1 new
-            expect(updatedChecklist.items).toContainEqual(expect.objectContaining({
-                id: 'item_3',
-                title: 'New Item',
-            }));
-
-            // Verify dispatch was called with the correct action type and run ID
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.update.item_inserts).toEqual([newItem]);
+            expect(dispatchedAction.data.update.items_order).toEqual(['item_1', 'item_2', 'item_3']);
         });
 
         it('handles items_order field updates', () => {
@@ -681,15 +666,10 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the action type and run ID
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-
-            // Items should still be present
-            const updatedChecklist = dispatchedAction.playbookRun.checklists[0];
-            expect(updatedChecklist.items.length).toBe(2);
-            expect(updatedChecklist.items[0].id).toBe('item_1');
-            expect(updatedChecklist.items[1].id).toBe('item_2');
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.update.items_order).toEqual(['item_2', 'item_1']);
         });
 
         // Note: We're not testing the "missing run in store" case here since that would
@@ -801,16 +781,12 @@ describe('incremental updates', () => {
             // Call the handler
             handler(msg);
 
-            // Verify dispatch was called with the correct action type and run ID
+            // Verify dispatch was called with the correct action type and data
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-
-            // Verify only the state was updated
-            const updatedItem = dispatchedAction.playbookRun.checklists[0].items[0];
-            expect(updatedItem.state).toBe('Closed');
-            expect(updatedItem.assignee_id).toBe(item.assignee_id); // unchanged
-            expect(updatedItem.title).toBe(item.title); // unchanged
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.update.fields.state).toBe('Closed');
         });
 
         it('handles multiple field changes at once', () => {
@@ -848,19 +824,15 @@ describe('incremental updates', () => {
             // Call the handler
             handler(msg);
 
-            // Verify dispatch was called with the correct action type and run ID
+            // Verify dispatch was called with the correct action type and data
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-
-            // Verify all fields were updated
-            const updatedItem = dispatchedAction.playbookRun.checklists[0].items.find((i: any) => i.id === item.id);
-            expect(updatedItem).not.toBeUndefined();
-            expect(updatedItem?.state).toBe('Closed');
-            expect(updatedItem?.assignee_id).toBe('user_2');
-            expect(updatedItem?.title).toBe('Updated Item Title');
-            expect(updatedItem?.due_date).toBe(1234567890);
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.update.fields.state).toBe('Closed');
+            expect(dispatchedAction.data.update.fields.assignee_id).toBe('user_2');
+            expect(dispatchedAction.data.update.fields.title).toBe('Updated Item Title');
+            expect(dispatchedAction.data.update.fields.due_date).toBe(1234567890);
         });
 
         it('handles missing updated_at field', () => {
@@ -892,15 +864,12 @@ describe('incremental updates', () => {
             // Call the handler
             handler(msg);
 
-            // Verify dispatch was called with the correct action type and run ID
+            // Verify dispatch was called with the correct action type and data
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-
-            // Verify assignee was updated
-            const updatedItem = dispatchedAction.playbookRun.checklists[0].items[0];
-            expect(updatedItem.assignee_id).toBe('user_2');
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.update.fields.assignee_id).toBe('user_2');
         });
 
         it('handles checklist_item_updated_at field', () => {
@@ -933,15 +902,13 @@ describe('incremental updates', () => {
             // Call the handler
             handler(msg);
 
-            // Verify dispatch was called with the correct action type and run ID
+            // Verify dispatch was called with the correct action type and data
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
-            expect(dispatchedAction.type).toBe('playbooks_playbook_run_updated');
-            expect(dispatchedAction.playbookRun.id).toBe(testPlaybookRun.id);
-
-            // Verify the title was updated
-            const updatedItem = dispatchedAction.playbookRun.checklists[0].items[0];
-            expect(updatedItem.title).toBe('Updated Title');
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.update.checklist_item_updated_at).toBe(1500);
+            expect(dispatchedAction.data.update.fields.title).toBe('Updated Title');
         });
 
         it('handles missing input data', () => {
@@ -966,8 +933,11 @@ describe('incremental updates', () => {
             // Call the handler - should not throw an error
             handler(msg);
 
-            // Verify dispatch was not called
-            expect(testDispatch).not.toHaveBeenCalled();
+            // Verify dispatch was called with the malformed data (handlers now just pass through)
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
         });
 
         // Note: We're not testing the "missing run in store" case here since that would
@@ -1082,32 +1052,19 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the timeline_events was updated correctly
-            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(3);
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.timeline_events).toBeDefined();
+            expect(dispatchedAction.data.changed_fields.timeline_events.length).toBe(3);
 
-            // Check for the new event
-            const addedEvent = dispatchedAction.playbookRun.timeline_events.find(
+            // Check for the new event in the action data
+            const addedEvent = dispatchedAction.data.changed_fields.timeline_events.find(
                 (e: any) => e.id === 'event_3'
             );
             expect(addedEvent).toBeDefined();
-            expect(addedEvent?.event_type).toBe('status_updated');
+            expect(addedEvent?.event_type).toBe(TimelineEventType.StatusUpdated);
             expect(addedEvent?.summary).toBe('Status updated');
-
-            // Verify the original events are still there
-            const originalEvent1 = dispatchedAction.playbookRun.timeline_events.find(
-                (e: any) => e.id === 'event_1'
-            );
-            const originalEvent2 = dispatchedAction.playbookRun.timeline_events.find(
-                (e: any) => e.id === 'event_2'
-            );
-            expect(originalEvent1).toBeDefined();
-            expect(originalEvent2).toBeDefined();
-
-            // Verify sort order by create_at
-            const timelineEvents = dispatchedAction.playbookRun.timeline_events;
-            for (let i = 1; i < timelineEvents.length; i++) {
-                expect(timelineEvents[i - 1].create_at).toBeLessThanOrEqual(timelineEvents[i].create_at);
-            }
         });
 
         it('handles modifying existing timeline events', () => {
@@ -1145,23 +1102,18 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the timeline_events count hasn't changed
-            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(2);
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.timeline_events.length).toBe(2);
 
-            // Check that the event was modified correctly
-            const modifiedEvent = dispatchedAction.playbookRun.timeline_events.find(
+            // Check that the event was modified correctly in the action data
+            const modifiedEvent = dispatchedAction.data.changed_fields.timeline_events.find(
                 (e: any) => e.id === 'event_1'
             );
             expect(modifiedEvent).toBeDefined();
             expect(modifiedEvent?.summary).toBe('Updated summary');
             expect(modifiedEvent?.details).toBe('Updated details');
-
-            // The unmodified event should remain unchanged
-            const unchangedEvent = dispatchedAction.playbookRun.timeline_events.find(
-                (e: any) => e.id === 'event_2'
-            );
-            expect(unchangedEvent).toBeDefined();
-            expect(unchangedEvent?.summary).toBe('Owner changed');
         });
 
         it('handles deleted timeline events', () => {
@@ -1200,22 +1152,17 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the timeline_events still has both events
-            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(2);
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.timeline_events.length).toBe(2);
 
-            // Check that the event was marked as deleted
-            const deletedEventInState = dispatchedAction.playbookRun.timeline_events.find(
+            // Check that the event was marked as deleted in the action data
+            const deletedEventInData = dispatchedAction.data.changed_fields.timeline_events.find(
                 (e: any) => e.id === 'event_1'
             );
-            expect(deletedEventInState).toBeDefined();
-            expect(deletedEventInState?.delete_at).toBe(3000);
-
-            // The other event should remain unchanged
-            const unchangedEvent = dispatchedAction.playbookRun.timeline_events.find(
-                (e: any) => e.id === 'event_2'
-            );
-            expect(unchangedEvent).toBeDefined();
-            expect(unchangedEvent?.delete_at).toBe(0);
+            expect(deletedEventInData).toBeDefined();
+            expect(deletedEventInData?.delete_at).toBe(3000);
         });
 
         it('handles complex timeline updates with additions, modifications, and preserving order', () => {
@@ -1293,36 +1240,24 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify we have 4 timeline events total
-            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(4);
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.timeline_events.length).toBe(4);
 
-            // Verify the new event was added
-            const addedEvent = dispatchedAction.playbookRun.timeline_events.find(
+            // Verify the new event was added in the action data
+            const addedEvent = dispatchedAction.data.changed_fields.timeline_events.find(
                 (e: any) => e.id === 'event_4'
             );
             expect(addedEvent).toBeDefined();
-            expect(addedEvent?.event_type).toBe('ran_slash_command');
+            expect(addedEvent?.event_type).toBe(TimelineEventType.RanSlashCommand);
 
-            // Verify the modified event was updated
-            const updatedEvent = dispatchedAction.playbookRun.timeline_events.find(
+            // Verify the modified event was updated in the action data
+            const updatedEvent = dispatchedAction.data.changed_fields.timeline_events.find(
                 (e: any) => e.id === 'event_2'
             );
             expect(updatedEvent).toBeDefined();
             expect(updatedEvent?.summary).toBe('Owner updated');
-
-            // Verify the deleted event has the correct delete_at timestamp
-            const markedDeletedEvent = dispatchedAction.playbookRun.timeline_events.find(
-                (e: any) => e.id === 'event_3'
-            );
-            expect(markedDeletedEvent).toBeDefined();
-            expect(markedDeletedEvent?.delete_at).toBe(4000);
-
-            // Verify events are in correct order by create_at
-            const timelineEvents = dispatchedAction.playbookRun.timeline_events;
-            expect(timelineEvents[0].id).toBe('event_1'); // 1000
-            expect(timelineEvents[1].id).toBe('event_4'); // 1500
-            expect(timelineEvents[2].id).toBe('event_2'); // 2000
-            expect(timelineEvents[3].id).toBe('event_3'); // 3000
         });
 
         it('initializes timeline_events if the property is missing', () => {
@@ -1393,10 +1328,12 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify the timeline_events was initialized correctly
-            expect(dispatchedAction.playbookRun.timeline_events).toBeDefined();
-            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(1);
-            expect(dispatchedAction.playbookRun.timeline_events[0].id).toBe('event_1');
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.timeline_events).toBeDefined();
+            expect(dispatchedAction.data.changed_fields.timeline_events.length).toBe(1);
+            expect(dispatchedAction.data.changed_fields.timeline_events[0].id).toBe('event_1');
         });
 
         it('handles concurrent timeline and other field updates', () => {
@@ -1443,13 +1380,15 @@ describe('incremental updates', () => {
             expect(testDispatch).toHaveBeenCalledTimes(1);
             const dispatchedAction = testDispatch.mock.calls[0][0];
 
-            // Verify both the timeline_events and other fields were updated
-            expect(dispatchedAction.playbookRun.timeline_events.length).toBe(3);
-            expect(dispatchedAction.playbookRun.name).toBe('Updated Run Name');
-            expect(dispatchedAction.playbookRun.owner_user_id).toBe('user_2');
+            // Verify action type and that data contains the raw update
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data).toEqual(update);
+            expect(dispatchedAction.data.changed_fields.timeline_events.length).toBe(3);
+            expect(dispatchedAction.data.changed_fields.name).toBe('Updated Run Name');
+            expect(dispatchedAction.data.changed_fields.owner_user_id).toBe('user_2');
 
-            // Verify the new event was added
-            const addedEvent = dispatchedAction.playbookRun.timeline_events.find(
+            // Verify the new event was added in the action data
+            const addedEvent = dispatchedAction.data.changed_fields.timeline_events.find(
                 (e: any) => e.id === 'event_3'
             );
             expect(addedEvent).toBeDefined();
