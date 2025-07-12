@@ -24,8 +24,8 @@ import {
     websocketPlaybookChecklistUpdateReceived,
     websocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/actions';
-import {fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
-import {clientId, myPlaybookRunsMap} from 'src/selectors';
+import {fetchPlaybookRun, fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
+import {clientId, getRun, myPlaybookRunsMap} from 'src/selectors';
 import {ChecklistItemUpdatePayload, ChecklistUpdatePayload, PlaybookRunUpdate} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
@@ -62,13 +62,25 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
     };
 }
 
-// Simplified handler for incremental updates - just dispatch the action
+// Handler for incremental updates - check state exists before dispatching
 export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
         const data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
+        
+        // Check if we have the run in state before applying incremental update
+        const state = getState();
+        const currentRun = getRun(data.id)(state);
+        
+        if (!currentRun) {
+            // If we don't have the current state, fetch the full playbook run
+            // This ensures we don't lose updates due to missing state
+            fetchAndUpdatePlaybookRun(data.id, dispatch);
+            return;
+        }
+        
         dispatch(websocketPlaybookRunIncrementalUpdateReceived(data));
     };
 }
@@ -231,3 +243,13 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
         }
     };
 };
+
+// Helper function to fetch and update a playbook run when state is missing
+async function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
+    try {
+        const playbookRun = await fetchPlaybookRun(runId);
+        dispatch(playbookRunUpdated(playbookRun));
+    } catch (error) {
+        console.error(`Failed to fetch playbook run ${runId}:`, error);
+    }
+}
