@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import * as TIMEOUTS from '../../../../fixtures/timeouts';
+
 // Stage: @prod
 // Group: @playbooks
 
@@ -32,6 +34,9 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
 
             // # Navigate to the application, starting in a non-run channel.
             cy.visit(`/${testTeam.name}/`);
+
+            // # Wait for page to fully load and settle
+            cy.wait(TIMEOUTS.TWO_SEC);
 
             // * Check time bar in the channel section
             // * as an indicator of page stability / end of rendering
