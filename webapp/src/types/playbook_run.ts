@@ -51,6 +51,9 @@ export interface PlaybookRun {
     /** Whether a channel member should be removed when an existing participant leaves the run */
     remove_channel_member_on_removed_participant: boolean;
 
+    /** The sort order of the checklists */
+    items_order: string[];
+
     type: PlaybookRunType
 }
 
