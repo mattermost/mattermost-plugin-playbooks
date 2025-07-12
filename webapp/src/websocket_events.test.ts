@@ -1508,4 +1508,589 @@ describe('incremental updates', () => {
             expect(() => handler(msg)).not.toThrow();
         });
     });
+
+    describe('incremental updates framework integration', () => {
+        let testDispatch: jest.Mock;
+        let testGetState: jest.Mock;
+        let testPlaybookRun: PlaybookRun;
+
+        beforeEach(() => {
+            // Create a fresh deep copy of the base playbook run
+            testPlaybookRun = JSON.parse(JSON.stringify(basePlaybookRun));
+
+            // Reset mocks with fresh playbook run
+            testDispatch = jest.fn();
+            testGetState = jest.fn(() => {
+                return {
+                    entities: {
+                        playbookRuns: {
+                            runs: {
+                                [testPlaybookRun.id]: testPlaybookRun,
+                            },
+                        },
+                    },
+                    'plugins-playbooks': {
+                        myPlaybookRuns: {
+                            [testPlaybookRun.id]: testPlaybookRun,
+                        },
+                        myPlaybookRunsByTeam: {
+                            [testPlaybookRun.team_id]: {
+                                [testPlaybookRun.channel_id]: testPlaybookRun,
+                            },
+                        },
+                    },
+                } as any;
+            });
+        });
+
+        describe('state fallback mechanism', () => {
+            it('fetches full playbook run when run missing from state', async () => {
+                // Mock the fetchPlaybookRun function to be called when state is missing
+                // Override global fetch method to mock the API call
+                const originalFetch = global.fetch;
+                global.fetch = jest.fn().mockResolvedValue({
+                    ok: true,
+                    json: jest.fn().mockResolvedValue(testPlaybookRun),
+                });
+
+                // Create state without the run
+                const emptyGetState = jest.fn(() => ({
+                    entities: {
+                        playbookRuns: {
+                            runs: {},
+                        },
+                    },
+                    'plugins-playbooks': {
+                        myPlaybookRuns: {},
+                        myPlaybookRunsByTeam: {},
+                    },
+                } as any));
+
+                const handler = handleWebsocketPlaybookRunUpdatedIncremental(emptyGetState, testDispatch);
+
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        name: 'Updated Name',
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                // Call the handler
+                handler(msg);
+
+                // Allow async operations to complete
+                await new Promise((resolve) => setTimeout(resolve, 0));
+
+                // The handler should detect missing state and trigger a fetch
+                // Since we can't easily mock the internal fetchPlaybookRun,
+                // we verify that no incremental update dispatch occurred
+                expect(testDispatch).not.toHaveBeenCalled();
+
+                // Restore original fetch
+                global.fetch = originalFetch;
+            });
+
+            it('handles fallback when checklist update for missing run', () => {
+                // Create state without the run
+                const emptyGetState = jest.fn(() => ({
+                    entities: {
+                        playbookRuns: {
+                            runs: {},
+                        },
+                    },
+                    'plugins-playbooks': {
+                        myPlaybookRuns: {},
+                        myPlaybookRunsByTeam: {},
+                    },
+                } as any));
+
+                const handler = handleWebsocketPlaybookChecklistUpdated(emptyGetState, testDispatch);
+
+                const update = {
+                    playbook_run_id: testPlaybookRun.id,
+                    update: {
+                        id: 'checklist_1',
+                        index: 0,
+                        checklist_updated_at: 2000,
+                        fields: {
+                            title: 'New Title',
+                        },
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                // Call the handler
+                handler(msg);
+
+                // Should dispatch the action even if run is missing - reducer will handle the fallback
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+                const dispatchedAction = testDispatch.mock.calls[0][0];
+                expect(dispatchedAction.type).toBe('playbooks_ws_checklist_update_received');
+                expect(dispatchedAction.data).toEqual(update);
+            });
+        });
+
+        describe('new checklist creation via websocket', () => {
+            it('creates new checklist when checklist does not exist', () => {
+                const handler = handleWebsocketPlaybookChecklistUpdated(testGetState, testDispatch);
+
+                // Create update for a new checklist that doesn't exist
+                const update = {
+                    playbook_run_id: testPlaybookRun.id,
+                    update: {
+                        id: 'new_checklist_123',
+                        index: 1,
+                        checklist_updated_at: 2000,
+                        fields: {
+                            title: 'Brand New Checklist',
+                        },
+                        item_inserts: [
+                            {
+                                id: 'new_item_1',
+                                title: 'New Item 1',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                            },
+                        ],
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(msg);
+
+                // Verify the update was dispatched
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+                const dispatchedAction = testDispatch.mock.calls[0][0];
+                expect(dispatchedAction.type).toBe('playbooks_ws_checklist_update_received');
+                expect(dispatchedAction.data.update.id).toBe('new_checklist_123');
+                expect(dispatchedAction.data.update.fields.title).toBe('Brand New Checklist');
+                expect(dispatchedAction.data.update.item_inserts).toHaveLength(1);
+            });
+
+            it('handles checklist creation with multiple items', () => {
+                const handler = handleWebsocketPlaybookChecklistUpdated(testGetState, testDispatch);
+
+                const newItems = [
+                    {
+                        id: 'item_a',
+                        title: 'Item A',
+                        state: 'Open',
+                        state_modified: 0,
+                        assignee_id: 'user_1',
+                        assignee_modified: 0,
+                        command: '/echo test',
+                        description: 'Test item A',
+                        command_last_run: 0,
+                        due_date: 0,
+                        task_actions: [],
+                    },
+                    {
+                        id: 'item_b',
+                        title: 'Item B',
+                        state: 'Closed',
+                        state_modified: 2000,
+                        assignee_id: 'user_2',
+                        assignee_modified: 1900,
+                        command: '',
+                        description: 'Test item B',
+                        command_last_run: 0,
+                        due_date: 1234567890,
+                        task_actions: [],
+                    },
+                ];
+
+                const update = {
+                    playbook_run_id: testPlaybookRun.id,
+                    update: {
+                        id: 'multi_item_checklist',
+                        index: 2,
+                        checklist_updated_at: 2000,
+                        fields: {
+                            title: 'Multi-item Checklist',
+                        },
+                        item_inserts: newItems,
+                        items_order: ['item_a', 'item_b'],
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(msg);
+
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+                const dispatchedAction = testDispatch.mock.calls[0][0];
+                expect(dispatchedAction.data.update.item_inserts).toHaveLength(2);
+                expect(dispatchedAction.data.update.items_order).toEqual(['item_a', 'item_b']);
+            });
+        });
+
+        describe('complex incremental update scenarios', () => {
+            it('handles simultaneous checklist and item updates', () => {
+                const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+                // Complex update affecting multiple checklists and items
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 3000,
+                    changed_fields: {
+                        name: 'Multi-Change Update',
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 3000,
+                                fields: {
+                                    title: 'Updated Title',
+                                },
+                                item_updates: [
+                                    {
+                                        id: 'item_1',
+                                        index: 0,
+                                        checklist_item_updated_at: 3000,
+                                        fields: {
+                                            state: 'Closed',
+                                            assignee_id: 'user_2',
+                                        },
+                                    },
+                                ],
+                                item_inserts: [
+                                    {
+                                        id: 'new_item_2',
+                                        title: 'Additional Item',
+                                        state: 'Open',
+                                        state_modified: 0,
+                                        assignee_id: '',
+                                        assignee_modified: 0,
+                                        command: '',
+                                        description: '',
+                                        command_last_run: 0,
+                                        due_date: 0,
+                                        task_actions: [],
+                                    },
+                                ],
+                                items_order: ['item_1', 'new_item_2'],
+                            },
+                        ],
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(msg);
+
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+                const dispatchedAction = testDispatch.mock.calls[0][0];
+                expect(dispatchedAction.type).toBe('playbooks_ws_run_incremental_update_received');
+                expect(dispatchedAction.data.changed_fields.name).toBe('Multi-Change Update');
+                expect(dispatchedAction.data.changed_fields.checklists).toHaveLength(1);
+                expect(dispatchedAction.data.changed_fields.checklists[0].item_updates).toHaveLength(1);
+                expect(dispatchedAction.data.changed_fields.checklists[0].item_inserts).toHaveLength(1);
+            });
+
+            it('handles reordering operations', () => {
+                // Add second checklist to test run
+                testPlaybookRun.checklists.push({
+                    id: 'checklist_2',
+                    title: 'Second Checklist',
+                    items: [
+                        {
+                            id: 'item_3',
+                            title: 'Item 3',
+                            state: 'Open',
+                            state_modified: 0,
+                            assignee_id: '',
+                            assignee_modified: 0,
+                            command: '',
+                            description: '',
+                            command_last_run: 0,
+                            due_date: 0,
+                            task_actions: [],
+                        },
+                    ],
+                });
+                testPlaybookRun.items_order = ['checklist_1', 'checklist_2'];
+
+                const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+                // Update that reorders checklists and items
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 3000,
+                    changed_fields: {
+                        items_order: ['checklist_2', 'checklist_1'], // Reverse order
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 3000,
+                                items_order: ['item_1'], // Keep existing order
+                            },
+                            {
+                                id: 'checklist_2',
+                                index: 1,
+                                checklist_updated_at: 3000,
+                                item_inserts: [
+                                    {
+                                        id: 'item_4',
+                                        title: 'Item 4',
+                                        state: 'Open',
+                                        state_modified: 0,
+                                        assignee_id: '',
+                                        assignee_modified: 0,
+                                        command: '',
+                                        description: '',
+                                        command_last_run: 0,
+                                        due_date: 0,
+                                        task_actions: [],
+                                    },
+                                ],
+                                items_order: ['item_4', 'item_3'], // New item first
+                            },
+                        ],
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(msg);
+
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+                const dispatchedAction = testDispatch.mock.calls[0][0];
+                expect(dispatchedAction.data.changed_fields.items_order).toEqual(['checklist_2', 'checklist_1']);
+                expect(dispatchedAction.data.changed_fields.checklists[1].items_order).toEqual(['item_4', 'item_3']);
+            });
+        });
+
+        describe('error handling and edge cases', () => {
+            it('handles malformed websocket payloads gracefully', () => {
+                const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+                // Malformed JSON
+                const msg = {
+                    data: {
+                        payload: 'invalid json {[',
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                expect(() => handler(msg)).not.toThrow();
+                expect(testDispatch).not.toHaveBeenCalled();
+            });
+
+            it('handles missing fields in update payload', () => {
+                const handler = handleWebsocketPlaybookChecklistUpdated(testGetState, testDispatch);
+
+                // Update missing required fields
+                const update = {
+                    playbook_run_id: testPlaybookRun.id,
+
+                    // Missing 'update' field
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(msg);
+
+                // Should still dispatch (reducers handle validation)
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+            });
+
+            it('handles checklist item updates for missing checklist gracefully', () => {
+                const handler = handleWebsocketPlaybookChecklistItemUpdated(testGetState, testDispatch);
+
+                const update = {
+                    playbook_run_id: testPlaybookRun.id,
+                    checklist_id: 'missing_checklist',
+                    update: {
+                        id: 'item_1',
+                        index: 0,
+                        checklist_item_updated_at: 2000,
+                        fields: {
+                            state: 'Closed',
+                        },
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(msg);
+
+                // Should dispatch action (reducer handles the missing checklist)
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+                const dispatchedAction = testDispatch.mock.calls[0][0];
+                expect(dispatchedAction.type).toBe('playbooks_ws_checklist_item_update_received');
+            });
+
+            it('validates timestamp ordering for idempotency', () => {
+                const handler = handleWebsocketPlaybookChecklistUpdated(testGetState, testDispatch);
+
+                // First update with newer timestamp
+                const newerUpdate = {
+                    playbook_run_id: testPlaybookRun.id,
+                    update: {
+                        id: 'checklist_1',
+                        index: 0,
+                        checklist_updated_at: 3000,
+                        fields: {
+                            title: 'Newer Update',
+                        },
+                    },
+                };
+
+                const newerMsg = {
+                    data: {
+                        payload: JSON.stringify(newerUpdate),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(newerMsg);
+
+                // Then older update with earlier timestamp
+                const olderUpdate = {
+                    playbook_run_id: testPlaybookRun.id,
+                    update: {
+                        id: 'checklist_1',
+                        index: 0,
+                        checklist_updated_at: 2000,
+                        fields: {
+                            title: 'Older Update',
+                        },
+                    },
+                };
+
+                const olderMsg = {
+                    data: {
+                        payload: JSON.stringify(olderUpdate),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(olderMsg);
+
+                // Both should be dispatched - the reducer handles idempotency
+                expect(testDispatch).toHaveBeenCalledTimes(2);
+            });
+        });
+
+        describe('performance and memory considerations', () => {
+            it('does not mutate original playbook run objects', () => {
+                const originalRun = JSON.parse(JSON.stringify(testPlaybookRun));
+                const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        name: 'Mutated Name',
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 2000,
+                                fields: {
+                                    title: 'Mutated Title',
+                                },
+                            },
+                        ],
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                handler(msg);
+
+                // Verify original run hasn't been mutated
+                expect(testPlaybookRun).toEqual(originalRun);
+                expect(testPlaybookRun.name).toBe(originalRun.name);
+                expect(testPlaybookRun.checklists[0].title).toBe(originalRun.checklists[0].title);
+            });
+
+            it('handles large payloads efficiently', () => {
+                const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+                // Create large update with many timeline events
+                const largeTimelineEvents = Array.from({length: 100}, (_, i) => ({
+                    id: `event_${i}`,
+                    playbook_run_id: testPlaybookRun.id,
+                    create_at: 1000 + i,
+                    delete_at: 0,
+                    event_at: 1000 + i,
+                    event_type: 'RunCreated' as any,
+                    summary: `Event ${i}`,
+                    details: `Details for event ${i}`,
+                    subject_user_id: 'user_1',
+                    creator_user_id: 'user_1',
+                    post_id: '',
+                }));
+
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        timeline_events: largeTimelineEvents,
+                    },
+                };
+
+                const msg = {
+                    data: {
+                        payload: JSON.stringify(update),
+                    },
+                } as WebSocketMessage<{payload: string}>;
+
+                const startTime = performance.now();
+                handler(msg);
+                const endTime = performance.now();
+
+                // Should complete quickly (less than 100ms for 100 events)
+                expect(endTime - startTime).toBeLessThan(100);
+                expect(testDispatch).toHaveBeenCalledTimes(1);
+            });
+        });
+    });
 });

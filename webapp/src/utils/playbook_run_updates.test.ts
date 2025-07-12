@@ -201,7 +201,7 @@ describe('playbook_run_updates utilities', () => {
             expect(result.checklists[0].title).toBe('First Update');
         });
 
-        it('should return unchanged for non-existent checklist', () => {
+        it('should create new checklist for non-existent checklist', () => {
             const payload = {
                 playbook_run_id: testPlaybookRun.id,
                 update: {
@@ -216,7 +216,14 @@ describe('playbook_run_updates utilities', () => {
 
             const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
 
-            expect(result).toBe(testPlaybookRun); // Same object, unchanged
+            // Should create new checklist when it doesn't exist
+            expect(result.checklists).toHaveLength(2);
+            expect(result.checklists[1]).toMatchObject({
+                id: 'non_existent_checklist',
+                title: 'Updated Title',
+                update_at: 2000,
+            });
+            expect(result.checklists[1].items).toHaveLength(0);
         });
     });
 
@@ -338,6 +345,776 @@ describe('playbook_run_updates utilities', () => {
             expect(result).not.toBe(testPlaybookRun); // Different objects
             expect(testPlaybookRun.checklists[0].items[0].state).toBe('Open'); // Original unchanged
             expect(result.checklists[0].items[0].state).toBe('Closed'); // Result changed
+        });
+    });
+
+    describe('NEW CHECKLIST CREATION TESTS - Bug Fix Validation', () => {
+        it('applyChecklistUpdateIdempotent should create new checklist when not found', () => {
+            const payload = {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
+                    id: 'brand_new_checklist',
+                    index: 1,
+                    checklist_updated_at: 2000,
+                    fields: {
+                        title: 'New Checklist Created',
+                    },
+                    item_inserts: [
+                        {
+                            id: 'new_item_1',
+                            title: 'New Item 1',
+                            state: 'Open',
+                            state_modified: 0,
+                            assignee_id: 'user_1',
+                            assignee_modified: 0,
+                            command: '',
+                            description: '',
+                            command_last_run: 0,
+                            due_date: 0,
+                            task_actions: [],
+                        },
+                    ],
+                },
+            };
+
+            const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+
+            // Should create a new checklist
+            expect(result.checklists).toHaveLength(2);
+            expect(result.checklists[1]).toMatchObject({
+                id: 'brand_new_checklist',
+                title: 'New Checklist Created',
+                update_at: 2000,
+            });
+            expect(result.checklists[1].items).toHaveLength(1);
+            expect(result.checklists[1].items[0]).toMatchObject({
+                id: 'new_item_1',
+                title: 'New Item 1',
+                assignee_id: 'user_1',
+            });
+        });
+
+        it('applyChecklistUpdateIdempotent should create new checklist with empty items when no item_inserts', () => {
+            const payload = {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
+                    id: 'empty_checklist',
+                    index: 1,
+                    checklist_updated_at: 2000,
+                    fields: {
+                        title: 'Empty New Checklist',
+                    },
+                },
+            };
+
+            const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+
+            // Should create a new checklist with empty items
+            expect(result.checklists).toHaveLength(2);
+            expect(result.checklists[1]).toMatchObject({
+                id: 'empty_checklist',
+                title: 'Empty New Checklist',
+                update_at: 2000,
+            });
+            expect(result.checklists[1].items).toHaveLength(0);
+        });
+
+        it('applyChecklistUpdateIdempotent should handle new checklist creation idempotently', () => {
+            const payload = {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
+                    id: 'idempotent_checklist',
+                    index: 1,
+                    checklist_updated_at: 2000,
+                    fields: {
+                        title: 'Idempotent Checklist',
+                    },
+                    item_inserts: [
+                        {
+                            id: 'item_x',
+                            title: 'Item X',
+                            state: 'Open',
+                            state_modified: 0,
+                            assignee_id: '',
+                            assignee_modified: 0,
+                            command: '',
+                            description: '',
+                            command_last_run: 0,
+                            due_date: 0,
+                            task_actions: [],
+                        },
+                    ],
+                },
+            };
+
+            // Apply the same update twice
+            const result1 = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+            const result2 = applyChecklistUpdateIdempotent(result1, payload);
+
+            // Should not create duplicates
+            expect(result1.checklists).toHaveLength(2);
+            expect(result2.checklists).toHaveLength(2);
+            expect(result2.checklists[1].id).toBe('idempotent_checklist');
+            expect(result2.checklists[1].items).toHaveLength(1);
+        });
+
+        it('applyChecklistUpdateIdempotent should reject older timestamps for new checklist creation', () => {
+            // First create a checklist with timestamp 2000
+            const firstPayload = {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
+                    id: 'timestamp_test_checklist',
+                    index: 1,
+                    checklist_updated_at: 2000,
+                    fields: {
+                        title: 'First Version',
+                    },
+                },
+            };
+
+            const result1 = applyChecklistUpdateIdempotent(testPlaybookRun, firstPayload);
+
+            // Try to apply older update (timestamp 1500)
+            const olderPayload = {
+                playbook_run_id: testPlaybookRun.id,
+                update: {
+                    id: 'timestamp_test_checklist',
+                    index: 1,
+                    checklist_updated_at: 1500,
+                    fields: {
+                        title: 'Older Version',
+                    },
+                },
+            };
+
+            const result2 = applyChecklistUpdateIdempotent(result1, olderPayload);
+
+            // Should remain unchanged due to older timestamp
+            expect(result2.checklists[1].title).toBe('First Version');
+            expect(result2.checklists[1].update_at).toBe(2000);
+        });
+
+        it('applyChecklistUpdates should create new checklist when not found', () => {
+            // Test the non-idempotent version
+            const update = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    checklists: [
+                        {
+                            id: 'another_new_checklist',
+                            index: 1,
+                            checklist_updated_at: 2000,
+                            fields: {
+                                title: 'Another New Checklist',
+                            },
+                            item_inserts: [
+                                {
+                                    id: 'another_item',
+                                    title: 'Another Item',
+                                    state: 'Closed',
+                                    state_modified: 2000,
+                                    assignee_id: 'user_2',
+                                    assignee_modified: 1900,
+                                    command: '/test command',
+                                    description: 'Test description',
+                                    command_last_run: 0,
+                                    due_date: 1234567890,
+                                    task_actions: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            };
+
+            const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+            // Should create a new checklist
+            expect(result.checklists).toHaveLength(2);
+            expect(result.checklists[1]).toMatchObject({
+                id: 'another_new_checklist',
+                title: 'Another New Checklist',
+            });
+            expect(result.checklists[1].items).toHaveLength(1);
+            expect(result.checklists[1].items[0]).toMatchObject({
+                id: 'another_item',
+                title: 'Another Item',
+                state: 'Closed',
+                assignee_id: 'user_2',
+                command: '/test command',
+                description: 'Test description',
+                due_date: 1234567890,
+            });
+        });
+    });
+
+    describe('DELETION SCENARIOS TESTS', () => {
+        describe('checklist item deletion', () => {
+            it('should delete checklist items using item_deletes', () => {
+                // First add another item to the checklist
+                const runWithMultipleItems = {
+                    ...testPlaybookRun,
+                    checklists: [{
+                        ...testPlaybookRun.checklists[0],
+                        items: [
+                            ...testPlaybookRun.checklists[0].items,
+                            {
+                                id: 'item_2',
+                                title: 'Second Item',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                        ],
+                    }],
+                };
+
+                const update = {
+                    id: runWithMultipleItems.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 2000,
+                                item_deletes: ['item_1'],
+                            },
+                        ],
+                    },
+                };
+
+                const result = applyIncrementalUpdate(runWithMultipleItems, update);
+
+                expect(result.checklists[0].items).toHaveLength(1);
+                expect(result.checklists[0].items[0].id).toBe('item_2');
+                expect(result.checklists[0].items.find((item) => item.id === 'item_1')).toBeUndefined();
+            });
+
+            it('should handle deletion of multiple items', () => {
+                const runWithMultipleItems = {
+                    ...testPlaybookRun,
+                    checklists: [{
+                        ...testPlaybookRun.checklists[0],
+                        items: [
+                            ...testPlaybookRun.checklists[0].items,
+                            {
+                                id: 'item_2',
+                                title: 'Second Item',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                            {
+                                id: 'item_3',
+                                title: 'Third Item',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                        ],
+                    }],
+                };
+
+                const update = {
+                    id: runWithMultipleItems.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 2000,
+                                item_deletes: ['item_1', 'item_3'],
+                            },
+                        ],
+                    },
+                };
+
+                const result = applyIncrementalUpdate(runWithMultipleItems, update);
+
+                expect(result.checklists[0].items).toHaveLength(1);
+                expect(result.checklists[0].items[0].id).toBe('item_2');
+                expect(result.checklists[0].items.find((item) => item.id === 'item_1')).toBeUndefined();
+                expect(result.checklists[0].items.find((item) => item.id === 'item_3')).toBeUndefined();
+            });
+
+            it('should handle deletion of non-existent items gracefully', () => {
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 2000,
+                                item_deletes: ['non_existent_item', 'another_missing_item'],
+                            },
+                        ],
+                    },
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+                // Should remain unchanged since items don't exist
+                expect(result.checklists[0].items).toHaveLength(1);
+                expect(result.checklists[0].items[0].id).toBe('item_1');
+            });
+        });
+
+        describe('checklist item deletion in idempotent updates', () => {
+            it('should delete items in applyChecklistUpdateIdempotent', () => {
+                const runWithMultipleItems = {
+                    ...testPlaybookRun,
+                    checklists: [{
+                        ...testPlaybookRun.checklists[0],
+                        items: [
+                            ...testPlaybookRun.checklists[0].items,
+                            {
+                                id: 'item_2',
+                                title: 'Second Item',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                        ],
+                    }],
+                };
+
+                const payload = {
+                    playbook_run_id: runWithMultipleItems.id,
+                    update: {
+                        id: 'checklist_1',
+                        index: 0,
+                        checklist_updated_at: 2000,
+                        item_deletes: ['item_1'],
+                    },
+                };
+
+                const result = applyChecklistUpdateIdempotent(runWithMultipleItems, payload);
+
+                expect(result.checklists[0].items).toHaveLength(1);
+                expect(result.checklists[0].items[0].id).toBe('item_2');
+            });
+        });
+    });
+
+    describe('REORDERING SCENARIOS TESTS', () => {
+        describe('checklist reordering', () => {
+            it('should handle checklist reordering via items_order field', () => {
+                const runWithMultipleChecklists = {
+                    ...testPlaybookRun,
+                    checklists: [
+                        testPlaybookRun.checklists[0],
+                        {
+                            id: 'checklist_2',
+                            title: 'Second Checklist',
+                            update_at: 1000,
+                            items: [],
+                        },
+                        {
+                            id: 'checklist_3',
+                            title: 'Third Checklist',
+                            update_at: 1000,
+                            items: [],
+                        },
+                    ],
+                    items_order: ['checklist_1', 'checklist_2', 'checklist_3'],
+                };
+
+                const update = {
+                    id: runWithMultipleChecklists.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        items_order: ['checklist_3', 'checklist_1', 'checklist_2'],
+                    },
+                };
+
+                const result = applyIncrementalUpdate(runWithMultipleChecklists, update);
+
+                expect(result.items_order).toEqual(['checklist_3', 'checklist_1', 'checklist_2']);
+
+                // Original checklists array should remain unchanged (reordering is handled by items_order)
+                expect(result.checklists).toHaveLength(3);
+                expect(result.checklists[0].id).toBe('checklist_1');
+                expect(result.checklists[1].id).toBe('checklist_2');
+                expect(result.checklists[2].id).toBe('checklist_3');
+            });
+        });
+
+        describe('checklist item reordering', () => {
+            it('should handle item reordering within a checklist', () => {
+                const runWithMultipleItems = {
+                    ...testPlaybookRun,
+                    checklists: [{
+                        ...testPlaybookRun.checklists[0],
+                        items: [
+                            testPlaybookRun.checklists[0].items[0],
+                            {
+                                id: 'item_2',
+                                title: 'Second Item',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                            {
+                                id: 'item_3',
+                                title: 'Third Item',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                        ],
+                    }],
+                };
+
+                const update = {
+                    id: runWithMultipleItems.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 2000,
+                                items_order: ['item_3', 'item_1', 'item_2'],
+                            },
+                        ],
+                    },
+                };
+
+                const result = applyIncrementalUpdate(runWithMultipleItems, update);
+
+                // Check that the items_order field was updated
+                expect(result.checklists[0]).toHaveProperty('items_order');
+                expect((result.checklists[0] as any).items_order).toEqual(['item_3', 'item_1', 'item_2']);
+            });
+
+            it('should handle item reordering in idempotent checklist updates', () => {
+                const runWithMultipleItems = {
+                    ...testPlaybookRun,
+                    checklists: [{
+                        ...testPlaybookRun.checklists[0],
+                        items: [
+                            testPlaybookRun.checklists[0].items[0],
+                            {
+                                id: 'item_2',
+                                title: 'Second Item',
+                                state: 'Open',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                        ],
+                    }],
+                };
+
+                const payload = {
+                    playbook_run_id: runWithMultipleItems.id,
+                    update: {
+                        id: 'checklist_1',
+                        index: 0,
+                        checklist_updated_at: 2000,
+                        items_order: ['item_2', 'item_1'],
+                    },
+                };
+
+                const result = applyChecklistUpdateIdempotent(runWithMultipleItems, payload);
+
+                expect((result.checklists[0] as any).items_order).toEqual(['item_2', 'item_1']);
+            });
+        });
+    });
+
+    describe('COMPREHENSIVE INCREMENTAL UPDATES FRAMEWORK TESTS', () => {
+        describe('applyIncrementalUpdate - advanced scenarios', () => {
+            it('should handle complex nested updates with timeline events', () => {
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 3000,
+                    changed_fields: {
+                        name: 'Complex Update Test',
+                        owner_user_id: 'user_3',
+                        status_update_enabled: true,
+                        timeline_events: [
+                            {
+                                id: 'event_1',
+                                playbook_run_id: testPlaybookRun.id,
+                                create_at: 3000,
+                                delete_at: 0,
+                                event_at: 3000,
+                                event_type: 'StatusUpdated' as any,
+                                summary: 'Status updated to In Progress',
+                                details: 'Automatic status update',
+                                subject_user_id: 'user_3',
+                                creator_user_id: 'user_3',
+                                post_id: '',
+                            },
+                        ],
+                        metrics_data: [
+                            {
+                                metric_config_id: 'metric_1',
+                                value: 42,
+                            },
+                        ],
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 3000,
+                                fields: {
+                                    title: 'Updated via Complex Update',
+                                },
+                                item_updates: [
+                                    {
+                                        id: 'item_1',
+                                        index: 0,
+                                        checklist_item_updated_at: 3000,
+                                        fields: {
+                                            state: 'Closed',
+                                            assignee_id: 'user_3',
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+                expect(result.name).toBe('Complex Update Test');
+                expect(result.owner_user_id).toBe('user_3');
+                expect(result.status_update_enabled).toBe(true);
+                expect(result.timeline_events).toHaveLength(1);
+                expect(result.metrics_data).toHaveLength(1);
+                expect(result.checklists[0].title).toBe('Updated via Complex Update');
+                expect(result.checklists[0].items[0].state).toBe('Closed');
+                expect(result.checklists[0].items[0].assignee_id).toBe('user_3');
+            });
+
+            it('should preserve immutability with deep nested structures', () => {
+                const originalRun = JSON.parse(JSON.stringify(testPlaybookRun));
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        checklists: [
+                            {
+                                id: 'checklist_1',
+                                index: 0,
+                                checklist_updated_at: 2000,
+                                item_updates: [
+                                    {
+                                        id: 'item_1',
+                                        index: 0,
+                                        checklist_item_updated_at: 2000,
+                                        fields: {
+                                            task_actions: [{
+                                                trigger: {
+                                                    type: 'status_update' as any,
+                                                    payload: '',
+                                                },
+                                                actions: [{
+                                                    type: 'send_webhook' as any,
+                                                    payload: 'http://example.com',
+                                                }],
+                                            }],
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+                // Verify deep immutability
+                expect(result).not.toBe(testPlaybookRun);
+                expect(result.checklists).not.toBe(testPlaybookRun.checklists);
+                expect(result.checklists[0]).not.toBe(testPlaybookRun.checklists[0]);
+                expect(result.checklists[0].items).not.toBe(testPlaybookRun.checklists[0].items);
+                expect(result.checklists[0].items[0]).not.toBe(testPlaybookRun.checklists[0].items[0]);
+
+                // Original should be unchanged
+                expect(testPlaybookRun).toEqual(originalRun);
+                expect(testPlaybookRun.checklists[0].items[0].task_actions).toHaveLength(0);
+
+                // Result should have new data
+                expect(result.checklists[0].items[0].task_actions).toHaveLength(1);
+            });
+        });
+
+        describe('error handling and edge cases', () => {
+            it('should handle updates with missing playbook_run_updated_at', () => {
+                const update = {
+                    id: testPlaybookRun.id,
+                    changed_fields: {
+                        name: 'Update Without Timestamp',
+                    },
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+                expect(result.name).toBe('Update Without Timestamp');
+                expect(result.update_at).toBe(testPlaybookRun.update_at); // Should preserve original
+            });
+
+            it('should handle empty changed_fields', () => {
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {},
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+                expect(result).toEqual({
+                    ...testPlaybookRun,
+                    update_at: 2000,
+                });
+            });
+
+            it('should handle null/undefined values in fields', () => {
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        retrospective: null as any,
+                        summary: null as any,
+                        end_at: 0,
+                    },
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+                expect(result.retrospective).toBeNull();
+                expect(result.summary).toBeNull();
+                expect(result.end_at).toBe(0);
+            });
+        });
+
+        describe('performance and memory optimization', () => {
+            it('should handle updates to large checklists efficiently', () => {
+                // Create a run with many checklists and items
+                const largeRun = {
+                    ...testPlaybookRun,
+                    checklists: Array.from({length: 50}, (_, i) => ({
+                        id: `checklist_${i}`,
+                        title: `Checklist ${i}`,
+                        update_at: 1000,
+                        items: Array.from({length: 20}, (__, j) => ({
+                            id: `item_${i}_${j}`,
+                            title: `Item ${i}-${j}`,
+                            state: 'Open' as any,
+                            state_modified: 0,
+                            assignee_id: '',
+                            assignee_modified: 0,
+                            command: '',
+                            description: '',
+                            command_last_run: 0,
+                            due_date: 0,
+                            task_actions: [],
+                            update_at: 1000,
+                        })),
+                    })),
+                };
+
+                const update = {
+                    id: largeRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {
+                        name: 'Updated Large Run',
+                        checklists: [
+                            {
+                                id: 'checklist_5',
+                                index: 5,
+                                checklist_updated_at: 2000,
+                                fields: {
+                                    title: 'Updated Checklist 5',
+                                },
+                                item_updates: [
+                                    {
+                                        id: 'item_5_10',
+                                        index: 10,
+                                        checklist_item_updated_at: 2000,
+                                        fields: {
+                                            state: 'Closed',
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                };
+
+                const startTime = performance.now();
+                const result = applyIncrementalUpdate(largeRun, update);
+                const endTime = performance.now();
+
+                // Should complete quickly (less than 50ms for large update)
+                expect(endTime - startTime).toBeLessThan(50);
+
+                // Verify the specific updates were applied
+                expect(result.name).toBe('Updated Large Run');
+                expect(result.checklists[5].title).toBe('Updated Checklist 5');
+                expect(result.checklists[5].items[10].state).toBe('Closed');
+
+                // Other data should remain unchanged
+                expect(result.checklists[0].title).toBe('Checklist 0');
+                expect(result.checklists[10].items[5].state).toBe('Open');
+            });
         });
     });
 });

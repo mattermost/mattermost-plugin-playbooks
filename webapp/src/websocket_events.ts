@@ -68,7 +68,13 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
         if (!msg.data.payload) {
             return;
         }
-        const data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
+
+        let data: PlaybookRunUpdate;
+        try {
+            data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
+        } catch {
+            return;
+        }
 
         // Check if we have the run in state before applying incremental update
         const state = getState();
@@ -181,7 +187,14 @@ export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, 
         if (!msg.data.payload) {
             return;
         }
-        const data = JSON.parse(msg.data.payload) as ChecklistUpdatePayload;
+
+        let data: ChecklistUpdatePayload;
+        try {
+            data = JSON.parse(msg.data.payload) as ChecklistUpdatePayload;
+        } catch {
+            return;
+        }
+
         dispatch(websocketPlaybookChecklistUpdateReceived(data));
     };
 }
@@ -192,7 +205,14 @@ export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFu
         if (!msg.data.payload) {
             return;
         }
-        const data = JSON.parse(msg.data.payload) as ChecklistItemUpdatePayload;
+
+        let data: ChecklistItemUpdatePayload;
+        try {
+            data = JSON.parse(msg.data.payload) as ChecklistItemUpdatePayload;
+        } catch {
+            return;
+        }
+
         dispatch(websocketPlaybookChecklistItemUpdateReceived(data));
     };
 }

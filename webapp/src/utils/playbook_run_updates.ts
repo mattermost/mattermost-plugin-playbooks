@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {Checklist} from 'src/types/playbook';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {TimelineEvent} from 'src/types/rhs';
 import {
     ChecklistItemUpdatePayload,
     ChecklistUpdate,
@@ -12,17 +13,23 @@ import {
 
 // Helper function to apply incremental updates idempotently
 export function applyIncrementalUpdate(currentRun: PlaybookRun, update: PlaybookRunUpdate): PlaybookRun {
-    // Clone the current run to create an updated version
-    const updatedRun = {...currentRun};
+    // Create a new run object with the timestamp update
+    let updatedRun = {
+        ...currentRun,
+        ...(update.playbook_run_updated_at && {update_at: update.playbook_run_updated_at}),
+    };
 
-    // Apply the changed fields to the run
-    applyChangedFields(updatedRun, update.changed_fields);
+    // Apply the changed fields to get a new run
+    updatedRun = applyChangedFields(updatedRun, update.changed_fields);
 
     return updatedRun;
 }
 
 // Helper function to apply changed fields to a playbook run (moved from websocket_events.ts)
-function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['changed_fields']) {
+function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['changed_fields']): PlaybookRun {
+    // Start with a shallow copy of the run
+    let updatedRun = {...run};
+
     // Apply simple field changes first
     for (const [field, value] of Object.entries(changedFields)) {
         // Skip special fields that need custom handling
@@ -30,116 +37,160 @@ function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['
             continue;
         }
 
-        // Apply the change to the run
-        (run as any)[field] = value;
+        // Apply the change to the run using type-safe property assignment
+        if (field in updatedRun) {
+            updatedRun = {
+                ...updatedRun,
+                [field]: value,
+            };
+        }
     }
 
     // Handle timeline events specially by merging them with existing events
     if (changedFields.timeline_events) {
-        applyTimelineUpdates(run, changedFields.timeline_events);
+        updatedRun = applyTimelineUpdates(updatedRun, changedFields.timeline_events);
     }
 
     // Apply checklist updates if provided by the server
     if (changedFields.checklists) {
-        applyChecklistUpdates(run, changedFields.checklists);
+        updatedRun = applyChecklistUpdates(updatedRun, changedFields.checklists);
     }
+
+    return updatedRun;
 }
 
 // Helper function to apply timeline updates (moved from websocket_events.ts)
-function applyTimelineUpdates(run: PlaybookRun, timelineEvents: any[]) {
+function applyTimelineUpdates(run: PlaybookRun, timelineEvents: TimelineEvent[]): PlaybookRun {
     // If we don't have any existing timeline events, just set them
     if (!run.timeline_events || !Array.isArray(run.timeline_events)) {
-        run.timeline_events = timelineEvents;
-    } else {
-        // Merge new timeline events with existing ones
-        // Create a map of existing events by ID for quick lookup
-        const existingEventsMap = new Map();
-        run.timeline_events.forEach((event) => {
-            if (event && event.id) {
-                existingEventsMap.set(event.id, event);
-            }
-        });
-
-        // Process each event from the update
-        timelineEvents.forEach((newEvent) => {
-            if (newEvent && newEvent.id) {
-                // If an event with this ID already exists, replace it
-                // Otherwise, it's a new event to add
-                existingEventsMap.set(newEvent.id, newEvent);
-            }
-        });
-
-        // Convert the map back to an array and sort by create_at if available
-        run.timeline_events = Array.from(existingEventsMap.values());
-        run.timeline_events.sort((a, b) => (a.create_at || 0) - (b.create_at || 0));
+        return {
+            ...run,
+            timeline_events: [...timelineEvents],
+        };
     }
+
+    // Merge new timeline events with existing ones
+    // Create a map of existing events by ID for quick lookup
+    const existingEventsMap = new Map<string, TimelineEvent>();
+    run.timeline_events.forEach((event) => {
+        if (event?.id) {
+            existingEventsMap.set(event.id, event);
+        }
+    });
+
+    // Process each event from the update
+    timelineEvents.forEach((newEvent) => {
+        if (newEvent?.id) {
+            // If an event with this ID already exists, replace it
+            // Otherwise, it's a new event to add
+            existingEventsMap.set(newEvent.id, newEvent);
+        }
+    });
+
+    // Convert the map back to an array and sort by create_at
+    const updatedEvents = Array.from(existingEventsMap.values());
+    updatedEvents.sort((a, b) => a.create_at - b.create_at);
+
+    return {
+        ...run,
+        timeline_events: updatedEvents,
+    };
 }
 
 // Helper function to apply checklist updates (moved from websocket_events.ts)
-function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]) {
+function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): PlaybookRun {
+    let updatedChecklists = [...run.checklists];
+
     for (const update of updates) {
         // Find the checklist to update
-        const checklistIndex = run.checklists.findIndex((cl: Checklist) => cl.id === update.id);
+        const checklistIndex = updatedChecklists.findIndex((cl: Checklist) => cl.id === update.id);
         if (checklistIndex === -1) {
+            // Checklist not found - this is a new checklist creation
+            // Create a new checklist with the provided fields
+            const newChecklist: Checklist = {
+                id: update.id,
+                title: '',
+                items: update.item_inserts ? [...update.item_inserts] : [],
+                ...update.fields, // Apply the fields (like title)
+            } as Checklist;
+
+            // Add the new checklist to the run
+            updatedChecklists = [...updatedChecklists, newChecklist];
             continue;
         }
 
-        // Make a copy of the checklist
-        const updatedChecklists = [...run.checklists];
-        const checklist = {...run.checklists[checklistIndex]};
+        // Get the current checklist and create an updated version
+        let updatedChecklist = {...updatedChecklists[checklistIndex]};
 
         // Apply checklist field updates
         if (update.fields) {
             for (const [field, value] of Object.entries(update.fields)) {
-                (checklist as any)[field] = value;
+                if (field in updatedChecklist && field !== 'items') {
+                    updatedChecklist = {
+                        ...updatedChecklist,
+                        [field]: value,
+                    };
+                }
             }
+        }
+
+        // Handle items_order separately from update.fields
+        if (update.items_order) {
+            updatedChecklist = {
+                ...updatedChecklist,
+                items_order: update.items_order,
+            } as Checklist & { items_order: string[] };
         }
 
         // Apply item updates
+        let updatedItems = [...updatedChecklist.items];
         if (update.item_updates && update.item_updates.length > 0) {
-            checklist.items = [...checklist.items]; // Make a copy of the items array
-
             for (const itemUpdate of update.item_updates) {
-                const itemIndex = checklist.items.findIndex((item) => item.id === itemUpdate.id);
-                if (itemIndex === -1) {
-                    continue;
+                const itemIndex = updatedItems.findIndex((item) => item.id === itemUpdate.id);
+                if (itemIndex !== -1) {
+                    // Update the item with changed fields
+                    updatedItems[itemIndex] = {
+                        ...updatedItems[itemIndex],
+                        ...itemUpdate.fields,
+                    };
                 }
-
-                // Update the item with changed fields
-                const updatedItem = {
-                    ...checklist.items[itemIndex],
-                    ...itemUpdate.fields,
-                };
-                checklist.items[itemIndex] = updatedItem;
             }
         }
 
-        // Apply item deletions
+        // Apply item deletions using Set for efficient lookup
         if (update.item_deletes && update.item_deletes.length > 0) {
-            checklist.items = checklist.items.filter((item: any) => {
-                // Don't include items whose IDs are in the item_deletes array
-                return !update.item_deletes?.includes(item.id as string);
-            });
+            const deleteSet = new Set(update.item_deletes);
+            updatedItems = updatedItems.filter((item) => !item.id || !deleteSet.has(item.id));
         }
 
         // Apply item insertions
         if (update.item_inserts && update.item_inserts.length > 0) {
-            checklist.items = [...checklist.items, ...update.item_inserts];
+            updatedItems = [...updatedItems, ...update.item_inserts];
         }
 
-        // Update the checklist in the run
-        updatedChecklists[checklistIndex] = checklist;
-        run.checklists = updatedChecklists;
+        // Update the checklist with the new items
+        updatedChecklist = {
+            ...updatedChecklist,
+            items: updatedItems,
+        };
+
+        // Update the checklist in the array
+        updatedChecklists[checklistIndex] = updatedChecklist;
     }
+
+    return {
+        ...run,
+        checklists: updatedChecklists,
+    };
 }
 
 // Idempotent checklist update - prevents duplicates and race conditions
 export function applyChecklistUpdateIdempotent(currentRun: PlaybookRun, payload: ChecklistUpdatePayload): PlaybookRun {
     const updateData = payload.update;
 
-    // Skip if missing checklist_updated_at field (for backward compatibility)
+    // Require server timestamp - reject updates without proper timestamps
     if (!updateData.checklist_updated_at) {
-        updateData.checklist_updated_at = Date.now();
+        return currentRun;
     }
 
     // Clone the current run to create an updated version
@@ -147,11 +198,26 @@ export function applyChecklistUpdateIdempotent(currentRun: PlaybookRun, payload:
     const updatedChecklists = [...updatedRun.checklists];
 
     // Find the checklist to update
-    const checklistIndex = updatedRun.checklists.findIndex((cl: any) => cl.id === updateData.id);
+    const checklistIndex = updatedRun.checklists.findIndex((cl) => cl.id === updateData.id);
     if (checklistIndex === -1) {
-        // Checklist not found - this might be a race condition where the incremental update hasn't been applied yet
-        // Return the current run unchanged rather than failing
-        return currentRun;
+        // Checklist not found - this is a new checklist creation
+        // Create a new checklist with the provided fields
+        const newChecklist = {
+            id: updateData.id,
+            title: '',
+            items: [] as ChecklistItem[],
+            update_at: updateData.checklist_updated_at,
+            ...updateData.fields, // Apply the fields (like title)
+        } as Checklist;
+
+        // Apply item insertions if provided
+        if (updateData.item_inserts && updateData.item_inserts.length > 0) {
+            newChecklist.items = [...updateData.item_inserts];
+        }
+
+        // Add the new checklist to the run
+        updatedRun.checklists = [...updatedRun.checklists, newChecklist];
+        return updatedRun;
     }
 
     // Check if this update is newer than what we already have (idempotency check)
@@ -167,25 +233,32 @@ export function applyChecklistUpdateIdempotent(currentRun: PlaybookRun, payload:
 
     // Apply checklist field updates
     if (updateData.fields) {
-        for (const [field, value] of Object.entries(updateData.fields)) {
-            (checklist as any)[field] = value;
-        }
+        const validFields = Object.fromEntries(
+            Object.entries(updateData.fields).filter(([field]) => field in checklist && field !== 'items')
+        );
+        Object.assign(checklist, validFields);
+    }
+
+    // Handle items_order separately
+    if (updateData.items_order) {
+        checklist.items_order = updateData.items_order;
     }
 
     // Update the timestamp to reflect this update
     checklist.update_at = updateData.checklist_updated_at;
 
-    // Apply item deletions first to avoid conflicts
+    // Apply item deletions first to avoid conflicts using Set for efficient lookup
     if (updateData.item_deletes && updateData.item_deletes.length > 0) {
-        checklist.items = checklist.items.filter((item: any) => {
-            return !updateData.item_deletes?.includes(item.id as string);
+        const deleteSet = new Set(updateData.item_deletes);
+        checklist.items = checklist.items.filter((item) => {
+            return !item.id || !deleteSet.has(item.id);
         });
     }
 
     // Apply item insertions - check for duplicates
     if (updateData.item_inserts && updateData.item_inserts.length > 0) {
-        const existingItemIds = new Set(checklist.items.map((item: any) => item.id));
-        const newItems = updateData.item_inserts.filter((item) => !existingItemIds.has(item.id));
+        const existingItemIds = new Set(checklist.items.map((item) => item.id).filter(Boolean));
+        const newItems = updateData.item_inserts.filter((item) => item.id && !existingItemIds.has(item.id));
         checklist.items = [...checklist.items, ...newItems];
     }
 
@@ -206,19 +279,24 @@ export function applyChecklistItemUpdateIdempotent(currentRun: PlaybookRun, payl
         return currentRun;
     }
 
+    // Require server timestamp - reject updates without proper timestamps
+    if (!itemData.checklist_item_updated_at) {
+        return currentRun;
+    }
+
     // Clone the current run to create an updated version
     const updatedRun = {...currentRun};
     const updatedChecklists = [...updatedRun.checklists];
 
     // Find the checklist that contains the item
-    const checklist = updatedRun.checklists.find((cl: any) => cl.id === checklistID);
+    const checklist = updatedRun.checklists.find((cl) => cl.id === checklistID);
     if (!checklist) {
         // Checklist not found, return unchanged
         return currentRun;
     }
 
     // Find the item to update
-    const itemIndex = checklist.items.findIndex((item: any) => item.id === itemData.id);
+    const itemIndex = checklist.items.findIndex((item) => item.id === itemData.id);
     if (itemIndex === -1) {
         // Item not found, return unchanged
         return currentRun;
@@ -238,9 +316,10 @@ export function applyChecklistItemUpdateIdempotent(currentRun: PlaybookRun, payl
 
     // Apply all fields from the update
     if (itemData.fields) {
-        for (const [key, value] of Object.entries(itemData.fields)) {
-            (updatedItem as any)[key] = value;
-        }
+        const validFields = Object.fromEntries(
+            Object.entries(itemData.fields).filter(([key]) => key in updatedItem)
+        );
+        Object.assign(updatedItem, validFields);
     }
 
     // Update the timestamp to reflect this update
@@ -250,7 +329,7 @@ export function applyChecklistItemUpdateIdempotent(currentRun: PlaybookRun, payl
     itemsCopy[itemIndex] = updatedItem;
 
     // Update the checklist with the new items array
-    const checklistIndex = updatedRun.checklists.findIndex((cl: any) => cl.id === checklistID);
+    const checklistIndex = updatedRun.checklists.findIndex((cl) => cl.id === checklistID);
     updatedChecklists[checklistIndex] = {
         ...checklist,
         items: itemsCopy,

@@ -102,6 +102,7 @@ export interface Checklist {
     items: ChecklistItem[];
     id?: string; // Added to support find/filter operations by ID
     update_at?: number; // Timestamp for idempotency checks
+    items_order?: string[]; // Order of checklist items
 }
 
 export enum ChecklistItemState {
