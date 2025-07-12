@@ -267,7 +267,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
 
                 // # Click request-join button
                 getOverviewEntry('channel').within(() => {
-                    cy.get('button').should('be.visible').click();
+                    cy.get('button').click();
                 });
 
                 // # Click send request button

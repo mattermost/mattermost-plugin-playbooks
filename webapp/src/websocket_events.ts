@@ -181,7 +181,6 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
     };
 }
 
-// Simplified handler for checklist updates - just dispatch the action
 export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
@@ -199,7 +198,6 @@ export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, 
     };
 }
 
-// Simplified handler for checklist item updates - just dispatch the action
 export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
