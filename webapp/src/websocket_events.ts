@@ -69,18 +69,18 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
             return;
         }
         const data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
-        
+
         // Check if we have the run in state before applying incremental update
         const state = getState();
         const currentRun = getRun(data.id)(state);
-        
+
         if (!currentRun) {
             // If we don't have the current state, fetch the full playbook run
             // This ensures we don't lose updates due to missing state
             fetchAndUpdatePlaybookRun(data.id, dispatch);
             return;
         }
-        
+
         dispatch(websocketPlaybookRunIncrementalUpdateReceived(data));
     };
 }
@@ -249,7 +249,7 @@ async function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
     try {
         const playbookRun = await fetchPlaybookRun(runId);
         dispatch(playbookRunUpdated(playbookRun));
-    } catch (error) {
-        console.error(`Failed to fetch playbook run ${runId}:`, error);
+    } catch {
+        // Error fetching playbook run
     }
 }
