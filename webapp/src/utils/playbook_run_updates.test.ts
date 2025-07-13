@@ -1117,4 +1117,240 @@ describe('playbook_run_updates utilities', () => {
             });
         });
     });
+
+    // Test for checklist item move duplication issue (PR #2008)
+    describe('checklist item move duplication prevention', () => {
+        test('should prevent duplicate item insertions when multiple events arrive with different timestamps', () => {
+            // Create a minimal run with two checklists for testing move operations
+            const moveTestRun: PlaybookRun = {
+                ...testPlaybookRun,
+                checklists: [
+                    {
+                        id: 'checklist_1',
+                        title: 'Source Checklist',
+                        update_at: 1000,
+                        items: [
+                            {
+                                id: 'item_to_move',
+                                title: 'Item to Move',
+                                state: 'Open',
+                                state_modified: 1000,
+                                assignee_id: '',
+                                assignee_modified: 1000,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                        ],
+                    },
+                    {
+                        id: 'checklist_2',
+                        title: 'Destination Checklist',
+                        update_at: 1000,
+                        items: [],
+                    },
+                ],
+            };
+
+            // First event: Move item to destination checklist
+            const moveEvent1 = {
+                playbook_run_id: 'run_123',
+                update: {
+                    id: 'checklist_2',
+                    index: 1,
+                    fields: {},
+                    item_inserts: [
+                        {
+                            id: 'item_to_move',
+                            title: 'Item to Move',
+                            state: 'Open',
+                            state_modified: 2000,
+                            assignee_id: '',
+                            assignee_modified: 2000,
+                            command: '',
+                            description: '',
+                            command_last_run: 0,
+                            due_date: 0,
+                            task_actions: [],
+                            update_at: 2000,
+                        },
+                    ],
+                    checklist_updated_at: 2000,
+                },
+            };
+
+            // Apply the first move event
+            let updatedRun = applyChecklistUpdateIdempotent(moveTestRun, moveEvent1);
+
+            // Verify item was moved to destination checklist
+            expect(updatedRun.checklists[1].items).toHaveLength(1);
+            expect(updatedRun.checklists[1].items[0].id).toBe('item_to_move');
+
+            // Second event: Duplicate move event with newer timestamp (simulates race condition)
+            const moveEvent2 = {
+                playbook_run_id: 'run_123',
+                update: {
+                    id: 'checklist_2',
+                    index: 1,
+                    fields: {},
+                    item_inserts: [
+                        {
+                            id: 'item_to_move',
+                            title: 'Item to Move',
+                            state: 'Open',
+                            state_modified: 2001,
+                            assignee_id: '',
+                            assignee_modified: 2001,
+                            command: '',
+                            description: '',
+                            command_last_run: 0,
+                            due_date: 0,
+                            task_actions: [],
+                            update_at: 2001,
+                        },
+                    ],
+                    checklist_updated_at: 2001,
+                },
+            };
+
+            // Apply the second (duplicate) move event
+            updatedRun = applyChecklistUpdateIdempotent(updatedRun, moveEvent2);
+
+            // Verify no duplication occurred - should still be exactly 1 item
+            expect(updatedRun.checklists[1].items).toHaveLength(1);
+            expect(updatedRun.checklists[1].items[0].id).toBe('item_to_move');
+
+            // The duplicate event should be ignored, preserving original timestamp
+            expect(updatedRun.checklists[1].items[0].update_at).toBe(2000);
+        });
+
+        test('should handle rapid sequence of duplicate move events without creating duplicates', () => {
+            const rapidMoveTestRun: PlaybookRun = {
+                ...testPlaybookRun,
+                checklists: [
+                    {
+                        id: 'checklist_1',
+                        title: 'Checklist 1',
+                        update_at: 1000,
+                        items: [],
+                    },
+                    {
+                        id: 'checklist_2',
+                        title: 'Checklist 2',
+                        update_at: 1000,
+                        items: [],
+                    },
+                ],
+            };
+
+            let currentRun = rapidMoveTestRun;
+
+            // Simulate rapid sequence of move events (like rapid drag and drop)
+            for (let i = 0; i < 5; i++) {
+                const timestamp = 2000 + i;
+                const rapidMoveEvent = {
+                    playbook_run_id: 'run_123',
+                    update: {
+                        id: 'checklist_2',
+                        index: 1,
+                        fields: {},
+                        item_inserts: [
+                            {
+                                id: 'rapid_move_item',
+                                title: 'Rapid Move Item',
+                                state: 'Open',
+                                state_modified: timestamp,
+                                assignee_id: '',
+                                assignee_modified: timestamp,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: timestamp,
+                            },
+                        ],
+                        checklist_updated_at: timestamp,
+                    },
+                };
+
+                currentRun = applyChecklistUpdateIdempotent(currentRun, rapidMoveEvent);
+            }
+
+            // After all rapid events, should still have exactly 1 item
+            expect(currentRun.checklists[1].items).toHaveLength(1);
+            expect(currentRun.checklists[1].items[0].id).toBe('rapid_move_item');
+
+            // Should have the first timestamp (subsequent duplicates ignored)
+            expect(currentRun.checklists[1].items[0].update_at).toBe(2000);
+        });
+
+        test('should prevent insertion of items that already exist in the same checklist', () => {
+            const duplicateTestRun: PlaybookRun = {
+                ...testPlaybookRun,
+                checklists: [
+                    {
+                        id: 'checklist_1',
+                        title: 'Test Checklist',
+                        update_at: 1000,
+                        items: [
+                            {
+                                id: 'existing_item',
+                                title: 'Existing Item',
+                                state: 'Open',
+                                state_modified: 1000,
+                                assignee_id: '',
+                                assignee_modified: 1000,
+                                command: '',
+                                description: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                update_at: 1000,
+                            },
+                        ],
+                    },
+                ],
+            };
+
+            // Attempt to insert the same item again
+            const duplicateInsertEvent = {
+                playbook_run_id: 'run_123',
+                update: {
+                    id: 'checklist_1',
+                    index: 0,
+                    fields: {},
+                    item_inserts: [
+                        {
+                            id: 'existing_item', // Same ID as existing item
+                            title: 'Existing Item',
+                            state: 'Open',
+                            state_modified: 2000,
+                            assignee_id: '',
+                            assignee_modified: 2000,
+                            command: '',
+                            description: '',
+                            command_last_run: 0,
+                            due_date: 0,
+                            task_actions: [],
+                            update_at: 2000,
+                        },
+                    ],
+                    checklist_updated_at: 2000,
+                },
+            };
+
+            const result = applyChecklistUpdateIdempotent(duplicateTestRun, duplicateInsertEvent);
+
+            // Should still have exactly 1 item (no duplicate created)
+            expect(result.checklists[0].items).toHaveLength(1);
+            expect(result.checklists[0].items[0].id).toBe('existing_item');
+
+            // Original item should be preserved (duplicate event ignored)
+            expect(result.checklists[0].items[0].update_at).toBe(1000);
+        });
+    });
 });

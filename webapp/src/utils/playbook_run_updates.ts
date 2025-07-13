@@ -163,9 +163,12 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): Pl
             updatedItems = updatedItems.filter((item) => !item.id || !deleteSet.has(item.id));
         }
 
-        // Apply item insertions
+        // Apply item insertions with duplicate prevention
         if (update.item_inserts && update.item_inserts.length > 0) {
-            updatedItems = [...updatedItems, ...update.item_inserts];
+            // Build a set of existing item IDs to prevent duplicates
+            const existingItemIds = new Set(updatedItems.map((item) => item.id).filter(Boolean));
+            const newItems = update.item_inserts.filter((item) => item.id && !existingItemIds.has(item.id));
+            updatedItems = [...updatedItems, ...newItems];
         }
 
         // Update the checklist with the new items
@@ -220,12 +223,35 @@ export function applyChecklistUpdateIdempotent(currentRun: PlaybookRun, payload:
         return updatedRun;
     }
 
-    // Check if this update is newer than what we already have (idempotency check)
+    // Enhanced idempotency check - consider both timestamp and content
     const currentChecklist = updatedRun.checklists[checklistIndex];
+
+    // First check: timestamp-based idempotency (traditional approach)
     if (currentChecklist.update_at && updateData.checklist_updated_at &&
         currentChecklist.update_at >= updateData.checklist_updated_at) {
         // We already have a newer or equal update, skip this one
         return currentRun;
+    }
+
+    // Second check: content-based idempotency for item insertions
+    if (updateData.item_inserts && updateData.item_inserts.length > 0) {
+        const existingItemIds = new Set(currentChecklist.items.map((item) => item.id).filter(Boolean));
+        const alreadyExistingItems = updateData.item_inserts.filter((item) => item.id && existingItemIds.has(item.id));
+
+        // If all items to be inserted already exist, this might be a duplicate event
+        if (alreadyExistingItems.length === updateData.item_inserts.length) {
+            // Check if this is likely a duplicate by comparing timestamps of existing items
+            const hasNewerItems = alreadyExistingItems.every((insertItem) => {
+                const existingItem = currentChecklist.items.find((item) => item.id === insertItem.id);
+                return existingItem && existingItem.update_at && insertItem.update_at &&
+                       existingItem.update_at >= insertItem.update_at;
+            });
+
+            if (hasNewerItems) {
+                // All items already exist with newer or equal timestamps, skip this update
+                return currentRun;
+            }
+        }
     }
 
     // Make a copy of the checklist
@@ -255,11 +281,15 @@ export function applyChecklistUpdateIdempotent(currentRun: PlaybookRun, payload:
         });
     }
 
-    // Apply item insertions - check for duplicates
+    // Apply item insertions with improved duplicate prevention
     if (updateData.item_inserts && updateData.item_inserts.length > 0) {
+        // First, check for duplicates within the current checklist only
         const existingItemIds = new Set(checklist.items.map((item) => item.id).filter(Boolean));
         const newItems = updateData.item_inserts.filter((item) => item.id && !existingItemIds.has(item.id));
-        checklist.items = [...checklist.items, ...newItems];
+
+        if (newItems.length > 0) {
+            checklist.items = [...checklist.items, ...newItems];
+        }
     }
 
     // Update the checklist in the run
