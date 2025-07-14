@@ -38,9 +38,8 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
             // # Wait for page to fully load and settle
             cy.wait(TIMEOUTS.TWO_SEC);
 
-            // * Check time bar in the channel section
-            // * as an indicator of page stability / end of rendering
-            cy.findByText('Today').should('be.visible');
+            // * Check post list content as an indicator of page stability
+            cy.get('#postListContent').should('be.visible');
         });
 
         describe('telemetry', () => {
