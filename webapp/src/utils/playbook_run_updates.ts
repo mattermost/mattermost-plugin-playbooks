@@ -34,7 +34,7 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
     return updatedRun;
 }
 
-// Helper function to apply changed fields to a playbook run (moved from websocket_events.ts)
+// Helper function to apply changed fields to a playbook run
 function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['changed_fields']): PlaybookRun {
     // Start with a shallow copy of the run
     let updatedRun = {...run};

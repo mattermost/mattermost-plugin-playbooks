@@ -77,6 +77,12 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
             return;
         }
 
+        // Guard against playbook ID mixups - incremental updates should only process playbook runs
+        if (!data.id || data.id.startsWith('playbook_')) {
+            console.warn('Ignoring incremental update for non-playbook-run ID:', data.id); // eslint-disable-line no-console
+            return;
+        }
+
         // Check if we have the run in state before applying incremental update
         const state = getState();
         const currentRun = getRun(data.id)(state);
