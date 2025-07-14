@@ -72,7 +72,8 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
         let data: PlaybookRunUpdate;
         try {
             data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
-        } catch {
+        } catch (error) {
+            console.error('Failed to parse PlaybookRunUpdate WebSocket message:', error, 'payload:', msg.data.payload); // eslint-disable-line no-console
             return;
         }
 
@@ -190,7 +191,8 @@ export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, 
         let data: ChecklistUpdatePayload;
         try {
             data = JSON.parse(msg.data.payload) as ChecklistUpdatePayload;
-        } catch {
+        } catch (error) {
+            console.error('Failed to parse ChecklistUpdatePayload WebSocket message:', error, 'payload:', msg.data.payload); // eslint-disable-line no-console
             return;
         }
 
@@ -207,7 +209,8 @@ export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFu
         let data: ChecklistItemUpdatePayload;
         try {
             data = JSON.parse(msg.data.payload) as ChecklistItemUpdatePayload;
-        } catch {
+        } catch (error) {
+            console.error('Failed to parse ChecklistItemUpdatePayload WebSocket message:', error, 'payload:', msg.data.payload); // eslint-disable-line no-console
             return;
         }
 

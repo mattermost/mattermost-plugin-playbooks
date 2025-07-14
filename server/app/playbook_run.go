@@ -486,7 +486,7 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 	for _, checklist := range current {
 		update := ChecklistUpdate{
 			ID:                 checklist.ID,
-			ChecklistUpdatedAt: model.GetMillis(), // checklist.UpdateAt,
+			ChecklistUpdatedAt: checklist.UpdateAt,
 		}
 
 		// Check if checklist exists in previous state
@@ -596,7 +596,7 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if len(fields) > 0 {
 				result.Updates = append(result.Updates, ChecklistItemUpdate{
 					ID:                     item.ID,
-					ChecklistItemUpdatedAt: model.GetMillis(), // item.UpdateAt,
+					ChecklistItemUpdatedAt: item.UpdateAt,
 					Fields:                 fields,
 				})
 			}

@@ -84,7 +84,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	// Prepare the update data
 	update := PlaybookRunUpdate{
 		ID:                   currentRun.ID,
-		PlaybookRunUpdatedAt: model.GetMillis(), // currentRun.UpdateAt,
+		PlaybookRunUpdatedAt: currentRun.UpdateAt,
 		ChangedFields:        changedFields,
 	}
 
