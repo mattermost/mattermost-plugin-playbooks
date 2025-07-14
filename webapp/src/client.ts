@@ -408,7 +408,7 @@ export async function clientSetChecklistItemCommand(playbookRunID: string, check
     return data;
 }
 
-export async function clientAddChecklist(playbookRunID: string, checklist: Checklist) {
+export async function clientAddChecklist(playbookRunID: string, checklist: Omit<Checklist, 'id'>) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists`,
         JSON.stringify(checklist),
     );

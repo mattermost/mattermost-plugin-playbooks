@@ -294,10 +294,15 @@ const ChecklistList = ({
                         setNewChecklistName('');
                     }}
                     onSave={() => {
-                        const newChecklist = {title: newChecklistName, items: [] as ChecklistItem[]};
                         if (playbookRun) {
+                            const newChecklist: Omit<Checklist, 'id'> = {title: newChecklistName, items: [] as ChecklistItem[]};
                             clientAddChecklist(playbookRun.id, newChecklist);
                         } else {
+                            const newChecklist: Checklist = {
+                                id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+                                title: newChecklistName,
+                                items: [] as ChecklistItem[],
+                            };
                             setChecklistsForPlaybook([...checklists, newChecklist]);
                         }
                         setTimeout(() => setNewChecklistName(''), 300);
