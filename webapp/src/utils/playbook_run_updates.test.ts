@@ -727,6 +727,92 @@ describe('playbook_run_updates utilities', () => {
                 expect(result.checklists[0].items[0].id).toBe('item_2');
             });
         });
+
+        describe('checklist deletion', () => {
+            it('should delete entire checklists using checklist_deletes', () => {
+                const runWithMultipleChecklists = {
+                    ...testPlaybookRun,
+                    checklists: [
+                        testPlaybookRun.checklists[0],
+                        {
+                            id: 'checklist_2',
+                            title: 'Second Checklist',
+                            items: [
+                                {
+                                    id: 'item_2',
+                                    title: 'Second Item',
+                                    state: 'Open',
+                                    state_modified: 0,
+                                    assignee_id: '',
+                                    assignee_modified: 0,
+                                    command: '',
+                                    description: '',
+                                    command_last_run: 0,
+                                    due_date: 0,
+                                    task_actions: [],
+                                    update_at: 1000,
+                                },
+                            ],
+                        },
+                    ],
+                };
+
+                const update = {
+                    id: runWithMultipleChecklists.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {},
+                    checklist_deletes: ['checklist_2'],
+                };
+
+                const result = applyIncrementalUpdate(runWithMultipleChecklists, update);
+                expect(result.checklists).toHaveLength(1);
+                expect(result.checklists[0].id).toBe('checklist_1');
+                expect(result.checklists.find((checklist) => checklist.id === 'checklist_2')).toBeUndefined();
+            });
+
+            it('should handle deletion of multiple checklists', () => {
+                const runWithMultipleChecklists = {
+                    ...testPlaybookRun,
+                    checklists: [
+                        testPlaybookRun.checklists[0],
+                        {
+                            id: 'checklist_2',
+                            title: 'Second Checklist',
+                            items: [],
+                        },
+                        {
+                            id: 'checklist_3',
+                            title: 'Third Checklist',
+                            items: [],
+                        },
+                    ],
+                };
+
+                const update = {
+                    id: runWithMultipleChecklists.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {},
+                    checklist_deletes: ['checklist_2', 'checklist_3'],
+                };
+
+                const result = applyIncrementalUpdate(runWithMultipleChecklists, update);
+                expect(result.checklists).toHaveLength(1);
+                expect(result.checklists[0].id).toBe('checklist_1');
+            });
+
+            it('should handle deletion of non-existent checklists gracefully', () => {
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000,
+                    changed_fields: {},
+                    checklist_deletes: ['non_existent_checklist'],
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+                expect(result.checklists).toHaveLength(1);
+                expect(result.checklists[0].id).toBe('checklist_1');
+            });
+        });
     });
 
     describe('REORDERING SCENARIOS TESTS', () => {

@@ -223,6 +223,9 @@ type PlaybookRunUpdate struct {
 
 	// ChangedFields contains only the fields that have changed in the playbook run
 	ChangedFields map[string]interface{} `json:"changed_fields"`
+
+	// ChecklistDeletes contains IDs of deleted checklists
+	ChecklistDeletes []string `json:"checklist_deletes,omitempty"`
 }
 
 // ChecklistUpdate represents changes to a specific checklist
@@ -247,6 +250,15 @@ type ChecklistUpdate struct {
 
 	// ItemsOrder contains the updated sort order of checklist items
 	ItemsOrder []string `json:"items_order,omitempty"`
+}
+
+// IsEmpty returns true if the ChecklistUpdate has no changes
+func (u *ChecklistUpdate) IsEmpty() bool {
+	return len(u.Fields) == 0 &&
+		len(u.ItemUpdates) == 0 &&
+		len(u.ItemDeletes) == 0 &&
+		len(u.ItemInserts) == 0 &&
+		len(u.ItemsOrder) == 0
 }
 
 // ChecklistItemUpdate represents changes to a specific checklist item
@@ -462,6 +474,28 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 		changes["checklists"] = checklistUpdates
 	}
 
+	// Process checklist deletions - detect checklists that exist in previous but not in current
+	var checklistDeletes []string
+	if len(previous.Checklists) > 0 {
+		// Create a map of current checklist IDs for quick lookup
+		currentChecklistIDs := make(map[string]bool)
+		for _, checklist := range current.Checklists {
+			currentChecklistIDs[checklist.ID] = true
+		}
+
+		// Find checklists that exist in previous but not in current
+		for _, prevChecklist := range previous.Checklists {
+			if !currentChecklistIDs[prevChecklist.ID] {
+				checklistDeletes = append(checklistDeletes, prevChecklist.ID)
+			}
+		}
+	}
+
+	// Add checklist deletes to changes if any exist
+	if len(checklistDeletes) > 0 {
+		changes["_checklist_deletes"] = checklistDeletes
+	}
+
 	return changes
 }
 
@@ -478,9 +512,6 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 	}
 
 	var updates []ChecklistUpdate
-
-	// Create a single timestamp for all updates in this batch
-	now := model.GetMillis()
 
 	// Process current checklists - update or add
 	for _, checklist := range current {
@@ -515,7 +546,7 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 			}
 
 			// Only add update if there are changes
-			if len(update.Fields) > 0 || len(update.ItemUpdates) > 0 || len(update.ItemDeletes) > 0 || len(update.ItemInserts) > 0 || len(update.ItemsOrder) > 0 {
+			if !update.IsEmpty() {
 				updates = append(updates, update)
 			}
 
@@ -530,15 +561,6 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 			update.ItemInserts = checklist.Items
 			updates = append(updates, update)
 		}
-	}
-
-	// Process deleted checklists
-	for id := range prevMap {
-		update := ChecklistUpdate{
-			ID:                 id,
-			ChecklistUpdatedAt: now, // Use the same timestamp for consistency
-		}
-		updates = append(updates, update)
 	}
 
 	return updates

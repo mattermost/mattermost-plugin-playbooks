@@ -24,6 +24,7 @@ export interface PlaybookRunUpdate {
     changed_fields: Omit<Partial<PlaybookRun>, 'checklists'> & {
         checklists?: ChecklistUpdate[];
     };
+    checklist_deletes?: string[];
 }
 
 export interface ChecklistUpdatePayload {

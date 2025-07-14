@@ -19,6 +19,15 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
         ...(update.playbook_run_updated_at && {update_at: update.playbook_run_updated_at}),
     };
 
+    // Apply checklist deletions first
+    if (update.checklist_deletes && update.checklist_deletes.length > 0) {
+        const deleteSet = new Set(update.checklist_deletes);
+        updatedRun = {
+            ...updatedRun,
+            checklists: updatedRun.checklists.filter((checklist) => checklist.id && !deleteSet.has(checklist.id)),
+        };
+    }
+
     // Apply the changed fields to get a new run
     updatedRun = applyChangedFields(updatedRun, update.changed_fields);
 

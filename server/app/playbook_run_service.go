@@ -81,11 +81,20 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		return
 	}
 
+	// Extract checklist deletes from changed fields
+	var checklistDeletes []string
+	if deletes, ok := changedFields["_checklist_deletes"].([]string); ok {
+		checklistDeletes = deletes
+		// Remove the internal key from changed fields
+		delete(changedFields, "_checklist_deletes")
+	}
+
 	// Prepare the update data
 	update := PlaybookRunUpdate{
 		ID:                   currentRun.ID,
 		PlaybookRunUpdatedAt: currentRun.UpdateAt,
 		ChangedFields:        changedFields,
+		ChecklistDeletes:     checklistDeletes,
 	}
 
 	// Extract checklist updates if they exist

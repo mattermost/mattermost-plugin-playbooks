@@ -908,8 +908,8 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 
 		changes := DetectChangedFields(prev, curr)
 
-		// There should be checklist changes
-		require.Len(t, changes, 1)
+		// There should be checklist changes (updates and deletions)
+		require.Len(t, changes, 2)
 		checklistUpdates, ok := changes["checklists"].([]ChecklistUpdate)
 		require.True(t, ok)
 
@@ -928,8 +928,8 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 			}
 
 			if update.ID == "checklist2" && len(update.ItemUpdates) > 0 {
-				itemState, ok := update.ItemUpdates[0].Fields["state"]
-				if ok && itemState == ChecklistItemStateClosed {
+				itemState, exists := update.ItemUpdates[0].Fields["state"]
+				if exists && itemState == ChecklistItemStateClosed {
 					itemStateChanged = true
 				}
 			}
@@ -942,6 +942,12 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 		require.True(t, checklistTitleChanged, "Failed to detect checklist title change")
 		require.True(t, itemStateChanged, "Failed to detect item state change")
 		require.True(t, checklistAdded, "Failed to detect checklist addition")
+
+		// Test that checklist deletion is handled via ChecklistDeletes
+		checklistDeletes, ok := changes["_checklist_deletes"].([]string)
+		require.True(t, ok, "Expected _checklist_deletes to be present in changes")
+		require.Len(t, checklistDeletes, 1, "Expected exactly one checklist deletion")
+		require.Equal(t, "checklist3", checklistDeletes[0], "Expected checklist3 to be deleted")
 	})
 }
 
