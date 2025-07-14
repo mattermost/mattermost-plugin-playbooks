@@ -67,7 +67,7 @@ import {
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
-import {applyChecklistItemUpdateIdempotent, applyChecklistUpdateIdempotent, applyIncrementalUpdate} from 'src/utils/playbook_run_updates';
+import {applyChecklistItemUpdate, applyChecklistUpdate, applyIncrementalUpdate} from 'src/utils/playbook_run_updates';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -191,7 +191,7 @@ const myPlaybookRuns = (
             return state;
         }
 
-        const updatedRun = applyChecklistUpdateIdempotent(currentRun, wsAction.data);
+        const updatedRun = applyChecklistUpdate(currentRun, wsAction.data);
         return {
             ...state,
             [runId]: updatedRun,
@@ -208,7 +208,7 @@ const myPlaybookRuns = (
             return state;
         }
 
-        const updatedRun = applyChecklistItemUpdateIdempotent(currentRun, wsAction.data);
+        const updatedRun = applyChecklistItemUpdate(currentRun, wsAction.data);
         return {
             ...state,
             [runId]: updatedRun,
@@ -374,7 +374,7 @@ const myPlaybookRunsByTeam = (
             return state;
         }
 
-        const updatedRun = applyChecklistUpdateIdempotent(currentRun, wsAction.data);
+        const updatedRun = applyChecklistUpdate(currentRun, wsAction.data);
         return {
             ...state,
             [targetTeamId]: {
@@ -417,7 +417,7 @@ const myPlaybookRunsByTeam = (
             return state;
         }
 
-        const updatedRun = applyChecklistItemUpdateIdempotent(currentRun, wsAction.data);
+        const updatedRun = applyChecklistItemUpdate(currentRun, wsAction.data);
         return {
             ...state,
             [targetTeamId]: {

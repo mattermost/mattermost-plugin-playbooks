@@ -187,8 +187,8 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): Pl
     };
 }
 
-// Idempotent checklist update - prevents duplicates and race conditions
-export function applyChecklistUpdateIdempotent(currentRun: PlaybookRun, payload: ChecklistUpdatePayload): PlaybookRun {
+// Checklist update - prevents duplicates and race conditions
+export function applyChecklistUpdate(currentRun: PlaybookRun, payload: ChecklistUpdatePayload): PlaybookRun {
     const updateData = payload.update;
 
     // Require server timestamp - reject updates without proper timestamps
@@ -299,8 +299,8 @@ export function applyChecklistUpdateIdempotent(currentRun: PlaybookRun, payload:
     return updatedRun;
 }
 
-// Idempotent checklist item update - prevents duplicates
-export function applyChecklistItemUpdateIdempotent(currentRun: PlaybookRun, payload: ChecklistItemUpdatePayload): PlaybookRun {
+// Checklist item update - prevents duplicates
+export function applyChecklistItemUpdate(currentRun: PlaybookRun, payload: ChecklistItemUpdatePayload): PlaybookRun {
     const itemData = payload.update;
     const checklistID = payload.checklist_id;
 

@@ -4,7 +4,7 @@
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
-import {applyChecklistItemUpdateIdempotent, applyChecklistUpdateIdempotent, applyIncrementalUpdate} from './playbook_run_updates';
+import {applyChecklistItemUpdate, applyChecklistUpdate, applyIncrementalUpdate} from './playbook_run_updates';
 
 describe('playbook_run_updates utilities', () => {
     // Create a test playbook run for testing
@@ -107,7 +107,7 @@ describe('playbook_run_updates utilities', () => {
         });
     });
 
-    describe('applyChecklistUpdateIdempotent', () => {
+    describe('applyChecklistUpdate', () => {
         it('should update checklist fields', () => {
             const payload = {
                 playbook_run_id: testPlaybookRun.id,
@@ -121,7 +121,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistUpdate(testPlaybookRun, payload);
 
             expect(result.checklists[0].title).toBe('Updated Checklist Title');
             expect(result.checklists[0].items.length).toBe(1); // Items preserved
@@ -152,7 +152,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistUpdate(testPlaybookRun, payload);
 
             expect(result.checklists[0].items.length).toBe(2);
             expect(result.checklists[0].items[1]).toMatchObject({
@@ -161,7 +161,7 @@ describe('playbook_run_updates utilities', () => {
             });
 
             // Applying the same update again should not create duplicates
-            const result2 = applyChecklistUpdateIdempotent(result, payload);
+            const result2 = applyChecklistUpdate(result, payload);
             expect(result2.checklists[0].items.length).toBe(2); // Still 2, no duplicates
         });
 
@@ -180,7 +180,7 @@ describe('playbook_run_updates utilities', () => {
             };
 
             // Apply the first update to get a result with proper timestamp
-            const firstResult = applyChecklistUpdateIdempotent(testPlaybookRun, firstPayload);
+            const firstResult = applyChecklistUpdate(testPlaybookRun, firstPayload);
 
             // Try to apply an older update (timestamp 1500)
             const olderPayload = {
@@ -195,7 +195,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistUpdateIdempotent(firstResult, olderPayload);
+            const result = applyChecklistUpdate(firstResult, olderPayload);
 
             // Should remain unchanged due to older timestamp
             expect(result.checklists[0].title).toBe('First Update');
@@ -214,7 +214,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistUpdate(testPlaybookRun, payload);
 
             // Should create new checklist when it doesn't exist
             expect(result.checklists).toHaveLength(2);
@@ -227,7 +227,7 @@ describe('playbook_run_updates utilities', () => {
         });
     });
 
-    describe('applyChecklistItemUpdateIdempotent', () => {
+    describe('applyChecklistItemUpdate', () => {
         it('should update item fields', () => {
             const payload = {
                 playbook_run_id: testPlaybookRun.id,
@@ -243,7 +243,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistItemUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistItemUpdate(testPlaybookRun, payload);
 
             expect(result.checklists[0].items[0].state).toBe('Closed');
             expect(result.checklists[0].items[0].assignee_id).toBe('user_2');
@@ -266,7 +266,7 @@ describe('playbook_run_updates utilities', () => {
             };
 
             // Apply the first update to get a result with proper timestamp
-            const firstResult = applyChecklistItemUpdateIdempotent(testPlaybookRun, firstPayload);
+            const firstResult = applyChecklistItemUpdate(testPlaybookRun, firstPayload);
 
             // Try to apply an older update (timestamp 1500)
             const olderPayload = {
@@ -282,7 +282,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistItemUpdateIdempotent(firstResult, olderPayload);
+            const result = applyChecklistItemUpdate(firstResult, olderPayload);
 
             // Should remain unchanged due to older timestamp
             expect(result.checklists[0].items[0].state).toBe('Closed');
@@ -302,7 +302,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistItemUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistItemUpdate(testPlaybookRun, payload);
 
             expect(result).toBe(testPlaybookRun); // Same object, unchanged
         });
@@ -321,7 +321,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistItemUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistItemUpdate(testPlaybookRun, payload);
 
             expect(result).toBe(testPlaybookRun); // Same object, unchanged
         });
@@ -340,7 +340,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistItemUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistItemUpdate(testPlaybookRun, payload);
 
             expect(result).not.toBe(testPlaybookRun); // Different objects
             expect(testPlaybookRun.checklists[0].items[0].state).toBe('Open'); // Original unchanged
@@ -349,7 +349,7 @@ describe('playbook_run_updates utilities', () => {
     });
 
     describe('NEW CHECKLIST CREATION TESTS - Bug Fix Validation', () => {
-        it('applyChecklistUpdateIdempotent should create new checklist when not found', () => {
+        it('applyChecklistUpdate should create new checklist when not found', () => {
             const payload = {
                 playbook_run_id: testPlaybookRun.id,
                 update: {
@@ -377,7 +377,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistUpdate(testPlaybookRun, payload);
 
             // Should create a new checklist
             expect(result.checklists).toHaveLength(2);
@@ -394,7 +394,7 @@ describe('playbook_run_updates utilities', () => {
             });
         });
 
-        it('applyChecklistUpdateIdempotent should create new checklist with empty items when no item_inserts', () => {
+        it('applyChecklistUpdate should create new checklist with empty items when no item_inserts', () => {
             const payload = {
                 playbook_run_id: testPlaybookRun.id,
                 update: {
@@ -407,7 +407,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
+            const result = applyChecklistUpdate(testPlaybookRun, payload);
 
             // Should create a new checklist with empty items
             expect(result.checklists).toHaveLength(2);
@@ -419,7 +419,7 @@ describe('playbook_run_updates utilities', () => {
             expect(result.checklists[1].items).toHaveLength(0);
         });
 
-        it('applyChecklistUpdateIdempotent should handle new checklist creation idempotently', () => {
+        it('applyChecklistUpdate should handle new checklist creation idempotently', () => {
             const payload = {
                 playbook_run_id: testPlaybookRun.id,
                 update: {
@@ -448,8 +448,8 @@ describe('playbook_run_updates utilities', () => {
             };
 
             // Apply the same update twice
-            const result1 = applyChecklistUpdateIdempotent(testPlaybookRun, payload);
-            const result2 = applyChecklistUpdateIdempotent(result1, payload);
+            const result1 = applyChecklistUpdate(testPlaybookRun, payload);
+            const result2 = applyChecklistUpdate(result1, payload);
 
             // Should not create duplicates
             expect(result1.checklists).toHaveLength(2);
@@ -458,7 +458,7 @@ describe('playbook_run_updates utilities', () => {
             expect(result2.checklists[1].items).toHaveLength(1);
         });
 
-        it('applyChecklistUpdateIdempotent should reject older timestamps for new checklist creation', () => {
+        it('applyChecklistUpdate should reject older timestamps for new checklist creation', () => {
             // First create a checklist with timestamp 2000
             const firstPayload = {
                 playbook_run_id: testPlaybookRun.id,
@@ -472,7 +472,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result1 = applyChecklistUpdateIdempotent(testPlaybookRun, firstPayload);
+            const result1 = applyChecklistUpdate(testPlaybookRun, firstPayload);
 
             // Try to apply older update (timestamp 1500)
             const olderPayload = {
@@ -487,7 +487,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result2 = applyChecklistUpdateIdempotent(result1, olderPayload);
+            const result2 = applyChecklistUpdate(result1, olderPayload);
 
             // Should remain unchanged due to older timestamp
             expect(result2.checklists[1].title).toBe('First Version');
@@ -686,7 +686,7 @@ describe('playbook_run_updates utilities', () => {
         });
 
         describe('checklist item deletion in idempotent updates', () => {
-            it('should delete items in applyChecklistUpdateIdempotent', () => {
+            it('should delete items in applyChecklistUpdate', () => {
                 const runWithMultipleItems = {
                     ...testPlaybookRun,
                     checklists: [{
@@ -721,7 +721,7 @@ describe('playbook_run_updates utilities', () => {
                     },
                 };
 
-                const result = applyChecklistUpdateIdempotent(runWithMultipleItems, payload);
+                const result = applyChecklistUpdate(runWithMultipleItems, payload);
 
                 expect(result.checklists[0].items).toHaveLength(1);
                 expect(result.checklists[0].items[0].id).toBe('item_2');
@@ -869,7 +869,7 @@ describe('playbook_run_updates utilities', () => {
                     },
                 };
 
-                const result = applyChecklistUpdateIdempotent(runWithMultipleItems, payload);
+                const result = applyChecklistUpdate(runWithMultipleItems, payload);
 
                 expect((result.checklists[0] as any).items_order).toEqual(['item_2', 'item_1']);
             });
@@ -1183,7 +1183,7 @@ describe('playbook_run_updates utilities', () => {
             };
 
             // Apply the first move event
-            let updatedRun = applyChecklistUpdateIdempotent(moveTestRun, moveEvent1);
+            let updatedRun = applyChecklistUpdate(moveTestRun, moveEvent1);
 
             // Verify item was moved to destination checklist
             expect(updatedRun.checklists[1].items).toHaveLength(1);
@@ -1217,7 +1217,7 @@ describe('playbook_run_updates utilities', () => {
             };
 
             // Apply the second (duplicate) move event
-            updatedRun = applyChecklistUpdateIdempotent(updatedRun, moveEvent2);
+            updatedRun = applyChecklistUpdate(updatedRun, moveEvent2);
 
             // Verify no duplication occurred - should still be exactly 1 item
             expect(updatedRun.checklists[1].items).toHaveLength(1);
@@ -1277,7 +1277,7 @@ describe('playbook_run_updates utilities', () => {
                     },
                 };
 
-                currentRun = applyChecklistUpdateIdempotent(currentRun, rapidMoveEvent);
+                currentRun = applyChecklistUpdate(currentRun, rapidMoveEvent);
             }
 
             // After all rapid events, should still have exactly 1 item
@@ -1343,7 +1343,7 @@ describe('playbook_run_updates utilities', () => {
                 },
             };
 
-            const result = applyChecklistUpdateIdempotent(duplicateTestRun, duplicateInsertEvent);
+            const result = applyChecklistUpdate(duplicateTestRun, duplicateInsertEvent);
 
             // Should still have exactly 1 item (no duplicate created)
             expect(result.checklists[0].items).toHaveLength(1);
