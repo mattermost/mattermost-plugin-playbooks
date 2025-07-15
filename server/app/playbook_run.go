@@ -206,7 +206,11 @@ type PlaybookRun struct {
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
-	return r.ItemsOrder
+	itemsOrder := make([]string, len(r.Checklists))
+	for i, checklist := range r.Checklists {
+		itemsOrder[i] = checklist.ID
+	}
+	return itemsOrder
 }
 
 // PlaybookRunUpdate represents an incremental update to a playbook run
