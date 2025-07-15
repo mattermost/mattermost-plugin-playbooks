@@ -13,10 +13,21 @@ import {
 
 // Helper function to apply incremental updates idempotently
 export function applyIncrementalUpdate(currentRun: PlaybookRun, update: PlaybookRunUpdate): PlaybookRun {
+    // Check if this update is older than the current state
+    if (currentRun.update_at && update.playbook_run_updated_at &&
+        update.playbook_run_updated_at > 0 &&
+        currentRun.update_at >= update.playbook_run_updated_at) {
+        // We already have a newer or equal update, skip this one
+        return currentRun;
+    }
+
     // Create a new run object with the timestamp update
+    // If update timestamp is 0 or missing, preserve original timestamp
     let updatedRun = {
         ...currentRun,
-        update_at: update.playbook_run_updated_at,
+        update_at: update.playbook_run_updated_at && update.playbook_run_updated_at > 0 ?
+            update.playbook_run_updated_at :
+            currentRun.update_at,
     };
 
     // Apply checklist deletions first
