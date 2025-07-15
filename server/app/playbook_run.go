@@ -682,7 +682,6 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 	newPlaybookRun.BroadcastChannelIDs = append([]string(nil), r.BroadcastChannelIDs...)
-	newPlaybookRun.ItemsOrder = append([]string(nil), r.ItemsOrder...)
 
 	return &newPlaybookRun
 }
@@ -729,9 +728,6 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.MetricsData == nil {
 		old.MetricsData = []RunMetricData{}
-	}
-	if old.ItemsOrder == nil {
-		old.ItemsOrder = []string{}
 	}
 
 	return json.Marshal(old)
