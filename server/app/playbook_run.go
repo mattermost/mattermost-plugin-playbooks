@@ -729,6 +729,9 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	if old.MetricsData == nil {
 		old.MetricsData = []RunMetricData{}
 	}
+	if old.ItemsOrder == nil {
+		old.ItemsOrder = []string{}
+	}
 
 	return json.Marshal(old)
 }
