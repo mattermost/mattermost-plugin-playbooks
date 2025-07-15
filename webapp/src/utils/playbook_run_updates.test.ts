@@ -1083,19 +1083,34 @@ describe('playbook_run_updates utilities', () => {
         });
 
         describe('error handling and edge cases', () => {
-            it('should handle updates with missing playbook_run_updated_at', () => {
+            it('should handle updates with unset timestamp (0)', () => {
                 const update = {
                     id: testPlaybookRun.id,
-                    playbook_run_updated_at: 0,
+                    playbook_run_updated_at: 0, // 0 means "unset" timestamp - should preserve original
                     changed_fields: {
-                        name: 'Update Without Timestamp',
+                        name: 'Update With Unset Timestamp',
                     },
                 };
 
                 const result = applyIncrementalUpdate(testPlaybookRun, update);
 
-                expect(result.name).toBe('Update Without Timestamp');
+                expect(result.name).toBe('Update With Unset Timestamp');
                 expect(result.update_at).toBe(testPlaybookRun.update_at); // Should preserve original
+            });
+
+            it('should handle updates with valid timestamp', () => {
+                const update = {
+                    id: testPlaybookRun.id,
+                    playbook_run_updated_at: 2000, // Valid timestamp - should be used
+                    changed_fields: {
+                        name: 'Update With Valid Timestamp',
+                    },
+                };
+
+                const result = applyIncrementalUpdate(testPlaybookRun, update);
+
+                expect(result.name).toBe('Update With Valid Timestamp');
+                expect(result.update_at).toBe(2000); // Should use the provided timestamp
             });
 
             it('should handle empty changed_fields', () => {

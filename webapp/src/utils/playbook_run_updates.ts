@@ -159,8 +159,14 @@ function applyItemUpdates(items: ChecklistItem[], update: ChecklistUpdate): Chec
     // Apply item insertions with duplicate prevention
     if (update.item_inserts && update.item_inserts.length > 0) {
         const existingItemIds = new Set(updatedItems.map((item) => item.id).filter(Boolean));
-        const newItems = update.item_inserts.filter((item) => item.id && !existingItemIds.has(item.id));
-        updatedItems = [...updatedItems, ...newItems];
+
+        // Deduplicate within the payload itself and filter out existing items
+        const uniqueNewItems = update.item_inserts.filter((item, index, array) =>
+            item.id && !existingItemIds.has(item.id) &&
+            array.findIndex((i) => i.id === item.id) === index
+        );
+
+        updatedItems = [...updatedItems, ...uniqueNewItems];
     }
 
     return updatedItems;
@@ -342,10 +348,15 @@ export function applyChecklistUpdate(currentRun: PlaybookRun, payload: Checklist
     if (updateData.item_inserts && updateData.item_inserts.length > 0) {
         // First, check for duplicates within the current checklist only
         const existingItemIds = new Set(checklist.items.map((item) => item.id).filter(Boolean));
-        const newItems = updateData.item_inserts.filter((item) => item.id && !existingItemIds.has(item.id));
 
-        if (newItems.length > 0) {
-            checklist.items = [...checklist.items, ...newItems];
+        // Deduplicate within the payload itself and filter out existing items
+        const uniqueNewItems = updateData.item_inserts.filter((item, index, array) =>
+            item.id && !existingItemIds.has(item.id) &&
+            array.findIndex((i) => i.id === item.id) === index
+        );
+
+        if (uniqueNewItems.length > 0) {
+            checklist.items = [...checklist.items, ...uniqueNewItems];
         }
     }
 
