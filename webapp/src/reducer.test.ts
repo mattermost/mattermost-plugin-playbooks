@@ -197,7 +197,6 @@ describe('websocket event actions', () => {
                 playbook_run_id: testPlaybookRun.id,
                 update: {
                     id: 'checklist_1',
-                    index: 0,
                     checklist_updated_at: 2000,
                     fields: {
                         title: 'Updated Checklist Title',
@@ -236,7 +235,6 @@ describe('websocket event actions', () => {
                 playbook_run_id: testPlaybookRun.id,
                 update: {
                     id: 'checklist_1',
-                    index: 0,
                     checklist_updated_at: 2000,
                     item_inserts: [newItem],
                 },
@@ -259,7 +257,6 @@ describe('websocket event actions', () => {
                 playbook_run_id: 'unknown_run',
                 update: {
                     id: 'checklist_1',
-                    index: 0,
                     checklist_updated_at: 2000,
                     fields: {
                         title: 'Updated Title',
@@ -283,7 +280,6 @@ describe('websocket event actions', () => {
                 checklist_id: 'checklist_1',
                 update: {
                     id: 'item_1',
-                    index: 0,
                     checklist_item_updated_at: 2000,
                     fields: {
                         state: 'Closed',
@@ -314,7 +310,6 @@ describe('websocket event actions', () => {
                 checklist_id: 'checklist_1',
                 update: {
                     id: 'item_1',
-                    index: 0,
                     checklist_item_updated_at: 2000,
                     fields: {
                         state: 'Closed',
@@ -336,7 +331,6 @@ describe('websocket event actions', () => {
                 checklist_id: 'unknown_checklist',
                 update: {
                     id: 'item_1',
-                    index: 0,
                     checklist_item_updated_at: 2000,
                     fields: {
                         state: 'Closed',
@@ -358,7 +352,6 @@ describe('websocket event actions', () => {
                 checklist_id: 'checklist_1',
                 update: {
                     id: 'unknown_item',
-                    index: 0,
                     checklist_item_updated_at: 2000,
                     fields: {
                         state: 'Closed',

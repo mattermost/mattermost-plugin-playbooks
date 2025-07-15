@@ -285,7 +285,6 @@ describe('incremental updates', () => {
             const checklistUpdates: ChecklistUpdate[] = [
                 {
                     id: 'checklist_1',
-                    index: 0,
                     checklist_updated_at: 1000,
                     fields: {
                         title: 'Updated Checklist Title',
@@ -293,7 +292,6 @@ describe('incremental updates', () => {
                     item_updates: [
                         {
                             id: 'item_1',
-                            index: 0,
                             checklist_item_updated_at: 1000,
                             fields: {
                                 state: 'Closed',
@@ -302,7 +300,6 @@ describe('incremental updates', () => {
                         },
                         {
                             id: 'item_2',
-                            index: 1,
                             checklist_item_updated_at: 1000,
                             fields: {},
                         },
@@ -357,7 +354,6 @@ describe('incremental updates', () => {
                     checklists: [
                         {
                             id: 'checklist_1',
-                            index: 0,
                             checklist_updated_at: 1000,
                             fields: {
                                 title: 'Updated Checklist Title via updates',
@@ -365,7 +361,6 @@ describe('incremental updates', () => {
                             item_updates: [
                                 {
                                     id: 'item_1',
-                                    index: 0,
                                     checklist_item_updated_at: 1000,
                                     fields: {
                                         state: 'Closed',

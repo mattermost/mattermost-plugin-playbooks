@@ -206,11 +206,7 @@ type PlaybookRun struct {
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
-	itemsOrder := make([]string, len(r.Checklists))
-	for i, checklist := range r.Checklists {
-		itemsOrder[i] = checklist.ID
-	}
-	return itemsOrder
+	return r.ItemsOrder
 }
 
 // PlaybookRunUpdate represents an incremental update to a playbook run
@@ -293,7 +289,19 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 
 	changes := make(map[string]interface{})
 
-	// Compare scalar fields
+	// Compare different types of fields using focused helper functions
+	detectScalarFieldChanges(previous, current, changes)
+	detectStringSliceFieldChanges(previous, current, changes)
+	detectStatusPostChanges(previous, current, changes)
+	detectTimelineEventChanges(previous, current, changes)
+	detectMetricsDataChanges(previous, current, changes)
+	detectChecklistChanges(previous, current, changes)
+
+	return changes
+}
+
+// detectScalarFieldChanges compares scalar fields between two PlaybookRun objects
+func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
 	if previous.Name != current.Name {
 		changes["name"] = current.Name
 	}
@@ -381,12 +389,13 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	if previous.Type != current.Type {
 		changes["type"] = current.Type
 	}
-
 	if !compareItemsOrder(previous.ItemsOrder, current.ItemsOrder) {
 		changes["items_order"] = current.ItemsOrder
 	}
+}
 
-	// Check array fields where order doesn't matter (unordered sets)
+// detectStringSliceFieldChanges compares string slice fields (unordered sets)
+func detectStringSliceFieldChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
 	if !StringSetsEqual(previous.InvitedUserIDs, current.InvitedUserIDs) {
 		changes["invited_user_ids"] = current.InvitedUserIDs
 	}
@@ -405,85 +414,78 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	if !StringSetsEqual(previous.WebhookOnStatusUpdateURLs, current.WebhookOnStatusUpdateURLs) {
 		changes["webhook_on_status_update_urls"] = current.WebhookOnStatusUpdateURLs
 	}
+}
 
-	// Process status posts
-	statusPostsChanged := false
+// detectStatusPostChanges compares status posts between two PlaybookRun objects
+func detectStatusPostChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
 	if len(previous.StatusPosts) != len(current.StatusPosts) {
-		statusPostsChanged = true
-	} else {
-		// Compare each status post by ID and other key fields
-		for i, prevPost := range previous.StatusPosts {
-			currPost := current.StatusPosts[i]
-			if prevPost.ID != currPost.ID ||
-				prevPost.CreateAt != currPost.CreateAt ||
-				prevPost.DeleteAt != currPost.DeleteAt {
-				statusPostsChanged = true
-				break
-			}
-		}
-	}
-	if statusPostsChanged {
 		changes["status_posts"] = current.StatusPosts
+		return
 	}
 
-	// Process timeline events
-	timelineEventsChanged := false
+	for i, prevPost := range previous.StatusPosts {
+		currPost := current.StatusPosts[i]
+		if prevPost.ID != currPost.ID ||
+			prevPost.CreateAt != currPost.CreateAt ||
+			prevPost.DeleteAt != currPost.DeleteAt {
+			changes["status_posts"] = current.StatusPosts
+			return
+		}
+	}
+}
+
+// detectTimelineEventChanges compares timeline events between two PlaybookRun objects
+func detectTimelineEventChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
 	if len(previous.TimelineEvents) != len(current.TimelineEvents) {
-		timelineEventsChanged = true
-	} else {
-		// Compare each timeline event by ID and other key fields
-		for i, prevEvent := range previous.TimelineEvents {
-			currEvent := current.TimelineEvents[i]
-			if prevEvent.ID != currEvent.ID ||
-				prevEvent.EventType != currEvent.EventType ||
-				prevEvent.CreateAt != currEvent.CreateAt ||
-				prevEvent.DeleteAt != currEvent.DeleteAt ||
-				prevEvent.PostID != currEvent.PostID ||
-				prevEvent.Summary != currEvent.Summary {
-				timelineEventsChanged = true
-				break
-			}
-		}
-	}
-	if timelineEventsChanged {
 		changes["timeline_events"] = current.TimelineEvents
+		return
 	}
 
-	// Process metrics data
-	metricsDataChanged := false
-	if len(previous.MetricsData) != len(current.MetricsData) {
-		metricsDataChanged = true
-	} else {
-		// Compare each metric by ID and value
-		for i, prevMetric := range previous.MetricsData {
-			currMetric := current.MetricsData[i]
-			if prevMetric.MetricConfigID != currMetric.MetricConfigID ||
-				prevMetric.Value != currMetric.Value {
-				metricsDataChanged = true
-				break
-			}
+	for i, prevEvent := range previous.TimelineEvents {
+		currEvent := current.TimelineEvents[i]
+		if prevEvent.ID != currEvent.ID ||
+			prevEvent.EventType != currEvent.EventType ||
+			prevEvent.CreateAt != currEvent.CreateAt ||
+			prevEvent.DeleteAt != currEvent.DeleteAt ||
+			prevEvent.PostID != currEvent.PostID ||
+			prevEvent.Summary != currEvent.Summary {
+			changes["timeline_events"] = current.TimelineEvents
+			return
 		}
 	}
-	if metricsDataChanged {
+}
+
+// detectMetricsDataChanges compares metrics data between two PlaybookRun objects
+func detectMetricsDataChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	if len(previous.MetricsData) != len(current.MetricsData) {
 		changes["metrics_data"] = current.MetricsData
+		return
 	}
 
-	// Process checklists - this returns a list of checklist updates
+	for i, prevMetric := range previous.MetricsData {
+		currMetric := current.MetricsData[i]
+		if prevMetric.MetricConfigID != currMetric.MetricConfigID ||
+			prevMetric.Value != currMetric.Value {
+			changes["metrics_data"] = current.MetricsData
+			return
+		}
+	}
+}
+
+// detectChecklistChanges compares checklists and handles both updates and deletions
+func detectChecklistChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
 	checklistUpdates := GetChecklistUpdates(previous.Checklists, current.Checklists)
 	if len(checklistUpdates) > 0 {
 		changes["checklists"] = checklistUpdates
 	}
 
-	// Process checklist deletions - detect checklists that exist in previous but not in current
 	var checklistDeletes []string
 	if len(previous.Checklists) > 0 {
-		// Create a map of current checklist IDs for quick lookup
 		currentChecklistIDs := make(map[string]bool)
 		for _, checklist := range current.Checklists {
 			currentChecklistIDs[checklist.ID] = true
 		}
 
-		// Find checklists that exist in previous but not in current
 		for _, prevChecklist := range previous.Checklists {
 			if !currentChecklistIDs[prevChecklist.ID] {
 				checklistDeletes = append(checklistDeletes, prevChecklist.ID)
@@ -491,12 +493,9 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 		}
 	}
 
-	// Add checklist deletes to changes if any exist
 	if len(checklistDeletes) > 0 {
 		changes["_checklist_deletes"] = checklistDeletes
 	}
-
-	return changes
 }
 
 // GetChecklistUpdates compares two slices of checklists and returns a list of updates
@@ -678,6 +677,8 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), r.WebhookOnCreationURLs...)
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
+	newPlaybookRun.BroadcastChannelIDs = append([]string(nil), r.BroadcastChannelIDs...)
+	newPlaybookRun.ItemsOrder = append([]string(nil), r.ItemsOrder...)
 
 	return &newPlaybookRun
 }

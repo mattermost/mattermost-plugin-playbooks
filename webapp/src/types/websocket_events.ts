@@ -20,7 +20,7 @@ export const WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATED = `custom_${manifest.id}_
 // Interfaces for incremental updates
 export interface PlaybookRunUpdate {
     id: string;
-    playbook_run_updated_at?: number;
+    playbook_run_updated_at: number;
     changed_fields: Omit<Partial<PlaybookRun>, 'checklists'> & {
         checklists?: ChecklistUpdate[];
     };
@@ -34,7 +34,6 @@ export interface ChecklistUpdatePayload {
 
 export interface ChecklistUpdate {
     id: string;
-    index: number;
     checklist_updated_at?: number;
     fields?: Omit<Partial<Checklist>, 'items'> & {
         items?: ChecklistItemUpdate[];
@@ -52,7 +51,6 @@ export interface ChecklistItemUpdatePayload {
 }
 export interface ChecklistItemUpdate {
     id: string;
-    index: number;
     checklist_item_updated_at?: number;
     fields: Partial<ChecklistItem>;
 }

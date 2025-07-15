@@ -16,7 +16,7 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
     // Create a new run object with the timestamp update
     let updatedRun = {
         ...currentRun,
-        ...(update.playbook_run_updated_at && {update_at: update.playbook_run_updated_at}),
+        update_at: update.playbook_run_updated_at,
     };
 
     // Apply checklist deletions first
@@ -58,7 +58,7 @@ function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['
     return updatedRun;
 }
 
-// Helper function to apply timeline updates (moved from websocket_events.ts)
+// Helper function to apply timeline updates
 function applyTimelineUpdates(run: PlaybookRun, timelineEvents: TimelineEvent[]): PlaybookRun {
     // If we don't have any existing timeline events, just set them
     if (!run.timeline_events || !Array.isArray(run.timeline_events)) {
@@ -188,7 +188,7 @@ function applyUpdateToChecklist(checklist: Checklist, update: ChecklistUpdate): 
     };
 }
 
-// Helper function to apply checklist updates (moved from websocket_events.ts)
+// Helper function to apply checklist updates
 function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): PlaybookRun {
     const checklistsMap = mapFromChecklists(run.checklists);
     const newChecklistIds: string[] = [];

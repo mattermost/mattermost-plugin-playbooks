@@ -798,27 +798,32 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 		originalRun = playbookRun.Clone()
 	}
 
-	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+	createdEvent, err := s.store.CreateTimelineEvent(event)
+	if err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	playbookRunModified, err := s.store.GetPlaybookRun(playbookRun.ID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
+	// Update the in-memory playbook run with the new timeline event
+	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, *createdEvent)
+	playbookRun.UpdateAt = model.GetMillis()
 
-	s.telemetry.AddPostToTimeline(playbookRunModified, userID)
-	s.sendPlaybookRunObjectUpdatedWS(playbookRun.ID, originalRun, playbookRunModified)
+	s.telemetry.AddPostToTimeline(playbookRun, userID)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRun.ID, originalRun, playbookRun)
 
 	return nil
 }
 
 // RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
 func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, eventID string) error {
-	// Get the current playbook run state before changes
-	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run before adding timeline event")
+	// Get the current playbook run state before changes if incremental updates are enabled
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		var err error
+		originalRun, err = s.store.GetPlaybookRun(playbookRunID)
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve playbook run before removing timeline event")
+		}
+		originalRun = originalRun.Clone()
 	}
 
 	event, err := s.store.GetTimelineEvent(playbookRunID, eventID)
@@ -1395,9 +1400,15 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		return nil
 	}
 
-	originalRun, err := s.store.GetPlaybookRun(id)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+	// Get the current playbook run state before changes if incremental updates are enabled
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		var err error
+		originalRun, err = s.store.GetPlaybookRun(id)
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve playbook run before GraphQL update")
+		}
+		originalRun = originalRun.Clone()
 	}
 
 	now := model.GetMillis()
@@ -1412,7 +1423,13 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		return err
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, nil)
+	// Get the updated playbook run state after changes
+	currentRun, err := s.store.GetPlaybookRun(id)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run after GraphQL update")
+	}
+
+	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, currentRun)
 	return nil
 }
 

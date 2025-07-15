@@ -1086,6 +1086,7 @@ describe('playbook_run_updates utilities', () => {
             it('should handle updates with missing playbook_run_updated_at', () => {
                 const update = {
                     id: testPlaybookRun.id,
+                    playbook_run_updated_at: 0,
                     changed_fields: {
                         name: 'Update Without Timestamp',
                     },
