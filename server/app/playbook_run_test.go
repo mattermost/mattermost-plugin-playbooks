@@ -933,8 +933,8 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 
 		changes := DetectChangedFields(prev, curr)
 
-		// There should be checklist changes (updates and deletions)
-		require.Len(t, changes, 2)
+		// There should be checklist changes (updates and deletions) and items_order change
+		require.Len(t, changes, 3)
 		checklistUpdates, ok := changes["checklists"].([]ChecklistUpdate)
 		require.True(t, ok)
 
@@ -973,6 +973,11 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 		require.True(t, ok, "Expected _checklist_deletes to be present in changes")
 		require.Len(t, checklistDeletes, 1, "Expected exactly one checklist deletion")
 		require.Equal(t, "checklist3", checklistDeletes[0], "Expected checklist3 to be deleted")
+
+		// Test that items_order change is detected when checklists are added/removed
+		itemsOrder, ok := changes["items_order"].([]string)
+		require.True(t, ok, "Expected items_order to be present in changes")
+		require.Equal(t, []string{"checklist1", "checklist2", "checklist4"}, itemsOrder)
 	})
 }
 
