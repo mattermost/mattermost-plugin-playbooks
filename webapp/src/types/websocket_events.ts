@@ -25,6 +25,8 @@ export interface PlaybookRunUpdate {
         checklists?: ChecklistUpdate[];
     };
     checklist_deletes?: string[];
+    timeline_event_deletes?: string[];
+    status_post_deletes?: string[];
 }
 
 export interface ChecklistUpdatePayload {

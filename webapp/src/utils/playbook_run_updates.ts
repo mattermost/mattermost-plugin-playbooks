@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {TimelineEvent} from 'src/types/rhs';
 import {
@@ -39,6 +39,24 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
         };
     }
 
+    // Apply timeline event deletions
+    if (update.timeline_event_deletes && update.timeline_event_deletes.length > 0) {
+        const deleteSet = new Set(update.timeline_event_deletes);
+        updatedRun = {
+            ...updatedRun,
+            timeline_events: updatedRun.timeline_events?.filter((event) => event.id && !deleteSet.has(event.id)) || [],
+        };
+    }
+
+    // Apply status post deletions
+    if (update.status_post_deletes && update.status_post_deletes.length > 0) {
+        const deleteSet = new Set(update.status_post_deletes);
+        updatedRun = {
+            ...updatedRun,
+            status_posts: updatedRun.status_posts?.filter((post) => post.id && !deleteSet.has(post.id)) || [],
+        };
+    }
+
     // Apply the changed fields to get a new run
     updatedRun = applyChangedFields(updatedRun, update.changed_fields);
 
@@ -47,7 +65,7 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
 
 // Helper function to apply changed fields to a playbook run
 function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['changed_fields']): PlaybookRun {
-    const {timeline_events, checklists, ...basicFields} = changedFields;
+    const {timeline_events, checklists, status_posts, ...basicFields} = changedFields;
 
     // Apply only valid basic fields with type safety
     const validBasicFields = Object.fromEntries(
@@ -59,6 +77,11 @@ function applyChangedFields(run: PlaybookRun, changedFields: PlaybookRunUpdate['
     // Handle timeline events specially by merging them with existing events
     if (timeline_events) {
         updatedRun = applyTimelineUpdates(updatedRun, timeline_events);
+    }
+
+    // Handle status posts specially by merging them with existing posts
+    if (status_posts) {
+        updatedRun = applyStatusPostUpdates(updatedRun, status_posts);
     }
 
     // Apply checklist updates if provided by the server
@@ -104,6 +127,42 @@ function applyTimelineUpdates(run: PlaybookRun, timelineEvents: TimelineEvent[])
     return {
         ...run,
         timeline_events: updatedEvents,
+    };
+}
+
+// Helper function to apply status post updates
+function applyStatusPostUpdates(run: PlaybookRun, statusPosts: StatusPost[]): PlaybookRun {
+    // If we don't have any existing status posts, just set them
+    if (!run.status_posts || !Array.isArray(run.status_posts)) {
+        return {
+            ...run,
+            status_posts: [...statusPosts],
+        };
+    }
+
+    // Create a map of existing posts by ID for efficient lookup
+    const existingPostsMap = new Map<string, StatusPost>();
+    run.status_posts.forEach((post) => {
+        if (post?.id) {
+            existingPostsMap.set(post.id, post);
+        }
+    });
+
+    // Process each post from the update
+    statusPosts.forEach((newPost) => {
+        if (newPost?.id) {
+            // Add new post or update existing one
+            existingPostsMap.set(newPost.id, newPost);
+        }
+    });
+
+    // Convert the map back to an array and sort by create_at
+    const updatedPosts = Array.from(existingPostsMap.values());
+    updatedPosts.sort((a, b) => a.create_at - b.create_at);
+
+    return {
+        ...run,
+        status_posts: updatedPosts,
     };
 }
 

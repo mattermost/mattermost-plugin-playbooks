@@ -226,6 +226,12 @@ type PlaybookRunUpdate struct {
 
 	// ChecklistDeletes contains IDs of deleted checklists
 	ChecklistDeletes []string `json:"checklist_deletes,omitempty"`
+
+	// TimelineEventDeletes contains IDs of deleted timeline events
+	TimelineEventDeletes []string `json:"timeline_event_deletes,omitempty"`
+
+	// StatusPostDeletes contains IDs of deleted status posts
+	StatusPostDeletes []string `json:"status_post_deletes,omitempty"`
 }
 
 // ChecklistUpdate represents changes to a specific checklist
@@ -422,40 +428,93 @@ func detectStringSliceFieldChanges(previous, current *PlaybookRun, changes map[s
 
 // detectStatusPostChanges compares status posts between two PlaybookRun objects
 func detectStatusPostChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
-	if len(previous.StatusPosts) != len(current.StatusPosts) {
-		changes["status_posts"] = current.StatusPosts
-		return
+	// Create maps for efficient lookup
+	prevPostsMap := make(map[string]StatusPost)
+	currPostsMap := make(map[string]StatusPost)
+
+	for _, post := range previous.StatusPosts {
+		prevPostsMap[post.ID] = post
 	}
 
-	for i, prevPost := range previous.StatusPosts {
-		currPost := current.StatusPosts[i]
-		if prevPost.ID != currPost.ID ||
-			prevPost.CreateAt != currPost.CreateAt ||
-			prevPost.DeleteAt != currPost.DeleteAt {
-			changes["status_posts"] = current.StatusPosts
-			return
+	for _, post := range current.StatusPosts {
+		currPostsMap[post.ID] = post
+	}
+
+	// Find new and modified posts
+	var statusPostUpdates []StatusPost
+	for _, currPost := range current.StatusPosts {
+		if prevPost, exists := prevPostsMap[currPost.ID]; !exists {
+			// New post
+			statusPostUpdates = append(statusPostUpdates, currPost)
+		} else if prevPost.DeleteAt != currPost.DeleteAt {
+			// Post was soft deleted/restored
+			statusPostUpdates = append(statusPostUpdates, currPost)
 		}
+	}
+
+	// Find deleted posts
+	var statusPostDeletes []string
+	for _, prevPost := range previous.StatusPosts {
+		if _, exists := currPostsMap[prevPost.ID]; !exists {
+			// Post was hard deleted (removed from array)
+			statusPostDeletes = append(statusPostDeletes, prevPost.ID)
+		}
+	}
+
+	// Only add to changes if there are actual updates
+	if len(statusPostUpdates) > 0 {
+		changes["status_posts"] = statusPostUpdates
+	}
+
+	// Store deletes in a special field that will be moved to StatusPostDeletes
+	if len(statusPostDeletes) > 0 {
+		changes["_status_post_deletes"] = statusPostDeletes
 	}
 }
 
 // detectTimelineEventChanges compares timeline events between two PlaybookRun objects
 func detectTimelineEventChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
-	if len(previous.TimelineEvents) != len(current.TimelineEvents) {
-		changes["timeline_events"] = current.TimelineEvents
-		return
+	// Create maps for efficient lookup
+	prevEventsMap := make(map[string]TimelineEvent)
+	currEventsMap := make(map[string]TimelineEvent)
+
+	for _, event := range previous.TimelineEvents {
+		prevEventsMap[event.ID] = event
 	}
 
-	for i, prevEvent := range previous.TimelineEvents {
-		currEvent := current.TimelineEvents[i]
-		if prevEvent.ID != currEvent.ID ||
-			prevEvent.EventType != currEvent.EventType ||
-			prevEvent.CreateAt != currEvent.CreateAt ||
-			prevEvent.DeleteAt != currEvent.DeleteAt ||
-			prevEvent.PostID != currEvent.PostID ||
-			prevEvent.Summary != currEvent.Summary {
-			changes["timeline_events"] = current.TimelineEvents
-			return
+	for _, event := range current.TimelineEvents {
+		currEventsMap[event.ID] = event
+	}
+
+	// Find new and modified events
+	var timelineEventUpdates []TimelineEvent
+	for _, currEvent := range current.TimelineEvents {
+		if prevEvent, exists := prevEventsMap[currEvent.ID]; !exists {
+			// New event
+			timelineEventUpdates = append(timelineEventUpdates, currEvent)
+		} else if prevEvent.DeleteAt != currEvent.DeleteAt {
+			// Event was soft deleted/restored
+			timelineEventUpdates = append(timelineEventUpdates, currEvent)
 		}
+	}
+
+	// Find deleted events
+	var timelineEventDeletes []string
+	for _, prevEvent := range previous.TimelineEvents {
+		if _, exists := currEventsMap[prevEvent.ID]; !exists {
+			// Event was hard deleted (removed from array)
+			timelineEventDeletes = append(timelineEventDeletes, prevEvent.ID)
+		}
+	}
+
+	// Only add to changes if there are actual updates
+	if len(timelineEventUpdates) > 0 {
+		changes["timeline_events"] = timelineEventUpdates
+	}
+
+	// Store deletes in a special field that will be moved to TimelineEventDeletes
+	if len(timelineEventDeletes) > 0 {
+		changes["_timeline_event_deletes"] = timelineEventDeletes
 	}
 }
 
