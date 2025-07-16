@@ -24,6 +24,7 @@ import {playbookRunUpdated} from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
+import {sortChecklistItemsByOrder} from 'src/utils/playbook_run_updates';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -343,7 +344,7 @@ const ChecklistList = ({
                                             <CollapsibleChecklist
                                                 draggableProvided={draggableProvided}
                                                 title={checklist.title}
-                                                items={checklist.items}
+                                                items={sortChecklistItemsByOrder(checklist)}
                                                 index={checklistIndex}
                                                 collapsed={Boolean(checklistsCollapseState[checklistIndex])}
                                                 setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}

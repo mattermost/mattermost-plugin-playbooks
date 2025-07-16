@@ -218,7 +218,10 @@ func TestDetectChangedFields(t *testing.T) {
 		require.Len(t, changes, 1)
 		events, ok := changes["timeline_events"].([]TimelineEvent)
 		require.True(t, ok)
-		require.Len(t, events, 2)
+		require.Len(t, events, 1)
+		require.Equal(t, "event2", events[0].ID)
+		require.Equal(t, "type2", string(events[0].EventType))
+		require.Equal(t, "summary2", events[0].Summary)
 	})
 
 	t.Run("metrics data changes", func(t *testing.T) {

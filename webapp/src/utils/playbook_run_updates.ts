@@ -498,3 +498,35 @@ export function applyChecklistItemUpdate(currentRun: PlaybookRun, payload: Check
 
     return updatedRun;
 }
+
+// Helper function to sort checklist items by items_order
+export function sortChecklistItemsByOrder(checklist: Checklist): ChecklistItem[] {
+    if (!checklist.items_order || checklist.items_order.length === 0) {
+        return checklist.items;
+    }
+
+    // Create a map of item ID to item for quick lookup
+    const itemMap = new Map<string, ChecklistItem>();
+    checklist.items.forEach((item) => {
+        if (item.id) {
+            itemMap.set(item.id, item);
+        }
+    });
+
+    // Sort items according to items_order
+    const sortedItems: ChecklistItem[] = [];
+    checklist.items_order.forEach((itemId) => {
+        const item = itemMap.get(itemId);
+        if (item) {
+            sortedItems.push(item);
+            itemMap.delete(itemId);
+        }
+    });
+
+    // Append any items not in items_order (shouldn't happen, but defensive)
+    itemMap.forEach((item) => {
+        sortedItems.push(item);
+    });
+
+    return sortedItems;
+}

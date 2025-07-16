@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -13,6 +13,7 @@ import {Checklist, ChecklistItem, emptyChecklistItem} from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {sortChecklistItemsByOrder} from 'src/utils/playbook_run_updates';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -69,7 +70,23 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    const keys = generateKeys(props.checklist.items.map((item) => props.id + item.title));
+    // Use memoization to optimize index mapping calculation
+    const {sortedItems, originalIndices} = useMemo(() => {
+        const sorted = sortChecklistItemsByOrder(props.checklist);
+
+        // Create a map for quick lookups of original indices by object reference
+        const originalIndexMap = new Map<ChecklistItem, number>();
+        props.checklist.items.forEach((item, index) => {
+            originalIndexMap.set(item, index);
+        });
+
+        // Create an array that maps sortedIndex -> originalIndex
+        const indices = sorted.map((item) => originalIndexMap.get(item) ?? -1);
+
+        return {sortedItems: sorted, originalIndices: indices};
+    }, [props.checklist]);
+
+    const keys = generateKeys(sortedItems.map((item) => props.id + item.title));
 
     return (
 
@@ -84,29 +101,31 @@ const GenericChecklist = (props: Props) => {
                         ref={droppableProvided.innerRef}
                         {...droppableProvided.droppableProps}
                     >
-                        {props.checklist.items.map((checklistItem: ChecklistItem, index: number) => {
+                        {sortedItems.map((checklistItem: ChecklistItem, sortedIndex: number) => {
                             // filtering here because we need to maintain the index values
                             // because we refer to checklist items by their index
                             if (props.showItem ? !props.showItem(checklistItem, myUser.id) : false) {
                                 return null;
                             }
 
+                            const originalIndex = originalIndices[sortedIndex];
+
                             return (
                                 <DraggableChecklistItem
-                                    key={keys[index]}
+                                    key={keys[sortedIndex]}
                                     playbookRun={props.playbookRun}
                                     playbookId={props.playbookId}
                                     readOnly={props.readOnly}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
-                                    itemIndex={index}
+                                    itemIndex={originalIndex}
                                     newItem={false}
                                     cancelAddingItem={() => {
                                         setAddingItem(false);
                                     }}
-                                    onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
-                                    onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
-                                    onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
+                                    onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(originalIndex, newItem)}
+                                    onDuplicateChecklistItem={() => onDuplicateChecklistItem(originalIndex)}
+                                    onDeleteChecklistItem={() => onDeleteChecklistItem(originalIndex)}
                                     itemButtonsFormat={props.itemButtonsFormat}
                                     onReadOnlyInteract={props.onReadOnlyInteract}
                                 />
