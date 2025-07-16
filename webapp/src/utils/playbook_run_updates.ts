@@ -16,18 +16,20 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
     // Check if this update is older than the current state
     if (currentRun.update_at && update.playbook_run_updated_at &&
         update.playbook_run_updated_at > 0 &&
-        currentRun.update_at >= update.playbook_run_updated_at) {
-        // We already have a newer or equal update, skip this one
+        currentRun.update_at > update.playbook_run_updated_at) {
+        // We already have a newer update, skip this one
         return currentRun;
     }
 
     // Create a new run object with the timestamp update
     // If update timestamp is 0 or missing, preserve original timestamp
+    const newUpdateAt = update.playbook_run_updated_at && update.playbook_run_updated_at > 0 ?
+        update.playbook_run_updated_at :
+        currentRun.update_at;
+
     let updatedRun = {
         ...currentRun,
-        update_at: update.playbook_run_updated_at && update.playbook_run_updated_at > 0 ?
-            update.playbook_run_updated_at :
-            currentRun.update_at,
+        update_at: newUpdateAt,
     };
 
     // Apply checklist deletions first
@@ -42,9 +44,10 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
     // Apply timeline event deletions
     if (update.timeline_event_deletes && update.timeline_event_deletes.length > 0) {
         const deleteSet = new Set(update.timeline_event_deletes);
+        const filteredEvents = updatedRun.timeline_events?.filter((event) => event.id && !deleteSet.has(event.id)) || [];
         updatedRun = {
             ...updatedRun,
-            timeline_events: updatedRun.timeline_events?.filter((event) => event.id && !deleteSet.has(event.id)) || [],
+            timeline_events: filteredEvents,
         };
     }
 
@@ -350,8 +353,8 @@ export function applyChecklistUpdate(currentRun: PlaybookRun, payload: Checklist
 
     // First check: timestamp-based idempotency (traditional approach)
     if (currentChecklist.update_at && updateData.checklist_updated_at &&
-        currentChecklist.update_at >= updateData.checklist_updated_at) {
-        // We already have a newer or equal update, skip this one
+        currentChecklist.update_at > updateData.checklist_updated_at) {
+        // We already have a newer update, skip this one
         return currentRun;
     }
 
@@ -366,7 +369,7 @@ export function applyChecklistUpdate(currentRun: PlaybookRun, payload: Checklist
             const hasNewerItems = alreadyExistingItems.every((insertItem) => {
                 const existingItem = currentChecklist.items.find((item) => item.id === insertItem.id);
                 return existingItem && existingItem.update_at && insertItem.update_at &&
-                       existingItem.update_at >= insertItem.update_at;
+                       existingItem.update_at > insertItem.update_at;
             });
 
             if (hasNewerItems) {
@@ -462,8 +465,8 @@ export function applyChecklistItemUpdate(currentRun: PlaybookRun, payload: Check
     // Check if this update is newer (idempotency check)
     const currentItem = checklist.items[itemIndex];
     if (currentItem.update_at && itemData.checklist_item_updated_at &&
-        currentItem.update_at >= itemData.checklist_item_updated_at) {
-        // We already have a newer or equal update, skip this one
+        currentItem.update_at > itemData.checklist_item_updated_at) {
+        // We already have a newer update, skip this one
         return currentRun;
     }
 
