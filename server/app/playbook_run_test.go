@@ -423,11 +423,16 @@ func TestDetectChangedFields(t *testing.T) {
 		}
 
 		changes := DetectChangedFields(prev, curr)
-		require.Len(t, changes, 1)
+		require.Len(t, changes, 2)
 
 		// Validate that the checklist addition was detected
 		checklistUpdates, ok := changes["checklists"].([]ChecklistUpdate)
 		require.True(t, ok)
+
+		// Validate that the items order change was detected
+		itemsOrder, ok := changes["items_order"].([]string)
+		require.True(t, ok)
+		require.Equal(t, []string{"checklist1", "checklist2"}, itemsOrder)
 
 		// There should be a change detecting the new checklist
 		require.NotEmpty(t, checklistUpdates)
@@ -499,20 +504,27 @@ func TestDetectChangedFields(t *testing.T) {
 
 	t.Run("items order changes", func(t *testing.T) {
 		prev := &PlaybookRun{
-			ID:         "run1",
-			ItemsOrder: []string{"checklist1", "checklist2"},
+			ID: "run1",
+			Checklists: []Checklist{
+				{ID: "checklist1", Title: "Checklist 1"},
+				{ID: "checklist2", Title: "Checklist 2"},
+			},
 		}
 
 		curr := &PlaybookRun{
-			ID:         "run1",
-			ItemsOrder: []string{"checklist2", "checklist1"},
+			ID: "run1",
+			Checklists: []Checklist{
+				{ID: "checklist2", Title: "Checklist 2"},
+				{ID: "checklist1", Title: "Checklist 1"},
+			},
 		}
 
 		changes := DetectChangedFields(prev, curr)
 		require.Len(t, changes, 1)
 		require.Equal(t, []string{"checklist2", "checklist1"}, changes["items_order"])
 
-		prev.ItemsOrder = curr.ItemsOrder
+		// When order is the same, no changes should be detected
+		prev.Checklists = curr.Checklists
 		changes = DetectChangedFields(prev, curr)
 		require.Empty(t, changes)
 	})
@@ -521,14 +533,26 @@ func TestDetectChangedFields(t *testing.T) {
 		prev := &PlaybookRun{
 			ID: "run1",
 			Checklists: []Checklist{
-				{ID: "checklist1", ItemsOrder: []string{"item1", "item2"}},
+				{
+					ID: "checklist1",
+					Items: []ChecklistItem{
+						{ID: "item1", Title: "Item 1"},
+						{ID: "item2", Title: "Item 2"},
+					},
+				},
 			},
 		}
 
 		curr := &PlaybookRun{
 			ID: "run1",
 			Checklists: []Checklist{
-				{ID: "checklist1", ItemsOrder: []string{"item2", "item1"}},
+				{
+					ID: "checklist1",
+					Items: []ChecklistItem{
+						{ID: "item2", Title: "Item 2"},
+						{ID: "item1", Title: "Item 1"},
+					},
+				},
 			},
 		}
 
@@ -539,7 +563,8 @@ func TestDetectChangedFields(t *testing.T) {
 		require.Len(t, checklistUpdates, 1)
 		require.Equal(t, []string{"item2", "item1"}, checklistUpdates[0].ItemsOrder)
 
-		prev.Checklists[0].ItemsOrder = curr.Checklists[0].ItemsOrder
+		// When order is the same, no changes should be detected
+		prev.Checklists[0].Items = curr.Checklists[0].Items
 		changes = DetectChangedFields(prev, curr)
 		require.Empty(t, changes)
 	})

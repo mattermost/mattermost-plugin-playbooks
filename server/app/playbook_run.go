@@ -393,8 +393,8 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	if previous.Type != current.Type {
 		changes["type"] = current.Type
 	}
-	if !compareItemsOrder(previous.ItemsOrder, current.ItemsOrder) {
-		changes["items_order"] = current.ItemsOrder
+	if !compareItemsOrder(previous.GetItemsOrder(), current.GetItemsOrder()) {
+		changes["items_order"] = current.GetItemsOrder()
 	}
 }
 
@@ -532,8 +532,8 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 			}
 			update.Fields = fields
 
-			if !compareItemsOrder(prev.ItemsOrder, checklist.ItemsOrder) {
-				update.ItemsOrder = checklist.ItemsOrder
+			if !compareItemsOrder(prev.GetItemsOrder(), checklist.GetItemsOrder()) {
+				update.ItemsOrder = checklist.GetItemsOrder()
 			}
 
 			// Get item updates
