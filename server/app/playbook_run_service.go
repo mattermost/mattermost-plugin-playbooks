@@ -52,8 +52,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	// Determine if incremental updates are enabled
-	incrementalUpdatesEnabled := s.configService.IsIncrementalUpdatesEnabled() && previousRun != nil
-
+	incrementalUpdatesEnabled := s.configService.IsIncrementalUpdatesEnabled()
 	if !incrementalUpdatesEnabled {
 		// If incremental updates are disabled, fall back to the standard WS update
 		sendWSOptions := RunWSOptions{
