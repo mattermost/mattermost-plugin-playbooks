@@ -175,10 +175,14 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
                 cy.findAllByTestId('webhooks-input').type('http://hook1.com{enter}http://hook2.com{enter}http://hook3.com{enter}');
                 cy.findAllByTestId('checklist-item-save-button').click();
 
+                cy.wait(FIVE_SEC);
+
                 // # Select a channel
                 cy.findAllByTestId('status-update-broadcast-channels').click();
                 cy.get('#playbook-automation-broadcast').contains('Town Square').click({force: true});
                 cy.findAllByTestId('status-update-broadcast-channels').click();
+
+                cy.wait(TWO_SEC);
 
                 // * Verify status update message.
                 cy.findAllByTestId('status-update-section').within(() => {
