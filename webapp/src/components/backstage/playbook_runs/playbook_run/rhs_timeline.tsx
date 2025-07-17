@@ -15,7 +15,7 @@ import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/compon
 
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {clientRemoveTimelineEvent} from 'src/client';
+import {clientRemoveTimelineEvent, timelineExportUrl} from 'src/client';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {useTimelineEvents} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
@@ -49,20 +49,30 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                         {filteredNum: filteredEvents.length, totalNum: playbookRun.timeline_events.length}
                     )}
                 </FilterText>
-                <FilterButton>
-                    <MultiCheckbox
-                        dotMenuButton={FakeButton}
-                        options={options}
-                        onselect={selectOption}
-                        placement='bottom-end'
-                        icon={
-                            <TextContainer>
-                                <i className='icon icon-filter-variant'/>
-                                {formatMessage({defaultMessage: 'Filter'})}
-                            </TextContainer>
-                        }
-                    />
-                </FilterButton>
+                <ButtonContainer>
+                    <ExportButton
+                        as='a'
+                        href={timelineExportUrl(playbookRun.id, eventsFilter)}
+                        download={`${playbookRun.name}_timeline.csv`}
+                    >
+                        <i className='icon icon-download-outline'/>
+                        {formatMessage({defaultMessage: 'Export CSV'})}
+                    </ExportButton>
+                    <FilterButton>
+                        <MultiCheckbox
+                            dotMenuButton={FakeButton}
+                            options={options}
+                            onselect={selectOption}
+                            placement='bottom-end'
+                            icon={
+                                <TextContainer>
+                                    <i className='icon icon-filter-variant'/>
+                                    {formatMessage({defaultMessage: 'Filter'})}
+                                </TextContainer>
+                            }
+                        />
+                    </FilterButton>
+                </ButtonContainer>
             </Filters>
             <Body>
                 <Scrollbars
@@ -124,6 +134,44 @@ const FilterText = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 12px;
     font-weight: 600;
+`;
+
+const ButtonContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const ExportButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    background: var(--button-bg);
+    color: var(--button-color) !important;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--button-bg);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.15s ease-out;
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.88);
+        border-color: rgba(var(--button-bg-rgb), 0.88);
+        text-decoration: none;
+        color: var(--button-color) !important;
+    }
+
+    &:active  {
+        background: rgba(var(--button-bg-rgb), 0.76);
+        border-color: rgba(var(--button-bg-rgb), 0.76);
+    }
+
+    i {
+        display: flex;
+        font-size: 12px;
+        margin-right: 5px;
+    }
 `;
 
 const FilterButton = styled.div`/* stylelint-disable no-empty-source */`;

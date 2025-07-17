@@ -783,6 +783,21 @@ export const playbookExportProps = (playbook: {id: string, title: string}) => {
     return [href, filename];
 };
 
+export function timelineExportUrl(playbookRunId: string, eventsFilter: any) {
+    const queryParams = qs.stringify({
+        all: eventsFilter.all,
+        owner_changed: eventsFilter.owner_changed,
+        status_updated: eventsFilter.status_updated,
+        event_from_post: eventsFilter.event_from_post,
+        task_state_modified: eventsFilter.task_state_modified,
+        assignee_changed: eventsFilter.assignee_changed,
+        ran_slash_command: eventsFilter.ran_slash_command,
+        user_joined_left: eventsFilter.user_joined_left,
+    }, {addQueryPrefix: true});
+
+    return `${apiUrl}/runs/${playbookRunId}/timeline/export${queryParams}`;
+};
+
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
     const queryParams = qs.stringify({
         time_range: timeRange,

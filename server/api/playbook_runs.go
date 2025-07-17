@@ -76,6 +76,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("", withContext(handler.getPlaybookRun)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/timeline/export", withContext(handler.exportTimelineCSV)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
@@ -1956,4 +1957,68 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	}
 
 	return &options, nil
+}
+
+// exportTimelineCSV handles the GET /runs/{id}/timeline/export endpoint.
+func (h *PlaybookRunHandler) exportTimelineCSV(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Get team information for post link generation
+	team, err := h.pluginAPI.Team.Get(playbookRun.TeamID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Parse timeline filter options from query parameters
+	filterOptions := app.TimelineFilterOptions{
+		All:               r.URL.Query().Get("all") == "true",
+		OwnerChanged:      r.URL.Query().Get("owner_changed") == "true",
+		StatusUpdated:     r.URL.Query().Get("status_updated") == "true",
+		EventFromPost:     r.URL.Query().Get("event_from_post") == "true",
+		TaskStateModified: r.URL.Query().Get("task_state_modified") == "true",
+		AssigneeChanged:   r.URL.Query().Get("assignee_changed") == "true",
+		RanSlashCommand:   r.URL.Query().Get("ran_slash_command") == "true",
+		UserJoinedLeft:    r.URL.Query().Get("user_joined_left") == "true",
+	}
+
+	// If no filters are specified, default to all events
+	if !filterOptions.All && !filterOptions.OwnerChanged && !filterOptions.StatusUpdated && !filterOptions.EventFromPost &&
+		!filterOptions.TaskStateModified && !filterOptions.AssigneeChanged && !filterOptions.RanSlashCommand && !filterOptions.UserJoinedLeft {
+		filterOptions.All = true
+	}
+
+	// Get SiteURL for complete post links
+	siteURL := model.ServiceSettingsDefaultSiteURL
+	if h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+
+	// Generate CSV content
+	csv, err := app.GenerateTimelineCSV(playbookRun, filterOptions, &h.pluginAPI.User, siteURL, team.Name)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Set headers for CSV download with timestamp prefix
+	now := time.Now()
+	timestamp := fmt.Sprintf("%04d%02d%02d_%02d%02d", now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute())
+	filename := fmt.Sprintf("%s_%s_timeline.csv", timestamp, playbookRun.Name)
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(csv)
 }
