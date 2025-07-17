@@ -54,9 +54,10 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                         as='a'
                         href={timelineExportUrl(playbookRun.id, eventsFilter)}
                         download={`${playbookRun.name}_timeline.csv`}
+                        title={formatMessage({defaultMessage: 'Export current events based on filters as CSV'})}
                     >
                         <i className='icon icon-download-outline'/>
-                        {formatMessage({defaultMessage: 'Export CSV'})}
+                        {formatMessage({defaultMessage: 'Export'})}
                     </ExportButton>
                     <FilterButton>
                         <MultiCheckbox

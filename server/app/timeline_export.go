@@ -270,11 +270,17 @@ func GenerateTimelineCSV(playbookRun *PlaybookRun, filterOptions TimelineFilterO
 		// Generate post link
 		postLink := generatePostLink(siteURL, teamName, event.PostID)
 
+		// Include status update content in details column, empty for other events
+		details := ""
+		if event.EventType == StatusUpdated {
+			details = event.Details
+		}
+
 		record := []string{
 			eventTime,
 			string(event.EventType),
 			enhancedSummary,
-			event.Details,
+			details,
 			postLink,
 		}
 

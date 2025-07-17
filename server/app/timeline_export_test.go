@@ -247,7 +247,7 @@ func TestGenerateTimelineCSV(t *testing.T) {
 			"2023-01-15 10:30:00 UTC",
 			"status_updated",
 			"Status updated to In Progress",
-			"Updated by user",
+			"Updated by user", // Status update details included
 			"/test-team/pl/post-101",
 		}
 		assert.Equal(t, expectedData, records[1])
@@ -363,8 +363,8 @@ func TestGenerateTimelineCSV(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, records, 2)
 
-		// Verify special characters are handled correctly in details
-		assert.Equal(t, "Details with\nnewlines", records[1][3])
+		// Verify special characters are handled correctly - details column is empty for non-status events
+		assert.Equal(t, "", records[1][3]) // Details column should be empty for EventFromPost
 	})
 
 	t.Run("time formatting", func(t *testing.T) {
