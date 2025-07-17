@@ -20,13 +20,11 @@ import {
     playbookRunUpdated,
     receivedTeamPlaybookRuns,
     removedFromPlaybookRunChannel,
-    websocketPlaybookChecklistItemUpdateReceived,
-    websocketPlaybookChecklistUpdateReceived,
     websocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/actions';
 import {fetchPlaybookRun, fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
 import {clientId, getRun, myPlaybookRunsMap} from 'src/selectors';
-import {ChecklistItemUpdatePayload, ChecklistUpdatePayload, PlaybookRunUpdate} from 'src/types/websocket_events';
+import {PlaybookRunUpdate} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
@@ -184,42 +182,6 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
         if (currentUserId === msg.broadcast.user_id) {
             dispatch(removedFromPlaybookRunChannel(msg.data.channel_id));
         }
-    };
-}
-
-export function handleWebsocketPlaybookChecklistUpdated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
-        if (!msg.data.payload) {
-            return;
-        }
-
-        let data: ChecklistUpdatePayload;
-        try {
-            data = JSON.parse(msg.data.payload) as ChecklistUpdatePayload;
-        } catch (error) {
-            console.error('Failed to parse ChecklistUpdatePayload WebSocket message:', error, 'payload:', msg.data.payload); // eslint-disable-line no-console
-            return;
-        }
-
-        dispatch(websocketPlaybookChecklistUpdateReceived(data));
-    };
-}
-
-export function handleWebsocketPlaybookChecklistItemUpdated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
-        if (!msg.data.payload) {
-            return;
-        }
-
-        let data: ChecklistItemUpdatePayload;
-        try {
-            data = JSON.parse(msg.data.payload) as ChecklistItemUpdatePayload;
-        } catch (error) {
-            console.error('Failed to parse ChecklistItemUpdatePayload WebSocket message:', error, 'payload:', msg.data.payload); // eslint-disable-line no-console
-            return;
-        }
-
-        dispatch(websocketPlaybookChecklistItemUpdateReceived(data));
     };
 }
 

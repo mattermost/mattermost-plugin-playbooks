@@ -40,8 +40,6 @@ import {
     handleReconnect,
     handleWebsocketChannelUpdated,
     handleWebsocketPlaybookArchived,
-    handleWebsocketPlaybookChecklistItemUpdated,
-    handleWebsocketPlaybookChecklistUpdated,
     handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookRestored,
     handleWebsocketPlaybookRunCreated,
@@ -53,8 +51,6 @@ import {
 } from 'src/websocket_events';
 import {
     WEBSOCKET_PLAYBOOK_ARCHIVED,
-    WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATED,
-    WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATED,
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_RESTORED,
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
@@ -246,8 +242,6 @@ export default class Plugin {
 
         // Register handlers for the new WebSocket events (incremental updates)
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL, handleWebsocketPlaybookRunUpdatedIncremental(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATED, handleWebsocketPlaybookChecklistUpdated(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATED, handleWebsocketPlaybookChecklistItemUpdated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));

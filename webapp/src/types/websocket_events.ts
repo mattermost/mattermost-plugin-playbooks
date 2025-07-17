@@ -14,8 +14,6 @@ export const WEBSOCKET_PLAYBOOK_RESTORED = `custom_${manifest.id}_playbook_resto
 
 // New WebSocket events for incremental updates
 export const WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL = `custom_${manifest.id}_playbook_run_updated_incremental`;
-export const WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATED = `custom_${manifest.id}_playbook_checklist_updated`;
-export const WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATED = `custom_${manifest.id}_playbook_checklist_item_updated`;
 
 // Interfaces for incremental updates
 export interface PlaybookRunUpdate {
@@ -27,11 +25,6 @@ export interface PlaybookRunUpdate {
     checklist_deletes?: string[];
     timeline_event_deletes?: string[];
     status_post_deletes?: string[];
-}
-
-export interface ChecklistUpdatePayload {
-    playbook_run_id: string;
-    update: ChecklistUpdate;
 }
 
 export interface ChecklistUpdate {
@@ -46,11 +39,6 @@ export interface ChecklistUpdate {
     items_order?: string[];
 }
 
-export interface ChecklistItemUpdatePayload {
-    playbook_run_id: string;
-    checklist_id: string;
-    update: ChecklistItemUpdate;
-}
 export interface ChecklistItemUpdate {
     id: string;
     checklist_item_updated_at?: number;

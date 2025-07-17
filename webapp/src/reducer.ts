@@ -58,16 +58,12 @@ import {
     ShowPlaybookActionsModal,
     ShowPostMenuModal,
     ShowRunActionsModal,
-    WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED,
-    WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED,
     WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
-    WebsocketPlaybookChecklistItemUpdateReceived,
-    WebsocketPlaybookChecklistUpdateReceived,
     WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
-import {applyChecklistItemUpdate, applyChecklistUpdate, applyIncrementalUpdate} from 'src/utils/playbook_run_updates';
+import {applyIncrementalUpdate} from 'src/utils/playbook_run_updates';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -106,7 +102,7 @@ type TStateMyPlaybookRuns = Record<PlaybookRun['id'], PlaybookRun>;
  */
 const myPlaybookRuns = (
     state: TStateMyPlaybookRuns = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | WebsocketPlaybookRunIncrementalUpdateReceived | WebsocketPlaybookChecklistUpdateReceived | WebsocketPlaybookChecklistItemUpdateReceived
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | WebsocketPlaybookRunIncrementalUpdateReceived
 ): TStateMyPlaybookRuns => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
@@ -181,40 +177,6 @@ const myPlaybookRuns = (
         };
     }
 
-    case WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED: {
-        const wsAction = action as WebsocketPlaybookChecklistUpdateReceived;
-        const runId = wsAction.data.playbook_run_id;
-        const currentRun = state[runId];
-
-        if (!currentRun) {
-            // Run not found in state
-            return state;
-        }
-
-        const updatedRun = applyChecklistUpdate(currentRun, wsAction.data);
-        return {
-            ...state,
-            [runId]: updatedRun,
-        };
-    }
-
-    case WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED: {
-        const wsAction = action as WebsocketPlaybookChecklistItemUpdateReceived;
-        const runId = wsAction.data.playbook_run_id;
-        const currentRun = state[runId];
-
-        if (!currentRun) {
-            // Run not found in state
-            return state;
-        }
-
-        const updatedRun = applyChecklistItemUpdate(currentRun, wsAction.data);
-        return {
-            ...state,
-            [runId]: updatedRun,
-        };
-    }
-
     default:
         return state;
     }
@@ -229,7 +191,7 @@ type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id']
  */
 const myPlaybookRunsByTeam = (
     state: TStateMyPlaybookRunsByTeam = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | WebsocketPlaybookRunIncrementalUpdateReceived | WebsocketPlaybookChecklistUpdateReceived | WebsocketPlaybookChecklistItemUpdateReceived
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | WebsocketPlaybookRunIncrementalUpdateReceived
 ): TStateMyPlaybookRunsByTeam => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
@@ -332,92 +294,6 @@ const myPlaybookRunsByTeam = (
         }
 
         const updatedRun = applyIncrementalUpdate(currentRun, wsAction.data);
-        return {
-            ...state,
-            [targetTeamId]: {
-                ...state[targetTeamId],
-                [targetChannelId]: updatedRun,
-            },
-        };
-    }
-
-    case WEBSOCKET_PLAYBOOK_CHECKLIST_UPDATE_RECEIVED: {
-        const wsAction = action as WebsocketPlaybookChecklistUpdateReceived;
-        const runId = wsAction.data.playbook_run_id;
-
-        // Find the team and channel for this run
-        let targetTeamId: string | null = null;
-        let targetChannelId: string | null = null;
-
-        for (const teamId of Object.keys(state)) {
-            const teamData = state[teamId];
-            if (teamData) {
-                for (const channelId of Object.keys(teamData)) {
-                    if (teamData[channelId]?.id === runId) {
-                        targetTeamId = teamId;
-                        targetChannelId = channelId;
-                        break;
-                    }
-                }
-                if (targetTeamId) {
-                    break;
-                }
-            }
-        }
-
-        if (!targetTeamId || !targetChannelId) {
-            return state;
-        }
-
-        const currentRun = state[targetTeamId]?.[targetChannelId];
-        if (!currentRun) {
-            return state;
-        }
-
-        const updatedRun = applyChecklistUpdate(currentRun, wsAction.data);
-        return {
-            ...state,
-            [targetTeamId]: {
-                ...state[targetTeamId],
-                [targetChannelId]: updatedRun,
-            },
-        };
-    }
-
-    case WEBSOCKET_PLAYBOOK_CHECKLIST_ITEM_UPDATE_RECEIVED: {
-        const wsAction = action as WebsocketPlaybookChecklistItemUpdateReceived;
-        const runId = wsAction.data.playbook_run_id;
-
-        // Find the team and channel for this run
-        let targetTeamId: string | null = null;
-        let targetChannelId: string | null = null;
-
-        for (const teamId of Object.keys(state)) {
-            const teamData = state[teamId];
-            if (teamData) {
-                for (const channelId of Object.keys(teamData)) {
-                    if (teamData[channelId]?.id === runId) {
-                        targetTeamId = teamId;
-                        targetChannelId = channelId;
-                        break;
-                    }
-                }
-                if (targetTeamId) {
-                    break;
-                }
-            }
-        }
-
-        if (!targetTeamId || !targetChannelId) {
-            return state;
-        }
-
-        const currentRun = state[targetTeamId]?.[targetChannelId];
-        if (!currentRun) {
-            return state;
-        }
-
-        const updatedRun = applyChecklistItemUpdate(currentRun, wsAction.data);
         return {
             ...state,
             [targetTeamId]: {

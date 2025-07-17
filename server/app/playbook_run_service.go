@@ -37,8 +37,6 @@ const (
 
 	// New WebSocket events for incremental updates
 	playbookRunUpdatedIncrementalWSEvent = "playbook_run_updated_incremental"
-	playbookChecklistUpdatedWSEvent      = "playbook_checklist_updated"
-	playbookChecklistItemUpdatedWSEvent  = "playbook_checklist_item_updated"
 
 	noAssigneeName = "No Assignee"
 )
@@ -119,6 +117,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	if chkUpdates, ok := changedFields["checklists"].([]ChecklistUpdate); ok {
 		checklistUpdates = chkUpdates
 	}
+	_ = checklistUpdates
 
 	var nonMembers []string
 	if len(additionalUserIDs) > 0 {
@@ -133,46 +132,6 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		}
 	}
 
-	// Send more granular checklist and item updates if any exist
-	for _, checklistUpdate := range checklistUpdates {
-		// For each checklist update, send a dedicated checklist update event
-		checklistUpdateWithRunID := struct {
-			PlaybookRunID string          `json:"playbook_run_id"`
-			Update        ChecklistUpdate `json:"update"`
-		}{
-			PlaybookRunID: currentRun.ID,
-			Update:        checklistUpdate,
-		}
-
-		s.poster.PublishWebsocketEventToChannel(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, currentRun.ChannelID)
-		if len(nonMembers) > 0 {
-			for _, nonMember := range nonMembers {
-				s.poster.PublishWebsocketEventToUser(playbookChecklistUpdatedWSEvent, checklistUpdateWithRunID, nonMember)
-			}
-		}
-
-		// Send more granular events for individual checklist items if needed
-		if len(checklistUpdate.ItemUpdates) > 0 {
-			for _, itemUpdate := range checklistUpdate.ItemUpdates {
-				itemUpdateWithIDs := struct {
-					PlaybookRunID string              `json:"playbook_run_id"`
-					ChecklistID   string              `json:"checklist_id"`
-					Update        ChecklistItemUpdate `json:"update"`
-				}{
-					PlaybookRunID: currentRun.ID,
-					ChecklistID:   checklistUpdate.ID,
-					Update:        itemUpdate,
-				}
-
-				s.poster.PublishWebsocketEventToChannel(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, currentRun.ChannelID)
-				if len(nonMembers) > 0 {
-					for _, nonMember := range nonMembers {
-						s.poster.PublishWebsocketEventToUser(playbookChecklistItemUpdatedWSEvent, itemUpdateWithIDs, nonMember)
-					}
-				}
-			}
-		}
-	}
 }
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
