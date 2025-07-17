@@ -273,7 +273,7 @@ export function useThing<T extends NonNullable<any>>(
             return error !== null && error.status_code === code;
         },
     };
-    return [thingFromState || thing, metadata] as const;
+    return [thing, metadata] as const;
 }
 
 export function usePost(postId: string) {
