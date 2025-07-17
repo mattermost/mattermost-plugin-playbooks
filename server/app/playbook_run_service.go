@@ -112,13 +112,6 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 		StatusPostDeletes:    statusPostDeletes,
 	}
 
-	// Extract checklist updates if they exist
-	var checklistUpdates []ChecklistUpdate
-	if chkUpdates, ok := changedFields["checklists"].([]ChecklistUpdate); ok {
-		checklistUpdates = chkUpdates
-	}
-	_ = checklistUpdates
-
 	var nonMembers []string
 	if len(additionalUserIDs) > 0 {
 		nonMembers = s.getNonMembersIDs(currentRun.ChannelID, additionalUserIDs)
