@@ -256,10 +256,21 @@ function applyUpdateToChecklist(checklist: Checklist, update: ChecklistUpdate): 
     // Apply item-level updates
     const updatedItems = applyItemUpdates(updatedChecklist.items, update);
 
-    return {
+    let result = {
         ...updatedChecklist,
         items: updatedItems,
     };
+
+    // Reorder items to match items_order after incremental updates
+    if (result.items_order && result.items_order.length > 0) {
+        const reorderedItems = sortChecklistItemsByOrder(result);
+        result = {
+            ...result,
+            items: reorderedItems,
+        };
+    }
+
+    return result;
 }
 
 // Helper function to apply checklist updates

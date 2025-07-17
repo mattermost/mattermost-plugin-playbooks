@@ -70,21 +70,15 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    // Use memoization to optimize index mapping calculation
-    const {sortedItems, originalIndices} = useMemo(() => {
-        const sorted = sortChecklistItemsByOrder(props.checklist);
-
-        // Create a map for quick lookups of original indices by object reference
-        const originalIndexMap = new Map<ChecklistItem, number>();
-        props.checklist.items.forEach((item, index) => {
-            originalIndexMap.set(item, index);
-        });
-
-        // Create an array that maps sortedIndex -> originalIndex
-        const indices = sorted.map((item) => originalIndexMap.get(item) ?? -1);
-
-        return {sortedItems: sorted, originalIndices: indices};
+    // Use memoization to optimize sorted items calculation
+    const sortedItems = useMemo(() => {
+        return sortChecklistItemsByOrder(props.checklist);
     }, [props.checklist]);
+
+    // Helper function to find the original index of an item by its ID
+    const findOriginalIndexById = (itemId: string): number => {
+        return props.checklist.items.findIndex((item) => item.id === itemId);
+    };
 
     const keys = generateKeys(sortedItems.map((item) => props.id + item.title));
 
@@ -108,7 +102,7 @@ const GenericChecklist = (props: Props) => {
                                 return null;
                             }
 
-                            const originalIndex = originalIndices[sortedIndex];
+                            const originalIndex = findOriginalIndexById(checklistItem.id || '');
 
                             return (
                                 <DraggableChecklistItem
