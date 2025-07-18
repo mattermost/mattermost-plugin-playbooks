@@ -24,6 +24,7 @@ import {playbookRunUpdated} from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
+import {sortChecklistItemsByOrder} from 'src/utils/playbook_run_updates';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -73,6 +74,7 @@ const ChecklistList = ({
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
+                id: ci.id || '',
                 title: ci.title,
                 description: ci.description,
                 state: ci.state,
@@ -125,6 +127,7 @@ const ChecklistList = ({
                 items: cl.items.map((ci) => {
                     return {
                         ...ci,
+                        id: ci.id || '',
                         state_modified: ci.state_modified || 0,
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
@@ -180,7 +183,7 @@ const ChecklistList = ({
         }
 
         // Copy the data to modify it
-        const newChecklists = Array.from(checklists);
+        const newChecklists = [...checklists];
 
         // Move a checklist item, either inside of the same checklist, or between checklists
         if (result.type === 'checklist-item') {
@@ -189,7 +192,7 @@ const ChecklistList = ({
 
             if (srcChecklistIdx === dstChecklistIdx) {
                 // Remove the dragged item from the checklist
-                const newChecklistItems = Array.from(checklists[srcChecklistIdx].items);
+                const newChecklistItems = [...checklists[srcChecklistIdx].items];
                 const [removed] = newChecklistItems.splice(srcIdx, 1);
 
                 // Add the dragged item to the checklist
@@ -203,11 +206,11 @@ const ChecklistList = ({
                 const dstChecklist = checklists[dstChecklistIdx];
 
                 // Remove the dragged item from the source checklist
-                const newSrcChecklistItems = Array.from(srcChecklist.items);
+                const newSrcChecklistItems = [...srcChecklist.items];
                 const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
 
                 // Add the dragged item to the destination checklist
-                const newDstChecklistItems = Array.from(dstChecklist.items);
+                const newDstChecklistItems = [...dstChecklist.items];
                 newDstChecklistItems.splice(dstIdx, 0, moved);
 
                 // Modify the new checklists array with the new source and destination checklists
@@ -294,10 +297,15 @@ const ChecklistList = ({
                         setNewChecklistName('');
                     }}
                     onSave={() => {
-                        const newChecklist = {title: newChecklistName, items: [] as ChecklistItem[]};
                         if (playbookRun) {
+                            const newChecklist: Omit<Checklist, 'id'> = {title: newChecklistName, items: [] as ChecklistItem[]};
                             clientAddChecklist(playbookRun.id, newChecklist);
                         } else {
+                            const newChecklist: Checklist = {
+                                id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+                                title: newChecklistName,
+                                items: [] as ChecklistItem[],
+                            };
                             setChecklistsForPlaybook([...checklists, newChecklist]);
                         }
                         setTimeout(() => setNewChecklistName(''), 300);
@@ -308,7 +316,7 @@ const ChecklistList = ({
         );
     }
 
-    const keys = generateKeys(checklists.map((checklist) => checklist.title));
+    const keys = generateKeys(checklists.map((checklist) => checklist.id || checklist.title));
 
     return (
         <>
@@ -330,7 +338,7 @@ const ChecklistList = ({
                             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                                 <Draggable
                                     key={keys[checklistIndex]}
-                                    draggableId={checklist.title + checklistIndex}
+                                    draggableId={checklist.id || (checklist.title + checklistIndex)}
                                     index={checklistIndex}
                                 >
                                     {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => {
@@ -338,7 +346,7 @@ const ChecklistList = ({
                                             <CollapsibleChecklist
                                                 draggableProvided={draggableProvided}
                                                 title={checklist.title}
-                                                items={checklist.items}
+                                                items={sortChecklistItemsByOrder(checklist)}
                                                 index={checklistIndex}
                                                 collapsed={Boolean(checklistsCollapseState[checklistIndex])}
                                                 setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}

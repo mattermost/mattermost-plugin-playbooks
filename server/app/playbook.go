@@ -68,7 +68,7 @@ type Playbook struct {
 	Metrics                                 []PlaybookMetricConfig `json:"metrics" export:"metrics"`
 	ActiveRuns                              int64                  `json:"active_runs" export:"-"`
 	CreateChannelMemberOnNewParticipant     bool                   `json:"create_channel_member_on_new_participant" export:"create_channel_member_on_new_participant"`
-	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant" export:"create_channel_member_on_removed_participant"`
+	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant" export:"remove_channel_member_on_removed_participant"`
 
 	// ChannelID is the identifier of the channel that would be -potentially- linked
 	// to any new run of this playbook
@@ -167,6 +167,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []ChecklistItem{}
 		}
+		if cl.ItemsOrder == nil {
+			old.Checklists[j].ItemsOrder = []string{}
+		}
 	}
 	if old.Members == nil {
 		old.Members = []PlaybookMember{}
@@ -219,6 +222,9 @@ type Checklist struct {
 	// Items is an array of all the items in the checklist.
 	Items []ChecklistItem `json:"items" export:"-"`
 
+	// ItemsOrder is the sort order of the checklist items
+	ItemsOrder []string `json:"items_order" export:"-"`
+
 	// UpdateAt is when this checklist was last modified
 	UpdateAt int64 `json:"update_at" export:"-"`
 }
@@ -231,9 +237,20 @@ func (c Checklist) GetItems() []ChecklistItemCommon {
 	return items
 }
 
+func (c Checklist) GetItemsOrder() []string {
+	itemsOrder := make([]string, len(c.Items))
+	for i, item := range c.Items {
+		itemsOrder[i] = item.ID
+	}
+	return itemsOrder
+}
+
 func (c Checklist) Clone() Checklist {
 	newChecklist := c
 	newChecklist.Items = append([]ChecklistItem(nil), c.Items...)
+	if len(c.ItemsOrder) != 0 {
+		newChecklist.ItemsOrder = append([]string(nil), c.ItemsOrder...)
+	}
 	return newChecklist
 }
 
@@ -747,6 +764,56 @@ func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
 		return cpm.UnmarshalText([]byte(txt))
 	}
 	return cpm.UnmarshalText(txt)
+}
+
+// ValidateChecklistIDs validates and cleans checklist IDs against existing checklists.
+// Resets IDs that don't exist in the current playbook to empty string for regeneration.
+func ValidateChecklistIDs(checklists []Checklist, existingChecklists []Checklist) {
+	existingByID := make(map[string]bool)
+	for _, existing := range existingChecklists {
+		if existing.ID != "" {
+			existingByID[existing.ID] = true
+		}
+	}
+
+	for i := range checklists {
+		if checklists[i].ID != "" && !existingByID[checklists[i].ID] {
+			checklists[i].ID = ""
+		}
+	}
+}
+
+// BuildChecklistMaps creates lookup maps for existing checklists and items by ID.
+// Returns (checklistsByID, itemsByID) for efficient validation.
+func BuildChecklistMaps(checklists []Checklist) (map[string]Checklist, map[string]ChecklistItem) {
+	checklistsByID := make(map[string]Checklist)
+	itemsByID := make(map[string]ChecklistItem)
+
+	for _, checklist := range checklists {
+		if checklist.ID != "" {
+			checklistsByID[checklist.ID] = checklist
+			for _, item := range checklist.Items {
+				if item.ID != "" {
+					itemsByID[item.ID] = item
+				}
+			}
+		}
+	}
+	return checklistsByID, itemsByID
+}
+
+// EnsureChecklistIDs generates IDs for checklists and items that don't have them.
+func EnsureChecklistIDs(checklists []Checklist) {
+	for i := range checklists {
+		if checklists[i].ID == "" {
+			checklists[i].ID = model.NewId()
+		}
+		for j := range checklists[i].Items {
+			if checklists[i].Items[j].ID == "" {
+				checklists[i].Items[j].ID = model.NewId()
+			}
+		}
+	}
 }
 
 // Value represents a ChannelPlaybookMode as a type writable into the DB

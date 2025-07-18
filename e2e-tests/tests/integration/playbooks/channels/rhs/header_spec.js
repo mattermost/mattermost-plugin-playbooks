@@ -7,6 +7,7 @@
 // ***************************************************************
 
 import {ONE_SEC} from '../../../../fixtures/timeouts';
+import * as TIMEOUTS from '../../../../fixtures/timeouts';
 
 // Stage: @prod
 // Group: @playbooks
@@ -193,6 +194,8 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
 
             // # Mark the run as finished
             cy.apiFinishRun(finishedPlaybookRun.id);
+
+            cy.wait(TIMEOUTS.TWO_SEC);
 
             // # click on the field
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').click();

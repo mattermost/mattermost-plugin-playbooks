@@ -80,6 +80,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         const checklists = playbook.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
+                id: ci.id || '',
                 title: ci.title,
                 description: ci.description,
                 state: ci.state,
@@ -104,6 +105,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         const checklists = playbook.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
+                id: ci.id || '',
                 title: ci.title,
                 description: ci.description,
                 state: ci.state,

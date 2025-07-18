@@ -200,6 +200,527 @@ type PlaybookRun struct {
 	// Type determines a type of a run.
 	// It can be RunTypePlaybook ("playbook") or RunTypeChannelChecklist ("channel")
 	Type string `json:"type"`
+
+	// ItemsOrder is the sort order of the checklists
+	ItemsOrder []string `json:"items_order"`
+}
+
+func (r PlaybookRun) GetItemsOrder() []string {
+	itemsOrder := make([]string, len(r.Checklists))
+	for i, checklist := range r.Checklists {
+		itemsOrder[i] = checklist.ID
+	}
+	return itemsOrder
+}
+
+// PlaybookRunUpdate represents an incremental update to a playbook run
+type PlaybookRunUpdate struct {
+	// ID is the unique identifier of the playbook run.
+	ID string `json:"id"`
+
+	// UpdatedAt is the timestamp of when the update occurred
+	PlaybookRunUpdatedAt int64 `json:"playbook_run_updated_at"`
+
+	// ChangedFields contains only the fields that have changed in the playbook run
+	ChangedFields map[string]interface{} `json:"changed_fields"`
+
+	// ChecklistDeletes contains IDs of deleted checklists
+	ChecklistDeletes []string `json:"checklist_deletes,omitempty"`
+
+	// TimelineEventDeletes contains IDs of deleted timeline events
+	TimelineEventDeletes []string `json:"timeline_event_deletes,omitempty"`
+
+	// StatusPostDeletes contains IDs of deleted status posts
+	StatusPostDeletes []string `json:"status_post_deletes,omitempty"`
+}
+
+// ChecklistUpdate represents changes to a specific checklist
+type ChecklistUpdate struct {
+	// ID is the unique identifier of the checklist
+	ID string `json:"id"`
+
+	// ChecklistUpdatedAt is the timestamp of when the checklist update occurred
+	ChecklistUpdatedAt int64 `json:"checklist_updated_at"`
+
+	// Fields contains changes to the checklist properties
+	Fields map[string]interface{} `json:"fields,omitempty"`
+
+	// ItemUpdates contains changes to existing checklist items
+	ItemUpdates []ChecklistItemUpdate `json:"item_updates,omitempty"`
+
+	// ItemDeletes contains IDs of deleted checklist items
+	ItemDeletes []string `json:"item_deletes,omitempty"`
+
+	// ItemInserts contains new checklist items
+	ItemInserts []ChecklistItem `json:"item_inserts,omitempty"`
+
+	// ItemsOrder contains the updated sort order of checklist items
+	ItemsOrder []string `json:"items_order,omitempty"`
+}
+
+// IsEmpty returns true if the ChecklistUpdate has no changes
+func (u *ChecklistUpdate) IsEmpty() bool {
+	return len(u.Fields) == 0 &&
+		len(u.ItemUpdates) == 0 &&
+		len(u.ItemDeletes) == 0 &&
+		len(u.ItemInserts) == 0 &&
+		len(u.ItemsOrder) == 0
+}
+
+// ChecklistItemUpdate represents changes to a specific checklist item
+type ChecklistItemUpdate struct {
+	// ID is the unique identifier of the checklist item
+	ID string `json:"id"`
+
+	// ChecklistItemUpdatedAt is the timestamp of when the checklist item update occurred
+	ChecklistItemUpdatedAt int64 `json:"checklist_item_updated_at"`
+
+	// Fields contains the changed fields of the checklist item
+	Fields map[string]interface{} `json:"fields"`
+}
+
+func compareItemsOrder(prevItemsOrder, currItemsOrder []string) bool {
+	if len(prevItemsOrder) != len(currItemsOrder) {
+		return false
+	}
+	for i, id := range prevItemsOrder {
+		if id != currItemsOrder[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// DetectChangedFields compares two playbook runs and returns a map of changed fields
+func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} {
+	if previous == nil || current == nil {
+		return nil
+	}
+
+	changes := make(map[string]interface{})
+
+	detectScalarFieldChanges(previous, current, changes)
+	detectStringSliceFieldChanges(previous, current, changes)
+	detectStatusPostChanges(previous, current, changes)
+	detectTimelineEventChanges(previous, current, changes)
+	detectMetricsDataChanges(previous, current, changes)
+	detectChecklistChanges(previous, current, changes)
+
+	return changes
+}
+
+// detectScalarFieldChanges compares scalar fields between two PlaybookRun objects
+func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	if previous.Name != current.Name {
+		changes["name"] = current.Name
+	}
+	if previous.Summary != current.Summary {
+		changes["summary"] = current.Summary
+	}
+	if previous.SummaryModifiedAt != current.SummaryModifiedAt {
+		changes["summary_modified_at"] = current.SummaryModifiedAt
+	}
+	if previous.OwnerUserID != current.OwnerUserID {
+		changes["owner_user_id"] = current.OwnerUserID
+	}
+	if previous.ReporterUserID != current.ReporterUserID {
+		changes["reporter_user_id"] = current.ReporterUserID
+	}
+	if previous.ChannelID != current.ChannelID {
+		changes["channel_id"] = current.ChannelID
+	}
+	if previous.CreateAt != current.CreateAt {
+		changes["create_at"] = current.CreateAt
+	}
+	if previous.EndAt != current.EndAt {
+		changes["end_at"] = current.EndAt
+	}
+	if previous.PostID != current.PostID {
+		changes["post_id"] = current.PostID
+	}
+	if previous.CurrentStatus != current.CurrentStatus {
+		changes["current_status"] = current.CurrentStatus
+	}
+	if previous.LastStatusUpdateAt != current.LastStatusUpdateAt {
+		changes["last_status_update_at"] = current.LastStatusUpdateAt
+	}
+	if previous.ReminderPostID != current.ReminderPostID {
+		changes["reminder_post_id"] = current.ReminderPostID
+	}
+	if previous.PreviousReminder != current.PreviousReminder {
+		changes["previous_reminder"] = current.PreviousReminder
+	}
+	if previous.ReminderMessageTemplate != current.ReminderMessageTemplate {
+		changes["reminder_message_template"] = current.ReminderMessageTemplate
+	}
+	if previous.ReminderTimerDefaultSeconds != current.ReminderTimerDefaultSeconds {
+		changes["reminder_timer_default_seconds"] = current.ReminderTimerDefaultSeconds
+	}
+	if previous.StatusUpdateEnabled != current.StatusUpdateEnabled {
+		changes["status_update_enabled"] = current.StatusUpdateEnabled
+	}
+	if previous.DefaultOwnerID != current.DefaultOwnerID {
+		changes["default_owner_id"] = current.DefaultOwnerID
+	}
+	if previous.Retrospective != current.Retrospective {
+		changes["retrospective"] = current.Retrospective
+	}
+	if previous.RetrospectivePublishedAt != current.RetrospectivePublishedAt {
+		changes["retrospective_published_at"] = current.RetrospectivePublishedAt
+	}
+	if previous.RetrospectiveEnabled != current.RetrospectiveEnabled {
+		changes["retrospective_enabled"] = current.RetrospectiveEnabled
+	}
+	if previous.MessageOnJoin != current.MessageOnJoin {
+		changes["message_on_join"] = current.MessageOnJoin
+	}
+	if previous.RetrospectiveReminderIntervalSeconds != current.RetrospectiveReminderIntervalSeconds {
+		changes["retrospective_reminder_interval_seconds"] = current.RetrospectiveReminderIntervalSeconds
+	}
+	if previous.RetrospectiveWasCanceled != current.RetrospectiveWasCanceled {
+		changes["retrospective_was_canceled"] = current.RetrospectiveWasCanceled
+	}
+	if previous.StatusUpdateBroadcastChannelsEnabled != current.StatusUpdateBroadcastChannelsEnabled {
+		changes["status_update_broadcast_channels_enabled"] = current.StatusUpdateBroadcastChannelsEnabled
+	}
+	if previous.StatusUpdateBroadcastWebhooksEnabled != current.StatusUpdateBroadcastWebhooksEnabled {
+		changes["status_update_broadcast_webhooks_enabled"] = current.StatusUpdateBroadcastWebhooksEnabled
+	}
+	if previous.CreateChannelMemberOnNewParticipant != current.CreateChannelMemberOnNewParticipant {
+		changes["create_channel_member_on_new_participant"] = current.CreateChannelMemberOnNewParticipant
+	}
+	if previous.RemoveChannelMemberOnRemovedParticipant != current.RemoveChannelMemberOnRemovedParticipant {
+		changes["remove_channel_member_on_removed_participant"] = current.RemoveChannelMemberOnRemovedParticipant
+	}
+	if previous.CategoryName != current.CategoryName {
+		changes["category_name"] = current.CategoryName
+	}
+	if previous.Type != current.Type {
+		changes["type"] = current.Type
+	}
+	if !compareItemsOrder(previous.GetItemsOrder(), current.GetItemsOrder()) {
+		changes["items_order"] = current.GetItemsOrder()
+	}
+}
+
+// detectStringSliceFieldChanges compares string slice fields (unordered sets)
+func detectStringSliceFieldChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	if !StringSetsEqual(previous.InvitedUserIDs, current.InvitedUserIDs) {
+		changes["invited_user_ids"] = current.InvitedUserIDs
+	}
+	if !StringSetsEqual(previous.InvitedGroupIDs, current.InvitedGroupIDs) {
+		changes["invited_group_ids"] = current.InvitedGroupIDs
+	}
+	if !StringSetsEqual(previous.ParticipantIDs, current.ParticipantIDs) {
+		changes["participant_ids"] = current.ParticipantIDs
+	}
+	if !StringSetsEqual(previous.BroadcastChannelIDs, current.BroadcastChannelIDs) {
+		changes["broadcast_channel_ids"] = current.BroadcastChannelIDs
+	}
+	if !StringSetsEqual(previous.WebhookOnCreationURLs, current.WebhookOnCreationURLs) {
+		changes["webhook_on_creation_urls"] = current.WebhookOnCreationURLs
+	}
+	if !StringSetsEqual(previous.WebhookOnStatusUpdateURLs, current.WebhookOnStatusUpdateURLs) {
+		changes["webhook_on_status_update_urls"] = current.WebhookOnStatusUpdateURLs
+	}
+}
+
+// detectStatusPostChanges compares status posts between two PlaybookRun objects
+func detectStatusPostChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	// Create maps for efficient lookup
+	prevPostsMap := make(map[string]StatusPost)
+	currPostsMap := make(map[string]StatusPost)
+
+	for _, post := range previous.StatusPosts {
+		prevPostsMap[post.ID] = post
+	}
+
+	for _, post := range current.StatusPosts {
+		currPostsMap[post.ID] = post
+	}
+
+	// Find new and modified posts
+	var statusPostUpdates []StatusPost
+	for _, currPost := range current.StatusPosts {
+		if prevPost, exists := prevPostsMap[currPost.ID]; !exists {
+			// New post
+			statusPostUpdates = append(statusPostUpdates, currPost)
+		} else if prevPost.DeleteAt != currPost.DeleteAt {
+			// Post was soft deleted/restored
+			statusPostUpdates = append(statusPostUpdates, currPost)
+		}
+	}
+
+	// Find deleted posts
+	var statusPostDeletes []string
+	for _, prevPost := range previous.StatusPosts {
+		if _, exists := currPostsMap[prevPost.ID]; !exists {
+			// Post was hard deleted (removed from array)
+			statusPostDeletes = append(statusPostDeletes, prevPost.ID)
+		}
+	}
+
+	// Only add to changes if there are actual updates
+	if len(statusPostUpdates) > 0 {
+		changes["status_posts"] = statusPostUpdates
+	}
+
+	// Store deletes in a special field that will be moved to StatusPostDeletes
+	if len(statusPostDeletes) > 0 {
+		changes["_status_post_deletes"] = statusPostDeletes
+	}
+}
+
+// detectTimelineEventChanges compares timeline events between two PlaybookRun objects
+func detectTimelineEventChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	// Create maps for efficient lookup
+	prevEventsMap := make(map[string]TimelineEvent)
+	currEventsMap := make(map[string]TimelineEvent)
+
+	for _, event := range previous.TimelineEvents {
+		prevEventsMap[event.ID] = event
+	}
+
+	for _, event := range current.TimelineEvents {
+		currEventsMap[event.ID] = event
+	}
+
+	// Find new and modified events
+	var timelineEventUpdates []TimelineEvent
+	for _, currEvent := range current.TimelineEvents {
+		if prevEvent, exists := prevEventsMap[currEvent.ID]; !exists {
+			// New event
+			timelineEventUpdates = append(timelineEventUpdates, currEvent)
+		} else if prevEvent.DeleteAt != currEvent.DeleteAt {
+			// Event was soft deleted/restored
+			timelineEventUpdates = append(timelineEventUpdates, currEvent)
+		}
+	}
+
+	// Find deleted events
+	var timelineEventDeletes []string
+	for _, prevEvent := range previous.TimelineEvents {
+		if _, exists := currEventsMap[prevEvent.ID]; !exists {
+			// Event was hard deleted (removed from array)
+			timelineEventDeletes = append(timelineEventDeletes, prevEvent.ID)
+		}
+	}
+
+	// Only add to changes if there are actual updates
+	if len(timelineEventUpdates) > 0 {
+		changes["timeline_events"] = timelineEventUpdates
+	}
+
+	// Store deletes in a special field that will be moved to TimelineEventDeletes
+	if len(timelineEventDeletes) > 0 {
+		changes["_timeline_event_deletes"] = timelineEventDeletes
+	}
+}
+
+// detectMetricsDataChanges compares metrics data between two PlaybookRun objects
+func detectMetricsDataChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	if len(previous.MetricsData) != len(current.MetricsData) {
+		changes["metrics_data"] = current.MetricsData
+		return
+	}
+
+	for i, prevMetric := range previous.MetricsData {
+		currMetric := current.MetricsData[i]
+		if prevMetric.MetricConfigID != currMetric.MetricConfigID ||
+			prevMetric.Value != currMetric.Value {
+			changes["metrics_data"] = current.MetricsData
+			return
+		}
+	}
+}
+
+// detectChecklistChanges compares checklists and handles both updates and deletions
+func detectChecklistChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	checklistUpdates := GetChecklistUpdates(previous.Checklists, current.Checklists)
+	if len(checklistUpdates) > 0 {
+		changes["checklists"] = checklistUpdates
+	}
+
+	var checklistDeletes []string
+	if len(previous.Checklists) > 0 {
+		currentChecklistIDs := make(map[string]bool)
+		for _, checklist := range current.Checklists {
+			currentChecklistIDs[checklist.ID] = true
+		}
+
+		for _, prevChecklist := range previous.Checklists {
+			if !currentChecklistIDs[prevChecklist.ID] {
+				checklistDeletes = append(checklistDeletes, prevChecklist.ID)
+			}
+		}
+	}
+
+	if len(checklistDeletes) > 0 {
+		changes["_checklist_deletes"] = checklistDeletes
+	}
+}
+
+// GetChecklistUpdates compares two slices of checklists and returns a list of updates
+func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
+	if len(previous) == 0 && len(current) == 0 {
+		return nil
+	}
+
+	// Map previous checklists by ID for quick lookup
+	prevMap := make(map[string]Checklist)
+	for _, checklist := range previous {
+		prevMap[checklist.ID] = checklist
+	}
+
+	var updates []ChecklistUpdate
+
+	// Process current checklists - update or add
+	for _, checklist := range current {
+		update := ChecklistUpdate{
+			ID:                 checklist.ID,
+			ChecklistUpdatedAt: checklist.UpdateAt,
+		}
+
+		// Check if checklist exists in previous state
+		if prev, exists := prevMap[checklist.ID]; exists {
+			// Compare fields
+			fields := make(map[string]interface{})
+			if prev.Title != checklist.Title {
+				fields["title"] = checklist.Title
+			}
+			update.Fields = fields
+
+			if !compareItemsOrder(prev.GetItemsOrder(), checklist.GetItemsOrder()) {
+				update.ItemsOrder = checklist.GetItemsOrder()
+			}
+
+			// Get item updates
+			itemUpdates := GetChecklistItemUpdates(prev.Items, checklist.Items)
+			if len(itemUpdates.Updates) > 0 {
+				update.ItemUpdates = itemUpdates.Updates
+			}
+			if len(itemUpdates.Deletes) > 0 {
+				update.ItemDeletes = itemUpdates.Deletes
+			}
+			if len(itemUpdates.Inserts) > 0 {
+				update.ItemInserts = itemUpdates.Inserts
+			}
+
+			// Only add update if there are changes
+			if !update.IsEmpty() {
+				updates = append(updates, update)
+			}
+
+			// Remove from map to track deletions
+			delete(prevMap, checklist.ID)
+		} else {
+			// New checklist - all fields are new
+			fields := map[string]interface{}{
+				"title": checklist.Title,
+			}
+			update.Fields = fields
+			update.ItemInserts = checklist.Items
+			updates = append(updates, update)
+		}
+	}
+
+	return updates
+}
+
+// ItemChanges represents the changes between two checklist item lists
+type ItemChanges struct {
+	Updates []ChecklistItemUpdate
+	Deletes []string
+	Inserts []ChecklistItem
+}
+
+// GetChecklistItemUpdates compares two slices of checklist items and returns updates
+func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
+	result := ItemChanges{}
+
+	// Map previous items by ID for quick lookup
+	prevMap := make(map[string]ChecklistItem)
+	for _, item := range previous {
+		prevMap[item.ID] = item
+	}
+
+	// Process current items - update or add
+	for _, item := range current {
+		// Check if item exists in previous state
+		if prev, exists := prevMap[item.ID]; exists {
+			// Compare fields
+			fields := make(map[string]interface{})
+			if prev.Title != item.Title {
+				fields["title"] = item.Title
+			}
+			if prev.Description != item.Description {
+				fields["description"] = item.Description
+			}
+			if prev.State != item.State {
+				fields["state"] = item.State
+			}
+			if prev.StateModified != item.StateModified {
+				fields["state_modified"] = item.StateModified
+			}
+			if prev.AssigneeID != item.AssigneeID {
+				fields["assignee_id"] = item.AssigneeID
+			}
+			if prev.CommandLastRun != item.CommandLastRun {
+				fields["command_last_run"] = item.CommandLastRun
+			}
+			if prev.Command != item.Command {
+				fields["command"] = item.Command
+			}
+			if prev.DueDate != item.DueDate {
+				fields["due_date"] = item.DueDate
+			}
+
+			// Only add update if there are changes
+			if len(fields) > 0 {
+				result.Updates = append(result.Updates, ChecklistItemUpdate{
+					ID:                     item.ID,
+					ChecklistItemUpdatedAt: item.UpdateAt,
+					Fields:                 fields,
+				})
+			}
+
+			// Remove from map to track deletions
+			delete(prevMap, item.ID)
+		} else {
+			// New item
+			result.Inserts = append(result.Inserts, item)
+		}
+	}
+
+	// Process deleted items
+	for id := range prevMap {
+		result.Deletes = append(result.Deletes, id)
+	}
+
+	return result
+}
+
+// StringSetsEqual compares two string slices as unordered sets.
+// Only membership matters, not the order of elements.
+func StringSetsEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// Create map for O(1) lookup
+	aMap := make(map[string]bool, len(a))
+	for _, item := range a {
+		aMap[item] = true
+	}
+
+	// Check if all items in b are in a
+	for _, item := range b {
+		if !aMap[item] {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *PlaybookRun) Clone() *PlaybookRun {
@@ -218,6 +739,7 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), r.WebhookOnCreationURLs...)
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), r.WebhookOnStatusUpdateURLs...)
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
+	newPlaybookRun.BroadcastChannelIDs = append([]string(nil), r.BroadcastChannelIDs...)
 
 	return &newPlaybookRun
 }
@@ -233,6 +755,9 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	for j, cl := range old.Checklists {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []ChecklistItem{}
+		}
+		if cl.ItemsOrder == nil {
+			old.Checklists[j].ItemsOrder = []string{}
 		}
 	}
 	if old.StatusPosts == nil {
@@ -261,6 +786,9 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.MetricsData == nil {
 		old.MetricsData = []RunMetricData{}
+	}
+	if old.ItemsOrder == nil {
+		old.ItemsOrder = []string{}
 	}
 
 	return json.Marshal(old)
@@ -597,7 +1125,7 @@ type PlaybookRunService interface {
 	OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error
 
 	// AddPostToTimeline adds an event based on a post to a playbook run's timeline.
-	AddPostToTimeline(playbookRunID, userID string, post *model.Post, summary string) error
+	AddPostToTimeline(playbookRun *PlaybookRun, userID string, post *model.Post, summary string) error
 
 	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
 	RemoveTimelineEvent(playbookRunID, userID, eventID string) error

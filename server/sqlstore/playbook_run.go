@@ -1155,6 +1155,12 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 		playbookRun.StatusUpdateBroadcastChannelsEnabled = false
 	}
 
+	playbookRun.ItemsOrder = playbookRun.GetItemsOrder()
+
+	for i := range playbookRun.Checklists {
+		playbookRun.Checklists[i].ItemsOrder = playbookRun.Checklists[i].GetItemsOrder()
+	}
+
 	return &playbookRun, nil
 }
 
@@ -1630,6 +1636,13 @@ func populateChecklistIDs(checklists []app.Checklist) []app.Checklist {
 			if item.ID == "" {
 				newChecklists[i].Items[j].ID = model.NewId()
 			}
+		}
+
+		// Update ItemsOrder to reflect the current order of items after ID assignment
+		// This ensures that duplicated items (which initially have no ID) are included in the order
+		newChecklists[i].ItemsOrder = make([]string, len(newChecklists[i].Items))
+		for j, item := range newChecklists[i].Items {
+			newChecklists[i].ItemsOrder[j] = item.ID
 		}
 	}
 

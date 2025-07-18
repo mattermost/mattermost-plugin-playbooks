@@ -61,7 +61,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
         //@ts-ignore
         profiles.then(({data}: { data: UserProfile[] }) => {
             // getProfilesByIds doesn't return current user profile, so add it when a user is participant
-            if (role === Role.Participant) {
+            if (role === Role.Participant && !data.some((user) => user.id === myUser.id)) {
                 data.push(myUser);
             }
             data.sort(sortByUsername);

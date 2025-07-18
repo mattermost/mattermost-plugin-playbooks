@@ -20,10 +20,11 @@ import {
     playbookRunUpdated,
     receivedTeamPlaybookRuns,
     removedFromPlaybookRunChannel,
+    websocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/actions';
-import {fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
-import {clientId, myPlaybookRunsMap} from 'src/selectors';
-
+import {fetchPlaybookRun, fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
+import {clientId, getRun, myPlaybookRunsMap} from 'src/selectors';
+import {PlaybookRunUpdate} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
@@ -52,11 +53,45 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
             return;
         }
         const data = JSON.parse(msg.data.payload);
+
         const playbookRun = data as PlaybookRun;
-
         dispatch(playbookRunUpdated(playbookRun));
-
         websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(playbookRun));
+    };
+}
+
+// Handler for incremental updates - check state exists before dispatching
+export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        let data: PlaybookRunUpdate;
+        try {
+            data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
+        } catch (error) {
+            console.error('Failed to parse PlaybookRunUpdate WebSocket message:', error); // eslint-disable-line no-console
+            return;
+        }
+
+        if (!data.id) {
+            console.warn('Ignoring incremental update with missing ID'); // eslint-disable-line no-console
+            return;
+        }
+
+        // Check if we have the run in state before applying incremental update
+        const state = getState();
+        const currentRun = getRun(data.id)(state);
+
+        if (!currentRun) {
+            // If we don't have the current state, fetch the full playbook run
+            // This ensures we don't lose updates due to missing state
+            fetchAndUpdatePlaybookRun(data.id, dispatch);
+            return;
+        }
+
+        dispatch(websocketPlaybookRunIncrementalUpdateReceived(data));
     };
 }
 
@@ -196,3 +231,14 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
         }
     };
 };
+
+// Helper function to fetch and update a playbook run when state is missing
+function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
+    fetchPlaybookRun(runId)
+        .then((playbookRun) => {
+            dispatch(playbookRunUpdated(playbookRun));
+        })
+        .catch(() => {
+            // Error fetching playbook run
+        });
+}
