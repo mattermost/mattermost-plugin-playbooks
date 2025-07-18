@@ -308,7 +308,10 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		}
 
 		// Convert UpdateChecklist to app.Checklist (now that UpdateChecklist can receive IDs)
-		appChecklists := convertUpdateChecklistsToAppChecklists(*args.Updates.Checklists, currentPlaybook.Checklists)
+		appChecklists, err := convertUpdateChecklistsToAppChecklists(*args.Updates.Checklists, currentPlaybook.Checklists)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to convert checklists for playbook id: '%s'", args.ID)
+		}
 
 		checklistsJSON, err := json.Marshal(appChecklists)
 		if err != nil {
@@ -562,7 +565,8 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 
 // convertUpdateChecklistsToAppChecklists converts GraphQL UpdateChecklist structs to app.Checklist structs.
 // This handles ID generation for new checklists and converts field types (float64 to int64).
-func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, currentChecklists []app.Checklist) []app.Checklist {
+// Returns an error if client provides invalid IDs for existing entities to prevent data corruption.
+func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, currentChecklists []app.Checklist) ([]app.Checklist, error) {
 	// Create maps for efficient ID-based lookup instead of index-based matching
 	existingChecklistsByID := make(map[string]app.Checklist)
 	existingItemsByID := make(map[string]app.ChecklistItem)
@@ -587,12 +591,12 @@ func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, 
 			// No valid ID provided, create a new checklist
 			checklistID = model.NewId()
 		} else {
-			// Use the provided ID if it exists in current checklists, otherwise create new
+			// Validate that the provided ID exists in current checklists
 			if _, exists := existingChecklistsByID[*updateChecklist.ID]; exists {
 				checklistID = *updateChecklist.ID
 			} else {
-				// Invalid ID provided, create new checklist
-				checklistID = model.NewId()
+				// Invalid ID provided - return error
+				return nil, errors.Errorf("invalid checklist ID '%s': checklist does not exist", *updateChecklist.ID)
 			}
 		}
 
@@ -605,12 +609,12 @@ func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, 
 				// No valid ID provided, create a new item
 				itemID = model.NewId()
 			} else {
-				// Use the provided ID if it exists in current items, otherwise create new
+				// Validate that the provided ID exists in current items
 				if _, exists := existingItemsByID[*updateItem.ID]; exists {
 					itemID = *updateItem.ID
 				} else {
-					// Invalid ID provided, create new item
-					itemID = model.NewId()
+					// Invalid ID provided - return error
+					return nil, errors.Errorf("invalid checklist item ID '%s': item does not exist", *updateItem.ID)
 				}
 			}
 
@@ -639,5 +643,5 @@ func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, 
 			Items: appChecklistItems,
 		}
 	}
-	return appChecklists
+	return appChecklists, nil
 }

@@ -8,6 +8,11 @@ import {ChecklistUpdate, PlaybookRunUpdate} from 'src/types/websocket_events';
 
 // Helper function to apply incremental updates idempotently
 export function applyIncrementalUpdate(currentRun: PlaybookRun, update: PlaybookRunUpdate): PlaybookRun {
+    // Validate inputs to prevent runtime errors
+    if (!currentRun || !update) {
+        return currentRun;
+    }
+
     // Check if this update is older than the current state
     if (currentRun.update_at && update.playbook_run_updated_at &&
         update.playbook_run_updated_at > 0 &&

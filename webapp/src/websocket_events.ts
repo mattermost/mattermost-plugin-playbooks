@@ -71,7 +71,7 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
         try {
             data = JSON.parse(msg.data.payload) as PlaybookRunUpdate;
         } catch (error) {
-            console.error('Failed to parse PlaybookRunUpdate WebSocket message:', error, 'payload:', msg.data.payload); // eslint-disable-line no-console
+            console.error('Failed to parse PlaybookRunUpdate WebSocket message:', error); // eslint-disable-line no-console
             return;
         }
 
