@@ -307,43 +307,8 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
 		}
 
-		// Convert UpdateChecklist to app.Checklist to preserve IDs
-		appChecklists := make([]app.Checklist, len(*args.Updates.Checklists))
-		for i, updateChecklist := range *args.Updates.Checklists {
-			// Generate ID if missing (for new checklists)
-			checklistID := updateChecklist.ID
-			if checklistID == "" || strings.HasPrefix(checklistID, "temp_") {
-				checklistID = model.NewId()
-			}
-
-			// Convert checklist items to prevent data loss
-			appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
-			for j, updateItem := range updateChecklist.Items {
-				appChecklistItems[j] = app.ChecklistItem{
-					ID:               model.NewId(),
-					Title:            updateItem.Title,
-					State:            updateItem.State,
-					StateModified:    int64(updateItem.StateModified),
-					AssigneeID:       updateItem.AssigneeID,
-					AssigneeModified: int64(updateItem.AssigneeModified),
-					Command:          updateItem.Command,
-					CommandLastRun:   int64(updateItem.CommandLastRun),
-					Description:      updateItem.Description,
-					LastSkipped:      int64(updateItem.LastSkipped),
-					DueDate:          int64(updateItem.DueDate),
-					TaskActions:      []app.TaskAction{},
-				}
-				if updateItem.TaskActions != nil {
-					appChecklistItems[j].TaskActions = *updateItem.TaskActions
-				}
-			}
-
-			appChecklists[i] = app.Checklist{
-				ID:    checklistID,
-				Title: updateChecklist.Title,
-				Items: appChecklistItems,
-			}
-		}
+		// Convert UpdateChecklist to app.Checklist (now that UpdateChecklist can receive IDs)
+		appChecklists := convertUpdateChecklistsToAppChecklists(*args.Updates.Checklists)
 
 		checklistsJSON, err := json.Marshal(appChecklists)
 		if err != nil {
@@ -594,4 +559,46 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 		}
 	}
 	return nil
+}
+
+// convertUpdateChecklistsToAppChecklists converts GraphQL UpdateChecklist structs to app.Checklist structs.
+// This handles ID generation for new checklists and converts field types (float64 to int64).
+func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist) []app.Checklist {
+	appChecklists := make([]app.Checklist, len(updateChecklists))
+	for i, updateChecklist := range updateChecklists {
+		// Generate ID if missing (for new checklists)
+		checklistID := updateChecklist.ID
+		if checklistID == "" || strings.HasPrefix(checklistID, "temp_") {
+			checklistID = model.NewId()
+		}
+
+		// Convert checklist items to prevent data loss
+		appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
+		for j, updateItem := range updateChecklist.Items {
+			appChecklistItems[j] = app.ChecklistItem{
+				ID:               model.NewId(),
+				Title:            updateItem.Title,
+				State:            updateItem.State,
+				StateModified:    int64(updateItem.StateModified),
+				AssigneeID:       updateItem.AssigneeID,
+				AssigneeModified: int64(updateItem.AssigneeModified),
+				Command:          updateItem.Command,
+				CommandLastRun:   int64(updateItem.CommandLastRun),
+				Description:      updateItem.Description,
+				LastSkipped:      int64(updateItem.LastSkipped),
+				DueDate:          int64(updateItem.DueDate),
+				TaskActions:      []app.TaskAction{},
+			}
+			if updateItem.TaskActions != nil {
+				appChecklistItems[j].TaskActions = *updateItem.TaskActions
+			}
+		}
+
+		appChecklists[i] = app.Checklist{
+			ID:    checklistID,
+			Title: updateChecklist.Title,
+			Items: appChecklistItems,
+		}
+	}
+	return appChecklists
 }
