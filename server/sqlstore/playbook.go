@@ -218,17 +218,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 	playbook.ID = model.NewId()
 
 	// Generate IDs for checklists that don't have them
-	for i := range playbook.Checklists {
-		if playbook.Checklists[i].ID == "" {
-			playbook.Checklists[i].ID = model.NewId()
-		}
-		// Generate IDs for checklist items that don't have them
-		for j := range playbook.Checklists[i].Items {
-			if playbook.Checklists[i].Items[j].ID == "" {
-				playbook.Checklists[i].Items[j].ID = model.NewId()
-			}
-		}
-	}
+	app.EnsureChecklistIDs(playbook.Checklists)
 
 	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
@@ -686,17 +676,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	}
 
 	// Generate IDs for checklists that don't have them
-	for i := range playbook.Checklists {
-		if playbook.Checklists[i].ID == "" {
-			playbook.Checklists[i].ID = model.NewId()
-		}
-		// Generate IDs for checklist items that don't have them
-		for j := range playbook.Checklists[i].Items {
-			if playbook.Checklists[i].Items[j].ID == "" {
-				playbook.Checklists[i].Items[j].ID = model.NewId()
-			}
-		}
-	}
+	app.EnsureChecklistIDs(playbook.Checklists)
 
 	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
@@ -1158,7 +1138,6 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
 			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
 		}
-
 	}
 
 	p.InvitedUserIDs = []string(nil)

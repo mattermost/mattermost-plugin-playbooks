@@ -302,7 +302,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {
 		app.CleanUpChecklists(*args.Updates.Checklists)
-
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
 		}
@@ -567,21 +566,7 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 // This handles ID generation for new checklists and converts field types (float64 to int64).
 // Returns an error if client provides invalid IDs for existing entities to prevent data corruption.
 func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, currentChecklists []app.Checklist) ([]app.Checklist, error) {
-	// Create maps for efficient ID-based lookup instead of index-based matching
-	existingChecklistsByID := make(map[string]app.Checklist)
-	existingItemsByID := make(map[string]app.ChecklistItem)
-
-	for _, checklist := range currentChecklists {
-		if checklist.ID != "" {
-			existingChecklistsByID[checklist.ID] = checklist
-			// Also map all items from this checklist
-			for _, item := range checklist.Items {
-				if item.ID != "" {
-					existingItemsByID[item.ID] = item
-				}
-			}
-		}
-	}
+	existingChecklistsByID, existingItemsByID := app.BuildChecklistMaps(currentChecklists)
 
 	appChecklists := make([]app.Checklist, len(updateChecklists))
 	for i, updateChecklist := range updateChecklists {

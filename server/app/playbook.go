@@ -766,6 +766,56 @@ func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
 	return cpm.UnmarshalText(txt)
 }
 
+// ValidateChecklistIDs validates and cleans checklist IDs against existing checklists.
+// Resets IDs that don't exist in the current playbook to empty string for regeneration.
+func ValidateChecklistIDs(checklists []Checklist, existingChecklists []Checklist) {
+	existingByID := make(map[string]bool)
+	for _, existing := range existingChecklists {
+		if existing.ID != "" {
+			existingByID[existing.ID] = true
+		}
+	}
+
+	for i := range checklists {
+		if checklists[i].ID != "" && !existingByID[checklists[i].ID] {
+			checklists[i].ID = ""
+		}
+	}
+}
+
+// BuildChecklistMaps creates lookup maps for existing checklists and items by ID.
+// Returns (checklistsByID, itemsByID) for efficient validation.
+func BuildChecklistMaps(checklists []Checklist) (map[string]Checklist, map[string]ChecklistItem) {
+	checklistsByID := make(map[string]Checklist)
+	itemsByID := make(map[string]ChecklistItem)
+
+	for _, checklist := range checklists {
+		if checklist.ID != "" {
+			checklistsByID[checklist.ID] = checklist
+			for _, item := range checklist.Items {
+				if item.ID != "" {
+					itemsByID[item.ID] = item
+				}
+			}
+		}
+	}
+	return checklistsByID, itemsByID
+}
+
+// EnsureChecklistIDs generates IDs for checklists and items that don't have them.
+func EnsureChecklistIDs(checklists []Checklist) {
+	for i := range checklists {
+		if checklists[i].ID == "" {
+			checklists[i].ID = model.NewId()
+		}
+		for j := range checklists[i].Items {
+			if checklists[i].Items[j].ID == "" {
+				checklists[i].Items[j].ID = model.NewId()
+			}
+		}
+	}
+}
+
 // Value represents a ChannelPlaybookMode as a type writable into the DB
 func (cpm ChannelPlaybookMode) Value() (driver.Value, error) {
 	return cpm.MarshalText()
