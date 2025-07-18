@@ -222,6 +222,12 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 		if playbook.Checklists[i].ID == "" {
 			playbook.Checklists[i].ID = model.NewId()
 		}
+		// Generate IDs for checklist items that don't have them
+		for j := range playbook.Checklists[i].Items {
+			if playbook.Checklists[i].Items[j].ID == "" {
+				playbook.Checklists[i].Items[j].ID = model.NewId()
+			}
+		}
 	}
 
 	rawPlaybook, err := toSQLPlaybook(playbook)
@@ -683,6 +689,12 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	for i := range playbook.Checklists {
 		if playbook.Checklists[i].ID == "" {
 			playbook.Checklists[i].ID = model.NewId()
+		}
+		// Generate IDs for checklist items that don't have them
+		for j := range playbook.Checklists[i].Items {
+			if playbook.Checklists[i].Items[j].ID == "" {
+				playbook.Checklists[i].Items[j].ID = model.NewId()
+			}
 		}
 	}
 
