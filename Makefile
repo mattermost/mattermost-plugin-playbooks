@@ -406,9 +406,8 @@ dist-fips: apply server-fips webapp bundle-fips
 ## Builds both normal and FIPS distributions.
 .PHONY: dist-all
 dist-all: clean
-	@echo "==> Building both normal and FIPS distributions..."
-	$(MAKE) dist
-	$(MAKE) dist-fips
+	@echo "==> Building both normal and FIPS distributions in parallel..."
+	$(MAKE) dist & $(MAKE) dist-fips & wait
 	@echo "==> Both distributions built successfully:"
 	@echo "    Normal: dist/$(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz"
 	@echo "    FIPS:   dist-fips/$(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz"
