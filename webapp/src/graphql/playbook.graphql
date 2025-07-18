@@ -40,6 +40,7 @@ query Playbook($id: String!) {
 			id
 			title
 			items {
+				id
 				title
 				description
 				state

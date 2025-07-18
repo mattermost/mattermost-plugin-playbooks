@@ -314,7 +314,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
 		}
-
 		setmap["ChecklistsJSON"] = checklistsJSON
 	}
 
@@ -575,8 +574,14 @@ func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist) 
 		// Convert checklist items to prevent data loss
 		appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
 		for j, updateItem := range updateChecklist.Items {
+			// Preserve existing ID or generate new one for new items
+			itemID := updateItem.ID
+			if itemID == "" || strings.HasPrefix(itemID, "temp_") {
+				itemID = model.NewId()
+			}
+
 			appChecklistItems[j] = app.ChecklistItem{
-				ID:               model.NewId(),
+				ID:               itemID,
 				Title:            updateItem.Title,
 				State:            updateItem.State,
 				StateModified:    int64(updateItem.StateModified),

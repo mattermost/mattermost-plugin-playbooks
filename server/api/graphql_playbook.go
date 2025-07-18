@@ -114,6 +114,10 @@ type ChecklistItemResolver struct {
 	app.ChecklistItem
 }
 
+func (r *ChecklistItemResolver) ID() string {
+	return r.ChecklistItem.ID
+}
+
 func (r *ChecklistItemResolver) StateModified() float64 {
 	return float64(r.ChecklistItem.StateModified)
 }
@@ -210,6 +214,7 @@ func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
 }
 
 type UpdateChecklistItem struct {
+	ID               string            `json:"id"`
 	Title            string            `json:"title"`
 	State            string            `json:"state"`
 	StateModified    float64           `json:"state_modified"`

@@ -299,7 +299,6 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 
 	changes := make(map[string]interface{})
 
-	// Compare different types of fields using focused helper functions
 	detectScalarFieldChanges(previous, current, changes)
 	detectStringSliceFieldChanges(previous, current, changes)
 	detectStatusPostChanges(previous, current, changes)

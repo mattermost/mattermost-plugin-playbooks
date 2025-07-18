@@ -74,6 +74,7 @@ const ChecklistList = ({
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
+                id: ci.id || '',
                 title: ci.title,
                 description: ci.description,
                 state: ci.state,
@@ -126,6 +127,7 @@ const ChecklistList = ({
                 items: cl.items.map((ci) => {
                     return {
                         ...ci,
+                        id: ci.id || '',
                         state_modified: ci.state_modified || 0,
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
@@ -181,7 +183,7 @@ const ChecklistList = ({
         }
 
         // Copy the data to modify it
-        const newChecklists = Array.from(checklists);
+        const newChecklists = [...checklists];
 
         // Move a checklist item, either inside of the same checklist, or between checklists
         if (result.type === 'checklist-item') {
@@ -190,7 +192,7 @@ const ChecklistList = ({
 
             if (srcChecklistIdx === dstChecklistIdx) {
                 // Remove the dragged item from the checklist
-                const newChecklistItems = Array.from(checklists[srcChecklistIdx].items);
+                const newChecklistItems = [...checklists[srcChecklistIdx].items];
                 const [removed] = newChecklistItems.splice(srcIdx, 1);
 
                 // Add the dragged item to the checklist
@@ -204,11 +206,11 @@ const ChecklistList = ({
                 const dstChecklist = checklists[dstChecklistIdx];
 
                 // Remove the dragged item from the source checklist
-                const newSrcChecklistItems = Array.from(srcChecklist.items);
+                const newSrcChecklistItems = [...srcChecklist.items];
                 const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
 
                 // Add the dragged item to the destination checklist
-                const newDstChecklistItems = Array.from(dstChecklist.items);
+                const newDstChecklistItems = [...dstChecklist.items];
                 newDstChecklistItems.splice(dstIdx, 0, moved);
 
                 // Modify the new checklists array with the new source and destination checklists
