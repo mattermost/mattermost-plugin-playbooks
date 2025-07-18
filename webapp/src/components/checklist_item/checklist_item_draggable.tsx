@@ -29,7 +29,7 @@ interface Props {
 const DraggableChecklistItem = (props: Props) => {
     return (
         <Draggable
-            draggableId={props.item.title + props.itemIndex}
+            draggableId={props.item.id || (props.item.title + props.itemIndex)}
             index={props.itemIndex}
         >
             {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (

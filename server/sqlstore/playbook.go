@@ -217,6 +217,13 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 	}
 	playbook.ID = model.NewId()
 
+	// Generate IDs for checklists that don't have them
+	for i := range playbook.Checklists {
+		if playbook.Checklists[i].ID == "" {
+			playbook.Checklists[i].ID = model.NewId()
+		}
+	}
+
 	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
 		return "", err
@@ -670,6 +677,13 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	if playbook.ID == "" {
 		return errors.New("id should not be empty")
+	}
+
+	// Generate IDs for checklists that don't have them
+	for i := range playbook.Checklists {
+		if playbook.Checklists[i].ID == "" {
+			playbook.Checklists[i].ID = model.NewId()
+		}
 	}
 
 	rawPlaybook, err := toSQLPlaybook(playbook)
@@ -1133,12 +1147,6 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
 		}
 
-		// Ensure backwards compatibility: generate IDs for checklists that don't have them
-		for i := range p.Checklists {
-			if p.Checklists[i].ID == "" {
-				p.Checklists[i].ID = model.NewId()
-			}
-		}
 	}
 
 	p.InvitedUserIDs = []string(nil)

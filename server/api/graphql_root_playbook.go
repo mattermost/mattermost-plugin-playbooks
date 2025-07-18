@@ -308,7 +308,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		}
 
 		// Convert UpdateChecklist to app.Checklist (now that UpdateChecklist can receive IDs)
-		appChecklists := convertUpdateChecklistsToAppChecklists(*args.Updates.Checklists)
+		appChecklists := convertUpdateChecklistsToAppChecklists(*args.Updates.Checklists, currentPlaybook.Checklists)
 
 		checklistsJSON, err := json.Marshal(appChecklists)
 		if err != nil {
@@ -562,24 +562,39 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 
 // convertUpdateChecklistsToAppChecklists converts GraphQL UpdateChecklist structs to app.Checklist structs.
 // This handles ID generation for new checklists and converts field types (float64 to int64).
-func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist) []app.Checklist {
+func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, currentChecklists []app.Checklist) []app.Checklist {
 	appChecklists := make([]app.Checklist, len(updateChecklists))
 	for i, updateChecklist := range updateChecklists {
-		// Generate ID if missing (for new checklists)
+		// Try to preserve existing checklist ID if updating an existing checklist
 		var checklistID string
 		if updateChecklist.ID == nil || *updateChecklist.ID == "" || strings.HasPrefix(*updateChecklist.ID, "temp_") {
-			checklistID = model.NewId()
+			// If no ID provided or temp ID, try to preserve existing ID if this is an update of existing checklist
+			if i < len(currentChecklists) && currentChecklists[i].ID != "" {
+				checklistID = currentChecklists[i].ID
+			} else {
+				checklistID = model.NewId()
+			}
 		} else {
 			checklistID = *updateChecklist.ID
 		}
 
 		// Convert checklist items to prevent data loss
 		appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
+		var currentItems []app.ChecklistItem
+		if i < len(currentChecklists) {
+			currentItems = currentChecklists[i].Items
+		}
+
 		for j, updateItem := range updateChecklist.Items {
-			// Preserve existing ID or generate new one for new items
+			// Try to preserve existing item ID if updating an existing item
 			var itemID string
 			if updateItem.ID == nil || *updateItem.ID == "" || strings.HasPrefix(*updateItem.ID, "temp_") {
-				itemID = model.NewId()
+				// If no ID provided or temp ID, try to preserve existing ID if this is an update of existing item
+				if j < len(currentItems) && currentItems[j].ID != "" {
+					itemID = currentItems[j].ID
+				} else {
+					itemID = model.NewId()
+				}
 			} else {
 				itemID = *updateItem.ID
 			}

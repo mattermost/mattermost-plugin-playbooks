@@ -243,6 +243,13 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Preserve existing checklist IDs when updating
+	for i := range playbook.Checklists {
+		if playbook.Checklists[i].ID == "" && i < len(oldPlaybook.Checklists) {
+			playbook.Checklists[i].ID = oldPlaybook.Checklists[i].ID
+		}
+	}
+
 	app.CleanUpChecklists(playbook.Checklists)
 
 	if err = validatePreAssignment(playbook); err != nil {

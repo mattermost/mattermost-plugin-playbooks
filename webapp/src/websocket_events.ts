@@ -233,11 +233,12 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
 };
 
 // Helper function to fetch and update a playbook run when state is missing
-async function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
-    try {
-        const playbookRun = await fetchPlaybookRun(runId);
-        dispatch(playbookRunUpdated(playbookRun));
-    } catch {
-        // Error fetching playbook run
-    }
+function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
+    fetchPlaybookRun(runId)
+        .then((playbookRun) => {
+            dispatch(playbookRunUpdated(playbookRun));
+        })
+        .catch(() => {
+            // Error fetching playbook run
+        });
 }
