@@ -288,7 +288,7 @@ endif
 			export GO111MODULE=on && \
 			export CGO_ENABLED=0 && \
 			cd /plugin/server && \
-			env GOOS=linux GOARCH=amd64 go build -tags fips -trimpath -o dist-fips/plugin-linux-amd64-fips && \
+			env GOOS=linux GOARCH=amd64 go build -tags fips -trimpath -buildvcs=false -o dist-fips/plugin-linux-amd64-fips && \
 			echo 'FIPS plugin build completed successfully'"
 	
 	@echo "FIPS plugin server build completed: server/dist-fips/plugin-linux-amd64-fips"
