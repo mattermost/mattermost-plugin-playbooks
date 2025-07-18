@@ -563,40 +563,55 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 // convertUpdateChecklistsToAppChecklists converts GraphQL UpdateChecklist structs to app.Checklist structs.
 // This handles ID generation for new checklists and converts field types (float64 to int64).
 func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, currentChecklists []app.Checklist) []app.Checklist {
+	// Create maps for efficient ID-based lookup instead of index-based matching
+	existingChecklistsByID := make(map[string]app.Checklist)
+	existingItemsByID := make(map[string]app.ChecklistItem)
+
+	for _, checklist := range currentChecklists {
+		if checklist.ID != "" {
+			existingChecklistsByID[checklist.ID] = checklist
+			// Also map all items from this checklist
+			for _, item := range checklist.Items {
+				if item.ID != "" {
+					existingItemsByID[item.ID] = item
+				}
+			}
+		}
+	}
+
 	appChecklists := make([]app.Checklist, len(updateChecklists))
 	for i, updateChecklist := range updateChecklists {
-		// Try to preserve existing checklist ID if updating an existing checklist
+		// Use ID-based matching for checklists
 		var checklistID string
 		if updateChecklist.ID == nil || *updateChecklist.ID == "" || strings.HasPrefix(*updateChecklist.ID, "temp_") {
-			// If no ID provided or temp ID, try to preserve existing ID if this is an update of existing checklist
-			if i < len(currentChecklists) && currentChecklists[i].ID != "" {
-				checklistID = currentChecklists[i].ID
+			// No valid ID provided, create a new checklist
+			checklistID = model.NewId()
+		} else {
+			// Use the provided ID if it exists in current checklists, otherwise create new
+			if _, exists := existingChecklistsByID[*updateChecklist.ID]; exists {
+				checklistID = *updateChecklist.ID
 			} else {
+				// Invalid ID provided, create new checklist
 				checklistID = model.NewId()
 			}
-		} else {
-			checklistID = *updateChecklist.ID
 		}
 
-		// Convert checklist items to prevent data loss
+		// Convert checklist items using ID-based matching
 		appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
-		var currentItems []app.ChecklistItem
-		if i < len(currentChecklists) {
-			currentItems = currentChecklists[i].Items
-		}
-
 		for j, updateItem := range updateChecklist.Items {
-			// Try to preserve existing item ID if updating an existing item
+			// Use ID-based matching for items
 			var itemID string
 			if updateItem.ID == nil || *updateItem.ID == "" || strings.HasPrefix(*updateItem.ID, "temp_") {
-				// If no ID provided or temp ID, try to preserve existing ID if this is an update of existing item
-				if j < len(currentItems) && currentItems[j].ID != "" {
-					itemID = currentItems[j].ID
+				// No valid ID provided, create a new item
+				itemID = model.NewId()
+			} else {
+				// Use the provided ID if it exists in current items, otherwise create new
+				if _, exists := existingItemsByID[*updateItem.ID]; exists {
+					itemID = *updateItem.ID
 				} else {
+					// Invalid ID provided, create new item
 					itemID = model.NewId()
 				}
-			} else {
-				itemID = *updateItem.ID
 			}
 
 			appChecklistItems[j] = app.ChecklistItem{

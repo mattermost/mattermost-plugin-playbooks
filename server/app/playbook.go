@@ -68,7 +68,7 @@ type Playbook struct {
 	Metrics                                 []PlaybookMetricConfig `json:"metrics" export:"metrics"`
 	ActiveRuns                              int64                  `json:"active_runs" export:"-"`
 	CreateChannelMemberOnNewParticipant     bool                   `json:"create_channel_member_on_new_participant" export:"create_channel_member_on_new_participant"`
-	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant" export:"create_channel_member_on_removed_participant"`
+	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant" export:"remove_channel_member_on_removed_participant"`
 
 	// ChannelID is the identifier of the channel that would be -potentially- linked
 	// to any new run of this playbook
