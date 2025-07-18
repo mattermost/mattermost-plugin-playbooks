@@ -1132,6 +1132,13 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
 			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
 		}
+
+		// Ensure backwards compatibility: generate IDs for checklists that don't have them
+		for i := range p.Checklists {
+			if p.Checklists[i].ID == "" {
+				p.Checklists[i].ID = model.NewId()
+			}
+		}
 	}
 
 	p.InvitedUserIDs = []string(nil)

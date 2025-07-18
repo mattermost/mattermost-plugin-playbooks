@@ -314,7 +314,7 @@ const ChecklistList = ({
         );
     }
 
-    const keys = generateKeys(checklists.map((checklist) => checklist.title));
+    const keys = generateKeys(checklists.map((checklist) => checklist.id || checklist.title));
 
     return (
         <>
@@ -336,7 +336,7 @@ const ChecklistList = ({
                             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                                 <Draggable
                                     key={keys[checklistIndex]}
-                                    draggableId={checklist.title + checklistIndex}
+                                    draggableId={checklist.id || (checklist.title + checklistIndex)}
                                     index={checklistIndex}
                                 >
                                     {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => {

@@ -6,6 +6,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
@@ -301,13 +302,54 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {
 		app.CleanUpChecklists(*args.Updates.Checklists)
+
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
 		}
-		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
+
+		// Convert UpdateChecklist to app.Checklist to preserve IDs
+		appChecklists := make([]app.Checklist, len(*args.Updates.Checklists))
+		for i, updateChecklist := range *args.Updates.Checklists {
+			// Generate ID if missing (for new checklists)
+			checklistID := updateChecklist.ID
+			if checklistID == "" || strings.HasPrefix(checklistID, "temp_") {
+				checklistID = model.NewId()
+			}
+
+			// Convert checklist items to prevent data loss
+			appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
+			for j, updateItem := range updateChecklist.Items {
+				appChecklistItems[j] = app.ChecklistItem{
+					ID:               model.NewId(),
+					Title:            updateItem.Title,
+					State:            updateItem.State,
+					StateModified:    int64(updateItem.StateModified),
+					AssigneeID:       updateItem.AssigneeID,
+					AssigneeModified: int64(updateItem.AssigneeModified),
+					Command:          updateItem.Command,
+					CommandLastRun:   int64(updateItem.CommandLastRun),
+					Description:      updateItem.Description,
+					LastSkipped:      int64(updateItem.LastSkipped),
+					DueDate:          int64(updateItem.DueDate),
+					TaskActions:      []app.TaskAction{},
+				}
+				if updateItem.TaskActions != nil {
+					appChecklistItems[j].TaskActions = *updateItem.TaskActions
+				}
+			}
+
+			appChecklists[i] = app.Checklist{
+				ID:    checklistID,
+				Title: updateChecklist.Title,
+				Items: appChecklistItems,
+			}
+		}
+
+		checklistsJSON, err := json.Marshal(appChecklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
 		}
+
 		setmap["ChecklistsJSON"] = checklistsJSON
 	}
 

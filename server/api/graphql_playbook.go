@@ -97,6 +97,10 @@ type ChecklistResolver struct {
 	app.Checklist
 }
 
+func (r *ChecklistResolver) Title() string {
+	return r.Checklist.Title
+}
+
 func (r *ChecklistResolver) Items() []*ChecklistItemResolver {
 	checklistItemResolvers := make([]*ChecklistItemResolver, 0, len(r.Checklist.Items))
 	for _, items := range r.Checklist.Items {
@@ -192,6 +196,7 @@ func (r *TriggerResolver) Payload() string {
 }
 
 type UpdateChecklist struct {
+	ID    string                `json:"id"`
 	Title string                `json:"title"`
 	Items []UpdateChecklistItem `json:"items"`
 }
