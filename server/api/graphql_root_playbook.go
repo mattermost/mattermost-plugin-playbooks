@@ -566,18 +566,22 @@ func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist) 
 	appChecklists := make([]app.Checklist, len(updateChecklists))
 	for i, updateChecklist := range updateChecklists {
 		// Generate ID if missing (for new checklists)
-		checklistID := updateChecklist.ID
-		if checklistID == "" || strings.HasPrefix(checklistID, "temp_") {
+		var checklistID string
+		if updateChecklist.ID == nil || *updateChecklist.ID == "" || strings.HasPrefix(*updateChecklist.ID, "temp_") {
 			checklistID = model.NewId()
+		} else {
+			checklistID = *updateChecklist.ID
 		}
 
 		// Convert checklist items to prevent data loss
 		appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
 		for j, updateItem := range updateChecklist.Items {
 			// Preserve existing ID or generate new one for new items
-			itemID := updateItem.ID
-			if itemID == "" || strings.HasPrefix(itemID, "temp_") {
+			var itemID string
+			if updateItem.ID == nil || *updateItem.ID == "" || strings.HasPrefix(*updateItem.ID, "temp_") {
 				itemID = model.NewId()
+			} else {
+				itemID = *updateItem.ID
 			}
 
 			appChecklistItems[j] = app.ChecklistItem{

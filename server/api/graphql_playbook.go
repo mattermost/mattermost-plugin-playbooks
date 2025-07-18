@@ -200,7 +200,7 @@ func (r *TriggerResolver) Payload() string {
 }
 
 type UpdateChecklist struct {
-	ID    string                `json:"id"`
+	ID    *string               `json:"id"`
 	Title string                `json:"title"`
 	Items []UpdateChecklistItem `json:"items"`
 }
@@ -214,7 +214,7 @@ func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
 }
 
 type UpdateChecklistItem struct {
-	ID               string            `json:"id"`
+	ID               *string           `json:"id"`
 	Title            string            `json:"title"`
 	State            string            `json:"state"`
 	StateModified    float64           `json:"state_modified"`
