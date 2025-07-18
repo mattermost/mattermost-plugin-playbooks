@@ -195,6 +195,11 @@ const TimelineEventItem = (props: Props) => {
                 requester: details.requester,
             });
         }
+        case TimelineEventType.CustomEvent:
+            if (event.details.length > 150) {
+                return event.details.substring(0, 150) + '[...]';
+            }
+            return event.details;
         default:
             return '';
         }
@@ -276,6 +281,8 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdatesDisabled:
             return formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.CustomEvent:
+            return event.summary;
         default:
             return '';
         }
@@ -308,6 +315,8 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.StatusUpdatesEnabled:
         case TimelineEventType.StatusUpdatesDisabled:
             return 'icon-clock-outline';
+        case TimelineEventType.CustomEvent:
+            return 'icon-star-outline';
         default:
             return '';
         }

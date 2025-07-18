@@ -29,6 +29,7 @@ type TimelineFilterOptions struct {
 	AssigneeChanged   bool
 	RanSlashCommand   bool
 	UserJoinedLeft    bool
+	CustomEvent       bool
 }
 
 // TaskStateModifiedDetails represents the details of a task state modification
@@ -72,6 +73,8 @@ func showEventForCSV(eventType timelineEventType, filter TimelineFilterOptions) 
 		return filter.RanSlashCommand
 	case UserJoinedLeft, ParticipantsChanged:
 		return filter.UserJoinedLeft
+	case CustomEvent:
+		return filter.CustomEvent
 	default:
 		return filter.All
 	}
@@ -270,9 +273,9 @@ func GenerateTimelineCSV(playbookRun *PlaybookRun, filterOptions TimelineFilterO
 		// Generate post link
 		postLink := generatePostLink(siteURL, teamName, event.PostID)
 
-		// Include status update content in details column, empty for other events
+		// Include status update and custom event content in details column, empty for other events
 		details := ""
-		if event.EventType == StatusUpdated {
+		if event.EventType == StatusUpdated || event.EventType == CustomEvent {
 			details = event.Details
 		}
 

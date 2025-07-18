@@ -109,8 +109,9 @@ export const useFilter = () => {
             disabled: false,
         },
         {
+            display: '',
             value: 'divider',
-        } as CheckboxOption,
+        },
         {
             display: formatMessage({defaultMessage: 'Role changes'}),
             value: TimelineEventType.OwnerChanged,
@@ -145,6 +146,12 @@ export const useFilter = () => {
             display: formatMessage({defaultMessage: 'Slash commands'}),
             value: TimelineEventType.RanSlashCommand,
             selected: eventsFilter.ran_slash_command,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: formatMessage({defaultMessage: 'Custom events'}),
+            value: TimelineEventType.CustomEvent,
+            selected: eventsFilter.custom_event,
             disabled: eventsFilter.all,
         },
     ];

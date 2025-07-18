@@ -91,6 +91,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", withContext(handler.reminderButtonUpdate)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder", withContext(handler.reminderReset)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", withContext(handler.noRetrospectiveButton)).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("/timeline", withContext(handler.addCustomTimelineEvent)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
@@ -1081,6 +1082,49 @@ func (h *PlaybookRunHandler) noRetrospectiveButton(c *Context, w http.ResponseWr
 	ReturnJSON(w, nil, http.StatusOK)
 }
 
+// CustomTimelineEventRequest represents the request payload for adding a custom timeline event.
+type CustomTimelineEventRequest struct {
+	Summary string `json:"summary"`
+	Details string `json:"details"`
+	EventAt int64  `json:"event_at"`
+}
+
+// User has been authenticated to edit the playbook run.
+func (h *PlaybookRunHandler) addCustomTimelineEvent(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var request CustomTimelineEventRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode custom timeline event request", err)
+		return
+	}
+
+	// Validate the request
+	if strings.TrimSpace(request.Summary) == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "summary cannot be empty", nil)
+		return
+	}
+
+	if len(request.Details) > 1000 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "details cannot exceed 1000 characters", nil)
+		return
+	}
+
+	if request.EventAt <= 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "event_at must be a valid timestamp", nil)
+		return
+	}
+
+	if err := h.playbookRunService.AddCustomTimelineEvent(playbookRunID, userID, request.Summary, request.Details, request.EventAt); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 // removeTimelineEvent handles the DELETE /runs/{id}/timeline/{eventID} endpoint.
 // User has been authenticated to edit the playbook run.
 func (h *PlaybookRunHandler) removeTimelineEvent(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -1992,11 +2036,12 @@ func (h *PlaybookRunHandler) exportTimelineCSV(c *Context, w http.ResponseWriter
 		AssigneeChanged:   r.URL.Query().Get("assignee_changed") == "true",
 		RanSlashCommand:   r.URL.Query().Get("ran_slash_command") == "true",
 		UserJoinedLeft:    r.URL.Query().Get("user_joined_left") == "true",
+		CustomEvent:       r.URL.Query().Get("custom_event") == "true",
 	}
 
 	// If no filters are specified, default to all events
 	if !filterOptions.All && !filterOptions.OwnerChanged && !filterOptions.StatusUpdated && !filterOptions.EventFromPost &&
-		!filterOptions.TaskStateModified && !filterOptions.AssigneeChanged && !filterOptions.RanSlashCommand && !filterOptions.UserJoinedLeft {
+		!filterOptions.TaskStateModified && !filterOptions.AssigneeChanged && !filterOptions.RanSlashCommand && !filterOptions.UserJoinedLeft && !filterOptions.CustomEvent {
 		filterOptions.All = true
 	}
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
@@ -16,6 +16,7 @@ import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/compon
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run/retrospective/timeline_event_item';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {clientRemoveTimelineEvent, timelineExportUrl} from 'src/client';
+import AddCustomTimelineEventModal from 'src/components/add_custom_timeline_event_modal';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {useTimelineEvents} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
@@ -35,6 +36,7 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
     const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.team_id));
 
     const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
+    const [showAddEventModal, setShowAddEventModal] = useState(false);
 
     if (!team) {
         return null;
@@ -50,15 +52,6 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                     )}
                 </FilterText>
                 <ButtonContainer>
-                    <ExportButton
-                        as='a'
-                        href={timelineExportUrl(playbookRun.id, eventsFilter)}
-                        download={`${playbookRun.name}_timeline.csv`}
-                        title={formatMessage({defaultMessage: 'Export current events based on filters as CSV'})}
-                    >
-                        <i className='icon icon-download-outline'/>
-                        {formatMessage({defaultMessage: 'Export'})}
-                    </ExportButton>
                     <FilterButton>
                         <MultiCheckbox
                             dotMenuButton={FakeButton}
@@ -73,6 +66,22 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                             }
                         />
                     </FilterButton>
+                    <ExportButton
+                        as='a'
+                        href={timelineExportUrl(playbookRun.id, eventsFilter)}
+                        download={`${playbookRun.name}_timeline.csv`}
+                        title={formatMessage({defaultMessage: 'Export current events based on filters as CSV'})}
+                    >
+                        <i className='icon icon-download-outline'/>
+                        {formatMessage({defaultMessage: 'Export'})}
+                    </ExportButton>
+                    <AddEventButton
+                        onClick={() => setShowAddEventModal(true)}
+                        title={formatMessage({defaultMessage: 'Add custom event'})}
+                        disabled={role !== Role.Participant}
+                    >
+                        <i className='icon icon-plus'/>
+                    </AddEventButton>
                 </ButtonContainer>
             </Filters>
             <Body>
@@ -108,6 +117,15 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                     </ItemList>
                 </Scrollbars>
             </Body>
+            <AddCustomTimelineEventModal
+                playbookRunId={playbookRun.id}
+                show={showAddEventModal}
+                onHide={() => setShowAddEventModal(false)}
+                onSuccess={() => {
+                    // The timeline will automatically refresh via websocket
+                    setShowAddEventModal(false);
+                }}
+            />
         </Container>
     );
 };
@@ -142,6 +160,41 @@ const ButtonContainer = styled.div`
     align-items: center;
     gap: 8px;
 `;
+
+const AddEventButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 28px;
+    background: var(--button-bg);
+    color: var(--button-color) !important;
+    border: 1px solid var(--button-bg);
+    border-radius: 4px;
+    transition: all 0.15s ease-out;
+    margin-right: 8px;
+
+    &:hover:not(:disabled) {
+        background: rgba(var(--button-bg-rgb), 0.88);
+        border-color: rgba(var(--button-bg-rgb), 0.88);
+    }
+
+    &:active:not(:disabled) {
+        background: rgba(var(--button-bg-rgb), 0.76);
+        border-color: rgba(var(--button-bg-rgb), 0.76);
+    }
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    i {
+        display: flex;
+        font-size: 12px;
+    }
+`;
+
 
 const ExportButton = styled.button`
     display: inline-flex;

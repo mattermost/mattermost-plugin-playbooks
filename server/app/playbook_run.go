@@ -420,6 +420,7 @@ const (
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
+	CustomEvent            timelineEventType = "custom_event"
 )
 
 type TimelineEvent struct {
@@ -598,6 +599,9 @@ type PlaybookRunService interface {
 
 	// AddPostToTimeline adds an event based on a post to a playbook run's timeline.
 	AddPostToTimeline(playbookRunID, userID string, post *model.Post, summary string) error
+
+	// AddCustomTimelineEvent adds a custom timeline event to a playbook run.
+	AddCustomTimelineEvent(playbookRunID, userID, summary, details string, eventAt int64) error
 
 	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
 	RemoveTimelineEvent(playbookRunID, userID, eventID string) error

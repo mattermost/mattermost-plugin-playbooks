@@ -687,6 +687,38 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID string,
 	return nil
 }
 
+// AddCustomTimelineEvent adds a custom timeline event to the playbook run.
+func (s *PlaybookRunServiceImpl) AddCustomTimelineEvent(playbookRunID, userID, summary, details string, eventAt int64) error {
+	// Validate inputs
+	if len(summary) == 0 {
+		return errors.New("summary cannot be empty")
+	}
+	if len(details) > 1000 {
+		return errors.New("details cannot exceed 1000 characters")
+	}
+
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      model.GetMillis(),
+		DeleteAt:      0,
+		EventAt:       eventAt,
+		EventType:     CustomEvent,
+		Summary:       summary,
+		Details:       details,
+		PostID:        "",
+		SubjectUserID: userID, // The user who created the custom event
+		CreatorUserID: userID,
+	}
+
+	if _, err := s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create custom timeline event")
+	}
+
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
+
+	return nil
+}
+
 // RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
 func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, eventID string) error {
 	event, err := s.store.GetTimelineEvent(playbookRunID, eventID)

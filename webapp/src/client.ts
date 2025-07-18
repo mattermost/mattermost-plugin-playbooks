@@ -464,6 +464,17 @@ export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: 
     });
 }
 
+export async function clientAddCustomTimelineEvent(playbookRunID: string, summary: string, details: string, eventAt: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/timeline`, {
+        method: 'post',
+        body: JSON.stringify({
+            summary,
+            details,
+            event_at: eventAt,
+        }),
+    });
+}
+
 // fetchSiteStats collect the stats we want to expose in system console
 export async function fetchSiteStats(): Promise<SiteStats | null> {
     const data = await doGet(`${apiUrl}/stats/site`);
@@ -793,6 +804,7 @@ export function timelineExportUrl(playbookRunId: string, eventsFilter: any) {
         assignee_changed: eventsFilter.assignee_changed,
         ran_slash_command: eventsFilter.ran_slash_command,
         user_joined_left: eventsFilter.user_joined_left,
+        custom_event: eventsFilter.custom_event,
     }, {addQueryPrefix: true});
 
     return `${apiUrl}/runs/${playbookRunId}/timeline/export${queryParams}`;

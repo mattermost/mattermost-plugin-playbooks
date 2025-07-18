@@ -18,7 +18,8 @@ export enum TimelineEventType {
     RunFinished = 'run_finished',
     RunRestored = 'run_restored',
     StatusUpdatesEnabled = 'status_updates_enabled',
-    StatusUpdatesDisabled = 'status_updates_disabled'
+    StatusUpdatesDisabled = 'status_updates_disabled',
+    CustomEvent = 'custom_event'
 }
 
 export interface TimelineEvent {
@@ -48,6 +49,7 @@ export interface TimelineEventsFilter {
     assignee_changed: boolean;
     ran_slash_command: boolean;
     user_joined_left: boolean;
+    custom_event: boolean;
 }
 
 export const TimelineEventsFilterDefault = {
@@ -59,6 +61,7 @@ export const TimelineEventsFilterDefault = {
     assignee_changed: false,
     ran_slash_command: false,
     user_joined_left: false,
+    custom_event: true,
 };
 
 export interface ParticipantsChangedDetails {
