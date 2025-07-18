@@ -352,7 +352,7 @@ else
 	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
 endif
 
-	@echo plugin built at: dist/$(BUNDLE_NAME)
+	@echo "==> Normal plugin built at: dist/$(BUNDLE_NAME)"
 
 ## Generates a tar bundle of the FIPS plugin for install.
 .PHONY: bundle-fips
@@ -390,7 +390,7 @@ else
 	cd dist-fips && tar -cvzf $(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz $(PLUGIN_ID)
 endif
 
-	@echo FIPS plugin built at: dist-fips/$(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz
+	@echo "==> FIPS plugin built at: dist-fips/$(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz"
 
 ## Builds and bundles the plugin.
 .PHONY: dist
@@ -402,6 +402,16 @@ dist-ci: apply server-ci webapp bundle
 ## Builds and bundles the FIPS plugin.
 .PHONY: dist-fips
 dist-fips: apply server-fips webapp bundle-fips
+
+## Builds both normal and FIPS distributions.
+.PHONY: dist-all
+dist-all: clean
+	@echo "==> Building both normal and FIPS distributions..."
+	$(MAKE) dist
+	$(MAKE) dist-fips
+	@echo "==> Both distributions built successfully:"
+	@echo "    Normal: dist/$(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz"
+	@echo "    FIPS:   dist-fips/$(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz"
 
 ## Builds and installs the plugin to a server.
 .PHONY: deploy
