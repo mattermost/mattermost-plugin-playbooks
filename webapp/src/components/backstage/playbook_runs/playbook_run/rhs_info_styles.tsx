@@ -67,7 +67,6 @@ const LinkStyle = css`
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
-    opacity: 0;
     transition: opacity .2s;
 
     &:hover{

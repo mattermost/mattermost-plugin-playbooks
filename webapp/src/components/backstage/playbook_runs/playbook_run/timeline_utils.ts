@@ -20,7 +20,6 @@ import {
     TimelineEventsFilterDefault,
 } from 'src/types/rhs';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {CheckboxOption} from 'src/components/multi_checkbox';
 
 export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
     const dispatch = useDispatch<DispatchFunc>();

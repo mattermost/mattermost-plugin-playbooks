@@ -808,7 +808,7 @@ export function timelineExportUrl(playbookRunId: string, eventsFilter: any) {
     }, {addQueryPrefix: true});
 
     return `${apiUrl}/runs/${playbookRunId}/timeline/export${queryParams}`;
-};
+}
 
 export async function getMyTopPlaybooks(timeRange: string, page: number, perPage: number, teamId: string): Promise<InsightsResponse | null> {
     const queryParams = qs.stringify({

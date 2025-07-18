@@ -7,8 +7,15 @@ import styled from 'styled-components';
 import {DateTime} from 'luxon';
 
 import GenericModal from 'src/components/widgets/generic_modal';
-import {Mode, ms, useDateTimeInput, Option} from 'src/components/datetime_input';
+import {
+    Mode,
+    Option,
+    ms,
+    useDateTimeInput,
+} from 'src/components/datetime_input';
 import {StyledTextarea} from 'src/components/backstage/styles';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 import {clientAddCustomTimelineEvent} from 'src/client';
 
@@ -22,7 +29,7 @@ interface Props {
 // Helper function to create default date/time options
 const makeDefaultDateTimeOptions = (): Option[] => {
     const now = DateTime.now();
-    
+
     return [
         {
             label: 'Now',
@@ -33,7 +40,7 @@ const makeDefaultDateTimeOptions = (): Option[] => {
             value: now.startOf('day').set({hour: 9}),
         },
         {
-            label: 'Today at 5 PM', 
+            label: 'Today at 5 PM',
             value: now.startOf('day').set({hour: 17}),
         },
         {
@@ -53,6 +60,7 @@ const makeDefaultDateTimeOptions = (): Option[] => {
 
 const AddCustomTimelineEventModal = ({playbookRunId, show, onHide, onSuccess}: Props) => {
     const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
     const [summary, setSummary] = useState('');
     const [details, setDetails] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +69,7 @@ const AddCustomTimelineEventModal = ({playbookRunId, show, onHide, onSuccess}: P
 
     const {input: dateTimeInput, value: dateTimeValue} = useDateTimeInput({
         mode: Mode.DateTimeValue,
-        defaultOptions: defaultOptions,
+        defaultOptions,
         placeholder: formatMessage({defaultMessage: 'Type or select date/time (e.g. "tomorrow at 3pm", "yesterday")'}),
     });
 
@@ -74,16 +82,18 @@ const AddCustomTimelineEventModal = ({playbookRunId, show, onHide, onSuccess}: P
         try {
             const eventAt = ms(dateTimeValue.value);
             await clientAddCustomTimelineEvent(playbookRunId, summary.trim(), details, eventAt);
-            
+
             // Reset form
             setSummary('');
             setDetails('');
-            
+
             onSuccess?.();
             onHide();
-        } catch (error) {
-            // Error handling could be improved with proper error messages
-            console.error('Failed to add custom timeline event:', error);
+        } catch {
+            addToast({
+                content: formatMessage({defaultMessage: 'Failed to add custom timeline event. Please try again.'}),
+                toastStyle: ToastStyle.Failure,
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -137,7 +147,7 @@ const AddCustomTimelineEventModal = ({playbookRunId, show, onHide, onSuccess}: P
 
                 <FieldContainer>
                     <Label>
-                        <FormattedMessage 
+                        <FormattedMessage
                             defaultMessage='Details ({characterCount}/1000)'
                             values={{characterCount: details.length}}
                         />
@@ -194,4 +204,4 @@ const SummaryInput = styled.input`
     }
 `;
 
-export default AddCustomTimelineEventModal; 
+export default AddCustomTimelineEventModal;

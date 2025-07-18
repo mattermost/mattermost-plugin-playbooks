@@ -302,11 +302,15 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.TaskStateModified:
             return 'icon-format-list-bulleted';
         case TimelineEventType.OwnerChanged:
+            return 'icon-account-switch-outline';
         case TimelineEventType.AssigneeChanged:
+            return 'icon-account-plus-outline';
         case TimelineEventType.RanSlashCommand:
+            return 'icon-lightning-bolt-outline';
         case TimelineEventType.PublishedRetrospective:
+            return 'icon-notebook-outline';
         case TimelineEventType.EventFromPost:
-            return 'icon-pencil-outline';
+            return 'icon-forum-outline';
         case TimelineEventType.UserJoinedLeft:
         case TimelineEventType.ParticipantsChanged:
             return 'icon-account-outline';
@@ -316,7 +320,7 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.StatusUpdatesDisabled:
             return 'icon-clock-outline';
         case TimelineEventType.CustomEvent:
-            return 'icon-star-outline';
+            return 'icon-pencil-outline';
         default:
             return '';
         }

@@ -66,22 +66,24 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
                             }
                         />
                     </FilterButton>
-                    <ExportButton
-                        as='a'
+                    <a
+                        className='btn btn-secondary btn-sm'
                         href={timelineExportUrl(playbookRun.id, eventsFilter)}
                         download={`${playbookRun.name}_timeline.csv`}
                         title={formatMessage({defaultMessage: 'Export current events based on filters as CSV'})}
                     >
                         <i className='icon icon-download-outline'/>
                         {formatMessage({defaultMessage: 'Export'})}
-                    </ExportButton>
-                    <AddEventButton
+                    </a>
+                    <button
+                        className='btn btn-primary btn-sm'
+                        style={{margin: 0}}
                         onClick={() => setShowAddEventModal(true)}
                         title={formatMessage({defaultMessage: 'Add custom event'})}
                         disabled={role !== Role.Participant}
                     >
                         <i className='icon icon-plus'/>
-                    </AddEventButton>
+                    </button>
                 </ButtonContainer>
             </Filters>
             <Body>
@@ -161,70 +163,34 @@ const ButtonContainer = styled.div`
     gap: 8px;
 `;
 
-const AddEventButton = styled.button`
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 28px;
-    background: var(--button-bg);
-    color: var(--button-color) !important;
-    border: 1px solid var(--button-bg);
-    border-radius: 4px;
-    transition: all 0.15s ease-out;
-    margin-right: 8px;
-
-    &:hover:not(:disabled) {
-        background: rgba(var(--button-bg-rgb), 0.88);
-        border-color: rgba(var(--button-bg-rgb), 0.88);
-    }
-
-    &:active:not(:disabled) {
-        background: rgba(var(--button-bg-rgb), 0.76);
-        border-color: rgba(var(--button-bg-rgb), 0.76);
-    }
-
-    &:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
-    i {
-        display: flex;
-        font-size: 12px;
-    }
-`;
-
-
-const ExportButton = styled.button`
+const FakeButton = styled.button`
     display: inline-flex;
     align-items: center;
     padding: 5px 10px;
-    background: var(--button-bg);
-    color: var(--button-color) !important;
-    font-size: 11px;
-    font-weight: 600;
+    background: var(--button-color-rgb);
+    color: var(--button-bg);
     border: 1px solid var(--button-bg);
     border-radius: 4px;
-    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
     transition: all 0.15s ease-out;
+    height: 32px;
 
     &:hover {
-        background: rgba(var(--button-bg-rgb), 0.88);
-        border-color: rgba(var(--button-bg-rgb), 0.88);
-        text-decoration: none;
-        color: var(--button-color) !important;
+        background: rgba(var(--button-bg-rgb), 0.12);
     }
 
     &:active  {
-        background: rgba(var(--button-bg-rgb), 0.76);
-        border-color: rgba(var(--button-bg-rgb), 0.76);
+        background: rgba(var(--button-bg-rgb), 0.16);
     }
 
     i {
         display: flex;
         font-size: 12px;
-        margin-right: 5px;
+
+        &::before {
+            margin: 0 5px 0 0;
+        }
     }
 `;
 
@@ -250,34 +216,6 @@ export const ItemList = styled.ul`
         width: 1px;
         background: #EFF1F5;
         content: '';
-    }
-`;
-
-const FakeButton = styled.button`
-    display: inline-flex;
-    align-items: center;
-    padding: 5px 10px;
-    background: var(--button-color-rgb);
-    color: var(--button-bg);
-    font-size: 11px;
-    font-weight: 600;
-    transition: all 0.15s ease-out;
-
-    &:hover {
-        background: rgba(var(--button-bg-rgb), 0.12);
-    }
-
-    &:active  {
-        background: rgba(var(--button-bg-rgb), 0.16);
-    }
-
-    i {
-        display: flex;
-        font-size: 12px;
-
-        &::before {
-            margin: 0 5px 0 0;
-        }
     }
 `;
 
