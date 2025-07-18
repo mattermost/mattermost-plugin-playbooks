@@ -1,5 +1,6 @@
 name: ci
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -122,6 +123,69 @@ jobs:
           retention-days: 7 ## No need to keep build artifacts for more than 7 days
       - name: ci/ensure-build-on-all-platforms ## Verify builds on all platgorms *after* ci/build-for-upload to keep artifact small
         run: make dist
+
+  dist-fips:
+    runs-on: ubuntu-22.04
+    needs:
+      - lint
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: "0"
+
+      - name: ci/setup-go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version: "${{ env.GO_VERSION }}"
+          cache: false
+
+      - name: ci/setup-node
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: ci/cache-webapp-node-modules
+        id: cache-webapp-node-modules
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-webapp-node-modules-
+
+      - name: ci/setup-webapp-npm-deps
+        if: steps.cache-webapp-node-modules.outputs.cache-hit != 'true'
+        env:
+          NODE_ENV: development
+        run: |
+          cd webapp
+          npm install --ignore-scripts --no-save --legacy-peer-deps
+
+      - name: ci/docker-login-chainguard
+        env:
+          CHAINGUARD_DEV_USERNAME: ${{ secrets.CHAINGUARD_DEV_USERNAME }}
+          CHAINGUARD_DEV_TOKEN: ${{ secrets.CHAINGUARD_DEV_TOKEN }}
+        run: |
+          if [ -n "$CHAINGUARD_DEV_USERNAME" ] && [ -n "$CHAINGUARD_DEV_TOKEN" ]; then
+            echo "Logging into Chainguard registry..."
+            echo "$CHAINGUARD_DEV_TOKEN" | docker login cgr.dev --username "$CHAINGUARD_DEV_USERNAME" --password-stdin
+          else
+            echo "Warning: CHAINGUARD credentials not available, FIPS build may fail"
+          fi
+
+      - name: ci/ensure-fips-build
+        env:
+          GO_VERSION: ${{ env.GO_VERSION }}
+        run: make dist-fips
+
+      - name: ci/upload-fips-artifacts
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.5.0
+        with:
+          name: fips-plugin-artifacts
+          path: dist-fips/*.tar.gz
+          retention-days: 7
 
   test-Postgres13:
     runs-on: ubuntu-22.04
