@@ -250,30 +250,13 @@ function applyUpdateToChecklist(checklist: Checklist, update: ChecklistUpdate): 
         }
     }
 
-    // Handle items_order separately from update.fields
-    if (update.items_order) {
-        updatedChecklist = {
-            ...updatedChecklist,
-            items_order: update.items_order,
-        } as Checklist & { items_order: string[] };
-    }
-
     // Apply item-level updates
     const updatedItems = applyItemUpdates(updatedChecklist.items, update);
 
-    let result = {
+    const result = {
         ...updatedChecklist,
         items: updatedItems,
     };
-
-    // Reorder items to match items_order after incremental updates
-    if (result.items_order && result.items_order.length > 0) {
-        const reorderedItems = sortChecklistItemsByOrder(result);
-        result = {
-            ...result,
-            items: reorderedItems,
-        };
-    }
 
     return result;
 }
@@ -323,34 +306,3 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): Pl
     };
 }
 
-// Helper function to sort checklist items by items_order
-export function sortChecklistItemsByOrder(checklist: Checklist): ChecklistItem[] {
-    if (!checklist.items_order || checklist.items_order.length === 0) {
-        return checklist.items;
-    }
-
-    // Create a map of item ID to item for quick lookup
-    const itemMap = new Map<string, ChecklistItem>();
-    checklist.items.forEach((item) => {
-        if (item.id) {
-            itemMap.set(item.id, item);
-        }
-    });
-
-    // Sort items according to items_order
-    const sortedItems: ChecklistItem[] = [];
-    checklist.items_order.forEach((itemId) => {
-        const item = itemMap.get(itemId);
-        if (item) {
-            sortedItems.push(item);
-            itemMap.delete(itemId);
-        }
-    });
-
-    // Append any items not in items_order (shouldn't happen, but defensive)
-    itemMap.forEach((item) => {
-        sortedItems.push(item);
-    });
-
-    return sortedItems;
-}

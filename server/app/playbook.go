@@ -167,9 +167,8 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []ChecklistItem{}
 		}
-		if cl.ItemsOrder == nil {
-			old.Checklists[j].ItemsOrder = []string{}
-		}
+		// Always compute ItemsOrder fresh to prevent data inconsistency
+		old.Checklists[j].ItemsOrder = p.Checklists[j].GetItemsOrder()
 	}
 	if old.Members == nil {
 		old.Members = []PlaybookMember{}
@@ -248,9 +247,8 @@ func (c Checklist) GetItemsOrder() []string {
 func (c Checklist) Clone() Checklist {
 	newChecklist := c
 	newChecklist.Items = append([]ChecklistItem(nil), c.Items...)
-	if len(c.ItemsOrder) != 0 {
-		newChecklist.ItemsOrder = append([]string(nil), c.ItemsOrder...)
-	}
+	// Don't copy ItemsOrder - always compute fresh to prevent data inconsistency
+	newChecklist.ItemsOrder = nil
 	return newChecklist
 }
 

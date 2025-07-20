@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -13,7 +13,6 @@ import {Checklist, ChecklistItem, emptyChecklistItem} from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {sortChecklistItemsByOrder} from 'src/utils/playbook_run_updates';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -55,7 +54,10 @@ const GenericChecklist = (props: Props) => {
 
     const onDuplicateChecklistItem = (index: number) => {
         const newChecklistItems = [...props.checklist.items];
-        const duplicate = {...newChecklistItems[index]};
+        const duplicate = {
+            ...newChecklistItems[index],
+            id: `temp_item_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+        };
         newChecklistItems.splice(index + 1, 0, duplicate);
         const newChecklist = {...props.checklist};
         newChecklist.items = newChecklistItems;
@@ -70,10 +72,8 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    // Use memoization to optimize sorted items calculation
-    const sortedItems = useMemo(() => {
-        return sortChecklistItemsByOrder(props.checklist);
-    }, [props.checklist]);
+    // Use items directly from the checklist array
+    const sortedItems = props.checklist.items;
 
     // Helper function to find the original index of an item by its ID
     const findOriginalIndexById = (itemId: string): number => {

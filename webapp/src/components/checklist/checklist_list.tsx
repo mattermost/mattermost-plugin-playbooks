@@ -24,7 +24,6 @@ import {playbookRunUpdated} from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
-import {sortChecklistItemsByOrder} from 'src/utils/playbook_run_updates';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -146,7 +145,15 @@ const ChecklistList = ({
     };
 
     const onDuplicateChecklist = (index: number) => {
-        const newChecklist = {...checklists[index]};
+        const originalChecklist = checklists[index];
+        const newChecklist = {
+            ...originalChecklist,
+            id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+            items: originalChecklist.items.map((item) => ({
+                ...item,
+                id: `temp_item_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+            })),
+        };
         const newChecklists = [...checklists, newChecklist];
         setChecklistsForPlaybook(newChecklists);
     };
@@ -346,7 +353,7 @@ const ChecklistList = ({
                                             <CollapsibleChecklist
                                                 draggableProvided={draggableProvided}
                                                 title={checklist.title}
-                                                items={sortChecklistItemsByOrder(checklist)}
+                                                items={checklist.items}
                                                 index={checklistIndex}
                                                 collapsed={Boolean(checklistsCollapseState[checklistIndex])}
                                                 setCollapsed={(newState) => onChecklistCollapsedStateChange(checklistIndex, newState)}

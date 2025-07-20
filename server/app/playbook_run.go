@@ -756,9 +756,8 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []ChecklistItem{}
 		}
-		if cl.ItemsOrder == nil {
-			old.Checklists[j].ItemsOrder = []string{}
-		}
+		// Always compute ItemsOrder fresh to prevent data inconsistency
+		old.Checklists[j].ItemsOrder = r.Checklists[j].GetItemsOrder()
 	}
 	if old.StatusPosts == nil {
 		old.StatusPosts = []StatusPost{}
@@ -787,9 +786,8 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	if old.MetricsData == nil {
 		old.MetricsData = []RunMetricData{}
 	}
-	if old.ItemsOrder == nil {
-		old.ItemsOrder = []string{}
-	}
+	// Always compute ItemsOrder fresh to prevent data inconsistency
+	old.ItemsOrder = r.GetItemsOrder()
 
 	return json.Marshal(old)
 }

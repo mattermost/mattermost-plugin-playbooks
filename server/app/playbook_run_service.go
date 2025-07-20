@@ -2089,6 +2089,12 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 
 	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
 
+	// Generate new IDs for the duplicated checklist and all its items to prevent conflicts
+	duplicate.ID = model.NewId()
+	for i := range duplicate.Items {
+		duplicate.Items[i].ID = model.NewId()
+	}
+
 	timestamp := model.GetMillis()
 	updateAllChecklistsAndItemsTimestamps([]Checklist{duplicate}, timestamp)
 
