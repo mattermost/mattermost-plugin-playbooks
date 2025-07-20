@@ -98,9 +98,9 @@ export interface FetchPlaybooksReturn {
 }
 
 export interface Checklist {
+    id?: string;
     title: string;
     items: ChecklistItem[];
-    id: string; // Required for find/filter operations and incremental updates
     update_at?: number; // Timestamp for idempotency checks
     items_order?: string[]; // Order of checklist items
 }
@@ -173,7 +173,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         num_runs: 0,
         num_actions: 0,
         last_run_at: 0,
-        checklists: [{...emptyChecklist(), id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`}],
+        checklists: [emptyChecklist()],
         members: [],
         reminder_message_template: '',
         reminder_timer_default_seconds: 7 * 24 * 60 * 60, // 7 days
@@ -212,8 +212,9 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
     };
 }
 
-export function emptyChecklist(): Omit<Checklist, 'id'> {
+export function emptyChecklist(): Checklist {
     return {
+        id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
         title: 'Default checklist',
         items: [emptyChecklistItem()],
     };

@@ -37,10 +37,8 @@ query Playbook($id: String!) {
 		channel_mode: channelMode
 		is_favorite: isFavorite
 		checklists {
-			id
 			title
 			items {
-				id
 				title
 				description
 				state

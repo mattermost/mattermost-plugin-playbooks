@@ -800,20 +800,6 @@ func BuildChecklistMaps(checklists []Checklist) (map[string]Checklist, map[strin
 	return checklistsByID, itemsByID
 }
 
-// EnsureChecklistIDs generates IDs for checklists and items that don't have them.
-func EnsureChecklistIDs(checklists []Checklist) {
-	for i := range checklists {
-		if checklists[i].ID == "" {
-			checklists[i].ID = model.NewId()
-		}
-		for j := range checklists[i].Items {
-			if checklists[i].Items[j].ID == "" {
-				checklists[i].Items[j].ID = model.NewId()
-			}
-		}
-	}
-}
-
 // Value represents a ChannelPlaybookMode as a type writable into the DB
 func (cpm ChannelPlaybookMode) Value() (driver.Value, error) {
 	return cpm.MarshalText()

@@ -217,9 +217,6 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 	}
 	playbook.ID = model.NewId()
 
-	// Generate IDs for checklists that don't have them
-	app.EnsureChecklistIDs(playbook.Checklists)
-
 	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
 		return "", err
@@ -674,9 +671,6 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	if playbook.ID == "" {
 		return errors.New("id should not be empty")
 	}
-
-	// Generate IDs for checklists that don't have them
-	app.EnsureChecklistIDs(playbook.Checklists)
 
 	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {

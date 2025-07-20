@@ -8,11 +8,6 @@ import {ChecklistUpdate, PlaybookRunUpdate} from 'src/types/websocket_events';
 
 // Helper function to apply incremental updates idempotently
 export function applyIncrementalUpdate(currentRun: PlaybookRun, update: PlaybookRunUpdate): PlaybookRun {
-    // Validate inputs to prevent runtime errors
-    if (!currentRun || !update) {
-        return currentRun;
-    }
-
     // Check if this update is older than the current state
     if (currentRun.update_at && update.playbook_run_updated_at &&
         update.playbook_run_updated_at > 0 &&
@@ -171,7 +166,7 @@ function applyStatusPostUpdates(run: PlaybookRun, statusPosts: StatusPost[]): Pl
 
 // Utility to create a Map from an array of objects with IDs
 const mapFromChecklists = (checklists: Checklist[]) => {
-    return new Map(checklists.map((checklist) => [checklist.id, checklist]));
+    return new Map(checklists.map((checklist) => [checklist.id!, checklist]));
 };
 
 // Helper to create a new checklist from an update
@@ -250,15 +245,21 @@ function applyUpdateToChecklist(checklist: Checklist, update: ChecklistUpdate): 
         }
     }
 
+    // Handle items_order (checklist item ordering) from dedicated field
+    if (update.items_order) {
+        updatedChecklist = {
+            ...updatedChecklist,
+            items_order: update.items_order,
+        };
+    }
+
     // Apply item-level updates
     const updatedItems = applyItemUpdates(updatedChecklist.items, update);
 
-    const result = {
+    return {
         ...updatedChecklist,
         items: updatedItems,
     };
-
-    return result;
 }
 
 // Helper function to apply checklist updates
@@ -286,7 +287,7 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): Pl
 
     // Add existing checklists in their original order
     for (const originalChecklist of run.checklists) {
-        const updated = checklistsMap.get(originalChecklist.id);
+        const updated = checklistsMap.get(originalChecklist.id!);
         if (updated) {
             orderedChecklists.push(updated);
         }
@@ -305,4 +306,3 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): Pl
         checklists: orderedChecklists,
     };
 }
-

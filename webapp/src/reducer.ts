@@ -64,7 +64,6 @@ import {
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {applyIncrementalUpdate} from 'src/utils/playbook_run_updates';
-
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
     case RECEIVED_TOGGLE_RHS_ACTION:
@@ -73,7 +72,6 @@ function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
         return state;
     }
 }
-
 function rhsOpen(state = false, action: SetRHSOpen) {
     switch (action.type) {
     case SET_RHS_OPEN:
@@ -82,7 +80,6 @@ function rhsOpen(state = false, action: SetRHSOpen) {
         return state;
     }
 }
-
 function clientId(state = '', action: SetClientId) {
     switch (action.type) {
     case SET_CLIENT_ID:
@@ -113,7 +110,6 @@ const myPlaybookRuns = (
             [playbookRun.id]: playbookRun,
         };
     }
-
     case PLAYBOOK_RUN_UPDATED: {
         const playbookRunUpdated = action as PlaybookRunUpdated;
         const playbookRun = playbookRunUpdated.playbookRun;
@@ -122,40 +118,32 @@ const myPlaybookRuns = (
             [playbookRun.id]: playbookRun,
         };
     }
-
     case RECEIVED_PLAYBOOK_RUNS: {
         const receivedPlaybookRunsAction = action as ReceivedPlaybookRuns;
         const playbookRuns = receivedPlaybookRunsAction.playbookRuns;
         if (playbookRuns.length === 0) {
             return state;
         }
-
         const newState = {
             ...state,
         };
-
         for (const playbookRun of playbookRuns) {
             newState[playbookRun.id] = playbookRun;
         }
-
         return newState;
     }
-
     case RECEIVED_TEAM_PLAYBOOK_RUNS: {
         const receivedTeamPlaybookRunsAction = action as ReceivedTeamPlaybookRuns;
         const playbookRuns = receivedTeamPlaybookRunsAction.playbookRuns;
         if (playbookRuns.length === 0) {
             return state;
         }
-
         const newState = {
             ...state,
         };
-
         for (const playbookRun of playbookRuns) {
             newState[playbookRun.id] = playbookRun;
         }
-
         return newState;
     }
 
@@ -231,14 +219,12 @@ const myPlaybookRunsByTeam = (
                 ...state[teamId],
             },
         };
-
         for (const playbookRun of playbookRuns) {
             const tx = newState[teamId];
             if (tx) {
                 tx[playbookRun.channel_id] = playbookRun;
             }
         }
-
         return newState;
     }
     case REMOVED_FROM_CHANNEL: {
@@ -248,7 +234,6 @@ const myPlaybookRunsByTeam = (
         if (!teamId) {
             return state;
         }
-
         const newState = {
             ...state,
             [teamId]: {...state[teamId]},
@@ -307,7 +292,6 @@ const myPlaybookRunsByTeam = (
         return state;
     }
 };
-
 const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
     switch (action.type) {
     case RECEIVED_GLOBAL_SETTINGS:
@@ -316,7 +300,6 @@ const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlo
         return state;
     }
 };
-
 const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | HidePostMenuModal) => {
     switch (action.type) {
     case SHOW_POST_MENU_MODAL:
@@ -327,7 +310,6 @@ const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | Hide
         return state;
     }
 };
-
 const channelActionsModalVisibility = (state = false, action: ShowChannelActionsModal) => {
     switch (action.type) {
     case SHOW_CHANNEL_ACTIONS_MODAL:
@@ -338,7 +320,6 @@ const channelActionsModalVisibility = (state = false, action: ShowChannelActions
         return state;
     }
 };
-
 const runActionsModalVisibility = (state = false, action: ShowRunActionsModal | HideRunActionsModal) => {
     switch (action.type) {
     case SHOW_RUN_ACTIONS_MODAL:
@@ -349,7 +330,6 @@ const runActionsModalVisibility = (state = false, action: ShowRunActionsModal | 
         return state;
     }
 };
-
 const playbookActionsModalVisibility = (state = false, action: ShowPlaybookActionsModal | HidePlaybookActionsModal) => {
     switch (action.type) {
     case SHOW_PLAYBOOK_ACTIONS_MODAL:
@@ -360,7 +340,6 @@ const playbookActionsModalVisibility = (state = false, action: ShowPlaybookActio
         return state;
     }
 };
-
 const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasViewedChannel) => {
     switch (action.type) {
     case SET_HAS_VIEWED_CHANNEL:
@@ -372,7 +351,6 @@ const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasV
         return state;
     }
 };
-
 const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action: SetRHSAboutCollapsedState) => {
     switch (action.type) {
     case SET_RHS_ABOUT_COLLAPSED_STATE:
@@ -426,7 +404,6 @@ const checklistCollapsedState = (
         return state;
     }
 };
-
 const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilter> = {}, action: SetChecklistItemsFilter) => {
     switch (action.type) {
     case SET_CHECKLIST_ITEMS_FILTER:
@@ -453,7 +430,6 @@ const initialBackstageRHSState = {
     viewMode: BackstageRHSViewMode.Overlap,
     section: BackstageRHSSection.TaskInbox,
 };
-
 const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, action: OpenBackstageRHS | CloseBackstageRHS) => {
     switch (action.type) {
     case OPEN_BACKSTAGE_RHS: {
@@ -466,7 +442,6 @@ const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, actio
         return state;
     }
 };
-
 const reducer = combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -484,7 +459,5 @@ const reducer = combineReducers({
     checklistItemsFilterByChannel,
     backstageRHS,
 });
-
 export default reducer;
-
 export type PlaybooksPluginState = ReturnType<typeof reducer>;

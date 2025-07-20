@@ -75,7 +75,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             description: 'Customize this playbook to reflect your own product release process.',
             checklists: [
                 {
-                    id: 'prepare-code',
                     title: 'Prepare code',
                     items: [
                         newChecklistItem('Triage and check for pending tickets and PRs to merge'),
@@ -86,7 +85,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'release-testing',
                     title: 'Release testing',
                     items: [
                         newChecklistItem('Cut a Release Candidate (RC-1)'),
@@ -96,7 +94,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'prepare-release-production',
                     title: 'Prepare release for production',
                     items: [
                         newChecklistItem('QA final approves the release'),
@@ -108,7 +105,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'post-release',
                     title: 'Post-release',
                     items: [
                         newChecklistItem('Schedule a release retrospective'),
@@ -166,7 +162,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             description: 'Customize this playbook to reflect your own incident resolution process.',
             checklists: [
                 {
-                    id: 'setup-triage',
                     title: 'Setup for triage',
                     items: [
                         newChecklistItem('Add on-call engineer to channel'),
@@ -178,14 +173,12 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'investigate-cause',
                     title: 'Investigate cause',
                     items: [
                         newChecklistItem('Add suspected causes here and check off if eliminated'),
                     ],
                 },
                 {
-                    id: 'resolution',
                     title: 'Resolution',
                     items: [
                         newChecklistItem('Confirm issue has been resolved'),
@@ -194,7 +187,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'retrospective',
                     title: 'Retrospective',
                     items: [
                         newChecklistItem('Send out survey to participants'),
@@ -263,7 +255,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             Customize this playbook to reflect your own customer onboarding process.`,
             checklists: [
                 {
-                    id: 'sales-handoff',
                     title: 'Sales to Post-Sales Handoff',
                     items: [
                         newChecklistItem('AE intro CSM and CSE to key contacts'),
@@ -275,7 +266,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'customer-technical-onboarding',
                     title: 'Customer Technical Onboarding',
                     items: [
                         newChecklistItem('Schedule technical discovery call'),
@@ -293,7 +283,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'go-live',
                     title: 'Go-Live',
                     items: [
                         newChecklistItem('Order Mattermost swag package for project team'),
@@ -303,7 +292,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'post-golive-prompts',
                     title: 'Optional value prompts after go-live',
                     items: [
                         newChecklistItem('Intro playbooks and boards'),
@@ -359,7 +347,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             Customize this playbook to reflect your own employee onboarding process.`,
             checklists: [
                 {
-                    id: 'pre-day-one',
                     title: 'Pre-day one',
                     items: [
                         newChecklistItem('Complete the [Onboarding Systems Form in the IT HelpDesk](https://helpdesk.mattermost.com/support/home)'),
@@ -373,7 +360,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'week-one',
                     title: 'Week one',
                     items: [
                         newChecklistItem(
@@ -401,7 +387,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'month-one',
                     title: 'Month one',
                     items: [
                         newChecklistItem('Review Company and Team [V2MOMs](https://handbook.mattermost.com/company/how-to-guides-for-staff/how-to-v2mom)'),
@@ -417,7 +402,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'month-two',
                     title: 'Month two',
                     items: [
                         newChecklistItem(
@@ -427,7 +411,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'month-three',
                     title: 'Month three',
                     items: [
                         newChecklistItem('Deliver New Colleague Feedback'),
@@ -467,7 +450,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             description: 'Customize this playbook to reflect your own feature lifecycle process.',
             checklists: [
                 {
-                    id: 'plan',
                     title: 'Plan',
                     items: [
                         newChecklistItem('Explain what the problem is and why it\'s important'),
@@ -477,7 +459,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'kickoff',
                     title: 'Kickoff',
                     items: [
                         newChecklistItem(
@@ -498,7 +479,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'build',
                     title: 'Build',
                     items: [
                         newChecklistItem(
@@ -509,7 +489,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'ship',
                     title: 'Ship',
                     items: [
                         newChecklistItem('Update documentation and user guides'),
@@ -532,7 +511,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'follow-up',
                     title: 'Follow up',
                     items: [
                         newChecklistItem('Schedule meeting to review adoption metrics and user feedback'),
@@ -599,7 +577,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             channel_name_template: 'Bug Bash (vX.Y)',
             checklists: [
                 {
-                    id: 'setup-testing-env',
                     title: 'Setup Testing Environment (Before Meeting)',
                     items: [
                         newChecklistItem(
@@ -653,7 +630,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'define-scope',
                     title: 'Define Scope (10 Minutes)',
                     items: [
                         newChecklistItem(
@@ -674,12 +650,10 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'target-testing-areas',
                     title: 'Target Testing Areas (30 Minutes)',
                     items: [],
                 },
                 {
-                    id: 'triage',
                     title: 'Triage (10 Minutes)',
                     items: [
                         newChecklistItem(
@@ -691,7 +665,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'clean-up',
                     title: 'Clean Up',
                     items: [
                         newChecklistItem(
@@ -762,7 +735,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             channel_name_template: 'Onboarding Run',
             checklists: [
                 {
-                    id: 'learn',
                     title: 'Learn',
                     items: [
                         newChecklistItem('Try editing the run name or description in the top section of this page.'),
@@ -773,7 +745,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     ],
                 },
                 {
-                    id: 'collaborate',
                     title: 'Collaborate',
                     items: [
                         newChecklistItem('Invite other team members that you would like to collaborate with.'),

@@ -88,13 +88,11 @@ input PlaybookUpdates {
 }
 
 input ChecklistUpdates {
-	id: String
 	title: String!
 	items: [ChecklistItemUpdates!]!
 }
 
 input ChecklistItemUpdates {
-	id: String
 	title: String!
 	description: String!
 	state: String!
@@ -176,7 +174,6 @@ type Playbook {
 }
 
 type Checklist {
-	id: String!
 	title: String!
 	items: [ChecklistItem!]!
 }
@@ -188,7 +185,6 @@ type Member {
 }
 
 type ChecklistItem {
-	id: String!
 	title: String!
 	description: String!
 	state: String!

@@ -73,7 +73,6 @@ const ChecklistList = ({
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
             items: cl.items.map((ci) => ({
-                id: ci.id || '',
                 title: ci.title,
                 description: ci.description,
                 state: ci.state,
@@ -126,7 +125,6 @@ const ChecklistList = ({
                 items: cl.items.map((ci) => {
                     return {
                         ...ci,
-                        id: ci.id || '',
                         state_modified: ci.state_modified || 0,
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
@@ -309,7 +307,6 @@ const ChecklistList = ({
                             clientAddChecklist(playbookRun.id, newChecklist);
                         } else {
                             const newChecklist: Checklist = {
-                                id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
                                 title: newChecklistName,
                                 items: [] as ChecklistItem[],
                             };
@@ -323,7 +320,7 @@ const ChecklistList = ({
         );
     }
 
-    const keys = generateKeys(checklists.map((checklist) => checklist.id || checklist.title));
+    const keys = generateKeys(checklists.map((checklist, index) => checklist.title + index));
 
     return (
         <>
@@ -345,7 +342,7 @@ const ChecklistList = ({
                             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                                 <Draggable
                                     key={keys[checklistIndex]}
-                                    draggableId={checklist.id || (checklist.title + checklistIndex)}
+                                    draggableId={checklist.title + checklistIndex}
                                     index={checklistIndex}
                                 >
                                     {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => {
