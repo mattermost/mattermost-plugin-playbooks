@@ -764,9 +764,9 @@ func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
 	return cpm.UnmarshalText(txt)
 }
 
-// ValidateChecklistIDs validates and cleans checklist IDs against existing checklists.
+// CleanChecklistIDs cleans checklist IDs against existing checklists.
 // Resets IDs that don't exist in the current playbook to empty string for regeneration.
-func ValidateChecklistIDs(checklists []Checklist, existingChecklists []Checklist) {
+func CleanChecklistIDs(checklists []Checklist, existingChecklists []Checklist) {
 	existingByID := make(map[string]bool)
 	for _, existing := range existingChecklists {
 		if existing.ID != "" {
