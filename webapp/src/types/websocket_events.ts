@@ -30,9 +30,7 @@ export interface PlaybookRunUpdate {
 export interface ChecklistUpdate {
     id: string;
     checklist_updated_at?: number;
-    fields?: Omit<Partial<Checklist>, 'items'> & {
-        items?: ChecklistItemUpdate[];
-    };
+    fields?: Omit<Partial<Checklist>, 'items'>;
     item_updates?: ChecklistItemUpdate[];
     item_deletes?: string[];
     item_inserts?: ChecklistItem[];

@@ -32,7 +32,7 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
         const deleteSet = new Set(update.checklist_deletes);
         updatedRun = {
             ...updatedRun,
-            checklists: updatedRun.checklists.filter((checklist) => checklist.id && !deleteSet.has(checklist.id)),
+            checklists: updatedRun.checklists.filter((checklist) => !checklist.id || !deleteSet.has(checklist.id)),
         };
     }
 
@@ -166,7 +166,11 @@ function applyStatusPostUpdates(run: PlaybookRun, statusPosts: StatusPost[]): Pl
 
 // Utility to create a Map from an array of objects with IDs
 const mapFromChecklists = (checklists: Checklist[]) => {
-    return new Map(checklists.map((checklist) => [checklist.id!, checklist]));
+    return new Map(
+        checklists
+            .filter((checklist) => checklist.id != null)
+            .map((checklist) => [checklist.id!, checklist])
+    );
 };
 
 // Helper to create a new checklist from an update
@@ -177,13 +181,11 @@ function createNewChecklist(update: ChecklistUpdate): Checklist {
         items: update.item_inserts ? [...update.item_inserts] : [],
     };
 
-    // Apply field updates if provided (excluding items which are handled separately)
+    // Apply field updates if provided
     if (update.fields) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const {items: _, ...otherFields} = update.fields;
         return {
             ...baseChecklist,
-            ...otherFields,
+            ...update.fields,
         };
     }
 
@@ -287,7 +289,11 @@ function applyChecklistUpdates(run: PlaybookRun, updates: ChecklistUpdate[]): Pl
 
     // Add existing checklists in their original order
     for (const originalChecklist of run.checklists) {
-        const updated = checklistsMap.get(originalChecklist.id!);
+        if (!originalChecklist.id) {
+            // Skip checklists without IDs - they can't be updated incrementally
+            continue;
+        }
+        const updated = checklistsMap.get(originalChecklist.id);
         if (updated) {
             orderedChecklists.push(updated);
         }

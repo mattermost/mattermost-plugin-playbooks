@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"time"
 
@@ -445,8 +446,8 @@ func detectStatusPostChanges(previous, current *PlaybookRun, changes map[string]
 		if prevPost, exists := prevPostsMap[currPost.ID]; !exists {
 			// New post
 			statusPostUpdates = append(statusPostUpdates, currPost)
-		} else if prevPost.DeleteAt != currPost.DeleteAt {
-			// Post was soft deleted/restored
+		} else if !reflect.DeepEqual(prevPost, currPost) {
+			// Post was modified in any way
 			statusPostUpdates = append(statusPostUpdates, currPost)
 		}
 	}
@@ -491,8 +492,8 @@ func detectTimelineEventChanges(previous, current *PlaybookRun, changes map[stri
 		if prevEvent, exists := prevEventsMap[currEvent.ID]; !exists {
 			// New event
 			timelineEventUpdates = append(timelineEventUpdates, currEvent)
-		} else if prevEvent.DeleteAt != currEvent.DeleteAt {
-			// Event was soft deleted/restored
+		} else if !reflect.DeepEqual(prevEvent, currEvent) {
+			// Event was modified in any way
 			timelineEventUpdates = append(timelineEventUpdates, currEvent)
 		}
 	}
@@ -588,6 +589,9 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 			if prev.Title != checklist.Title {
 				fields["title"] = checklist.Title
 			}
+			if prev.UpdateAt != checklist.UpdateAt {
+				fields["update_at"] = checklist.UpdateAt
+			}
 			update.Fields = fields
 
 			if !compareItemsOrder(prev.GetItemsOrder(), checklist.GetItemsOrder()) {
@@ -648,31 +652,46 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 	for _, item := range current {
 		// Check if item exists in previous state
 		if prev, exists := prevMap[item.ID]; exists {
-			// Compare fields
+			// Compare all fields using deep equality for comprehensive detection
 			fields := make(map[string]interface{})
-			if prev.Title != item.Title {
-				fields["title"] = item.Title
-			}
-			if prev.Description != item.Description {
-				fields["description"] = item.Description
-			}
-			if prev.State != item.State {
-				fields["state"] = item.State
-			}
-			if prev.StateModified != item.StateModified {
-				fields["state_modified"] = item.StateModified
-			}
-			if prev.AssigneeID != item.AssigneeID {
-				fields["assignee_id"] = item.AssigneeID
-			}
-			if prev.CommandLastRun != item.CommandLastRun {
-				fields["command_last_run"] = item.CommandLastRun
-			}
-			if prev.Command != item.Command {
-				fields["command"] = item.Command
-			}
-			if prev.DueDate != item.DueDate {
-				fields["due_date"] = item.DueDate
+			if !reflect.DeepEqual(prev, item) {
+				// Only include changed fields in the update
+				if prev.Title != item.Title {
+					fields["title"] = item.Title
+				}
+				if prev.Description != item.Description {
+					fields["description"] = item.Description
+				}
+				if prev.State != item.State {
+					fields["state"] = item.State
+				}
+				if prev.StateModified != item.StateModified {
+					fields["state_modified"] = item.StateModified
+				}
+				if prev.AssigneeID != item.AssigneeID {
+					fields["assignee_id"] = item.AssigneeID
+				}
+				if prev.AssigneeModified != item.AssigneeModified {
+					fields["assignee_modified"] = item.AssigneeModified
+				}
+				if prev.Command != item.Command {
+					fields["command"] = item.Command
+				}
+				if prev.CommandLastRun != item.CommandLastRun {
+					fields["command_last_run"] = item.CommandLastRun
+				}
+				if prev.DueDate != item.DueDate {
+					fields["due_date"] = item.DueDate
+				}
+				if prev.LastSkipped != item.LastSkipped {
+					fields["delete_at"] = item.LastSkipped
+				}
+				if !reflect.DeepEqual(prev.TaskActions, item.TaskActions) {
+					fields["task_actions"] = item.TaskActions
+				}
+				if prev.UpdateAt != item.UpdateAt {
+					fields["update_at"] = item.UpdateAt
+				}
 			}
 
 			// Only add update if there are changes
