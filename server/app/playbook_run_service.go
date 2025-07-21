@@ -1618,7 +1618,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
 // any action if the checklist item is already in the given checked state
-func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
+func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, itemID ...string) error {
 	type Details struct {
 		Action string `json:"action,omitempty"`
 		Task   string `json:"task,omitempty"`
@@ -1627,6 +1627,23 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
+	}
+
+	// When incremental updates are enabled and we have an item ID, use ID-based lookup
+	// to ensure we're modifying the correct item regardless of array index mismatches
+	if s.configService.IsIncrementalUpdatesEnabled() && len(itemID) > 0 && itemID[0] != "" {
+		targetItemID := itemID[0]
+
+		// Find the item by ID and get its current indices
+		for checklistIdx, checklist := range playbookRunToModify.Checklists {
+			for itemIdx, item := range checklist.Items {
+				if item.ID == targetItemID {
+					// Use the actual backend indices instead of the frontend indices
+					checklistNumber, itemNumber = checklistIdx, itemIdx
+					break
+				}
+			}
+		}
 	}
 
 	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
@@ -1639,6 +1656,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	}
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
 	if newState == itemToCheck.State {
 		return nil
 	}

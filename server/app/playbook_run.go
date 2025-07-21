@@ -1180,7 +1180,8 @@ type PlaybookRunService interface {
 
 	// ModifyCheckedState modifies the state of the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already in the specified state
-	ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber int, itemNumber int) error
+	// When itemID is provided and incremental updates are enabled, uses ID-based lookup for consistency
+	ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber int, itemNumber int, itemID ...string) error
 
 	// ToggleCheckedState checks or unchecks the specified checklist item
 	ToggleCheckedState(playbookRunID, userID string, checklistNumber, itemNumber int) error

@@ -1204,6 +1204,7 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 
 	var params struct {
 		NewState string `json:"new_state"`
+		ItemID   string `json:"item_id,omitempty"` // Optional: for incremental updates
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
@@ -1215,7 +1216,7 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		return
 	}
 
-	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
+	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, params.ItemID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

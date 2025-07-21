@@ -330,8 +330,12 @@ export async function setDueDate(playbookRunId: string, checklistNum: number, it
     }
 }
 
-export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    const body = JSON.stringify({new_state: newState});
+export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState, itemID?: string) {
+    // Include item ID in request body when available (for incremental updates)
+    const body = JSON.stringify({
+        new_state: newState,
+        ...(itemID && {item_id: itemID}),
+    });
     try {
         return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`, body);
     } catch (error) {
