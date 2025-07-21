@@ -172,7 +172,7 @@ func TestGraphQLPlaybooks(t *testing.T) {
 						CommandLastRun:   0,
 						LastSkipped:      0,
 						DueDate:          100,
-						TaskActions:      []client.TaskAction{}, // Initialize empty slice instead of nil
+						TaskActions:      nil, // TaskActions can be nil when not provided
 					},
 				},
 			},
