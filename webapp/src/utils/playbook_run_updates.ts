@@ -39,7 +39,7 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
     // Apply timeline event deletions
     if (update.timeline_event_deletes && update.timeline_event_deletes.length > 0) {
         const deleteSet = new Set(update.timeline_event_deletes);
-        const filteredEvents = updatedRun.timeline_events?.filter((event) => event.id && !deleteSet.has(event.id)) || [];
+        const filteredEvents = updatedRun.timeline_events?.filter((event) => !event.id || !deleteSet.has(event.id)) || [];
         updatedRun = {
             ...updatedRun,
             timeline_events: filteredEvents,
