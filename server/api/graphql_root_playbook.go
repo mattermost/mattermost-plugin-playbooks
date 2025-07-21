@@ -6,7 +6,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
@@ -306,13 +305,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
 		}
 
-		// Convert UpdateChecklist to app.Checklist (now that UpdateChecklist can receive IDs)
-		appChecklists, err := convertUpdateChecklistsToAppChecklists(*args.Updates.Checklists, currentPlaybook.Checklists)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to convert checklists for playbook id: '%s'", args.ID)
-		}
-
-		checklistsJSON, err := json.Marshal(appChecklists)
+		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
 		}
@@ -560,73 +553,4 @@ func validateUpdateTaskActions(checklists []UpdateChecklist) error {
 		}
 	}
 	return nil
-}
-
-// convertUpdateChecklistsToAppChecklists converts GraphQL UpdateChecklist structs to app.Checklist structs.
-// This handles ID generation for new checklists and converts field types (float64 to int64).
-// Returns an error if client provides invalid IDs for existing entities to prevent data corruption.
-func convertUpdateChecklistsToAppChecklists(updateChecklists []UpdateChecklist, currentChecklists []app.Checklist) ([]app.Checklist, error) {
-	existingChecklistsByID, existingItemsByID := app.BuildChecklistMaps(currentChecklists)
-
-	appChecklists := make([]app.Checklist, len(updateChecklists))
-	for i, updateChecklist := range updateChecklists {
-		// Use ID-based matching for checklists
-		var checklistID string
-		if updateChecklist.ID == nil || *updateChecklist.ID == "" || strings.HasPrefix(*updateChecklist.ID, "temp_") {
-			// No valid ID provided, create a new checklist
-			checklistID = model.NewId()
-		} else {
-			// Validate that the provided ID exists in current checklists
-			if _, exists := existingChecklistsByID[*updateChecklist.ID]; exists {
-				checklistID = *updateChecklist.ID
-			} else {
-				// Invalid ID provided - return error
-				return nil, errors.Errorf("invalid checklist ID '%s': checklist does not exist", *updateChecklist.ID)
-			}
-		}
-
-		// Convert checklist items using ID-based matching
-		appChecklistItems := make([]app.ChecklistItem, len(updateChecklist.Items))
-		for j, updateItem := range updateChecklist.Items {
-			// Use ID-based matching for items
-			var itemID string
-			if updateItem.ID == nil || *updateItem.ID == "" || strings.HasPrefix(*updateItem.ID, "temp_") {
-				// No valid ID provided, create a new item
-				itemID = model.NewId()
-			} else {
-				// Validate that the provided ID exists in current items
-				if _, exists := existingItemsByID[*updateItem.ID]; exists {
-					itemID = *updateItem.ID
-				} else {
-					// Invalid ID provided - return error
-					return nil, errors.Errorf("invalid checklist item ID '%s': item does not exist", *updateItem.ID)
-				}
-			}
-
-			appChecklistItems[j] = app.ChecklistItem{
-				ID:               itemID,
-				Title:            updateItem.Title,
-				State:            updateItem.State,
-				StateModified:    int64(updateItem.StateModified),
-				AssigneeID:       updateItem.AssigneeID,
-				AssigneeModified: int64(updateItem.AssigneeModified),
-				Command:          updateItem.Command,
-				CommandLastRun:   int64(updateItem.CommandLastRun),
-				Description:      updateItem.Description,
-				LastSkipped:      int64(updateItem.LastSkipped),
-				DueDate:          int64(updateItem.DueDate),
-				TaskActions:      []app.TaskAction{},
-			}
-			if updateItem.TaskActions != nil {
-				appChecklistItems[j].TaskActions = *updateItem.TaskActions
-			}
-		}
-
-		appChecklists[i] = app.Checklist{
-			ID:    checklistID,
-			Title: updateChecklist.Title,
-			Items: appChecklistItems,
-		}
-	}
-	return appChecklists, nil
 }
