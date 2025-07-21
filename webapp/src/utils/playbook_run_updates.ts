@@ -32,14 +32,14 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
         const deleteSet = new Set(update.checklist_deletes);
         updatedRun = {
             ...updatedRun,
-            checklists: updatedRun.checklists.filter((checklist) => !checklist.id || !deleteSet.has(checklist.id)),
+            checklists: updatedRun.checklists.filter((checklist) => checklist.id && !deleteSet.has(checklist.id)),
         };
     }
 
     // Apply timeline event deletions
     if (update.timeline_event_deletes && update.timeline_event_deletes.length > 0) {
         const deleteSet = new Set(update.timeline_event_deletes);
-        const filteredEvents = updatedRun.timeline_events?.filter((event) => !event.id || !deleteSet.has(event.id)) || [];
+        const filteredEvents = updatedRun.timeline_events?.filter((event) => event.id && !deleteSet.has(event.id)) || [];
         updatedRun = {
             ...updatedRun,
             timeline_events: filteredEvents,
@@ -212,7 +212,7 @@ function applyItemUpdates(items: ChecklistItem[], update: ChecklistUpdate): Chec
     // Apply item deletions using Set for efficient lookup
     if (update.item_deletes && update.item_deletes.length > 0) {
         const deleteSet = new Set(update.item_deletes);
-        updatedItems = updatedItems.filter((item) => !item.id || !deleteSet.has(item.id));
+        updatedItems = updatedItems.filter((item) => item.id && !deleteSet.has(item.id));
     }
 
     // Apply item insertions with duplicate prevention
