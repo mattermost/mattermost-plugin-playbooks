@@ -72,11 +72,8 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    // Use items directly from the checklist array
-    const sortedItems = props.checklist.items;
-
     // Use item IDs for unique React keys, fallback to title-based keys for items without IDs
-    const rawKeys = sortedItems.map((item) => item.id || (props.id + item.title));
+    const rawKeys = props.checklist.items.map((item) => item.id || (props.id + item.title));
     const keys = generateKeys(rawKeys);
 
     return (
@@ -92,7 +89,7 @@ const GenericChecklist = (props: Props) => {
                         ref={droppableProvided.innerRef}
                         {...droppableProvided.droppableProps}
                     >
-                        {sortedItems.map((checklistItem: ChecklistItem, sortedIndex: number) => {
+                        {props.checklist.items.map((checklistItem: ChecklistItem, index: number) => {
                             // filtering here because we need to maintain the index values
                             // because we refer to checklist items by their index
                             if (props.showItem ? !props.showItem(checklistItem, myUser.id) : false) {
@@ -101,20 +98,20 @@ const GenericChecklist = (props: Props) => {
 
                             return (
                                 <DraggableChecklistItem
-                                    key={keys[sortedIndex]}
+                                    key={keys[index]}
                                     playbookRun={props.playbookRun}
                                     playbookId={props.playbookId}
                                     readOnly={props.readOnly}
                                     checklistIndex={props.checklistIndex}
                                     item={checklistItem}
-                                    itemIndex={sortedIndex}
+                                    itemIndex={index}
                                     newItem={false}
                                     cancelAddingItem={() => {
                                         setAddingItem(false);
                                     }}
-                                    onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(sortedIndex, newItem)}
-                                    onDuplicateChecklistItem={() => onDuplicateChecklistItem(sortedIndex)}
-                                    onDeleteChecklistItem={() => onDeleteChecklistItem(sortedIndex)}
+                                    onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
+                                    onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
+                                    onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
                                     itemButtonsFormat={props.itemButtonsFormat}
                                     onReadOnlyInteract={props.onReadOnlyInteract}
                                 />
