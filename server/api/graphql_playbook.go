@@ -97,10 +97,6 @@ type ChecklistResolver struct {
 	app.Checklist
 }
 
-func (r *ChecklistResolver) Title() string {
-	return r.Checklist.Title
-}
-
 func (r *ChecklistResolver) Items() []*ChecklistItemResolver {
 	checklistItemResolvers := make([]*ChecklistItemResolver, 0, len(r.Checklist.Items))
 	for _, items := range r.Checklist.Items {
@@ -112,10 +108,6 @@ func (r *ChecklistResolver) Items() []*ChecklistItemResolver {
 
 type ChecklistItemResolver struct {
 	app.ChecklistItem
-}
-
-func (r *ChecklistItemResolver) ID() string {
-	return r.ChecklistItem.ID
 }
 
 func (r *ChecklistItemResolver) StateModified() float64 {
@@ -213,7 +205,6 @@ func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
 }
 
 type UpdateChecklistItem struct {
-	ID               *string           `json:"id"`
 	Title            string            `json:"title"`
 	State            string            `json:"state"`
 	StateModified    float64           `json:"state_modified"`

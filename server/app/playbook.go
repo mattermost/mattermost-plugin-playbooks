@@ -781,25 +781,6 @@ func ValidateChecklistIDs(checklists []Checklist, existingChecklists []Checklist
 	}
 }
 
-// BuildChecklistMaps creates lookup maps for existing checklists and items by ID.
-// Returns (checklistsByID, itemsByID) for efficient validation.
-func BuildChecklistMaps(checklists []Checklist) (map[string]Checklist, map[string]ChecklistItem) {
-	checklistsByID := make(map[string]Checklist)
-	itemsByID := make(map[string]ChecklistItem)
-
-	for _, checklist := range checklists {
-		if checklist.ID != "" {
-			checklistsByID[checklist.ID] = checklist
-			for _, item := range checklist.Items {
-				if item.ID != "" {
-					itemsByID[item.ID] = item
-				}
-			}
-		}
-	}
-	return checklistsByID, itemsByID
-}
-
 // Value represents a ChannelPlaybookMode as a type writable into the DB
 func (cpm ChannelPlaybookMode) Value() (driver.Value, error) {
 	return cpm.MarshalText()

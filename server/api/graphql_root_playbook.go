@@ -304,7 +304,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
 			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
 		}
-
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
