@@ -425,6 +425,7 @@ const checklistCollapsedState = (
         return state;
     }
 };
+
 const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilter> = {}, action: SetChecklistItemsFilter) => {
     switch (action.type) {
     case SET_CHECKLIST_ITEMS_FILTER:
@@ -464,6 +465,7 @@ const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, actio
         return state;
     }
 };
+
 const reducer = combineReducers({
     toggleRHSFunction,
     rhsOpen,

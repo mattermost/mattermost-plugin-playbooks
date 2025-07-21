@@ -520,40 +520,16 @@ func detectTimelineEventChanges(previous, current *PlaybookRun, changes map[stri
 
 // detectMetricsDataChanges compares metrics data between two PlaybookRun objects
 func detectMetricsDataChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
-	if len(previous.MetricsData) != len(current.MetricsData) {
+	if !reflect.DeepEqual(previous.MetricsData, current.MetricsData) {
 		changes["metrics_data"] = current.MetricsData
-		return
-	}
-
-	for i, prevMetric := range previous.MetricsData {
-		currMetric := current.MetricsData[i]
-		if prevMetric.MetricConfigID != currMetric.MetricConfigID ||
-			prevMetric.Value != currMetric.Value {
-			changes["metrics_data"] = current.MetricsData
-			return
-		}
 	}
 }
 
 // detectChecklistChanges compares checklists and handles both updates and deletions
 func detectChecklistChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
-	checklistUpdates := GetChecklistUpdates(previous.Checklists, current.Checklists)
+	checklistUpdates, checklistDeletes := GetChecklistUpdates(previous.Checklists, current.Checklists)
 	if len(checklistUpdates) > 0 {
 		changes["checklists"] = checklistUpdates
-	}
-
-	var checklistDeletes []string
-	if len(previous.Checklists) > 0 {
-		currentChecklistIDs := make(map[string]bool)
-		for _, checklist := range current.Checklists {
-			currentChecklistIDs[checklist.ID] = true
-		}
-
-		for _, prevChecklist := range previous.Checklists {
-			if !currentChecklistIDs[prevChecklist.ID] {
-				checklistDeletes = append(checklistDeletes, prevChecklist.ID)
-			}
-		}
 	}
 
 	if len(checklistDeletes) > 0 {
@@ -561,10 +537,10 @@ func detectChecklistChanges(previous, current *PlaybookRun, changes map[string]i
 	}
 }
 
-// GetChecklistUpdates compares two slices of checklists and returns a list of updates
-func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
+// GetChecklistUpdates compares two slices of checklists and returns updates and deleted IDs
+func GetChecklistUpdates(previous, current []Checklist) ([]ChecklistUpdate, []string) {
 	if len(previous) == 0 && len(current) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// Map previous checklists by ID for quick lookup
@@ -628,7 +604,13 @@ func GetChecklistUpdates(previous, current []Checklist) []ChecklistUpdate {
 		}
 	}
 
-	return updates
+	// Collect deleted checklist IDs from remaining entries in prevMap
+	var deletes []string
+	for id := range prevMap {
+		deletes = append(deletes, id)
+	}
+
+	return updates, deletes
 }
 
 // ItemChanges represents the changes between two checklist item lists
