@@ -67,6 +67,9 @@ type PlaybookRun struct {
 	// CreateAt is the timestamp, in milliseconds since epoch, of when the playbook run was created.
 	CreateAt int64 `json:"create_at"`
 
+	// UpdateAt is the timestamp, in milliseconds since epoch, of when the playbook run was last modified.
+	UpdateAt int64 `json:"update_at"`
+
 	// EndAt is the timestamp, in milliseconds since epoch, of when the playbook run was ended.
 	// If 0, the run is still ongoing.
 	EndAt int64 `json:"end_at"`
@@ -1075,8 +1078,18 @@ type PlaybookRunFilterOptions struct {
 	// Types filters by all run types in the list (inclusive)
 	Types []string
 
+	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
+	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
+	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
+	// Maps to the "since" URL parameter in the API and client.
+	ActivitySince int64 `url:"since,omitempty"`
+
 	// Skip getting extra information (like timeline events and status posts). Used by GraphQL to limit the amount of data retrieved.
 	SkipExtras bool
+
+	// OmitEnded determines whether to omit runs that have ended (EndAt > 0).
+	// If true, only active runs (EndAt = 0) are returned.
+	OmitEnded bool `url:"omit_ended,omitempty"`
 }
 
 // Clone duplicates the given options.
@@ -1158,6 +1171,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
+	}
+	// Normalize negative ActivitySince values to 0, which means "no filtering by activity time"
+	if options.ActivitySince < 0 {
+		options.ActivitySince = 0
 	}
 
 	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {

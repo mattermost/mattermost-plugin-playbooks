@@ -20,6 +20,7 @@ type Query {
 		first: Int,
 		after: String,
 		types: [PlaybookRunType!] = [],
+		omitEnded: Boolean = false,
 	): RunConnection!
 
 	playbookProperty(playbookID: String!, propertyID: String!): PropertyField

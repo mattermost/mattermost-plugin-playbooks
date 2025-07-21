@@ -408,6 +408,7 @@ export type QueryRunsArgs = {
   channelID?: InputMaybe<Scalars['String']>;
   direction?: InputMaybe<Scalars['String']>;
   first?: InputMaybe<Scalars['Int']>;
+  omitEnded?: InputMaybe<Scalars['Boolean']>;
   participantOrFollowerID?: InputMaybe<Scalars['String']>;
   sort?: InputMaybe<Scalars['String']>;
   statuses?: InputMaybe<Array<Scalars['String']>>;

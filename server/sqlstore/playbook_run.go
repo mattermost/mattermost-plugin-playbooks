@@ -186,7 +186,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 	// When adding a PlaybookRun column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
 		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
+			"i.CreateAt", "i.UpdateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
@@ -332,6 +332,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
 	}
 
+	if options.OmitEnded {
+		queryForResults = queryForResults.Where(sq.Eq{"i.EndAt": 0})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
+	}
+
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		column := "i.Name"
@@ -358,6 +363,12 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
 	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
+
+	// Filter by UpdateAt for the activity since parameter
+	if options.ActivitySince > 0 {
+		queryForResults = queryForResults.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
+		queryForTotal = queryForTotal.Where(sq.GtOrEq{"i.UpdateAt": options.ActivitySince})
+	}
 
 	queryForResults, err := applyPlaybookRunFilterOptionsSort(queryForResults, options)
 	if err != nil {
@@ -428,13 +439,15 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		addMetricsToPlaybookRuns(metricsData, playbookRuns)
 	}
 
-	return &app.GetPlaybookRunsResults{
+	result := &app.GetPlaybookRunsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		PerPage:    options.PerPage,
 		HasMore:    hasMore,
 		Items:      playbookRuns,
-	}, nil
+	}
+
+	return result, nil
 }
 
 // CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.
@@ -473,6 +486,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"TeamID":                                  rawPlaybookRun.TeamID,
 			"ChannelID":                               rawPlaybookRun.ChannelID,
 			"CreateAt":                                rawPlaybookRun.CreateAt,
+			"UpdateAt":                                rawPlaybookRun.CreateAt,
 			"EndAt":                                   rawPlaybookRun.EndAt,
 			"PostID":                                  rawPlaybookRun.PostID,
 			"PlaybookID":                              rawPlaybookRun.PlaybookID,
@@ -525,6 +539,9 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, errors.New("ID should not be empty")
 	}
 
+	// Always ensure UpdateAt is set to current time when updating
+	playbookRun.UpdateAt = model.GetMillis()
+
 	playbookRun = playbookRun.Clone()
 	playbookRun.Checklists = populateChecklistIDs(playbookRun.Checklists)
 
@@ -566,7 +583,8 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
-			"RunType": rawPlaybookRun.Type,
+			"RunType":  rawPlaybookRun.Type,
+			"UpdateAt": rawPlaybookRun.UpdateAt,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
@@ -614,6 +632,7 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 		SetMap(map[string]interface{}{
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
+			"UpdateAt":      endAt,
 		}).
 		Where(sq.Eq{"ID": playbookRunID}),
 	); err != nil {
@@ -630,6 +649,7 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 			"CurrentStatus":      app.StatusInProgress,
 			"EndAt":              0,
 			"LastStatusUpdateAt": restoredAt,
+			"UpdateAt":           restoredAt,
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)
@@ -957,7 +977,8 @@ func (s *playbookRunStore) NukeDB() (err error) {
 func (s *playbookRunStore) ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error {
 	updateQuery := s.queryBuilder.Update("IR_Incident").
 		Where(sq.Eq{"ID": playbookRunID}).
-		Set("CreateAt", model.GetMillisForTime(creationTimestamp))
+		Set("CreateAt", model.GetMillisForTime(creationTimestamp)).
+		Set("UpdateAt", model.GetMillis())
 
 	sqlResult, err := s.store.execBuilder(s.store.db, updateQuery)
 	if err != nil {
@@ -1009,7 +1030,10 @@ func (s *playbookRunStore) SetBroadcastChannelIDsToRootID(playbookRunID string, 
 
 	_, err = s.store.execBuilder(s.store.db,
 		sq.Update("IR_Incident").
-			Set("ChannelIDToRootID", data).
+			SetMap(map[string]interface{}{
+				"ChannelIDToRootID": data,
+				"UpdateAt":          model.GetMillis(),
+			}).
 			Where(sq.Eq{"ID": playbookRunID}))
 	if err != nil {
 		return errors.Wrapf(err, "failed to set ChannelIDsToRootID column for playbookRunID '%s'", playbookRunID)
@@ -1514,7 +1538,20 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
 	}
 
+	if err = s.touchPlaybookRun(playbookRunID); err != nil {
+		return errors.Wrapf(err, "failed to touch playbook run '%s'", playbookRunID)
+	}
+
 	return nil
+}
+
+func (s *playbookRunStore) touchPlaybookRun(playbookRunID string) error {
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookRunID}))
+
+	return err
 }
 
 // GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
