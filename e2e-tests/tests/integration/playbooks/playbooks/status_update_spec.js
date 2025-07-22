@@ -91,12 +91,20 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
+            // # Intercept GraphQL UpdatePlaybook mutation
+            cy.intercept('POST', '**/graphql', (req) => {
+                if (req.body.operationName === 'UpdatePlaybook') {
+                    req.alias = 'updatePlaybook';
+                }
+            });
+
             // # Add webhooks
             cy.findAllByTestId('status-update-webhooks').click();
             cy.findAllByTestId('webhooks-input').type('http://hook1.com');
             cy.findAllByTestId('checklist-item-save-button').click();
 
-            cy.wait(FIVE_SEC);
+            // # Wait for the GraphQL mutation to complete
+            cy.wait('@updatePlaybook');
 
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
