@@ -231,9 +231,7 @@ const ChecklistList = ({
 
             // Persist the new data in the server
             if (playbookRun) {
-                const movedItem = result.type === 'checklist-item' && srcChecklistIdx === dstChecklistIdx ?
-                    checklists[srcChecklistIdx].items[srcIdx] : moved;
-                clientMoveChecklistItem(playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx, movedItem?.id);
+                clientMoveChecklistItem(playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
             }
         }
 

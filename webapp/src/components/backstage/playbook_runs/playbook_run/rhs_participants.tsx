@@ -60,7 +60,7 @@ export const Participants = ({playbookRun, role, teamName}: Props) => {
 
         //@ts-ignore
         profiles.then(({data}: { data: UserProfile[] }) => {
-            // getProfilesByIds doesn't return current user profile, so add it when a user is participant
+            // getProfilesByIds doesn't return current user profile, so add it when a user is participant (prevent duplicates)
             if (role === Role.Participant && !data.some((user) => user.id === myUser.id)) {
                 data.push(myUser);
             }
