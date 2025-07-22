@@ -231,6 +231,28 @@ function applyItemUpdates(items: ChecklistItem[], update: ChecklistUpdate): Chec
     return updatedItems;
 }
 
+// Helper function to reorder items according to items_order array
+function reorderItemsByOrder(items: ChecklistItem[], itemsOrder: string[]): ChecklistItem[] {
+    const itemsMap = new Map(items.map((item) => [item.id, item]));
+    const orderedItems: ChecklistItem[] = [];
+
+    // Add items in the order specified by items_order
+    for (const itemId of itemsOrder) {
+        const item = itemsMap.get(itemId);
+        if (item) {
+            orderedItems.push(item);
+            itemsMap.delete(itemId);
+        }
+    }
+
+    // Add any remaining items that weren't in items_order
+    for (const remainingItem of itemsMap.values()) {
+        orderedItems.push(remainingItem);
+    }
+
+    return orderedItems;
+}
+
 // Helper to apply field updates to an existing checklist
 function applyUpdateToChecklist(checklist: Checklist, update: ChecklistUpdate): Checklist {
     let updatedChecklist = {...checklist};
@@ -256,7 +278,12 @@ function applyUpdateToChecklist(checklist: Checklist, update: ChecklistUpdate): 
     }
 
     // Apply item-level updates
-    const updatedItems = applyItemUpdates(updatedChecklist.items, update);
+    let updatedItems = applyItemUpdates(updatedChecklist.items, update);
+
+    // Reorder items according to items_order if provided
+    if (update.items_order && update.items_order.length > 0) {
+        updatedItems = reorderItemsByOrder(updatedItems, update.items_order);
+    }
 
     return {
         ...updatedChecklist,

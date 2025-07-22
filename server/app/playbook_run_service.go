@@ -1618,7 +1618,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
 // any action if the checklist item is already in the given checked state
-func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int, itemID ...string) error {
+func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
 	type Details struct {
 		Action string `json:"action,omitempty"`
 		Task   string `json:"task,omitempty"`
@@ -1629,33 +1629,12 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return err
 	}
 
-	// When incremental updates are enabled and we have an item ID, use ID-based lookup
-	// to ensure we're modifying the correct item regardless of array index mismatches
-	if s.configService.IsIncrementalUpdatesEnabled() && len(itemID) > 0 && itemID[0] != "" {
-		targetItemID := itemID[0]
-
-		// Find the item by ID and get its current indices
-		for checklistIdx, checklist := range playbookRunToModify.Checklists {
-			for itemIdx, item := range checklist.Items {
-				if item.ID == targetItemID {
-					// Use the actual backend indices instead of the frontend indices
-					checklistNumber, itemNumber = checklistIdx, itemIdx
-					break
-				}
-			}
-		}
-	}
-
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indicies")
-	}
+	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
-
-	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	if newState == itemToCheck.State {
 		return nil
@@ -1744,16 +1723,12 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return err
 	}
 
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
-	}
+	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
-
-	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	if assigneeID == itemToCheck.AssigneeID {
 		return nil
 	}
@@ -1852,9 +1827,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return err
 	}
 
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
-	}
+	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -1863,7 +1836,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 
 	// CommandLastRun is reset to avoid misunderstandings when the command is changed but the date
 	// of the previous run is set (and show rerun in the UI)
-	if playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command != newCommand {
+	if itemToCheck.Command != newCommand {
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = 0
 	}
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
@@ -1912,16 +1885,12 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 		return err
 	}
 
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
-	}
+	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
-
-	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	itemToCheck.DueDate = duedate
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, 0)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
@@ -1945,10 +1914,6 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 
 	if !s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionCreatePost) {
 		return "", errors.New("user does not have permission to channel")
-	}
-
-	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklistNumber, itemNumber) {
-		return "", errors.New("invalid checklist item indices")
 	}
 
 	itemToRun := playbookRun.Checklists[checklistNumber].Items[itemNumber]
@@ -2046,7 +2011,9 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &checklistItem, 0)
 
 	var originalRun *PlaybookRun
-	if s.configService.IsIncrementalUpdatesEnabled() {
+	isIncrementalEnabled := s.configService.IsIncrementalUpdatesEnabled()
+
+	if isIncrementalEnabled {
 		originalRun = playbookRunToModify.Clone()
 	}
 
@@ -2215,12 +2182,12 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 		return err
 	}
 
+	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
-
-	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	playbookRunToModify.Checklists[checklistNumber].Items = append(
 		playbookRunToModify.Checklists[checklistNumber].Items[:itemNumber],
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber+1:]...,
@@ -2440,6 +2407,8 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		return err
 	}
 
+	itemMoved := playbookRunToModify.Checklists[sourceChecklistIdx].Items[sourceItemIdx]
+
 	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
 		return errors.New("invalid destChecklist")
 	}
@@ -2458,7 +2427,6 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 
 	// Moved item
 	sourceChecklist := playbookRunToModify.Checklists[sourceChecklistIdx].Items
-	itemMoved := sourceChecklist[sourceItemIdx]
 
 	updateChecklistItemTimestamp(&itemMoved, timestamp)
 

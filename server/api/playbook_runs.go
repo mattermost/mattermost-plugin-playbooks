@@ -1204,7 +1204,6 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 
 	var params struct {
 		NewState string `json:"new_state"`
-		ItemID   string `json:"item_id,omitempty"` // Optional: for incremental updates
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
@@ -1216,7 +1215,7 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 		return
 	}
 
-	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum, params.ItemID); err != nil {
+	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1366,6 +1365,12 @@ func (h *PlaybookRunHandler) itemDuplicate(c *Context, w http.ResponseWriter, r 
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Check the body is empty
+	if _, err := r.Body.Read(make([]byte, 1)); err != io.EOF {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "request body must be empty", nil)
+		return
+	}
 
 	if err := h.playbookRunService.DuplicateChecklistItem(playbookRunID, userID, checklistNum, itemNum); err != nil {
 		h.HandleError(w, c.logger, err)
