@@ -308,9 +308,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         checklistNum={props.checklistNum}
                         itemNum={props.itemNum}
                         isSkipped={isSkipped()}
-                        onEdit={() => {
-                            setIsEditing(true);
-                        }}
+                        onEdit={() => setIsEditing(true)}
                         isEditing={isEditing}
                         onChange={props.onChange}
                         description={props.checklistItem.description}

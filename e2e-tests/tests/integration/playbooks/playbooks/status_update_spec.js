@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {FIVE_SEC, TWO_SEC} from '../../../../tests/fixtures/timeouts';
+import {FIVE_SEC, TWO_SEC, TEN_SEC} from '../../../../tests/fixtures/timeouts';
 
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
@@ -91,20 +91,16 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-            // # Intercept GraphQL UpdatePlaybook mutation
-            cy.intercept('POST', '**/graphql', (req) => {
-                if (req.body.operationName === 'UpdatePlaybook') {
-                    req.alias = 'updatePlaybook';
-                }
-            });
-
             // # Add webhooks
             cy.findAllByTestId('status-update-webhooks').click();
+            cy.findAllByTestId('webhooks-input').should('be.visible');
+            cy.findAllByTestId('webhooks-input').clear();
             cy.findAllByTestId('webhooks-input').type('http://hook1.com');
+            cy.findAllByTestId('webhooks-input').should('have.value', 'http://hook1.com');
+            cy.findAllByTestId('checklist-item-save-button').should('be.visible');
             cy.findAllByTestId('checklist-item-save-button').click();
 
-            // # Wait for the GraphQL mutation to complete
-            cy.wait('@updatePlaybook');
+            cy.wait(TEN_SEC);
 
             // # Refresh the page
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
