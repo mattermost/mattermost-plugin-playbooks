@@ -446,8 +446,8 @@ func detectStatusPostChanges(previous, current *PlaybookRun, changes map[string]
 		if prevPost, exists := prevPostsMap[currPost.ID]; !exists {
 			// New post
 			statusPostUpdates = append(statusPostUpdates, currPost)
-		} else if !reflect.DeepEqual(prevPost, currPost) {
-			// Post was modified in any way
+		} else if prevPost.DeleteAt != currPost.DeleteAt {
+			// Post was soft deleted - only change that should happen to immutable status posts
 			statusPostUpdates = append(statusPostUpdates, currPost)
 		}
 	}
@@ -492,8 +492,8 @@ func detectTimelineEventChanges(previous, current *PlaybookRun, changes map[stri
 		if prevEvent, exists := prevEventsMap[currEvent.ID]; !exists {
 			// New event
 			timelineEventUpdates = append(timelineEventUpdates, currEvent)
-		} else if !reflect.DeepEqual(prevEvent, currEvent) {
-			// Event was modified in any way
+		} else if prevEvent.DeleteAt != currEvent.DeleteAt {
+			// Event was soft deleted - only change that should happen to immutable timeline events
 			timelineEventUpdates = append(timelineEventUpdates, currEvent)
 		}
 	}
@@ -634,9 +634,9 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 	for _, item := range current {
 		// Check if item exists in previous state
 		if prev, exists := prevMap[item.ID]; exists {
-			// Compare all fields using deep equality for comprehensive detection
+			// Use timestamp-based change detection for performance
 			fields := make(map[string]interface{})
-			if !reflect.DeepEqual(prev, item) {
+			if prev.UpdateAt != item.UpdateAt {
 				// Only include changed fields in the update
 				if prev.Title != item.Title {
 					fields["title"] = item.Title
