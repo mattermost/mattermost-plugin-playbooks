@@ -15,7 +15,7 @@ DEFAULT_GOARCH ?= $(shell go env GOARCH)
 # To build FIPS-compliant plugin: make dist-fips
 # Requires Docker to be installed and running
 FIPS_ENABLED ?= false
-FIPS_IMAGE ?= cgr.dev/mattermost.com/glibc-openssl-fips:15.1@sha256:d4ae220f588b914bede8a46a151addba99c894a2fa54bcf0bd090503b01b9644
+FIPS_IMAGE ?= cgr.dev/mattermost.com/go-msft-fips:1.24.4@sha256:8ab847d56930279a3ea36763277080106406354ec31c5f57f9d7fa787ecadcb2
 
 export GO111MODULE=on
 
@@ -270,6 +270,7 @@ endif
 	# Create local cache directory for CI/ACT compatibility
 	mkdir -p $(PWD)/.build-cache
 	docker run --rm \
+		--entrypoint="" \
 		--user root \
 		-v $(PWD):/plugin \
 		-v $(PWD)/.build-cache:/root/.cache \
@@ -277,16 +278,9 @@ endif
 		-e GO_VERSION \
 		$(FIPS_IMAGE) \
 		/bin/sh -c "\
-			apk add --no-cache curl bash make nodejs npm git jq && \
-			if ! command -v go >/dev/null 2>&1; then \
-				echo 'Installing Go \$${GO_VERSION:-1.24.3}...' && \
-				curl -s https://dl.google.com/go/go\$${GO_VERSION:-1.24.3}.linux-amd64.tar.gz | tar -xz -C /usr/local && \
-				export PATH=\"/usr/local/go/bin:\$$PATH\"; \
-			else \
-				echo 'Go already available: ' && go version; \
-			fi && \
+			echo 'Go already available: ' && go version && \
 			export GO111MODULE=on && \
-			export CGO_ENABLED=0 && \
+			export CGO_ENABLED=1 && \
 			cd /plugin/server && \
 			env GOOS=linux GOARCH=amd64 go build -tags fips -trimpath -buildvcs=false -o dist-fips/plugin-linux-amd64-fips && \
 			echo 'FIPS plugin build completed successfully'"
