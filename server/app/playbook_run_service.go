@@ -1882,6 +1882,7 @@ func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, us
 	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
+
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
 
 	return nil

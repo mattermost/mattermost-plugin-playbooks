@@ -741,6 +741,9 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), r.MetricsData...)
 	newPlaybookRun.BroadcastChannelIDs = append([]string(nil), r.BroadcastChannelIDs...)
 
+	// Clear ItemsOrder to prevent data inconsistency, same as Checklist.Clone()
+	newPlaybookRun.ItemsOrder = nil
+
 	return &newPlaybookRun
 }
 
