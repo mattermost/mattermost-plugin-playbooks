@@ -35,7 +35,7 @@ const (
 	PlaybookRunCreatedWSEvent = "playbook_run_created"
 	playbookRunUpdatedWSEvent = "playbook_run_updated"
 
-	// New WebSocket events for incremental updates
+	// playbookRunUpdatedIncrementalWSEvent is for incremental updates
 	playbookRunUpdatedIncrementalWSEvent = "playbook_run_updated_incremental"
 
 	noAssigneeName = "No Assignee"
@@ -1628,6 +1628,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return err
 	}
 
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
+	}
+
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
@@ -1720,6 +1724,10 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
+	}
+
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
 	}
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -1826,6 +1834,10 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return err
 	}
 
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
+	}
+
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
@@ -1884,6 +1896,10 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 		return err
 	}
 
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
+	}
+
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
@@ -1913,6 +1929,10 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 
 	if !s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionCreatePost) {
 		return "", errors.New("user does not have permission to channel")
+	}
+
+	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklistNumber, itemNumber) {
+		return "", errors.New("invalid checklist item indices")
 	}
 
 	itemToRun := playbookRun.Checklists[checklistNumber].Items[itemNumber]
