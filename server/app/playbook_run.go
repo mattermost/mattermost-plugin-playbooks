@@ -207,6 +207,9 @@ type PlaybookRun struct {
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
+	if len(r.Checklists) == 0 {
+		return nil
+	}
 	itemsOrder := make([]string, len(r.Checklists))
 	for i, checklist := range r.Checklists {
 		itemsOrder[i] = checklist.ID

@@ -311,6 +311,11 @@ func TestUpdatePlaybookRun(t *testing.T) {
 
 				actual, err := playbookRunStore.GetPlaybookRun(expected.ID)
 				require.NoError(t, err)
+				// Populate ItemsOrder to match what GetPlaybookRun returns after MarshalJSON
+				expected.ItemsOrder = expected.GetItemsOrder()
+				for i := range expected.Checklists {
+					expected.Checklists[i].ItemsOrder = expected.Checklists[i].GetItemsOrder()
+				}
 				require.Equal(t, expected, actual)
 			})
 		}
@@ -609,6 +614,8 @@ func createPlaybookRunsAndPosts(t testing.TB, store *SQLStore, playbookRunStore 
 		ret, err := playbookRunStore.CreatePlaybookRun(inc)
 		require.NoError(t, err)
 		createPlaybookRunChannel(t, store, ret)
+		// Populate ItemsOrder to match what GetPlaybookRuns would return after MarshalJSON
+		ret.ItemsOrder = ret.GetItemsOrder()
 		playbookRunsSorted = append(playbookRunsSorted, *ret)
 	}
 

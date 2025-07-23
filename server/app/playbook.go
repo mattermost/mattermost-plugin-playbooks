@@ -237,6 +237,9 @@ func (c Checklist) GetItems() []ChecklistItemCommon {
 }
 
 func (c Checklist) GetItemsOrder() []string {
+	if len(c.Items) == 0 {
+		return nil
+	}
 	itemsOrder := make([]string, len(c.Items))
 	for i, item := range c.Items {
 		itemsOrder[i] = item.ID
