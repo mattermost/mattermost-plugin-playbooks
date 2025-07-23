@@ -634,46 +634,45 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 	for _, item := range current {
 		// Check if item exists in previous state
 		if prev, exists := prevMap[item.ID]; exists {
-			// Use timestamp-based change detection for performance
+			// Check for field changes
 			fields := make(map[string]interface{})
+
+			// Always check for field changes, not just timestamp differences
+			if prev.Title != item.Title {
+				fields["title"] = item.Title
+			}
+			if prev.Description != item.Description {
+				fields["description"] = item.Description
+			}
+			if prev.State != item.State {
+				fields["state"] = item.State
+			}
+			if prev.StateModified != item.StateModified {
+				fields["state_modified"] = item.StateModified
+			}
+			if prev.AssigneeID != item.AssigneeID {
+				fields["assignee_id"] = item.AssigneeID
+			}
+			if prev.AssigneeModified != item.AssigneeModified {
+				fields["assignee_modified"] = item.AssigneeModified
+			}
+			if prev.Command != item.Command {
+				fields["command"] = item.Command
+			}
+			if prev.CommandLastRun != item.CommandLastRun {
+				fields["command_last_run"] = item.CommandLastRun
+			}
+			if prev.DueDate != item.DueDate {
+				fields["due_date"] = item.DueDate
+			}
+			if prev.LastSkipped != item.LastSkipped {
+				fields["delete_at"] = item.LastSkipped
+			}
+			if !reflect.DeepEqual(prev.TaskActions, item.TaskActions) {
+				fields["task_actions"] = item.TaskActions
+			}
 			if prev.UpdateAt != item.UpdateAt {
-				// Only include changed fields in the update
-				if prev.Title != item.Title {
-					fields["title"] = item.Title
-				}
-				if prev.Description != item.Description {
-					fields["description"] = item.Description
-				}
-				if prev.State != item.State {
-					fields["state"] = item.State
-				}
-				if prev.StateModified != item.StateModified {
-					fields["state_modified"] = item.StateModified
-				}
-				if prev.AssigneeID != item.AssigneeID {
-					fields["assignee_id"] = item.AssigneeID
-				}
-				if prev.AssigneeModified != item.AssigneeModified {
-					fields["assignee_modified"] = item.AssigneeModified
-				}
-				if prev.Command != item.Command {
-					fields["command"] = item.Command
-				}
-				if prev.CommandLastRun != item.CommandLastRun {
-					fields["command_last_run"] = item.CommandLastRun
-				}
-				if prev.DueDate != item.DueDate {
-					fields["due_date"] = item.DueDate
-				}
-				if prev.LastSkipped != item.LastSkipped {
-					fields["delete_at"] = item.LastSkipped
-				}
-				if !reflect.DeepEqual(prev.TaskActions, item.TaskActions) {
-					fields["task_actions"] = item.TaskActions
-				}
-				if prev.UpdateAt != item.UpdateAt {
-					fields["update_at"] = item.UpdateAt
-				}
+				fields["update_at"] = item.UpdateAt
 			}
 
 			// Only add update if there are changes
