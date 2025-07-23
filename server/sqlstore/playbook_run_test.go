@@ -227,6 +227,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				PlaybookRun: NewBuilder(t).WithChecklists([]int{1}).ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
 					old.Checklists[0].Items = nil
+					old.Checklists[0].ItemsOrder = []string{}
 					return &old
 				},
 				ExpectedErr: nil,
@@ -310,6 +311,11 @@ func TestUpdatePlaybookRun(t *testing.T) {
 
 				actual, err := playbookRunStore.GetPlaybookRun(expected.ID)
 				require.NoError(t, err)
+				// Populate ItemsOrder to match what GetPlaybookRun returns after MarshalJSON
+				expected.ItemsOrder = expected.GetItemsOrder()
+				for i := range expected.Checklists {
+					expected.Checklists[i].ItemsOrder = expected.Checklists[i].GetItemsOrder()
+				}
 				require.Equal(t, expected, actual)
 			})
 		}
@@ -608,6 +614,8 @@ func createPlaybookRunsAndPosts(t testing.TB, store *SQLStore, playbookRunStore 
 		ret, err := playbookRunStore.CreatePlaybookRun(inc)
 		require.NoError(t, err)
 		createPlaybookRunChannel(t, store, ret)
+		// Populate ItemsOrder to match what GetPlaybookRuns would return after MarshalJSON
+		ret.ItemsOrder = ret.GetItemsOrder()
 		playbookRunsSorted = append(playbookRunsSorted, *ret)
 	}
 
@@ -1769,6 +1777,7 @@ func NewBuilder(t testing.TB) *PlaybookRunBuilder {
 			Checklists:    nil,
 			CurrentStatus: "InProgress",
 			Type:          app.RunTypePlaybook,
+			ItemsOrder:    []string{},
 		},
 	}
 }
@@ -1816,23 +1825,31 @@ func (ib *PlaybookRunBuilder) WithUpdateAt(updateAt int64) *PlaybookRunBuilder {
 
 func (ib *PlaybookRunBuilder) WithChecklists(itemsPerChecklist []int) *PlaybookRunBuilder {
 	ib.playbookRun.Checklists = make([]app.Checklist, len(itemsPerChecklist))
+	var checklistIDs []string
 
 	for i, numItems := range itemsPerChecklist {
 		var items []app.ChecklistItem
+		var itemIDs []string
 		for j := 0; j < numItems; j++ {
+			itemID := model.NewId()
 			items = append(items, app.ChecklistItem{
-				ID:    model.NewId(),
+				ID:    itemID,
 				Title: fmt.Sprint("Checklist ", i, " - item ", j),
 			})
+			itemIDs = append(itemIDs, itemID)
 		}
 
+		checklistID := model.NewId()
 		ib.playbookRun.Checklists[i] = app.Checklist{
-			ID:    model.NewId(),
-			Title: fmt.Sprint("Checklist ", i),
-			Items: items,
+			ID:         checklistID,
+			Title:      fmt.Sprint("Checklist ", i),
+			Items:      items,
+			ItemsOrder: itemIDs,
 		}
+		checklistIDs = append(checklistIDs, checklistID)
 	}
 
+	ib.playbookRun.ItemsOrder = checklistIDs
 	return ib
 }
 
@@ -1936,4 +1953,98 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func TestPopulateChecklistIDs(t *testing.T) {
+	t.Run("updates ItemsOrder after assigning IDs to items without IDs", func(t *testing.T) {
+		// Simulate the scenario where an item is duplicated and has no ID
+		checklists := []app.Checklist{
+			{
+				ID:    "checklist1",
+				Title: "Test Checklist",
+				Items: []app.ChecklistItem{
+					{ID: "item1", Title: "Task A"},
+					{ID: "item2", Title: "Task B"},
+					{ID: "", Title: "Task B (duplicate)"}, // Duplicated item with no ID
+					{ID: "item3", Title: "Task C"},
+				},
+				ItemsOrder: []string{"item1", "item2", "item3"}, // Missing the duplicate item
+			},
+		}
+
+		result := populateChecklistIDs(checklists)
+
+		// Verify that all items now have IDs
+		for i, item := range result[0].Items {
+			require.NotEmpty(t, item.ID, "Item %d should have an ID", i)
+		}
+
+		// Verify that ItemsOrder is updated to include all items in the correct order
+		expectedOrder := []string{
+			result[0].Items[0].ID, // item1
+			result[0].Items[1].ID, // item2
+			result[0].Items[2].ID, // duplicate item (now has ID)
+			result[0].Items[3].ID, // item3
+		}
+		require.Equal(t, expectedOrder, result[0].ItemsOrder, "ItemsOrder should reflect the current order of items")
+		require.Len(t, result[0].ItemsOrder, 4, "ItemsOrder should include all items")
+	})
+
+	t.Run("handles multiple checklists with items without IDs", func(t *testing.T) {
+		checklists := []app.Checklist{
+			{
+				ID:    "checklist1",
+				Title: "First Checklist",
+				Items: []app.ChecklistItem{
+					{ID: "item1", Title: "Task A"},
+					{ID: "", Title: "Task A (duplicate)"},
+				},
+				ItemsOrder: []string{"item1"},
+			},
+			{
+				ID:    "checklist2",
+				Title: "Second Checklist",
+				Items: []app.ChecklistItem{
+					{ID: "item2", Title: "Task B"},
+					{ID: "", Title: "Task B (duplicate)"},
+					{ID: "item3", Title: "Task C"},
+				},
+				ItemsOrder: []string{"item2", "item3"},
+			},
+		}
+
+		result := populateChecklistIDs(checklists)
+
+		// Verify first checklist
+		require.Len(t, result[0].ItemsOrder, 2, "First checklist should have 2 items in order")
+		require.Equal(t, result[0].Items[0].ID, result[0].ItemsOrder[0])
+		require.Equal(t, result[0].Items[1].ID, result[0].ItemsOrder[1])
+
+		// Verify second checklist
+		require.Len(t, result[1].ItemsOrder, 3, "Second checklist should have 3 items in order")
+		require.Equal(t, result[1].Items[0].ID, result[1].ItemsOrder[0])
+		require.Equal(t, result[1].Items[1].ID, result[1].ItemsOrder[1])
+		require.Equal(t, result[1].Items[2].ID, result[1].ItemsOrder[2])
+	})
+
+	t.Run("preserves existing ItemsOrder when all items have IDs", func(t *testing.T) {
+		checklists := []app.Checklist{
+			{
+				ID:    "checklist1",
+				Title: "Test Checklist",
+				Items: []app.ChecklistItem{
+					{ID: "item1", Title: "Task A"},
+					{ID: "item2", Title: "Task B"},
+					{ID: "item3", Title: "Task C"},
+				},
+				ItemsOrder: []string{"item1", "item2", "item3"},
+			},
+		}
+
+		result := populateChecklistIDs(checklists)
+
+		// ItemsOrder should be updated to match the current order
+		expectedOrder := []string{"item1", "item2", "item3"}
+		require.Equal(t, expectedOrder, result[0].ItemsOrder, "ItemsOrder should match current order")
+	})
 }

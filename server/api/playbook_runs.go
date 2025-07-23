@@ -196,9 +196,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
-		"playbook_run": playbookRun,
-	}, userID)
+	h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{"playbook_run": playbookRun}, playbookRun.ChannelID)
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
 	ReturnJSON(w, &playbookRun, http.StatusCreated)
@@ -322,11 +320,11 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	go func() {
 		time.Sleep(1 * time.Second) // arbitrary 1 second magic number
 
-		h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
+		h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
 			"client_id":    state.ClientID,
 			"playbook_run": playbookRun,
 			"channel_name": channel.Name,
-		}, request.UserId)
+		}, playbookRun.ChannelID)
 	}()
 
 	if err := h.postPlaybookRunCreatedMessage(playbookRun, request.ChannelId); err != nil {
@@ -396,7 +394,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {
+	if err = h.playbookRunService.AddPostToTimeline(playbookRun, userID, post, summary); err != nil {
 		h.HandleError(w, c.logger, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
@@ -1367,6 +1365,12 @@ func (h *PlaybookRunHandler) itemDuplicate(c *Context, w http.ResponseWriter, r 
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Check the body is empty
+	if _, err := r.Body.Read(make([]byte, 1)); err != io.EOF {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "request body must be empty", nil)
+		return
+	}
 
 	if err := h.playbookRunService.DuplicateChecklistItem(playbookRunID, userID, checklistNum, itemNum); err != nil {
 		h.HandleError(w, c.logger, err)

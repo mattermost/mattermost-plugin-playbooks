@@ -1155,6 +1155,12 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 		playbookRun.StatusUpdateBroadcastChannelsEnabled = false
 	}
 
+	// Always compute ItemsOrder fresh from current array state to prevent data inconsistency
+	playbookRun.ItemsOrder = playbookRun.GetItemsOrder()
+	for i := range playbookRun.Checklists {
+		playbookRun.Checklists[i].ItemsOrder = playbookRun.Checklists[i].GetItemsOrder()
+	}
+
 	return &playbookRun, nil
 }
 
@@ -1631,6 +1637,9 @@ func populateChecklistIDs(checklists []app.Checklist) []app.Checklist {
 				newChecklists[i].Items[j].ID = model.NewId()
 			}
 		}
+
+		// Always compute ItemsOrder fresh from current items to prevent data inconsistency
+		newChecklists[i].ItemsOrder = newChecklists[i].GetItemsOrder()
 	}
 
 	return newChecklists

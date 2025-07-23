@@ -67,7 +67,7 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				WebhookOnStatusUpdateURLs:    []string{"testurl"},
 				WebhookOnStatusUpdateEnabled: true,
 			},
-			expected: []byte(`"checklists":[{"id":"checklist1","title":"checklist 1","items":[]`),
+			expected: []byte(`"checklists":[{"id":"checklist1","title":"checklist 1","items":[],"items_order":null,"update_at":0}]`),
 			wantErr:  false,
 		},
 	}
@@ -183,4 +183,28 @@ func TestPlaybookFilterOptions_Validate(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, options, validOptions)
 	})
+}
+
+func TestChecklist_GetItemsOrder(t *testing.T) {
+	checklist := Checklist{
+		Items: []ChecklistItem{
+			{ID: "item1"},
+			{ID: "item2"},
+		},
+	}
+
+	itemsOrder := checklist.GetItemsOrder()
+	require.Equal(t, []string{"item1", "item2"}, itemsOrder)
+
+	checklist.Items = []ChecklistItem{
+		{ID: "item2"},
+		{ID: "item1"},
+	}
+
+	itemsOrder = checklist.GetItemsOrder()
+	require.Equal(t, []string{"item2", "item1"}, itemsOrder)
+
+	checklist.Items = []ChecklistItem{}
+	itemsOrder = checklist.GetItemsOrder()
+	require.Nil(t, itemsOrder)
 }

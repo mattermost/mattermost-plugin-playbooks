@@ -209,3 +209,8 @@ func (c *ServiceImpl) SupportsGivingFeedback() error {
 
 	return nil
 }
+
+// IsIncrementalUpdatesEnabled returns true when incremental WebSocket updates are enabled.
+func (c *ServiceImpl) IsIncrementalUpdatesEnabled() bool {
+	return c.GetConfiguration().EnableIncrementalUpdates
+}

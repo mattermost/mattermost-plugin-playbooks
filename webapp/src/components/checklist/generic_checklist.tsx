@@ -54,7 +54,10 @@ const GenericChecklist = (props: Props) => {
 
     const onDuplicateChecklistItem = (index: number) => {
         const newChecklistItems = [...props.checklist.items];
-        const duplicate = {...newChecklistItems[index]};
+        const duplicate = {
+            ...newChecklistItems[index],
+            id: `temp_item_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+        };
         newChecklistItems.splice(index + 1, 0, duplicate);
         const newChecklist = {...props.checklist};
         newChecklist.items = newChecklistItems;
@@ -69,7 +72,9 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    const keys = generateKeys(props.checklist.items.map((item) => props.id + item.title));
+    // Use item IDs for unique React keys, fallback to title-based keys for items without IDs
+    const rawKeys = props.checklist.items.map((item) => item.id || (props.id + item.title));
+    const keys = generateKeys(rawKeys);
 
     return (
 

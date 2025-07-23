@@ -243,6 +243,11 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Clean checklist IDs for incremental update compatibility
+	if h.config.IsIncrementalUpdatesEnabled() {
+		app.CleanChecklistIDs(playbook.Checklists, oldPlaybook.Checklists)
+	}
+
 	app.CleanUpChecklists(playbook.Checklists)
 
 	if err = validatePreAssignment(playbook); err != nil {

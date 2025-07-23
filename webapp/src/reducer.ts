@@ -58,10 +58,12 @@ import {
     ShowPlaybookActionsModal,
     ShowPostMenuModal,
     ShowRunActionsModal,
+    WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
+    WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
-
+import {applyIncrementalUpdate} from 'src/utils/playbook_run_updates';
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
     case RECEIVED_TOGGLE_RHS_ACTION:
@@ -99,7 +101,7 @@ type TStateMyPlaybookRuns = Record<PlaybookRun['id'], PlaybookRun>;
  */
 const myPlaybookRuns = (
     state: TStateMyPlaybookRuns = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | WebsocketPlaybookRunIncrementalUpdateReceived
 ): TStateMyPlaybookRuns => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
@@ -156,6 +158,24 @@ const myPlaybookRuns = (
         return newState;
     }
 
+    case WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED: {
+        const wsAction = action as WebsocketPlaybookRunIncrementalUpdateReceived;
+        const runId = wsAction.data.id;
+        const currentRun = state[runId];
+
+        if (!currentRun) {
+            // Run not found in state - it might not be loaded yet
+            // Return state unchanged and let other mechanisms handle fetching
+            return state;
+        }
+
+        const updatedRun = applyIncrementalUpdate(currentRun, wsAction.data);
+        return {
+            ...state,
+            [runId]: updatedRun,
+        };
+    }
+
     default:
         return state;
     }
@@ -170,7 +190,7 @@ type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id']
  */
 const myPlaybookRunsByTeam = (
     state: TStateMyPlaybookRunsByTeam = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | WebsocketPlaybookRunIncrementalUpdateReceived
 ): TStateMyPlaybookRunsByTeam => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
@@ -238,6 +258,50 @@ const myPlaybookRunsByTeam = (
         }
         return newState;
     }
+
+    case WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED: {
+        const wsAction = action as WebsocketPlaybookRunIncrementalUpdateReceived;
+        const runId = wsAction.data.id;
+
+        // Find the team and channel for this run
+        let targetTeamId: string | null = null;
+        let targetChannelId: string | null = null;
+
+        for (const teamId of Object.keys(state)) {
+            const teamData = state[teamId];
+            if (teamData) {
+                for (const channelId of Object.keys(teamData)) {
+                    if (teamData[channelId]?.id === runId) {
+                        targetTeamId = teamId;
+                        targetChannelId = channelId;
+                        break;
+                    }
+                }
+                if (targetTeamId) {
+                    break;
+                }
+            }
+        }
+
+        if (!targetTeamId || !targetChannelId) {
+            return state;
+        }
+
+        const currentRun = state[targetTeamId]?.[targetChannelId];
+        if (!currentRun) {
+            return state;
+        }
+
+        const updatedRun = applyIncrementalUpdate(currentRun, wsAction.data);
+        return {
+            ...state,
+            [targetTeamId]: {
+                ...state[targetTeamId],
+                [targetChannelId]: updatedRun,
+            },
+        };
+    }
+
     default:
         return state;
     }

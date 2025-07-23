@@ -152,11 +152,16 @@ func TestGraphQLPlaybooks(t *testing.T) {
 
 		require.NoError(t, err)
 
-		actual := []client.Checklist{
+		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+
+		expected := []client.Checklist{
 			{
+				ID:    updatedPlaybook.Checklists[0].ID, // Use the actual ID from the returned playbook
 				Title: "A",
 				Items: []client.ChecklistItem{
 					{
+						ID:               updatedPlaybook.Checklists[0].Items[0].ID, // Use the actual item ID
 						Title:            "title1",
 						Description:      "description1",
 						AssigneeID:       "",
@@ -167,14 +172,13 @@ func TestGraphQLPlaybooks(t *testing.T) {
 						CommandLastRun:   0,
 						LastSkipped:      0,
 						DueDate:          100,
+						TaskActions:      nil, // TaskActions can be nil when not provided
 					},
 				},
 			},
 		}
-		updatedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
-		require.NoError(t, err)
 
-		require.Equal(t, updatedPlaybook.Checklists, actual)
+		require.Equal(t, expected, updatedPlaybook.Checklists)
 	})
 
 	t.Run("update playbook with pre-assigned task, valid invite user list, and invitations enabled", func(t *testing.T) {
@@ -465,11 +469,9 @@ func getPlaybookFavorite(c *client.Client, playbookID string) (bool, error) {
 }
 
 func gqlTestPlaybookUpdate(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
-	testPlaybookMutateQuery := `
-	mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
-	updatePlaybook(id: $id, updates: $updates)
-	}
-		`
+	testPlaybookMutateQuery := `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
+		updatePlaybook(id: $id, updates: $updates)
+	}`
 	var response graphql.Response
 	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testPlaybookMutateQuery,
@@ -606,11 +608,9 @@ func TestGraphQLPlaybooksMetrics(t *testing.T) {
 }
 
 func gqlTestPlaybookUpdateGuest(e *TestEnvironment, t *testing.T, playbookID string, updates map[string]interface{}) error {
-	testPlaybookMutateQuery := `
-	mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
-	updatePlaybook(id: $id, updates: $updates)
-	}
-		`
+	testPlaybookMutateQuery := `mutation UpdatePlaybook($id: String!, $updates: PlaybookUpdates!) {
+		updatePlaybook(id: $id, updates: $updates)
+	}`
 	var response graphql.Response
 	err := e.PlaybooksClientGuest.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         testPlaybookMutateQuery,
