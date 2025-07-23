@@ -18,7 +18,7 @@ func TestPlaybookRun_MarshalJSON(t *testing.T) {
 		result, err := json.Marshal(testPlaybookRun)
 		require.NoError(t, err)
 		resultStr := string(result)
-		
+
 		// Check that critical slice fields are initialized to empty arrays, not null
 		require.Contains(t, resultStr, "\"checklists\":[]", "checklists should be empty array")
 		require.Contains(t, resultStr, "\"status_posts\":[]", "status_posts should be empty array")
@@ -26,7 +26,7 @@ func TestPlaybookRun_MarshalJSON(t *testing.T) {
 		require.Contains(t, resultStr, "\"timeline_events\":[]", "timeline_events should be empty array")
 		require.Contains(t, resultStr, "\"participant_ids\":[]", "participant_ids should be empty array")
 		require.Contains(t, resultStr, "\"metrics_data\":[]", "metrics_data should be empty array")
-		
+
 		// ItemsOrder should be null when no checklists exist
 		require.Contains(t, resultStr, "\"items_order\":null", "items_order should be null when no checklists")
 	})
@@ -36,7 +36,7 @@ func TestPlaybookRun_MarshalJSON(t *testing.T) {
 		result, err := json.Marshal(testPlaybookRun)
 		require.NoError(t, err)
 		resultStr := string(result)
-		
+
 		// Check that critical slice fields are initialized to empty arrays, not null
 		require.Contains(t, resultStr, "\"checklists\":[]", "checklists should be empty array")
 		require.Contains(t, resultStr, "\"status_posts\":[]", "status_posts should be empty array")
@@ -44,7 +44,7 @@ func TestPlaybookRun_MarshalJSON(t *testing.T) {
 		require.Contains(t, resultStr, "\"timeline_events\":[]", "timeline_events should be empty array")
 		require.Contains(t, resultStr, "\"participant_ids\":[]", "participant_ids should be empty array")
 		require.Contains(t, resultStr, "\"metrics_data\":[]", "metrics_data should be empty array")
-		
+
 		// ItemsOrder should be null when no checklists exist
 		require.Contains(t, resultStr, "\"items_order\":null", "items_order should be null when no checklists")
 	})
@@ -1053,28 +1053,28 @@ func TestPlaybookRun_Clone(t *testing.T) {
 	// Create original data fresh for each test to avoid cross-test pollution
 	createOriginal := func() *PlaybookRun {
 		return &PlaybookRun{
-			ID:                      "run1",
-			Name:                    "Test Run",
-			Summary:                 "Test Summary",
-			OwnerUserID:             "user1",
-			ReporterUserID:          "user2",
-			TeamID:                  "team1",
-			ChannelID:               "channel1",
-			CreateAt:                1000,
-			UpdateAt:                2000,
-			EndAt:                   3000,
-			DeleteAt:                0,
-			PlaybookID:              "playbook1",
-			StatusPosts:             []StatusPost{{ID: "post1", CreateAt: 100}},
-			TimelineEvents:          []TimelineEvent{{ID: "event1", CreateAt: 200}},
-			InvitedUserIDs:          []string{"user3", "user4"},
-			InvitedGroupIDs:         []string{"group1", "group2"},
-			ParticipantIDs:          []string{"user5", "user6"},
-			WebhookOnCreationURLs:   []string{"http://example.com/hook1"},
+			ID:                        "run1",
+			Name:                      "Test Run",
+			Summary:                   "Test Summary",
+			OwnerUserID:               "user1",
+			ReporterUserID:            "user2",
+			TeamID:                    "team1",
+			ChannelID:                 "channel1",
+			CreateAt:                  1000,
+			UpdateAt:                  2000,
+			EndAt:                     3000,
+			DeleteAt:                  0,
+			PlaybookID:                "playbook1",
+			StatusPosts:               []StatusPost{{ID: "post1", CreateAt: 100}},
+			TimelineEvents:            []TimelineEvent{{ID: "event1", CreateAt: 200}},
+			InvitedUserIDs:            []string{"user3", "user4"},
+			InvitedGroupIDs:           []string{"group1", "group2"},
+			ParticipantIDs:            []string{"user5", "user6"},
+			WebhookOnCreationURLs:     []string{"http://example.com/hook1"},
 			WebhookOnStatusUpdateURLs: []string{"http://example.com/hook2"},
-			MetricsData:             []RunMetricData{{MetricConfigID: "metric1"}},
-			BroadcastChannelIDs:     []string{"broadcast1", "broadcast2"},
-			ItemsOrder:              []string{"checklist1", "checklist2"},
+			MetricsData:               []RunMetricData{{MetricConfigID: "metric1"}},
+			BroadcastChannelIDs:       []string{"broadcast1", "broadcast2"},
+			ItemsOrder:                []string{"checklist1", "checklist2"},
 			Checklists: []Checklist{
 				{
 					ID:         "checklist1",
@@ -1145,7 +1145,7 @@ func TestPlaybookRun_Clone(t *testing.T) {
 		// Each checklist's ItemsOrder should be nil
 		for i, checklist := range cloned.Checklists {
 			require.Nil(t, checklist.ItemsOrder, "Checklist %d ItemsOrder should be nil", i)
-			
+
 			// But GetItemsOrder() should still work correctly
 			expectedOrder := checklist.GetItemsOrder()
 			require.Equal(t, []string{original.Checklists[i].Items[0].ID}, expectedOrder)
@@ -1211,13 +1211,13 @@ func TestPlaybookRun_Clone(t *testing.T) {
 
 	t.Run("clone with nil slices", func(t *testing.T) {
 		nilRun := &PlaybookRun{
-			ID:              "nil_run",
-			Name:            "Nil Run",
-			Checklists:      nil,
-			StatusPosts:     nil,
-			InvitedUserIDs:  nil,
-			ParticipantIDs:  nil,
-			ItemsOrder:      nil,
+			ID:             "nil_run",
+			Name:           "Nil Run",
+			Checklists:     nil,
+			StatusPosts:    nil,
+			InvitedUserIDs: nil,
+			ParticipantIDs: nil,
+			ItemsOrder:     nil,
 		}
 
 		cloned := nilRun.Clone()
