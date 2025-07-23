@@ -67,7 +67,7 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				WebhookOnStatusUpdateURLs:    []string{"testurl"},
 				WebhookOnStatusUpdateEnabled: true,
 			},
-			expected: []byte(`"checklists":[{"id":"checklist1","title":"checklist 1","items":[],"items_order":[],"update_at":0}]`),
+			expected: []byte(`"checklists":[{"id":"checklist1","title":"checklist 1","items":[],"items_order":null,"update_at":0}]`),
 			wantErr:  false,
 		},
 	}
@@ -206,5 +206,5 @@ func TestChecklist_GetItemsOrder(t *testing.T) {
 
 	checklist.Items = []ChecklistItem{}
 	itemsOrder = checklist.GetItemsOrder()
-	require.Equal(t, []string{}, itemsOrder)
+	require.Nil(t, itemsOrder)
 }

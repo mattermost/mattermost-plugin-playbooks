@@ -17,14 +17,36 @@ func TestPlaybookRun_MarshalJSON(t *testing.T) {
 		testPlaybookRun := &PlaybookRun{}
 		result, err := json.Marshal(testPlaybookRun)
 		require.NoError(t, err)
-		require.NotContains(t, string(result), "null", "update MarshalJSON to initialize nil slices")
+		resultStr := string(result)
+		
+		// Check that critical slice fields are initialized to empty arrays, not null
+		require.Contains(t, resultStr, "\"checklists\":[]", "checklists should be empty array")
+		require.Contains(t, resultStr, "\"status_posts\":[]", "status_posts should be empty array")
+		require.Contains(t, resultStr, "\"invited_user_ids\":[]", "invited_user_ids should be empty array")
+		require.Contains(t, resultStr, "\"timeline_events\":[]", "timeline_events should be empty array")
+		require.Contains(t, resultStr, "\"participant_ids\":[]", "participant_ids should be empty array")
+		require.Contains(t, resultStr, "\"metrics_data\":[]", "metrics_data should be empty array")
+		
+		// ItemsOrder should be null when no checklists exist
+		require.Contains(t, resultStr, "\"items_order\":null", "items_order should be null when no checklists")
 	})
 
 	t.Run("marshal value", func(t *testing.T) {
 		testPlaybookRun := PlaybookRun{}
 		result, err := json.Marshal(testPlaybookRun)
 		require.NoError(t, err)
-		require.NotContains(t, string(result), "null", "update MarshalJSON to initialize nil slices")
+		resultStr := string(result)
+		
+		// Check that critical slice fields are initialized to empty arrays, not null
+		require.Contains(t, resultStr, "\"checklists\":[]", "checklists should be empty array")
+		require.Contains(t, resultStr, "\"status_posts\":[]", "status_posts should be empty array")
+		require.Contains(t, resultStr, "\"invited_user_ids\":[]", "invited_user_ids should be empty array")
+		require.Contains(t, resultStr, "\"timeline_events\":[]", "timeline_events should be empty array")
+		require.Contains(t, resultStr, "\"participant_ids\":[]", "participant_ids should be empty array")
+		require.Contains(t, resultStr, "\"metrics_data\":[]", "metrics_data should be empty array")
+		
+		// ItemsOrder should be null when no checklists exist
+		require.Contains(t, resultStr, "\"items_order\":null", "items_order should be null when no checklists")
 	})
 }
 
@@ -1005,7 +1027,7 @@ func TestPlaybookRun_GetItemsOrder(t *testing.T) {
 
 	playbookRun.Checklists = []Checklist{}
 	itemsOrder = playbookRun.GetItemsOrder()
-	require.Equal(t, []string{}, itemsOrder)
+	require.Nil(t, itemsOrder)
 }
 
 func TestPlaybookRun_CompareItemsOrder(t *testing.T) {
@@ -1025,4 +1047,429 @@ func TestPlaybookRun_CompareItemsOrder(t *testing.T) {
 	prev = []string{"checklist1", "checklist2", "checklist3"}
 	curr = []string{"checklist1", "checklist2"}
 	require.False(t, compareItemsOrder(prev, curr))
+}
+
+func TestPlaybookRun_Clone(t *testing.T) {
+	// Create original data fresh for each test to avoid cross-test pollution
+	createOriginal := func() *PlaybookRun {
+		return &PlaybookRun{
+			ID:                      "run1",
+			Name:                    "Test Run",
+			Summary:                 "Test Summary",
+			OwnerUserID:             "user1",
+			ReporterUserID:          "user2",
+			TeamID:                  "team1",
+			ChannelID:               "channel1",
+			CreateAt:                1000,
+			UpdateAt:                2000,
+			EndAt:                   3000,
+			DeleteAt:                0,
+			PlaybookID:              "playbook1",
+			StatusPosts:             []StatusPost{{ID: "post1", CreateAt: 100}},
+			TimelineEvents:          []TimelineEvent{{ID: "event1", CreateAt: 200}},
+			InvitedUserIDs:          []string{"user3", "user4"},
+			InvitedGroupIDs:         []string{"group1", "group2"},
+			ParticipantIDs:          []string{"user5", "user6"},
+			WebhookOnCreationURLs:   []string{"http://example.com/hook1"},
+			WebhookOnStatusUpdateURLs: []string{"http://example.com/hook2"},
+			MetricsData:             []RunMetricData{{MetricConfigID: "metric1"}},
+			BroadcastChannelIDs:     []string{"broadcast1", "broadcast2"},
+			ItemsOrder:              []string{"checklist1", "checklist2"},
+			Checklists: []Checklist{
+				{
+					ID:         "checklist1",
+					Title:      "Checklist 1",
+					Items:      []ChecklistItem{{ID: "item1", Title: "Item 1"}},
+					ItemsOrder: []string{"item1"},
+				},
+				{
+					ID:         "checklist2",
+					Title:      "Checklist 2",
+					Items:      []ChecklistItem{{ID: "item2", Title: "Item 2"}},
+					ItemsOrder: []string{"item2"},
+				},
+			},
+		}
+	}
+
+	t.Run("creates deep copy with proper isolation", func(t *testing.T) {
+		original := createOriginal()
+		cloned := original.Clone()
+
+		// Verify it's a different instance
+		require.NotSame(t, original, cloned)
+
+		// Verify scalar fields are copied correctly
+		require.Equal(t, original.ID, cloned.ID)
+		require.Equal(t, original.Name, cloned.Name)
+		require.Equal(t, original.Summary, cloned.Summary)
+		require.Equal(t, original.OwnerUserID, cloned.OwnerUserID)
+		require.Equal(t, original.CreateAt, cloned.CreateAt)
+		require.Equal(t, original.UpdateAt, cloned.UpdateAt)
+
+		// Verify checklists are deep copied - compare content, not pointers
+		require.Len(t, cloned.Checklists, 2)
+		require.Equal(t, original.Checklists[0].ID, cloned.Checklists[0].ID)
+		require.Equal(t, original.Checklists[0].Title, cloned.Checklists[0].Title)
+
+		// Verify slice contents are copied correctly
+		require.Equal(t, original.StatusPosts, cloned.StatusPosts)
+		require.Equal(t, original.TimelineEvents, cloned.TimelineEvents)
+		require.Equal(t, original.InvitedUserIDs, cloned.InvitedUserIDs)
+		require.Equal(t, original.ParticipantIDs, cloned.ParticipantIDs)
+		require.Equal(t, original.MetricsData, cloned.MetricsData)
+
+		// Verify deep copy by modifying cloned slices and ensuring original is unaffected
+		if len(cloned.InvitedUserIDs) > 0 {
+			cloned.InvitedUserIDs[0] = "modified_user"
+			require.Equal(t, "user3", original.InvitedUserIDs[0], "Original should not be affected by clone modifications")
+		}
+	})
+
+	t.Run("defensive programming - ItemsOrder is set to nil", func(t *testing.T) {
+		original := createOriginal()
+		cloned := original.Clone()
+
+		// ItemsOrder should be nil for defensive programming
+		require.Nil(t, cloned.ItemsOrder, "ItemsOrder should be nil to force recomputation")
+
+		// But GetItemsOrder() should still work correctly
+		expectedOrder := cloned.GetItemsOrder()
+		require.Equal(t, []string{"checklist1", "checklist2"}, expectedOrder)
+	})
+
+	t.Run("defensive programming - checklist ItemsOrder is set to nil", func(t *testing.T) {
+		original := createOriginal()
+		cloned := original.Clone()
+
+		// Each checklist's ItemsOrder should be nil
+		for i, checklist := range cloned.Checklists {
+			require.Nil(t, checklist.ItemsOrder, "Checklist %d ItemsOrder should be nil", i)
+			
+			// But GetItemsOrder() should still work correctly
+			expectedOrder := checklist.GetItemsOrder()
+			require.Equal(t, []string{original.Checklists[i].Items[0].ID}, expectedOrder)
+		}
+	})
+
+	t.Run("modifications to original don't affect clone", func(t *testing.T) {
+		original := createOriginal()
+		cloned := original.Clone()
+
+		// Modify original scalar fields
+		original.Name = "Modified Name"
+		original.Summary = "Modified Summary"
+		original.OwnerUserID = "modified_user"
+
+		// Modify original slice fields
+		original.InvitedUserIDs[0] = "modified_user"
+		original.StatusPosts[0].ID = "modified_post"
+		original.Checklists[0].Title = "Modified Checklist"
+		original.Checklists[0].Items[0].Title = "Modified Item"
+
+		// Verify clone is unchanged
+		require.Equal(t, "Test Run", cloned.Name)
+		require.Equal(t, "Test Summary", cloned.Summary)
+		require.Equal(t, "user1", cloned.OwnerUserID)
+		require.Equal(t, "user3", cloned.InvitedUserIDs[0])
+		require.Equal(t, "post1", cloned.StatusPosts[0].ID)
+		require.Equal(t, "Checklist 1", cloned.Checklists[0].Title)
+		require.Equal(t, "Item 1", cloned.Checklists[0].Items[0].Title)
+	})
+
+	t.Run("modifications to clone don't affect original", func(t *testing.T) {
+		original := createOriginal()
+		cloned := original.Clone()
+
+		// Modify clone
+		cloned.Name = "Cloned Name"
+		cloned.InvitedUserIDs[0] = "cloned_user"
+		cloned.StatusPosts[0].ID = "cloned_post"
+		cloned.Checklists[0].Title = "Cloned Checklist"
+
+		// Verify original is unchanged (using fresh original)
+		require.Equal(t, "Test Run", original.Name)
+		require.Equal(t, "user3", original.InvitedUserIDs[0])
+		require.Equal(t, "post1", original.StatusPosts[0].ID)
+		require.Equal(t, "Checklist 1", original.Checklists[0].Title)
+	})
+
+	t.Run("clone with empty checklists", func(t *testing.T) {
+		emptyRun := &PlaybookRun{
+			ID:         "empty_run",
+			Name:       "Empty Run",
+			Checklists: []Checklist{},
+			ItemsOrder: []string{}, // Set to empty slice
+		}
+
+		cloned := emptyRun.Clone()
+
+		require.Nil(t, cloned.ItemsOrder, "ItemsOrder should be nil for defensive programming")
+		require.Nil(t, cloned.GetItemsOrder(), "GetItemsOrder should return nil for empty checklists")
+		require.Empty(t, cloned.Checklists)
+	})
+
+	t.Run("clone with nil slices", func(t *testing.T) {
+		nilRun := &PlaybookRun{
+			ID:              "nil_run",
+			Name:            "Nil Run",
+			Checklists:      nil,
+			StatusPosts:     nil,
+			InvitedUserIDs:  nil,
+			ParticipantIDs:  nil,
+			ItemsOrder:      nil,
+		}
+
+		cloned := nilRun.Clone()
+
+		require.Nil(t, cloned.Checklists)
+		require.Nil(t, cloned.StatusPosts)
+		require.Nil(t, cloned.InvitedUserIDs)
+		require.Nil(t, cloned.ParticipantIDs)
+		require.Nil(t, cloned.ItemsOrder)
+		require.Nil(t, cloned.GetItemsOrder())
+	})
+}
+
+func TestPlaybookRun_ItemsOrder_Behavior(t *testing.T) {
+	t.Run("GetItemsOrder returns nil for empty checklists", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID:         "test_run",
+			Checklists: []Checklist{},
+		}
+
+		itemsOrder := run.GetItemsOrder()
+		require.Nil(t, itemsOrder, "GetItemsOrder should return nil for empty checklists")
+	})
+
+	t.Run("GetItemsOrder returns nil for nil checklists", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID:         "test_run",
+			Checklists: nil,
+		}
+
+		itemsOrder := run.GetItemsOrder()
+		require.Nil(t, itemsOrder, "GetItemsOrder should return nil for nil checklists")
+	})
+
+	t.Run("GetItemsOrder returns checklist IDs in order", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID: "test_run",
+			Checklists: []Checklist{
+				{ID: "checklist1", Title: "First"},
+				{ID: "checklist2", Title: "Second"},
+				{ID: "checklist3", Title: "Third"},
+			},
+		}
+
+		itemsOrder := run.GetItemsOrder()
+		require.Equal(t, []string{"checklist1", "checklist2", "checklist3"}, itemsOrder)
+	})
+
+	t.Run("Checklist GetItemsOrder returns nil for empty items", func(t *testing.T) {
+		checklist := Checklist{
+			ID:    "test_checklist",
+			Title: "Test",
+			Items: []ChecklistItem{},
+		}
+
+		itemsOrder := checklist.GetItemsOrder()
+		require.Nil(t, itemsOrder, "Checklist GetItemsOrder should return nil for empty items")
+	})
+
+	t.Run("Checklist GetItemsOrder returns nil for nil items", func(t *testing.T) {
+		checklist := Checklist{
+			ID:    "test_checklist",
+			Title: "Test",
+			Items: nil,
+		}
+
+		itemsOrder := checklist.GetItemsOrder()
+		require.Nil(t, itemsOrder, "Checklist GetItemsOrder should return nil for nil items")
+	})
+
+	t.Run("Checklist GetItemsOrder returns item IDs in order", func(t *testing.T) {
+		checklist := Checklist{
+			ID:    "test_checklist",
+			Title: "Test",
+			Items: []ChecklistItem{
+				{ID: "item1", Title: "First Item"},
+				{ID: "item2", Title: "Second Item"},
+				{ID: "item3", Title: "Third Item"},
+			},
+		}
+
+		itemsOrder := checklist.GetItemsOrder()
+		require.Equal(t, []string{"item1", "item2", "item3"}, itemsOrder)
+	})
+
+	t.Run("consistency between PlaybookRun and Checklist GetItemsOrder", func(t *testing.T) {
+		// Both should return nil for empty collections
+		emptyRun := &PlaybookRun{Checklists: []Checklist{}}
+		emptyChecklist := Checklist{Items: []ChecklistItem{}}
+
+		require.Nil(t, emptyRun.GetItemsOrder())
+		require.Nil(t, emptyChecklist.GetItemsOrder())
+
+		// Both should return nil for nil collections
+		nilRun := &PlaybookRun{Checklists: nil}
+		nilChecklist := Checklist{Items: nil}
+
+		require.Nil(t, nilRun.GetItemsOrder())
+		require.Nil(t, nilChecklist.GetItemsOrder())
+	})
+}
+
+func TestPlaybookRun_MarshalJSON_ItemsOrder(t *testing.T) {
+	t.Run("marshals ItemsOrder as null when nil", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID:         "test_run",
+			Name:       "Test Run",
+			Checklists: []Checklist{}, // Empty checklists
+		}
+
+		jsonBytes, err := json.Marshal(run)
+		require.NoError(t, err)
+
+		// Parse back to verify
+		var result map[string]interface{}
+		err = json.Unmarshal(jsonBytes, &result)
+		require.NoError(t, err)
+
+		// ItemsOrder should be null in JSON since GetItemsOrder() returns nil for empty checklists
+		require.Nil(t, result["items_order"], "ItemsOrder should be null in JSON when no checklists")
+	})
+
+	t.Run("marshals ItemsOrder with checklist IDs when checklists exist", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID:   "test_run",
+			Name: "Test Run",
+			Checklists: []Checklist{
+				{ID: "checklist1", Title: "First", Items: []ChecklistItem{}},
+				{ID: "checklist2", Title: "Second", Items: []ChecklistItem{}},
+			},
+		}
+
+		jsonBytes, err := json.Marshal(run)
+		require.NoError(t, err)
+
+		// Parse back to verify
+		var result map[string]interface{}
+		err = json.Unmarshal(jsonBytes, &result)
+		require.NoError(t, err)
+
+		// ItemsOrder should contain checklist IDs
+		itemsOrder, ok := result["items_order"].([]interface{})
+		require.True(t, ok, "ItemsOrder should be an array")
+		require.Len(t, itemsOrder, 2)
+		require.Equal(t, "checklist1", itemsOrder[0])
+		require.Equal(t, "checklist2", itemsOrder[1])
+	})
+
+	t.Run("marshals checklist ItemsOrder as null when no items", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID:   "test_run",
+			Name: "Test Run",
+			Checklists: []Checklist{
+				{
+					ID:    "checklist1",
+					Title: "Empty Checklist",
+					Items: []ChecklistItem{}, // Empty items
+				},
+			},
+		}
+
+		jsonBytes, err := json.Marshal(run)
+		require.NoError(t, err)
+
+		// Parse back to verify
+		var result map[string]interface{}
+		err = json.Unmarshal(jsonBytes, &result)
+		require.NoError(t, err)
+
+		// Get the checklists array
+		checklists, ok := result["checklists"].([]interface{})
+		require.True(t, ok)
+		require.Len(t, checklists, 1)
+
+		// Get the first checklist
+		checklist, ok := checklists[0].(map[string]interface{})
+		require.True(t, ok)
+
+		// ItemsOrder should be null since checklist has no items
+		require.Nil(t, checklist["items_order"], "Checklist ItemsOrder should be null when no items")
+	})
+
+	t.Run("marshals checklist ItemsOrder with item IDs when items exist", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID:   "test_run",
+			Name: "Test Run",
+			Checklists: []Checklist{
+				{
+					ID:    "checklist1",
+					Title: "Checklist with Items",
+					Items: []ChecklistItem{
+						{ID: "item1", Title: "First Item"},
+						{ID: "item2", Title: "Second Item"},
+					},
+				},
+			},
+		}
+
+		jsonBytes, err := json.Marshal(run)
+		require.NoError(t, err)
+
+		// Parse back to verify
+		var result map[string]interface{}
+		err = json.Unmarshal(jsonBytes, &result)
+		require.NoError(t, err)
+
+		// Get the checklists array
+		checklists, ok := result["checklists"].([]interface{})
+		require.True(t, ok)
+		require.Len(t, checklists, 1)
+
+		// Get the first checklist
+		checklist, ok := checklists[0].(map[string]interface{})
+		require.True(t, ok)
+
+		// ItemsOrder should contain item IDs
+		itemsOrder, ok := checklist["items_order"].([]interface{})
+		require.True(t, ok, "Checklist ItemsOrder should be an array")
+		require.Len(t, itemsOrder, 2)
+		require.Equal(t, "item1", itemsOrder[0])
+		require.Equal(t, "item2", itemsOrder[1])
+	})
+
+	t.Run("defensive programming - ItemsOrder computed fresh regardless of stored value", func(t *testing.T) {
+		run := &PlaybookRun{
+			ID:   "test_run",
+			Name: "Test Run",
+			// Set ItemsOrder to stale/incorrect value
+			ItemsOrder: []string{"stale_id", "wrong_id"},
+			Checklists: []Checklist{
+				{ID: "correct1", Title: "First"},
+				{ID: "correct2", Title: "Second"},
+			},
+		}
+
+		jsonBytes, err := json.Marshal(run)
+		require.NoError(t, err)
+
+		// Parse back to verify
+		var result map[string]interface{}
+		err = json.Unmarshal(jsonBytes, &result)
+		require.NoError(t, err)
+
+		// ItemsOrder should contain correct IDs, not the stale ones
+		itemsOrder, ok := result["items_order"].([]interface{})
+		require.True(t, ok)
+		require.Len(t, itemsOrder, 2)
+		require.Equal(t, "correct1", itemsOrder[0])
+		require.Equal(t, "correct2", itemsOrder[1])
+
+		// Should NOT contain the stale values
+		require.NotContains(t, itemsOrder, "stale_id")
+		require.NotContains(t, itemsOrder, "wrong_id")
+	})
 }
