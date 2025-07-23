@@ -50,8 +50,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	// Determine if incremental updates are enabled
-	incrementalUpdatesEnabled := s.configService.IsIncrementalUpdatesEnabled()
-	if !incrementalUpdatesEnabled {
+	if !s.configService.IsIncrementalUpdatesEnabled() {
 		// If incremental updates are disabled, fall back to the standard WS update
 		sendWSOptions := RunWSOptions{
 			AdditionalUserIDs: additionalUserIDs,
@@ -2011,9 +2010,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &checklistItem, 0)
 
 	var originalRun *PlaybookRun
-	isIncrementalEnabled := s.configService.IsIncrementalUpdatesEnabled()
-
-	if isIncrementalEnabled {
+	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
 
@@ -2074,10 +2071,10 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 
 	duplicate := playbookRunToModify.Checklists[checklistNumber].Clone()
 
-	// Generate new IDs for the duplicated checklist and all its items to prevent conflicts
-	duplicate.ID = model.NewId()
+	// Clear IDs so populateChecklistIDs will generate new ones to prevent conflicts
+	duplicate.ID = ""
 	for i := range duplicate.Items {
-		duplicate.Items[i].ID = model.NewId()
+		duplicate.Items[i].ID = ""
 	}
 
 	timestamp := model.GetMillis()
