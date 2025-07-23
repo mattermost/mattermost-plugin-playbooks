@@ -143,7 +143,15 @@ const ChecklistList = ({
     };
 
     const onDuplicateChecklist = (index: number) => {
-        const newChecklist = {...checklists[index]};
+        const originalChecklist = checklists[index];
+        const newChecklist = {
+            ...originalChecklist,
+            id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+            items: originalChecklist.items.map((item) => ({
+                ...item,
+                id: `temp_item_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+            })),
+        };
         const newChecklists = [...checklists, newChecklist];
         setChecklistsForPlaybook(newChecklists);
     };
@@ -180,7 +188,7 @@ const ChecklistList = ({
         }
 
         // Copy the data to modify it
-        const newChecklists = Array.from(checklists);
+        const newChecklists = [...checklists];
 
         // Move a checklist item, either inside of the same checklist, or between checklists
         if (result.type === 'checklist-item') {
@@ -189,7 +197,7 @@ const ChecklistList = ({
 
             if (srcChecklistIdx === dstChecklistIdx) {
                 // Remove the dragged item from the checklist
-                const newChecklistItems = Array.from(checklists[srcChecklistIdx].items);
+                const newChecklistItems = [...checklists[srcChecklistIdx].items];
                 const [removed] = newChecklistItems.splice(srcIdx, 1);
 
                 // Add the dragged item to the checklist
@@ -203,11 +211,11 @@ const ChecklistList = ({
                 const dstChecklist = checklists[dstChecklistIdx];
 
                 // Remove the dragged item from the source checklist
-                const newSrcChecklistItems = Array.from(srcChecklist.items);
+                const newSrcChecklistItems = [...srcChecklist.items];
                 const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
 
                 // Add the dragged item to the destination checklist
-                const newDstChecklistItems = Array.from(dstChecklist.items);
+                const newDstChecklistItems = [...dstChecklist.items];
                 newDstChecklistItems.splice(dstIdx, 0, moved);
 
                 // Modify the new checklists array with the new source and destination checklists
@@ -294,10 +302,14 @@ const ChecklistList = ({
                         setNewChecklistName('');
                     }}
                     onSave={() => {
-                        const newChecklist = {title: newChecklistName, items: [] as ChecklistItem[]};
                         if (playbookRun) {
+                            const newChecklist: Omit<Checklist, 'id'> = {title: newChecklistName, items: [] as ChecklistItem[]};
                             clientAddChecklist(playbookRun.id, newChecklist);
                         } else {
+                            const newChecklist: Checklist = {
+                                title: newChecklistName,
+                                items: [] as ChecklistItem[],
+                            };
                             setChecklistsForPlaybook([...checklists, newChecklist]);
                         }
                         setTimeout(() => setNewChecklistName(''), 300);
@@ -308,7 +320,7 @@ const ChecklistList = ({
         );
     }
 
-    const keys = generateKeys(checklists.map((checklist) => checklist.title));
+    const keys = generateKeys(checklists.map((checklist, index) => checklist.title + index));
 
     return (
         <>
