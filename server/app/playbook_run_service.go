@@ -1838,8 +1838,6 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 		return errors.New("invalid checklist item indices")
 	}
 
-	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
@@ -1847,7 +1845,7 @@ func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID
 
 	// CommandLastRun is reset to avoid misunderstandings when the command is changed but the date
 	// of the previous run is set (and show rerun in the UI)
-	if itemToCheck.Command != newCommand {
+	if playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command != newCommand {
 		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = 0
 	}
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
@@ -2424,8 +2422,6 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 		return err
 	}
 
-	itemMoved := playbookRunToModify.Checklists[sourceChecklistIdx].Items[sourceItemIdx]
-
 	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
 		return errors.New("invalid destChecklist")
 	}
@@ -2444,7 +2440,7 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 
 	// Moved item
 	sourceChecklist := playbookRunToModify.Checklists[sourceChecklistIdx].Items
-
+	itemMoved := sourceChecklist[sourceItemIdx]
 	updateChecklistItemTimestamp(&itemMoved, timestamp)
 
 	// Delete item to move
