@@ -28,6 +28,9 @@ import {
     RhsRunsDocument,
     RunUpdates,
     SetRunFavoriteDocument,
+    SetRunPropertyValueDocument,
+    SetRunPropertyValueMutation,
+    SetRunPropertyValueMutationVariables,
     TaskActionUpdates,
     UpdatePlaybookDocument,
     UpdatePlaybookFavoriteDocument,
@@ -318,4 +321,28 @@ export const useDeletePlaybookPropertyField = () => {
     );
 
     return [deletePropertyField, result] as const;
+};
+
+export const useSetRunPropertyValue = () => {
+    const [innerSetRunPropertyValue, result] = useMutation<
+        SetRunPropertyValueMutation,
+        SetRunPropertyValueMutationVariables
+    >(SetRunPropertyValueDocument, {
+        errorPolicy: 'all',
+    });
+
+    const setRunPropertyValue = useCallback(
+        (runID: string, propertyFieldID: string, value: any) => {
+            return innerSetRunPropertyValue({
+                variables: {
+                    runID,
+                    propertyFieldID,
+                    value,
+                },
+            });
+        },
+        [innerSetRunPropertyValue]
+    );
+
+    return [setRunPropertyValue, result] as const;
 };

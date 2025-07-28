@@ -4,6 +4,8 @@
 package app
 
 import (
+	"encoding/json"
+
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
@@ -12,6 +14,7 @@ import (
 
 const (
 	PropertyGroupPlaybooks = "playbooks"
+	PropertySearchPerPage  = 20
 )
 
 type propertyService struct {
@@ -156,7 +159,7 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 		GroupID:    s.groupID,
 		TargetType: targetType,
 		TargetID:   targetID,
-		PerPage:    20,
+		PerPage:    PropertySearchPerPage,
 	}
 
 	var allFields []*model.PropertyField
@@ -168,7 +171,7 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 
 		allFields = append(allFields, fields...)
 
-		if len(fields) < opts.PerPage {
+		if len(fields) < PropertySearchPerPage {
 			break
 		}
 
@@ -231,6 +234,59 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	return propertyField.ToMattermostPropertyField(), nil
+}
+
+func (s *propertyService) GetRunPropertyValues(runID string) ([]PropertyValue, error) {
+	opts := model.PropertyValueSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		TargetID:   runID,
+		PerPage:    PropertySearchPerPage,
+	}
+
+	var allValues []PropertyValue
+	for {
+		values, err := s.api.Property.SearchPropertyValues(s.groupID, runID, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to search property values")
+		}
+
+		for _, mmValue := range values {
+			allValues = append(allValues, PropertyValue(*mmValue))
+		}
+
+		if len(values) < PropertySearchPerPage {
+			break
+		}
+
+		lastValue := values[len(values)-1]
+		opts.Cursor = model.PropertyValueSearchCursor{
+			PropertyValueID: lastValue.ID,
+			CreateAt:        lastValue.CreateAt,
+		}
+	}
+
+	return allValues, nil
+}
+
+func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	// Create the property value model
+	propertyValue := &model.PropertyValue{
+		GroupID:    s.groupID,
+		FieldID:    propertyFieldID,
+		TargetID:   runID,
+		TargetType: PropertyTargetTypeRun,
+		Value:      value,
+	}
+
+	// Use the plugin API to upsert the property value
+	upsertedValue, err := s.api.Property.UpsertPropertyValue(propertyValue)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upsert property value")
+	}
+
+	// Convert back to our PropertyValue type
+	return (*PropertyValue)(upsertedValue), nil
 }
 
 func (s *propertyService) ensurePropertyGroup() (string, error) {

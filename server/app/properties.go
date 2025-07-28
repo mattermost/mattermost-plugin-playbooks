@@ -142,7 +142,9 @@ type PropertyService interface {
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
 	GetRunPropertyFields(runID string) ([]PropertyField, error)
+	GetRunPropertyValues(runID string) ([]PropertyValue, error)
 	UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	DeletePropertyField(propertyID string) error
 	CopyPlaybookPropertiesToRun(playbookID, runID string) error
+	UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
 }
