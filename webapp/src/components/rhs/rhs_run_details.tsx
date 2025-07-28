@@ -60,7 +60,7 @@ const RHSRunDetails = (props: Props) => {
     const scrollbarsRef = useRef<Scrollbars>(null);
     const currentUserId = useSelector(getCurrentUserId);
 
-    const [playbookRun] = useRun(props.runID, {includeProperties: true});
+    const [playbookRun] = useRun(props.runID);
     const isParticipant = playbookRun?.participant_ids.includes(currentUserId);
     useViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 

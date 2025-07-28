@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/types/property';
+import {PropertyField, PropertyValue} from 'src/graphql/generated/graphql';
 
 import {useSetRunPropertyValue} from 'src/graphql/hooks';
 
@@ -64,8 +64,8 @@ const RHSProperty = (props: Props) => {
     const getDisplayValue = () => {
         if ((isSelectField || isMultiselectField) && displayValue) {
             const selectOptions = props.field.attrs?.options?.map((option) => ({
-                value: option.data?.id || option.id,
-                label: option.data?.name || option.name,
+                value: option.id,
+                label: option.name,
             })) || [];
 
             if (isMultiselectField) {
@@ -89,10 +89,9 @@ const RHSProperty = (props: Props) => {
     const renderInput = () => {
         if (isSelectField || isMultiselectField) {
             // Convert property field options to react-select format
-            // TODO: Remove .data access once Mattermost fixes PluginPropertyOption serialization
             const selectOptions = props.field.attrs?.options?.map((option) => ({
-                value: option.data?.id || option.id,
-                label: option.data?.name || option.name,
+                value: option.id,
+                label: option.name,
             })) || [];
 
             let initialValue = displayValue;

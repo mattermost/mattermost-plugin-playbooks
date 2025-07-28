@@ -778,7 +778,7 @@ func getRun(id string, sqlStore *SQLStore) (app.PlaybookRun, error) {
 
 func TestHasConsistentCharset(t *testing.T) {
 	t.Run("MySQL", func(t *testing.T) {
-		db := setupTestDB(t, model.DatabaseDriverMysql)
+		db := setupTestDB(t, DeprecatedDatabaseDriverMysql)
 		setupPlaybookStore(t, db) // To run the migrations and everything
 		badCharsets := []string{}
 		err := db.Select(&badCharsets, `
@@ -797,7 +797,7 @@ func TestHasConsistentCharset(t *testing.T) {
 
 func TestHasPrimaryKeys(t *testing.T) {
 	t.Run("MySQL", func(t *testing.T) {
-		db := setupTestDB(t, model.DatabaseDriverMysql)
+		db := setupTestDB(t, DeprecatedDatabaseDriverMysql)
 		setupPlaybookStore(t, db) // To run the migrations and everything
 		tablesWithoutPrimaryKeys := []string{}
 		err := db.Select(&tablesWithoutPrimaryKeys, `

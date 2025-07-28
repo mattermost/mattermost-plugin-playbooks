@@ -676,7 +676,7 @@ func TestMigration_000080(t *testing.T) {
 }
 
 func TestMigration_000063(t *testing.T) {
-	driverName := model.DatabaseDriverMysql
+	driverName := DeprecatedDatabaseDriverMysql
 	encodingQuery := `
 		SELECT TABLE_COLLATION FROM information_schema.TABLES
 		WHERE table_name = 'IR_System'

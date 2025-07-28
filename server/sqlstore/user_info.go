@@ -65,7 +65,7 @@ func (s *userInfoStore) Upsert(info app.UserInfo) error {
 		return err
 	}
 
-	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		_, err = s.store.execBuilder(s.store.db,
 			sq.Insert("IR_UserInfo").
 				Columns("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
