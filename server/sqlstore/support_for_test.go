@@ -20,7 +20,7 @@ import (
 	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
 )
 
-var driverNames = []string{model.DatabaseDriverPostgres, DeprecatedDatabaseDriverMysql}
+var driverNames = []string{model.DatabaseDriverPostgres}
 
 func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
