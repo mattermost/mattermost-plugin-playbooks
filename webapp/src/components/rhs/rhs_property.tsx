@@ -1,17 +1,16 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/graphql/generated/graphql';
+import {PropertyField, PropertyValue} from 'src/types/properties';
 
 import {useSetRunPropertyValue} from 'src/graphql/hooks';
 
-import PropertyDisplay from './property_display';
-import PropertyTextInput from './property_text_input';
-import PropertySelectInput from './property_select_input';
+import TextProperty from './properties/property_text';
+import SelectProperty from './properties/property_select';
+import MultiselectProperty from './properties/property_multiselect';
 
 interface Props {
     field: PropertyField;
@@ -20,117 +19,50 @@ interface Props {
 }
 
 const RHSProperty = (props: Props) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [displayValue, setDisplayValue] = useState(props.value?.value || null);
     const [setRunPropertyValue] = useSetRunPropertyValue();
-    const isSelectField = props.field.type === 'select';
-    const isMultiselectField = props.field.type === 'multiselect';
-
-    // Update local display value when props change (from websocket updates)
-    useUpdateEffect(() => {
-        setDisplayValue(props.value?.value || null);
-    }, [props.value?.value]);
 
     const handleValueChange = (newValue: string | string[] | null) => {
-        let valueToStore: string | string[] | null;
-
-        if (isMultiselectField && Array.isArray(newValue)) {
-            // For multiselect, store the array directly (GraphQL JSON type handles it)
-            valueToStore = newValue;
-
-            // For display, store the array directly - getDisplayValue will handle the conversion
-            setDisplayValue(newValue);
-        } else if (typeof newValue === 'string') {
-            // For single select and text, use as-is
-            valueToStore = newValue;
-            setDisplayValue(newValue);
-        } else {
-            valueToStore = null;
-            setDisplayValue(null);
-        }
-
-        // GraphQL client will handle JSON encoding automatically for the JSON type
-        setRunPropertyValue(props.runID, props.field.id, valueToStore);
+        setRunPropertyValue(props.runID, props.field.id, newValue);
     };
 
-    const handleStartEdit = () => {
-        setIsEditing(true);
-    };
+    const renderPropertyComponent = () => {
+        const commonProps = {
+            field: props.field,
+            value: props.value,
+            runID: props.runID,
+        };
 
-    const handleStopEdit = () => {
-        setIsEditing(false);
-    };
-
-    const getDisplayValue = () => {
-        if ((isSelectField || isMultiselectField) && displayValue) {
-            const selectOptions = props.field.attrs?.options?.map((option) => ({
-                value: option.id,
-                label: option.name,
-            })) || [];
-
-            if (isMultiselectField) {
-                // For multiselect fields, displayValue is always a string[] from the API
-                if (Array.isArray(displayValue)) {
-                    const selectedLabels = displayValue
-                        .map((id) => selectOptions.find((option) => option.value === id)?.label)
-                        .filter(Boolean);
-                    return selectedLabels.join(', ');
-                }
-                return null;
-            } else if (isSelectField) {
-                // For select fields, find the option label
-                const matchingOption = selectOptions.find((option) => option.value === displayValue);
-                return matchingOption?.label;
-            }
-        }
-        return displayValue;
-    };
-
-    const renderInput = () => {
-        if (isSelectField || isMultiselectField) {
-            // Convert property field options to react-select format
-            const selectOptions = props.field.attrs?.options?.map((option) => ({
-                value: option.id,
-                label: option.name,
-            })) || [];
-
-            let initialValue = displayValue;
-            if (isMultiselectField) {
-                // For multiselect, displayValue is already a string[] from the API
-                initialValue = Array.isArray(displayValue) ? displayValue : [];
-            }
-
+        switch (props.field.type) {
+        case 'text':
             return (
-                <PropertySelectInput
-                    options={selectOptions}
-                    initialValue={initialValue}
+                <TextProperty
+                    {...commonProps}
                     onValueChange={handleValueChange}
-                    onBlur={handleStopEdit}
-                    isMulti={isMultiselectField}
                 />
             );
+        case 'select':
+            return (
+                <SelectProperty
+                    {...commonProps}
+                    onValueChange={handleValueChange}
+                />
+            );
+        case 'multiselect':
+            return (
+                <MultiselectProperty
+                    {...commonProps}
+                    onValueChange={handleValueChange}
+                />
+            );
+        default:
+            return null;
         }
-
-        return (
-            <PropertyTextInput
-                initialValue={displayValue}
-                onValueChange={handleValueChange}
-                onBlur={handleStopEdit}
-            />
-        );
     };
 
     return (
         <PropertyRow>
             <PropertyLabel>{props.field.name}</PropertyLabel>
-            {isEditing ? (
-                renderInput()
-            ) : (
-                <PropertyDisplay
-                    value={getDisplayValue()}
-                    onClick={handleStartEdit}
-                />
-            )}
+            {renderPropertyComponent()}
         </PropertyRow>
     );
 };

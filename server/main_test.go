@@ -122,7 +122,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	// Environment Settings
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
 
-	sqlSettings := storetest.MakeSqlSettings(driverName, false)
+	sqlSettings := storetest.MakeSqlSettings(driverName)
 
 	// Directories for plugin stuff
 	dir := t.TempDir()

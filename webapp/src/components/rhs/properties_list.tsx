@@ -3,7 +3,7 @@
 
 import React, {useMemo} from 'react';
 
-import {PropertyField, PropertyValue} from 'src/graphql/generated/graphql';
+import {PropertyField, PropertyValue} from 'src/types/properties';
 
 import RHSProperty from 'src/components/rhs/rhs_property';
 
@@ -20,9 +20,10 @@ const PropertiesList = (props: Props) => {
         if (!props.propertyFields) {
             return [];
         }
+
         return props.propertyFields.map((field) => {
             const matchingValue = props.propertyValues?.find(
-                (value) => value.fieldID === field.id
+                (value) => value.field_id === field.id
             );
             return {
                 field,

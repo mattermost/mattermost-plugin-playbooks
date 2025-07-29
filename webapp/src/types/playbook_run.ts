@@ -1,7 +1,8 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {PlaybookRunType, PropertyField, PropertyValue} from 'src/graphql/generated/graphql';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PropertyField, PropertyValue} from 'src/types/properties';
 
 import {TimelineEvent} from 'src/types/rhs';
 import {Checklist, ChecklistItem} from 'src/types/playbook';

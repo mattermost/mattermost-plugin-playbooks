@@ -2053,17 +2053,17 @@ func (r *Runner) actionDevCreateFields(args []string) {
 			SortOrder:  2.0,
 		},
 	}
-	
+
 	// Create options manually using the proper interface
 	highOption := model.NewPluginPropertyOption(model.NewId(), "High")
 	highOption.SetValue("color", "red")
-	
-	mediumOption := model.NewPluginPropertyOption(model.NewId(), "Medium") 
+
+	mediumOption := model.NewPluginPropertyOption(model.NewId(), "Medium")
 	mediumOption.SetValue("color", "yellow")
-	
+
 	lowOption := model.NewPluginPropertyOption(model.NewId(), "Low")
 	lowOption.SetValue("color", "green")
-	
+
 	selectField.Attrs.Options = model.PropertyOptions[*model.PluginPropertyOption]{
 		highOption, mediumOption, lowOption,
 	}
@@ -2119,7 +2119,7 @@ func (r *Runner) actionDevCreateFields(args []string) {
 		return
 	}
 
-	r.postCommandResponse(fmt.Sprintf("✅ Created property fields for playbook %s:\n- Text field: %s (ID: %s)\n- Select field: %s (ID: %s)\n- Multiselect field: %s (ID: %s)", 
+	r.postCommandResponse(fmt.Sprintf("✅ Created property fields for playbook %s:\n- Text field: %s (ID: %s)\n- Select field: %s (ID: %s)\n- Multiselect field: %s (ID: %s)",
 		playbookID, createdTextField.Name, createdTextField.ID, createdSelectField.Name, createdSelectField.ID, createdMultiselectField.Name, createdMultiselectField.ID))
 }
 

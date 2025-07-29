@@ -25,7 +25,7 @@ var driverNames = []string{model.DatabaseDriverPostgres, DeprecatedDatabaseDrive
 func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
 
-	sqlSettings := storetest.MakeSqlSettings(driverName, false)
+	sqlSettings := storetest.MakeSqlSettings(driverName)
 
 	origDB, err := sql.Open(*sqlSettings.DriverName, *sqlSettings.DataSource)
 	require.NoError(t, err)

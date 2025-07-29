@@ -28,7 +28,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost/server/public v0.1.16
-	github.com/mattermost/mattermost/server/v8 v8.0.0-20250610231028-731bd7c4145f
+	github.com/mattermost/mattermost/server/v8 v8.0.0-20250729002454-4ee339f43b46
 	github.com/mattermost/morph v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
