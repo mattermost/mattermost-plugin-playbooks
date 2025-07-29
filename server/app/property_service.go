@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -276,8 +277,14 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 		return nil, errors.Wrap(err, "failed to get property field")
 	}
 
-	// Validate the value based on field type
-	if err := s.validatePropertyValue(propertyField, value); err != nil {
+	// Sanitize the value based on field type (e.g., trim spaces for text)
+	sanitizedValue, err := s.sanitizePropertyValue(propertyField, value)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to sanitize property value")
+	}
+
+	// Validate the sanitized value based on field type
+	if err := s.validatePropertyValue(propertyField, sanitizedValue); err != nil {
 		return nil, errors.Wrap(err, "invalid property value")
 	}
 
@@ -287,7 +294,7 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 		FieldID:    propertyFieldID,
 		TargetID:   runID,
 		TargetType: PropertyTargetTypeRun,
-		Value:      value,
+		Value:      sanitizedValue,
 	}
 
 	// Use the plugin API to upsert the property value
@@ -298,6 +305,42 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 
 	// Convert back to our PropertyValue type
 	return (*PropertyValue)(upsertedValue), nil
+}
+
+func (s *propertyService) sanitizePropertyValue(propertyField *model.PropertyField, value json.RawMessage) (json.RawMessage, error) {
+	switch propertyField.Type {
+	case model.PropertyFieldTypeText:
+		return s.sanitizeTextValue(value)
+	case model.PropertyFieldTypeSelect, model.PropertyFieldTypeMultiselect:
+		// No sanitization needed for select/multiselect - values are option IDs
+		return value, nil
+	default:
+		return value, nil
+	}
+}
+
+func (s *propertyService) sanitizeTextValue(value json.RawMessage) (json.RawMessage, error) {
+	// Handle null/empty values - pass them through as-is
+	if len(value) == 0 || string(value) == "null" {
+		return value, nil
+	}
+
+	var stringValue string
+	if err := json.Unmarshal(value, &stringValue); err != nil {
+		// Return the original value if it's not a string - validation will catch this
+		return value, nil
+	}
+
+	// Trim whitespace from the string value
+	trimmedValue := strings.TrimSpace(stringValue)
+
+	// Marshal back to JSON
+	sanitizedJSON, err := json.Marshal(trimmedValue)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal sanitized text value")
+	}
+
+	return sanitizedJSON, nil
 }
 
 func (s *propertyService) validatePropertyValue(propertyField *model.PropertyField, value json.RawMessage) error {
