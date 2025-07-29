@@ -4,15 +4,21 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -76,6 +82,8 @@ type TestEnvironment struct {
 	Permissions PermissionsHelper
 	logger      mlog.LoggerIFace
 
+	createClientsOnce sync.Once
+
 	ServerAdminClient        *model.Client4
 	PlaybooksAdminClient     *client.Client
 	ServerClient             *model.Client4
@@ -104,6 +112,12 @@ type TestEnvironment struct {
 	GuestUser                *model.User
 }
 
+// Global bundle cache to avoid recreating for every test
+var (
+	globalBundlePath string
+	globalBundleOnce sync.Once
+)
+
 func getEnvWithDefault(name, defaultValue string) string {
 	if value := os.Getenv(name); value != "" {
 		return value
@@ -111,7 +125,74 @@ func getEnvWithDefault(name, defaultValue string) string {
 	return defaultValue
 }
 
+// createPluginBundleOnce creates the plugin bundle once and caches it for reuse
+func createPluginBundleOnce() string {
+	globalBundleOnce.Do(func() {
+		// Create a very short path temp directory
+		bundleDir := "/tmp/pb-test"
+		os.RemoveAll(bundleDir) // Clean up any existing
+		err := os.MkdirAll(bundleDir, 0755)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to create bundle dir: %v", err))
+		}
+
+		// Get current binary
+		currentBinary, err := os.Executable()
+		if err != nil {
+			panic(fmt.Sprintf("Failed to get executable: %v", err))
+		}
+
+		// Copy the manifest without webapp
+		modifiedManifest := model.Manifest{}
+		_ = json.NewDecoder(strings.NewReader(manifestStr)).Decode(&modifiedManifest)
+		modifiedManifest.Webapp = nil
+
+		// Create bundle directory structure with short paths
+		bundleBinaryDir := path.Join(bundleDir, "server", "dist")
+		bundleManifest := path.Join(bundleDir, "plugin.json")
+		bundleAssetsDir := path.Join(bundleDir, "assets")
+		bundleBinary := path.Join(bundleBinaryDir, "plugin-"+runtime.GOOS+"-"+runtime.GOARCH)
+
+		// Copy files to bundle directory
+		err = os.MkdirAll(bundleBinaryDir, 0755)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to create binary dir: %v", err))
+		}
+		err = putils.CopyFile(currentBinary, bundleBinary)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to copy binary: %v", err))
+		}
+
+		// Copy assets directory (needed for plugin icon)
+		assetsDir := "../assets"
+		if _, err := os.Stat(assetsDir); err == nil {
+			err = putils.CopyDir(assetsDir, bundleAssetsDir)
+			if err != nil {
+				panic(fmt.Sprintf("Failed to copy assets: %v", err))
+			}
+		}
+
+		manifestJSONBytes, _ := json.Marshal(modifiedManifest)
+		err = os.WriteFile(bundleManifest, manifestJSONBytes, 0700)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to write manifest: %v", err))
+		}
+
+		// Create tar.gz bundle with short path
+		globalBundlePath = "/tmp/pb-test.tar.gz"
+		err = createTarGz(bundleDir, globalBundlePath)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to create bundle: %v", err))
+		}
+	})
+	return globalBundlePath
+}
+
 func Setup(t *testing.T) *TestEnvironment {
+	setupStart := time.Now()
+	defer func() {
+		t.Logf("Total Setup() took: %v", time.Since(setupStart))
+	}()
 	// Ignore any locally defined SiteURL as we intend to host our own.
 	os.Unsetenv("MM_SERVICESETTINGS_SITEURL")
 	os.Unsetenv("MM_SERVICESETTINGS_LISTENADDRESS")
@@ -127,17 +208,20 @@ func Setup(t *testing.T) *TestEnvironment {
 	// Directories for plugin stuff
 	dir := t.TempDir()
 	clientDir := t.TempDir()
-	playbooksDir := path.Join(dir, "playbooks")
-	binaryDir := path.Join(playbooksDir, "server", "dist")
-	pluginBinary := path.Join(binaryDir, "plugin-"+runtime.GOOS+"-"+runtime.GOARCH)
-	pluginManifest := path.Join(playbooksDir, "plugin.json")
-	assetsDir := path.Join(playbooksDir, "assets")
+
+	// Get the cached plugin bundle (created once globally)
+	bundleStart := time.Now()
+	bundlePath := createPluginBundleOnce()
+	t.Logf("Bundle retrieval took: %v", time.Since(bundleStart))
 
 	// Create a test memory store and modify configuration appropriately
 	configStore := config.NewTestMemoryStore()
 	config := configStore.Get()
 	config.PluginSettings.Directory = &dir
 	config.PluginSettings.ClientDirectory = &clientDir
+	config.PluginSettings.Enable = model.NewPointer(true)
+	config.PluginSettings.RequirePluginSignature = model.NewPointer(false)
+	config.PluginSettings.EnableUploads = model.NewPointer(true)
 	config.ServiceSettings.ListenAddress = model.NewPointer("localhost:0")
 	config.TeamSettings.MaxUsersPerTeam = model.NewPointer(10000)
 	config.LocalizationSettings.SetDefaults()
@@ -145,7 +229,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.ServiceSettings.SiteURL = model.NewPointer("http://testsiteurlplaybooks.mattermost.com/")
 	config.LogSettings.EnableConsole = model.NewPointer(true)
 	config.LogSettings.EnableFile = model.NewPointer(false)
-	config.LogSettings.ConsoleLevel = model.NewPointer("INFO")
+	config.LogSettings.ConsoleLevel = model.NewPointer("DEBUG")
 
 	// override config with e2etest.config.json if it exists
 	textConfig, err := os.ReadFile("./e2etest.config.json")
@@ -159,21 +243,10 @@ func Setup(t *testing.T) *TestEnvironment {
 	_, _, err = configStore.Set(config)
 	require.NoError(t, err)
 
-	// Copy ourselves into the correct directory so we are executed.
-	currentBinary, err := os.Executable()
-	require.NoError(t, err)
-	err = putils.CopyFile(currentBinary, pluginBinary)
-	require.NoError(t, err)
-	err = putils.CopyDir("../assets", assetsDir)
-	require.NoError(t, err)
-
-	// Copy the manifest without webapp to the correct directory
+	// Get manifest for plugin ID
 	modifiedManifest := model.Manifest{}
 	_ = json.NewDecoder(strings.NewReader(manifestStr)).Decode(&modifiedManifest)
 	modifiedManifest.Webapp = nil
-	manifestJSONBytes, _ := json.Marshal(modifiedManifest)
-	err = os.WriteFile(pluginManifest, manifestJSONBytes, 0700)
-	require.NoError(t, err)
 
 	// Create a logger to override
 	testLogger, err := mlog.NewLogger()
@@ -205,7 +278,7 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	ap := sapp.New(sapp.ServerConnector(server.Channels()))
 
-	return &TestEnvironment{
+	env := &TestEnvironment{
 		T:       t,
 		Context: request.EmptyContext(testLogger),
 		Srv:     server,
@@ -218,90 +291,173 @@ func Setup(t *testing.T) *TestEnvironment {
 		},
 		logger: testLogger,
 	}
+
+	// Create users first so we can authenticate for plugin deployment
+	env.CreateClients()
+
+	// Deploy plugin using forced upload (like pluginctl does in development)
+	bundleFile, err := os.Open(bundlePath)
+	require.NoError(t, err)
+	defer bundleFile.Close()
+
+	// Create API client for plugin deployment
+	// Get the actual server port (since we used localhost:0)
+	siteURL := fmt.Sprintf("http://localhost:%v", ap.Srv().ListenAddr.Port)
+	client := model.NewAPIv4Client(siteURL)
+
+	// Authenticate as admin user
+	authStart := time.Now()
+	_, _, err = client.Login(context.Background(), "playbooksadmin", "Password123!")
+	require.NoError(t, err)
+	t.Logf("Authentication took: %v", time.Since(authStart))
+
+	// Upload plugin using forced upload (bypasses signature verification)
+	uploadStart := time.Now()
+	_, _, err = client.UploadPluginForced(context.Background(), bundleFile)
+	require.NoError(t, err)
+	t.Logf("Plugin upload took: %v", time.Since(uploadStart))
+
+	// Enable the plugin
+	enableStart := time.Now()
+	_, err = client.EnablePlugin(context.Background(), modifiedManifest.Id)
+	require.NoError(t, err)
+	t.Logf("Plugin enable took: %v", time.Since(enableStart))
+
+	return env
+}
+
+func createTarGz(srcDir, dstFile string) error {
+	file, err := os.Create(dstFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	gzw := gzip.NewWriter(file)
+	defer gzw.Close()
+
+	tw := tar.NewWriter(gzw)
+	defer tw.Close()
+
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+		header.Name = relPath
+
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			srcFile, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer srcFile.Close()
+
+			_, err = io.Copy(tw, srcFile)
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (e *TestEnvironment) CreateClients() {
 	e.T.Helper()
 
-	userPassword := "Password123!"
-	admin, appErr := e.A.CreateUserAsAdmin(e.Context, &model.User{
-		Email:    "playbooksadmin@example.com",
-		Username: "playbooksadmin",
-		Password: userPassword,
-	}, "")
-	require.Nil(e.T, appErr)
-	e.AdminUser = admin
+	e.createClientsOnce.Do(func() {
+		userPassword := "Password123!"
+		admin, appErr := e.A.CreateUserAsAdmin(e.Context, &model.User{
+			Email:    "playbooksadmin@example.com",
+			Username: "playbooksadmin",
+			Password: userPassword,
+		}, "")
+		require.Nil(e.T, appErr)
+		e.AdminUser = admin
 
-	user, appErr := e.A.CreateUser(e.Context, &model.User{
-		Email:     "playbooksuser@example.com",
-		Username:  "playbooksuser",
-		Password:  userPassword,
-		FirstName: "First 1",
-		LastName:  "Last 1",
+		user, appErr := e.A.CreateUser(e.Context, &model.User{
+			Email:     "playbooksuser@example.com",
+			Username:  "playbooksuser",
+			Password:  userPassword,
+			FirstName: "First 1",
+			LastName:  "Last 1",
+		})
+		require.Nil(e.T, appErr)
+		e.RegularUser = user
+
+		user2, appErr := e.A.CreateUser(e.Context, &model.User{
+			Email:     "playbooksuser2@example.com",
+			Username:  "playbooksuser2",
+			Password:  userPassword,
+			FirstName: "First 2",
+			LastName:  "Last 2",
+		})
+		require.Nil(e.T, appErr)
+		e.RegularUser2 = user2
+
+		notInTeam, appErr := e.A.CreateUser(e.Context, &model.User{
+			Email:    "playbooksusernotinteam@example.com",
+			Username: "playbooksusenotinteam",
+			Password: userPassword,
+		})
+		require.Nil(e.T, appErr)
+		e.RegularUserNotInTeam = notInTeam
+
+		siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
+
+		serverAdminClient := model.NewAPIv4Client(siteURL)
+		_, _, err := serverAdminClient.Login(context.Background(), admin.Email, userPassword)
+		require.NoError(e.T, err)
+
+		playbooksAdminClient, err := client.New(serverAdminClient)
+		require.NoError(e.T, err)
+
+		e.ServerAdminClient = serverAdminClient
+		e.PlaybooksAdminClient = playbooksAdminClient
+
+		serverClient := model.NewAPIv4Client(siteURL)
+		_, _, err = serverClient.Login(context.Background(), user.Email, userPassword)
+		require.NoError(e.T, err)
+
+		playbooksClient, err := client.New(serverClient)
+		require.NoError(e.T, err)
+
+		unauthServerClient := model.NewAPIv4Client(siteURL)
+		unauthClient, err := client.New(unauthServerClient)
+		require.NoError(e.T, err)
+
+		serverClient2 := model.NewAPIv4Client(siteURL)
+		_, _, err = serverClient2.Login(context.Background(), user2.Email, userPassword)
+		require.NoError(e.T, err)
+
+		playbooksClient2, err := client.New(serverClient2)
+		require.NoError(e.T, err)
+
+		serverClientNotInTeam := model.NewAPIv4Client(siteURL)
+		_, _, err = serverClientNotInTeam.Login(context.Background(), notInTeam.Email, userPassword)
+		require.NoError(e.T, err)
+
+		playbooksClientNotInTeam, err := client.New(serverClientNotInTeam)
+		require.NoError(e.T, err)
+
+		e.ServerClient = serverClient
+		e.PlaybooksClient = playbooksClient
+		e.PlaybooksClient2 = playbooksClient2
+		e.UnauthenticatedPlaybooksClient = unauthClient
+		e.PlaybooksClientNotInTeam = playbooksClientNotInTeam
 	})
-	require.Nil(e.T, appErr)
-	e.RegularUser = user
-
-	user2, appErr := e.A.CreateUser(e.Context, &model.User{
-		Email:     "playbooksuser2@example.com",
-		Username:  "playbooksuser2",
-		Password:  userPassword,
-		FirstName: "First 2",
-		LastName:  "Last 2",
-	})
-	require.Nil(e.T, appErr)
-	e.RegularUser2 = user2
-
-	notInTeam, appErr := e.A.CreateUser(e.Context, &model.User{
-		Email:    "playbooksusernotinteam@example.com",
-		Username: "playbooksusenotinteam",
-		Password: userPassword,
-	})
-	require.Nil(e.T, appErr)
-	e.RegularUserNotInTeam = notInTeam
-
-	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
-
-	serverAdminClient := model.NewAPIv4Client(siteURL)
-	_, _, err := serverAdminClient.Login(context.Background(), admin.Email, userPassword)
-	require.NoError(e.T, err)
-
-	playbooksAdminClient, err := client.New(serverAdminClient)
-	require.NoError(e.T, err)
-
-	e.ServerAdminClient = serverAdminClient
-	e.PlaybooksAdminClient = playbooksAdminClient
-
-	serverClient := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClient.Login(context.Background(), user.Email, userPassword)
-	require.NoError(e.T, err)
-
-	playbooksClient, err := client.New(serverClient)
-	require.NoError(e.T, err)
-
-	unauthServerClient := model.NewAPIv4Client(siteURL)
-	unauthClient, err := client.New(unauthServerClient)
-	require.NoError(e.T, err)
-
-	serverClient2 := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClient2.Login(context.Background(), user2.Email, userPassword)
-	require.NoError(e.T, err)
-
-	playbooksClient2, err := client.New(serverClient2)
-	require.NoError(e.T, err)
-
-	serverClientNotInTeam := model.NewAPIv4Client(siteURL)
-	_, _, err = serverClientNotInTeam.Login(context.Background(), notInTeam.Email, userPassword)
-	require.NoError(e.T, err)
-
-	playbooksClientNotInTeam, err := client.New(serverClientNotInTeam)
-	require.NoError(e.T, err)
-
-	e.ServerClient = serverClient
-	e.PlaybooksClient = playbooksClient
-	e.PlaybooksClient2 = playbooksClient2
-	e.UnauthenticatedPlaybooksClient = unauthClient
-	e.PlaybooksClientNotInTeam = playbooksClientNotInTeam
 }
 
 func (e *TestEnvironment) CreateBasicServer() {
