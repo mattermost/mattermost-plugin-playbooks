@@ -280,15 +280,8 @@ export function usePost(postId: string) {
     return useThing(postId, Client4.getPost, getPostFromState);
 }
 
-interface UseRunOptions {
-    teamId?: string;
-    channelId?: string;
-}
-
-export function useRun(runId: string, options?: UseRunOptions) {
-    const {teamId, channelId} = options || {};
-    const fetchWithProperties = useCallback((id: string) => fetchPlaybookRun(id), []);
-    return useThing(runId, fetchWithProperties, getRun(runId, teamId, channelId));
+export function useRun(runId: string, teamId?: string, channelId?: string) {
+    return useThing(runId, fetchPlaybookRun, getRun(runId, teamId, channelId));
 }
 
 /**
