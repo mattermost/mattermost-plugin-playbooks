@@ -270,6 +270,17 @@ func (s *propertyService) GetRunPropertyValues(runID string) ([]PropertyValue, e
 }
 
 func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	// Get the property field to validate against
+	propertyField, err := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property field")
+	}
+
+	// Validate the value based on field type
+	if err := s.validatePropertyValue(propertyField, value); err != nil {
+		return nil, errors.Wrap(err, "invalid property value")
+	}
+
 	// Create the property value model
 	propertyValue := &model.PropertyValue{
 		GroupID:    s.groupID,
@@ -287,6 +298,98 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 
 	// Convert back to our PropertyValue type
 	return (*PropertyValue)(upsertedValue), nil
+}
+
+func (s *propertyService) validatePropertyValue(propertyField *model.PropertyField, value json.RawMessage) error {
+	switch propertyField.Type {
+	case model.PropertyFieldTypeText:
+		return s.validateTextValue(value)
+	case model.PropertyFieldTypeSelect:
+		return s.validateSelectValue(propertyField, value)
+	case model.PropertyFieldTypeMultiselect:
+		return s.validateMultiselectValue(propertyField, value)
+	default:
+		return errors.Errorf("property field type '%s' is not supported", propertyField.Type)
+	}
+}
+
+func (s *propertyService) validateTextValue(value json.RawMessage) error {
+	// Handle null/empty values - these are allowed for text fields
+	if len(value) == 0 || string(value) == "null" {
+		return nil
+	}
+
+	var stringValue string
+	if err := json.Unmarshal(value, &stringValue); err != nil {
+		return errors.New("text field value must be a string")
+	}
+	// Text values can be any string, including empty strings
+	return nil
+}
+
+func (s *propertyService) validateSelectValue(propertyField *model.PropertyField, value json.RawMessage) error {
+	// Handle null/empty values - these are allowed for select fields
+	if len(value) == 0 || string(value) == "null" {
+		return nil
+	}
+
+	var stringValue string
+	if err := json.Unmarshal(value, &stringValue); err != nil {
+		return errors.New("select field value must be a string")
+	}
+
+	// Convert to our PropertyField type to access parsed options
+	ourPropertyField, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert property field")
+	}
+
+	// Check if the value exists in the options
+	for _, option := range ourPropertyField.Attrs.Options {
+		if option.GetID() == stringValue {
+			return nil
+		}
+	}
+
+	return errors.New("select field value must be a valid option ID")
+}
+
+func (s *propertyService) validateMultiselectValue(propertyField *model.PropertyField, value json.RawMessage) error {
+	// Handle null/empty values - these are allowed for multiselect fields
+	if len(value) == 0 || string(value) == "null" {
+		return nil
+	}
+
+	var arrayValue []string
+	if err := json.Unmarshal(value, &arrayValue); err != nil {
+		return errors.New("multiselect field value must be an array of strings")
+	}
+
+	// Empty arrays are allowed
+	if len(arrayValue) == 0 {
+		return nil
+	}
+
+	// Convert to our PropertyField type to access parsed options
+	ourPropertyField, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert property field")
+	}
+
+	// Build a map of valid option IDs for quick lookup
+	validOptions := make(map[string]bool)
+	for _, option := range ourPropertyField.Attrs.Options {
+		validOptions[option.GetID()] = true
+	}
+
+	// Check that each value exists in the options
+	for _, val := range arrayValue {
+		if !validOptions[val] {
+			return errors.Errorf("multiselect field value '%s' is not a valid option ID", val)
+		}
+	}
+
+	return nil
 }
 
 func (s *propertyService) ensurePropertyGroup() (string, error) {
