@@ -50,25 +50,24 @@ describe('channels > run dialog', {testIsolation: true}, () => {
         cy.openPlaybookRunDialogFromSlashCommand();
 
         // * Verify the playbook run creation dialog has opened
-        cy.get('#interactiveDialogModal').should('exist').within(() => {
+        cy.get('#appsModal').should('exist').within(() => {
             cy.findByText('Start run').should('exist');
         });
     });
 
     it('cannot create a playbook run without filling required fields', () => {
-        cy.get('#interactiveDialogModal').within(() => {
+        cy.get('#appsModal').within(() => {
             cy.findByText('Start run').should('exist');
 
             // # Attempt to submit
-            cy.get('#interactiveDialogSubmit').click();
+            cy.get('#appsModalSubmit').click();
         });
 
         // * Verify it didn't submit
-        cy.get('#interactiveDialogModal').should('exist');
+        cy.get('#appsModal').should('exist');
 
         // * Verify required fields
-        cy.findByTestId('autoCompleteSelector').contains('Playbook');
-        cy.findByTestId('autoCompleteSelector').contains('This field is required.');
+        cy.findByTestId('playbookID').contains('This field is required.');
         cy.findByTestId('playbookRunName').contains('This field is required.');
     });
 
@@ -76,28 +75,28 @@ describe('channels > run dialog', {testIsolation: true}, () => {
         cy.selectPlaybookFromDropdown('Playbook');
 
         const invalidPlaybookRunName = '  ';
-        cy.get('#interactiveDialogModal').within(() => {
+        cy.get('#appsModal').within(() => {
             cy.findByTestId('playbookRunNameinput').type(invalidPlaybookRunName, {force: true});
         });
 
-        cy.get('#interactiveDialogModal').within(() => {
+        cy.get('#appsModal').within(() => {
             cy.findByText('Start run').should('exist');
 
             // # Attempt to submit
-            cy.get('#interactiveDialogSubmit').click();
+            cy.get('#appsModalSubmit').click();
         });
 
         // * Verify it didn't submit
-        cy.get('#interactiveDialogModal').should('exist');
+        cy.get('#appsModal').should('exist');
 
         // * Verify error message
-        cy.get('#interactiveDialogModal').within(() => {
+        cy.get('#appsModal').within(() => {
             cy.get('div.error-text').contains('unable to create playbook run');
         });
     });
 
     it('shows expected metadata', () => {
-        cy.get('#interactiveDialogModal').within(() => {
+        cy.get('#appsModal').within(() => {
             // * Shows current user as owner.
             cy.findByText(`${testUser.first_name} ${testUser.last_name}`).should('exist');
 
@@ -112,15 +111,15 @@ describe('channels > run dialog', {testIsolation: true}, () => {
     it('is canceled when cancel is clicked', () => {
         // # Populate the interactive dialog
         const playbookRunName = 'New Run' + Date.now();
-        cy.get('#interactiveDialogModal').within(() => {
+        cy.get('#appsModal').within(() => {
             cy.findByTestId('playbookRunNameinput').type('Playbook', {force: true});
         });
 
         // # Cancel the interactive dialog
-        cy.get('#interactiveDialogCancel').click();
+        cy.get('#appsModalCancel').click();
 
         // * Verify the modal is no longer displayed
-        cy.get('#interactiveDialogModal').should('not.exist');
+        cy.get('#appsModal').should('not.exist');
 
         // * Verify the playbook run did not get created
         cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
