@@ -27,6 +27,7 @@ const (
 
 	// Target types
 	PropertyTargetTypePlaybook = "playbook"
+	PropertyTargetTypeRun      = "run"
 )
 
 type Attrs struct {
@@ -46,7 +47,15 @@ type PropertyValue model.PropertyValue
 // SupportsOptions checks the PropertyField type and determines if the type
 // supports the use of options
 func (p *PropertyField) SupportsOptions() bool {
-	return p.Type == model.PropertyFieldTypeSelect || p.Type == model.PropertyFieldTypeMultiselect
+	switch p.Type {
+	case model.PropertyFieldTypeSelect,
+		model.PropertyFieldTypeMultiselect,
+		model.PropertyFieldTypeUser,
+		model.PropertyFieldTypeMultiuser:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *PropertyField) SanitizeAndValidate() error {
@@ -132,6 +141,8 @@ type PropertyService interface {
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
+	GetRunPropertyFields(runID string) ([]PropertyField, error)
 	UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	DeletePropertyField(propertyID string) error
+	CopyPlaybookPropertiesToRun(playbookID, runID string) error
 }

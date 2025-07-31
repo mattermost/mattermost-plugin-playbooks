@@ -27,9 +27,10 @@ interface Props {
 }
 
 const DraggableChecklistItem = (props: Props) => {
+    const draggableId = props.item.id || (props.item.title + props.itemIndex);
     return (
         <Draggable
-            draggableId={props.item.title + props.itemIndex}
+            draggableId={draggableId}
             index={props.itemIndex}
         >
             {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
@@ -40,7 +41,9 @@ const DraggableChecklistItem = (props: Props) => {
                     playbookRunId={props.playbookRun?.id}
                     playbookId={props.playbookId}
                     participantUserIds={props.playbookRun?.participant_ids ?? []}
-                    onChange={(newState: ChecklistItemState) => props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState)}
+                    onChange={(newState: ChecklistItemState) => {
+                        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState, props.item.id);
+                    }}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}
                     readOnly={props.readOnly ?? false}

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 )
@@ -67,7 +68,7 @@ type Playbook struct {
 	Metrics                                 []PlaybookMetricConfig `json:"metrics" export:"metrics"`
 	ActiveRuns                              int64                  `json:"active_runs" export:"-"`
 	CreateChannelMemberOnNewParticipant     bool                   `json:"create_channel_member_on_new_participant" export:"create_channel_member_on_new_participant"`
-	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant" export:"create_channel_member_on_removed_participant"`
+	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant" export:"remove_channel_member_on_removed_participant"`
 
 	// ChannelID is the identifier of the channel that would be -potentially- linked
 	// to any new run of this playbook
@@ -166,6 +167,8 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []ChecklistItem{}
 		}
+		// Always compute ItemsOrder fresh to prevent data inconsistency
+		old.Checklists[j].ItemsOrder = p.Checklists[j].GetItemsOrder()
 	}
 	if old.Members == nil {
 		old.Members = []PlaybookMember{}
@@ -217,6 +220,12 @@ type Checklist struct {
 
 	// Items is an array of all the items in the checklist.
 	Items []ChecklistItem `json:"items" export:"-"`
+
+	// ItemsOrder is the sort order of the checklist items
+	ItemsOrder []string `json:"items_order" export:"-"`
+
+	// UpdateAt is when this checklist was last modified
+	UpdateAt int64 `json:"update_at" export:"-"`
 }
 
 func (c Checklist) GetItems() []ChecklistItemCommon {
@@ -227,9 +236,22 @@ func (c Checklist) GetItems() []ChecklistItemCommon {
 	return items
 }
 
+func (c Checklist) GetItemsOrder() []string {
+	if len(c.Items) == 0 {
+		return nil
+	}
+	itemsOrder := make([]string, len(c.Items))
+	for i, item := range c.Items {
+		itemsOrder[i] = item.ID
+	}
+	return itemsOrder
+}
+
 func (c Checklist) Clone() Checklist {
 	newChecklist := c
 	newChecklist.Items = append([]ChecklistItem(nil), c.Items...)
+	// Don't copy ItemsOrder - always compute fresh to prevent data inconsistency
+	newChecklist.ItemsOrder = nil
 	return newChecklist
 }
 
@@ -287,6 +309,9 @@ type ChecklistItem struct {
 
 	// TaskActions is an array of all the task actions associated with this task.
 	TaskActions []TaskAction `json:"task_actions" export:"-"`
+
+	// UpdateAt is when this checklist item was last modified
+	UpdateAt int64 `json:"update_at" export:"-"`
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
@@ -295,18 +320,22 @@ func (ci *ChecklistItem) GetAssigneeID() string {
 
 func (ci *ChecklistItem) SetAssigneeModified(modified int64) {
 	ci.AssigneeModified = modified
+	ci.UpdateAt = modified
 }
 
 func (ci *ChecklistItem) SetState(state string) {
 	ci.State = state
+	ci.UpdateAt = model.GetMillis()
 }
 
 func (ci *ChecklistItem) SetStateModified(modified int64) {
 	ci.StateModified = modified
+	ci.UpdateAt = modified
 }
 
 func (ci *ChecklistItem) SetCommandLastRun(lastRun int64) {
 	ci.CommandLastRun = lastRun
+	ci.UpdateAt = lastRun
 }
 
 type GetPlaybooksResults struct {
@@ -736,6 +765,23 @@ func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
 		return cpm.UnmarshalText([]byte(txt))
 	}
 	return cpm.UnmarshalText(txt)
+}
+
+// CleanChecklistIDs cleans checklist IDs against existing checklists.
+// Resets IDs that don't exist in the current playbook to empty string for regeneration.
+func CleanChecklistIDs(checklists []Checklist, existingChecklists []Checklist) {
+	existingByID := make(map[string]bool)
+	for _, existing := range existingChecklists {
+		if existing.ID != "" {
+			existingByID[existing.ID] = true
+		}
+	}
+
+	for i := range checklists {
+		if checklists[i].ID != "" && !existingByID[checklists[i].ID] {
+			checklists[i].ID = ""
+		}
+	}
 }
 
 // Value represents a ChannelPlaybookMode as a type writable into the DB

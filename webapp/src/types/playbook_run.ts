@@ -15,6 +15,7 @@ export interface PlaybookRun {
     team_id: string;
     channel_id: string;
     create_at: number;
+    update_at: number;
     end_at: number;
     post_id: string;
     playbook_id: string;
@@ -49,6 +50,9 @@ export interface PlaybookRun {
 
     /** Whether a channel member should be removed when an existing participant leaves the run */
     remove_channel_member_on_removed_participant: boolean;
+
+    /** The sort order of the checklists */
+    items_order: string[];
 
     type: PlaybookRunType
 }

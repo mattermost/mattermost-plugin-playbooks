@@ -196,9 +196,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
-		"playbook_run": playbookRun,
-	}, userID)
+	h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{"playbook_run": playbookRun}, playbookRun.ChannelID)
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
 	ReturnJSON(w, &playbookRun, http.StatusCreated)
@@ -322,11 +320,11 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	go func() {
 		time.Sleep(1 * time.Second) // arbitrary 1 second magic number
 
-		h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
+		h.poster.PublishWebsocketEventToChannel(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
 			"client_id":    state.ClientID,
 			"playbook_run": playbookRun,
 			"channel_name": channel.Name,
-		}, request.UserId)
+		}, playbookRun.ChannelID)
 	}()
 
 	if err := h.postPlaybookRunCreatedMessage(playbookRun, request.ChannelId); err != nil {
@@ -396,7 +394,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if err = h.playbookRunService.AddPostToTimeline(playbookRunID, userID, post, summary); err != nil {
+	if err = h.playbookRunService.AddPostToTimeline(playbookRun, userID, post, summary); err != nil {
 		h.HandleError(w, c.logger, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
@@ -541,6 +539,15 @@ func (h *PlaybookRunHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, 
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Bad parameter", err)
 		return
+	}
+
+	// Add channel permission check if channel_id filter is used
+	if filterOptions.ChannelID != "" {
+		hasPermission := h.pluginAPI.User.HasPermissionToChannel(userID, filterOptions.ChannelID, model.PermissionReadChannel)
+		if !hasPermission {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "No permission to access this channel", nil)
+			return
+		}
 	}
 
 	requesterInfo, err := h.getRequesterInfo(userID)
@@ -1359,6 +1366,12 @@ func (h *PlaybookRunHandler) itemDuplicate(c *Context, w http.ResponseWriter, r 
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	// Check the body is empty
+	if _, err := r.Body.Read(make([]byte, 1)); err != io.EOF {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "request body must be empty", nil)
+		return
+	}
+
 	if err := h.playbookRunService.DuplicateChecklistItem(playbookRunID, userID, checklistNum, itemNum); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -1875,6 +1888,9 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 
 	playbookID := u.Query().Get("playbook_id")
 
+	// Get channel_id parameter from URL query
+	channelID := u.Query().Get("channel_id")
+
 	activeGTEParam := u.Query().Get("active_gte")
 	if activeGTEParam == "" {
 		activeGTEParam = "0"
@@ -1902,6 +1918,20 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	// Parse types= query string parameters as an array.
 	types := u.Query()["types"]
 
+	// Parse since parameter for timestamp-based activity filtering
+	sinceParam := u.Query().Get("since")
+	var activitySince int64
+	if sinceParam != "" {
+		activitySince, err = strconv.ParseInt(sinceParam, 10, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "bad parameter 'since'")
+		}
+	}
+
+	// Parse omit_ended param - default to false for backward compatibility
+	omitEndedParam := u.Query().Get("omit_ended")
+	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
+
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
 		Page:                    page,
@@ -1914,11 +1944,14 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		ParticipantID:           participantID,
 		ParticipantOrFollowerID: participantOrFollowerID,
 		PlaybookID:              playbookID,
+		ChannelID:               channelID,
 		ActiveGTE:               activeGTE,
 		ActiveLT:                activeLT,
 		StartedGTE:              startedGTE,
 		StartedLT:               startedLT,
 		Types:                   types,
+		ActivitySince:           activitySince,
+		OmitEnded:               omitEnded,
 	}
 
 	options, err = options.Validate()

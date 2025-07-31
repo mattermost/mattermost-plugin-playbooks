@@ -232,6 +232,7 @@ func (p *Plugin) OnActivate() error {
 		p.channelActionService,
 		p.licenseChecker,
 		p.metricsService,
+		p.propertyService,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {

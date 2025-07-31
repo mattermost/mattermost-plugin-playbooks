@@ -74,6 +74,8 @@ import {
     ShowPlaybookActionsModal,
     ShowPostMenuModal,
     ShowRunActionsModal,
+    WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
+    WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
@@ -369,4 +371,10 @@ export const openBackstageRHS = (section: BackstageRHSSection, viewMode: Backsta
 export const publishTemplates = (templates: PresetTemplate[]): PublishTemplates => ({
     type: PUBLISH_TEMPLATES,
     templates,
+});
+
+// Granular websocket event action creators
+export const websocketPlaybookRunIncrementalUpdateReceived = (data: import('src/types/websocket_events').PlaybookRunUpdate): WebsocketPlaybookRunIncrementalUpdateReceived => ({
+    type: WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
+    data,
 });

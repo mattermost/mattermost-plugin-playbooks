@@ -44,6 +44,7 @@ import {
     handleWebsocketPlaybookRestored,
     handleWebsocketPlaybookRunCreated,
     handleWebsocketPlaybookRunUpdated,
+    handleWebsocketPlaybookRunUpdatedIncremental,
     handleWebsocketPostEditedOrDeleted,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
@@ -54,6 +55,7 @@ import {
     WEBSOCKET_PLAYBOOK_RESTORED,
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
+    WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL,
 } from 'src/types/websocket_events';
 import {
     fetchGlobalSettings,
@@ -233,6 +235,7 @@ export default class Plugin {
         // Websocket listeners
         registry.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_UPDATED, handleWebsocketPlaybookRunUpdated(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL, handleWebsocketPlaybookRunUpdatedIncremental(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_CREATED, handleWebsocketPlaybookRunCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED, handleWebsocketPlaybookCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_ARCHIVED, handleWebsocketPlaybookArchived(store.getState, store.dispatch));
