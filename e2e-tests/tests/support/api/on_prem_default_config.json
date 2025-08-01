@@ -69,6 +69,7 @@
         "EnableAPITeamDeletion": true,
         "ExperimentalEnableHardenedMode": false,
         "ExperimentalStrictCSRFEnforcement": false,
+        "StrictCSRFEnforcement": false,
         "EnableEmailInvitations": true,
         "DisableBotsWhenOwnerIsDeactivated": true,
         "EnableBotAccountCreation": true,
