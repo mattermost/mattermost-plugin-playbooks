@@ -1362,11 +1362,13 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 		require.NoError(t, err)
 		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
 		require.NoError(t, err)
-		actual := []client.Checklist{
+		expected := []client.Checklist{
 			{
+				ID:    pb.Checklists[0].ID, // Use the actual ID from the returned playbook
 				Title: "A",
 				Items: []client.ChecklistItem{
 					{
+						ID:               pb.Checklists[0].Items[0].ID, // Use the actual item ID
 						Title:            "title1",
 						AssigneeModified: 0,
 						State:            "",
@@ -1376,7 +1378,7 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 				},
 			},
 		}
-		require.Equal(t, pb.Checklists, actual)
+		require.Equal(t, expected, pb.Checklists)
 	})
 
 	t.Run("create playbook", func(t *testing.T) {
@@ -1401,11 +1403,13 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 		require.NoError(t, err)
 		pb, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
 		require.NoError(t, err)
-		actual := []client.Checklist{
+		expected := []client.Checklist{
 			{
+				ID:    pb.Checklists[0].ID, // Use the actual ID from the returned playbook
 				Title: "A",
 				Items: []client.ChecklistItem{
 					{
+						ID:               pb.Checklists[0].Items[0].ID, // Use the actual item ID
 						Title:            "title1",
 						AssigneeModified: 0,
 						State:            "",
@@ -1415,7 +1419,7 @@ func TestPlaybookChecklistCleanup(t *testing.T) {
 				},
 			},
 		}
-		require.Equal(t, pb.Checklists, actual)
+		require.Equal(t, expected, pb.Checklists)
 	})
 }
 

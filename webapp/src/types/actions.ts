@@ -44,6 +44,8 @@ export const SET_CHECKLIST_ITEMS_FILTER = manifest.id + '_set_checklist_items_fi
 export const OPEN_BACKSTAGE_RHS = manifest.id + '_open_backstage_rhs';
 export const CLOSE_BACKSTAGE_RHS = manifest.id + '_close_backstage_rhs';
 
+export const WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED = manifest.id + '_ws_run_incremental_update_received';
+
 // This action is meant to be used by mattermost-webapp
 // so we respect their naming convention (all caps)
 export const PUBLISH_TEMPLATES = (manifest.id + '_PUBLISH_TEMPLATES').toUpperCase();
@@ -195,6 +197,11 @@ export interface OpenBackstageRHS {
 
 export interface CloseBackstageRHS {
     type: typeof CLOSE_BACKSTAGE_RHS;
+}
+
+export interface WebsocketPlaybookRunIncrementalUpdateReceived {
+    type: typeof WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED;
+    data: import('./websocket_events').PlaybookRunUpdate;
 }
 
 export interface PublishTemplates {
