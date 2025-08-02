@@ -98,10 +98,10 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 
 // Select the playbook from the dropdown menu
 Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
-    cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
+    cy.findByTestId('playbookID').should('exist').within(() => {
         cy.get('input').click().type(playbookName.toLowerCase(), {force: true});
-        cy.get('#suggestionList').contains(playbookName).click({force: true});
     });
+    cy.document().its('body').find('#react-select-2-listbox').contains(playbookName).click({force: true});
 });
 
 Cypress.Commands.add('createPost', (message) => {
@@ -115,10 +115,10 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (playbookRunName, summary
 
     cy.get('#appsModal').should('exist').within(() => {
         // # Select playbook run
-        cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
+        cy.findByTestId('playbookID').should('exist').within(() => {
             cy.get('input').click().type(playbookRunName);
-            cy.get('#suggestionList').contains(playbookRunName).click({force: true});
         });
+        cy.document().its('body').find('#react-select-2-listbox').contains(playbookRunName).click({force: true});
 
         // # Type playbook run name
         cy.findByTestId('summaryinput').clear().type(summary, {force: true});
