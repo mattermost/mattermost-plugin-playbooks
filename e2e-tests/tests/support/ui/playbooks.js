@@ -5,7 +5,7 @@ import * as TIMEOUTS from '../../fixtures/timeouts';
 const playbookRunStartCommand = '/playbook run';
 
 Cypress.Commands.add('startPlaybookRun', (playbookName, playbookRunName) => {
-    cy.get('#interactiveDialogModal').should('exist').within(() => {
+    cy.get('#appsModal').should('exist').within(() => {
         // # Select playbook
         cy.selectPlaybookFromDropdown(playbookName);
 
@@ -13,10 +13,10 @@ Cypress.Commands.add('startPlaybookRun', (playbookName, playbookRunName) => {
         cy.findByTestId('playbookRunNameinput').type(playbookRunName, {force: true});
 
         // # Submit
-        cy.get('#interactiveDialogSubmit').click();
+        cy.get('#appsModalSubmit').click();
     });
 
-    cy.get('#interactiveDialogModal').should('not.exist');
+    cy.get('#appsModal').should('not.exist');
 });
 
 // Opens playbook run dialog using the `/playbook run` slash command
@@ -113,7 +113,7 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (playbookRunName, summary
     cy.clickPostDotMenu(postId);
     cy.findByTestId('playbookRunAddToTimeline').click();
 
-    cy.get('#interactiveDialogModal').should('exist').within(() => {
+    cy.get('#appsModal').should('exist').within(() => {
         // # Select playbook run
         cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
             cy.get('input').click().type(playbookRunName);
@@ -124,10 +124,10 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (playbookRunName, summary
         cy.findByTestId('summaryinput').clear().type(summary, {force: true});
 
         // # Submit
-        cy.get('#interactiveDialogSubmit').click();
+        cy.get('#appsModalSubmit').click();
     });
 
-    cy.get('#interactiveDialogModal').should('not.exist');
+    cy.get('#appsModal').should('not.exist');
 });
 
 Cypress.Commands.add('openSelector', () => {
