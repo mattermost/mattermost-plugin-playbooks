@@ -140,7 +140,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly('/playbook finish');
 
             // * Verify confirm modal is visible.
-            cy.get('#interactiveDialogModalLabel').should('exist');
+            cy.get('#appsModalLabel').should('exist');
 
             // # Confirm finish
             cy.get('#interactiveDialogSubmit').click();
@@ -482,7 +482,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly('/playbook finish 1');
 
             // * Verify confirm modal is visible.
-            cy.get('#interactiveDialogModalLabel').should('exist');
+            cy.get('#appsModalLabel').should('exist');
 
             // # Confirm finish
             cy.get('#interactiveDialogSubmit').click();
