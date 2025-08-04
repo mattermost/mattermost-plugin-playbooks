@@ -142,6 +142,7 @@ type PlaybookRunServiceImpl struct {
 	permissions      *PermissionsService
 	licenseChecker   LicenseChecker
 	metricsService   *metrics.Metrics
+	propertyService  PropertyService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -193,6 +194,7 @@ func NewPlaybookRunService(
 	channelActionService ChannelActionService,
 	licenseChecker LicenseChecker,
 	metricsService *metrics.Metrics,
+	propertyService PropertyService,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
 		pluginAPI:        pluginAPI,
@@ -208,6 +210,7 @@ func NewPlaybookRunService(
 		actionService:    channelActionService,
 		licenseChecker:   licenseChecker,
 		metricsService:   metricsService,
+		propertyService:  propertyService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -412,6 +415,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create playbook run")
+	}
+
+	if pb != nil {
+		err = s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
+		if err != nil {
+			logger.WithError(err).Warn("failed to copy playbook properties to run")
+		}
 	}
 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
