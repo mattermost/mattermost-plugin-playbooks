@@ -249,6 +249,12 @@ endif
 	@echo "Setting up FIPS build environment..."
 	@echo "Using Docker authentication configured by chainctl..."
 	
+	# Test if Docker can access the image, if not try to configure chainctl again
+	@if ! docker manifest inspect $(FIPS_IMAGE) >/dev/null 2>&1; then \
+		echo "Docker authentication failed, attempting to reconfigure chainctl..."; \
+		chainctl auth configure-docker 2>/dev/null || echo "chainctl not available or failed"; \
+	fi
+	
 	# Build directly in the FIPS container without external script
 	# Create local cache directory for CI/ACT compatibility
 	mkdir -p $(PWD)/.build-cache

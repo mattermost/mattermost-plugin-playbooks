@@ -118,9 +118,13 @@ jobs:
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
           cache: true
 
+      - name: ci/setup-chainctl
+        uses: chainguard-dev/setup-chainctl@f52718d822dc73d21a04ef2082822c4a203163b3 # v0.2.2
       - name: ci/setup-node
         uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
+          identity: ${{ secrets.CHAINGUARD_IDENTITY }}
+        continue-on-error: true
           node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: webapp/package-lock.json
@@ -208,6 +212,7 @@ jobs:
           fi
 
       - name: ci/ensure-fips-build
+      - name: ci/build-both-distributions
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
         run: make dist-fips
