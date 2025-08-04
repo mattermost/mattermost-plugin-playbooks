@@ -114,18 +114,15 @@ jobs:
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
           configure-docker: true
-        continue-on-error: true
+        continue-on-error: false
 
-      - name: ci/test-docker-auth
+      - name: ci/setup-build-tools
         run: |
-          echo "Testing Chainguard registry access..."
-          if docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4; then
-            echo "✅ Chainguard authentication successful"
-          else
-            echo "❌ Authentication failed, will try fallback in Makefile"
-          fi
-        continue-on-error: true
-
+          echo "Setting up build tools..."
+          mkdir -p build/bin
+          cd build/manifest && go build -o ../bin/manifest
+          cd ../pluginctl && go build -o ../bin/pluginctl
+          
       - name: ci/build-both-distributions
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
