@@ -113,20 +113,25 @@ jobs:
         uses: chainguard-dev/setup-chainctl@f52718d822dc73d21a04ef2082822c4a203163b3 # v0.2.2
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
+          configure-docker: true
+        continue-on-error: true
+
+      - name: ci/test-docker-auth
+        run: |
+          echo "Testing Chainguard registry access..."
+          if docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4; then
+            echo "✅ Chainguard authentication successful"
+          else
+            echo "❌ Authentication failed, will try fallback in Makefile"
+          fi
         continue-on-error: true
 
       - name: ci/build-both-distributions
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
-        run: |
-          echo "Configuring Docker authentication before build..."
-          chainctl auth configure-docker || echo "chainctl configure-docker failed, continuing anyway"
-          
-          echo "Testing Docker authentication..."
-          docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4 || echo "Docker pull test failed"
-          
-          echo "Starting build process..."
-          make dist-all
+          CHAINGUARD_DEV_USERNAME: ${{ secrets.CHAINGUARD_DEV_USERNAME }}
+          CHAINGUARD_DEV_TOKEN: ${{ secrets.CHAINGUARD_DEV_TOKEN }}
+        run: make dist-all
 
       - name: ci/upload-all-artifacts
         uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.5.0
