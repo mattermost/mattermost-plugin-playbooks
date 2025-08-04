@@ -117,18 +117,15 @@ jobs:
         if: github.event_name == 'pull_request' && success()
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
           cache: true
-
+      - name: ci/setup-node
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
       - name: ci/setup-chainctl
         uses: chainguard-dev/setup-chainctl@f52718d822dc73d21a04ef2082822c4a203163b3 # v0.2.2
-      - name: ci/setup-node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+.2.0
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
           configure-docker: true
-        continue-on-error: true
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: webapp/package-lock.json
+        continue-on-error: false
 
       - name: ci/cache-webapp-node-modules
         id: cache-webapp-node-modules
