@@ -115,19 +115,18 @@ jobs:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
         continue-on-error: true
 
-      - name: ci/test-chainguard-access
-        run: |
-          echo "Testing Chainguard registry access..."
-          if docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4; then
-            echo "✅ Chainguard registry access successful"
-          else
-            echo "❌ Chainguard registry access failed - FIPS build may not work"
-          fi
-
       - name: ci/build-both-distributions
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
-        run: make dist-all
+        run: |
+          echo "Configuring Docker authentication before build..."
+          chainctl auth configure-docker || echo "chainctl configure-docker failed, continuing anyway"
+          
+          echo "Testing Docker authentication..."
+          docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4 || echo "Docker pull test failed"
+          
+          echo "Starting build process..."
+          make dist-all
 
       - name: ci/upload-all-artifacts
         uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.5.0
