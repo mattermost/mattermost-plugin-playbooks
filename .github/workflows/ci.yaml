@@ -97,6 +97,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - lint
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC authentication with Chainguard identity
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -124,8 +127,13 @@ jobs:
 .2.0
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
-          configure-docker: true
-        continue-on-error: false
+
+      - name: ci/validate-chainguard-auth
+        run: |
+          echo "Validating Chainguard authentication..."
+          # Test that we can access the registry (this will fail fast if auth doesn't work)
+          docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4
+          echo "✅ Chainguard authentication validated successfully"
 
       - name: ci/cache-webapp-node-modules
         id: cache-webapp-node-modules
