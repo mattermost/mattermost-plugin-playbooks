@@ -67,6 +67,7 @@ describe('channels > run dialog', {testIsolation: true}, () => {
         cy.get('#appsModal').should('exist');
 
         // * Verify required fields
+        cy.findByTestId('playbookID').contains('Playbook');
         cy.findByTestId('playbookID').contains('This field is required.');
         cy.findByTestId('playbookRunName').contains('This field is required.');
     });
