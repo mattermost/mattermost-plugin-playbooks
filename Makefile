@@ -17,19 +17,9 @@ DEFAULT_GOARCH ?= $(shell go env GOARCH)
 FIPS_ENABLED ?= false
 FIPS_IMAGE ?= cgr.dev/mattermost.com/go-msft-fips:1.24.4@sha256:8ab847d56930279a3ea36763277080106406354ec31c5f57f9d7fa787ecadcb2
 
-export GO111MODULE=on
-
 # We need to export GOBIN to allow it to be set
 # for processes spawned from the Makefile
-ifeq ($(FIPS_ENABLED),true)
-	export GOBIN ?= /go/bin
-	GO_FIPS ?= docker run --rm -v $(PWD):/plugin -v $(HOME)/.cache:/root/.cache -w /plugin -e GOFLAGS -e GO111MODULE $(FIPS_IMAGE) go
-	GO_BUILD_TAGS_FIPS = fips
-else
-	export GOBIN ?= $(PWD)/bin
-	GO_FIPS ?= $(GO)
-	GO_BUILD_TAGS_FIPS =
-endif
+export GOBIN ?= $(PWD)/bin
 
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
 ASSETS_DIR ?= assets
@@ -279,10 +269,9 @@ endif
 		$(FIPS_IMAGE) \
 		/bin/sh -c "\
 			echo 'Go already available: ' && go version && \
-			export GO111MODULE=on && \
 			export CGO_ENABLED=1 && \
 			cd /plugin/server && \
-			env GOOS=linux GOARCH=amd64 go build -tags fips -trimpath -buildvcs=false -o dist-fips/plugin-linux-amd64-fips && \
+			env GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=false -o dist-fips/plugin-linux-amd64-fips && \
 			echo 'FIPS plugin build completed successfully'"
 	
 	@echo "FIPS plugin server build completed: server/dist-fips/plugin-linux-amd64-fips"
@@ -314,24 +303,21 @@ else
 endif
 endif
 
+# Helper function to copy common files to bundle directory
+define copy_bundle_files
+	$(if $(wildcard LICENSE.txt),cp -r LICENSE.txt $(1)/$(PLUGIN_ID)/)
+	$(if $(wildcard NOTICE.txt),cp -r NOTICE.txt $(1)/$(PLUGIN_ID)/)
+	$(if $(wildcard $(ASSETS_DIR)/.),cp -r $(ASSETS_DIR) $(1)/$(PLUGIN_ID)/)
+	$(if $(HAS_PUBLIC),cp -r public $(1)/$(PLUGIN_ID)/public/)
+endef
+
 ## Generates a tar bundle of the plugin for install.
 .PHONY: bundle
 bundle:
 	rm -rf dist/
 	mkdir -p dist/$(PLUGIN_ID)
 	./build/bin/manifest dist
-ifneq ($(wildcard LICENSE.txt),)
-	cp -r LICENSE.txt dist/$(PLUGIN_ID)/
-endif
-ifneq ($(wildcard NOTICE.txt),)
-	cp -r NOTICE.txt dist/$(PLUGIN_ID)/
-endif
-ifneq ($(wildcard $(ASSETS_DIR)/.),)
-	cp -r $(ASSETS_DIR) dist/$(PLUGIN_ID)/
-endif
-ifneq ($(HAS_PUBLIC),)
-	cp -r public dist/$(PLUGIN_ID)/public/
-endif
+	$(call copy_bundle_files,dist)
 ifneq ($(HAS_SERVER),)
 	mkdir -p dist/$(PLUGIN_ID)/server
 	cp -r server/dist dist/$(PLUGIN_ID)/server/
@@ -354,18 +340,7 @@ bundle-fips:
 	rm -rf dist-fips/
 	mkdir -p dist-fips/$(PLUGIN_ID)
 	./build/bin/manifest dist-fips
-ifneq ($(wildcard LICENSE.txt),)
-	cp -r LICENSE.txt dist-fips/$(PLUGIN_ID)/
-endif
-ifneq ($(wildcard NOTICE.txt),)
-	cp -r NOTICE.txt dist-fips/$(PLUGIN_ID)/
-endif
-ifneq ($(wildcard $(ASSETS_DIR)/.),)
-	cp -r $(ASSETS_DIR) dist-fips/$(PLUGIN_ID)/
-endif
-ifneq ($(HAS_PUBLIC),)
-	cp -r public dist-fips/$(PLUGIN_ID)/public/
-endif
+	$(call copy_bundle_files,dist-fips)
 ifneq ($(HAS_SERVER),)
 	mkdir -p dist-fips/$(PLUGIN_ID)/server
 	cp -r server/dist-fips dist-fips/$(PLUGIN_ID)/server/dist
@@ -375,7 +350,8 @@ ifneq ($(HAS_WEBAPP),)
 		mkdir -p dist-fips/$(PLUGIN_ID)/webapp && \
 		cp -r webapp/dist dist-fips/$(PLUGIN_ID)/webapp/; \
 	else \
-		echo "Warning: webapp/dist not found, skipping webapp in FIPS bundle"; \
+		echo "Error: webapp/dist not found, but HAS_WEBAPP is set. Run 'make webapp' first."; \
+		exit 1; \
 	fi
 endif
 ifeq ($(shell uname),Darwin)
@@ -400,8 +376,10 @@ dist-fips: apply server-fips webapp bundle-fips
 ## Builds both normal and FIPS distributions.
 .PHONY: dist-all
 dist-all: clean
-	@echo "==> Building both normal and FIPS distributions in parallel..."
-	$(MAKE) dist & $(MAKE) dist-fips & wait
+	@echo "==> Building normal distribution..."
+	$(MAKE) dist
+	@echo "==> Building FIPS distribution..."
+	$(MAKE) dist-fips
 	@echo "==> Both distributions built successfully:"
 	@echo "    Normal: dist/$(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz"
 	@echo "    FIPS:   dist-fips/$(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz"

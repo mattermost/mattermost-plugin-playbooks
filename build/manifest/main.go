@@ -85,14 +85,9 @@ func main() {
 			panic("failed to apply manifest: " + err.Error())
 		}
 
-	case "dist":
-		if err := distManifest(manifest, "dist"); err != nil {
-			panic("failed to write manifest to dist directory: " + err.Error())
-		}
-
-	case "dist-fips":
-		if err := distManifest(manifest, "dist-fips"); err != nil {
-			panic("failed to write manifest to dist-fips directory: " + err.Error())
+	case "dist", "dist-fips":
+		if err := distManifest(manifest, cmd); err != nil {
+			panic("failed to write manifest to " + cmd + " directory: " + err.Error())
 		}
 
 	case "check":

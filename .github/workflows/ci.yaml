@@ -235,39 +235,26 @@ jobs:
           go-version: "${{ env.GO_VERSION }}"
           cache: true
 
-      - name: ci/setup-node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: webapp/package-lock.json
-
-      - name: ci/cache-webapp-node-modules
-        id: cache-webapp-node-modules
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        with:
-          path: webapp/node_modules
-          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-webapp-node-modules-
-
-      - name: ci/setup-webapp-npm-deps
-        if: steps.cache-webapp-node-modules.outputs.cache-hit != 'true'
+      - name: ci/test-chainguard-identity
         env:
-          NODE_ENV: development
+          CHAINGUARD_IDENTITY: ${{ secrets.CHAINGUARD_IDENTITY }}
         run: |
-          cd webapp
-          npm install --ignore-scripts --no-save --legacy-peer-deps
-
-      - name: ci/docker-login-chainguard
-        env:
-          CHAINGUARD_DEV_USERNAME: ${{ secrets.CHAINGUARD_DEV_USERNAME }}
-          CHAINGUARD_DEV_TOKEN: ${{ secrets.CHAINGUARD_DEV_TOKEN }}
-        run: |
-          if [ -n "$CHAINGUARD_DEV_USERNAME" ] && [ -n "$CHAINGUARD_DEV_TOKEN" ]; then
-            echo "Logging into Chainguard registry..."
-            echo "$CHAINGUARD_DEV_TOKEN" | docker login cgr.dev --username "$CHAINGUARD_DEV_USERNAME" --password-stdin
+          if [ -n "$CHAINGUARD_IDENTITY" ]; then
+            echo "Testing Chainguard identity authentication..."
+            # Install chainctl
+            curl -o chainctl https://dl.enforce.dev/chainctl/latest/chainctl_linux_amd64
+            chmod +x chainctl
+            sudo mv chainctl /usr/local/bin/
+            
+            # Try to authenticate with the identity
+            chainctl auth login --identity="$CHAINGUARD_IDENTITY" --yes
+            chainctl auth configure-docker
+            
+            # Test access
+            docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4
           else
-            echo "Warning: CHAINGUARD credentials not available, FIPS build may fail"
+            echo "No CHAINGUARD_IDENTITY secret found"
+            exit 1
           fi
 
       - name: ci/build-both-distributions
