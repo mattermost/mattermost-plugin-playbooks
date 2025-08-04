@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
           go-version: "${{ env.GO_VERSION }}"
-          cache: true
+          cache: false
 
       - name: ci/setup-node
         uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
@@ -107,7 +107,7 @@ jobs:
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
           go-version: "${{ env.GO_VERSION }}"
-          cache: true
+          cache: false
 
       - name: ci/test-chainguard-identity
         env:
@@ -115,8 +115,12 @@ jobs:
         run: |
           if [ -n "$CHAINGUARD_IDENTITY" ]; then
             echo "Testing Chainguard identity authentication..."
-            # Install chainctl
-            curl -o chainctl https://dl.enforce.dev/chainctl/latest/chainctl_linux_amd64
+            # Install chainctl using the correct method
+            curl -o chainctl "https://dl.enforce.dev/chainctl/latest/chainctl_linux_amd64"
+            if file chainctl | grep -q "ASCII text"; then
+              echo "Download failed, trying alternative URL..."
+              curl -o chainctl "https://github.com/chainguard-dev/chainctl/releases/latest/download/chainctl_linux_amd64"
+            fi
             chmod +x chainctl
             sudo mv chainctl /usr/local/bin/
             
