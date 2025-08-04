@@ -124,6 +124,7 @@ jobs:
         uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
+          configure-docker: true
         continue-on-error: true
           node-version-file: ".nvmrc"
           cache: "npm"
@@ -208,10 +209,10 @@ jobs:
             echo "Logging into Chainguard registry..."
             echo "$CHAINGUARD_DEV_TOKEN" | docker login cgr.dev --username "$CHAINGUARD_DEV_USERNAME" --password-stdin
           else
-            echo "Warning: CHAINGUARD credentials not available, FIPS build may fail"
+            echo "❌ Authentication failed, will try fallback in Makefile"
           fi
+        continue-on-error: true
 
-      - name: ci/ensure-fips-build
       - name: ci/build-both-distributions
         env:
           GO_VERSION: ${{ env.GO_VERSION }}

@@ -247,12 +247,18 @@ endif
 	@echo Building FIPS-compliant plugin server binaries
 	mkdir -p server/dist-fips
 	@echo "Setting up FIPS build environment..."
-	@echo "Using Docker authentication configured by chainctl..."
 	
-	# Test if Docker can access the image, if not try to configure chainctl again
+	# Test if Docker can access the image, if not try fallback authentication
 	@if ! docker manifest inspect $(FIPS_IMAGE) >/dev/null 2>&1; then \
-		echo "Docker authentication failed, attempting to reconfigure chainctl..."; \
-		chainctl auth configure-docker 2>/dev/null || echo "chainctl not available or failed"; \
+		echo "Docker authentication failed, trying fallback authentication..."; \
+		if [ -n "$(CHAINGUARD_DEV_USERNAME)" ] && [ -n "$(CHAINGUARD_DEV_TOKEN)" ]; then \
+			echo "Using username/token authentication..."; \
+			echo "$(CHAINGUARD_DEV_TOKEN)" | docker login cgr.dev --username "$(CHAINGUARD_DEV_USERNAME)" --password-stdin; \
+		else \
+			echo "Warning: No authentication available. FIPS build may fail."; \
+		fi; \
+	else \
+		echo "✅ Docker authentication is working"; \
 	fi
 	
 	# Build directly in the FIPS container without external script
