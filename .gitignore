@@ -21,3 +21,7 @@ server/e2etest.config.json
 .notice-work
 .aider*
 .env
+.claude/
+CLAUDE.md
+mprocs.yaml
+server/logs/
