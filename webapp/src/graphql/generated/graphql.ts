@@ -12,6 +12,7 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  JSON: any;
 };
 
 export type Action = {
@@ -88,6 +89,7 @@ export type Mutation = {
   removePlaybookMember: Scalars['String'];
   removeRunParticipants: Scalars['String'];
   setRunFavorite: Scalars['String'];
+  setRunPropertyValue: Scalars['String'];
   updateMetric: Scalars['String'];
   updatePlaybook: Scalars['String'];
   updatePlaybookFavorite: Scalars['String'];
@@ -157,6 +159,13 @@ export type MutationRemoveRunParticipantsArgs = {
 export type MutationSetRunFavoriteArgs = {
   fav: Scalars['Boolean'];
   id: Scalars['String'];
+};
+
+
+export type MutationSetRunPropertyValueArgs = {
+  propertyFieldID: Scalars['String'];
+  runID: Scalars['String'];
+  value?: InputMaybe<Scalars['JSON']>;
 };
 
 
@@ -365,6 +374,16 @@ export type PropertyOptionInput = {
   color?: InputMaybe<Scalars['String']>;
   id?: InputMaybe<Scalars['String']>;
   name: Scalars['String'];
+};
+
+export type PropertyValue = {
+  __typename?: 'PropertyValue';
+  createAt: Scalars['Float'];
+  deleteAt: Scalars['Float'];
+  fieldID: Scalars['String'];
+  id: Scalars['String'];
+  updateAt: Scalars['Float'];
+  value?: Maybe<Scalars['JSON']>;
 };
 
 export type Query = {
@@ -717,6 +736,15 @@ export type UpdateRunTaskActionsMutationVariables = Exact<{
 
 export type UpdateRunTaskActionsMutation = { __typename?: 'Mutation', updateRunTaskActions: string };
 
+export type SetRunPropertyValueMutationVariables = Exact<{
+  runID: Scalars['String'];
+  propertyFieldID: Scalars['String'];
+  value?: InputMaybe<Scalars['JSON']>;
+}>;
+
+
+export type SetRunPropertyValueMutation = { __typename?: 'Mutation', setRunPropertyValue: string };
+
 export const DefaultMessageFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"DefaultMessage"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reminderMessageTemplate"}},{"kind":"Field","name":{"kind":"Name","value":"statusPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"deleteAt"}}]}}]}}]} as unknown as DocumentNode<DefaultMessageFragment, unknown>;
 export const ReminderTimerFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ReminderTimer"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"previousReminder"}},{"kind":"Field","name":{"kind":"Name","value":"reminderTimerDefaultSeconds"}},{"kind":"Field","name":{"kind":"Name","value":"statusPosts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteAt"}}]}}]}}]} as unknown as DocumentNode<ReminderTimerFragment, unknown>;
 export const PlaybookModalFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PlaybookModalFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Playbook"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","alias":{"kind":"Name","value":"is_favorite"},"name":{"kind":"Name","value":"isFavorite"}},{"kind":"Field","name":{"kind":"Name","value":"public"}},{"kind":"Field","alias":{"kind":"Name","value":"team_id"},"name":{"kind":"Name","value":"teamID"}},{"kind":"Field","name":{"kind":"Name","value":"members"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"user_id"},"name":{"kind":"Name","value":"userID"}},{"kind":"Field","alias":{"kind":"Name","value":"scheme_roles"},"name":{"kind":"Name","value":"schemeRoles"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"default_playbook_member_role"},"name":{"kind":"Name","value":"defaultPlaybookMemberRole"}},{"kind":"Field","alias":{"kind":"Name","value":"last_run_at"},"name":{"kind":"Name","value":"lastRunAt"}},{"kind":"Field","alias":{"kind":"Name","value":"active_runs"},"name":{"kind":"Name","value":"activeRuns"}}]}}]} as unknown as DocumentNode<PlaybookModalFieldsFragment, unknown>;
@@ -741,3 +769,4 @@ export const AddRunParticipantsDocument = {"kind":"Document","definitions":[{"ki
 export const RemoveRunParticipantsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveRunParticipants"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userIDs"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"removeRunParticipants"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"runID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}},{"kind":"Argument","name":{"kind":"Name","value":"userIDs"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userIDs"}}}]}]}}]} as unknown as DocumentNode<RemoveRunParticipantsMutation, RemoveRunParticipantsMutationVariables>;
 export const ChangeRunOwnerDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ChangeRunOwner"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ownerID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changeRunOwner"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"runID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}},{"kind":"Argument","name":{"kind":"Name","value":"ownerID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ownerID"}}}]}]}}]} as unknown as DocumentNode<ChangeRunOwnerMutation, ChangeRunOwnerMutationVariables>;
 export const UpdateRunTaskActionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRunTaskActions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"checklistNum"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"itemNum"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"taskActions"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TaskActionUpdates"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRunTaskActions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"runID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}},{"kind":"Argument","name":{"kind":"Name","value":"checklistNum"},"value":{"kind":"Variable","name":{"kind":"Name","value":"checklistNum"}}},{"kind":"Argument","name":{"kind":"Name","value":"itemNum"},"value":{"kind":"Variable","name":{"kind":"Name","value":"itemNum"}}},{"kind":"Argument","name":{"kind":"Name","value":"taskActions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"taskActions"}}}]}]}}]} as unknown as DocumentNode<UpdateRunTaskActionsMutation, UpdateRunTaskActionsMutationVariables>;
+export const SetRunPropertyValueDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetRunPropertyValue"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"propertyFieldID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"value"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setRunPropertyValue"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"runID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runID"}}},{"kind":"Argument","name":{"kind":"Name","value":"propertyFieldID"},"value":{"kind":"Variable","name":{"kind":"Name","value":"propertyFieldID"}}},{"kind":"Argument","name":{"kind":"Name","value":"value"},"value":{"kind":"Variable","name":{"kind":"Name","value":"value"}}}]}]}}]} as unknown as DocumentNode<SetRunPropertyValueMutation, SetRunPropertyValueMutationVariables>;
