@@ -247,14 +247,7 @@ endif
 	@echo Building FIPS-compliant plugin server binaries
 	mkdir -p server/dist-fips
 	@echo "Setting up FIPS build environment..."
-	
-	# Login to Chainguard registry if credentials are available
-	@if [ -n "$(CHAINGUARD_DEV_USERNAME)" ] && [ -n "$(CHAINGUARD_DEV_TOKEN)" ]; then \
-		echo "Logging into Chainguard registry..."; \
-		echo "$(CHAINGUARD_DEV_TOKEN)" | docker login cgr.dev --username "$(CHAINGUARD_DEV_USERNAME)" --password-stdin; \
-	else \
-		echo "Warning: CHAINGUARD_DEV_USERNAME and CHAINGUARD_DEV_TOKEN not set. Using public image if available."; \
-	fi
+	@echo "Using Docker authentication configured by chainctl..."
 	
 	# Build directly in the FIPS container without external script
 	# Create local cache directory for CI/ACT compatibility
