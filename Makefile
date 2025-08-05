@@ -386,8 +386,9 @@ dist-all: clean
 	@echo "==> Building FIPS distribution..."
 	$(MAKE) dist-fips
 	@echo "==> Both distributions built successfully:"
-	@echo "    Normal: dist/$(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz"
-	@echo "    FIPS:   dist-fips/$(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz"
+	@PLUGIN_ID=$$(build/bin/manifest id); PLUGIN_VERSION=$$(build/bin/manifest version); \
+	echo "    Normal: dist/$$PLUGIN_ID-$$PLUGIN_VERSION.tar.gz"; \
+	echo "    FIPS:   dist-fips/$$PLUGIN_ID-$$PLUGIN_VERSION-fips.tar.gz"
 
 ## Builds and installs the plugin to a server.
 .PHONY: deploy
