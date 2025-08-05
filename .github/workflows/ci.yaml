@@ -138,6 +138,26 @@ jobs:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
           audience: https://github.com/mattermost
 
+      - name: ci/debug-chainctl-status
+        run: |
+          echo "=== Debugging chainctl Status ==="
+          echo "chainctl version:"
+          chainctl version || echo "chainctl not available"
+          
+          echo "chainctl auth status:"
+          chainctl auth status || echo "chainctl auth status failed"
+          
+          echo "Environment variables:"
+          echo "CHAINCTL_CONFIG: '$CHAINCTL_CONFIG'"
+          
+          echo "Docker config check:"
+          ls -la ~/.docker/ 2>/dev/null || echo "No ~/.docker directory"
+          
+          if [ -f ~/.docker/config.json ]; then
+            echo "Docker config exists, checking for cgr.dev:"
+            grep -q "cgr.dev" ~/.docker/config.json && echo "✅ cgr.dev found in Docker config" || echo "❌ cgr.dev not found in Docker config"
+          fi
+
       - name: ci/validate-chainguard-auth
         run: |
           echo "Validating Chainguard authentication..."
