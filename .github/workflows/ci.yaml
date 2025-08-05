@@ -106,6 +106,15 @@ jobs:
         with:
           fetch-depth: "0"
 
+      # - name: ci/debug-github-token
+      #   run: |
+      #     echo "=== GitHub OIDC Token Debug ==="
+      #     echo "Actor: ${{ github.actor }}"
+      #     echo "Repository: ${{ github.repository }}"
+      #     echo "Ref: ${{ github.ref }}"
+      #     echo "Expected subject: repo:${{ github.repository }}:ref:${{ github.ref }}"
+      #     echo "GitHub default audience would be: https://github.com/${{ github.repository_owner }}"
+
       - name: ci/setup-go
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
@@ -127,6 +136,7 @@ jobs:
 .2.0
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
+          audience: https://github.com/mattermost
 
       - name: ci/validate-chainguard-auth
         run: |
