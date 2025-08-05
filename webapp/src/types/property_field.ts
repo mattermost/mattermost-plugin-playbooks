@@ -1,24 +1,20 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-export type PropertyField = {
-    id: string;
-    group_id: string;
-    name: string;
-    type: 'text' | 'select' | 'multiselect' | 'date' | 'user' | 'multiuser';
+
+import type {
+    FieldVisibility,
+    PropertyField as PropertyFieldBase,
+    PropertyFieldOption,
+} from '@mattermost/types/properties';
+
+
+export type PropertyField = PropertyFieldBase & {
+    target_type: 'playbook' | 'run';
     attrs: {
-        visibility?: 'hidden' | 'when_set' | 'always';
+        visibility?: FieldVisibility;
         sort_order?: number;
-        options?: Array<{
-            id: string;
-            name: string;
-            color?: string;
-        }>;
+        options?: PropertyFieldOption[];
         parent_id?: string;
     };
-    target_id: string;
-    target_type: 'playbook' | 'run';
-    create_at: number;
-    update_at: number;
-    delete_at: number;
 };

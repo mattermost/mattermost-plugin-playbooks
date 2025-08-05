@@ -1,8 +1,6 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/* eslint-disable no-console */ // TODO: Remove console statements when implementing actual server calls
-
 import React, {
     useCallback,
     useMemo,
@@ -22,6 +20,15 @@ import {ChevronDownCircleOutlineIcon, FormatListBulletedIcon, MenuVariantIcon} f
 
 import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
 import {PlaybookViewTarget} from 'src/types/telemetry';
+import {
+    FullPlaybook,
+    PlaybookPropertyField as GraphQLPropertyField,
+    useAddPlaybookPropertyField,
+    useDeletePlaybookPropertyField,
+    usePlaybook,
+    useUpdatePlaybookPropertyField,
+} from 'src/graphql/hooks';
+import {PropertyFieldInput, PropertyFieldType} from 'src/graphql/generated/graphql';
 import {PropertyField} from 'src/types/property_field';
 
 import GenericModal from 'src/components/widgets/generic_modal';
@@ -36,6 +43,19 @@ interface Props {
     playbookID: string;
 }
 
+const toPropertyField = (gqlField: GraphQLPropertyField, playbookID: string): PropertyField => {
+    return {...gqlField, target_type: 'playbook', target_id: playbookID} as PropertyField;
+};
+
+const usePlaybookPropertyFields = (playbook: Maybe<FullPlaybook>): PropertyField[] => {
+    return useMemo(() => {
+        if (!playbook || !playbook.propertyFields) {
+            return [];
+        }
+        return playbook.propertyFields.map((field) => toPropertyField(field, playbook.id));
+    }, [playbook]);
+};
+
 const PlaybookProperties = ({playbookID}: Props) => {
     const {formatMessage} = useIntl();
     usePlaybookViewTelemetry(PlaybookViewTarget.Properties, playbookID);
@@ -44,87 +64,57 @@ const PlaybookProperties = ({playbookID}: Props) => {
     const [deletingProperty, setDeletingProperty] = useState<PropertyField | null>(null);
     const nameInputRefs = useRef<{[key: string]: PropertyNameInputRef | null}>({});
 
-    // Test data - in real implementation this would come from GraphQL
-    const [properties, setProperties] = useState<PropertyField[]>([
-        {
-            id: '1',
-            group_id: 'playbooks',
-            name: 'Priority',
-            type: 'select',
-            attrs: {
-                visibility: 'always',
-                sort_order: 1,
-                options: [
-                    {id: 'opt1', name: 'High', color: '#ff0000'},
-                    {id: 'opt2', name: 'Medium', color: '#ffaa00'},
-                    {id: 'opt3', name: 'Low', color: '#00aa00'},
-                ],
-            },
-            target_id: playbookID,
-            target_type: 'playbook',
-            create_at: Date.now(),
-            update_at: Date.now(),
-            delete_at: 0,
-        },
-        {
-            id: '2',
-            group_id: 'playbooks',
-            name: 'Description',
-            type: 'text',
-            attrs: {
-                visibility: 'when_set',
-                sort_order: 2,
-            },
-            target_id: playbookID,
-            target_type: 'playbook',
-            create_at: Date.now(),
-            update_at: Date.now(),
-            delete_at: 0,
-        },
-    ]);
+    const [playbook, playbookResult] = usePlaybook(playbookID);
+    const [addPropertyField] = useAddPlaybookPropertyField();
+    const [updatePropertyField] = useUpdatePlaybookPropertyField();
+    const [deletePropertyField] = useDeletePlaybookPropertyField();
 
-    const updateProperty = useCallback((updatedProperty: PropertyField) => {
-        console.debug('Would call server update attribute', updatedProperty);
+    const properties = usePlaybookPropertyFields(playbook);
 
-        setProperties((prev) =>
-            prev.map((prop) =>
-                (prop.id === updatedProperty.id ? updatedProperty : prop)
-            )
-        );
-    }, []);
+    const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
+        try {
+            const propertyFieldInput: PropertyFieldInput = {
+                name: updatedProperty.name,
+                type: updatedProperty.type as PropertyFieldType,
+                attrs: {
+                    visibility: updatedProperty.attrs.visibility,
+                    sortOrder: updatedProperty.attrs.sort_order,
+                    options: updatedProperty.attrs.options,
+                },
+            };
 
-    const deleteProperty = useCallback((propertyId: string) => {
-        console.debug('Would call server delete attribute', propertyId);
+            await updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
+        } catch (error) {
+            console.error('Failed to update property field:', error);
+        }
+    }, [updatePropertyField, playbookID]);
 
-        setProperties((prev) => prev.filter((prop) => prop.id !== propertyId));
-    }, []);
+    const deleteProperty = useCallback(async (propertyId: string) => {
+        try {
+            await deletePropertyField(playbookID, propertyId);
+        } catch (error) {
+            console.error('Failed to delete property field:', error);
+        }
+    }, [deletePropertyField, playbookID]);
 
-    const addProperty = useCallback(() => {
-        const existingIds = properties.map((p) => parseInt(p.id, 10)).filter(Boolean);
-        const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-        const newId = (maxId + 1).toString();
+    const addProperty = useCallback(async () => {
+        try {
+            const newPropertyField: PropertyFieldInput = {
+                name: `Attribute ${properties.length + 1}`,
+                type: PropertyFieldType.Text,
+                attrs: {
+                    visibility: 'when_set',
+                    sortOrder: properties.length + 1,
+                },
+            };
 
-        const newProperty: PropertyField = {
-            id: newId,
-            group_id: 'playbooks',
-            name: `Attribute ${properties.length + 1}`,
-            type: 'text',
-            attrs: {
-                visibility: 'when_set',
-                sort_order: properties.length + 1,
-            },
-            target_id: playbookID,
-            target_type: 'playbook',
-            create_at: Date.now(),
-            update_at: Date.now(),
-            delete_at: 0,
-        };
+            await addPropertyField(playbookID, newPropertyField);
+        } catch (error) {
+            console.error('Failed to add property field:', error);
+        }
+    }, [addPropertyField, playbookID, properties.length]);
 
-        console.debug('Would call server create attribute', newProperty);
-        setProperties((prev) => [...prev, newProperty]);
-    }, [properties, formatMessage, playbookID]);
-
-    const handleDragEnd = useCallback((result: any) => {
+    const handleDragEnd = useCallback(async (result: any) => {
         if (!result.destination) {
             return;
         }
@@ -133,18 +123,34 @@ const PlaybookProperties = ({playbookID}: Props) => {
         const [removed] = reorderedProperties.splice(result.source.index, 1);
         reorderedProperties.splice(result.destination.index, 0, removed);
 
-        // Update sort_order for all properties
-        const updatedProperties = reorderedProperties.map((prop, index) => ({
-            ...prop,
-            attrs: {
-                ...prop.attrs,
-                sort_order: index + 1,
-            },
-        }));
+        try {
+            const updatePromises = reorderedProperties.map(async (prop, index) => {
+                const updatedProperty = {
+                    ...prop,
+                    attrs: {
+                        ...prop.attrs,
+                        sort_order: index + 1,
+                    },
+                };
 
-        console.debug('Would call server update attribute order', updatedProperties);
-        setProperties(updatedProperties);
-    }, [properties]);
+                const propertyFieldInput: PropertyFieldInput = {
+                    name: updatedProperty.name,
+                    type: updatedProperty.type as PropertyFieldType,
+                    attrs: {
+                        visibility: updatedProperty.attrs.visibility,
+                        sortOrder: updatedProperty.attrs.sort_order,
+                        options: updatedProperty.attrs.options,
+                    },
+                };
+
+                return updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
+            });
+
+            await Promise.all(updatePromises);
+        } catch (error) {
+            console.error('Failed to update property field order:', error);
+        }
+    }, [properties, updatePropertyField, playbookID]);
 
     const columnHelper = createColumnHelper<PropertyField>();
 
@@ -251,19 +257,28 @@ const PlaybookProperties = ({playbookID}: Props) => {
                             setEditingTypeId(field.id);
                         }}
                         onDelete={(field) => setDeletingProperty(field)}
-                        onDuplicate={(field) => {
-                            const duplicatedField = {
-                                ...field,
-                                name: `${field.name} Copy`,
-                            };
-                            console.debug('Would call server create attribute', duplicatedField);
-                            setProperties((prev) => [...prev, duplicatedField]);
+                        onDuplicate={async (field) => {
+                            try {
+                                const duplicatedPropertyField: PropertyFieldInput = {
+                                    name: `${field.name} Copy`,
+                                    type: field.type as PropertyFieldType,
+                                    attrs: {
+                                        visibility: field.attrs.visibility,
+                                        sortOrder: properties.length + 1,
+                                        options: field.attrs.options,
+                                    },
+                                };
+
+                                await addPropertyField(playbookID, duplicatedPropertyField);
+                            } catch (error) {
+                                console.error('Failed to duplicate property field:', error);
+                            }
                         }}
                     />
                 ),
             }),
         ],
-        [columnHelper, formatMessage, updateProperty, deleteProperty, properties, setProperties, editingTypeId]
+        [columnHelper, formatMessage, updateProperty, deleteProperty, properties, editingTypeId]
     );
 
     const table = useReactTable({
@@ -271,6 +286,26 @@ const PlaybookProperties = ({playbookID}: Props) => {
         columns,
         getCoreRowModel: getCoreRowModel(),
     });
+
+    if (playbookResult.loading) {
+        return (
+            <OuterContainer>
+                <InnerContainer>
+                    <div>Loading...</div>
+                </InnerContainer>
+            </OuterContainer>
+        );
+    }
+
+    if (playbookResult.error || !playbook) {
+        return (
+            <OuterContainer>
+                <InnerContainer>
+                    <div>Error loading playbook properties. Please try again.</div>
+                </InnerContainer>
+            </OuterContainer>
+        );
+    }
 
     if (properties.length === 0) {
         return (
