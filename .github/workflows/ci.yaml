@@ -106,15 +106,6 @@ jobs:
         with:
           fetch-depth: "0"
 
-      # - name: ci/debug-github-token
-      #   run: |
-      #     echo "=== GitHub OIDC Token Debug ==="
-      #     echo "Actor: ${{ github.actor }}"
-      #     echo "Repository: ${{ github.repository }}"
-      #     echo "Ref: ${{ github.ref }}"
-      #     echo "Expected subject: repo:${{ github.repository }}:ref:${{ github.ref }}"
-      #     echo "GitHub default audience would be: https://github.com/${{ github.repository_owner }}"
-
       - name: ci/setup-go
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
@@ -126,13 +117,6 @@ jobs:
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
 
-      - name: ci/validate-chainguard-auth
-        run: |
-          echo "Validating Chainguard authentication..."
-          # Test that we can access the registry (this will fail fast if auth doesn't work)
-          docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4
-          echo "✅ Chainguard authentication validated successfully"
-
       - name: ci/setup-build-tools
         run: |
           echo "Setting up build tools..."
@@ -143,8 +127,7 @@ jobs:
       - name: ci/build-both-distributions
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
-          CHAINGUARD_DEV_USERNAME: ${{ secrets.CHAINGUARD_DEV_USERNAME }}
-          CHAINGUARD_DEV_TOKEN: ${{ secrets.CHAINGUARD_DEV_TOKEN }}
+
         run: make dist-all
 
       - name: ci/upload-all-artifacts
