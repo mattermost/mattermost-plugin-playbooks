@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package app
 
 import (
@@ -218,26 +221,26 @@ func (cc *ComparisonCondition) validateValueForFieldType(field PropertyField) er
 			return errors.New("text field condition value must be a string")
 		}
 		return nil
-		
+
 	case model.PropertyFieldTypeSelect:
 		// Select fields must have string values (single option ID)
 		var stringValue string
 		if err := json.Unmarshal(cc.Value, &stringValue); err != nil {
 			return errors.New("select field condition value must be a string")
 		}
-		
+
 		// Validate that the value is a valid option ID
 		if len(field.Attrs.Options) == 0 {
 			return errors.New("condition value does not match any valid option for select field")
 		}
-		
+
 		for _, option := range field.Attrs.Options {
 			if option.GetID() == stringValue {
 				return nil
 			}
 		}
 		return errors.New("condition value does not match any valid option for select field")
-		
+
 	case model.PropertyFieldTypeMultiselect:
 		// Multiselect fields must have array values
 		var arrayValue []string
@@ -247,25 +250,25 @@ func (cc *ComparisonCondition) validateValueForFieldType(field PropertyField) er
 		if len(arrayValue) == 0 {
 			return errors.New("multiselect field condition value array cannot be empty")
 		}
-		
+
 		// Validate that all values are valid option IDs
 		if len(field.Attrs.Options) == 0 {
 			return errors.New("condition value does not match any valid option for multiselect field")
 		}
-		
+
 		validOptionIDs := make(map[string]bool)
 		for _, option := range field.Attrs.Options {
 			validOptionIDs[option.GetID()] = true
 		}
-		
+
 		for _, value := range arrayValue {
 			if !validOptionIDs[value] {
 				return errors.New("condition value does not match any valid option for multiselect field")
 			}
 		}
-		
+
 		return nil
-		
+
 	default:
 		return errors.New("unsupported field type for condition")
 	}
@@ -287,12 +290,12 @@ func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue
 		if err := json.Unmarshal(conditionValue, &conditionString); err != nil {
 			return false
 		}
-		
+
 		var propertyString string
 		if err := json.Unmarshal(propertyValue.Value, &propertyString); err != nil {
 			return false
 		}
-		
+
 		return strings.EqualFold(propertyString, conditionString)
 
 	case model.PropertyFieldTypeSelect:
@@ -301,12 +304,12 @@ func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue
 		if err := json.Unmarshal(conditionValue, &conditionString); err != nil {
 			return false
 		}
-		
+
 		var propertyString string
 		if err := json.Unmarshal(propertyValue.Value, &propertyString); err != nil {
 			return false
 		}
-		
+
 		return propertyString == conditionString
 
 	case model.PropertyFieldTypeMultiselect:
@@ -315,12 +318,12 @@ func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue
 		if err := json.Unmarshal(conditionValue, &conditionArray); err != nil {
 			return false
 		}
-		
+
 		var propertyArray []string
 		if err := json.Unmarshal(propertyValue.Value, &propertyArray); err != nil {
 			return false
 		}
-		
+
 		// Check if any condition value is in the property array
 		for _, conditionItem := range conditionArray {
 			if slices.Contains(propertyArray, conditionItem) {

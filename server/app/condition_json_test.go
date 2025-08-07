@@ -13,11 +13,11 @@ import (
 )
 
 type ConditionTestCase struct {
-	Name       string           `json:"name"`
-	Fields     []PropertyField  `json:"fields"`
-	Values     []PropertyValue  `json:"values"`
-	Condition  Condition        `json:"condition"`
-	ShouldPass bool             `json:"shouldPass"`
+	Name       string          `json:"name"`
+	Fields     []PropertyField `json:"fields"`
+	Values     []PropertyValue `json:"values"`
+	Condition  Condition       `json:"condition"`
+	ShouldPass bool            `json:"shouldPass"`
 }
 
 func TestConditionJSONTestCases(t *testing.T) {
