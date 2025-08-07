@@ -21,7 +21,7 @@ export interface ComparisonCondition {
 
     // Value can be:
     // - string for text fields (case-insensitive matching)
-    // - string for select fields (exact matching)
+    // - string[] for select fields ("any of" logic)
     // - string[] for multiselect fields ("any of" logic)
     value: string | string[];
 }
@@ -110,11 +110,11 @@ const is = (
     }
 
     if (isSelectValue(propertyField, propertyValue)) {
-        if (typeof conditionValue !== 'string') {
+        if (!Array.isArray(conditionValue)) {
             return false;
         }
 
-        return propertyValue.value === conditionValue;
+        return conditionValue.includes(propertyValue.value);
     }
 
     if (isMultiselectValue(propertyField, propertyValue)) {

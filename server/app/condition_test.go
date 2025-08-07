@@ -18,7 +18,7 @@ func TestCondition_Evaluate(t *testing.T) {
 		condition := &Condition{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
-				Value:   json.RawMessage(`"critical_id"`),
+				Value:   json.RawMessage(`["critical_id"]`),
 			},
 		}
 		require.True(t, condition.Evaluate(propertyFields, propertyValues))
@@ -28,7 +28,7 @@ func TestCondition_Evaluate(t *testing.T) {
 		condition := &Condition{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
-				Value:   json.RawMessage(`"low_id"`),
+				Value:   json.RawMessage(`["low_id"]`),
 			},
 		}
 		require.False(t, condition.Evaluate(propertyFields, propertyValues))
@@ -38,7 +38,7 @@ func TestCondition_Evaluate(t *testing.T) {
 		condition := &Condition{
 			Is: &ComparisonCondition{
 				FieldID: "nonexistent_id",
-				Value:   json.RawMessage(`"critical_id"`),
+				Value:   json.RawMessage(`["critical_id"]`),
 			},
 		}
 		require.False(t, condition.Evaluate(propertyFields, propertyValues))
@@ -58,7 +58,7 @@ func TestCondition_Evaluate(t *testing.T) {
 		condition := &Condition{
 			IsNot: &ComparisonCondition{
 				FieldID: "severity_id",
-				Value:   json.RawMessage(`"critical_id"`),
+				Value:   json.RawMessage(`["critical_id"]`),
 			},
 		}
 		require.False(t, condition.Evaluate(propertyFields, propertyValues))
@@ -68,7 +68,7 @@ func TestCondition_Evaluate(t *testing.T) {
 		condition := &Condition{
 			IsNot: &ComparisonCondition{
 				FieldID: "nonexistent_id",
-				Value:   json.RawMessage(`"critical_id"`),
+				Value:   json.RawMessage(`["critical_id"]`),
 			},
 		}
 		require.True(t, condition.Evaluate(propertyFields, propertyValues))
@@ -80,7 +80,7 @@ func TestCondition_Evaluate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"critical_id"`),
+						Value:   json.RawMessage(`["critical_id"]`),
 					},
 				},
 				{
@@ -100,13 +100,13 @@ func TestCondition_Evaluate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"critical_id"`),
+						Value:   json.RawMessage(`["critical_id"]`),
 					},
 				},
 				{
 					Is: &ComparisonCondition{
 						FieldID: "status_id",
-						Value:   json.RawMessage(`"closed_id"`),
+						Value:   json.RawMessage(`["closed_id"]`),
 					},
 				},
 			},
@@ -120,13 +120,13 @@ func TestCondition_Evaluate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"low_id"`),
+						Value:   json.RawMessage(`["low_id"]`),
 					},
 				},
 				{
 					Is: &ComparisonCondition{
 						FieldID: "priority_id",
-						Value:   json.RawMessage(`"high_priority_id"`),
+						Value:   json.RawMessage(`["high_priority_id"]`),
 					},
 				},
 			},
@@ -140,13 +140,13 @@ func TestCondition_Evaluate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"low_id"`),
+						Value:   json.RawMessage(`["low_id"]`),
 					},
 				},
 				{
 					Is: &ComparisonCondition{
 						FieldID: "status_id",
-						Value:   json.RawMessage(`"closed_id"`),
+						Value:   json.RawMessage(`["closed_id"]`),
 					},
 				},
 			},
@@ -160,7 +160,7 @@ func TestCondition_Evaluate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"critical_id"`),
+						Value:   json.RawMessage(`["critical_id"]`),
 					},
 				},
 				{
@@ -168,13 +168,13 @@ func TestCondition_Evaluate(t *testing.T) {
 						{
 							Is: &ComparisonCondition{
 								FieldID: "status_id",
-								Value:   json.RawMessage(`"open_id"`),
+								Value:   json.RawMessage(`["open_id"]`),
 							},
 						},
 						{
 							Is: &ComparisonCondition{
 								FieldID: "priority_id",
-								Value:   json.RawMessage(`"high_priority_id"`),
+								Value:   json.RawMessage(`["high_priority_id"]`),
 							},
 						},
 					},
@@ -255,7 +255,7 @@ func TestCondition_JSON(t *testing.T) {
 		original := &Condition{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
-				Value:   json.RawMessage(`"Critical"`),
+				Value:   json.RawMessage(`["Critical"]`),
 			},
 		}
 
@@ -268,7 +268,7 @@ func TestCondition_JSON(t *testing.T) {
 
 		require.NotNil(t, unmarshaled.Is)
 		require.Equal(t, "severity_id", unmarshaled.Is.FieldID)
-		require.Equal(t, json.RawMessage(`"Critical"`), unmarshaled.Is.Value)
+		require.Equal(t, json.RawMessage(`["Critical"]`), unmarshaled.Is.Value)
 		require.Nil(t, unmarshaled.IsNot)
 		require.Nil(t, unmarshaled.And)
 		require.Nil(t, unmarshaled.Or)
@@ -280,7 +280,7 @@ func TestCondition_JSON(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"critical_id"`),
+						Value:   json.RawMessage(`["critical_id"]`),
 					},
 				},
 				{
@@ -288,7 +288,7 @@ func TestCondition_JSON(t *testing.T) {
 						{
 							Is: &ComparisonCondition{
 								FieldID: "status_id",
-								Value:   json.RawMessage(`"open_id"`),
+								Value:   json.RawMessage(`["open_id"]`),
 							},
 						},
 						{
@@ -325,7 +325,7 @@ func TestCondition_JSON(t *testing.T) {
 				{
 					"is": {
 						"field_id": "severity_id",
-						"value": "Critical"
+						"value": ["Critical"]
 					}
 				},
 				{
@@ -344,7 +344,7 @@ func TestCondition_JSON(t *testing.T) {
 		require.Len(t, condition.And, 2)
 		require.NotNil(t, condition.And[0].Is)
 		require.Equal(t, "severity_id", condition.And[0].Is.FieldID)
-		require.Equal(t, json.RawMessage(`"Critical"`), condition.And[0].Is.Value)
+		require.Equal(t, json.RawMessage(`["Critical"]`), condition.And[0].Is.Value)
 		require.NotNil(t, condition.And[1].IsNot)
 		require.Equal(t, "acknowledged_id", condition.And[1].IsNot.FieldID)
 		require.Equal(t, json.RawMessage(`"true"`), condition.And[1].IsNot.Value)
@@ -617,7 +617,7 @@ func TestCondition_Validate(t *testing.T) {
 		condition := &Condition{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
-				Value:   json.RawMessage(`"critical_id"`),
+				Value:   json.RawMessage(`["critical_id"]`),
 			},
 		}
 		require.NoError(t, condition.Validate(propertyFields))
@@ -639,7 +639,7 @@ func TestCondition_Validate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"critical_id"`),
+						Value:   json.RawMessage(`["critical_id"]`),
 					},
 				},
 				{
@@ -659,13 +659,13 @@ func TestCondition_Validate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
-						Value:   json.RawMessage(`"critical_id"`),
+						Value:   json.RawMessage(`["critical_id"]`),
 					},
 				},
 				{
 					Is: &ComparisonCondition{
 						FieldID: "priority_id",
-						Value:   json.RawMessage(`"high_priority_id"`),
+						Value:   json.RawMessage(`["high_priority_id"]`),
 					},
 				},
 			},
@@ -684,7 +684,7 @@ func TestCondition_Validate(t *testing.T) {
 		condition := &Condition{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
-				Value:   json.RawMessage(`"critical_id"`),
+				Value:   json.RawMessage(`["critical_id"]`),
 			},
 			IsNot: &ComparisonCondition{
 				FieldID: "acknowledged_id",
@@ -720,7 +720,7 @@ func TestCondition_Validate(t *testing.T) {
 				{
 					Is: &ComparisonCondition{
 						FieldID: "",
-						Value:   json.RawMessage(`"critical_id"`),
+						Value:   json.RawMessage(`["critical_id"]`),
 					},
 				},
 			},
@@ -778,7 +778,7 @@ func TestComparisonCondition_Validate(t *testing.T) {
 	t.Run("valid comparison condition", func(t *testing.T) {
 		condition := &ComparisonCondition{
 			FieldID: "severity_id",
-			Value:   json.RawMessage(`"critical_id"`),
+			Value:   json.RawMessage(`["critical_id"]`),
 		}
 		require.NoError(t, condition.Validate(propertyFields))
 	})
@@ -786,7 +786,7 @@ func TestComparisonCondition_Validate(t *testing.T) {
 	t.Run("empty field_id fails", func(t *testing.T) {
 		condition := &ComparisonCondition{
 			FieldID: "",
-			Value:   json.RawMessage(`"critical_id"`),
+			Value:   json.RawMessage(`["critical_id"]`),
 		}
 		err := condition.Validate(propertyFields)
 		require.Error(t, err)
@@ -817,7 +817,7 @@ func TestComparisonCondition_Validate(t *testing.T) {
 
 		condition := &ComparisonCondition{
 			FieldID: "empty_select_id",
-			Value:   json.RawMessage(`"any_value"`),
+			Value:   json.RawMessage(`["any_value"]`),
 		}
 		err := condition.Validate(emptySelectFields)
 		require.Error(t, err)

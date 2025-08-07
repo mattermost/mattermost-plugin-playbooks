@@ -184,7 +184,7 @@ describe('conditions', () => {
                 const condition: Condition = {
                     is: {
                         field_id: 'select1',
-                        value: 'option1',
+                        value: ['option1'],
                     },
                 };
 
@@ -196,7 +196,7 @@ describe('conditions', () => {
                 const condition: Condition = {
                     is: {
                         field_id: 'select1',
-                        value: 'OPTION1',
+                        value: ['OPTION1'],
                     },
                 };
 
@@ -208,7 +208,7 @@ describe('conditions', () => {
                 const condition: Condition = {
                     isNot: {
                         field_id: 'select1',
-                        value: 'option2',
+                        value: ['option2'],
                     },
                 };
 
@@ -216,11 +216,11 @@ describe('conditions', () => {
                 expect(result).toBe(true);
             });
 
-            it('should reject array values for select fields', () => {
+            it('should reject string values for select fields', () => {
                 const condition: Condition = {
                     is: {
                         field_id: 'select1',
-                        value: ['option1', 'option2'],
+                        value: 'option1',
                     },
                 };
 
@@ -304,7 +304,7 @@ describe('conditions', () => {
                         {
                             is: {
                                 field_id: 'select1',
-                                value: 'option1',
+                                value: ['option1'],
                             },
                         },
                     ],
@@ -326,7 +326,7 @@ describe('conditions', () => {
                         {
                             is: {
                                 field_id: 'select1',
-                                value: 'option2',
+                                value: ['option2'],
                             },
                         },
                     ],
@@ -348,7 +348,7 @@ describe('conditions', () => {
                         {
                             is: {
                                 field_id: 'select1',
-                                value: 'option1',
+                                value: ['option1'],
                             },
                         },
                     ],
@@ -370,7 +370,7 @@ describe('conditions', () => {
                         {
                             is: {
                                 field_id: 'select1',
-                                value: 'option2',
+                                value: ['option2'],
                             },
                         },
                     ],
