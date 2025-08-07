@@ -1,9 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import testCases from '../../../testdata/condition-test-cases.json';
+
 import {Condition, executeCondition} from './conditions';
 import {PropertyField, PropertyValue} from './properties';
-import testCases from '../../../testdata/condition-test-cases.json';
 
 interface TestCase {
     name: string;
