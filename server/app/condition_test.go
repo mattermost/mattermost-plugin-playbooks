@@ -423,7 +423,7 @@ func TestIsFunction(t *testing.T) {
 			FieldID: "select_field",
 			Value:   json.RawMessage(`"Option1"`),
 		}
-		result := is(field, pv, json.RawMessage(`"Option1"`))
+		result := is(field, pv, json.RawMessage(`["Option1"]`))
 		require.True(t, result)
 	})
 
@@ -438,7 +438,7 @@ func TestIsFunction(t *testing.T) {
 			FieldID: "select_field",
 			Value:   json.RawMessage(`"Option1"`),
 		}
-		result := is(field, pv, json.RawMessage(`"option1"`))
+		result := is(field, pv, json.RawMessage(`["option1"]`))
 		require.False(t, result)
 	})
 
