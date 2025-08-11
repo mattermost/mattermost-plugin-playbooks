@@ -32,6 +32,7 @@ default: all
 include build/setup.mk
 
 BUNDLE_NAME ?= $(PLUGIN_ID)-$(PLUGIN_VERSION).tar.gz
+BUNDLE_NAME_FIPS ?= $(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz
 
 # Include custom makefile, if present
 ifneq ($(wildcard build/custom.mk),)
@@ -360,12 +361,12 @@ ifneq ($(HAS_WEBAPP),)
 	fi
 endif
 ifeq ($(shell uname),Darwin)
-	cd dist-fips && tar --disable-copyfile -cvzf $(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz $(PLUGIN_ID)
+	cd dist-fips && tar --disable-copyfile -cvzf $(BUNDLE_NAME_FIPS) $(PLUGIN_ID)
 else
-	cd dist-fips && tar -cvzf $(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz $(PLUGIN_ID)
+	cd dist-fips && tar -cvzf $(BUNDLE_NAME_FIPS) $(PLUGIN_ID)
 endif
 
-	@echo "==> FIPS plugin built at: dist-fips/$(PLUGIN_ID)-$(PLUGIN_VERSION)-fips.tar.gz"
+	@echo "==> FIPS plugin built at: dist-fips/$(BUNDLE_NAME_FIPS)"
 
 ## Builds and bundles the plugin.
 .PHONY: dist
