@@ -7,6 +7,8 @@ webapp/src/manifest.ts
 server/manifest.go
 server/data/
 server/e2etest.config.json
+server/logs/
+mprocs.yaml
 
 # Mac
 .DS_Store
@@ -21,7 +23,9 @@ server/e2etest.config.json
 .notice-work
 .aider*
 .env
-.claude/
+
+# Claude
+**/CLAUDE.local.md
+.claude
 CLAUDE.md
-mprocs.yaml
-server/logs/
+.cursorrules
