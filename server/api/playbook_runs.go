@@ -256,17 +256,22 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
-	playbook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
-		return
+	var channelID string
+
+	if playbookID != "" {
+		playbook, err := h.playbookService.Get(playbookID)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
+			return
+		}
+		channelID = playbook.GetRunChannelID()
 	}
 
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
-			ChannelID:   playbook.GetRunChannelID(),
+			ChannelID:   channelID,
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,

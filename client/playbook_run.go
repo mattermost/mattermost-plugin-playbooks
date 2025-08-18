@@ -30,7 +30,7 @@ type PlaybookRun struct {
 	ActiveStage                             int             `json:"active_stage"`
 	ActiveStageTitle                        string          `json:"active_stage_title"`
 	PostID                                  string          `json:"post_id"`
-	PlaybookID                              string          `json:"playbook_id"`
+	PlaybookID                              string          `json:"playbook_id"` // Can be empty for standalone runs
 	Checklists                              []Checklist     `json:"checklists"`
 	StatusPosts                             []StatusPost    `json:"status_posts"`
 	CurrentStatus                           string          `json:"current_status"`
