@@ -119,8 +119,9 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 
 	switch options.Sort {
 	case app.SortByMetric0, app.SortByMetric1, app.SortByMetric2, app.SortByMetric3:
-		if options.PlaybookID == "" {
-			return sq.SelectBuilder{}, errors.New("sorting by metric requires a playbook_id")
+		// For metric sorting, we need to support both playbook-based and standalone run metrics
+		if options.PlaybookID == "" && options.RunID == "" {
+			return sq.SelectBuilder{}, errors.New("sorting by metric requires either a playbook_id or run_id")
 		}
 
 		ordering := 0
@@ -133,18 +134,24 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 			ordering = 3
 		}
 
+		// Build metric query for playbook-based or standalone runs
+		metricQuery := sq.Select("m.Value").
+			From("IR_Metric AS m").
+			InnerJoin("IR_MetricConfig AS mc ON (mc.ID = m.MetricConfigID)").
+			Where("mc.DeleteAt = 0").
+			Where("m.IncidentID = i.ID").
+			Where(sq.Eq{"mc.Ordering": ordering})
+
+		if options.PlaybookID != "" {
+			// Playbook-based runs: use PlaybookID
+			metricQuery = metricQuery.Where(sq.Eq{"mc.PlaybookID": options.PlaybookID})
+		} else {
+			// Standalone runs: use RunID
+			metricQuery = metricQuery.Where(sq.Eq{"mc.RunID": options.RunID})
+		}
+
 		// Since we're sorting by metric, we need to create the correct metric column to sort by
-		builder = builder.Column(
-			sq.Alias(
-				sq.Select("m.Value").
-					From("IR_Metric AS m").
-					InnerJoin("IR_MetricConfig AS mc ON (mc.ID = m.MetricConfigID)").
-					Where("mc.DeleteAt = 0").
-					Where(sq.Eq{"mc.PlaybookID": options.PlaybookID}).
-					Where("m.IncidentID = i.ID").
-					Where(sq.Eq{"mc.Ordering": ordering}),
-				"Metric",
-			)).
+		builder = builder.Column(sq.Alias(metricQuery, "Metric")).
 			OrderByClause("Metric " + direction)
 	default:
 		builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
@@ -1435,12 +1442,16 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 		return nil
 	}
 
-	//retrieve metrics configurations ids for this run to validate received data
 	query := s.queryBuilder.
 		Select("ID").
 		From("IR_MetricConfig").
-		Where(sq.Eq{"PlaybookID": playbookRun.PlaybookID}).
 		Where(sq.Eq{"DeleteAt": 0})
+
+	if playbookRun.PlaybookID == "" {
+		query = query.Where(sq.Eq{"RunID": playbookRun.ID})
+	} else {
+		query = query.Where(sq.Eq{"PlaybookID": playbookRun.PlaybookID})
+	}
 
 	var metricsConfigsIDs []string
 	err := s.store.selectBuilder(q, &metricsConfigsIDs, query)
@@ -1455,11 +1466,11 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 	retrospectivePublished := !playbookRun.RetrospectiveWasCanceled && playbookRun.RetrospectivePublishedAt > 0
 
 	for _, m := range playbookRun.MetricsData {
-		//do not store if id is not in run's playbook configuration
+		//do not store if id is not in run's configuration (playbook or standalone run)
 		if !validIDs[m.MetricConfigID] {
 			continue
 		}
-		_, err = s.store.execBuilder(q, sq.
+		_, err := s.store.execBuilder(q, sq.
 			Insert("IR_Metric").
 			Columns("IncidentID", "MetricConfigID", "Value", "Published").
 			Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).

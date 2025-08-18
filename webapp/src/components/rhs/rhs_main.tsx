@@ -224,7 +224,7 @@ const RightHandSidebar = () => {
     }
 
     // No playbooks
-    if (!isLoading && playbooks?.length === 0) {
+    if (!isLoading && playbooks?.length === 0 && fetchedRuns.runsInProgress.length === 0 && fetchedRuns.runsFinished.length === 0) {
         return <RHSHome/>;
     }
 

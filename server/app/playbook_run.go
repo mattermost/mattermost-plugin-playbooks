@@ -88,6 +88,7 @@ type PlaybookRun struct {
 	PostID string `json:"post_id"`
 
 	// PlaybookID is the identifier of the playbook from which this run was created.
+	// Can be empty for standalone runs.
 	PlaybookID string `json:"playbook_id"`
 
 	// Checklists is an array of the checklists in the run.
@@ -1559,6 +1560,10 @@ type PlaybookRunFilterOptions struct {
 	// PlaybookID filters playbook runs that are derived from this playbook id.
 	// Defaults to blank (no filter).
 	PlaybookID string `url:"playbook_id,omitempty"`
+
+	// RunID filters by a specific run ID. Used for metric sorting on standalone runs.
+	// Defaults to blank (no filter).
+	RunID string `url:"run_id,omitempty"`
 
 	// ActiveGTE filters playbook runs that were active after (or equal) to the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).

@@ -176,6 +176,12 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
+	// Set the run type based on whether a playbook ID is provided
+	runType := app.RunTypeChannelChecklist
+	if playbookRunCreateOptions.PlaybookID != "" {
+		runType = app.RunTypePlaybook
+	}
+
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
@@ -185,7 +191,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
-			Type:        playbookRunCreateOptions.Type,
+			Type:        runType,
 		},
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
@@ -266,21 +272,29 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
-	playbook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
-		return
+	channelID := ""
+	runType := app.RunTypeChannelChecklist
+
+	// if a playbook ID exists, link the run to the channel and set the right type
+	if playbookID != "" {
+		playbook, err := h.playbookService.Get(playbookID)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
+			return
+		}
+		channelID = playbook.GetRunChannelID()
+		runType = app.RunTypePlaybook
 	}
 
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
-			ChannelID:   playbook.GetRunChannelID(),
+			ChannelID:   channelID,
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
-			Type:        app.RunTypePlaybook,
+			Type:        runType,
 		},
 		request.UserId,
 		nil,
