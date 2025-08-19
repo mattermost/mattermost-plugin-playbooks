@@ -135,4 +135,11 @@ func TestJSONScalarIntegration(t *testing.T) {
 
 		assert.Nil(t, response.TestJSON)
 	})
+
+	t.Run("invalid json input", func(t *testing.T) {
+		query := `{ testJSON(input: {key: "value", invalid: }) }`
+		result := schema.Exec(context.Background(), query, "", nil)
+		require.NotEmpty(t, result.Errors)
+		assert.Contains(t, result.Errors[0].Error(), "syntax error")
+	})
 }
