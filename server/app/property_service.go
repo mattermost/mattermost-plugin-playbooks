@@ -303,7 +303,6 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 }
 
 func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage) (json.RawMessage, error) {
-	// Handle null/empty values - these are allowed for all field types
 	if len(value) == 0 || string(value) == "null" {
 		return value, nil
 	}
@@ -337,23 +336,20 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 }
 
 func (s *propertyService) sanitizeTextValue(value string) (string, error) {
-	// Trim whitespace from the string value
-	sanitizedValue := strings.TrimSpace(value)
-	// Text values can be any string, including empty strings after trimming
-	return sanitizedValue, nil
+	return strings.TrimSpace(value), nil
 }
 
-
-
 func (s *propertyService) validateSelectValue(propertyField *model.PropertyField, value string) error {
-	// Convert to our PropertyField type to access parsed options
-	ourPropertyField, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
+	if value == "" {
+		return nil
+	}
+
+	pf, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert property field")
 	}
 
-	// Check if the value exists in the options
-	for _, option := range ourPropertyField.Attrs.Options {
+	for _, option := range pf.Attrs.Options {
 		if option.GetID() == value {
 			return nil
 		}
@@ -363,26 +359,22 @@ func (s *propertyService) validateSelectValue(propertyField *model.PropertyField
 }
 
 func (s *propertyService) validateMultiselectValue(propertyField *model.PropertyField, value []string) error {
-	// Empty arrays are allowed
 	if len(value) == 0 {
 		return nil
 	}
 
-	// Convert to our PropertyField type to access parsed options
-	ourPropertyField, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
+	pf, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert property field")
 	}
 
-	// Build a map of valid option IDs for quick lookup
-	validOptions := make(map[string]bool)
-	for _, option := range ourPropertyField.Attrs.Options {
-		validOptions[option.GetID()] = true
+	validOptions := make(map[string]struct{})
+	for _, option := range pf.Attrs.Options {
+		validOptions[option.GetID()] = struct{}{}
 	}
 
-	// Check that each value exists in the options
 	for _, val := range value {
-		if !validOptions[val] {
+		if _, exists := validOptions[val]; !exists {
 			return errors.Errorf("multiselect field value '%s' is not a valid option ID", val)
 		}
 	}
