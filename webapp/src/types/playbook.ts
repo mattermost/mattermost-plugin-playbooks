@@ -214,7 +214,6 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
 
 export function emptyChecklist(): Checklist {
     return {
-        id: `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
         title: 'Default checklist',
         items: [emptyChecklistItem()],
     };
@@ -222,7 +221,6 @@ export function emptyChecklist(): Checklist {
 
 export function emptyChecklistItem(): ChecklistItem {
     return {
-        id: `temp_item_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
         title: '',
         state: ChecklistItemState.Open,
         command: '',
@@ -237,7 +235,6 @@ export function emptyChecklistItem(): ChecklistItem {
 }
 
 export const newChecklistItem = (title = '', description = '', command = '', state = ChecklistItemState.Open): ChecklistItem => ({
-    id: `temp_item_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
     title,
     description,
     command,
