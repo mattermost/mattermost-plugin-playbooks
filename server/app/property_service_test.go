@@ -112,7 +112,6 @@ func TestPropertyService_duplicatePropertyFieldForRun(t *testing.T) {
 	})
 }
 
-
 func TestPropertyService_validateSelectValue(t *testing.T) {
 	s := &propertyService{}
 
@@ -229,7 +228,6 @@ func TestPropertyService_validateMultiselectValue(t *testing.T) {
 		})
 	}
 }
-
 
 func TestPropertyService_sanitizeTextValue(t *testing.T) {
 	s := &propertyService{}
@@ -449,4 +447,3 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 		})
 	}
 }
-
