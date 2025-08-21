@@ -9,7 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
-describe('channels > status update posts in DMs', { testIsolation: true }, () => {
+describe('channels > status update posts in DMs', {testIsolation: true}, () => {
     let testTeam;
     let userA;
     let userB;
@@ -18,12 +18,12 @@ describe('channels > status update posts in DMs', { testIsolation: true }, () =>
     beforeEach(() => {
         cy.apiAdminLogin();
 
-        cy.apiInitSetup({ loginAfter: false }).then(({ team, user }) => {
+        cy.apiInitSetup({loginAfter: false}).then(({team, user}) => {
             testTeam = team;
             userA = user;
 
             // # Create second user
-            cy.apiCreateUser().then(({ user: secondUser }) => {
+            cy.apiCreateUser().then(({user: secondUser}) => {
                 userB = secondUser;
                 cy.apiAddUserToTeam(testTeam.id, userB.id);
 
