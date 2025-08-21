@@ -10,7 +10,8 @@ import {Post} from '@mattermost/types/posts';
 import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {Channel} from '@mattermost/types/channels';
 import {GlobalState} from '@mattermost/types/store';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId, getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {General} from 'mattermost-redux/constants';
 import {Team} from '@mattermost/types/teams';
 
 import {PlaybookRunViewTarget} from 'src/types/telemetry';
@@ -29,7 +30,9 @@ interface Props {
 export const UpdatePost = (props: Props) => {
     const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel | undefined>((state) => getChannel(state, props.post.channel_id));
-    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, channel?.team_id ?? ''));
+    const currentTeamId = useSelector<GlobalState, string>(getCurrentTeamId);
+    const teamId = channel?.type === General.DM_CHANNEL || channel?.type === General.GM_CHANNEL ? currentTeamId : channel?.team_id;
+    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, teamId ?? ''));
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
 
     const markdownOptions = {
