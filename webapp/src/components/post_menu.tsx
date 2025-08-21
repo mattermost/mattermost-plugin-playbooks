@@ -22,14 +22,10 @@ import {addToTimeline, showPostMenuModal, startPlaybookRun} from 'src/actions';
 import {useAllowAddMessageToTimelineInCurrentTeam} from 'src/hooks';
 import {isProfessionalLicensedOrDevelopment} from 'src/license';
 
-interface Props {
-    postId: string;
-}
-
 function shouldShowPostMenuForPost(store: Store, postId: string) {
     const state = store.getState() as GlobalState;
     const post = getPost(state, postId);
-    return !!post && !isSystemMessage(post);
+    return Boolean(post) && !isSystemMessage(post);
 }
 
 export const StartPlaybookRunPostMenuText = () => {
