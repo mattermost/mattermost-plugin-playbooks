@@ -198,9 +198,8 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 cy.apiDeleteChannel(testRun.channel_id).then(() => {
                     cy.visit(`/playbooks/runs/${testRun.id}`);
 
-                    // https://mattermost.atlassian.net/browse/MM-63682
-                    // * Assert channel status private
-                    getOverviewEntry('channel').contains('Private');
+                    // * Assert channel status shows deleted
+                    getOverviewEntry('channel').contains('Channel deleted');
                 });
             });
         });
