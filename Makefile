@@ -15,7 +15,7 @@ DEFAULT_GOARCH ?= $(shell go env GOARCH)
 # To build FIPS-compliant plugin: make dist-fips
 # Requires Docker to be installed and running
 FIPS_ENABLED ?= false
-FIPS_IMAGE ?= cgr.dev/mattermost.com/go-msft-fips:1.24.4@sha256:8ab847d56930279a3ea36763277080106406354ec31c5f57f9d7fa787ecadcb2
+FIPS_IMAGE ?= cgr.dev/mattermost.com/go-msft-fips:1.24.6@sha256:b94d424ab26b590163634001b22242ceac6f5d76bfbbaa77b6f0dda97220c717
 
 # We need to export GOBIN to allow it to be set
 # for processes spawned from the Makefile
@@ -348,8 +348,18 @@ bundle-fips:
 	./build/bin/manifest dist-fips
 	$(call copy_bundle_files,dist-fips)
 ifneq ($(HAS_SERVER),)
-	mkdir -p dist-fips/$(PLUGIN_ID)/server
-	cp -r server/dist-fips dist-fips/$(PLUGIN_ID)/server/dist
+	mkdir -p dist-fips/$(PLUGIN_ID)/server/dist
+	# Copy FIPS binaries but rename them to standard names for server compatibility
+	if [ -f server/dist-fips/plugin-linux-amd64-fips ]; then \
+		cp server/dist-fips/plugin-linux-amd64-fips dist-fips/$(PLUGIN_ID)/server/dist/plugin-linux-amd64; \
+	fi
+	# Copy any other FIPS binaries and rename them
+	for file in server/dist-fips/plugin-*-fips*; do \
+		if [ -f "$$file" ]; then \
+			target=$$(basename "$$file" | sed 's/-fips//g'); \
+			cp "$$file" "dist-fips/$(PLUGIN_ID)/server/dist/$$target"; \
+		fi; \
+	done
 endif
 ifneq ($(HAS_WEBAPP),)
 	if [ -d webapp/dist ]; then \
