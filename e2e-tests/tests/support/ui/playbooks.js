@@ -75,7 +75,7 @@ Cypress.Commands.add('startPlaybookRunFromPostMenu', (playbookName, playbookRunN
     // post a second message because cypress has trouble finding latest post when there's only one message
     cy.findByTestId('post_textbox').clear().type('another new message here{enter}');
     cy.clickPostActionsMenu();
-    cy.findByTestId('playbookRunPostMenuIcon').click();
+    cy.findByTestId('PlaybookRunPostMenuIcon').click();
     cy.startPlaybookRun(playbookName, playbookRunName);
 });
 
