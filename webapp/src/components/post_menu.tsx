@@ -31,7 +31,7 @@ function shouldShowPostMenuForPost(store: Store, postId: string) {
 export const StartPlaybookRunPostMenuText = () => {
     return (
         <>
-            <PlaybookRunPostMenuIcon/>
+            <PlaybookRunPostMenuIcon data-testid={'playbookRunPostMenuIcon'}/>
             <FormattedMessage defaultMessage='Run playbook'/>
         </>
     );
