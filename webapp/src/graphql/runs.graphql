@@ -22,4 +22,8 @@ mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: 
 	updateRunTaskActions(runID: $runID, checklistNum: $checklistNum, itemNum: $itemNum, taskActions: $taskActions)
 }
 
+mutation SetRunPropertyValue($runID: String!, $propertyFieldID: String!, $value: JSON) {
+	setRunPropertyValue(runID: $runID, propertyFieldID: $propertyFieldID, value: $value)
+}
+
 

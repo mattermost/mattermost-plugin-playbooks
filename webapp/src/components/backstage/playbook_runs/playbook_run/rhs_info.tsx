@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
 
 import RHSInfoOverview from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_overview';
+import RHSInfoProperties from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_properties';
 import RHSInfoMetrics from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_metrics';
 import RHSInfoActivity from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_activity';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -46,6 +47,10 @@ const RHSInfo = (props: Props) => {
                 channelDeleted={props.channelDeleted}
                 followState={props.followState}
                 playbook={props.playbook}
+            />
+            <RHSInfoProperties
+                run={props.run}
+                editable={editable}
             />
             {props.run.retrospective_enabled ? (
                 <RHSInfoMetrics

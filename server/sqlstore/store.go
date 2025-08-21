@@ -21,6 +21,8 @@ import (
 // that we'll control manually.
 const maxJSONLength = 256 * 1024 // 256KB
 
+const DeprecatedDatabaseDriverMysql = "mysql"
+
 type SQLStore struct {
 	db        *sqlx.DB
 	builder   sq.StatementBuilderType
@@ -42,7 +44,7 @@ func New(pluginAPI PluginAPIClient, scheduler app.JobOnceScheduler) (*SQLStore, 
 		builder = builder.PlaceholderFormat(sq.Dollar)
 	}
 
-	if pluginAPI.Store.DriverName() == model.DatabaseDriverMysql {
+	if pluginAPI.Store.DriverName() == DeprecatedDatabaseDriverMysql {
 		db.MapperFunc(func(s string) string { return s })
 	}
 

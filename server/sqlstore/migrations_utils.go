@@ -191,7 +191,7 @@ func addPrimaryKey(e sqlx.Ext, sqlStore *SQLStore, tableName, primaryKey string)
 func dropIndexIfExists(e sqlx.Ext, sqlStore *SQLStore, tableName, indexName string) error {
 	hasIndex := 0
 
-	if e.DriverName() == model.DatabaseDriverMysql {
+	if e.DriverName() == DeprecatedDatabaseDriverMysql {
 		if err := sqlStore.db.Get(&hasIndex, fmt.Sprintf(`
 			SELECT 1 FROM information_schema.statistics s
 			WHERE s.table_name = '%s'
@@ -218,7 +218,7 @@ func dropIndexIfExists(e sqlx.Ext, sqlStore *SQLStore, tableName, indexName stri
 func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error) {
 	results := []string{}
 	var err error
-	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+	if sqlStore.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		err = sqlStore.db.Select(&results, `
 			SELECT COLUMN_NAME
 			FROM INFORMATION_SCHEMA.COLUMNS
@@ -254,7 +254,7 @@ func getDBSchemaInfo(store *SQLStore) ([]TableInfo, error) {
 	var results []TableInfo
 	var err error
 
-	if store.db.DriverName() == model.DatabaseDriverMysql {
+	if store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		err = store.db.Select(&results, `
 			SELECT
 				TABLE_NAME as TableName, COLUMN_NAME as ColumnName, DATA_TYPE as DataType,
@@ -300,7 +300,7 @@ func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
 	var results []IndexInfo
 	var err error
 
-	if store.db.DriverName() == model.DatabaseDriverMysql {
+	if store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		err = store.db.Select(&results, `
 			SELECT TABLE_NAME as TableName, INDEX_NAME as IndexName, COLUMN_NAME as ColumnName
 			FROM INFORMATION_SCHEMA.STATISTICS
@@ -334,7 +334,7 @@ func getDBConstraintsInfo(store *SQLStore) ([]ConstraintsInfo, error) {
 	var results []ConstraintsInfo
 	var err error
 
-	if store.db.DriverName() == model.DatabaseDriverMysql {
+	if store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		err = store.db.Select(&results, `
 			SELECT CONSTRAINT_NAME as ConstraintName, TABLE_NAME as TableName, CONSTRAINT_TYPE as ConstraintType
 			FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
