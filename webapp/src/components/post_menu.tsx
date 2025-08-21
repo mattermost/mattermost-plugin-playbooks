@@ -60,7 +60,7 @@ export function makeStartPlaybookRunAction(store: Store) {
         action: (postId: string) => {
             const state = store.getState() as GlobalState;
             const post = getPost(state, postId);
-            if (!post || isSystemMessage(post)) {
+            if (!post) {
                 return;
             }
             const channel = getChannel(state, post.channel_id);
@@ -80,10 +80,6 @@ export function makeAttachToPlaybookRunAction(store: Store) {
         text: AttachToPlaybookRunPostMenuText,
         action: (postId: string) => {
             const state = store.getState() as GlobalState;
-            const post = getPost(state, postId);
-            if (!post || isSystemMessage(post)) {
-                return;
-            }
             if (isProfessionalLicensedOrDevelopment(state)) {
                 store.dispatch(addToTimeline(postId) as any);
             } else {
