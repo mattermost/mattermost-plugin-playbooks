@@ -35,7 +35,7 @@ const TYPE_OPTIONS: Array<{
     type: PropertyType;
     icon: React.ComponentType<{size?: number}>;
     label: string;
-}> = [
+}> = ([
     {
         type: 'text',
         icon: MenuVariantIcon,
@@ -51,7 +51,7 @@ const TYPE_OPTIONS: Array<{
         icon: FormatListBulletedIcon,
         label: 'Multi-select',
     },
-];
+]) as const;
 
 const SimpleTypeSelector = ({field, updateField, onClose, isOpen, onOpenChange, target}: Props) => {
     const handleTypeSelect = (option: TypeOption | null | undefined) => {
@@ -70,7 +70,7 @@ const SimpleTypeSelector = ({field, updateField, onClose, isOpen, onOpenChange, 
             updatedField.attrs = {
                 ...updatedField.attrs,
                 options: [{
-                    id: `option-${Date.now()}`,
+                    id: '',
                     name: 'Option 1',
                 }],
             };

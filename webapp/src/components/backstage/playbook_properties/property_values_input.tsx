@@ -53,7 +53,7 @@ const PropertyValuesInput = ({
 
         const currentOptions = field.attrs.options || [];
         const newOption = {
-            id: `option-${Date.now()}`,
+            id: '', // temporary id, real id assigned by server
             name: trimmedName,
         };
         updateField({

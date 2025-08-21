@@ -86,6 +86,10 @@ func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField,
 		propertyFields = append(propertyFields, *propertyField)
 	}
 
+	logrus.WithFields(logrus.Fields{
+		"field": propertyFields,
+	}).Info("fields found in search REMOVE")
+
 	return propertyFields, nil
 }
 
@@ -178,6 +182,10 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 			CreateAt:        lastField.CreateAt,
 		}
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"field": allFields,
+	}).Info("fields found in search REMOVE")
 
 	return allFields, nil
 }

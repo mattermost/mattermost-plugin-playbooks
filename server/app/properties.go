@@ -8,6 +8,7 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -130,6 +131,14 @@ func NewPropertyFieldFromMattermostPropertyField(mmpf *model.PropertyField) (*Pr
 	if err != nil {
 		return nil, err
 	}
+
+	if
+
+	logrus.WithFields(logrus.Fields{
+		"field":     *mmpf,
+		"attrs":     mmpf.Attrs[model.PropertyFieldAttributeOptions],
+		"attrsJSON": string(attrsJSON),
+	}).Info("fields found in search REMOVE2")
 
 	return &PropertyField{
 		PropertyField: *mmpf,

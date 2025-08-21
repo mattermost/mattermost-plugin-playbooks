@@ -72,46 +72,34 @@ const PlaybookProperties = ({playbookID}: Props) => {
     const properties = usePlaybookPropertyFields(playbook);
 
     const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
-        try {
-            const propertyFieldInput: PropertyFieldInput = {
-                name: updatedProperty.name,
-                type: updatedProperty.type as PropertyFieldType,
-                attrs: {
-                    visibility: updatedProperty.attrs.visibility,
-                    sortOrder: updatedProperty.attrs.sort_order,
-                    options: updatedProperty.attrs.options,
-                },
-            };
+        const propertyFieldInput: PropertyFieldInput = {
+            name: updatedProperty.name,
+            type: updatedProperty.type as PropertyFieldType,
+            attrs: {
+                visibility: updatedProperty.attrs.visibility,
+                sortOrder: updatedProperty.attrs.sort_order,
+                options: updatedProperty.attrs.options,
+            },
+        };
 
-            await updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
-        } catch (error) {
-            console.error('Failed to update property field:', error);
-        }
+        await updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
     }, [updatePropertyField, playbookID]);
 
     const deleteProperty = useCallback(async (propertyId: string) => {
-        try {
-            await deletePropertyField(playbookID, propertyId);
-        } catch (error) {
-            console.error('Failed to delete property field:', error);
-        }
+        await deletePropertyField(playbookID, propertyId);
     }, [deletePropertyField, playbookID]);
 
     const addProperty = useCallback(async () => {
-        try {
-            const newPropertyField: PropertyFieldInput = {
-                name: `Attribute ${properties.length + 1}`,
-                type: PropertyFieldType.Text,
-                attrs: {
-                    visibility: 'when_set',
-                    sortOrder: properties.length + 1,
-                },
-            };
+        const newPropertyField: PropertyFieldInput = {
+            name: `Attribute ${properties.length + 1}`,
+            type: PropertyFieldType.Text,
+            attrs: {
+                visibility: 'when_set',
+                sortOrder: properties.length + 1,
+            },
+        };
 
-            await addPropertyField(playbookID, newPropertyField);
-        } catch (error) {
-            console.error('Failed to add property field:', error);
-        }
+        await addPropertyField(playbookID, newPropertyField);
     }, [addPropertyField, playbookID, properties.length]);
 
     const handleDragEnd = useCallback(async (result: any) => {
@@ -123,33 +111,29 @@ const PlaybookProperties = ({playbookID}: Props) => {
         const [removed] = reorderedProperties.splice(result.source.index, 1);
         reorderedProperties.splice(result.destination.index, 0, removed);
 
-        try {
-            const updatePromises = reorderedProperties.map(async (prop, index) => {
-                const updatedProperty = {
-                    ...prop,
-                    attrs: {
-                        ...prop.attrs,
-                        sort_order: index + 1,
-                    },
-                };
+        const updatePromises = reorderedProperties.map(async (prop, index) => {
+            const updatedProperty = {
+                ...prop,
+                attrs: {
+                    ...prop.attrs,
+                    sort_order: index + 1,
+                },
+            };
 
-                const propertyFieldInput: PropertyFieldInput = {
-                    name: updatedProperty.name,
-                    type: updatedProperty.type as PropertyFieldType,
-                    attrs: {
-                        visibility: updatedProperty.attrs.visibility,
-                        sortOrder: updatedProperty.attrs.sort_order,
-                        options: updatedProperty.attrs.options,
-                    },
-                };
+            const propertyFieldInput: PropertyFieldInput = {
+                name: updatedProperty.name,
+                type: updatedProperty.type as PropertyFieldType,
+                attrs: {
+                    visibility: updatedProperty.attrs.visibility,
+                    sortOrder: updatedProperty.attrs.sort_order,
+                    options: updatedProperty.attrs.options,
+                },
+            };
 
-                return updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
-            });
+            return updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
+        });
 
-            await Promise.all(updatePromises);
-        } catch (error) {
-            console.error('Failed to update property field order:', error);
-        }
+        await Promise.all(updatePromises);
     }, [properties, updatePropertyField, playbookID]);
 
     const columnHelper = createColumnHelper<PropertyField>();
@@ -258,21 +242,17 @@ const PlaybookProperties = ({playbookID}: Props) => {
                         }}
                         onDelete={(field) => setDeletingProperty(field)}
                         onDuplicate={async (field) => {
-                            try {
-                                const duplicatedPropertyField: PropertyFieldInput = {
-                                    name: `${field.name} Copy`,
-                                    type: field.type as PropertyFieldType,
-                                    attrs: {
-                                        visibility: field.attrs.visibility,
-                                        sortOrder: properties.length + 1,
-                                        options: field.attrs.options,
-                                    },
-                                };
+                            const duplicatedPropertyField: PropertyFieldInput = {
+                                name: `${field.name} Copy`,
+                                type: field.type as PropertyFieldType,
+                                attrs: {
+                                    visibility: field.attrs.visibility,
+                                    sortOrder: properties.length + 1,
+                                    options: field.attrs.options,
+                                },
+                            };
 
-                                await addPropertyField(playbookID, duplicatedPropertyField);
-                            } catch (error) {
-                                console.error('Failed to duplicate property field:', error);
-                            }
+                            await addPropertyField(playbookID, duplicatedPropertyField);
                         }}
                     />
                 ),
@@ -291,7 +271,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
         return (
             <OuterContainer>
                 <InnerContainer>
-                    <div>Loading...</div>
+                    <div>
+                        <FormattedMessage defaultMessage='Loading…'/>
+                    </div>
                 </InnerContainer>
             </OuterContainer>
         );
@@ -301,7 +283,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
         return (
             <OuterContainer>
                 <InnerContainer>
-                    <div>Error loading playbook properties. Please try again.</div>
+                    <div>
+                        <FormattedMessage defaultMessage='Error loading playbook attributes. Please try again.'/>
+                    </div>
                 </InnerContainer>
             </OuterContainer>
         );
