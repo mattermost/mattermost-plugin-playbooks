@@ -489,37 +489,6 @@ type PlaybookStore interface {
 	RemovePlaybookMember(id string, memberID string) error
 }
 
-// PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
-// userID is the user initiating the event.
-type PlaybookTelemetry interface {
-	// CreatePlaybook tracks the creation of a playbook.
-	CreatePlaybook(playbook Playbook, userID string)
-
-	// ImportPlaybook tracks the import of a playbook.
-	ImportPlaybook(playbook Playbook, userID string)
-
-	// UpdatePlaybook tracks the update of a playbook.
-	UpdatePlaybook(playbook Playbook, userID string)
-
-	// DeletePlaybook tracks the deletion of a playbook.
-	DeletePlaybook(playbook Playbook, userID string)
-
-	// RestorePlaybook tracks the restoration of a playbook.
-	RestorePlaybook(playbook Playbook, userID string)
-
-	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
-	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)
-
-	// FrontendTelemetryForPlaybookTemplate tracks an event originating from the frontend
-	FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string)
-
-	// AutoFollowPlaybook tracks the auto-follow of a playbook.
-	AutoFollowPlaybook(playbook Playbook, userID string)
-
-	// AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
-	AutoUnfollowPlaybook(playbook Playbook, userID string)
-}
-
 const (
 	ChecklistItemStateOpen       = ""
 	ChecklistItemStateInProgress = "in_progress"

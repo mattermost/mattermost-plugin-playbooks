@@ -31,10 +31,9 @@ type channelActionServiceImpl struct {
 	api                   *pluginapi.Client
 	playbookGetter        PlaybookGetter
 	keywordsThreadIgnorer KeywordsThreadIgnorer
-	telemetry             ChannelActionTelemetry
 }
 
-func NewChannelActionsService(api *pluginapi.Client, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer, telemetry ChannelActionTelemetry) ChannelActionService {
+func NewChannelActionsService(api *pluginapi.Client, poster bot.Poster, configService config.Service, store ChannelActionStore, playbookGetter PlaybookGetter, keywordsThreadIgnorer KeywordsThreadIgnorer) ChannelActionService {
 	return &channelActionServiceImpl{
 		poster:                poster,
 		configService:         configService,
@@ -42,7 +41,6 @@ func NewChannelActionsService(api *pluginapi.Client, poster bot.Poster, configSe
 		api:                   api,
 		playbookGetter:        playbookGetter,
 		keywordsThreadIgnorer: keywordsThreadIgnorer,
-		telemetry:             telemetry,
 	}
 }
 
@@ -136,8 +134,6 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction, userID st
 		return err
 	}
 
-	a.telemetry.UpdateChannelAction(action, userID)
-
 	return nil
 }
 
@@ -209,7 +205,6 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 				logrus.WithError(err).Error("failed to categorize channel")
 			}
 
-			a.telemetry.RunChannelAction(action, userID)
 		}()
 	}
 }
@@ -318,7 +313,6 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 				Message: payload.Message,
 			})
 
-			a.telemetry.RunChannelAction(action, userID)
 		}
 	}
 
@@ -375,18 +369,13 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(post *model.Post) {
 		}
 
 		triggers := payload.Keywords
-		actionExecuted := false
 		for _, trigger := range triggers {
 			if strings.Contains(post.Message, trigger) || containsAttachments(post.Attachments(), trigger) {
 				triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
 				presentTriggers = append(presentTriggers, trigger)
-				actionExecuted = true
 			}
 		}
 
-		if actionExecuted {
-			a.telemetry.RunChannelAction(action, post.UserId)
-		}
 	}
 
 	if len(triggeredPlaybooksMap) == 0 {
