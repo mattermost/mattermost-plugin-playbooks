@@ -7,14 +7,13 @@ import {DotsVerticalIcon} from '@mattermost/compass-icons/components';
 import {useSelector} from 'react-redux';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
+import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {useSetRunFavorite} from 'src/graphql/hooks';
 import {useRunFollowers} from 'src/hooks';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {useLeaveRun} from './playbook_runs/playbook_run/context_menu';
 import {
@@ -45,7 +44,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
     const followState = useRunFollowers(followerIDs);
     const {isFollowing, followers, setFollowers} = followState;
 
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRunId, ownerUserId, isFollowing, 'playbooks_lhs');
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRunId, ownerUserId, isFollowing);
     const role = participantIDs.includes(currentUser.id) ? Role.Participant : Role.Viewer;
 
     const toggleFavorite = () => {
@@ -55,16 +54,11 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
     // TODO: converge with src/hooks/run useFollowRun
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        const eventTarget = isFollowing ? PlaybookRunEventTarget.Unfollow : PlaybookRunEventTarget.Follow;
         action(playbookRunId)
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setFollowers(newFollowers);
                 refreshLHS();
-                telemetryEvent(eventTarget, {
-                    playbookrun_id: playbookRunId,
-                    from: 'playbooks_lhs',
-                });
             })
             .catch(() => {
                 addToast({

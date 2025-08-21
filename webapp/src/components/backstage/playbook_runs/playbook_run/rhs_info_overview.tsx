@@ -185,7 +185,6 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
                     <FollowButton
                         runID={run.id}
                         followState={followState}
-                        trigger={'run_details'}
                     />
                     <Following
                         userIds={followState.followers}

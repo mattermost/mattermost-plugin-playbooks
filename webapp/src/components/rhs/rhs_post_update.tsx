@@ -128,7 +128,6 @@ const RHSPostUpdate = (props: Props) => {
                     width={352}
                     autoTour={true}
                     punchOut={postUpdatePunchout}
-                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.PostUpdate}_PostUpdate`}
                 />
             )}
         </PostUpdate>

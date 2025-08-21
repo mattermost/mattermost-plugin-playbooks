@@ -23,8 +23,6 @@ import {isCurrentUserChannelMember} from 'src/selectors';
 import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
 
 import {useChannel} from 'src/hooks';
-import {telemetryEvent} from 'src/client';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -84,7 +82,6 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const onConfirm = () => {
         const ids = profiles.map((e) => e.id);
         addToRun(ids, forceAddToChannel);
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRun.id, from: 'run_details', trigger: 'add_participant', count: ids.length.toString()});
         hideModal();
     };
 

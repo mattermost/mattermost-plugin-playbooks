@@ -17,10 +17,8 @@ import {
     setDueDate as clientSetDueDate,
     setAssignee,
     setChecklistItemState,
-    telemetryEvent,
 } from 'src/client';
 import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType} from 'src/types/playbook';
-import {TaskActionsEventTarget} from 'src/types/telemetry';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
@@ -183,13 +181,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
         if (props.playbookRunId) {
             updateRunTaskActions(props.checklistNum, props.itemNum, newTaskActions);
-            telemetryEvent(TaskActionsEventTarget.UpdateActions, {
-                playbookrun_id: props.playbookRunId,
-            });
         } else {
-            telemetryEvent(TaskActionsEventTarget.UpdateActions, {
-                playbook_id: props.playbookId || '',
-            });
             const newItem = {...props.checklistItem};
             newItem.task_actions = newTaskActions;
             props.onUpdateChecklistItem?.(newItem);

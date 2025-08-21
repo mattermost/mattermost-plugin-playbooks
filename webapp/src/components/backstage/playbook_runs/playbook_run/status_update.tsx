@@ -19,12 +19,11 @@ import {useAllowRequestUpdate, useNow} from 'src/hooks';
 import Clock from 'src/components/assets/icons/clock';
 import {TertiaryButton, UpgradeTertiaryButton} from 'src/components/assets/buttons';
 import {FUTURE_TIME_SPEC, PAST_TIME_SPEC} from 'src/components/time_spec';
-import {requestUpdate, telemetryEventForPlaybookRun} from 'src/client';
+import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import Tooltip from 'src/components/widgets/tooltip';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {useToaster} from 'src/components/backstage/toast_banner';
 
@@ -117,7 +116,6 @@ const useRequestUpdate = (playbookRunId: string) => {
         RequestUpdateConfirmModal,
         showRequestUpdateConfirm: () => {
             setShowRequestUpdateConfirm(true);
-            telemetryEventForPlaybookRun(playbookRunId, PlaybookRunEventTarget.RequestUpdateClick);
         },
     };
 };

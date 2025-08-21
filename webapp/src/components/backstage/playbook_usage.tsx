@@ -16,8 +16,6 @@ import {PlaybookStats} from 'src/types/stats';
 import {useRunsList} from 'src/hooks';
 
 import {PlaybookRunStatus} from 'src/types/playbook_run';
-import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
-import {PlaybookViewTarget} from 'src/types/telemetry';
 
 import RunList from './runs_list/runs_list';
 
@@ -41,7 +39,6 @@ const PlaybookUsage = ({
     stats,
     ...attrs
 }: Props & Attrs) => {
-    usePlaybookViewTelemetry(PlaybookViewTarget.Usage, playbookID);
     const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 

@@ -10,7 +10,6 @@ import {GlobalState} from '@mattermost/types/store';
 
 import {savePreferences as storeSavePreferences} from 'mattermost-redux/actions/preferences';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-import {Client4} from 'mattermost-redux/client';
 
 import {FINISHED, SKIPPED, TTCategoriesMapToSteps} from 'src/components/tutorial/tours';
 
@@ -31,7 +30,6 @@ export interface TutorialTourTipManager {
 
 type Props = {
     autoTour?: boolean;
-    telemetryTag?: string;
     tutorialCategory: string;
     step: number;
     onNextNavigateTo?: () => void;
@@ -43,7 +41,6 @@ type Props = {
 
 const useTutorialTourTipManager = ({
     autoTour,
-    telemetryTag,
     tutorialCategory,
     onNextNavigateTo,
     onPrevNavigateTo,
@@ -72,10 +69,6 @@ const useTutorialTourTipManager = ({
         },
         [dispatch],
     );
-
-    const trackEvent = useCallback((category, event, props?) => {
-        Client4.trackEvent(category, event, props);
-    }, []);
 
     // Function to save the tutorial step in redux store end here
 
@@ -146,10 +139,6 @@ const useTutorialTourTipManager = ({
         if (e) {
             handleEventPropagationAndDefault(e);
         }
-        if (telemetryTag) {
-            const tag = telemetryTag + '_next';
-            trackEvent('tutorial', tag);
-        }
         if (getLastStep() === currentStep) {
             handleSavePreferences(FINISHED);
         } else {
@@ -160,10 +149,6 @@ const useTutorialTourTipManager = ({
     const handleSkipTutorial = (e: React.MouseEvent): void => {
         handleEventPropagationAndDefault(e);
 
-        if (telemetryTag) {
-            const tag = telemetryTag + '_skip';
-            trackEvent('tutorial', tag);
-        }
         handleSavePreferences(SKIPPED);
     };
 
@@ -193,7 +178,7 @@ const useTutorialTourTipManager = ({
 
 export default useTutorialTourTipManager;
 
-export const useTutorialStepper = (category: string, telemetryTag?: string) => {
+export const useTutorialStepper = (category: string) => {
     const currentUserId = useSelector(getCurrentUserId);
     const currentStep = useSelector((state: GlobalState) => get(state, category, currentUserId, ''));
     const dispatch = useDispatch();
@@ -209,10 +194,6 @@ export const useTutorialStepper = (category: string, telemetryTag?: string) => {
                     value: step.toString(),
                 },
             ];
-            if (step === SKIPPED && telemetryTag) {
-                const tag = telemetryTag + '_skip';
-                Client4.trackEvent('tutorial', tag);
-            }
 
             dispatch(storeSavePreferences(currentUserId, preferences));
         },
