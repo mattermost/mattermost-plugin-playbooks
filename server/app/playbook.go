@@ -702,7 +702,7 @@ var channelPlaybookTypes = [...]string{
 	PlaybookRunLinkExistingChannel: "link_existing_channel",
 }
 
-// String creates the string version of the TelemetryTrack
+// String creates the string version of the ChannelPlaybookMode
 func (cpm ChannelPlaybookMode) String() string {
 	return channelPlaybookTypes[cpm]
 }
