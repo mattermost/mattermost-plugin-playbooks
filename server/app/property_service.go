@@ -4,6 +4,9 @@
 package app
 
 import (
+	"encoding/json"
+	"strings"
+
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
@@ -12,6 +15,7 @@ import (
 
 const (
 	PropertyGroupPlaybooks = "playbooks"
+	PropertySearchPerPage  = 20
 )
 
 type propertyService struct {
@@ -160,7 +164,7 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 		GroupID:    s.groupID,
 		TargetType: targetType,
 		TargetID:   targetID,
-		PerPage:    20,
+		PerPage:    PropertySearchPerPage,
 	}
 
 	var allFields []*model.PropertyField
@@ -172,7 +176,7 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 
 		allFields = append(allFields, fields...)
 
-		if len(fields) < opts.PerPage {
+		if len(fields) < PropertySearchPerPage {
 			break
 		}
 
@@ -239,6 +243,151 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	return propertyField.ToMattermostPropertyField(), nil
+}
+
+func (s *propertyService) GetRunPropertyValues(runID string) ([]PropertyValue, error) {
+	opts := model.PropertyValueSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		TargetID:   runID,
+		PerPage:    PropertySearchPerPage,
+	}
+
+	var allValues []PropertyValue
+	for {
+		values, err := s.api.Property.SearchPropertyValues(s.groupID, runID, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to search property values")
+		}
+
+		for _, mmValue := range values {
+			allValues = append(allValues, PropertyValue(*mmValue))
+		}
+
+		if len(values) < PropertySearchPerPage {
+			break
+		}
+
+		lastValue := values[len(values)-1]
+		opts.Cursor = model.PropertyValueSearchCursor{
+			PropertyValueID: lastValue.ID,
+			CreateAt:        lastValue.CreateAt,
+		}
+	}
+
+	return allValues, nil
+}
+
+func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	// Get the property field to validate against
+	propertyField, err := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property field")
+	}
+
+	// Sanitize and validate the value based on field type
+	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to sanitize and validate property value")
+	}
+
+	// Create the property value model
+	propertyValue := &model.PropertyValue{
+		GroupID:    s.groupID,
+		FieldID:    propertyFieldID,
+		TargetID:   runID,
+		TargetType: PropertyTargetTypeRun,
+		Value:      sanitizedValue,
+	}
+
+	// Use the plugin API to upsert the property value
+	upsertedValue, err := s.api.Property.UpsertPropertyValue(propertyValue)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upsert property value")
+	}
+
+	// Convert back to our PropertyValue type
+	return (*PropertyValue)(upsertedValue), nil
+}
+
+func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage) (json.RawMessage, error) {
+	if len(value) == 0 || string(value) == "null" {
+		return value, nil
+	}
+
+	switch propertyField.Type {
+	case model.PropertyFieldTypeText:
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return nil, errors.New("text field value must be a string")
+		}
+		sanitizedString, err := s.sanitizeTextValue(stringValue)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(sanitizedString)
+	case model.PropertyFieldTypeSelect:
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return nil, errors.New("select field value must be a string")
+		}
+		return value, s.validateSelectValue(propertyField, stringValue)
+	case model.PropertyFieldTypeMultiselect:
+		var arrayValue []string
+		if err := json.Unmarshal(value, &arrayValue); err != nil {
+			return nil, errors.New("multiselect field value must be an array of strings")
+		}
+		return value, s.validateMultiselectValue(propertyField, arrayValue)
+	default:
+		return nil, errors.Errorf("property field type '%s' is not supported", propertyField.Type)
+	}
+}
+
+func (s *propertyService) sanitizeTextValue(value string) (string, error) {
+	return strings.TrimSpace(value), nil
+}
+
+func (s *propertyService) validateSelectValue(propertyField *model.PropertyField, value string) error {
+	if value == "" {
+		return nil
+	}
+
+	pf, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert property field")
+	}
+
+	for _, option := range pf.Attrs.Options {
+		if option.GetID() == value {
+			return nil
+		}
+	}
+
+	return errors.New("select field value must be a valid option ID")
+}
+
+func (s *propertyService) validateMultiselectValue(propertyField *model.PropertyField, value []string) error {
+	if len(value) == 0 {
+		return nil
+	}
+
+	pf, err := NewPropertyFieldFromMattermostPropertyField(propertyField)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert property field")
+	}
+
+	validOptions := make(map[string]struct{})
+	for _, option := range pf.Attrs.Options {
+		validOptions[option.GetID()] = struct{}{}
+	}
+
+	for _, val := range value {
+		if _, exists := validOptions[val]; !exists {
+			return errors.Errorf("multiselect field value '%s' is not a valid option ID", val)
+		}
+	}
+
+	return nil
 }
 
 func (s *propertyService) ensurePropertyGroup() (string, error) {

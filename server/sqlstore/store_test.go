@@ -776,57 +776,11 @@ func getRun(id string, sqlStore *SQLStore) (app.PlaybookRun, error) {
 	return run, err
 }
 
-func TestHasConsistentCharset(t *testing.T) {
-	t.Run("MySQL", func(t *testing.T) {
-		db := setupTestDB(t, model.DatabaseDriverMysql)
-		setupPlaybookStore(t, db) // To run the migrations and everything
-		badCharsets := []string{}
-		err := db.Select(&badCharsets, `
-			SELECT tab.table_name
-			FROM   information_schema.tables tab
-			WHERE  tab.table_schema NOT IN ( 'mysql', 'information_schema',
-											 'performance_schema',
-											 'sys' )
-			AND tab.table_schema = (SELECT DATABASE())
-			AND NOT (tab.table_collation = 'utf8mb4_general_ci' OR tab.table_collation = 'utf8mb4_0900_ai_ci')
-		`)
-		require.Len(t, badCharsets, 0)
-		require.NoError(t, err)
-	})
-}
-
 func TestHasPrimaryKeys(t *testing.T) {
-	t.Run("MySQL", func(t *testing.T) {
-		db := setupTestDB(t, model.DatabaseDriverMysql)
-		setupPlaybookStore(t, db) // To run the migrations and everything
-		tablesWithoutPrimaryKeys := []string{}
-		err := db.Select(&tablesWithoutPrimaryKeys, `
-			SELECT tab.table_name
-				   AS tablename
-			FROM   information_schema.tables tab
-				   LEFT JOIN information_schema.table_constraints tco
-						  ON tab.table_schema = tco.table_schema
-							 AND tab.table_name = tco.table_name
-							 AND tco.constraint_type = 'PRIMARY KEY'
-				   LEFT JOIN information_schema.key_column_usage kcu
-						  ON tco.constraint_schema = kcu.constraint_schema
-							 AND tco.constraint_name = kcu.constraint_name
-							 AND tco.table_name = kcu.table_name
-			WHERE tab.table_schema = (SELECT DATABASE())
-			AND tco.constraint_name is NULL
-			GROUP  BY tab.table_schema,
-					  tab.table_name,
-					  tco.constraint_name
-		`)
-		require.Len(t, tablesWithoutPrimaryKeys, 0)
-		require.NoError(t, err)
-	})
-
-	t.Run("Postgres", func(t *testing.T) {
-		db := setupTestDB(t, model.DatabaseDriverPostgres)
-		setupPlaybookStore(t, db) // To run the migrations and everything
-		tablesWithoutPrimaryKeys := []string{}
-		err := db.Select(&tablesWithoutPrimaryKeys, `
+	db := setupTestDB(t, model.DatabaseDriverPostgres)
+	setupPlaybookStore(t, db) // To run the migrations and everything
+	tablesWithoutPrimaryKeys := []string{}
+	err := db.Select(&tablesWithoutPrimaryKeys, `
 			SELECT tab.table_name AS pk_name
 			FROM   information_schema.tables tab
 				   LEFT JOIN information_schema.table_constraints tco
@@ -845,13 +799,12 @@ func TestHasPrimaryKeys(t *testing.T) {
 					  tab.table_name,
 					  tco.constraint_name
 		`)
-		tablesToBeFiltered := []string{"teammembers"}
-		for _, table := range tablesToBeFiltered {
-			tablesWithoutPrimaryKeys = removeFromSlice(tablesWithoutPrimaryKeys, table)
-		}
-		require.Len(t, tablesWithoutPrimaryKeys, 0)
-		require.NoError(t, err)
-	})
+	tablesToBeFiltered := []string{"teammembers"}
+	for _, table := range tablesToBeFiltered {
+		tablesWithoutPrimaryKeys = removeFromSlice(tablesWithoutPrimaryKeys, table)
+	}
+	require.Len(t, tablesWithoutPrimaryKeys, 0)
+	require.NoError(t, err)
 
 }
 

@@ -5,6 +5,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -168,6 +169,55 @@ func (r *PropertyRootResolver) DeletePlaybookPropertyField(ctx context.Context, 
 	}
 
 	return args.PropertyFieldID, nil
+}
+
+func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args struct {
+	RunID           string
+	PropertyFieldID string
+	Value           *JSONResolver
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	// Extract the json.RawMessage from the JSONResolver
+	var value json.RawMessage
+	if args.Value != nil {
+		value = args.Value.value
+	} else {
+		value = json.RawMessage(`null`)
+	}
+
+	// Get the run to check permissions
+	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get playbook run")
+	}
+
+	// Check permissions to modify the run
+	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
+		return "", err
+	}
+
+	// Verify the property field exists and belongs to the run
+	propertyField, err := c.propertyService.GetPropertyField(args.PropertyFieldID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get property field")
+	}
+
+	if propertyField.TargetType != "run" || propertyField.TargetID != playbookRun.ID {
+		return "", errors.New("property field does not belong to this run")
+	}
+
+	// Set the property value via PlaybookRunService (which handles websockets)
+	propertyValue, err := c.playbookRunService.SetRunPropertyValue(playbookRun.ID, args.PropertyFieldID, value)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to set property value")
+	}
+
+	return propertyValue.ID, nil
 }
 
 // convertPropertyFieldInputToPropertyField converts a GraphQL PropertyFieldInput to an app.PropertyField

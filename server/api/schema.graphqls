@@ -1,3 +1,5 @@
+scalar JSON
+
 type Query {
 	playbook(id: String!): Playbook
 	playbooks(
@@ -47,6 +49,8 @@ type Mutation {
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 	changeRunOwner(runID: String!, ownerID: String!): String!
 	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String!
+
+	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String!
 }
 
 type PageInfo {
@@ -380,6 +384,15 @@ type PropertyField {
 	type: PropertyFieldType!
 	groupID: String!
 	attrs: PropertyFieldAttrs!
+	createAt: Float!
+	updateAt: Float!
+	deleteAt: Float!
+}
+
+type PropertyValue {
+	id: String!
+	fieldID: String!
+	value: JSON
 	createAt: Float!
 	updateAt: Float!
 	deleteAt: Float!

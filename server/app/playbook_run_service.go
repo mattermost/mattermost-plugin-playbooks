@@ -63,7 +63,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	// Get the current state only if we don't already have it
 	if currentRun == nil {
 		var err error
-		currentRun, err = s.store.GetPlaybookRun(playbookRunID)
+		currentRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			logger.WithError(err).Error("failed to get current state of playbook run")
 			return
@@ -1444,7 +1444,24 @@ func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *Playbook
 
 // GetPlaybookRun gets a playbook run by ID. Returns error if it could not be found.
 func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*PlaybookRun, error) {
-	return s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFields, err := s.propertyService.GetRunPropertyFields(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get run property fields")
+	}
+	playbookRun.PropertyFields = propertyFields
+
+	propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get run property values")
+	}
+	playbookRun.PropertyValues = propertyValues
+
+	return playbookRun, nil
 }
 
 // GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
@@ -3101,7 +3118,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 	// Get playbookRun if not provided
 	playbookRun := sendWSOptions.PlaybookRun
 	if playbookRun == nil {
-		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+		playbookRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			logrus.WithError(err).WithField("playbookRunID", playbookRunID).Error("failed to retrieve playbook run when sending websocket")
 			return
@@ -4121,4 +4138,15 @@ func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, u
 // GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
 func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
 	return s.store.GetPlaybookRunIDsForUser(userID)
+}
+
+// SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
+func (s *PlaybookRunServiceImpl) SetRunPropertyValue(playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upsert property value")
+	}
+
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
+	return propertyValue, nil
 }

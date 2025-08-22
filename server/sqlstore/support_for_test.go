@@ -20,18 +20,18 @@ import (
 	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
 )
 
-var driverNames = []string{model.DatabaseDriverPostgres, model.DatabaseDriverMysql}
+var driverNames = []string{model.DatabaseDriverPostgres}
 
 func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
 
-	sqlSettings := storetest.MakeSqlSettings(driverName, false)
+	sqlSettings := storetest.MakeSqlSettings(driverName)
 
 	origDB, err := sql.Open(*sqlSettings.DriverName, *sqlSettings.DataSource)
 	require.NoError(t, err)
 
 	db := sqlx.NewDb(origDB, driverName)
-	if driverName == model.DatabaseDriverMysql {
+	if driverName == DeprecatedDatabaseDriverMysql {
 		db.MapperFunc(func(s string) string { return s })
 	}
 
