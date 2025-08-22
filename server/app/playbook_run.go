@@ -1773,16 +1773,10 @@ func validType(runType string) bool {
 
 // PropertyFieldsEqual compares two slices of PropertyField for deep equality
 func PropertyFieldsEqual(a, b []PropertyField) bool {
-	if len(a) != len(b) {
-		return false
-	}
 	return reflect.DeepEqual(a, b)
 }
 
 // PropertyValuesEqual compares two slices of PropertyValue for deep equality
 func PropertyValuesEqual(a, b []PropertyValue) bool {
-	if len(a) != len(b) {
-		return false
-	}
 	return reflect.DeepEqual(a, b)
 }

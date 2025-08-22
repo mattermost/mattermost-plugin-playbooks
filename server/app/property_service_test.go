@@ -112,63 +112,6 @@ func TestPropertyService_duplicatePropertyFieldForRun(t *testing.T) {
 	})
 }
 
-func TestPropertyService_validateTextValue(t *testing.T) {
-	s := &propertyService{}
-
-	tests := []struct {
-		name        string
-		value       json.RawMessage
-		expectError bool
-	}{
-		{
-			name:        "valid string value",
-			value:       json.RawMessage(`"hello world"`),
-			expectError: false,
-		},
-		{
-			name:        "empty string value",
-			value:       json.RawMessage(`""`),
-			expectError: false,
-		},
-		{
-			name:        "null value",
-			value:       json.RawMessage(`null`),
-			expectError: false,
-		},
-		{
-			name:        "empty value",
-			value:       json.RawMessage(``),
-			expectError: false,
-		},
-		{
-			name:        "number value should fail",
-			value:       json.RawMessage(`123`),
-			expectError: true,
-		},
-		{
-			name:        "boolean value should fail",
-			value:       json.RawMessage(`true`),
-			expectError: true,
-		},
-		{
-			name:        "array value should fail",
-			value:       json.RawMessage(`["test"]`),
-			expectError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := s.validateTextValue(tt.value)
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestPropertyService_validateSelectValue(t *testing.T) {
 	s := &propertyService{}
 
@@ -185,43 +128,28 @@ func TestPropertyService_validateSelectValue(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		value       json.RawMessage
+		value       string
 		expectError bool
 	}{
 		{
 			name:        "valid option ID",
-			value:       json.RawMessage(`"opt1"`),
+			value:       "opt1",
 			expectError: false,
 		},
 		{
 			name:        "another valid option ID",
-			value:       json.RawMessage(`"opt2"`),
-			expectError: false,
-		},
-		{
-			name:        "null value",
-			value:       json.RawMessage(`null`),
-			expectError: false,
-		},
-		{
-			name:        "empty value",
-			value:       json.RawMessage(``),
+			value:       "opt2",
 			expectError: false,
 		},
 		{
 			name:        "invalid option ID",
-			value:       json.RawMessage(`"invalid-option"`),
+			value:       "invalid-option",
 			expectError: true,
 		},
 		{
-			name:        "number value should fail",
-			value:       json.RawMessage(`123`),
-			expectError: true,
-		},
-		{
-			name:        "array value should fail",
-			value:       json.RawMessage(`["opt1"]`),
-			expectError: true,
+			name:        "empty string is allowed",
+			value:       "",
+			expectError: false,
 		},
 	}
 
@@ -254,62 +182,37 @@ func TestPropertyService_validateMultiselectValue(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		value       json.RawMessage
+		value       []string
 		expectError bool
 	}{
 		{
 			name:        "single valid option",
-			value:       json.RawMessage(`["opt1"]`),
+			value:       []string{"opt1"},
 			expectError: false,
 		},
 		{
 			name:        "multiple valid options",
-			value:       json.RawMessage(`["opt1", "opt3"]`),
+			value:       []string{"opt1", "opt3"},
 			expectError: false,
 		},
 		{
 			name:        "all valid options",
-			value:       json.RawMessage(`["opt1", "opt2", "opt3"]`),
+			value:       []string{"opt1", "opt2", "opt3"},
 			expectError: false,
 		},
 		{
 			name:        "empty array",
-			value:       json.RawMessage(`[]`),
-			expectError: false,
-		},
-		{
-			name:        "null value",
-			value:       json.RawMessage(`null`),
-			expectError: false,
-		},
-		{
-			name:        "empty value",
-			value:       json.RawMessage(``),
+			value:       []string{},
 			expectError: false,
 		},
 		{
 			name:        "invalid option ID",
-			value:       json.RawMessage(`["invalid-option"]`),
+			value:       []string{"invalid-option"},
 			expectError: true,
 		},
 		{
 			name:        "mix of valid and invalid options",
-			value:       json.RawMessage(`["opt1", "invalid-option"]`),
-			expectError: true,
-		},
-		{
-			name:        "string value should fail",
-			value:       json.RawMessage(`"opt1"`),
-			expectError: true,
-		},
-		{
-			name:        "number value should fail",
-			value:       json.RawMessage(`123`),
-			expectError: true,
-		},
-		{
-			name:        "array with numbers should fail",
-			value:       json.RawMessage(`[123, 456]`),
+			value:       []string{"opt1", "invalid-option"},
 			expectError: true,
 		},
 	}
@@ -326,184 +229,215 @@ func TestPropertyService_validateMultiselectValue(t *testing.T) {
 	}
 }
 
-func TestPropertyService_validatePropertyValue(t *testing.T) {
-	s := &propertyService{}
-
-	tests := []struct {
-		name        string
-		fieldType   model.PropertyFieldType
-		value       json.RawMessage
-		expectError bool
-	}{
-		{
-			name:        "text field with string value",
-			fieldType:   model.PropertyFieldTypeText,
-			value:       json.RawMessage(`"test"`),
-			expectError: false,
-		},
-		{
-			name:        "text field with invalid value",
-			fieldType:   model.PropertyFieldTypeText,
-			value:       json.RawMessage(`123`),
-			expectError: true,
-		},
-		{
-			name:        "unsupported field type should fail",
-			fieldType:   model.PropertyFieldTypeDate,
-			value:       json.RawMessage(`"2023-01-01"`),
-			expectError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			propertyField := &model.PropertyField{
-				Type: tt.fieldType,
-			}
-
-			// For select/multiselect tests, add some options
-			if tt.fieldType == model.PropertyFieldTypeSelect || tt.fieldType == model.PropertyFieldTypeMultiselect {
-				option1 := model.NewPluginPropertyOption("opt1", "Option 1")
-				propertyField.Attrs = model.StringInterface{
-					model.PropertyFieldAttributeOptions: []*model.PluginPropertyOption{option1},
-				}
-			}
-
-			err := s.validatePropertyValue(propertyField, tt.value)
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestPropertyService_sanitizeTextValue(t *testing.T) {
 	s := &propertyService{}
 
 	tests := []struct {
 		name           string
-		input          json.RawMessage
-		expectedOutput json.RawMessage
-		expectError    bool
+		input          string
+		expectedOutput string
 	}{
 		{
 			name:           "trim leading and trailing spaces",
-			input:          json.RawMessage(`"  hello world  "`),
-			expectedOutput: json.RawMessage(`"hello world"`),
-			expectError:    false,
+			input:          "  hello world  ",
+			expectedOutput: "hello world",
 		},
 		{
 			name:           "trim only leading spaces",
-			input:          json.RawMessage(`"  hello world"`),
-			expectedOutput: json.RawMessage(`"hello world"`),
-			expectError:    false,
+			input:          "  hello world",
+			expectedOutput: "hello world",
 		},
 		{
 			name:           "trim only trailing spaces",
-			input:          json.RawMessage(`"hello world  "`),
-			expectedOutput: json.RawMessage(`"hello world"`),
-			expectError:    false,
+			input:          "hello world  ",
+			expectedOutput: "hello world",
 		},
 		{
 			name:           "no spaces to trim",
-			input:          json.RawMessage(`"hello world"`),
-			expectedOutput: json.RawMessage(`"hello world"`),
-			expectError:    false,
+			input:          "hello world",
+			expectedOutput: "hello world",
 		},
 		{
 			name:           "empty string remains empty",
-			input:          json.RawMessage(`""`),
-			expectedOutput: json.RawMessage(`""`),
-			expectError:    false,
+			input:          "",
+			expectedOutput: "",
 		},
 		{
 			name:           "string with only spaces becomes empty",
-			input:          json.RawMessage(`"   "`),
-			expectedOutput: json.RawMessage(`""`),
-			expectError:    false,
+			input:          "   ",
+			expectedOutput: "",
 		},
 		{
-			name:           "null value passes through",
-			input:          json.RawMessage(`null`),
-			expectedOutput: json.RawMessage(`null`),
-			expectError:    false,
-		},
-		{
-			name:           "empty value passes through",
-			input:          json.RawMessage(``),
-			expectedOutput: json.RawMessage(``),
-			expectError:    false,
-		},
-		{
-			name:           "non-string value passes through unchanged",
-			input:          json.RawMessage(`123`),
-			expectedOutput: json.RawMessage(`123`),
-			expectError:    false,
+			name:           "empty string is allowed",
+			input:          "",
+			expectedOutput: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := s.sanitizeTextValue(tt.input)
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, string(tt.expectedOutput), string(result))
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedOutput, result)
 		})
 	}
 }
 
-func TestPropertyService_sanitizePropertyValue(t *testing.T) {
+func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 	s := &propertyService{}
+
+	// Create test property fields with options
+	option1 := model.NewPluginPropertyOption("opt1", "Option 1")
+	option2 := model.NewPluginPropertyOption("opt2", "Option 2")
+
+	selectPropertyField := &model.PropertyField{
+		Type: model.PropertyFieldTypeSelect,
+		Attrs: model.StringInterface{
+			model.PropertyFieldAttributeOptions: []*model.PluginPropertyOption{option1, option2},
+		},
+	}
+
+	multiselectPropertyField := &model.PropertyField{
+		Type: model.PropertyFieldTypeMultiselect,
+		Attrs: model.StringInterface{
+			model.PropertyFieldAttributeOptions: []*model.PluginPropertyOption{option1, option2},
+		},
+	}
+
+	textPropertyField := &model.PropertyField{
+		Type: model.PropertyFieldTypeText,
+	}
 
 	tests := []struct {
 		name           string
-		fieldType      model.PropertyFieldType
+		propertyField  *model.PropertyField
 		input          json.RawMessage
 		expectedOutput json.RawMessage
 		expectError    bool
 	}{
+		// Text field tests
 		{
-			name:           "text field gets trimmed",
-			fieldType:      model.PropertyFieldTypeText,
-			input:          json.RawMessage(`"  hello  "`),
-			expectedOutput: json.RawMessage(`"hello"`),
+			name:           "text field trims spaces",
+			propertyField:  textPropertyField,
+			input:          json.RawMessage(`"  hello world  "`),
+			expectedOutput: json.RawMessage(`"hello world"`),
 			expectError:    false,
 		},
 		{
-			name:           "select field passes through",
-			fieldType:      model.PropertyFieldTypeSelect,
-			input:          json.RawMessage(`"option1"`),
-			expectedOutput: json.RawMessage(`"option1"`),
+			name:           "text field allows empty string",
+			propertyField:  textPropertyField,
+			input:          json.RawMessage(`""`),
+			expectedOutput: json.RawMessage(`""`),
 			expectError:    false,
 		},
 		{
-			name:           "multiselect field passes through",
-			fieldType:      model.PropertyFieldTypeMultiselect,
-			input:          json.RawMessage(`["option1", "option2"]`),
-			expectedOutput: json.RawMessage(`["option1", "option2"]`),
+			name:          "text field rejects non-string",
+			propertyField: textPropertyField,
+			input:         json.RawMessage(`123`),
+			expectError:   true,
+		},
+		{
+			name:           "text field allows null",
+			propertyField:  textPropertyField,
+			input:          json.RawMessage(`null`),
+			expectedOutput: json.RawMessage(`null`),
+			expectError:    false,
+		},
+		// Select field tests
+		{
+			name:           "select field allows valid option",
+			propertyField:  selectPropertyField,
+			input:          json.RawMessage(`"opt1"`),
+			expectedOutput: json.RawMessage(`"opt1"`),
 			expectError:    false,
 		},
 		{
-			name:           "unsupported field type passes through",
-			fieldType:      model.PropertyFieldTypeDate,
-			input:          json.RawMessage(`"2023-01-01"`),
-			expectedOutput: json.RawMessage(`"2023-01-01"`),
+			name:           "select field allows empty string",
+			propertyField:  selectPropertyField,
+			input:          json.RawMessage(`""`),
+			expectedOutput: json.RawMessage(`""`),
+			expectError:    false,
+		},
+		{
+			name:          "select field rejects invalid option",
+			propertyField: selectPropertyField,
+			input:         json.RawMessage(`"invalid-option"`),
+			expectError:   true,
+		},
+		{
+			name:          "select field rejects non-string",
+			propertyField: selectPropertyField,
+			input:         json.RawMessage(`123`),
+			expectError:   true,
+		},
+		{
+			name:           "select field allows null",
+			propertyField:  selectPropertyField,
+			input:          json.RawMessage(`null`),
+			expectedOutput: json.RawMessage(`null`),
+			expectError:    false,
+		},
+		// Multiselect field tests
+		{
+			name:           "multiselect field allows valid options",
+			propertyField:  multiselectPropertyField,
+			input:          json.RawMessage(`["opt1", "opt2"]`),
+			expectedOutput: json.RawMessage(`["opt1", "opt2"]`),
+			expectError:    false,
+		},
+		{
+			name:           "multiselect field allows empty array",
+			propertyField:  multiselectPropertyField,
+			input:          json.RawMessage(`[]`),
+			expectedOutput: json.RawMessage(`[]`),
+			expectError:    false,
+		},
+		{
+			name:          "multiselect field rejects invalid option",
+			propertyField: multiselectPropertyField,
+			input:         json.RawMessage(`["invalid-option"]`),
+			expectError:   true,
+		},
+		{
+			name:          "multiselect field rejects non-array",
+			propertyField: multiselectPropertyField,
+			input:         json.RawMessage(`"opt1"`),
+			expectError:   true,
+		},
+		{
+			name:           "multiselect field allows null",
+			propertyField:  multiselectPropertyField,
+			input:          json.RawMessage(`null`),
+			expectedOutput: json.RawMessage(`null`),
+			expectError:    false,
+		},
+		// Empty value tests
+		{
+			name:           "text field allows empty RawMessage",
+			propertyField:  textPropertyField,
+			input:          json.RawMessage(``),
+			expectedOutput: json.RawMessage(``),
+			expectError:    false,
+		},
+		{
+			name:           "select field allows empty RawMessage",
+			propertyField:  selectPropertyField,
+			input:          json.RawMessage(``),
+			expectedOutput: json.RawMessage(``),
+			expectError:    false,
+		},
+		{
+			name:           "multiselect field allows empty RawMessage",
+			propertyField:  multiselectPropertyField,
+			input:          json.RawMessage(``),
+			expectedOutput: json.RawMessage(``),
 			expectError:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			propertyField := &model.PropertyField{
-				Type: tt.fieldType,
-			}
-
-			result, err := s.sanitizePropertyValue(propertyField, tt.input)
+			result, err := s.sanitizeAndValidatePropertyValue(tt.propertyField, tt.input)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
