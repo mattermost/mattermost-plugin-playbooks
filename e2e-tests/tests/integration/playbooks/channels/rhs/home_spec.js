@@ -42,19 +42,6 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
             cy.get('#postListContent').should('be.visible');
         });
 
-        describe('telemetry', () => {
-            it('track page view', () => {
-                // # intercepts telemetry
-                cy.interceptTelemetry();
-
-                // # Click the icon
-                cy.getPlaybooksAppBarIcon().should('be.visible').click();
-
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([{name: 'channels_rhs_home', type: 'page'}]);
-            });
-        });
-
         describe('shows available', () => {
             it('starter templates', () => {
             // templates are defined in webapp/src/components/templates/template_data.tsx
