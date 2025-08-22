@@ -132,8 +132,6 @@ func NewPropertyFieldFromMattermostPropertyField(mmpf *model.PropertyField) (*Pr
 		return nil, err
 	}
 
-	if
-
 	logrus.WithFields(logrus.Fields{
 		"field":     *mmpf,
 		"attrs":     mmpf.Attrs[model.PropertyFieldAttributeOptions],
