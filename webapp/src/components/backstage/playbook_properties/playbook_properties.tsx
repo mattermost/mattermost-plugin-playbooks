@@ -33,6 +33,8 @@ import {PropertyField} from 'src/types/property_field';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 
+import {useProxyState} from 'src/hooks';
+
 import PropertyValuesInput from './property_values_input';
 import PropertyDotMenu from './property_dot_menu';
 import SimpleTypeSelector from './simple_type_selector';
@@ -65,11 +67,32 @@ const PlaybookProperties = ({playbookID}: Props) => {
     const nameInputRefs = useRef<{[key: string]: PropertyNameInputRef | null}>({});
 
     const [playbook, playbookResult] = usePlaybook(playbookID);
+    const inProperties = usePlaybookPropertyFields(playbook);
+
     const [addPropertyField] = useAddPlaybookPropertyField();
     const [updatePropertyField] = useUpdatePlaybookPropertyField();
     const [deletePropertyField] = useDeletePlaybookPropertyField();
 
-    const properties = usePlaybookPropertyFields(playbook);
+    const [properties, setProperties] = useProxyState(inProperties, useCallback((updatedProperties) => {
+        updatedProperties.forEach((updatedProperty, index) => {
+            if (updatedProperty === inProperties[index]) {
+                return; // No change needed for unchanged properties
+            }
+
+            updateProperty(updatedProperty);
+        });
+    }, [updatePropertyField, inProperties]), 0);
+
+    const updatePropertyOptimistically = useCallback((updatedProperty: PropertyField) => {
+        setProperties((prevProperties) => {
+            return prevProperties.map((property) => {
+                if (property.id === updatedProperty.id) {
+                    return updatedProperty;
+                }
+                return property;
+            });
+        });
+    }, [setProperties]);
 
     const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
         const propertyFieldInput: PropertyFieldInput = {
@@ -95,7 +118,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
             type: PropertyFieldType.Text,
             attrs: {
                 visibility: 'when_set',
-                sortOrder: properties.length + 1,
+                sortOrder: properties.length,
             },
         };
 
@@ -107,33 +130,27 @@ const PlaybookProperties = ({playbookID}: Props) => {
             return;
         }
 
-        const reorderedProperties = Array.from(properties);
-        const [removed] = reorderedProperties.splice(result.source.index, 1);
-        reorderedProperties.splice(result.destination.index, 0, removed);
+        setProperties((prevProperties) => {
+            const reorderedProperties = Array.from(prevProperties);
+            const [removed] = reorderedProperties.splice(result.source.index, 1);
+            reorderedProperties.splice(result.destination.index, 0, removed);
 
-        const updatePromises = reorderedProperties.map(async (prop, index) => {
-            const updatedProperty = {
-                ...prop,
-                attrs: {
-                    ...prop.attrs,
-                    sort_order: index + 1,
-                },
-            };
+            return reorderedProperties.map((field, index) => {
+                const nextSortOrder = index;
 
-            const propertyFieldInput: PropertyFieldInput = {
-                name: updatedProperty.name,
-                type: updatedProperty.type as PropertyFieldType,
-                attrs: {
-                    visibility: updatedProperty.attrs.visibility,
-                    sortOrder: updatedProperty.attrs.sort_order,
-                    options: updatedProperty.attrs.options,
-                },
-            };
+                if (field.attrs.sort_order === nextSortOrder) {
+                    return field; // No change needed
+                }
 
-            return updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
+                return {
+                    ...field,
+                    attrs: {
+                        ...field.attrs,
+                        sort_order: nextSortOrder,
+                    },
+                };
+            });
         });
-
-        await Promise.all(updatePromises);
     }, [properties, updatePropertyField, playbookID]);
 
     const columnHelper = createColumnHelper<PropertyField>();
@@ -181,7 +198,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                             {editingTypeId === info.row.original.id ? (
                                 <SimpleTypeSelector
                                     field={info.row.original}
-                                    updateField={updateProperty}
+                                    updateField={updatePropertyOptimistically}
                                     onClose={() => setEditingTypeId(null)}
                                     isOpen={editingTypeId === info.row.original.id}
                                     onOpenChange={(isOpen) => {
@@ -199,7 +216,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                     nameInputRefs.current[info.row.original.id] = el;
                                 }}
                                 field={info.row.original}
-                                updateField={updateProperty}
+                                updateField={updatePropertyOptimistically}
                                 existingNames={properties.map((p) => p.name)}
                             />
                         </PropertyCellContent>
@@ -215,7 +232,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 cell: (info) => (
                     <PropertyValuesInput
                         field={info.row.original}
-                        updateField={updateProperty}
+                        updateField={updatePropertyOptimistically}
                     />
                 ),
             }),
