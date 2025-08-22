@@ -132,12 +132,6 @@ func NewPropertyFieldFromMattermostPropertyField(mmpf *model.PropertyField) (*Pr
 		return nil, err
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"field":     *mmpf,
-		"attrs":     mmpf.Attrs[model.PropertyFieldAttributeOptions],
-		"attrsJSON": string(attrsJSON),
-	}).Info("fields found in search REMOVE2")
-
 	return &PropertyField{
 		PropertyField: *mmpf,
 		Attrs:         attrs,
