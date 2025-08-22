@@ -89,22 +89,11 @@ describe('Task Inbox >', {testIsolation: true}, () => {
     });
 
     it('icon toggles taskinbox view', () => {
-        // # Intercept all calls to telemetry
-        cy.interceptTelemetry();
-
         // # Click on global header icon to open
         cy.findByTestId('header-task-inbox-icon').click();
 
         // * assert RHS is shown
         getRHS().should('be.visible');
-
-        // * assert telemetry pageview
-        cy.expectTelemetryToContain([
-            {
-                name: 'task_inbox',
-                type: 'page',
-            },
-        ]);
 
         // * assert zero case
         getRHS().within(() => {

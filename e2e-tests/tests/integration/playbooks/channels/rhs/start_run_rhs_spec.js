@@ -53,11 +53,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
     };
 
     describe('From RHS run list  > ', () => {
-        beforeEach(() => {
-            // # intercepts telemetry
-            cy.interceptTelemetry();
-        });
-
         describe('playbook configured as create new channel', () => {
             it('defaults', () => {
                 // # Fill default values
@@ -100,24 +95,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
-
-                    // * Assert telemetry data
-                    cy.expectTelemetryToContain([{
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'channels_rhs_runlist',
-                            playbookId: playbook.id,
-                            channelMode: 'create_new_channel',
-                            public: true,
-                            hasPlaybookChanged: true,
-                            hasNameChanged: false,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        }},
-                    ], {waitForCalls: 2});
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/channel-template`);
@@ -180,24 +157,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
-
-                    // * Assert telemetry data
-                    cy.expectTelemetryToContain([{
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'channels_rhs_runlist',
-                            playbookId: playbook.id,
-                            channelMode: 'create_new_channel',
-                            public: true,
-                            hasPlaybookChanged: true,
-                            hasNameChanged: true,
-                            hasSummaryChanged: true,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        }},
-                    ]);
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);
@@ -341,23 +300,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // * Assert telemetry data
-                    cy.expectTelemetryToContain([{
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'channels_rhs_runlist',
-                            playbookId: playbook.id,
-                            channelMode: 'link_existing_channel',
-                            hasPlaybookChanged: true,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: true,
-                            hasChannelIdChanged: true,
-                            hasPublicChanged: false,
-                        }},
-                    ]);
-
                     // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
@@ -419,23 +361,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
-
-                    // * Assert telemetry data
-                    cy.expectTelemetryToContain([{
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'channels_rhs_runlist',
-                            playbookId: playbook.id,
-                            channelMode: 'link_existing_channel',
-                            hasPlaybookChanged: true,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        }},
-                    ]);
 
                     // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
@@ -499,23 +424,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         cy.findByTestId('modal-confirm-button').click();
                     });
 
-                    // * Assert telemetry data
-                    cy.expectTelemetryToContain([{
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'channels_rhs_runlist',
-                            playbookId: playbook.id,
-                            channelMode: 'link_existing_channel',
-                            hasPlaybookChanged: true,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: true,
-                            hasPublicChanged: false,
-                        }},
-                    ]);
-
                     // * Verify we are on the existing channel
                     cy.url().should('include', `/${testTeam.name}/channels/${testChannel.name}`);
 
@@ -572,23 +480,6 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         // # Click start button
                         cy.findByTestId('modal-confirm-button').click();
                     });
-
-                    // * Assert telemetry data
-                    cy.expectTelemetryToContain([{
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'channels_rhs_runlist',
-                            playbookId: playbook.id,
-                            channelMode: 'create_new_channel',
-                            hasPlaybookChanged: true,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: true,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        }},
-                    ]);
 
                     // * Verify we are on the channel just created
                     cy.url().should('include', `/${testTeam.name}/channels/test-run-name`);

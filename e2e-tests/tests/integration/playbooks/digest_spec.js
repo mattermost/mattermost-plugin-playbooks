@@ -49,9 +49,6 @@ describe.skip('digest messages', {testIsolation: true}, () => {
     });
 
     beforeEach(() => {
-        // # intercepts telemetry
-        cy.interceptTelemetry();
-
         // # Login as testUser
         cy.apiLogin(testUser);
     });
@@ -100,17 +97,6 @@ describe.skip('digest messages', {testIsolation: true}, () => {
 
             // # assert url is RDP
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_overduestatus');
-
-            // # assert telemetry tracks correctly the origin
-            cy.expectTelemetryToContain([
-                {
-                    name: 'run_details',
-                    type: 'page',
-                    properties: {
-                        from: 'digest_overduestatus',
-                    },
-                },
-            ]);
         });
 
         it('has one run in progress and links to RDP', () => {
@@ -133,17 +119,6 @@ describe.skip('digest messages', {testIsolation: true}, () => {
 
             // # assert url is RDP
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_runsinprogress');
-
-            // # assert telemetry tracks correctly the origin
-            cy.expectTelemetryToContain([
-                {
-                    name: 'run_details',
-                    type: 'page',
-                    properties: {
-                        from: 'digest_runsinprogress',
-                    },
-                },
-            ]);
         });
 
         it('has one run with one assigned task and links to RDP', () => {
@@ -166,17 +141,6 @@ describe.skip('digest messages', {testIsolation: true}, () => {
 
             // # assert url is RDP
             cy.url().should('contain', '/playbooks/runs/' + testRun.id + '?from=digest_assignedtask');
-
-            // # assert telemetry tracks correctly the origin
-            cy.expectTelemetryToContain([
-                {
-                    name: 'run_details',
-                    type: 'page',
-                    properties: {
-                        from: 'digest_assignedtask',
-                    },
-                },
-            ]);
         });
     });
 });

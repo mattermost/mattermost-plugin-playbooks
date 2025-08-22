@@ -8,8 +8,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import styled from 'styled-components';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import Tooltip from 'src/components/widgets/tooltip';
@@ -24,7 +23,6 @@ interface FollowState {
 interface Props {
     runID: string;
     followState?: FollowState;
-    trigger: 'run_details'|'playbooks_lhs'|'channel_rhs'
 }
 
 const FollowButton = styled(TertiaryButton)`
@@ -41,7 +39,7 @@ const UnfollowButton = styled(SecondaryButton)`
     font-size: 12px;
 `;
 
-export const FollowUnfollowButton = ({runID, followState, trigger}: Props) => {
+export const FollowUnfollowButton = ({runID, followState}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
     const currentUserId = useSelector(getCurrentUserId);
@@ -54,16 +52,11 @@ export const FollowUnfollowButton = ({runID, followState, trigger}: Props) => {
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        const eventTarget = isFollowing ? PlaybookRunEventTarget.Unfollow : PlaybookRunEventTarget.Follow;
         action(runID)
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId: string) => userId !== currentUserId) : [...followers, currentUserId];
                 setFollowers(newFollowers);
                 refreshLHS();
-                telemetryEvent(eventTarget, {
-                    playbookrun_id: runID,
-                    from: trigger,
-                });
             })
             .catch(() => {
                 addToast({

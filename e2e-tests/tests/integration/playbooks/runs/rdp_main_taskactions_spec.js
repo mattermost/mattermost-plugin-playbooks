@@ -49,9 +49,6 @@ describe('runs > task actions', {testIsolation: true}, () => {
     });
 
     beforeEach(() => {
-        // # intercepts telemetry
-        cy.interceptTelemetry();
-
         // # Login as testUser
         cy.apiLogin(testUser);
     });
@@ -125,17 +122,6 @@ describe('runs > task actions', {testIsolation: true}, () => {
                 assert.deepEqual(trigger.user_ids, []);
                 assert.isTrue(actions.enabled);
             });
-
-            // # assert telemetry data
-            cy.expectTelemetryToContain([
-                {
-                    name: 'taskactions_updated',
-                    type: 'track',
-                    properties: {
-                        playbookrun_id: testPlaybookRun.id,
-                    },
-                },
-            ]);
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);

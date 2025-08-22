@@ -6,11 +6,8 @@ import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
-import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
-import {PlaybookViewTarget} from 'src/types/telemetry';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
@@ -30,8 +27,6 @@ interface Props {
 type StyledAttrs = {className?: string};
 
 const Outline = ({playbook, refetch}: Props) => {
-    usePlaybookViewTelemetry(PlaybookViewTarget.Outline, playbook.id);
-
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
@@ -70,7 +65,6 @@ const Outline = ({playbook, refetch}: Props) => {
 
     return (
         <Sections
-            playbookId={playbook.id}
             data-testid='preview-content'
         >
             <Section
@@ -163,12 +157,10 @@ export const ScrollNav = styled(ScrollNavBase)`/* stylelint-disable no-empty-sou
 type SectionItem = {id: string, title: string};
 
 type SectionsProps = {
-    playbookId: PlaybookWithChecklist['id'];
     children: ReactNode;
 }
 
 const SectionsImpl = ({
-    playbookId,
     children,
     className,
 }: SectionsProps & StyledAttrs) => {
@@ -188,7 +180,6 @@ const SectionsImpl = ({
     return (
         <>
             <ScrollNav
-                playbookId={playbookId}
                 items={items}
             />
             <div className={className}>

@@ -24,7 +24,6 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
-import {telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
@@ -236,19 +235,16 @@ const PlaybookEditor = () => {
                 <NavItem
                     to={generatePath(path, {playbookId})}
                     exact={true}
-                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
                 <NavItem
                     to={generatePath(path, {playbookId, tab: 'outline'})}
-                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Outline'})}
                 </NavItem>
                 <NavItem
                     to={generatePath(path, {playbookId, tab: 'reports'})}
-                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_reports_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Reports'})}
                 </NavItem>

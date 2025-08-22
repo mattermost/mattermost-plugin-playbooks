@@ -24,8 +24,7 @@ import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {PlaybookRunViewTarget} from 'src/types/telemetry';
-import {useViewTelemetry} from 'src/hooks/telemetry';
+
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 import {useFilter} from 'src/components/backstage/playbook_runs/playbook_run/timeline_utils';
 
@@ -100,12 +99,6 @@ const PlaybookRunDetails = () => {
     const role = playbookRun?.participant_ids.includes(myUser.id) || playbookRun?.owner_user_id === myUser.id ? Role.Participant : Role.Viewer;
 
     useEnsureProfiles(playbookRun?.participant_ids ?? []);
-    useViewTelemetry(PlaybookRunViewTarget.Details, playbookRun?.id, {
-        from: queryParams.from ?? '',
-        playbook_id: playbookRun?.playbook_id,
-        playbookrun_id: playbookRun?.id,
-        role,
-    });
 
     const RHS = useRHS(playbookRun);
 

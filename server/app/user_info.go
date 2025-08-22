@@ -23,10 +23,3 @@ type UserInfoStore interface {
 	// Upsert inserts (creates) or updates the UserInfo in info.
 	Upsert(info UserInfo) error
 }
-
-// UserInfoTelemetry defines the methods that the UserInfo store needs from the RudderTelemetry.
-// userID is the user initiating the event.
-type UserInfoTelemetry interface {
-	// ChangeDigestSettings tracks when a user changes one of the digest settings
-	ChangeDigestSettings(userID string, old DigestNotificationSettings, new DigestNotificationSettings)
-}

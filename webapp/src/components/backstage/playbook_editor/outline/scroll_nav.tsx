@@ -15,13 +15,10 @@ import {useLocation} from 'react-router-dom';
 
 import {TextBoxOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {telemetryEventForPlaybook} from 'src/client';
 import {BackstageID} from 'src/components/backstage/backstage';
-import {PlaybookWithChecklist} from 'src/types/playbook';
 import {useScrollListener} from 'src/hooks';
 
 interface Props {
-    playbookId: PlaybookWithChecklist['id'];
     items: Array<{id: string; title: string;}>;
 }
 
@@ -32,7 +29,7 @@ type Attrs = HTMLAttributes<HTMLElement>;
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
+const ScrollNav = ({items, ...attrs}: Props & Attrs) => {
     const {hash} = useLocation();
     const [activeId, setActiveId] = useState(items?.[0].id);
 
@@ -64,8 +61,6 @@ const ScrollNav = ({playbookId, items, ...attrs}: Props & Attrs) => {
     useScrollListener(root, updateActiveSection);
 
     const scrollToSection = useCallback((id: ItemId) => {
-        telemetryEventForPlaybook(playbookId, `playbook_preview_navbar_section_${id}_clicked`);
-
         if (activeId === id) {
             return;
         }

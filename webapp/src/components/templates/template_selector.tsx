@@ -8,7 +8,7 @@ import {useSelector} from 'react-redux';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/common';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
-import {savePlaybook, telemetryEventForTemplate} from 'src/client';
+import {savePlaybook} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {setPlaybookDefaults} from 'src/types/playbook';
 import {usePlaybooksRouting} from 'src/hooks';
@@ -89,7 +89,6 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
                     author={template.author}
                     labelColor={template.labelColor}
                     onSelect={async () => {
-                        telemetryEventForTemplate(template.title, 'click_template_icon');
                         let username = currentUser.username;
                         const isTutorial = template.title === 'Learn how to use playbooks';
                         if (isTutorial) {

@@ -48,8 +48,6 @@ import {
     getSiteUrl,
     playbookExportProps,
     restorePlaybook,
-    telemetryEvent,
-    telemetryEventForPlaybook,
 } from 'src/client';
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
@@ -65,7 +63,6 @@ import {StyledDropdownMenuItem} from 'src/components/backstage/shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import useConfirmPlaybookConvertPrivateModal from 'src/components/backstage/convert_private_playbook_modal';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 type ControlProps = {
     playbook: {
@@ -262,10 +259,9 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
         <PrimaryButtonLarger
             onClick={() => {
                 dispatch(openPlaybookRunModal({
-                    onRunCreated: (runId, channelId, statsData) => {
+                    onRunCreated: (runId) => {
                         navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                         refreshLHS();
-                        telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_playbook_editor'});
                     },
                     playbookId: playbook.id,
                     teamId: team.id,
@@ -434,7 +430,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         navigateToPluginUrl(`/playbooks/${newID}/outline`);
                         addToast({content: formatMessage({defaultMessage: 'Successfully duplicated playbook'})});
                         refreshLHS();
-                        telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                     }}
                     disabled={!permissionForDuplicate}
                     disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
@@ -451,7 +446,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         alignItems: 'center',
                         gap: '8px',
                     }}
-                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
                 >
                     <ExportVariantIcon size={18}/>
                     <FormattedMessage defaultMessage='Export'/>
@@ -465,7 +459,6 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             gap: '8px',
                         }}
                         onClick={() => {
-                            telemetryEventForPlaybook(playbook.id, 'playbook_makeprivate');
                             setShowMakePrivateConfirm(true);
                         }}
                     >

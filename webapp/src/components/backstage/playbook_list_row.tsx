@@ -33,20 +33,13 @@ import DotMenu, {
     iconSplitStyling,
 } from 'src/components/dot_menu';
 import Tooltip from 'src/components/widgets/tooltip';
-import {
-    createPlaybookRun,
-    playbookExportProps,
-    telemetryEvent,
-    telemetryEventForPlaybook,
-} from 'src/client';
+import {createPlaybookRun, playbookExportProps} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {navigateToPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {usePlaybookMembership} from 'src/graphql/hooks';
 import {Timestamp} from 'src/webapp_globals';
 import {openPlaybookRunModal} from 'src/actions';
-
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 import {InfoLine} from './styles';
 import {playbookIsTutorialPlaybook} from './playbook_editor/controls';
@@ -153,12 +146,10 @@ const PlaybookListRow = (props: Props) => {
             return;
         }
         if (props.playbook?.id) {
-            telemetryEventForPlaybook(props.playbook.id, 'playbook_list_run_clicked');
             dispatch(openPlaybookRunModal({
-                onRunCreated: (runId, channelId, statsData) => {
+                onRunCreated: (runId) => {
                     navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                     refreshLHS();
-                    telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_playbook_list'});
                 },
                 playbookId: props.playbook.id,
                 teamId: team.id,
@@ -286,7 +277,6 @@ const PlaybookListRow = (props: Props) => {
                     <DropdownMenuItem
                         onClick={() => {
                             props.onDuplicate();
-                            telemetryEventForPlaybook(props.playbook.id, 'playbook_duplicate_clicked_in_playbooks_list');
                         }}
                         disabled={!permissionForDuplicate}
                         disabledAltText={formatMessage({defaultMessage: 'Duplicate is disabled for this team.'})}
@@ -303,7 +293,6 @@ const PlaybookListRow = (props: Props) => {
                             alignItems: 'center',
                             gap: '8px',
                         }}
-                        onClick={() => telemetryEventForPlaybook(props.playbook.id, 'playbook_export_clicked_in_playbooks_list')}
                     >
                         <ExportVariantIcon size={18}/>
                         <FormattedMessage defaultMessage='Export'/>

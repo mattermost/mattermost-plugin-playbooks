@@ -118,25 +118,11 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                 cy.findByTestId('update-due-date-text').contains('Update due');
                 cy.findByTestId('update-due-date-time').contains('in 15 minutes');
 
-                // # Intercept all calls to telemetry
-                cy.interceptTelemetry();
-
                 // # go to channel
                 cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * check that post has been added
                 cy.getLastPost().contains('my nice update');
-
-                // * assert  telemetry pageview
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'run_status_update',
-                        type: 'page',
-                        properties: {
-                            channel_type: 'P',
-                        },
-                    },
-                ]);
             });
         });
 
