@@ -14,6 +14,8 @@ import {
 import type {PropertyField} from 'src/types/property_field';
 import Dropdown from 'src/components/dropdown';
 
+import {hasOptions, supportsOptions} from './property_utils';
+
 interface Props {
     field: PropertyField;
     updateField: (field: PropertyField) => void;
@@ -53,22 +55,28 @@ const TYPE_OPTIONS: Array<{
     },
 ]) as const;
 
-const SimpleTypeSelector = ({field, updateField, onClose, isOpen, onOpenChange, target}: Props) => {
+const SimpleTypeSelector = ({
+    field,
+    updateField,
+    onClose,
+    isOpen,
+    onOpenChange,
+    target,
+}: Props) => {
     const handleTypeSelect = (option: TypeOption | null | undefined) => {
         if (!option) {
             return;
         }
+        const nextField = {...field, type: option.type, attrs: {...field.attrs}};
 
-        const newType = option.type;
-        const updatedField = {...field, type: newType};
-
-        // Remove options for text type
-        if (newType === 'text') {
-            delete updatedField.attrs.options;
-        } else if ((newType === 'select' || newType === 'multiselect') && !updatedField.attrs.options?.length) {
-            // Add default option for select/multiselect if none exist
-            updatedField.attrs = {
-                ...updatedField.attrs,
+        if (!supportsOptions(nextField) && hasOptions(nextField)) {
+            // Remove options if not supported
+            nextField.attrs = {...nextField.attrs || {}};
+            Reflect.deleteProperty(nextField.attrs, 'options');
+        } else if (supportsOptions(nextField) && !hasOptions(nextField)) {
+            // Add default option if supported and none exist
+            nextField.attrs = {
+                ...nextField.attrs,
                 options: [{
                     id: '',
                     name: 'Option 1',
@@ -76,7 +84,7 @@ const SimpleTypeSelector = ({field, updateField, onClose, isOpen, onOpenChange, 
             };
         }
 
-        updateField(updatedField);
+        updateField(nextField);
         onClose?.();
         onOpenChange(false);
     };
