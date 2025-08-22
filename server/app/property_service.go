@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"sort"
 	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -182,6 +183,10 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 			CreateAt:        lastField.CreateAt,
 		}
 	}
+
+	sort.Slice(allFields, func(i, j int) bool {
+		return PropertySortOrder(allFields[i]) < PropertySortOrder(allFields[j])
+	})
 
 	return allFields, nil
 }

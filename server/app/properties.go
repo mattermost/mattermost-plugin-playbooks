@@ -8,7 +8,6 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -36,6 +35,20 @@ type Attrs struct {
 	SortOrder  float64                                            `json:"sort_order"`
 	Options    model.PropertyOptions[*model.PluginPropertyOption] `json:"options"`
 	ParentID   string                                             `json:"parent_id"`
+}
+
+func PropertySortOrder(p *model.PropertyField) int {
+	value, ok := p.Attrs[PropertyAttrsSortOrder]
+	if !ok {
+		return 0
+	}
+
+	order, ok := value.(float64)
+	if !ok {
+		return 0
+	}
+
+	return int(order)
 }
 
 type PropertyField struct {
