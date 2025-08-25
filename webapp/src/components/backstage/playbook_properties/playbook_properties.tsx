@@ -37,7 +37,7 @@ import {useProxyState} from 'src/hooks';
 
 import PropertyValuesInput from './property_values_input';
 import PropertyDotMenu from './property_dot_menu';
-import SimpleTypeSelector from './simple_type_selector';
+import PropertyTypeSelector from './property_type_selector';
 import EmptyState from './empty_state';
 import PropertyNameInput, {PropertyNameInputRef} from './property_name_input';
 
@@ -196,7 +196,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     return (
                         <PropertyCellContent>
                             {editingTypeId === info.row.original.id ? (
-                                <SimpleTypeSelector
+                                <PropertyTypeSelector
                                     field={info.row.original}
                                     updateField={updatePropertyOptimistically}
                                     onClose={() => setEditingTypeId(null)}

@@ -55,7 +55,7 @@ const TYPE_OPTIONS: Array<{
     },
 ]) as const;
 
-const SimpleTypeSelector = ({
+const PropertyTypeSelector = ({
     field,
     updateField,
     onClose,
@@ -171,4 +171,4 @@ const selectStyles: StylesConfig<TypeOption, false> = {
     },
 };
 
-export default SimpleTypeSelector;
+export default PropertyTypeSelector;
