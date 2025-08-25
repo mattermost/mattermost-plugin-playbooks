@@ -6,7 +6,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -247,14 +246,10 @@ func convertPropertyFieldInputToPropertyField(input PropertyFieldInput) *app.Pro
 			options := make(model.PropertyOptions[*model.PluginPropertyOption], 0, len(*input.Attrs.Options))
 			for _, opt := range *input.Attrs.Options {
 				var id string
-				var name = opt.Name
-
-				if opt.ID != nil && strings.TrimSpace(*opt.ID) != "" {
+				if opt.ID != nil {
 					id = *opt.ID
-				} else {
-					id = model.NewId()
 				}
-				option := model.NewPluginPropertyOption(id, name)
+				option := model.NewPluginPropertyOption(id, opt.Name)
 				if opt.Color != nil {
 					option.SetValue("color", *opt.Color)
 				}
