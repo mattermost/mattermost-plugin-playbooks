@@ -14,7 +14,7 @@ import {
 } from '@mattermost/compass-icons/components';
 
 import DotMenu, {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
-import type {PropertyField} from 'src/types/property_field';
+import type {PropertyField} from 'src/types/properties';
 
 type Props = {
     field: PropertyField;

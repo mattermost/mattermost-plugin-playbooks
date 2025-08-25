@@ -29,7 +29,7 @@ import {
     useUpdatePlaybookPropertyField,
 } from 'src/graphql/hooks';
 import {PropertyFieldInput, PropertyFieldType} from 'src/graphql/generated/graphql';
-import {PropertyField} from 'src/types/property_field';
+import {PropertyField} from 'src/types/properties';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 

@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import styled from 'styled-components';
 
-import type {PropertyField} from 'src/types/property_field';
+import type {PropertyField} from 'src/types/properties';
 
 interface Props {
     field: PropertyField;

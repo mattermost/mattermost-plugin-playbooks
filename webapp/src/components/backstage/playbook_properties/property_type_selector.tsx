@@ -11,7 +11,8 @@ import {
     MenuVariantIcon,
 } from '@mattermost/compass-icons/components';
 
-import type {PropertyField} from 'src/types/property_field';
+import type {PropertyField} from 'src/types/properties';
+
 import Dropdown from 'src/components/dropdown';
 
 import {hasOptions, supportsOptions} from './property_utils';

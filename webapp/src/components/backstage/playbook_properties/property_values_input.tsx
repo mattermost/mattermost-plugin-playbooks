@@ -15,7 +15,7 @@ import styled from 'styled-components';
 
 import {MinusIcon} from '@mattermost/compass-icons/components';
 
-import type {PropertyField} from 'src/types/property_field';
+import type {PropertyField} from 'src/types/properties';
 
 type Props = {
     field: PropertyField;
@@ -175,7 +175,7 @@ const PropertyValuesInput = ({
     );
 };
 
-const checkForDuplicates = (options: Array<{id: string; name: string; color?: string}> | undefined, newValue: string) => {
+const checkForDuplicates = <T extends {name: string}>(options: Maybe<Array<T>>, newValue: string) => {
     return options?.some((option) => option.name === newValue);
 };
 
