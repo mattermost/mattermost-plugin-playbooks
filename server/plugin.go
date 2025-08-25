@@ -344,7 +344,7 @@ func (p *Plugin) OnConfigurationChange() error {
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
-		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
+		p.playbookRunService, p.playbookService, p.propertyService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)

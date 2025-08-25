@@ -233,7 +233,7 @@ func (c *channelActionStore) SetViewedChannel(userID, channelID string) error {
 		}))
 
 	if err != nil {
-		if c.store.db.DriverName() == model.DatabaseDriverMysql {
+		if c.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 			me, ok := err.(*mysql.MySQLError)
 			if ok && me.Number == 1062 {
 				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
@@ -300,7 +300,7 @@ func (c *channelActionStore) SetMultipleViewedChannel(userIDs []string, channelI
 	_, err = c.store.execBuilder(c.store.db, query)
 	if err != nil {
 		// If there's an error, return a specific one if possible
-		if c.store.db.DriverName() == model.DatabaseDriverMysql {
+		if c.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 			me, ok := err.(*mysql.MySQLError)
 			if ok && me.Number == 1062 {
 				return errors.Wrap(app.ErrDuplicateEntry, err.Error())

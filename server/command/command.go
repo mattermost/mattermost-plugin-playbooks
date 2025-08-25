@@ -178,6 +178,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		testSelf := model.NewAutocompleteData("self", "", "DESTRUCTIVE ACTION - Perform a series of self tests to ensure everything works as expected.")
 		test.AddCommand(testSelf)
 
+		testDevCreateFields := model.NewAutocompleteData("dev-create-fields", "[playbook-id]", "Create sample property fields for a playbook")
+		testDevCreateFields.AddTextArgument("Playbook ID to add fields to", "[playbook-id]", "")
+		test.AddCommand(testDevCreateFields)
+
 		command.AddCommand(test)
 	}
 
@@ -192,6 +196,7 @@ type Runner struct {
 	poster             bot.Poster
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
+	propertyService    app.PropertyService
 	configService      config.Service
 	userInfoStore      app.UserInfoStore
 	userInfoTelemetry  app.UserInfoTelemetry
@@ -205,6 +210,7 @@ func NewCommandRunner(ctx *plugin.Context,
 	poster bot.Poster,
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
+	propertyService app.PropertyService,
 	configService config.Service,
 	userInfoStore app.UserInfoStore,
 	userInfoTelemetry app.UserInfoTelemetry,
@@ -217,6 +223,7 @@ func NewCommandRunner(ctx *plugin.Context,
 		poster:             poster,
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
+		propertyService:    propertyService,
 		configService:      configService,
 		userInfoStore:      userInfoStore,
 		userInfoTelemetry:  userInfoTelemetry,
@@ -1300,6 +1307,8 @@ func (r *Runner) actionTest(args []string) {
 		r.actionTestData(params)
 	case "self":
 		r.actionTestSelf(params)
+	case "dev-create-fields":
+		r.actionDevCreateFields(params)
 	default:
 		r.postCommandResponse(fmt.Sprintf("Command '%s' unknown.", args[0]))
 		return
@@ -1993,6 +2002,125 @@ func (r *Runner) actionNukeDB(args []string) {
 		return
 	}
 	r.postCommandResponse("DB has been reset.")
+}
+
+func (r *Runner) actionDevCreateFields(args []string) {
+	if len(args) == 0 {
+		r.postCommandResponse("❌ Please provide a playbook ID. Usage: `/playbook test dev-create-fields [playbook-id]`")
+		return
+	}
+
+	playbookID := args[0]
+
+	// Check if the playbook exists
+	_, err := r.playbookService.Get(playbookID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("❌ Playbook with ID '%s' not found: %v", playbookID, err))
+		return
+	}
+
+	// Check if the playbook already has property fields
+	existingFields, err := r.propertyService.GetPropertyFields(playbookID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error checking existing property fields: %v", err))
+		return
+	}
+
+	if len(existingFields) > 0 {
+		r.postCommandResponse(fmt.Sprintf("⚠️ Playbook already has %d property field(s). No new fields created.", len(existingFields)))
+		return
+	}
+
+	// Create some sample property fields for the playbook
+	textField := app.PropertyField{
+		PropertyField: model.PropertyField{
+			Name: "Priority",
+			Type: "text",
+		},
+		Attrs: app.Attrs{
+			Visibility: "always",
+			SortOrder:  1.0,
+		},
+	}
+
+	selectField := app.PropertyField{
+		PropertyField: model.PropertyField{
+			Name: "Status Level",
+			Type: "select",
+		},
+		Attrs: app.Attrs{
+			Visibility: "always",
+			SortOrder:  2.0,
+		},
+	}
+
+	// Create options manually using the proper interface
+	highOption := model.NewPluginPropertyOption(model.NewId(), "High")
+	highOption.SetValue("color", "red")
+
+	mediumOption := model.NewPluginPropertyOption(model.NewId(), "Medium")
+	mediumOption.SetValue("color", "yellow")
+
+	lowOption := model.NewPluginPropertyOption(model.NewId(), "Low")
+	lowOption.SetValue("color", "green")
+
+	selectField.Attrs.Options = model.PropertyOptions[*model.PluginPropertyOption]{
+		highOption, mediumOption, lowOption,
+	}
+
+	// Create multiselect field for tags
+	multiselectField := app.PropertyField{
+		PropertyField: model.PropertyField{
+			Name: "Tags",
+			Type: "multiselect",
+		},
+		Attrs: app.Attrs{
+			Visibility: "always",
+			SortOrder:  3.0,
+		},
+	}
+
+	// Create options for multiselect field
+	urgentOption := model.NewPluginPropertyOption(model.NewId(), "Urgent")
+	urgentOption.SetValue("color", "red")
+
+	criticalOption := model.NewPluginPropertyOption(model.NewId(), "Critical")
+	criticalOption.SetValue("color", "orange")
+
+	securityOption := model.NewPluginPropertyOption(model.NewId(), "Security")
+	securityOption.SetValue("color", "purple")
+
+	performanceOption := model.NewPluginPropertyOption(model.NewId(), "Performance")
+	performanceOption.SetValue("color", "blue")
+
+	maintenanceOption := model.NewPluginPropertyOption(model.NewId(), "Maintenance")
+	maintenanceOption.SetValue("color", "gray")
+
+	multiselectField.Attrs.Options = model.PropertyOptions[*model.PluginPropertyOption]{
+		urgentOption, criticalOption, securityOption, performanceOption, maintenanceOption,
+	}
+
+	// Add the fields to the playbook
+	createdTextField, err := r.propertyService.CreatePropertyField(playbookID, textField)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error creating text field: %v", err))
+		return
+	}
+
+	createdSelectField, err := r.propertyService.CreatePropertyField(playbookID, selectField)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error creating select field: %v", err))
+		return
+	}
+
+	createdMultiselectField, err := r.propertyService.CreatePropertyField(playbookID, multiselectField)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error creating multiselect field: %v", err))
+		return
+	}
+
+	r.postCommandResponse(fmt.Sprintf("✅ Created property fields for playbook %s:\n- Text field: %s (ID: %s)\n- Select field: %s (ID: %s)\n- Multiselect field: %s (ID: %s)",
+		playbookID, createdTextField.Name, createdTextField.ID, createdSelectField.Name, createdSelectField.ID, createdMultiselectField.Name, createdMultiselectField.ID))
 }
 
 // Execute should be called by the plugin when a command invocation is received from the Mattermost server.

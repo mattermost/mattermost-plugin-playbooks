@@ -921,7 +921,7 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 
 func (p *playbookStore) AutoFollow(playbookID, userID string) error {
 	var err error
-	if p.store.db.DriverName() == model.DatabaseDriverMysql {
+	if p.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		_, err = p.store.execBuilder(p.store.db, sq.
 			Insert("IR_PlaybookAutoFollow").
 			Columns("PlaybookID", "UserID").

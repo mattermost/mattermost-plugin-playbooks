@@ -92,7 +92,7 @@ func (sqlStore *SQLStore) createDriver() (drivers.Driver, error) {
 	var driver drivers.Driver
 	var err error
 	switch driverName {
-	case model.DatabaseDriverMysql:
+	case DeprecatedDatabaseDriverMysql:
 		driver, err = ms.WithInstance(sqlStore.db.DB)
 	case model.DatabaseDriverPostgres:
 		driver, err = ps.WithInstance(sqlStore.db.DB)
