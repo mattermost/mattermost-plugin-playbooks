@@ -135,7 +135,7 @@ const StyledInput = styled.input<{$hasError?: boolean}>`
     border: none;
     background: transparent;
     font-size: 14px;
-    font-weight: 400;
+    font-weight: 600;
     line-height: 20px;
     color: var(--center-channel-color);
     padding: 4px 8px;
