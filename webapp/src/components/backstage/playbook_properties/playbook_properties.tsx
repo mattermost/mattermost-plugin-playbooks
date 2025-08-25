@@ -73,7 +73,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
     const [updatePropertyField] = useUpdatePlaybookPropertyField();
     const [deletePropertyField] = useDeletePlaybookPropertyField();
 
-    const [properties, setProperties] = useProxyState(inProperties, useCallback((updatedProperties) => {
+    const [properties, updatePropertiesOptimistically] = useProxyState(inProperties, useCallback((updatedProperties) => {
         updatedProperties.forEach((updatedProperty, index) => {
             if (updatedProperty === inProperties[index]) {
                 return; // No change needed for unchanged properties
@@ -84,7 +84,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
     }, [updatePropertyField, inProperties]), 0);
 
     const updatePropertyOptimistically = useCallback((updatedProperty: PropertyField) => {
-        setProperties((prevProperties) => {
+        updatePropertiesOptimistically((prevProperties) => {
             return prevProperties.map((property) => {
                 if (property.id === updatedProperty.id) {
                     return updatedProperty;
@@ -92,7 +92,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 return property;
             });
         });
-    }, [setProperties]);
+    }, [updatePropertiesOptimistically]);
 
     const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
         const propertyFieldInput: PropertyFieldInput = {
@@ -130,7 +130,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
             return;
         }
 
-        setProperties((prevProperties) => {
+        updatePropertiesOptimistically((prevProperties) => {
             const reorderedProperties = Array.from(prevProperties);
             const [removed] = reorderedProperties.splice(result.source.index, 1);
             reorderedProperties.splice(result.destination.index, 0, removed);
