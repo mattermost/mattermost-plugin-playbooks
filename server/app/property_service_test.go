@@ -449,7 +449,7 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 	}
 }
 
-func TestPropertySortOrder(t *testing.T) {
+func TestPropertyService_TestPropertySortOrder(t *testing.T) {
 	tests := []struct {
 		name          string
 		propertyField *model.PropertyField
@@ -508,7 +508,7 @@ func TestPropertySortOrder(t *testing.T) {
 	}
 }
 
-func TestPropertyFieldsSortingOrder(t *testing.T) {
+func TestPropertyService_TestPropertyFieldsSortingOrder(t *testing.T) {
 	// Create test property fields with different sort orders
 	fields := []*model.PropertyField{
 		{
