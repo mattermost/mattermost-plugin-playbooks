@@ -239,7 +239,9 @@ const PlaybookProperties = ({playbookID}: Props) => {
             columnHelper.display({
                 id: 'actions',
                 header: () => (
-                    <FormattedMessage defaultMessage='Actions'/>
+                    <HeaderColEnd>
+                        <FormattedMessage defaultMessage='Actions'/>
+                    </HeaderColEnd>
                 ),
                 size: 40,
                 cell: (info) => (
@@ -483,7 +485,6 @@ const TableHeaderCell = styled.th`
     font-weight: 600;
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
-    text-transform: uppercase;
     letter-spacing: 0.02em;
 
     &:first-child {
@@ -525,6 +526,12 @@ const PropertyCellContent = styled.div`
     height: 100%;
     padding: 0 10px;
     gap: 2px;
+`;
+
+const HeaderColEnd = styled.div`
+    display: inline-block;
+    width: 100%;
+    text-align: right;
 `;
 
 const TypeIconButton = styled.button`

@@ -98,7 +98,7 @@ const PropertyTypeSelector = ({
             label: (
                 <ItemContent>
                     <ItemLeft>
-                        <Icon size={16}/>
+                        <Icon size={18}/>
                         {option.label}
                     </ItemLeft>
                     {field.type === option.type && (

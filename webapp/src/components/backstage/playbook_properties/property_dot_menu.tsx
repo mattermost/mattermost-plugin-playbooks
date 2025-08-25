@@ -53,12 +53,12 @@ const PropertyDotMenu = ({
                 placement='bottom-end'
                 dotMenuButton={FullWidthActionsButton}
                 dropdownMenu={CustomDropdownMenu}
-                icon={<DotsHorizontalIcon size={16}/>}
+                icon={<DotsHorizontalIcon size={18}/>}
             >
                 <DropdownMenuItem onClick={handleRename}>
                     <MenuItemContent>
                         <MenuItemLeft>
-                            <PencilOutlineIcon size={16}/>
+                            <PencilOutlineIcon size={18}/>
                             <FormattedMessage
                                 defaultMessage='Rename'
                             />
@@ -68,7 +68,7 @@ const PropertyDotMenu = ({
                 <DropdownMenuItem onClick={handleEditType}>
                     <MenuItemContent>
                         <MenuItemLeft>
-                            <FormatListBulletedIcon size={16}/>
+                            <FormatListBulletedIcon size={18}/>
                             <FormattedMessage
                                 defaultMessage='Edit property type'
                             />
@@ -78,7 +78,7 @@ const PropertyDotMenu = ({
                 <DropdownMenuItem onClick={handleDuplicate}>
                     <MenuItemContent>
                         <MenuItemLeft>
-                            <ContentCopyIcon size={16}/>
+                            <ContentCopyIcon size={18}/>
                             <FormattedMessage
                                 defaultMessage='Duplicate property'
                             />
@@ -88,7 +88,10 @@ const PropertyDotMenu = ({
                 <DangerDropdownMenuItem onClick={handleDeleteClick}>
                     <MenuItemContent>
                         <MenuItemLeft>
-                            <DangerIcon><TrashCanOutlineIcon size={16}/></DangerIcon>
+                            <TrashCanOutlineIcon
+                                size={18}
+                                color='#D24B4E'
+                            />
                             <FormattedMessage
                                 defaultMessage='Delete property'
                             />
@@ -150,10 +153,6 @@ const DangerDropdownMenuItem = styled(DropdownMenuItem)`
     &&:hover {
         color: #D24B4E;
     }
-`;
-
-const DangerIcon = styled.div`
-    color: #D24B4E;
 `;
 
 export default PropertyDotMenu;
