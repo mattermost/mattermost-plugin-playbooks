@@ -8,12 +8,10 @@ import React, {
     useMemo,
     useRef,
 } from 'react';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {components} from 'react-select';
 import CreatableSelect, {type CreatableProps} from 'react-select/creatable';
 import styled from 'styled-components';
-
-import {MinusIcon} from '@mattermost/compass-icons/components';
 
 import type {PropertyField} from 'src/types/properties';
 
@@ -32,6 +30,7 @@ const PropertyValuesInput = ({
     field,
     updateField,
 }: Props) => {
+    const {formatMessage} = useIntl();
     const [query, setQuery] = React.useState('');
     const [showLastOptionError, setShowLastOptionError] = React.useState(false);
     const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,7 +104,10 @@ const PropertyValuesInput = ({
     if (field.type !== 'multiselect' && field.type !== 'select') {
         return (
             <Container>
-                <MinusIcon size={16}/>
+                <EmptyValues>
+                    {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                    {'-'}
+                </EmptyValues>
             </Container>
         );
     }
@@ -149,7 +151,7 @@ const PropertyValuesInput = ({
                 onInputChange={(newValue) => setQuery(newValue)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleOnBlur}
-                placeholder='Add values…'
+                placeholder={formatMessage({defaultMessage: 'Add values…'})}
                 value={field.attrs.options?.map((option) => ({
                     label: option.name,
                     value: option.name,
@@ -246,6 +248,10 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: center;
+`;
+
+const EmptyValues = styled.div`
+    padding: 4px 8px;
 `;
 
 const ErrorText = styled.div`
