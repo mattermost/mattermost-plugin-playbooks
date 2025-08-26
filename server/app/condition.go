@@ -339,3 +339,167 @@ func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue
 func isNot(propertyField PropertyField, propertyValue PropertyValue, conditionValue json.RawMessage) bool {
 	return !is(propertyField, propertyValue, conditionValue)
 }
+
+// ToString returns a human-readable string representation of the condition
+func (c *Condition) ToString(propertyFields []PropertyField) string {
+	fieldMap := make(map[string]PropertyField)
+	for _, field := range propertyFields {
+		fieldMap[field.ID] = field
+	}
+
+	return c.toString(fieldMap, false)
+}
+
+func (c *Condition) toString(fieldMap map[string]PropertyField, needsParens bool) string {
+	if c.And != nil {
+		var parts []string
+		for _, condition := range c.And {
+			parts = append(parts, condition.toString(fieldMap, true))
+		}
+		if len(parts) == 1 {
+			return parts[0]
+		}
+		result := strings.Join(parts, " AND ")
+		if needsParens {
+			return "(" + result + ")"
+		}
+		return result
+	}
+
+	if c.Or != nil {
+		var parts []string
+		for _, condition := range c.Or {
+			parts = append(parts, condition.toString(fieldMap, true))
+		}
+		if len(parts) == 1 {
+			return parts[0]
+		}
+		result := strings.Join(parts, " OR ")
+		if needsParens {
+			return "(" + result + ")"
+		}
+		return result
+	}
+
+	if c.Is != nil {
+		return c.Is.toString(fieldMap, false)
+	}
+
+	if c.IsNot != nil {
+		return c.IsNot.toString(fieldMap, true)
+	}
+
+	return ""
+}
+
+func (cc *ComparisonCondition) toString(fieldMap map[string]PropertyField, isNot bool) string {
+	field, exists := fieldMap[cc.FieldID]
+	var fieldName string
+	if exists && field.Name != "" {
+		fieldName = field.Name
+	} else {
+		fieldName = cc.FieldID
+	}
+
+	operator := "is"
+	if isNot {
+		operator = "is not"
+	}
+
+	valueStr := cc.formatValue(field, exists)
+	return fmt.Sprintf("%s %s %s", fieldName, operator, valueStr)
+}
+
+func (cc *ComparisonCondition) formatValue(field PropertyField, fieldExists bool) string {
+	if !fieldExists {
+		return cc.formatUnknownFieldValue()
+	}
+
+	switch field.Type {
+	case model.PropertyFieldTypeText:
+		return cc.formatTextValue()
+	case model.PropertyFieldTypeSelect:
+		return cc.formatSelectValue(field)
+	case model.PropertyFieldTypeMultiselect:
+		return cc.formatMultiselectValue(field)
+	}
+	
+	return ""
+}
+
+func (cc *ComparisonCondition) formatTextValue() string {
+	var stringValue string
+	if err := json.Unmarshal(cc.Value, &stringValue); err == nil {
+		return stringValue
+	}
+	return string(cc.Value)
+}
+
+func (cc *ComparisonCondition) formatSelectValue(field PropertyField) string {
+	var arrayValue []string
+	if err := json.Unmarshal(cc.Value, &arrayValue); err != nil {
+		return string(cc.Value)
+	}
+
+	optionMap := make(map[string]string)
+	for _, option := range field.Attrs.Options {
+		optionMap[option.GetID()] = option.GetName()
+	}
+
+	var displayValues []string
+	for _, value := range arrayValue {
+		if name, ok := optionMap[value]; ok {
+			displayValues = append(displayValues, name)
+		} else {
+			displayValues = append(displayValues, value)
+		}
+	}
+
+	if len(displayValues) == 1 {
+		return displayValues[0]
+	}
+	return "[" + strings.Join(displayValues, ",") + "]"
+}
+
+func (cc *ComparisonCondition) formatMultiselectValue(field PropertyField) string {
+	var arrayValue []string
+	if err := json.Unmarshal(cc.Value, &arrayValue); err != nil {
+		return string(cc.Value)
+	}
+
+	optionMap := make(map[string]string)
+	for _, option := range field.Attrs.Options {
+		optionMap[option.GetID()] = option.GetName()
+	}
+
+	var displayValues []string
+	for _, value := range arrayValue {
+		if name, ok := optionMap[value]; ok {
+			displayValues = append(displayValues, name)
+		} else {
+			displayValues = append(displayValues, value)
+		}
+	}
+
+	if len(displayValues) == 1 {
+		return displayValues[0]
+	}
+	return "[" + strings.Join(displayValues, ",") + "]"
+}
+
+func (cc *ComparisonCondition) formatUnknownFieldValue() string {
+	var stringValue string
+	if err := json.Unmarshal(cc.Value, &stringValue); err == nil {
+		return stringValue
+	}
+
+	var arrayValue []string
+	if err := json.Unmarshal(cc.Value, &arrayValue); err == nil {
+		if len(arrayValue) == 1 {
+			return arrayValue[0]
+		}
+		return "[" + strings.Join(arrayValue, ",") + "]"
+	}
+
+	return string(cc.Value)
+}

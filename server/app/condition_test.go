@@ -953,6 +953,7 @@ func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) 
 		{
 			PropertyField: model.PropertyField{
 				ID:   "severity_id",
+				Name: "Severity",
 				Type: model.PropertyFieldTypeSelect,
 			},
 			Attrs: Attrs{
@@ -967,12 +968,14 @@ func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) 
 		{
 			PropertyField: model.PropertyField{
 				ID:   "acknowledged_id",
+				Name: "Acknowledged",
 				Type: model.PropertyFieldTypeText,
 			},
 		},
 		{
 			PropertyField: model.PropertyField{
 				ID:   "status_id",
+				Name: "Status",
 				Type: model.PropertyFieldTypeSelect,
 			},
 			Attrs: Attrs{
@@ -985,6 +988,7 @@ func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) 
 		{
 			PropertyField: model.PropertyField{
 				ID:   "priority_id",
+				Name: "Priority",
 				Type: model.PropertyFieldTypeSelect,
 			},
 			Attrs: Attrs{
@@ -998,6 +1002,7 @@ func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) 
 		{
 			PropertyField: model.PropertyField{
 				ID:   "categories_id",
+				Name: "Categories",
 				Type: model.PropertyFieldTypeMultiselect,
 			},
 			Attrs: Attrs{
@@ -1034,4 +1039,126 @@ func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) 
 	}
 
 	return fields, values
+}
+
+func TestCondition_ToString(t *testing.T) {
+	propertyFields, _ := createTestFieldsAndValues(t)
+
+	t.Run("simple is condition", func(t *testing.T) {
+		condition := &Condition{
+			Is: &ComparisonCondition{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`["critical_id"]`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, "Severity is Critical", result)
+	})
+
+	t.Run("simple isNot condition", func(t *testing.T) {
+		condition := &Condition{
+			IsNot: &ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage(`"false"`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, "Acknowledged is not false", result)
+	})
+
+	t.Run("single value array condition", func(t *testing.T) {
+		condition := &Condition{
+			Is: &ComparisonCondition{
+				FieldID: "status_id",
+				Value:   json.RawMessage(`["open_id"]`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, "Status is Open", result)
+	})
+
+	t.Run("multi value array condition", func(t *testing.T) {
+		condition := &Condition{
+			IsNot: &ComparisonCondition{
+				FieldID: "categories_id",
+				Value:   json.RawMessage(`["cat_a_id", "cat_b_id"]`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, "Categories is not [Category A,Category B]", result)
+	})
+
+	t.Run("and condition", func(t *testing.T) {
+		condition := &Condition{
+			And: []Condition{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					IsNot: &ComparisonCondition{
+						FieldID: "acknowledged_id",
+						Value:   json.RawMessage(`"true"`),
+					},
+				},
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, "Severity is Critical AND Acknowledged is not true", result)
+	})
+
+	t.Run("or condition", func(t *testing.T) {
+		condition := &Condition{
+			Or: []Condition{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["low_id"]`),
+					},
+				},
+				{
+					Is: &ComparisonCondition{
+						FieldID: "priority_id",
+						Value:   json.RawMessage(`["high_priority_id"]`),
+					},
+				},
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, "Severity is Low OR Priority is High", result)
+	})
+
+	t.Run("nested conditions", func(t *testing.T) {
+		condition := &Condition{
+			And: []Condition{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					Or: []Condition{
+						{
+							Is: &ComparisonCondition{
+								FieldID: "status_id",
+								Value:   json.RawMessage(`["open_id"]`),
+							},
+						},
+						{
+							IsNot: &ComparisonCondition{
+								FieldID: "acknowledged_id",
+								Value:   json.RawMessage(`"true"`),
+							},
+						},
+					},
+				},
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, "Severity is Critical AND (Status is Open OR Acknowledged is not true)", result)
+	})
+
 }
