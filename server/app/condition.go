@@ -6,6 +6,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -133,7 +134,7 @@ func (c *Condition) validate(currentDepth int, propertyFields []PropertyField) e
 			return errors.New("and condition must have at least one nested condition")
 		}
 		if currentDepth >= MaxConditionDepth {
-			return errors.New("condition nesting depth exceeds maximum allowed")
+			return fmt.Errorf("condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
 		}
 		for _, condition := range c.And {
 			if err := condition.validate(currentDepth+1, propertyFields); err != nil {
@@ -148,7 +149,7 @@ func (c *Condition) validate(currentDepth int, propertyFields []PropertyField) e
 			return errors.New("or condition must have at least one nested condition")
 		}
 		if currentDepth >= MaxConditionDepth {
-			return errors.New("condition nesting depth exceeds maximum allowed")
+			return fmt.Errorf("condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
 		}
 		for _, condition := range c.Or {
 			if err := condition.validate(currentDepth+1, propertyFields); err != nil {
