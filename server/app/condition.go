@@ -423,7 +423,7 @@ func (cc *ComparisonCondition) formatValue(field PropertyField, fieldExists bool
 	case model.PropertyFieldTypeMultiselect:
 		return cc.formatMultiselectValue(field)
 	}
-	
+
 	return ""
 }
 
