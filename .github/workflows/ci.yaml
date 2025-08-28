@@ -110,11 +110,14 @@ jobs:
 
       - name: ci/ensure-build-on-all-platforms
         run: make dist
+      - name: ci/get-short-sha
+        id: short-sha
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: ci/upload-build-artifact
-        if: success()
+        if: github.event_name == 'pull_request' && success()
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         with:
-          name: playbooks-bundle
+          name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
           path: |
             dist/playbooks-*.tar.gz
           retention-days: 14 ## No need to keep build artifacts for more than 14 days
