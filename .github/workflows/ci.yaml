@@ -110,6 +110,14 @@ jobs:
 
       - name: ci/ensure-build-on-all-platforms
         run: make dist
+      - name: ci/upload-build-artifact
+        if: success()
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        with:
+          name: playbooks-bundle
+          path: |
+            dist/playbooks-*.tar.gz
+          retention-days: 14 ## No need to keep build artifacts for more than 14 days
 
   test-MySQL8-Postgres13:
     runs-on: ubuntu-22.04
