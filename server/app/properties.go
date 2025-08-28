@@ -37,6 +37,20 @@ type Attrs struct {
 	ParentID   string                                             `json:"parent_id"`
 }
 
+func PropertySortOrder(p *model.PropertyField) int {
+	value, ok := p.Attrs[PropertyAttrsSortOrder]
+	if !ok {
+		return 0
+	}
+
+	order, ok := value.(float64)
+	if !ok {
+		return 0
+	}
+
+	return int(order)
+}
+
 type PropertyField struct {
 	model.PropertyField
 	Attrs Attrs `json:"attrs"`

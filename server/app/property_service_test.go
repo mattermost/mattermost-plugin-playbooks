@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"sort"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -445,5 +446,128 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 				assert.Equal(t, string(tt.expectedOutput), string(result))
 			}
 		})
+	}
+}
+
+func TestPropertyService_TestPropertySortOrder(t *testing.T) {
+	tests := []struct {
+		name          string
+		propertyField *model.PropertyField
+		expectedOrder int
+	}{
+		{
+			name: "property field with sort order",
+			propertyField: &model.PropertyField{
+				Attrs: model.StringInterface{
+					PropertyAttrsSortOrder: 42.5,
+				},
+			},
+			expectedOrder: 42,
+		},
+		{
+			name: "property field with zero sort order",
+			propertyField: &model.PropertyField{
+				Attrs: model.StringInterface{
+					PropertyAttrsSortOrder: 0.0,
+				},
+			},
+			expectedOrder: 0,
+		},
+		{
+			name: "property field with negative sort order",
+			propertyField: &model.PropertyField{
+				Attrs: model.StringInterface{
+					PropertyAttrsSortOrder: -10.7,
+				},
+			},
+			expectedOrder: -10,
+		},
+		{
+			name: "property field without sort order",
+			propertyField: &model.PropertyField{
+				Attrs: model.StringInterface{},
+			},
+			expectedOrder: 0,
+		},
+		{
+			name: "property field with invalid sort order type",
+			propertyField: &model.PropertyField{
+				Attrs: model.StringInterface{
+					PropertyAttrsSortOrder: "invalid",
+				},
+			},
+			expectedOrder: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := PropertySortOrder(tt.propertyField)
+			assert.Equal(t, tt.expectedOrder, result)
+		})
+	}
+}
+
+func TestPropertyService_TestPropertyFieldsSortingOrder(t *testing.T) {
+	// Create test property fields with different sort orders
+	fields := []*model.PropertyField{
+		{
+			ID:   "field3",
+			Name: "Field 3",
+			Attrs: model.StringInterface{
+				PropertyAttrsSortOrder: 30.0,
+			},
+		},
+		{
+			ID:   "field1",
+			Name: "Field 1",
+			Attrs: model.StringInterface{
+				PropertyAttrsSortOrder: 10.0,
+			},
+		},
+		{
+			ID:    "field4",
+			Name:  "Field 4",
+			Attrs: model.StringInterface{}, // No sort order, should default to 0
+		},
+		{
+			ID:   "field2",
+			Name: "Field 2",
+			Attrs: model.StringInterface{
+				PropertyAttrsSortOrder: 20.0,
+			},
+		},
+		{
+			ID:   "field5",
+			Name: "Field 5",
+			Attrs: model.StringInterface{
+				PropertyAttrsSortOrder: -5.0,
+			},
+		},
+	}
+
+	// Test the sorting logic used in getAllPropertyFields
+	// We'll simulate what happens in the sorting part of getAllPropertyFields
+	sortedFields := make([]*model.PropertyField, len(fields))
+	copy(sortedFields, fields)
+
+	// Apply the same sorting logic as in getAllPropertyFields
+	sort.Slice(sortedFields, func(i, j int) bool {
+		return PropertySortOrder(sortedFields[i]) < PropertySortOrder(sortedFields[j])
+	})
+
+	// Verify the order: field5 (-5) < field4 (0) < field1 (10) < field2 (20) < field3 (30)
+	expectedOrder := []string{"field5", "field4", "field1", "field2", "field3"}
+
+	require.Len(t, sortedFields, len(expectedOrder))
+	for i, expectedID := range expectedOrder {
+		assert.Equal(t, expectedID, sortedFields[i].ID, "Field at position %d should be %s", i, expectedID)
+	}
+
+	// Verify the sort orders are in ascending order
+	for i := 1; i < len(sortedFields); i++ {
+		prevOrder := PropertySortOrder(sortedFields[i-1])
+		currOrder := PropertySortOrder(sortedFields[i])
+		assert.LessOrEqual(t, prevOrder, currOrder, "Sort orders should be in ascending order")
 	}
 }
