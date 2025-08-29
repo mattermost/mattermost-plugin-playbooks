@@ -10,8 +10,6 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost/server/public/model"
-
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
@@ -65,7 +63,7 @@ func (s *userInfoStore) Upsert(info app.UserInfo) error {
 		return err
 	}
 
-	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		_, err = s.store.execBuilder(s.store.db,
 			sq.Insert("IR_UserInfo").
 				Columns("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").

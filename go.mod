@@ -8,6 +8,9 @@ replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistog
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
 
+// Keep version locked to prevent Go version requirement bump (see mattermost/mattermost#31021)
+replace github.com/ledongthuc/pdf => github.com/ledongthuc/pdf v0.0.0-20240201131950-da5b75280b06
+
 require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/MicahParks/jwkset v0.5.18
@@ -24,8 +27,8 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost/server/public v0.1.15
-	github.com/mattermost/mattermost/server/v8 v8.0.0-20250610231028-731bd7c4145f
+	github.com/mattermost/mattermost/server/public v0.1.16
+	github.com/mattermost/mattermost/server/v8 v8.0.0-20250730203729-9f921318995a
 	github.com/mattermost/morph v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1

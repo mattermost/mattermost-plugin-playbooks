@@ -204,6 +204,12 @@ type PlaybookRun struct {
 
 	// ItemsOrder is the sort order of the checklists
 	ItemsOrder []string `json:"items_order"`
+
+	// PropertyFields is the list of property fields associated with this run, included when requested
+	PropertyFields []PropertyField `json:"property_fields,omitempty"`
+
+	// PropertyValues is the list of property values for this run, included when requested
+	PropertyValues []PropertyValue `json:"property_values,omitempty"`
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -309,6 +315,7 @@ func DetectChangedFields(previous, current *PlaybookRun) map[string]interface{} 
 	detectTimelineEventChanges(previous, current, changes)
 	detectMetricsDataChanges(previous, current, changes)
 	detectChecklistChanges(previous, current, changes)
+	detectPropertyChanges(previous, current, changes)
 
 	return changes
 }
@@ -540,6 +547,20 @@ func detectChecklistChanges(previous, current *PlaybookRun, changes map[string]i
 	}
 }
 
+// detectPropertyChanges compares property fields and values between two PlaybookRun objects
+// For v1, we do a simple equality check and republish the whole struct if different
+func detectPropertyChanges(previous, current *PlaybookRun, changes map[string]interface{}) {
+	// Compare PropertyFields arrays
+	if !PropertyFieldsEqual(previous.PropertyFields, current.PropertyFields) {
+		changes["property_fields"] = current.PropertyFields
+	}
+
+	// Compare PropertyValues arrays
+	if !PropertyValuesEqual(previous.PropertyValues, current.PropertyValues) {
+		changes["property_values"] = current.PropertyValues
+	}
+}
+
 // GetChecklistUpdates compares two slices of checklists and returns updates and deleted IDs
 func GetChecklistUpdates(previous, current []Checklist) ([]ChecklistUpdate, []string) {
 	if len(previous) == 0 && len(current) == 0 {
@@ -747,6 +768,9 @@ func (r *PlaybookRun) Clone() *PlaybookRun {
 	// Clear ItemsOrder to prevent data inconsistency, same as Checklist.Clone()
 	newPlaybookRun.ItemsOrder = nil
 
+	newPlaybookRun.PropertyFields = append([]PropertyField(nil), r.PropertyFields...)
+	newPlaybookRun.PropertyValues = append([]PropertyValue(nil), r.PropertyValues...)
+
 	return &newPlaybookRun
 }
 
@@ -794,6 +818,14 @@ func (r PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	// Always compute ItemsOrder fresh to prevent data inconsistency
 	old.ItemsOrder = r.GetItemsOrder()
+
+	if old.PropertyFields == nil {
+		old.PropertyFields = []PropertyField{}
+	}
+
+	if old.PropertyValues == nil {
+		old.PropertyValues = []PropertyValue{}
+	}
 
 	return json.Marshal(old)
 }
@@ -1146,8 +1178,11 @@ type PlaybookRunService interface {
 	// ToggleStatusUpdates  enables or disables status update for the run
 	ToggleStatusUpdates(playbookRunID, userID string, enable bool) error
 
-	// GetPlaybookRun gets a playbook run by ID. Returns error if it could not be found.
+	// GetPlaybookRun gets a playbook run by ID with property fields and values. Returns error if it could not be found.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
+
+	// SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
+	SetRunPropertyValue(playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
 
 	// GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
 	GetPlaybookRunMetadata(playbookRunID string, hasChannelAccess bool) (*Metadata, error)
@@ -1734,4 +1769,14 @@ func validStatus(status string) bool {
 
 func validType(runType string) bool {
 	return runType == RunTypePlaybook || runType == RunTypeChannelChecklist
+}
+
+// PropertyFieldsEqual compares two slices of PropertyField for deep equality
+func PropertyFieldsEqual(a, b []PropertyField) bool {
+	return reflect.DeepEqual(a, b)
+}
+
+// PropertyValuesEqual compares two slices of PropertyValue for deep equality
+func PropertyValuesEqual(a, b []PropertyValue) bool {
+	return reflect.DeepEqual(a, b)
 }

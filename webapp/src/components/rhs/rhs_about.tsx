@@ -20,6 +20,7 @@ import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
+import PropertiesList from 'src/components/rhs/properties_list';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {setRHSAboutCollapsedState} from 'src/actions';
 import {useUpdateRun} from 'src/graphql/hooks';
@@ -147,16 +148,23 @@ const RHSAbout = (props: Props) => {
                                 />
                             </ParticipantsSection>
                         </Row>
+                        <PropertiesList
+                            propertyFields={props.playbookRun.property_fields}
+                            propertyValues={props.playbookRun.property_values}
+                            runID={props.playbookRun.id}
+                        />
                     </>
                 }
                 {props.playbookRun.status_update_enabled && (
-                    <RHSPostUpdate
-                        readOnly={props.readOnly}
-                        onReadOnlyInteract={props.onReadOnlyInteract}
-                        collapsed={collapsed}
-                        playbookRun={props.playbookRun}
-                        updatesExist={props.playbookRun.status_posts.length !== 0}
-                    />
+                    <PostUpdateSection>
+                        <RHSPostUpdate
+                            readOnly={props.readOnly}
+                            onReadOnlyInteract={props.onReadOnlyInteract}
+                            collapsed={collapsed}
+                            playbookRun={props.playbookRun}
+                            updatesExist={props.playbookRun.status_posts.length !== 0}
+                        />
+                    </PostUpdateSection>
                 )}
             </Container>
             {ParticipateConfirmModal}
@@ -218,7 +226,7 @@ const Row = styled.div`
     display: flex;
     flex-flow: row nowrap;
     padding: 0 8px;
-    margin-bottom: 30px;
+    margin-bottom: 12px;
 `;
 
 const MemberSection = styled.div`
@@ -238,6 +246,10 @@ const MemberSectionTitle = styled.div`
     font-size: 12px;
     font-weight: 600;
     line-height: 16px;
+`;
+
+const PostUpdateSection = styled.div`
+    margin-top: 18px;
 `;
 
 export default RHSAbout;

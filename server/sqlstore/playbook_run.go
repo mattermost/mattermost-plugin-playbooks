@@ -169,7 +169,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 				ORDER BY (CASE WHEN b.UserId IS NULL THEN 0 ELSE 1 END), rp.UserId
 			) x), ''
         ) AS ConcatenatedParticipantIDs`
-	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+	if sqlStore.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		participantsCol = `
         COALESCE(
 			(SELECT group_concat(rp.UserId separator ',')
@@ -1176,7 +1176,7 @@ func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.Assign
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		OrderBy("i.Name")
 
-	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
 	} else {
 		query = query.Where(sq.Like{"i.ChecklistsJSON::text": fmt.Sprintf("%%\"%s\"%%", userID)})
@@ -1267,7 +1267,7 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 		Where(membershipClause).
 		OrderBy("i.Name")
 
-	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
 	} else {
 		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
@@ -1291,7 +1291,7 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 
 func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
 	var err error
-	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		_, err = s.store.execBuilder(s.store.db, sq.
 			Insert("IR_Run_Participants").
 			Columns("IncidentID", "UserID", "IsFollower").
@@ -1354,7 +1354,7 @@ func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 		Where(sq.Eq{"StatusUpdateEnabled": true}).
 		Where(sq.NotEq{"PreviousReminder": 0})
 
-	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
 	} else {
 		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
@@ -1486,7 +1486,7 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 		if !validIDs[m.MetricConfigID] {
 			continue
 		}
-		if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 			_, err = s.store.execBuilder(q, sq.
 				Insert("IR_Metric").
 				Columns("IncidentID", "MetricConfigID", "Value", "Published").
@@ -1528,7 +1528,7 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 	}
 
 	var err error
-	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
 		_, err = s.store.execBuilder(
 			s.store.db,
 			query.Suffix("ON DUPLICATE KEY UPDATE IsParticipant = ?", isParticipating),
