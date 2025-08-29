@@ -358,4 +358,3 @@ func (h *ConditionHandler) deletePlaybookCondition(c *Context, w http.ResponseWr
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
