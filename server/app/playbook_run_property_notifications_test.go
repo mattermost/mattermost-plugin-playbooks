@@ -133,8 +133,8 @@ func TestPlaybookRunServiceImpl_formatPropertyValueForDisplay(t *testing.T) {
 		}
 		longValue, _ := json.Marshal(longText)
 		result = service.formatPropertyValueForDisplay(field, longValue)
-		require.Len(t, result, 50) // 47 chars + "..."
-		require.True(t, len(result) > 47 && result[47:] == "...")
+		require.Len(t, result, propertyValueMaxDisplayLength) // (propertyValueMaxDisplayLength-3) chars + "..."
+		require.True(t, len(result) > propertyValueMaxDisplayLength-3 && result[propertyValueMaxDisplayLength-3:] == "...")
 
 		// Invalid JSON falls back to raw string
 		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`invalid json`))

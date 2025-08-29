@@ -29,6 +29,7 @@ import (
 )
 
 const checklistItemDescriptionCharLimit = 4000
+const propertyValueMaxDisplayLength = 50
 
 const (
 	// PlaybookRunCreatedWSEvent is for playbook run creation.
@@ -4217,15 +4218,12 @@ func (s *PlaybookRunServiceImpl) compareMultiselectValues(oldValue, newValue jso
 		return false
 	}
 
+	newMap := make(map[string]struct{}, len(newArray))
+	for _, val := range newArray {
+		newMap[val] = struct{}{}
+	}
 	for _, oldVal := range oldArray {
-		found := false
-		for _, newVal := range newArray {
-			if oldVal == newVal {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if _, exists := newMap[oldVal]; !exists {
 			return false
 		}
 	}
@@ -4297,8 +4295,8 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 		if err := json.Unmarshal(value, &stringValue); err != nil {
 			return string(value)
 		}
-		if len(stringValue) > 50 {
-			return stringValue[:47] + "..."
+		if len(stringValue) > propertyValueMaxDisplayLength {
+			return stringValue[:propertyValueMaxDisplayLength-3] + "..."
 		}
 		return stringValue
 
