@@ -1182,7 +1182,7 @@ type PlaybookRunService interface {
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
 
 	// SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
-	SetRunPropertyValue(playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
+	SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
 
 	// GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
 	GetPlaybookRunMetadata(playbookRunID string, hasChannelAccess bool) (*Metadata, error)
