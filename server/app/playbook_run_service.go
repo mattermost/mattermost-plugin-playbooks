@@ -4141,12 +4141,152 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 }
 
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
-func (s *PlaybookRunServiceImpl) SetRunPropertyValue(playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	// Get current property values to detect changes
+	currentValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current property values")
+	}
+
+	// Find current value for this property field
+	var currentValue json.RawMessage
+	for _, pv := range currentValues {
+		if pv.FieldID == propertyFieldID {
+			currentValue = pv.Value
+			break
+		}
+	}
+
+	// Upsert the new property value
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upsert property value")
 	}
 
+	// Check if value actually changed and post bot message
+	if !s.propertyValuesEqual(currentValue, value) {
+		s.postPropertyChangeMessage(userID, playbookRunID, propertyFieldID, value)
+	}
+
 	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	return propertyValue, nil
+}
+
+// propertyValuesEqual compares two property values for equality
+func (s *PlaybookRunServiceImpl) propertyValuesEqual(oldValue, newValue json.RawMessage) bool {
+	// Handle nil/empty cases
+	if len(oldValue) == 0 && len(newValue) == 0 {
+		return true
+	}
+	if len(oldValue) == 0 || len(newValue) == 0 {
+		return false
+	}
+
+	// Normalize null values
+	oldStr := string(oldValue)
+	newStr := string(newValue)
+	if oldStr == "null" {
+		oldStr = ""
+	}
+	if newStr == "null" {
+		newStr = ""
+	}
+
+	return oldStr == newStr
+}
+
+// postPropertyChangeMessage posts a bot message when a property value changes
+func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID, propertyFieldID string, newValue json.RawMessage) {
+	// Get playbook run for channel ID
+	run, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Error("failed to get playbook run for property change message")
+		return
+	}
+
+	// Get user info
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to get user for property change message")
+		return
+	}
+
+	// Get property field info
+	propertyField, err := s.propertyService.GetPropertyField(propertyFieldID)
+	if err != nil {
+		logrus.WithError(err).WithField("property_field_id", propertyFieldID).Error("failed to get property field for property change message")
+		return
+	}
+
+	// Format the new value for display
+	displayValue := s.formatPropertyValueForDisplay(propertyField, newValue)
+
+	// Post the message
+	message := fmt.Sprintf("@%s updated %s to %s", user.Username, propertyField.Name, displayValue)
+	_, err = s.poster.PostMessage(run.ChannelID, message)
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"user_id":           userID,
+			"playbook_run_id":   playbookRunID,
+			"property_field_id": propertyFieldID,
+			"channel_id":        run.ChannelID,
+		}).Error("failed to post property change message")
+	}
+}
+
+// formatPropertyValueForDisplay formats a property value for display in bot messages
+func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) string {
+	if len(value) == 0 || string(value) == "null" || string(value) == `""` {
+		return "(empty)"
+	}
+
+	switch propertyField.Type {
+	case "text":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value)
+		}
+		if len(stringValue) > 50 {
+			return stringValue[:47] + "..."
+		}
+		return stringValue
+
+	case "select":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value)
+		}
+		// Find the option label for this value
+		for _, option := range propertyField.Attrs.Options {
+			if option.GetID() == stringValue {
+				return option.GetName()
+			}
+		}
+		return stringValue
+
+	case "multiselect":
+		var arrayValue []string
+		if err := json.Unmarshal(value, &arrayValue); err != nil {
+			return string(value)
+		}
+		if len(arrayValue) == 0 {
+			return "(empty)"
+		}
+		// Convert option IDs to labels
+		var labels []string
+		for _, val := range arrayValue {
+			label := val // Default to ID if label not found
+			for _, option := range propertyField.Attrs.Options {
+				if option.GetID() == val {
+					label = option.GetName()
+					break
+				}
+			}
+			labels = append(labels, label)
+		}
+		return strings.Join(labels, ", ")
+
+	default:
+		return string(value)
+	}
 }

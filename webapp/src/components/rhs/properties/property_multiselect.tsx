@@ -24,6 +24,7 @@ const MultiselectProperty = (props: Props) => {
     const [displayValue, setDisplayValue] = useState<string[] | null>(
         Array.isArray(props.value?.value) ? props.value.value : null
     );
+    const [tempValue, setTempValue] = useState<string[] | null>(null);
 
     useUpdateEffect(() => {
         const newValue = Array.isArray(props.value?.value) ? props.value.value : null;
@@ -31,16 +32,21 @@ const MultiselectProperty = (props: Props) => {
     }, [props.value?.value]);
 
     const handleValueChange = (newValue: string[] | null) => {
-        setDisplayValue(newValue);
-        props.onValueChange(newValue);
+        setTempValue(newValue);
     };
 
     const handleStartEdit = () => {
         setIsEditing(true);
+        setTempValue(displayValue);
     };
 
     const handleStopEdit = () => {
         setIsEditing(false);
+        if (tempValue !== null) {
+            setDisplayValue(tempValue);
+            props.onValueChange(tempValue);
+        }
+        setTempValue(null);
     };
 
     const selectOptions = props.field.attrs?.options?.map((option) => ({
@@ -52,7 +58,7 @@ const MultiselectProperty = (props: Props) => {
         return (
             <PropertySelectInput
                 options={selectOptions}
-                initialValue={displayValue || undefined}
+                initialValue={tempValue || displayValue || undefined}
                 onValueChange={(value) => handleValueChange(Array.isArray(value) ? value : null)}
                 onBlur={handleStopEdit}
                 isMulti={true}
