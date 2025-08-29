@@ -4142,13 +4142,16 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
 func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	// Get current property values to detect changes
+	propertyField, err := s.propertyService.GetPropertyField(propertyFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property field")
+	}
+
 	currentValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current property values")
 	}
 
-	// Find current value for this property field
 	var currentValue json.RawMessage
 	for _, pv := range currentValues {
 		if pv.FieldID == propertyFieldID {
@@ -4157,46 +4160,104 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
-	// Upsert the new property value
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upsert property value")
 	}
 
-	// Check if value actually changed and post bot message
-	if !s.propertyValuesEqual(currentValue, value) {
-		s.postPropertyChangeMessage(userID, playbookRunID, propertyFieldID, value)
+	if !s.propertyValuesEqual(propertyField, currentValue, value) {
+		s.postPropertyChangeMessage(userID, playbookRunID, propertyFieldID, propertyField, value)
 	}
 
 	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	return propertyValue, nil
 }
 
-// propertyValuesEqual compares two property values for equality
-func (s *PlaybookRunServiceImpl) propertyValuesEqual(oldValue, newValue json.RawMessage) bool {
-	// Handle nil/empty cases
-	if len(oldValue) == 0 && len(newValue) == 0 {
-		return true
+// propertyValuesEqual compares two property values for equality based on the property field type
+func (s *PlaybookRunServiceImpl) propertyValuesEqual(field *PropertyField, oldValue, newValue json.RawMessage) bool {
+	switch field.Type {
+	case "text":
+		return s.compareTextValues(oldValue, newValue)
+	case "select":
+		return s.compareSelectValues(oldValue, newValue)
+	case "multiselect":
+		return s.compareMultiselectValues(oldValue, newValue)
 	}
-	if len(oldValue) == 0 || len(newValue) == 0 {
-		return false
-	}
+	return s.compareTextValues(oldValue, newValue)
+}
 
-	// Normalize null values
-	oldStr := string(oldValue)
-	newStr := string(newValue)
-	if oldStr == "null" {
-		oldStr = ""
-	}
-	if newStr == "null" {
-		newStr = ""
-	}
-
+// compareTextValues compares text property values
+func (s *PlaybookRunServiceImpl) compareTextValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
 	return oldStr == newStr
 }
 
+// compareSelectValues compares select property values
+func (s *PlaybookRunServiceImpl) compareSelectValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
+	return oldStr == newStr
+}
+
+// compareMultiselectValues compares multiselect property values as sets (order doesn't matter)
+func (s *PlaybookRunServiceImpl) compareMultiselectValues(oldValue, newValue json.RawMessage) bool {
+	var oldArray, newArray []string
+
+	if len(oldValue) > 0 && string(oldValue) != "null" {
+		if err := json.Unmarshal(oldValue, &oldArray); err != nil {
+			return false
+		}
+	}
+
+	if len(newValue) > 0 && string(newValue) != "null" {
+		if err := json.Unmarshal(newValue, &newArray); err != nil {
+			return false
+		}
+	}
+
+	if len(oldArray) != len(newArray) {
+		return false
+	}
+
+	for _, oldVal := range oldArray {
+		found := false
+		for _, newVal := range newArray {
+			if oldVal == newVal {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
+
+// normalizeStringValue converts a JSON value to a normalized string
+func (s *PlaybookRunServiceImpl) normalizeStringValue(value json.RawMessage) string {
+	if len(value) == 0 {
+		return ""
+	}
+
+	str := string(value)
+	if str == "null" {
+		return ""
+	}
+
+	// Try to unmarshal as string to handle quoted strings
+	var unquoted string
+	if err := json.Unmarshal(value, &unquoted); err == nil {
+		return unquoted
+	}
+
+	return str
+}
+
 // postPropertyChangeMessage posts a bot message when a property value changes
-func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID, propertyFieldID string, newValue json.RawMessage) {
+func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID, propertyFieldID string, propertyField *PropertyField, newValue json.RawMessage) {
 	// Get playbook run for channel ID
 	run, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -4208,13 +4269,6 @@ func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
 		logrus.WithError(err).WithField("user_id", userID).Error("failed to get user for property change message")
-		return
-	}
-
-	// Get property field info
-	propertyField, err := s.propertyService.GetPropertyField(propertyFieldID)
-	if err != nil {
-		logrus.WithError(err).WithField("property_field_id", propertyFieldID).Error("failed to get property field for property change message")
 		return
 	}
 
