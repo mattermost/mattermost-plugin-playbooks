@@ -281,8 +281,6 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		}(admin.Id)
 	}
 
-	b.telemetry.NotifyAdmins(authorUserID, messageType)
-
 	return nil
 }
 

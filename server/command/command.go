@@ -194,7 +194,6 @@ type Runner struct {
 	playbookService    app.PlaybookService
 	configService      config.Service
 	userInfoStore      app.UserInfoStore
-	userInfoTelemetry  app.UserInfoTelemetry
 	permissions        *app.PermissionsService
 }
 
@@ -207,7 +206,6 @@ func NewCommandRunner(ctx *plugin.Context,
 	playbookService app.PlaybookService,
 	configService config.Service,
 	userInfoStore app.UserInfoStore,
-	userInfoTelemetry app.UserInfoTelemetry,
 	permissions *app.PermissionsService,
 ) *Runner {
 	return &Runner{
@@ -219,7 +217,6 @@ func NewCommandRunner(ctx *plugin.Context,
 		playbookService:    playbookService,
 		configService:      configService,
 		userInfoStore:      userInfoStore,
-		userInfoTelemetry:  userInfoTelemetry,
 		permissions:        permissions,
 	}
 }
@@ -997,8 +994,6 @@ func (r *Runner) actionSettings(args []string) {
 		return
 	}
 
-	oldInfo := info
-
 	if args[0] == "weekly-digest" && args[1] == "off" {
 		info.DisableWeeklyDigest = true
 	} else if args[0] == "weekly-digest" {
@@ -1013,8 +1008,6 @@ func (r *Runner) actionSettings(args []string) {
 		r.warnUserAndLogErrorf("Error updating userInfo: %v", err)
 		return
 	}
-
-	r.userInfoTelemetry.ChangeDigestSettings(r.args.UserId, oldInfo.DigestNotificationSettings, info.DigestNotificationSettings)
 
 	r.displayCurrentSettings()
 }

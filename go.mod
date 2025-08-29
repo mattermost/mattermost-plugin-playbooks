@@ -30,7 +30,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
-	github.com/rudderlabs/analytics-go v3.3.3+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
@@ -170,6 +169,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/rudderlabs/analytics-go v3.3.3+incompatible // indirect
 	github.com/russellhaering/goxmldsig v1.5.0 // indirect
 	github.com/segmentio/backo-go v1.1.0 // indirect
 	github.com/sorairolake/lzip-go v0.3.5 // indirect

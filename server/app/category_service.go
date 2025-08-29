@@ -13,17 +13,15 @@ import (
 )
 
 type categoryService struct {
-	store     CategoryStore
-	api       *pluginapi.Client
-	telemetry CategoryTelemetry
+	store CategoryStore
+	api   *pluginapi.Client
 }
 
 // NewPlaybookService returns a new playbook service
-func NewCategoryService(store CategoryStore, api *pluginapi.Client, categoryTelemetry CategoryTelemetry) CategoryService {
+func NewCategoryService(store CategoryStore, api *pluginapi.Client) CategoryService {
 	return &categoryService{
-		store:     store,
-		api:       api,
-		telemetry: categoryTelemetry,
+		store: store,
+		api:   api,
 	}
 }
 
@@ -99,7 +97,6 @@ func (c *categoryService) AddFavorite(item CategoryItem, teamID, userID string) 
 		return errors.Wrap(err, "failed to add favorite")
 	}
 
-	c.telemetry.FavoriteItem(item, userID)
 	return nil
 }
 
@@ -122,7 +119,6 @@ func (c *categoryService) DeleteFavorite(item CategoryItem, teamID, userID strin
 		return errors.Wrap(err, "can't delete item from favorite category")
 	}
 
-	c.telemetry.UnfavoriteItem(item, userID)
 	return nil
 }
 

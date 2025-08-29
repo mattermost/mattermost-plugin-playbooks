@@ -27,7 +27,6 @@ import {
     ChecklistItemState,
     ChecklistItemsFilter,
 } from 'src/types/playbook';
-import {telemetryEventForPlaybookRun} from 'src/client';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {currentChecklistAllCollapsed, currentChecklistCollapsedState, currentChecklistItemsFilter} from 'src/selectors';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
@@ -173,8 +172,6 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
     }
 
     const selectOption = (value: string, checked: boolean) => {
-        telemetryEventForPlaybookRun(playbookRun.id, 'checklists_filter_selected');
-
         if (checklistItemsFilter.all && value !== 'all') {
             return;
         }
@@ -300,7 +297,6 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                     width={352}
                     autoTour={true}
                     punchOut={checklistsPunchout}
-                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.Checklists}_Checklists`}
                 />
             )}
         </InnerContainer>

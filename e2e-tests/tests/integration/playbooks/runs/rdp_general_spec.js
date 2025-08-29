@@ -13,7 +13,6 @@ describe('runs > run details page', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
     let testPublicPlaybook;
-    let testPlaybookRun;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -46,8 +45,6 @@ describe('runs > run details page', {testIsolation: true}, () => {
             playbookId: testPublicPlaybook.id,
             playbookRunName: 'the run name',
             ownerUserId: testUser.id,
-        }).then((playbookRun) => {
-            testPlaybookRun = playbookRun;
         });
     });
 
@@ -65,27 +62,5 @@ describe('runs > run details page', {testIsolation: true}, () => {
 
         // * Verify that the user has been redirected to the not found error page
         cy.url().should('include', '/playbooks/error?type=default');
-    });
-
-    it('telemetry is triggered', () => {
-        // # Intercept all calls to telemetry
-        cy.interceptTelemetry();
-
-        // # Visit the URL of a non-existing playbook run
-        cy.visit(`/playbooks/runs/${testPlaybookRun.id}`);
-
-        // * assert telemetry pageview
-        cy.expectTelemetryToContain([
-            {
-                name: 'run_details',
-                type: 'page',
-                properties: {
-                    from: '',
-                    role: 'participant',
-                    playbookrun_id: testPlaybookRun.id,
-                    playbook_id: testPublicPlaybook.id,
-                },
-            },
-        ]);
     });
 });

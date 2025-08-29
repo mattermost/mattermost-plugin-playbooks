@@ -23,7 +23,6 @@ const (
 type playbookService struct {
 	store          PlaybookStore
 	poster         bot.Poster
-	telemetry      PlaybookTelemetry
 	api            *pluginapi.Client
 	metricsService *metrics.Metrics
 }
@@ -35,11 +34,10 @@ type InsightsOpts struct {
 }
 
 // NewPlaybookService returns a new playbook service
-func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api *pluginapi.Client, metricsService *metrics.Metrics) PlaybookService {
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, api *pluginapi.Client, metricsService *metrics.Metrics) PlaybookService {
 	return &playbookService{
 		store:          store,
 		poster:         poster,
-		telemetry:      telemetry,
 		api:            api,
 		metricsService: metricsService,
 	}
@@ -55,8 +53,6 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	}
 	playbook.ID = newID
 
-	s.telemetry.CreatePlaybook(playbook, userID)
-
 	s.poster.PublishWebsocketEventToTeam(playbookCreatedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
@@ -71,7 +67,6 @@ func (s *playbookService) Import(playbook Playbook, userID string) (string, erro
 		return "", err
 	}
 	playbook.ID = newID
-	s.telemetry.ImportPlaybook(playbook, userID)
 	return newID, nil
 }
 
@@ -102,8 +97,6 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.telemetry.UpdatePlaybook(playbook, userID)
-
 	return nil
 }
 
@@ -116,7 +109,6 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.telemetry.DeletePlaybook(playbook, userID)
 	s.metricsService.IncrementPlaybookArchivedCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
@@ -139,7 +131,6 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.telemetry.RestorePlaybook(playbook, userID)
 	s.metricsService.IncrementPlaybookRestoredCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
@@ -155,11 +146,10 @@ func (s *playbookService) AutoFollow(playbookID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to auto-follow the playbook `%s`", userID, playbookID)
 	}
 
-	playbook, err := s.store.Get(playbookID)
+	_, err := s.store.Get(playbookID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
-	s.telemetry.AutoFollowPlaybook(playbook, userID)
 	return nil
 }
 
@@ -169,11 +159,10 @@ func (s *playbookService) AutoUnfollow(playbookID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to auto-unfollow the playbook `%s`", userID, playbookID)
 	}
 
-	playbook, err := s.store.Get(playbookID)
+	_, err := s.store.Get(playbookID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
-	s.telemetry.AutoUnfollowPlaybook(playbook, userID)
 	return nil
 }
 

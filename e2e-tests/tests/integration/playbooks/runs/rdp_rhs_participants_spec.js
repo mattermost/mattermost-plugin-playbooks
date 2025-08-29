@@ -139,27 +139,11 @@ describe('runs > run details page > rhs > participants', {testIsolation: true}, 
                 cy.get('#profile-autocomplete').click().type(testUser2.username + '{enter}', {delay: 400});
                 cy.get('#profile-autocomplete').click().type(testViewerUser.username + '{enter}', {delay: 400});
 
-                // # Intercept all calls to telemetry
-                cy.interceptTelemetry();
-
                 // * Verify modal message is correct
                 cy.findByText('Participants will also be added to the channel linked to this run').should('exist');
 
                 // # Add selected participant
                 cy.findByTestId('modal-confirm-button').click();
-
-                // * Verify telemetry
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_participate',
-                        type: 'track',
-                        properties: {
-                            from: 'run_details',
-                            trigger: 'add_participant',
-                            count: '2',
-                        },
-                    },
-                ]);
 
                 // * Verify the users have been added
                 cy.findByTestId(testUser2.id).should('exist');

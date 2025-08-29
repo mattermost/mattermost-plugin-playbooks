@@ -49,8 +49,6 @@ type Client struct {
 	Stats *StatsService
 	// Reminders is a collection of methods used to interact with reminders.
 	Reminders *RemindersService
-	// Telemetry is a collection of methods used to interact with telemetry.
-	Telemetry *TelemetryService
 	// TabApp is a collection of methods used to interact with playbooks from the tabapp.
 	TabApp *TabAppService
 }
@@ -79,7 +77,6 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c.Actions = &ActionsService{c}
 	c.Stats = &StatsService{c}
 	c.Reminders = &RemindersService{c}
-	c.Telemetry = &TelemetryService{c}
 	c.TabApp = &TabAppService{c}
 	return c, nil
 }
