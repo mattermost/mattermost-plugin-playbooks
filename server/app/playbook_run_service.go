@@ -4147,17 +4147,14 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		return nil, errors.Wrap(err, "failed to get property field")
 	}
 
-	currentValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
+	currentPropertyValue, err := s.propertyService.GetRunPropertyValueByFieldID(playbookRunID, propertyFieldID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current property values")
+		return nil, errors.Wrap(err, "failed to get current property value")
 	}
 
 	var currentValue json.RawMessage
-	for _, pv := range currentValues {
-		if pv.FieldID == propertyFieldID {
-			currentValue = pv.Value
-			break
-		}
+	if currentPropertyValue != nil {
+		currentValue = currentPropertyValue.Value
 	}
 
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
