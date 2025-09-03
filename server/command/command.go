@@ -1525,7 +1525,6 @@ var playbookRunNames = []string{
 	"Security breach",
 	"Customers data breach",
 	"SLA broken",
-	"MySQL max connections error",
 	"Postgres max connections error",
 	"Elastic Search unresponsive",
 	"Posts deleted",

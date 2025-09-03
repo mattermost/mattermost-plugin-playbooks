@@ -756,7 +756,7 @@ func (cpm *ChannelPlaybookMode) UnmarshalText(text []byte) error {
 
 // Scan parses a ChannelPlaybookMode back from the DB
 func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
-	txt, ok := src.([]byte) // mysql
+	txt, ok := src.([]byte)
 	if !ok {
 		txt, ok := src.(string) //postgres
 		if !ok {

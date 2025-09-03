@@ -1,13 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/**
- * Functions here are expected to work with MySQL and PostgreSQL (known as dialect).
- * When updating this file, make sure to test in both dialect.
- * You'll find table and columns names are being converted to lowercase. Reason being is that
- * in MySQL, first letter is capitalized.
- */
-
 const mapKeys = require('lodash.mapkeys');
 
 function convertKeysToLowercase(obj) {
@@ -120,10 +113,6 @@ const dbUpdateUserSession = async ({dbConfig, params: {sessionId, userId, fields
 };
 
 function toLowerCase(config, name) {
-    if (config.client === 'mysql') {
-        return name;
-    }
-
     return name.toLowerCase();
 }
 

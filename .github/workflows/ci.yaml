@@ -111,7 +111,7 @@ jobs:
       - name: ci/ensure-build-on-all-platforms
         run: make dist
 
-  test-MySQL8-Postgres13:
+  test-Postgres13:
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -126,20 +126,6 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mysql:8
-        env:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -265,7 +251,7 @@ jobs:
     if: always()
     needs:
       - e2e-cypress-tests
-      - test-MySQL8-Postgres13
+      - test-Postgres13
     runs-on: ubuntu-22.04
     permissions:
       checks: write
