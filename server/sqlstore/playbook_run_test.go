@@ -191,7 +191,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 	playbookStore := setupPlaybookStore(t, db)
 	id, err := playbookStore.Create(pbWithMetrics)
 	require.NoError(t, err)
-	pbWithMetrics, err := playbookStore.Get(id)
+	pbWithMetrics, err = playbookStore.Get(id)
 	require.NoError(t, err)
 
 	validPlaybookRuns := []struct {
