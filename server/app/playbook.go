@@ -756,15 +756,11 @@ func (cpm *ChannelPlaybookMode) UnmarshalText(text []byte) error {
 
 // Scan parses a ChannelPlaybookMode back from the DB
 func (cpm *ChannelPlaybookMode) Scan(src interface{}) error {
-	txt, ok := src.([]byte)
+	txt, ok := src.(string) //postgres
 	if !ok {
-		txt, ok := src.(string) //postgres
-		if !ok {
-			return fmt.Errorf("could not cast to string: %v", src)
-		}
-		return cpm.UnmarshalText([]byte(txt))
+		return fmt.Errorf("could not cast to string: %v", src)
 	}
-	return cpm.UnmarshalText(txt)
+	return cpm.UnmarshalText([]byte(txt))
 }
 
 // CleanChecklistIDs cleans checklist IDs against existing checklists.
