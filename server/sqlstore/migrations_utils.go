@@ -109,10 +109,6 @@ var dropColumnPG = func(e sqlx.Ext, tableName, colName string) error {
 }
 
 func addPrimaryKey(e sqlx.Ext, sqlStore *SQLStore, tableName, primaryKey string) error {
-	if e.DriverName() != model.DatabaseDriverPostgres {
-		return fmt.Errorf("only PostgreSQL is supported")
-	}
-
 	hasPK := 0
 	if err := sqlStore.db.Get(&hasPK, fmt.Sprintf(`
 		SELECT 1 FROM information_schema.table_constraints tco
@@ -135,10 +131,6 @@ func addPrimaryKey(e sqlx.Ext, sqlStore *SQLStore, tableName, primaryKey string)
 }
 
 func dropIndexIfExists(e sqlx.Ext, sqlStore *SQLStore, tableName, indexName string) error {
-	if e.DriverName() != model.DatabaseDriverPostgres {
-		return fmt.Errorf("only PostgreSQL is supported")
-	}
-
 	if _, err := e.Exec(fmt.Sprintf("DROP INDEX IF EXISTS %s", indexName)); err != nil {
 		return errors.Wrapf(err, "failed to drop index %s on table %s", indexName, tableName)
 	}
@@ -147,10 +139,6 @@ func dropIndexIfExists(e sqlx.Ext, sqlStore *SQLStore, tableName, indexName stri
 }
 
 func columnExists(sqlStore *SQLStore, tableName, columnName string) (bool, error) {
-	if sqlStore.db.DriverName() != model.DatabaseDriverPostgres {
-		return false, fmt.Errorf("only PostgreSQL is supported")
-	}
-
 	results := []string{}
 	err := sqlStore.db.Select(&results, `
 		SELECT COLUMN_NAME
@@ -175,10 +163,6 @@ type TableInfo struct {
 
 // getDBSchemaInfo returns info for each table created by Playbook plugin
 func getDBSchemaInfo(store *SQLStore) ([]TableInfo, error) {
-	if store.db.DriverName() != model.DatabaseDriverPostgres {
-		return nil, fmt.Errorf("only PostgreSQL is supported")
-	}
-
 	var results []TableInfo
 	err := store.db.Select(&results, `
 		SELECT
@@ -203,10 +187,6 @@ type IndexInfo struct {
 
 // getDBIndexesInfo returns index info for each table created by Playbook plugin
 func getDBIndexesInfo(store *SQLStore) ([]IndexInfo, error) {
-	if store.db.DriverName() != model.DatabaseDriverPostgres {
-		return nil, fmt.Errorf("only PostgreSQL is supported")
-	}
-
 	var results []IndexInfo
 	err := store.db.Select(&results, `
 		SELECT TABLENAME as TableName, INDEXNAME as IndexName, INDEXDEF as IndexDef
@@ -228,10 +208,6 @@ type ConstraintsInfo struct {
 
 // getDBConstraintsInfo returns constraint info for each table created by Playbook plugin
 func getDBConstraintsInfo(store *SQLStore) ([]ConstraintsInfo, error) {
-	if store.db.DriverName() != model.DatabaseDriverPostgres {
-		return nil, fmt.Errorf("only PostgreSQL is supported")
-	}
-
 	var results []ConstraintsInfo
 	err := store.db.Select(&results, `
 		SELECT conname as ConstraintName, contype as ConstraintType
