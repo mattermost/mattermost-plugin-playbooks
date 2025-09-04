@@ -450,7 +450,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
-	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false)
+	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
 	if err != nil {
 		logrus.WithError(err).WithFields(map[string]any{
 			"playbookRunId":  playbookRun.ID,
@@ -1542,7 +1542,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	// add owner as user
-	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false)
+	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
@@ -1746,7 +1746,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			}
 		}
 		if !isParticipant {
-			err = s.AddParticipants(playbookRunID, []string{assigneeID}, userID, false)
+			err = s.AddParticipants(playbookRunID, []string{assigneeID}, userID, false, false)
 			if err != nil {
 				return errors.Wrapf(err, "failed to add assignee to run")
 			}
@@ -2724,7 +2724,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		participants = append(participants, playbookRun.ReporterUserID)
 	}
-	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false)
+	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
@@ -3396,7 +3396,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool, sendWebsocket bool) error {
 	usersFailedToInvite := make([]string, 0)
 	usersToInvite := make([]string, 0)
 
@@ -3467,7 +3467,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	}
 
 	// ws send run
-	if len(usersToInvite) > 0 {
+	if len(usersToInvite) > 0 && sendWebsocket {
 		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
