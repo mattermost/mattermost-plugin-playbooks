@@ -25,7 +25,7 @@ import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/
 import manifest from 'src/manifest';
 import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
-import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
+import {makeAttachToPlaybookRunAction, makeStartPlaybookRunAction} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
@@ -200,8 +200,8 @@ export default class Plugin {
         };
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
         registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
-        registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
-        registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
+        registry.registerPostDropdownMenuAction(makeStartPlaybookRunAction(store));
+        registry.registerPostDropdownMenuAction(makeAttachToPlaybookRunAction(store));
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
         registry.registerRootComponent(LoginHook);
