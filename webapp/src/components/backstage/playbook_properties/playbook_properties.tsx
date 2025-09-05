@@ -18,8 +18,6 @@ import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ChevronDownCircleOutlineIcon, FormatListBulletedIcon, MenuVariantIcon} from '@mattermost/compass-icons/components';
 
-import {usePlaybookViewTelemetry} from 'src/hooks/telemetry';
-import {PlaybookViewTarget} from 'src/types/telemetry';
 import {
     FullPlaybook,
     PlaybookPropertyField as GraphQLPropertyField,
@@ -60,7 +58,6 @@ const usePlaybookPropertyFields = (playbook: Maybe<FullPlaybook>): PropertyField
 
 const PlaybookProperties = ({playbookID}: Props) => {
     const {formatMessage} = useIntl();
-    usePlaybookViewTelemetry(PlaybookViewTarget.Properties, playbookID);
 
     const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
     const [deletingProperty, setDeletingProperty] = useState<PropertyField | null>(null);

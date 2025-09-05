@@ -24,7 +24,6 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import appIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
-import {useViewTelemetry} from 'src/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
@@ -39,7 +38,6 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
-import {GeneralViewTarget} from 'src/types/telemetry';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import {UserList} from './rhs_participants';
@@ -104,7 +102,6 @@ const RHSRunList = (props: Props) => {
     const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
     const showNoRuns = props.runs.length === 0;
-    useViewTelemetry(GeneralViewTarget.ChannelsRHSRunList, currentChannelId);
 
     const handleStartRun = () => {
         dispatch(openPlaybookRunModal({

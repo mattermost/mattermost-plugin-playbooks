@@ -37,10 +37,9 @@ import {
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
 import {useTutorialStepper} from 'src/components/tutorial/tutorial_tour_tip/manager';
 import {browserHistory} from 'src/webapp_globals';
-import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {useParticipateInRun, useViewTelemetry} from 'src/hooks';
+import {useParticipateInRun} from 'src/hooks';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 import RHSRunDetailsTitle from './rhs_run_details_title';
@@ -62,7 +61,6 @@ const RHSRunDetails = (props: Props) => {
 
     const [playbookRun] = useRun(props.runID);
     const isParticipant = playbookRun?.participant_ids.includes(currentUserId);
-    useViewTelemetry(PlaybookRunViewTarget.ChannelsRHSDetails, playbookRun?.id);
 
     const prevStatus = usePrevious(playbookRun?.current_status);
 
@@ -92,7 +90,7 @@ const RHSRunDetails = (props: Props) => {
         }
     }, [runDetailsStep]);
 
-    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined, 'channel_rhs');
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined);
     const addToast = useToaster().add;
     const removeToast = useToaster().remove;
     const displayReadOnlyToast = useMemo(() => throttle(() => {
@@ -194,7 +192,6 @@ const RHSRunDetails = (props: Props) => {
                         width={352}
                         autoTour={true}
                         punchOut={rhsContainerPunchout}
-                        telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.SidePanel}_SidePanel`}
                     />
                 )}
             </RHSContainer>

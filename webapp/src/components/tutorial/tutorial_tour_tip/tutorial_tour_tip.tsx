@@ -45,7 +45,6 @@ type Props = {
     singleTip?: boolean;
     showOptOut?: boolean;
     placement?: Placement
-    telemetryTag?: string;
     stopPropagation?: boolean;
     preventDefault?: boolean;
     tutorialCategory: string;
@@ -70,7 +69,6 @@ const TutorialTourTip = ({
     onNextNavigateTo,
     onPrevNavigateTo,
     onFinish,
-    telemetryTag,
     placement,
     showOptOut,
     pulsatingDotTranslate,
@@ -95,7 +93,6 @@ const TutorialTourTip = ({
     } = useTutorialTourTipManager({
         step,
         autoTour,
-        telemetryTag,
         tutorialCategory,
         onNextNavigateTo,
         onPrevNavigateTo,

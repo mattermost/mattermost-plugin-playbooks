@@ -87,9 +87,6 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows a single keyword', () => {
-        // # intercepts telemetry
-        cy.interceptTelemetry();
-
         // Open the task actions modal
         editTask();
         cy.findByText('Task Actions').click();
@@ -115,17 +112,6 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
             assert.deepEqual(trigger.user_ids, []);
             assert.isTrue(actions.enabled);
         });
-
-        // # assert telemetry data
-        cy.expectTelemetryToContain([
-            {
-                name: 'taskactions_updated',
-                type: 'track',
-                properties: {
-                    playbook_id: testPlaybook.id,
-                },
-            },
-        ]);
     });
 
     it('allows multiple keywords', () => {

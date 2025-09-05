@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
@@ -233,16 +232,9 @@ func (c *channelActionStore) SetViewedChannel(userID, channelID string) error {
 		}))
 
 	if err != nil {
-		if c.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-			me, ok := err.(*mysql.MySQLError)
-			if ok && me.Number == 1062 {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
-		} else {
-			pe, ok := err.(*pq.Error)
-			if ok && pe.Code == "23505" {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
+		pe, ok := err.(*pq.Error)
+		if ok && pe.Code == "23505" {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
 		}
 
 		return errors.Wrapf(err, "failed to store userID and channelID")
@@ -300,16 +292,9 @@ func (c *channelActionStore) SetMultipleViewedChannel(userIDs []string, channelI
 	_, err = c.store.execBuilder(c.store.db, query)
 	if err != nil {
 		// If there's an error, return a specific one if possible
-		if c.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-			me, ok := err.(*mysql.MySQLError)
-			if ok && me.Number == 1062 {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
-		} else {
-			pe, ok := err.(*pq.Error)
-			if ok && pe.Code == "23505" {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
+		pe, ok := err.(*pq.Error)
+		if ok && pe.Code == "23505" {
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
 		}
 
 		return errors.Wrapf(err, "failed to store userIDs and channelID")

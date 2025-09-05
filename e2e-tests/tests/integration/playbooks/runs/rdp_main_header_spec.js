@@ -179,23 +179,8 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
                         // # Open the run actions modal
                         openRunActionsModal();
 
-                        // Intercept all telemetry calls
-                        cy.interceptTelemetry();
-
                         // * Verify that saving the modal hides it
                         saveRunActionsModal();
-
-                        // * assert telemetry call
-                        cy.expectTelemetryToContain([
-                            {
-                                name: 'playbookrun_update_actions',
-                                type: 'track',
-                                properties: {
-                                    playbookrun_id: playbookRun.id,
-                                    playbook_id: playbookRun.playbook_id,
-                                },
-                            },
-                        ]);
                     });
 
                     it('can not save an invalid form', () => {
@@ -469,9 +454,6 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
 
             describe('leave run', () => {
                 it('can leave run', () => {
-                    // # Intercept all calls to telemetry
-                    cy.interceptTelemetry();
-
                     // # Add viewer user to the channel
                     cy.apiAddUsersToRun(playbookRun.id, [testViewerUser.id]);
                     cy.findAllByTestId('timeline-item', {exact: false}).should('have.length', 3);
@@ -492,18 +474,6 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
 
                     // * Verify run has been removed from LHS
                     cy.findByTestId('lhs-navigation').findByText(playbookRun.name).should('not.exist');
-
-                    // # assert telemetry data
-                    cy.expectTelemetryToContain([
-                        {
-                            name: 'playbookrun_leave',
-                            type: 'track',
-                            properties: {
-                                from: 'run_details',
-                                playbookrun_id: playbookRun.id,
-                            },
-                        },
-                    ]);
                 });
             });
         });
@@ -594,9 +564,6 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
                     });
 
                     it('click button to show modal and confirm when private channel', () => {
-                        // # Intercept all calls to telemetry
-                        cy.interceptTelemetry();
-
                         // * Assert component is rendered
                         getHeader().findByText('Participate').should('be.visible');
 
@@ -628,18 +595,6 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
                             // Otherwise, we don't assert anything - it's OK for the user not to have channel access
                             // as long as they're a participant in the run
                         });
-
-                        // * assert telemetry data
-                        cy.expectTelemetryToContain([
-                            {
-                                name: 'playbookrun_participate',
-                                type: 'track',
-                                properties: {
-                                    from: 'run_details',
-                                    playbookrun_id: playbookRun.id,
-                                },
-                            },
-                        ]);
                     });
 
                     it('click button and confirm to when public channel', () => {

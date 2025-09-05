@@ -14,14 +14,12 @@ import {getCurrentTeamId, getTeam} from 'mattermost-redux/selectors/entities/tea
 import {General} from 'mattermost-redux/constants';
 import {Team} from '@mattermost/types/teams';
 
-import {PlaybookRunViewTarget} from 'src/types/telemetry';
 import Tooltip from 'src/components/widgets/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {useFormattedUsernameByID} from 'src/hooks/general';
-import {useViewTelemetry} from 'src/hooks/telemetry';
 
 interface Props {
     post: Post;
@@ -60,11 +58,6 @@ export const UpdatePost = (props: Props) => {
     const playbookRunId = props.post.props.playbookRunId ?? '';
     const overviewURL = `/playbooks/runs/${playbookRunId}`;
     const runName = typeof props.post.props.runName === 'string' ? props.post.props.runName : '';
-    useViewTelemetry(PlaybookRunViewTarget.StatusUpdate, props.post.id, {
-        post_id: props.post.id,
-        channel_type: channel?.type || '', // not always available
-        playbook_run_id: props.post.props.playbookRunId || '',
-    });
 
     if (!team) {
         return null;

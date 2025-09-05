@@ -143,11 +143,3 @@ type CategoryStore interface {
 	// DeleteItemFromCategory adds an item to category
 	DeleteItemFromCategory(item CategoryItem, categoryID string) error
 }
-
-type CategoryTelemetry interface {
-	// FavoriteItem tracks run favoriting of an item. Item can be run or a playbook
-	FavoriteItem(item CategoryItem, userID string)
-
-	// UnfavoriteItem tracks run unfavoriting of an item. Item can be run or a playbook
-	UnfavoriteItem(item CategoryItem, userID string)
-}

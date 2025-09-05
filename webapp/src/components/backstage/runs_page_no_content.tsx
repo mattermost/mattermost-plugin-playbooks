@@ -20,9 +20,8 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import {useCanCreatePlaybooksInTeam, usePlaybooksCrud, usePlaybooksRouting} from 'src/hooks';
 import {PrimaryButton} from 'src/components/assets/buttons';
 
-import {clientHasPlaybooks, telemetryEvent} from 'src/client';
+import {clientHasPlaybooks} from 'src/client';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 
 const NoContentContainer = styled.div`
     display: flex;
@@ -88,10 +87,9 @@ const NoContentPage = () => {
         if (playbookExist) {
             dispatch(openPlaybookRunModal({
                 teamId,
-                onRunCreated: (runId: string, channelId: string, statsData: object) => {
+                onRunCreated: (runId: string) => {
                     navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
                     refreshLHS();
-                    telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'backstage_runs_no_content'});
                 },
             }));
         } else {

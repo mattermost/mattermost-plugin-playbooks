@@ -17,7 +17,6 @@ import (
 	"github.com/mattermost/morph/sources/embedded"
 	"github.com/pkg/errors"
 
-	ms "github.com/mattermost/morph/drivers/mysql"
 	ps "github.com/mattermost/morph/drivers/postgres"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -89,17 +88,11 @@ func (sqlStore *SQLStore) migrate(migration Migration) (err error) {
 func (sqlStore *SQLStore) createDriver() (drivers.Driver, error) {
 	driverName := sqlStore.db.DriverName()
 
-	var driver drivers.Driver
-	var err error
-	switch driverName {
-	case DeprecatedDatabaseDriverMysql:
-		driver, err = ms.WithInstance(sqlStore.db.DB)
-	case model.DatabaseDriverPostgres:
-		driver, err = ps.WithInstance(sqlStore.db.DB)
-	default:
-		err = fmt.Errorf("unsupported database type %s for migration", driverName)
+	if driverName != model.DatabaseDriverPostgres {
+		return nil, fmt.Errorf("unsupported database type %s for migration, only PostgreSQL is supported", driverName)
 	}
-	return driver, err
+
+	return ps.WithInstance(sqlStore.db.DB)
 }
 
 func (sqlStore *SQLStore) createSource() (sources.Source, error) {

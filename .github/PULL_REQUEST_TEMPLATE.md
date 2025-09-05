@@ -26,6 +26,5 @@ Otherwise, link the Jira ticket.
 
 ## Checklist
 <!-- Check off items as they are completed. ~~Strike through~~ items if they don't apply -->
-- [ ] Telemetry updated
 - [ ] Gated by experimental feature flag
 - [ ] Unit tests updated

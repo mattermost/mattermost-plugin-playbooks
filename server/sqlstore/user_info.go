@@ -63,21 +63,12 @@ func (s *userInfoStore) Upsert(info app.UserInfo) error {
 		return err
 	}
 
-	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		_, err = s.store.execBuilder(s.store.db,
-			sq.Insert("IR_UserInfo").
-				Columns("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
-				Values(raw.ID, raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON).
-				Suffix("ON DUPLICATE KEY UPDATE LastDailyTodoDMAt = ?, DigestNotificationSettingsJSON = ?",
-					raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON))
-	} else {
-		_, err = s.store.execBuilder(s.store.db,
-			sq.Insert("IR_UserInfo").
-				Columns("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
-				Values(raw.ID, raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON).
-				Suffix("ON CONFLICT (ID) DO UPDATE SET LastDailyTodoDMAt = ?, DigestNotificationSettingsJSON = ?",
-					raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON))
-	}
+	_, err = s.store.execBuilder(s.store.db,
+		sq.Insert("IR_UserInfo").
+			Columns("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
+			Values(raw.ID, raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON).
+			Suffix("ON CONFLICT (ID) DO UPDATE SET LastDailyTodoDMAt = ?, DigestNotificationSettingsJSON = ?",
+				raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON))
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to upsert userInfo with id '%s'", raw.ID)

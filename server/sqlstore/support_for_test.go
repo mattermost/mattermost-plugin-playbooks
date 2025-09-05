@@ -20,20 +20,16 @@ import (
 	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
 )
 
-var driverNames = []string{model.DatabaseDriverPostgres}
-
-func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
+func setupTestDB(t testing.TB) *sqlx.DB {
 	t.Helper()
 
+	driverName := model.DatabaseDriverPostgres
 	sqlSettings := storetest.MakeSqlSettings(driverName)
 
 	origDB, err := sql.Open(*sqlSettings.DriverName, *sqlSettings.DataSource)
 	require.NoError(t, err)
 
 	db := sqlx.NewDb(origDB, driverName)
-	if driverName == DeprecatedDatabaseDriverMysql {
-		db.MapperFunc(func(s string) string { return s })
-	}
 
 	t.Cleanup(func() {
 		err := db.Close()
@@ -51,11 +47,11 @@ func setupTables(t *testing.T, db *sqlx.DB) *SQLStore {
 	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	driverName := db.DriverName()
-
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-	if driverName == model.DatabaseDriverPostgres {
-		builder = builder.PlaceholderFormat(sq.Dollar)
+	if driverName != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", driverName)
 	}
+
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	sqlStore := &SQLStore{
 		db,
@@ -89,566 +85,306 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) *SQLStore {
 func setupUsersTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
+	}
+
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	// NOTE: for this and the other tables below, this is a now out-of-date schema, which doesn't
 	//       reflect any of the changes past v5.0. If the test code requires a new column, you will
 	//       need to update these tables accordingly.
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.users (
-				id character varying(26) NOT NULL,
-				createat bigint,
-				updateat bigint,
-				deleteat bigint,
-				username character varying(64),
-				password character varying(128),
-				authdata character varying(128),
-				authservice character varying(32),
-				email character varying(128),
-				emailverified boolean,
-				nickname character varying(64),
-				firstname character varying(64),
-				lastname character varying(64),
-				"position" character varying(128),
-				roles character varying(256),
-				allowmarketing boolean,
-				props character varying(4000),
-				notifyprops character varying(2000),
-				lastpasswordupdate bigint,
-				lastpictureupdate bigint,
-				failedattempts integer,
-				locale character varying(5),
-				timezone character varying(256),
-				mfaactive boolean,
-				mfasecret character varying(128),
-				PRIMARY KEY (Id)
-			);
-		`)
-		require.NoError(t, err)
-
-		return
-	}
-
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS Users (
-				Id varchar(26) NOT NULL,
-				CreateAt bigint(20) DEFAULT NULL,
-				UpdateAt bigint(20) DEFAULT NULL,
-				DeleteAt bigint(20) DEFAULT NULL,
-				Username varchar(64) DEFAULT NULL,
-				Password varchar(128) DEFAULT NULL,
-				AuthData varchar(128) DEFAULT NULL,
-				AuthService varchar(32) DEFAULT NULL,
-				Email varchar(128) DEFAULT NULL,
-				EmailVerified tinyint(1) DEFAULT NULL,
-				Nickname varchar(64) DEFAULT NULL,
-				FirstName varchar(64) DEFAULT NULL,
-				LastName varchar(64) DEFAULT NULL,
-				Position varchar(128) DEFAULT NULL,
-				Roles text,
-				AllowMarketing tinyint(1) DEFAULT NULL,
-				Props text,
-				NotifyProps text,
-				LastPasswordUpdate bigint(20) DEFAULT NULL,
-				LastPictureUpdate bigint(20) DEFAULT NULL,
-				FailedAttempts int(11) DEFAULT NULL,
-				Locale varchar(5) DEFAULT NULL,
-				Timezone text,
-				MfaActive tinyint(1) DEFAULT NULL,
-				MfaSecret varchar(128) DEFAULT NULL,
-				PRIMARY KEY (Id),
-				UNIQUE KEY Username (Username),
-				UNIQUE KEY AuthData (AuthData),
-				UNIQUE KEY Email (Email),
-				KEY idx_users_email (Email),
-				KEY idx_users_update_at (UpdateAt),
-				KEY idx_users_create_at (CreateAt),
-				KEY idx_users_delete_at (DeleteAt),
-				FULLTEXT KEY idx_users_all_txt (Username,FirstName,LastName,Nickname,Email),
-				FULLTEXT KEY idx_users_all_no_full_name_txt (Username,Nickname,Email),
-				FULLTEXT KEY idx_users_names_txt (Username,FirstName,LastName,Nickname),
-				FULLTEXT KEY idx_users_names_no_full_name_txt (Username,Nickname)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.users (
+			id character varying(26) NOT NULL,
+			createat bigint,
+			updateat bigint,
+			deleteat bigint,
+			username character varying(64),
+			password character varying(128),
+			authdata character varying(128),
+			authservice character varying(32),
+			email character varying(128),
+			emailverified boolean,
+			nickname character varying(64),
+			firstname character varying(64),
+			lastname character varying(64),
+			"position" character varying(128),
+			roles character varying(256),
+			allowmarketing boolean,
+			props character varying(4000),
+			notifyprops character varying(2000),
+			lastpasswordupdate bigint,
+			lastpictureupdate bigint,
+			failedattempts integer,
+			locale character varying(5),
+			timezone character varying(256),
+			mfaactive boolean,
+			mfasecret character varying(128),
+			PRIMARY KEY (Id)
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupChannelMemberHistoryTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
-				channelid character varying(26) NOT NULL,
-				userid character varying(26) NOT NULL,
-				jointime bigint NOT NULL,
-				leavetime bigint
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS ChannelMemberHistory (
-				ChannelId varchar(26) NOT NULL,
-				UserId varchar(26) NOT NULL,
-				JoinTime bigint(20) NOT NULL,
-				LeaveTime bigint(20) DEFAULT NULL,
-				PRIMARY KEY (ChannelId,UserId,JoinTime)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
+			channelid character varying(26) NOT NULL,
+			userid character varying(26) NOT NULL,
+			jointime bigint NOT NULL,
+			leavetime bigint
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupTeamMembersTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.teammembers (
-				teamid character varying(26) NOT NULL,
-				userid character varying(26) NOT NULL,
-				roles character varying(64),
-				deleteat bigint,
-				schemeuser boolean,
-				schemeadmin boolean
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS TeamMembers (
-			  TeamId varchar(26) NOT NULL,
-			  UserId varchar(26) NOT NULL,
-			  Roles varchar(64) DEFAULT NULL,
-			  DeleteAt bigint(20) DEFAULT NULL,
-			  SchemeUser tinyint(4) DEFAULT NULL,
-			  SchemeAdmin tinyint(4) DEFAULT NULL,
-			  PRIMARY KEY (TeamId,UserId),
-			  KEY idx_teammembers_team_id (TeamId),
-			  KEY idx_teammembers_user_id (UserId),
-			  KEY idx_teammembers_delete_at (DeleteAt)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.teammembers (
+			teamid character varying(26) NOT NULL,
+			userid character varying(26) NOT NULL,
+			roles character varying(64),
+			deleteat bigint,
+			schemeuser boolean,
+			schemeadmin boolean
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupChannelMembersTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.channelmembers (
-				channelid character varying(26) NOT NULL,
-				userid character varying(26) NOT NULL,
-				roles character varying(64),
-				lastviewedat bigint,
-				msgcount bigint,
-				mentioncount bigint,
-				notifyprops character varying(2000),
-				lastupdateat bigint,
-				schemeuser boolean,
-				PRIMARY KEY (ChannelId,UserId),
-				schemeadmin boolean
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS ChannelMembers (
-			  ChannelId varchar(26) NOT NULL,
-			  UserId varchar(26) NOT NULL,
-			  Roles varchar(64) DEFAULT NULL,
-			  LastViewedAt bigint(20) DEFAULT NULL,
-			  MsgCount bigint(20) DEFAULT NULL,
-			  MentionCount bigint(20) DEFAULT NULL,
-			  NotifyProps text,
-			  LastUpdateAt bigint(20) DEFAULT NULL,
-			  SchemeUser tinyint(4) DEFAULT NULL,
-			  SchemeAdmin tinyint(4) DEFAULT NULL,
-			  PRIMARY KEY (ChannelId,UserId),
-			  KEY idx_channelmembers_channel_id (ChannelId),
-			  KEY idx_channelmembers_user_id (UserId)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.channelmembers (
+			channelid character varying(26) NOT NULL,
+			userid character varying(26) NOT NULL,
+			roles character varying(64),
+			lastviewedat bigint,
+			msgcount bigint,
+			mentioncount bigint,
+			notifyprops character varying(2000),
+			lastupdateat bigint,
+			schemeuser boolean,
+			PRIMARY KEY (ChannelId,UserId),
+			schemeadmin boolean
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.channels (
-				id character varying(26) NOT NULL,
-				createat bigint,
-				updateat bigint,
-				deleteat bigint,
-				teamid character varying(26),
-				type character varying(1),
-				displayname character varying(64),
-				name character varying(64),
-				header character varying(1024),
-				purpose character varying(250),
-				lastpostat bigint,
-				totalmsgcount bigint,
-				extraupdateat bigint,
-				creatorid character varying(26),
-				PRIMARY KEY (Id),
-				schemeid character varying(26)
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS Channels (
-			  Id varchar(26) NOT NULL,
-			  CreateAt bigint(20) DEFAULT NULL,
-			  UpdateAt bigint(20) DEFAULT NULL,
-			  DeleteAt bigint(20) DEFAULT NULL,
-			  TeamId varchar(26) DEFAULT NULL,
-			  Type varchar(1) DEFAULT NULL,
-			  DisplayName varchar(64) DEFAULT NULL,
-			  Name varchar(64) DEFAULT NULL,
-			  Header text,
-			  Purpose varchar(250) DEFAULT NULL,
-			  LastPostAt bigint(20) DEFAULT NULL,
-			  TotalMsgCount bigint(20) DEFAULT NULL,
-			  ExtraUpdateAt bigint(20) DEFAULT NULL,
-			  CreatorId varchar(26) DEFAULT NULL,
-			  SchemeId varchar(26) DEFAULT NULL,
-			  PRIMARY KEY (Id),
-			  UNIQUE KEY Name (Name,TeamId),
-			  KEY idx_channels_team_id (TeamId),
-			  KEY idx_channels_name (Name),
-			  KEY idx_channels_update_at (UpdateAt),
-			  KEY idx_channels_create_at (CreateAt),
-			  KEY idx_channels_delete_at (DeleteAt),
-			  FULLTEXT KEY idx_channels_txt (Name,DisplayName)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.channels (
+			id character varying(26) NOT NULL,
+			createat bigint,
+			updateat bigint,
+			deleteat bigint,
+			teamid character varying(26),
+			type character varying(1),
+			displayname character varying(64),
+			name character varying(64),
+			header character varying(1024),
+			purpose character varying(250),
+			lastpostat bigint,
+			totalmsgcount bigint,
+			extraupdateat bigint,
+			creatorid character varying(26),
+			PRIMARY KEY (Id),
+			schemeid character varying(26)
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.posts (
-				id character varying(26) NOT NULL,
-				createat bigint,
-				updateat bigint,
-				editat bigint,
-				deleteat bigint,
-				ispinned boolean,
-				userid character varying(26),
-				channelid character varying(26),
-				rootid character varying(26),
-				parentid character varying(26),
-				originalid character varying(26),
-				message character varying(65535),
-				type character varying(26),
-				props character varying(8000),
-				hashtags character varying(1000),
-				filenames character varying(4000),
-				fileids character varying(150),
-				PRIMARY KEY (Id),
-				hasreactions boolean
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS Posts (
-			  Id varchar(26) NOT NULL,
-			  CreateAt bigint(20) DEFAULT NULL,
-			  UpdateAt bigint(20) DEFAULT NULL,
-			  EditAt bigint(20) DEFAULT NULL,
-			  DeleteAt bigint(20) DEFAULT NULL,
-			  IsPinned tinyint(1) DEFAULT NULL,
-			  UserId varchar(26) DEFAULT NULL,
-			  ChannelId varchar(26) DEFAULT NULL,
-			  RootId varchar(26) DEFAULT NULL,
-			  ParentId varchar(26) DEFAULT NULL,
-			  OriginalId varchar(26) DEFAULT NULL,
-			  Message text,
-			  Type varchar(26) DEFAULT NULL,
-			  Props text,
-			  Hashtags text,
-			  Filenames text,
-			  FileIds varchar(150) DEFAULT NULL,
-			  HasReactions tinyint(1) DEFAULT NULL,
-			  PRIMARY KEY (Id),
-			  KEY idx_posts_update_at (UpdateAt),
-			  KEY idx_posts_create_at (CreateAt),
-			  KEY idx_posts_delete_at (DeleteAt),
-			  KEY idx_posts_channel_id (ChannelId),
-			  KEY idx_posts_root_id (RootId),
-			  KEY idx_posts_user_id (UserId),
-			  KEY idx_posts_is_pinned (IsPinned),
-			  KEY idx_posts_channel_id_update_at (ChannelId,UpdateAt),
-			  KEY idx_posts_channel_id_delete_at_create_at (ChannelId,DeleteAt,CreateAt),
-			  FULLTEXT KEY idx_posts_message_txt (Message),
-			  FULLTEXT KEY idx_posts_hashtags_txt (Hashtags)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.posts (
+			id character varying(26) NOT NULL,
+			createat bigint,
+			updateat bigint,
+			editat bigint,
+			deleteat bigint,
+			ispinned boolean,
+			userid character varying(26),
+			channelid character varying(26),
+			rootid character varying(26),
+			parentid character varying(26),
+			originalid character varying(26),
+			message character varying(65535),
+			type character varying(26),
+			props character varying(8000),
+			hashtags character varying(1000),
+			filenames character varying(4000),
+			fileids character varying(150),
+			PRIMARY KEY (Id),
+			hasreactions boolean
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupTeamsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.teams (
-				id character varying(26) NOT NULL,
-				PRIMARY KEY (Id),
-				createat bigint,
-				updateat bigint,
-				deleteat bigint,
-				displayname character varying(64),
-				name character varying(64),
-				description character varying(255),
-				email character varying(128),
-				type character varying(255),
-				companyname character varying(64),
-				alloweddomains character varying(1000),
-				inviteid character varying(32),
-				schemeid character varying(26),
-				allowopeninvite boolean,
-				lastteamiconupdate bigint,
-				groupconstrained boolean
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS Teams (
-			  Id varchar(26) NOT NULL,
-			  CreateAt bigint(20) DEFAULT NULL,
-			  UpdateAt bigint(20) DEFAULT NULL,
-			  DeleteAt bigint(20) DEFAULT NULL,
-			  DisplayName varchar(64) DEFAULT NULL,
-			  Name varchar(64) DEFAULT NULL,
-			  Description varchar(255) DEFAULT NULL,
-			  Email varchar(128) DEFAULT NULL,
-			  Type varchar(255) DEFAULT NULL,
-			  CompanyName varchar(64) DEFAULT NULL,
-			  AllowedDomains text,
-			  InviteId varchar(32) DEFAULT NULL,
-			  SchemeId varchar(26) DEFAULT NULL,
-			  AllowOpenInvite tinyint(1) DEFAULT NULL,
-			  LastTeamIconUpdate bigint(20) DEFAULT NULL,
-			  GroupConstrained tinyint(1) DEFAULT NULL,
-			  PRIMARY KEY (Id),
-			  UNIQUE KEY Name (Name),
-			  KEY idx_teams_invite_id (InviteId),
-			  KEY idx_teams_update_at (UpdateAt),
-			  KEY idx_teams_create_at (CreateAt),
-			  KEY idx_teams_delete_at (DeleteAt),
-			  KEY idx_teams_scheme_id (SchemeId)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.teams (
+			id character varying(26) NOT NULL,
+			PRIMARY KEY (Id),
+			createat bigint,
+			updateat bigint,
+			deleteat bigint,
+			displayname character varying(64),
+			name character varying(64),
+			description character varying(255),
+			email character varying(128),
+			type character varying(255),
+			companyname character varying(64),
+			alloweddomains character varying(1000),
+			inviteid character varying(32),
+			schemeid character varying(26),
+			allowopeninvite boolean,
+			lastteamiconupdate bigint,
+			groupconstrained boolean
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupRolesTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.roles (
-				id character varying(26) NOT NULL,
-				PRIMARY KEY (Id),
-				name character varying(64),
-				displayname character varying(128),
-				description character varying(1024),
-				createat bigint,
-				updateat bigint,
-				deleteat bigint,
-				permissions text,
-				schememanaged boolean,
-				builtin boolean
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS Roles (
-			  Id varchar(26) NOT NULL,
-			  Name varchar(64) DEFAULT NULL,
-			  DisplayName varchar(128) DEFAULT NULL,
-			  Description text,
-			  CreateAt bigint(20) DEFAULT NULL,
-			  UpdateAt bigint(20) DEFAULT NULL,
-			  DeleteAt bigint(20) DEFAULT NULL,
-			  Permissions text,
-			  SchemeManaged tinyint(1) DEFAULT NULL,
-			  BuiltIn tinyint(1) DEFAULT NULL,
-			  PRIMARY KEY (Id),
-			  UNIQUE KEY Name (Name)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.roles (
+			id character varying(26) NOT NULL,
+			PRIMARY KEY (Id),
+			name character varying(64),
+			displayname character varying(128),
+			description character varying(1024),
+			createat bigint,
+			updateat bigint,
+			deleteat bigint,
+			permissions text,
+			schememanaged boolean,
+			builtin boolean
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupSchemesTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.schemes (
-				id character varying(26) NOT NULL,
-				PRIMARY KEY (Id),
-				name character varying(64),
-				displayname character varying(128),
-				description character varying(1024),
-				createat bigint,
-				updateat bigint,
-				deleteat bigint,
-				scope character varying(32),
-				defaultteamadminrole character varying(64),
-				defaultteamuserrole character varying(64),
-				defaultchanneladminrole character varying(64),
-				defaultchanneluserrole character varying(64),
-				defaultteamguestrole character varying(64),
-				defaultchannelguestrole character varying(64),
-				defaultplaybookadminrole character varying(64),
-				defaultplaybookmemberrole character varying(64),
-				defaultrunadminrole character varying(64),
-				defaultrunmemberrole character varying(64)
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS Schemes (
-			  Id varchar(26) NOT NULL,
-			  Name varchar(64) DEFAULT NULL,
-			  DisplayName varchar(128) DEFAULT NULL,
-			  Description text,
-			  CreateAt bigint(20) DEFAULT NULL,
-			  UpdateAt bigint(20) DEFAULT NULL,
-			  DeleteAt bigint(20) DEFAULT NULL,
-			  Scope varchar(32) DEFAULT NULL,
-			  DefaultTeamAdminRole varchar(64) DEFAULT NULL,
-			  DefaultTeamUserRole varchar(64) DEFAULT NULL,
-			  DefaultChannelAdminRole varchar(64) DEFAULT NULL,
-			  DefaultChannelUserRole varchar(64) DEFAULT NULL,
-			  DefaultTeamGuestRole varchar(64) DEFAULT NULL,
-			  DefaultChannelGuestRole varchar(64) DEFAULT NULL,
-			  DefaultPlaybookAdminRole varchar(64) DEFAULT NULL,
-			  DefaultPlaybookMemberRole varchar(64) DEFAULT NULL,
-			  DefaultRunAdminRole varchar(64) DEFAULT NULL,
-			  DefaultRunMemberRole varchar(64) DEFAULT NULL,
-			  PRIMARY KEY (Id),
-			  UNIQUE KEY Name (Name),
-			  KEY idx_schemes_channel_guest_role (DefaultChannelGuestRole),
-			  KEY idx_schemes_channel_user_role (DefaultChannelUserRole),
-			  KEY idx_schemes_channel_admin_role (DefaultChannelAdminRole)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.schemes (
+			id character varying(26) NOT NULL,
+			PRIMARY KEY (Id),
+			name character varying(64),
+			displayname character varying(128),
+			description character varying(1024),
+			createat bigint,
+			updateat bigint,
+			deleteat bigint,
+			scope character varying(32),
+			defaultteamadminrole character varying(64),
+			defaultteamuserrole character varying(64),
+			defaultchanneladminrole character varying(64),
+			defaultchanneluserrole character varying(64),
+			defaultteamguestrole character varying(64),
+			defaultchannelguestrole character varying(64),
+			defaultplaybookadminrole character varying(64),
+			defaultplaybookmemberrole character varying(64),
+			defaultrunadminrole character varying(64),
+			defaultrunmemberrole character varying(64)
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupBotsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
-	// This is completely handmade
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.bots (
-				userid character varying(26) NOT NULL PRIMARY KEY,
-				description character varying(1024),
-			    ownerid character varying(190)
-			);
-		`)
-		require.NoError(t, err)
-
-		return
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
-	// handmade
+	// This is completely handmade
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS Bots (
-				UserId varchar(26) NOT NULL PRIMARY KEY,
-				Description varchar(1024),
-			    OwnerId varchar(190)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
+		CREATE TABLE IF NOT EXISTS public.bots (
+			userid character varying(26) NOT NULL PRIMARY KEY,
+			description character varying(1024),
+		    ownerid character varying(190)
+		);
+	`)
 	require.NoError(t, err)
 }
 
 func setupKVStoreTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.pluginkeyvaluestore (
-				pluginid character varying(190) NOT NULL,
-				pkey character varying(50) NOT NULL,
-				pvalue bytea,
-				expireat bigint,
-				PRIMARY KEY (PluginId,PKey)
-			);
-		`)
-		require.NoError(t, err)
-	} else {
-		// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
-		_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS PluginKeyValueStore (
-			  PluginId varchar(190) NOT NULL,
-			  PKey varchar(50) NOT NULL,
-			  PValue mediumblob,
-			  ExpireAt bigint(20) DEFAULT NULL,
-			  PRIMARY KEY (PluginId,PKey)
-		  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
-		require.NoError(t, err)
+	if db.DriverName() != model.DatabaseDriverPostgres {
+		t.Fatalf("unsupported database driver: %s, only PostgreSQL is supported", db.DriverName())
 	}
 
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS public.pluginkeyvaluestore (
+			pluginid character varying(190) NOT NULL,
+			pkey character varying(50) NOT NULL,
+			pvalue bytea,
+			expireat bigint,
+			PRIMARY KEY (PluginId,PKey)
+		);
+	`)
+	require.NoError(t, err)
 }
 
 type userInfo struct {

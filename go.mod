@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-playbooks
 
-go 1.24.3
+go 1.24.5
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
 
@@ -16,7 +16,6 @@ require (
 	github.com/MicahParks/jwkset v0.5.18
 	github.com/MicahParks/keyfunc/v3 v3.3.3
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/go-sql-driver/mysql v1.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
@@ -27,13 +26,12 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost/server/public v0.1.16
+	github.com/mattermost/mattermost/server/public v0.1.17
 	github.com/mattermost/mattermost/server/v8 v8.0.0-20250730203729-9f921318995a
 	github.com/mattermost/morph v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
-	github.com/rudderlabs/analytics-go v3.3.3+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
@@ -101,6 +99,7 @@ require (
 	github.com/go-asn1-ber/asn1-ber v1.5.7 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-resty/resty/v2 v2.16.5 // indirect
+	github.com/go-sql-driver/mysql v1.9.2 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/golang-migrate/migrate/v4 v4.18.3 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
@@ -173,6 +172,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/rudderlabs/analytics-go v3.3.3+incompatible // indirect
 	github.com/russellhaering/goxmldsig v1.5.0 // indirect
 	github.com/segmentio/backo-go v1.1.0 // indirect
 	github.com/sorairolake/lzip-go v0.3.5 // indirect
