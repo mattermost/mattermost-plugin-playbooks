@@ -57,11 +57,6 @@ describe('lhs', {testIsolation: true}, () => {
         });
     });
 
-    beforeEach(() => {
-        // # Intercepts telemetry
-        cy.interceptTelemetry();
-    });
-
     const getRunDropdownItemByText = (groupName, runName, itemName) => {
         // # Click on run at LHS
         cy.findByTestId(groupName).findByTestId(runName).click();
@@ -104,20 +99,6 @@ describe('lhs', {testIsolation: true}, () => {
         it('click run', () => {
             // # Click on run at LHS
             cy.findByTestId('Runs').findByTestId(playbookRun.name).click();
-
-            // * assert telemetry
-            cy.expectTelemetryToContain([
-                {
-                    type: 'page',
-                    name: 'run_details',
-                    properties: {
-                        from: 'playbooks_lhs',
-                        role: 'participant',
-                        playbookrun_id: playbookRun.id,
-                        playbook_id: testPublicPlaybook.id,
-                    },
-                },
-            ]);
         });
     });
 
@@ -208,26 +189,6 @@ describe('lhs', {testIsolation: true}, () => {
 
             // * Verify that the run is removed lhs
             cy.findByTestId('Runs').findByTestId(playbookRun.name).should('not.exist');
-
-            // # assert telemetry data
-            cy.expectTelemetryToContain([
-                {
-                    type: 'track',
-                    name: 'playbookrun_follow',
-                    properties: {
-                        from: 'run_details',
-                        playbookrun_id: playbookRun.id,
-                    },
-                },
-                {
-                    type: 'track',
-                    name: 'playbookrun_unfollow',
-                    properties: {
-                        from: 'playbooks_lhs',
-                        playbookrun_id: playbookRun.id,
-                    },
-                },
-            ]);
         });
 
         it('leave run', () => {
@@ -255,18 +216,6 @@ describe('lhs', {testIsolation: true}, () => {
 
             // * Click leave confirmation
             cy.get('#confirmModalButton').click();
-
-            // # assert telemetry data
-            cy.expectTelemetryToContain([
-                {
-                    type: 'track',
-                    name: 'playbookrun_leave',
-                    properties: {
-                        from: 'playbooks_lhs',
-                        playbookrun_id: playbookRun.id,
-                    },
-                },
-            ]);
         });
     });
 

@@ -15,7 +15,6 @@ type Bot struct {
 	configService config.Service
 	pluginAPI     *pluginapi.Client
 	botUserID     string
-	telemetry     Telemetry
 }
 
 // Poster interface - a small subset of the plugin posting API.
@@ -70,17 +69,11 @@ type Poster interface {
 	IsFromPoster(post *model.Post) bool
 }
 
-type Telemetry interface {
-	NotifyAdmins(userID string, action string)
-	StartTrial(userID string, action string)
-}
-
 // New creates a new bot poster.
-func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
+func New(api *pluginapi.Client, botUserID string, configService config.Service) *Bot {
 	return &Bot{
 		pluginAPI:     api,
 		botUserID:     botUserID,
 		configService: configService,
-		telemetry:     telemetry,
 	}
 }

@@ -14,7 +14,6 @@ import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu, {TitleButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {useManageRunMembership} from 'src/graphql/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -22,7 +21,6 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {telemetryEvent} from 'src/client';
 
 import {
     CopyRunLinkMenuItem,
@@ -47,7 +45,7 @@ interface Props {
 }
 
 export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick}: Props) => {
-    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing, 'run_details');
+    const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showModal, setShowModal] = useState(false);
 
     return (
@@ -114,7 +112,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     );
 };
 
-export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean, from: 'run_details' | 'playbooks_lhs') => {
+export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const addToast = useToaster().add;
@@ -132,7 +130,6 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
                 });
 
                 const sameRunRDP = window.location.href.includes('runs/' + playbookRunId);
-                telemetryEvent(PlaybookRunEventTarget.Leave, {playbookrun_id: playbookRunId, from, trigger: 'leave', count: '1'});
                 if (!hasPermanentViewerAccess && sameRunRDP) {
                     navigateToUrl(pluginUrl(''));
                 }

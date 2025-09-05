@@ -17,10 +17,6 @@ import {navigateToChannel} from 'src/browser_routing';
 import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 
-import {telemetryEvent} from 'src/client';
-
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
-
 import {graphql} from 'src/graphql/generated/gql';
 
 import RHSRunList, {FilterType, RunListOptions} from './rhs_run_list';
@@ -196,8 +192,7 @@ const RightHandSidebar = () => {
         setCurrentRunId(undefined);
     };
 
-    const handleOnCreateRun = (runId: string, channelId: string, statsData: object) => {
-        telemetryEvent(PlaybookRunEventTarget.Create, {...statsData, place: 'channels_rhs_runlist'});
+    const handleOnCreateRun = (runId: string, channelId: string) => {
         if (channelId === currentChannelId) {
             fetchedRuns.refetch();
             setCurrentRunId(runId);

@@ -21,17 +21,15 @@ import {useManageRunMembership} from 'src/graphql/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
-import {requestJoinChannel, telemetryEvent} from 'src/client';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
+import {requestJoinChannel} from 'src/client';
 
 interface Props {
     playbookRun: PlaybookRun | undefined;
     show: boolean;
     hideModal: () => void;
-    from: string;
 }
 
-const BecomeParticipantsModal = ({playbookRun, show, hideModal, from}: Props) => {
+const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
     const {formatMessage} = useIntl();
 
     const currentUserId = useSelector(getCurrentUserId);
@@ -99,7 +97,6 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal, from}: Props) =>
                 content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
                 toastStyle: ToastStyle.Failure,
             }));
-        telemetryEvent(PlaybookRunEventTarget.Participate, {playbookrun_id: playbookRunId, from, trigger: 'participate', count: '1'});
 
         hideModal();
     };
