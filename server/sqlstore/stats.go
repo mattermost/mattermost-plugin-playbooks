@@ -175,21 +175,7 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
-		if s.store.db.DriverName() == model.DatabaseDriverMysql {
-			q = q.Column(`
-			CAST(
-				COALESCE(
-					 SUM(
-						 CASE
-							 WHEN i.CreateAt >= ? AND i.CreateAt < ?
-								 THEN 1
-							 ELSE 0
-						 END)
-				, 0)
-				 AS UNSIGNED)
-				 `, startOfWeek, endOfWeek)
-		} else {
-			q = q.Column(`
+		q = q.Column(`
 			COALESCE(
 				 SUM(CASE
 					WHEN i.CreateAt >= ? AND i.CreateAt < ?
@@ -198,7 +184,6 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 				END)
 			, 0)
                  `, startOfWeek, endOfWeek)
-		}
 
 		weeksStartAndEnd = append(weeksStartAndEnd, []int64{startOfWeek, endOfWeek})
 
@@ -233,21 +218,7 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	for i := 0; i < x; i++ {
 		// a playbook run was active if it was created before the end of the day and ended after the
 		// start of the day (or still active)
-		if s.store.db.DriverName() == model.DatabaseDriverMysql {
-			q = q.Column(`
-			CAST(
-				COALESCE(
-					 SUM(
-						 CASE
-							 WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
-								 THEN 1
-							 ELSE 0
-						 END)
-				, 0)
-				 AS UNSIGNED)
-                `, startOfDay, endOfDay)
-		} else {
-			q = q.Column(`
+		q = q.Column(`
 			COALESCE(
 				SUM(CASE
 					WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
@@ -256,7 +227,6 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 				END)
 			, 0)
                 `, startOfDay, endOfDay)
-		}
 
 		daysAsStartAndEnd = append(daysAsStartAndEnd, []int64{startOfDay, endOfDay})
 
