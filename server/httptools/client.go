@@ -4,6 +4,7 @@
 package httptools
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"strings"
@@ -42,31 +43,31 @@ func MakeTransport(pluginAPI *pluginapi.Client) *httpservice.MattermostTransport
 		return false
 	}
 
-	allowIP := func(ip net.IP) bool {
+	allowIP := func(ip net.IP) error {
 		reservedIP := httpservice.IsReservedIP(ip)
 		ownIP, err := httpservice.IsOwnIP(ip)
 
 		// If there is an error getting the self-assigned IPs, default to the secure option
 		if err != nil {
-			return false
+			return errors.New("unable to determine if IP is own IP")
 		}
 
 		// If it's not a reserved IP and it's not self-assigned IP, accept the IP
 		if !reservedIP && !ownIP {
-			return true
+			return nil
 		}
 
 		if pluginAPI.Configuration.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections == nil {
-			return false
+			return errors.New("IP is reserved or own IP and AllowedUntrustedInternalConnections is not configured")
 		}
 
 		// In the case it's the self-assigned IP, enforce that it needs to be explicitly added to the AllowedUntrustedInternalConnections
 		for _, allowed := range strings.FieldsFunc(*pluginAPI.Configuration.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections, splitFields) {
 			if _, ipRange, err := net.ParseCIDR(allowed); err == nil && ipRange.Contains(ip) {
-				return true
+				return nil
 			}
 		}
-		return false
+		return errors.New("IP is not in AllowedUntrustedInternalConnections")
 	}
 
 	return httpservice.NewTransport(insecure, allowHost, allowIP)

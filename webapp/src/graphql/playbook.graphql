@@ -8,6 +8,7 @@ query Playbook($id: String!) {
 		delete_at: deleteAt
 		default_playbook_member_role: defaultPlaybookMemberRole
 		invited_user_ids: invitedUserIDs
+		invited_group_ids: invitedGroupIDs
 		broadcast_channel_ids: broadcastChannelIDs
 		webhook_on_creation_urls: webhookOnCreationURLs
 		reminder_timer_default_seconds: reminderTimerDefaultSeconds
@@ -29,6 +30,8 @@ query Playbook($id: String!) {
 		webhook_on_creation_enabled: webhookOnCreationEnabled
 		message_on_join_enabled: messageOnJoinEnabled
 		categorize_channel_enabled: categorizeChannelEnabled
+		signal_any_keywords_enabled: signalAnyKeywordsEnabled
+		signal_any_keywords: signalAnyKeywords
 		create_public_playbook_run: createPublicPlaybookRun
 		channel_name_template: channelNameTemplate
 		create_channel_member_on_new_participant: createChannelMemberOnNewParticipant
@@ -72,6 +75,25 @@ query Playbook($id: String!) {
 			type
 			target
 		}
+		propertyFields {
+			id
+			name
+			type
+			group_id: groupID
+			attrs {
+				visibility
+				sort_order: sortOrder
+				options {
+					id
+					name
+					color
+				}
+				parent_id: parentID
+			}
+			create_at: createAt
+			update_at: updateAt
+			delete_at: deleteAt
+		}
     }
 }
 
@@ -90,4 +112,39 @@ mutation AddPlaybookMember($playbookID: String!, $userID: String!) {
 
 mutation RemovePlaybookMember($playbookID: String!, $userID: String!) {
 	removePlaybookMember(playbookID: $playbookID, userID: $userID)
+}
+
+
+query PlaybookProperty($playbookID: String!, $propertyID: String!) {
+	playbookProperty(playbookID: $playbookID, propertyID: $propertyID) {
+		id
+		name
+		type
+		group_id: groupID
+		attrs {
+			visibility
+			sort_order: sortOrder
+			options {
+				id
+				name
+				color
+			}
+			parent_id: parentID
+		}
+		create_at: createAt
+		update_at: updateAt
+		delete_at: deleteAt
+	}
+}
+
+mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+	addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+}
+
+mutation UpdatePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!, $propertyField: PropertyFieldInput!) {
+	updatePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID, propertyField: $propertyField)
+}
+
+mutation DeletePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!) {
+	deletePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID)
 }

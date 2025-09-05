@@ -21,6 +21,8 @@ import (
 // that we'll control manually.
 const maxJSONLength = 256 * 1024 // 256KB
 
+const DeprecatedDatabaseDriverMysql = "mysql"
+
 type SQLStore struct {
 	db        *sqlx.DB
 	builder   sq.StatementBuilderType

@@ -54,6 +54,20 @@ const RHSRunsQuery = graphql(/* GraphQL */`
                     numTasks
                     lastUpdatedAt
                     type
+                    propertyFields {
+                        id
+                        name
+                        type
+                        attrs {
+                            sort_order: sortOrder
+                            options {
+                                id
+                                name
+                                color
+                            }
+                            parent_id: parentID
+                        }
+                    }
                 }
             }
             pageInfo {
