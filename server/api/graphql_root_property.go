@@ -211,7 +211,7 @@ func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args str
 	}
 
 	// Set the property value via PlaybookRunService (which handles websockets)
-	propertyValue, err := c.playbookRunService.SetRunPropertyValue(playbookRun.ID, args.PropertyFieldID, value)
+	propertyValue, err := c.playbookRunService.SetRunPropertyValue(userID, playbookRun.ID, args.PropertyFieldID, value)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to set property value")
 	}

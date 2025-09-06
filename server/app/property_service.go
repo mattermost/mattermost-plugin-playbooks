@@ -275,6 +275,28 @@ func (s *propertyService) GetRunPropertyValues(runID string) ([]PropertyValue, e
 	return allValues, nil
 }
 
+func (s *propertyService) GetRunPropertyValueByFieldID(runID, propertyFieldID string) (*PropertyValue, error) {
+	opts := model.PropertyValueSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		TargetID:   runID,
+		FieldID:    propertyFieldID,
+		PerPage:    1,
+	}
+
+	values, err := s.api.Property.SearchPropertyValues(s.groupID, runID, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to search property value")
+	}
+
+	if len(values) == 0 {
+		return nil, nil
+	}
+
+	propertyValue := PropertyValue(*values[0])
+	return &propertyValue, nil
+}
+
 func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
 	// Get the property field to validate against
 	propertyField, err := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
