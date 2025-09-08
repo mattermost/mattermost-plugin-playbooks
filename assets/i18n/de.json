@@ -123,7 +123,7 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Status aktualisieren"
+        "translation": "Nachricht"
     },
     {
         "id": "app.user.run.update_status.reminder_for_next_update",
