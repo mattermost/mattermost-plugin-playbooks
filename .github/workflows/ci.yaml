@@ -111,23 +111,18 @@ jobs:
         with:
           go-version: "${{ env.GO_VERSION }}"
           cache: false
-      - name: ci/get-short-sha
-        id: short-sha
-        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      - name: ci/build-for-upload
-        run: make dist-ci
-      - name: ci/upload-build-artifact
-        if: github.event_name == 'pull_request' && success()
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
-          cache: true
+
       - name: ci/setup-node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: webapp/package-lock.json
+
       - name: ci/setup-chainctl
-        uses: chainguard-dev/setup-chainctl@f52718d822dc73d21a04ef2082822c4a203163b3 # v0.2.2
-.2.0
+        uses: chainguard-dev/setup-chainctl@v0.3.2
         with:
           identity: ${{ secrets.CHAINGUARD_IDENTITY }}
-          audience: https://github.com/mattermost
 
       - name: ci/debug-chainctl-status
         run: |
@@ -149,13 +144,6 @@ jobs:
             grep -q "cgr.dev" ~/.docker/config.json && echo "✅ cgr.dev found in Docker config" || echo "❌ cgr.dev not found in Docker config"
           fi
 
-      - name: ci/validate-chainguard-auth
-        run: |
-          echo "Validating Chainguard authentication..."
-          # Test that we can access the registry (this will fail fast if auth doesn't work)
-          docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4
-          echo "✅ Chainguard authentication validated successfully"
-
       - name: ci/cache-webapp-node-modules
         id: cache-webapp-node-modules
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -171,123 +159,6 @@ jobs:
         run: |
           cd webapp
           npm install --ignore-scripts --no-save --legacy-peer-deps
-
-      - name: ci/ensure-build-on-all-platforms
-          name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
-          path: |
-            dist/playbooks-*.tar.gz
-          retention-days: 7 ## No need to keep build artifacts for more than 7 days
-      - name: ci/ensure-build-on-all-platforms ## Verify builds on all platgorms *after* ci/build-for-upload to keep artifact small
-        run: make dist
-
-      - name: ci/upload-plugin-artifacts
-        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.5.0
-        with:
-          name: plugin-artifacts
-          path: dist/*.tar.gz
-          retention-days: 7
-
-  dist-fips:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: "0"
-
-      - name: ci/setup-go
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-        with:
-          go-version: "${{ env.GO_VERSION }}"
-          cache: false
-
-      - name: ci/setup-node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: webapp/package-lock.json
-
-      - name: ci/cache-webapp-node-modules
-        id: cache-webapp-node-modules
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        with:
-          path: webapp/node_modules
-          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-webapp-node-modules-
-
-      - name: ci/setup-webapp-npm-deps
-        if: steps.cache-webapp-node-modules.outputs.cache-hit != 'true'
-        env:
-          NODE_ENV: development
-        run: |
-          cd webapp
-          npm install --ignore-scripts --no-save --legacy-peer-deps
-
-      - name: ci/docker-login-chainguard
-        env:
-          CHAINGUARD_DEV_USERNAME: ${{ secrets.CHAINGUARD_DEV_USERNAME }}
-          CHAINGUARD_DEV_TOKEN: ${{ secrets.CHAINGUARD_DEV_TOKEN }}
-        run: |
-          if [ -n "$CHAINGUARD_DEV_USERNAME" ] && [ -n "$CHAINGUARD_DEV_TOKEN" ]; then
-            echo "Logging into Chainguard registry..."
-            echo "$CHAINGUARD_DEV_TOKEN" | docker login cgr.dev --username "$CHAINGUARD_DEV_USERNAME" --password-stdin
-          else
-            echo "❌ Authentication failed, will try fallback in Makefile"
-          fi
-        continue-on-error: true
-
-      - name: ci/build-both-distributions
-        env:
-          GO_VERSION: ${{ env.GO_VERSION }}
-        run: make dist-fips
-
-      - name: ci/upload-fips-artifacts
-        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.5.0
-        with:
-          name: fips-plugin-artifacts
-          path: dist-fips/*.tar.gz
-          retention-days: 7
-
-  dist-all:
-    runs-on: ubuntu-22.04
-    needs:
-      - lint
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: "0"
-
-      - name: ci/setup-go
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-        with:
-          go-version: "${{ env.GO_VERSION }}"
-          cache: true
-
-      - name: ci/test-chainguard-identity
-        env:
-          CHAINGUARD_IDENTITY: ${{ secrets.CHAINGUARD_IDENTITY }}
-        run: |
-          if [ -n "$CHAINGUARD_IDENTITY" ]; then
-            echo "Testing Chainguard identity authentication..."
-            # Install chainctl
-            curl -o chainctl https://dl.enforce.dev/chainctl/latest/chainctl_linux_amd64
-            chmod +x chainctl
-            sudo mv chainctl /usr/local/bin/
-            
-            # Try to authenticate with the identity
-            chainctl auth login --identity="$CHAINGUARD_IDENTITY" --yes
-            chainctl auth configure-docker
-            
-            # Test access
-            docker pull cgr.dev/mattermost.com/go-msft-fips:1.24.4
-          else
-            echo "No CHAINGUARD_IDENTITY secret found"
-            exit 1
-          fi
 
       - name: ci/build-both-distributions
         env:
@@ -340,7 +211,8 @@ jobs:
             dist-fips/*.tar.gz
           retention-days: 7
 
-  test-Postgres13:
+
+  test-postgres13:
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -480,7 +352,7 @@ jobs:
     if: always()
     needs:
       - e2e-cypress-tests
-      - test-Postgres13
+      - test-postgres13
     runs-on: ubuntu-22.04
     permissions:
       checks: write
