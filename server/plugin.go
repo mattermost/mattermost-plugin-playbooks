@@ -140,6 +140,7 @@ func (p *Plugin) OnActivate() error {
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+	p.config.SetWebsocketPublisher(p.bot)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, scheduler)

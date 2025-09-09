@@ -32,6 +32,7 @@ import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
 import CopyLink from 'src/components/widgets/copy_link';
 import {usePlaybook, useUpdatePlaybook, useUpdatePlaybookFavorite} from 'src/graphql/hooks';
+import {globalSettings} from 'src/selectors';
 import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -52,6 +53,7 @@ const PlaybookEditor = () => {
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
     const currentUserId = useSelector(getCurrentUserId);
+    const settings = useSelector(globalSettings);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -239,11 +241,13 @@ const PlaybookEditor = () => {
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
-                <NavItem
-                    to={generatePath(path, {playbookId, tab: 'attributes'})}
-                >
-                    {formatMessage({defaultMessage: 'Attributes'})}
-                </NavItem>
+                {settings?.enable_experimental_features && (
+                    <NavItem
+                        to={generatePath(path, {playbookId, tab: 'attributes'})}
+                    >
+                        {formatMessage({defaultMessage: 'Attributes'})}
+                    </NavItem>
+                )}
                 <NavItem
                     to={generatePath(path, {playbookId, tab: 'outline'})}
                 >
@@ -265,14 +269,16 @@ const PlaybookEditor = () => {
                         stats={stats}
                     />
                 </Route>
-                <Route
-                    path={generatePath(path, {playbookId, tab: 'attributes'})}
-                    exact={true}
-                >
-                    <PlaybookProperties
-                        playbookID={playbook.id}
-                    />
-                </Route>
+                {settings?.enable_experimental_features && (
+                    <Route
+                        path={generatePath(path, {playbookId, tab: 'attributes'})}
+                        exact={true}
+                    >
+                        <PlaybookProperties
+                            playbookID={playbook.id}
+                        />
+                    </Route>
+                )}
                 <Route
                     path={generatePath(path, {playbookId, tab: 'outline'})}
                     exact={true}

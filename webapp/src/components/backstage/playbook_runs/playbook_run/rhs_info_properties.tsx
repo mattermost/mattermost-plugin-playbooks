@@ -3,9 +3,11 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {globalSettings} from 'src/selectors';
 import PropertiesList from 'src/components/rhs/properties_list';
 
 import {Section, SectionHeader} from './rhs_info_styles';
@@ -17,6 +19,11 @@ interface Props {
 
 const RHSInfoProperties = (props: Props) => {
     const {formatMessage} = useIntl();
+    const settings = useSelector(globalSettings);
+
+    if (!settings?.enable_experimental_features) {
+        return null;
+    }
 
     if (!props.run.property_fields || props.run.property_fields.length === 0) {
         return null;
