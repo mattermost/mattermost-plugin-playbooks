@@ -173,8 +173,8 @@ jobs:
           
           # Extract plugin version using manifest tool (handles git versioning)
           PLUGIN_VERSION=$(build/bin/manifest version)
-          # Add 'v' prefix for consistency with other plugin packages
-          if [[ ! $PLUGIN_VERSION == v* ]]; then
+          # Add 'v' prefix for consistency with other plugin packages, but only if version doesn't already contain SHA
+          if [[ ! $PLUGIN_VERSION == v* ]] && [[ ! $PLUGIN_VERSION == *"+"* ]]; then
             PLUGIN_VERSION="v${PLUGIN_VERSION}"
           fi
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
