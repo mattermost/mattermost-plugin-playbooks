@@ -303,6 +303,21 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
+	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRun.TeamID)
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
+	model.AddEventParameterToAuditRec(auditRec, "public", public)
+	if pb != nil {
+		model.AddEventParameterToAuditRec(auditRec, "playbookID", pb.ID)
+		model.AddEventParameterToAuditRec(auditRec, "playbookTitle", pb.Title)
+	}
+	if playbookRun.PostID != "" {
+		model.AddEventParameterToAuditRec(auditRec, "fromPostID", playbookRun.PostID)
+	}
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
 		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
@@ -405,14 +420,26 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create playbook run")
+		err := errors.Wrap(err, "failed to create playbook run")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	s.metricsService.IncrementRunsCreatedCount(1)
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRun.ID)
+	model.AddEventParameterToAuditRec(auditRec, "channelID", playbookRun.ChannelID)
+	model.AddEventParameterToAuditRec(auditRec, "finalOwnerID", playbookRun.OwnerUserID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	auditRec.AddEventResultState(*playbookRun)
+
 	err = s.addPlaybookRunInitialMemberships(playbookRun, channel, createdChannel)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to setup core memberships at run/channel")
+		err := errors.Wrap(err, "failed to setup core memberships at run/channel")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	invitedUserIDs := playbookRun.InvitedUserIDs
@@ -461,7 +488,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	var reporter *model.User
 	reporter, err = s.pluginAPI.User.Get(playbookRun.ReporterUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
+		err := errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	// Do we send a DM to the new owner?
@@ -470,7 +499,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			playbookRun.Name, GetRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
 
 		if err = s.poster.DM(playbookRun.OwnerUserID, &model.Post{Message: startMessage}); err != nil {
-			return nil, errors.Wrapf(err, "failed to send DM on CreatePlaybookRun")
+			err := errors.Wrapf(err, "failed to send DM on CreatePlaybookRun")
+			auditRec.AddErrorDesc(err.Error())
+			return nil, err
 		}
 	}
 
@@ -478,7 +509,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		var messageTemplate string
 		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, playbookRun, reporter)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
+			err := errors.Wrapf(err, "failed to build the playbook run creation message")
+			auditRec.AddErrorDesc(err.Error())
+			return nil, err
 		}
 
 		if playbookRun.StatusUpdateBroadcastChannelsEnabled {
@@ -502,7 +535,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return playbookRun, errors.Wrap(err, "failed to create timeline event")
+		err := errors.Wrap(err, "failed to create timeline event")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, *event)
 
@@ -511,7 +546,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		var autoFollows []string
 		autoFollows, err = s.playbookService.GetAutoFollows(pb.ID)
 		if err != nil {
-			return playbookRun, errors.Wrapf(err, "failed to get autoFollows of the playbook `%s`", pb.ID)
+			err := errors.Wrapf(err, "failed to get autoFollows of the playbook `%s`", pb.ID)
+			auditRec.AddErrorDesc(err.Error())
+			return nil, err
 		}
 		for _, autoFollow := range autoFollows {
 			if err = s.Follow(playbookRun.ID, autoFollow); err != nil {
@@ -534,7 +571,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	// Post the content and link of the original post
 	post, err := s.pluginAPI.Post.GetPost(playbookRun.PostID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get original post")
+		err := errors.Wrapf(err, "failed to get original post")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	postURL := fmt.Sprintf("/_redirect/pl/%s", playbookRun.PostID)
@@ -542,7 +581,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	_, err = s.poster.PostMessage(channel.Id, postMessage)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to post to channel")
+		err := errors.Wrapf(err, "failed to post to channel")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	return playbookRun, nil
@@ -729,6 +770,16 @@ func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, p
 }
 
 func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, userID string, post *model.Post, summary string) error {
+	auditRec := plugin.MakeAuditRecord("addPostToTimeline", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRun.ID)
+	model.AddEventParameterToAuditRec(auditRec, "postID", post.Id)
+	model.AddEventParameterToAuditRec(auditRec, "summaryLength", len(summary))
+	model.AddEventParameterToAuditRec(auditRec, "postMessageLength", len(post.Message))
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRun.ID,
 		CreateAt:      model.GetMillis(),
@@ -749,7 +800,9 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 
 	createdEvent, err := s.store.CreateTimelineEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
+		err := errors.Wrapf(err, "failed to create timeline event for post (postID: %s) in run '%s'", post.Id, playbookRun.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	// Update the in-memory playbook run with the new timeline event
@@ -758,38 +811,71 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRun.ID, originalRun, playbookRun)
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "timelineEventID", createdEvent.ID)
+	model.AddEventParameterToAuditRec(auditRec, "eventCreateAt", createdEvent.CreateAt)
+	model.AddEventParameterToAuditRec(auditRec, "summary", summary)
+	auditRec.AddEventResultState(*playbookRun)
+
 	return nil
 }
 
 // RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
 func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, eventID string) error {
+	auditRec := plugin.MakeAuditRecord("removeTimelineEvent", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "eventID", eventID)
 	// Get the current playbook run state before changes if incremental updates are enabled
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
 		originalRun, err = s.store.GetPlaybookRun(playbookRunID)
 		if err != nil {
-			return errors.Wrap(err, "failed to retrieve playbook run before removing timeline event")
+			err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) before removing timeline event", playbookRunID)
+			auditRec.AddErrorDesc(err.Error())
+			return err
 		}
 		originalRun = originalRun.Clone()
 	}
 
 	event, err := s.store.GetTimelineEvent(playbookRunID, eventID)
 	if err != nil {
+		err := errors.Wrapf(err, "failed to retrieve timeline event (eventID: %s) for removal from run (runID: %s)", eventID, playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "eventType", string(event.EventType))
+	model.AddEventParameterToAuditRec(auditRec, "eventSummary", event.Summary)
+	model.AddEventParameterToAuditRec(auditRec, "eventCreateAt", event.CreateAt)
+
 	event.DeleteAt = model.GetMillis()
 	if err = s.store.UpdateTimelineEvent(event); err != nil {
+		err := errors.Wrapf(err, "failed to update timeline event (eventID: %s) to mark as deleted in run (runID: %s)", eventID, playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 
 	playbookRunModified, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+		err := errors.Wrapf(err, "failed to retrieve updated playbook run (runID: %s) after removing timeline event", playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunModified)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunModified.Name)
+	model.AddEventParameterToAuditRec(auditRec, "deletedAt", event.DeleteAt)
+	auditRec.AddEventResultState(*playbookRunModified)
 
 	return nil
 }
@@ -881,6 +967,15 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 
 // UpdateStatus updates a playbook run's status.
 func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, options StatusUpdateOptions) error {
+	auditRec := plugin.MakeAuditRecord("updatePlaybookRunStatus", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "messageLength", len(options.Message))
+	model.AddEventParameterToAuditRec(auditRec, "reminderSeconds", int64(options.Reminder/time.Second))
+
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
@@ -959,6 +1054,12 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 	}
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "postID", channelPost.Id)
+	model.AddEventParameterToAuditRec(auditRec, "statusUpdateAt", channelPost.CreateAt)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -1040,6 +1141,13 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookR
 
 // FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
+	auditRec := plugin.MakeAuditRecord("finishPlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
@@ -1047,7 +1155,16 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToModify.CurrentStatus)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
+
 	if playbookRunToModify.CurrentStatus == StatusFinished {
+		// Mark as successful noop
+		auditRec.Success()
+		model.AddEventParameterToAuditRec(auditRec, "noop", true)
+		auditRec.AddEventResultState(*playbookRunToModify)
 		return nil
 	}
 
@@ -1131,16 +1248,34 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 	}
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "endAt", endAt)
+	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusFinished)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
 	return nil
 }
 
 func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID string, enable bool) error {
+	auditRec := plugin.MakeAuditRecord("togglePlaybookRunStatusUpdates", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "enable", enable)
 
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
+
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentlyEnabled", playbookRunToModify.StatusUpdateEnabled)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -1226,11 +1361,24 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 	}
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "updateAt", updateAt)
+	model.AddEventParameterToAuditRec(auditRec, "finalState", enable)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
 	return nil
 }
 
 // RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string) error {
+	auditRec := plugin.MakeAuditRecord("restorePlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	playbookRunToRestore, err := s.store.GetPlaybookRun(playbookRunID)
@@ -1238,7 +1386,16 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToRestore.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToRestore.CurrentStatus)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToRestore.TeamID)
+
 	if playbookRunToRestore.CurrentStatus != StatusFinished {
+		// Mark as successful noop
+		auditRec.Success()
+		model.AddEventParameterToAuditRec(auditRec, "noop", true)
+		auditRec.AddEventResultState(*playbookRunToRestore)
 		return nil
 	}
 
@@ -1296,6 +1453,12 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 	}
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "restoreAt", restoreAt)
+	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusInProgress)
+	auditRec.AddEventResultState(*playbookRunToRestore)
+
 	return nil
 }
 
@@ -1336,36 +1499,67 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		return nil
 	}
 
+	auditRec := plugin.MakeAuditRecord("graphqlUpdatePlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", id)
+	model.AddEventParameterToAuditRec(auditRec, "fieldsCount", len(setmap))
+
+	// Capture field names being updated (for audit visibility)
+	fieldNames := make([]string, 0, len(setmap))
+	for fieldName := range setmap {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	model.AddEventParameterToAuditRec(auditRec, "fieldsUpdated", strings.Join(fieldNames, ","))
+
 	// Get the current playbook run state before changes if incremental updates are enabled
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
 		originalRun, err = s.store.GetPlaybookRun(id)
 		if err != nil {
-			return errors.Wrap(err, "failed to retrieve playbook run before GraphQL update")
+			err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) before GraphQL update", id)
+			auditRec.AddErrorDesc(err.Error())
+			return err
 		}
 		originalRun = originalRun.Clone()
+
+		// Add current context to audit
+		model.AddEventParameterToAuditRec(auditRec, "runName", originalRun.Name)
 	}
 
 	now := model.GetMillis()
 	// Update checklist timestamps if checklists are being modified
 	if checklists, ok := setmap["Checklists"].([]Checklist); ok {
 		updateAllChecklistsAndItemsTimestamps(checklists, now)
+		model.AddEventParameterToAuditRec(auditRec, "checklistsUpdated", len(checklists))
 	}
 
 	setmap["UpdateAt"] = now
 
 	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
+		err := errors.Wrapf(err, "failed to execute GraphQL update for playbook run (runID: %s) with fields [%s]", id, strings.Join(fieldNames, ","))
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 
 	// Get the updated playbook run state after changes
 	currentRun, err := s.store.GetPlaybookRun(id)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run after GraphQL update")
+		err := errors.Wrapf(err, "failed to retrieve updated playbook run (runID: %s) after GraphQL update", id)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, currentRun)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalRunName", currentRun.Name)
+	model.AddEventParameterToAuditRec(auditRec, "updateAt", now)
+	auditRec.AddEventResultState(*currentRun)
+
 	return nil
 }
 
@@ -1514,12 +1708,28 @@ func (s *PlaybookRunServiceImpl) IsOwner(playbookRunID, userID string) bool {
 // ChangeOwner processes a request from userID to change the owner for playbookRunID
 // to ownerID. Changing to the same ownerID is a no-op.
 func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID string) error {
+	auditRec := plugin.MakeAuditRecord("changePlaybookRunOwner", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "newOwnerID", ownerID)
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return err
 	}
 
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentOwnerID", playbookRunToModify.OwnerUserID)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
+
 	if playbookRunToModify.OwnerUserID == ownerID {
+		// Mark as successful noop
+		auditRec.Success()
+		model.AddEventParameterToAuditRec(auditRec, "noop", true)
+		auditRec.AddEventResultState(*playbookRunToModify)
 		return nil
 	}
 
@@ -1579,12 +1789,29 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "oldOwnerUsername", oldOwner.Username)
+	model.AddEventParameterToAuditRec(auditRec, "newOwnerUsername", newOwner.Username)
+	model.AddEventParameterToAuditRec(auditRec, "changeTimestamp", eventTime)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
 	return nil
 }
 
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
 // any action if the checklist item is already in the given checked state
 func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newState string, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("modifyChecklistItemState", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "newState", newState)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+
 	type Details struct {
 		Action string `json:"action,omitempty"`
 		Task   string `json:"task,omitempty"`
@@ -1601,12 +1828,20 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentState", itemToCheck.State)
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
 
 	if newState == itemToCheck.State {
+		// Mark as successful noop
+		auditRec.Success()
+		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -1660,11 +1895,25 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	}
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "action", details.Action)
+	model.AddEventParameterToAuditRec(auditRec, "finalState", newState)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
 	return nil
 }
 
 // ToggleCheckedState checks or unchecks the specified checklist item
 func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("toggleChecklistItemState", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1674,11 +1923,23 @@ func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string
 		return errors.New("invalid checklist item indices")
 	}
 
-	isOpen := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State == ChecklistItemStateOpen
+	item := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", item.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentState", item.State)
+
+	isOpen := item.State == ChecklistItemStateOpen
 	newState := ChecklistItemStateOpen
 	if isOpen {
 		newState = ChecklistItemStateClosed
 	}
+
+	model.AddEventParameterToAuditRec(auditRec, "newState", newState)
+
+	// Mark success (ModifyCheckedState handles the actual operation)
+	auditRec.Success()
 
 	return s.ModifyCheckedState(playbookRunID, userID, newState, checklistNumber, itemNumber)
 }
@@ -1686,6 +1947,15 @@ func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string
 // SetAssignee sets the assignee for the specified checklist item
 // Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("setChecklistItemAssignee", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "assigneeID", assigneeID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1697,11 +1967,19 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentAssigneeID", itemToCheck.AssigneeID)
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRunToModify.Clone()
 	}
 	if assigneeID == itemToCheck.AssigneeID {
+		// Mark as successful noop
+		auditRec.Success()
+		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -1787,6 +2065,13 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "oldAssigneeUserAtMention", oldAssigneeUserAtMention)
+	model.AddEventParameterToAuditRec(auditRec, "newAssigneeUserAtMention", newAssigneeUserAtMention)
+	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
+	auditRec.AddEventResultState(*playbookRunToModify)
+
 	return nil
 }
 
@@ -1853,6 +2138,15 @@ func (s *PlaybookRunServiceImpl) SetTaskActionsToChecklistItem(playbookRunID, us
 
 // SetDueDate sets absolute due date timestamp for the specified checklist item
 func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("setChecklistItemDueDate", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "duedate", duedate)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1863,6 +2157,11 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 	}
 
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentDueDate", itemToCheck.DueDate)
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -1877,6 +2176,11 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalDueDate", duedate)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -2011,10 +2315,24 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 
 // AddChecklist adds a checklist to the specified run
 func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, checklist Checklist) error {
+	auditRec := plugin.MakeAuditRecord("addChecklistToPlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", checklist.Title)
+	model.AddEventParameterToAuditRec(auditRec, "checklistItemCount", len(checklist.Items))
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve playbook run")
+		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) for adding checklist '%s'", playbookRunID, checklist.Title)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentChecklistCount", len(playbookRunToModify.Checklists))
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2027,10 +2345,18 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding checklist '%s'", playbookRunToModify.Name, checklist.Title)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalChecklistCount", len(playbookRunToModify.Checklists))
+	model.AddEventParameterToAuditRec(auditRec, "timestamp", timestamp)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -2072,10 +2398,26 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 
 // RemoveChecklist removes the specified checklist
 func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, checklistNumber int) error {
+	auditRec := plugin.MakeAuditRecord("removeChecklistFromPlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
+		err := errors.Wrapf(err, "failed to verify checklist parameters for removal (runID: %s, checklistNumber: %d)", playbookRunID, checklistNumber)
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
+
+	// Add current context to audit
+	checklistToRemove := playbookRunToModify.Checklists[checklistNumber]
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", checklistToRemove.Title)
+	model.AddEventParameterToAuditRec(auditRec, "checklistItemCount", len(checklistToRemove.Items))
+	model.AddEventParameterToAuditRec(auditRec, "currentChecklistCount", len(playbookRunToModify.Checklists))
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2086,20 +2428,43 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing checklist '%s'", playbookRunToModify.Name, checklistToRemove.Title)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalChecklistCount", len(playbookRunToModify.Checklists))
+	model.AddEventParameterToAuditRec(auditRec, "removedChecklistTitle", checklistToRemove.Title)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
 
 // RenameChecklist adds a checklist to the specified run
 func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, checklistNumber int, newTitle string) error {
+	auditRec := plugin.MakeAuditRecord("renameChecklistInPlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "newTitle", newTitle)
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
+		err := errors.Wrapf(err, "failed to verify checklist parameters for rename (runID: %s, checklistNumber: %d)", playbookRunID, checklistNumber)
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
+
+	// Add current context to audit
+	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentTitle", currentChecklist.Title)
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2111,20 +2476,45 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after renaming checklist from '%s' to '%s'", playbookRunToModify.Name, currentChecklist.Title, newTitle)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalTitle", newTitle)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
 
 // AddChecklistItem adds an item to the specified checklist
 func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, checklistNumber int, checklistItem ChecklistItem) error {
+	auditRec := plugin.MakeAuditRecord("addItemToChecklist", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemTitle", checklistItem.Title)
+	model.AddEventParameterToAuditRec(auditRec, "itemCommand", checklistItem.Command)
+	model.AddEventParameterToAuditRec(auditRec, "itemDescription", checklistItem.Description)
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
+		err := errors.Wrapf(err, "failed to verify checklist parameters for adding item (runID: %s, checklistNumber: %d)", playbookRunID, checklistNumber)
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
+
+	// Add current context to audit
+	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", currentChecklist.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentItemCount", len(currentChecklist.Items))
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2136,20 +2526,45 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after adding item '%s' to checklist '%s'", playbookRunToModify.Name, checklistItem.Title, currentChecklist.Title)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalItemCount", len(playbookRunToModify.Checklists[checklistNumber].Items))
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
 
 // RemoveChecklistItem removes the item at the given index from the given checklist
 func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	auditRec := plugin.MakeAuditRecord("removeItemFromChecklist", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
+		err := errors.Wrapf(err, "failed to verify checklist item parameters for removal (runID: %s, checklistNumber: %d, itemNumber: %d)", playbookRunID, checklistNumber, itemNumber)
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
+
+	// Add current context to audit
+	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
+	itemToRemove := currentChecklist.Items[itemNumber]
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", currentChecklist.Title)
+	model.AddEventParameterToAuditRec(auditRec, "itemTitle", itemToRemove.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentItemCount", len(currentChecklist.Items))
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2164,10 +2579,18 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' after removing item '%s' from checklist '%s'", playbookRunToModify.Name, itemToRemove.Title, currentChecklist.Title)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalItemCount", len(playbookRunToModify.Checklists[checklistNumber].Items))
+	model.AddEventParameterToAuditRec(auditRec, "removedItemTitle", itemToRemove.Title)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -2283,10 +2706,28 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 
 // EditChecklistItem changes the title of a specified checklist item
 func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error {
+	auditRec := plugin.MakeAuditRecord("editChecklistItem", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
+	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
+	model.AddEventParameterToAuditRec(auditRec, "newTitleLength", len(newTitle))
+	model.AddEventParameterToAuditRec(auditRec, "newCommandLength", len(newCommand))
+	model.AddEventParameterToAuditRec(auditRec, "newDescriptionLength", len(newDescription))
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
+
+	// Add current context to audit
+	item := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentTitle", item.Title)
+	model.AddEventParameterToAuditRec(auditRec, "currentCommand", item.Command)
+	model.AddEventParameterToAuditRec(auditRec, "currentDescription", item.Description)
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2304,6 +2745,13 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalTitle", newTitle)
+	model.AddEventParameterToAuditRec(auditRec, "finalCommand", newCommand)
+	model.AddEventParameterToAuditRec(auditRec, "finalDescription", newDescription)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -3042,10 +3490,25 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 }
 
 func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, newRetrospective RetrospectiveUpdate) error {
+	auditRec := plugin.MakeAuditRecord("updatePlaybookRunRetrospective", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", updaterID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "retrospectiveTextLength", len(newRetrospective.Text))
+	model.AddEventParameterToAuditRec(auditRec, "metricsCount", len(newRetrospective.Metrics))
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) for retrospective update", playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
+	model.AddEventParameterToAuditRec(auditRec, "previousRetrospectiveLength", len(playbookRunToModify.Retrospective))
+	model.AddEventParameterToAuditRec(auditRec, "previousMetricsCount", len(playbookRunToModify.MetricsData))
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -3057,21 +3520,45 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		return errors.Wrap(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' with new retrospective content", playbookRunToModify.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "finalRetrospectiveLength", len(newRetrospective.Text))
+	model.AddEventParameterToAuditRec(auditRec, "finalMetricsCount", len(newRetrospective.Metrics))
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
 
 func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID string, retrospective RetrospectiveUpdate) error {
+	auditRec := plugin.MakeAuditRecord("publishPlaybookRunRetrospective", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", publisherID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "retrospectiveTextLength", len(retrospective.Text))
+	model.AddEventParameterToAuditRec(auditRec, "metricsCount", len(retrospective.Metrics))
+
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
 	playbookRunToPublish, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) for retrospective publishing", playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToPublish.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentlyPublished", playbookRunToPublish.RetrospectivePublishedAt > 0)
+	model.AddEventParameterToAuditRec(auditRec, "wasAlreadyCanceled", playbookRunToPublish.RetrospectiveWasCanceled)
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -3088,22 +3575,30 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 
 	playbookRunToPublish, err = s.store.UpdatePlaybookRun(playbookRunToPublish)
 	if err != nil {
-		return errors.Wrap(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' for retrospective publishing", playbookRunToPublish.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	publisherUser, err := s.pluginAPI.User.Get(publisherID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get publisher user")
+		err := errors.Wrapf(err, "failed to retrieve publisher user (userID: %s) for retrospective publishing", publisherID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
 	post, err := s.buildRetrospectivePost(playbookRunToPublish, publisherUser, retrospectiveURL)
 	if err != nil {
+		err := errors.Wrapf(err, "failed to build retrospective post for run '%s'", playbookRunToPublish.Name)
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 
 	if err = s.poster.Post(post); err != nil {
-		return errors.Wrap(err, "failed to post to channel")
+		err := errors.Wrapf(err, "failed to post retrospective to channel for run '%s'", playbookRunToPublish.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
@@ -3122,10 +3617,19 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
+		err := errors.Wrapf(err, "failed to create timeline event for retrospective publishing in run '%s'", playbookRunToPublish.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "publishedAt", now)
+	model.AddEventParameterToAuditRec(auditRec, "publisherUsername", publisherUser.Username)
+	model.AddEventParameterToAuditRec(auditRec, "retrospectiveURL", retrospectiveURL)
+	auditRec.AddEventResultState(*playbookRunToPublish)
 
 	return nil
 }
@@ -3166,10 +3670,23 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 }
 
 func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID string) error {
+	auditRec := plugin.MakeAuditRecord("cancelPlaybookRunRetrospective", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", cancelerID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
 	playbookRunToCancel, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) for retrospective cancellation", playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToCancel.Name)
+	model.AddEventParameterToAuditRec(auditRec, "currentlyPublished", playbookRunToCancel.RetrospectivePublishedAt > 0)
+	model.AddEventParameterToAuditRec(auditRec, "currentRetrospectiveLength", len(playbookRunToCancel.Retrospective))
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -3185,16 +3702,22 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 
 	playbookRunToCancel, err = s.store.UpdatePlaybookRun(playbookRunToCancel)
 	if err != nil {
-		return errors.Wrap(err, "failed to update playbook run")
+		err := errors.Wrapf(err, "failed to update playbook run '%s' for retrospective cancellation", playbookRunToCancel.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	cancelerUser, err := s.pluginAPI.User.Get(cancelerID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get canceler user")
+		err := errors.Wrapf(err, "failed to retrieve canceler user (userID: %s) for retrospective cancellation", cancelerID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	if _, err = s.poster.PostMessage(playbookRunToCancel.ChannelID, "@channel Retrospective for [%s](%s) has been canceled by @%s\n", playbookRunToCancel.Name, GetRunDetailsRelativeURL(playbookRunID), cancelerUser.Username); err != nil {
-		return errors.Wrap(err, "failed to post to channel")
+		err := errors.Wrapf(err, "failed to post retrospective cancellation message to channel for run '%s'", playbookRunToCancel.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	event := &TimelineEvent{
@@ -3206,10 +3729,18 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
+		err := errors.Wrapf(err, "failed to create timeline event for retrospective cancellation in run '%s'", playbookRunToCancel.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "canceledAt", now)
+	model.AddEventParameterToAuditRec(auditRec, "cancelerUsername", cancelerUser.Username)
+	auditRec.AddEventResultState(*playbookRunToCancel)
 
 	return nil
 }
@@ -3245,10 +3776,22 @@ func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID s
 
 // RequestUpdate posts a status update request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
+	auditRec := plugin.MakeAuditRecord("requestPlaybookRunUpdate", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", requesterID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) for update request", playbookRunID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
+
+	// Add current context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
+	model.AddEventParameterToAuditRec(auditRec, "channelID", playbookRun.ChannelID)
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -3257,7 +3800,9 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 
 	requesterUser, err := s.pluginAPI.User.Get(requesterID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get requester user")
+		err := errors.Wrapf(err, "failed to retrieve requester user (userID: %s) for update request", requesterID)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	T := i18n.GetUserTranslations(requesterUser.Locale)
@@ -3269,7 +3814,9 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 
 	post, err := s.poster.PostMessage(playbookRun.ChannelID, T("app.user.run.request_update", data))
 	if err != nil {
-		return errors.Wrap(err, "failed to post to channel")
+		err := errors.Wrapf(err, "failed to post update request message in channel for run '%s'", playbookRun.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	// create timeline event
@@ -3285,18 +3832,38 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
+		err := errors.Wrapf(err, "failed to create timeline event for update request in run '%s'", playbookRun.Name)
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	// send updated run through websocket
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "requesterUsername", requesterUser.Username)
+	model.AddEventParameterToAuditRec(auditRec, "postID", post.Id)
+	model.AddEventParameterToAuditRec(auditRec, "timelineEventID", event.ID)
+	auditRec.AddEventResultState(*playbookRun)
 
 	return nil
 }
 
 // Leave removes user from the run's participants
 func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userIDs []string, requesterUserID string) error {
+	auditRec := plugin.MakeAuditRecord("removePlaybookRunParticipants", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "requesterUserID", requesterUserID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "userIDsCount", len(userIDs))
+
 	if len(userIDs) == 0 {
+		// Mark as successful noop
+		auditRec.Success()
+		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -3304,6 +3871,11 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
+
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRun.TeamID)
+	model.AddEventParameterToAuditRec(auditRec, "currentParticipantCount", len(playbookRun.ParticipantIDs))
 
 	// Check if any user is the owner
 	for _, userID := range userIDs {
@@ -3353,6 +3925,12 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	userIDs = append(userIDs, requesterUserID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userIDs...)
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "usersRemoved", len(userIDs)-1) // Subtract 1 for requesterUserID
+	model.AddEventParameterToAuditRec(auditRec, "finalParticipantCount", len(playbookRun.ParticipantIDs))
+	auditRec.AddEventResultState(*playbookRun)
+
 	return nil
 }
 
@@ -3397,10 +3975,23 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 }
 
 func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool, sendWebsocket bool) error {
+	auditRec := plugin.MakeAuditRecord("addPlaybookRunParticipants", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "requesterUserID", requesterUserID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
+	model.AddEventParameterToAuditRec(auditRec, "userIDsCount", len(userIDs))
+	model.AddEventParameterToAuditRec(auditRec, "forceAddToChannel", forceAddToChannel)
+	model.AddEventParameterToAuditRec(auditRec, "sendWebsocket", sendWebsocket)
+
 	usersFailedToInvite := make([]string, 0)
 	usersToInvite := make([]string, 0)
 
 	if len(userIDs) == 0 {
+		// Mark as successful noop
+		auditRec.Success()
+		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -3408,6 +3999,11 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	if err != nil {
 		return errors.Wrapf(err, "failed to get run %s", playbookRunID)
 	}
+
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRun.TeamID)
+	model.AddEventParameterToAuditRec(auditRec, "currentParticipantCount", len(playbookRun.ParticipantIDs))
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -3475,6 +4071,16 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 		combinedUserIDs := append(usersToInvite, requesterUserID)
 		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, combinedUserIDs...)
+	}
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	model.AddEventParameterToAuditRec(auditRec, "usersSuccessfullyAdded", len(usersToInvite))
+	model.AddEventParameterToAuditRec(auditRec, "usersFailedToInvite", len(usersFailedToInvite))
+	if len(usersToInvite) > 0 {
+		// Only add result state if we actually made changes
+		model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+		auditRec.AddEventResultState(*playbookRun)
 	}
 
 	return nil
@@ -3592,10 +4198,20 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 
 // Follow method lets user follow a specific playbook run
 func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
+	auditRec := plugin.MakeAuditRecord("followPlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
 	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
+
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", originalRun.Name)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", originalRun.TeamID)
 
 	if err := s.store.Follow(playbookRunID, userID); err != nil {
 		return errors.Wrapf(err, "user `%s` failed to follow the run `%s`", userID, playbookRunID)
@@ -3607,15 +4223,29 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 	}
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
+	// Mark success and add result state for audit
+	auditRec.Success()
+	auditRec.AddEventResultState(*playbookRun)
+
 	return nil
 }
 
 // UnFollow method lets user unfollow a specific playbook run
 func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
+	auditRec := plugin.MakeAuditRecord("unfollowPlaybookRun", model.AuditStatusFail)
+	defer s.api.LogAuditRec(auditRec)
+
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
 	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
+
+	// Add current run context to audit
+	model.AddEventParameterToAuditRec(auditRec, "runName", originalRun.Name)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", originalRun.TeamID)
 
 	if err := s.store.Unfollow(playbookRunID, userID); err != nil {
 		return errors.Wrapf(err, "user `%s` failed to unfollow the run `%s`", userID, playbookRunID)
@@ -3627,6 +4257,10 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
+
+	// Mark success and add result state for audit
+	auditRec.Success()
+	auditRec.AddEventResultState(*playbookRun)
 
 	return nil
 }
