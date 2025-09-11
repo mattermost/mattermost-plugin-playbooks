@@ -18,6 +18,7 @@ const (
 	PropertyGroupPlaybooks    = "playbooks"
 	PropertySearchPerPage     = 20
 	PropertyBulkSearchPerPage = 1000
+	MaxPropertiesPerPlaybook  = 20
 )
 
 type propertyService struct {
@@ -45,6 +46,11 @@ func (s *propertyService) CreatePropertyField(playbookID string, propertyField P
 		return nil, errors.Wrap(err, "invalid property field")
 	}
 
+	// Check if adding a new property would exceed the limit
+	if err := s.validatePropertyLimit(playbookID); err != nil {
+		return nil, err
+	}
+
 	mmPropertyField := propertyField.ToMattermostPropertyField()
 	mmPropertyField.GroupID = s.groupID
 	mmPropertyField.TargetType = PropertyTargetTypePlaybook
@@ -61,6 +67,20 @@ func (s *propertyService) CreatePropertyField(playbookID string, propertyField P
 	}
 
 	return resultField, nil
+}
+
+// validatePropertyLimit checks if adding a new property would exceed the maximum allowed
+func (s *propertyService) validatePropertyLimit(playbookID string) error {
+	currentCount, err := s.GetPropertyFieldsCount(playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current property count")
+	}
+
+	if currentCount >= MaxPropertiesPerPlaybook {
+		return errors.Errorf("cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
+	}
+
+	return nil
 }
 
 func (s *propertyService) GetPropertyField(propertyID string) (*PropertyField, error) {
@@ -93,6 +113,19 @@ func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField,
 	}
 
 	return propertyFields, nil
+}
+
+func (s *propertyService) GetPropertyFieldsCount(playbookID string) (int, error) {
+	count, err := s.api.Property.CountPropertyFieldsForTarget(
+		s.groupID,
+		PropertyTargetTypePlaybook,
+		playbookID,
+		false, // only count active (non-deleted) properties
+	)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to count property fields for playbook")
+	}
+	return int(count), nil
 }
 
 func (s *propertyService) GetRunPropertyFields(runID string) ([]PropertyField, error) {
