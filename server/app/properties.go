@@ -155,6 +155,7 @@ type PropertyService interface {
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
+	GetPropertyFieldsCount(playbookID string) (int, error)
 	GetRunPropertyFields(runID string) ([]PropertyField, error)
 	GetRunPropertyValues(runID string) ([]PropertyValue, error)
 	GetRunPropertyValueByFieldID(runID, propertyFieldID string) (*PropertyValue, error)
