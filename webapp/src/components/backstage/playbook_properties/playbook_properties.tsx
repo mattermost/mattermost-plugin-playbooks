@@ -325,6 +325,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
     return (
         <OuterContainer>
             <InnerContainer>
+                <ExperimentalBanner>
+                    <i className='icon-flask-outline'/>
+                    <FormattedMessage defaultMessage='Experimental Feature'/>
+                </ExperimentalBanner>
                 <TableContainer>
                     <DragDropContext onDragEnd={handleDragEnd}>
                         <Droppable droppableId='properties-table'>
@@ -441,6 +445,24 @@ const InnerContainer = styled.div`
 
     > div + div {
         margin-top: 16px;
+    }
+`;
+
+const ExperimentalBanner = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: rgba(var(--sidebar-text-active-border-rgb), 0.08);
+    border: 1px solid rgba(var(--sidebar-text-active-border-rgb), 0.24);
+    border-radius: 4px;
+    color: var(--sidebar-text-active-border);
+    font-size: 14px;
+    font-weight: 600;
+
+    i {
+        font-size: 16px;
     }
 `;
 
