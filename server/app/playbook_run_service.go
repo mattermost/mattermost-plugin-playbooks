@@ -427,8 +427,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	s.metricsService.IncrementRunsCreatedCount(1)
 
-	// Mark success and add result state for audit
-	auditRec.Success()
+	// Add playbookRun data for audit
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRun.ID)
 	model.AddEventParameterToAuditRec(auditRec, "channelID", playbookRun.ChannelID)
 	model.AddEventParameterToAuditRec(auditRec, "finalOwnerID", playbookRun.OwnerUserID)
@@ -565,6 +564,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if playbookRun.PostID == "" {
+		auditRec.Success()
 		return playbookRun, nil
 	}
 
@@ -586,6 +586,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, err
 	}
 
+	auditRec.Success()
 	return playbookRun, nil
 }
 
