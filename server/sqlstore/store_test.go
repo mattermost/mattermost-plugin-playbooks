@@ -773,12 +773,10 @@ func getRun(id string, sqlStore *SQLStore) (app.PlaybookRun, error) {
 }
 
 func TestHasPrimaryKeys(t *testing.T) {
-
-	t.Run("PostgreSQL", func(t *testing.T) {
-		db := setupTestDB(t)
-		setupPlaybookStore(t, db) // To run the migrations and everything
-		tablesWithoutPrimaryKeys := []string{}
-		err := db.Select(&tablesWithoutPrimaryKeys, `
+	db := setupTestDB(t)
+	setupPlaybookStore(t, db) // To run the migrations and everything
+	tablesWithoutPrimaryKeys := []string{}
+	err := db.Select(&tablesWithoutPrimaryKeys, `
 			SELECT tab.table_name AS pk_name
 			FROM   information_schema.tables tab
 				   LEFT JOIN information_schema.table_constraints tco
@@ -797,14 +795,12 @@ func TestHasPrimaryKeys(t *testing.T) {
 					  tab.table_name,
 					  tco.constraint_name
 		`)
-		tablesToBeFiltered := []string{"teammembers"}
-		for _, table := range tablesToBeFiltered {
-			tablesWithoutPrimaryKeys = removeFromSlice(tablesWithoutPrimaryKeys, table)
-		}
-		require.Len(t, tablesWithoutPrimaryKeys, 0)
-		require.NoError(t, err)
-	})
-
+	tablesToBeFiltered := []string{"teammembers"}
+	for _, table := range tablesToBeFiltered {
+		tablesWithoutPrimaryKeys = removeFromSlice(tablesWithoutPrimaryKeys, table)
+	}
+	require.Len(t, tablesWithoutPrimaryKeys, 0)
+	require.NoError(t, err)
 }
 
 func removeFromSlice(slice []string, item string) []string {

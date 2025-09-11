@@ -15,7 +15,17 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
-const npsPluginID = "com.mattermost.nps"
+// WebsocketPublisher defines interface for publishing websocket events
+type WebsocketPublisher interface {
+	PublishWebsocketEventGlobal(event string, payload interface{})
+}
+
+const (
+	npsPluginID = "com.mattermost.nps"
+
+	// SettingsChangedWSEvent is sent when plugin settings change
+	SettingsChangedWSEvent = "settings_changed"
+)
 
 // ServiceImpl holds access to the plugin's Configuration.
 type ServiceImpl struct {
@@ -30,6 +40,9 @@ type ServiceImpl struct {
 
 	// configChangeListeners will be notified when the OnConfigurationChange event has been called.
 	configChangeListeners map[string]func()
+
+	// websocketPublisher publishes websocket events for configuration changes
+	websocketPublisher WebsocketPublisher
 
 	// manifest is the plugin manifest
 	manifest *model.Manifest
@@ -48,6 +61,11 @@ func NewConfigService(api *pluginapi.Client, manifest *model.Manifest) *ServiceI
 	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
 
 	return c
+}
+
+// SetWebsocketPublisher sets the websocket publisher for broadcasting config changes
+func (c *ServiceImpl) SetWebsocketPublisher(publisher WebsocketPublisher) {
+	c.websocketPublisher = publisher
 }
 
 // GetConfiguration retrieves the active configuration under lock, making it safe to use
@@ -126,6 +144,19 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 
 	configuration.BotUserID = c.configuration.BotUserID
 	configuration.TeamsTabAppBotUserID = c.configuration.TeamsTabAppBotUserID
+
+	oldConfig := c.configuration
+	settingsPayload := make(map[string]interface{})
+
+	if oldConfig != nil {
+		if oldConfig.EnableExperimentalFeatures != configuration.EnableExperimentalFeatures {
+			settingsPayload["enable_experimental_features"] = configuration.EnableExperimentalFeatures
+		}
+	}
+
+	if c.websocketPublisher != nil && len(settingsPayload) > 0 {
+		c.websocketPublisher.PublishWebsocketEventGlobal(SettingsChangedWSEvent, settingsPayload)
+	}
 
 	c.setConfiguration(configuration)
 
@@ -213,4 +244,9 @@ func (c *ServiceImpl) SupportsGivingFeedback() error {
 // IsIncrementalUpdatesEnabled returns true when incremental WebSocket updates are enabled.
 func (c *ServiceImpl) IsIncrementalUpdatesEnabled() bool {
 	return c.GetConfiguration().EnableIncrementalUpdates
+}
+
+// IsExperimentalFeaturesEnabled returns true when experimental features are enabled.
+func (c *ServiceImpl) IsExperimentalFeaturesEnabled() bool {
+	return c.GetConfiguration().EnableExperimentalFeatures
 }

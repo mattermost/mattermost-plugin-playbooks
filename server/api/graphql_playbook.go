@@ -72,6 +72,25 @@ func (r *PlaybookResolver) Metrics() []*MetricConfigResolver {
 	return metricConfigResolvers
 }
 
+func (r *PlaybookResolver) PropertyFields(ctx context.Context) ([]*PropertyFieldResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFields, err := c.propertyService.GetPropertyFields(r.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFieldResolvers := make([]*PropertyFieldResolver, 0, len(propertyFields))
+	for _, propertyField := range propertyFields {
+		propertyFieldResolvers = append(propertyFieldResolvers, &PropertyFieldResolver{propertyField: propertyField})
+	}
+
+	return propertyFieldResolvers, nil
+}
+
 type MetricConfigResolver struct {
 	app.PlaybookMetricConfig
 }

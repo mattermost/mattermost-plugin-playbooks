@@ -29,6 +29,7 @@ import (
 )
 
 const checklistItemDescriptionCharLimit = 4000
+const propertyValueMaxDisplayLength = 50
 
 const (
 	// PlaybookRunCreatedWSEvent is for playbook run creation.
@@ -63,7 +64,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 	// Get the current state only if we don't already have it
 	if currentRun == nil {
 		var err error
-		currentRun, err = s.store.GetPlaybookRun(playbookRunID)
+		currentRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			logger.WithError(err).Error("failed to get current state of playbook run")
 			return
@@ -140,6 +141,7 @@ type PlaybookRunServiceImpl struct {
 	permissions     *PermissionsService
 	licenseChecker  LicenseChecker
 	metricsService  *metrics.Metrics
+	propertyService PropertyService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -189,6 +191,7 @@ func NewPlaybookRunService(
 	channelActionService ChannelActionService,
 	licenseChecker LicenseChecker,
 	metricsService *metrics.Metrics,
+	propertyService PropertyService,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
@@ -202,6 +205,7 @@ func NewPlaybookRunService(
 		actionService:   channelActionService,
 		licenseChecker:  licenseChecker,
 		metricsService:  metricsService,
+		propertyService: propertyService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -406,6 +410,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create playbook run")
+	}
+
+	if pb != nil {
+		err = s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
+		if err != nil {
+			logger.WithError(err).Warn("failed to copy playbook properties to run")
+		}
 	}
 
 	s.metricsService.IncrementRunsCreatedCount(1)
@@ -1402,7 +1413,24 @@ func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *Playbook
 
 // GetPlaybookRun gets a playbook run by ID. Returns error if it could not be found.
 func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*PlaybookRun, error) {
-	return s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFields, err := s.propertyService.GetRunPropertyFields(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get run property fields")
+	}
+	playbookRun.PropertyFields = propertyFields
+
+	propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get run property values")
+	}
+	playbookRun.PropertyValues = propertyValues
+
+	return playbookRun, nil
 }
 
 // GetPlaybookRunMetadata gets ancillary metadata about a playbook run.
@@ -3024,7 +3052,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 	// Get playbookRun if not provided
 	playbookRun := sendWSOptions.PlaybookRun
 	if playbookRun == nil {
-		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+		playbookRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			logrus.WithError(err).WithField("playbookRunID", playbookRunID).Error("failed to retrieve playbook run when sending websocket")
 			return
@@ -4026,4 +4054,203 @@ func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, u
 // GetPlaybookRunIDsForUser returns run ids where user is a participant or is following
 func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]string, error) {
 	return s.store.GetPlaybookRunIDsForUser(userID)
+}
+
+// SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
+func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	propertyField, err := s.propertyService.GetPropertyField(propertyFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property field")
+	}
+
+	currentPropertyValue, err := s.propertyService.GetRunPropertyValueByFieldID(playbookRunID, propertyFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current property value")
+	}
+
+	var currentValue json.RawMessage
+	if currentPropertyValue != nil {
+		currentValue = currentPropertyValue.Value
+	}
+
+	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upsert property value")
+	}
+
+	if !s.propertyValuesEqual(propertyField, currentValue, value) {
+		s.postPropertyChangeMessage(userID, playbookRunID, propertyFieldID, propertyField, value)
+	}
+
+	s.sendPlaybookRunUpdatedWS(playbookRunID)
+	return propertyValue, nil
+}
+
+// propertyValuesEqual compares two property values for equality based on the property field type
+func (s *PlaybookRunServiceImpl) propertyValuesEqual(field *PropertyField, oldValue, newValue json.RawMessage) bool {
+	switch field.Type {
+	case "text":
+		return s.compareTextValues(oldValue, newValue)
+	case "select":
+		return s.compareSelectValues(oldValue, newValue)
+	case "multiselect":
+		return s.compareMultiselectValues(oldValue, newValue)
+	}
+	return s.compareTextValues(oldValue, newValue)
+}
+
+// compareTextValues compares text property values
+func (s *PlaybookRunServiceImpl) compareTextValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
+	return oldStr == newStr
+}
+
+// compareSelectValues compares select property values
+func (s *PlaybookRunServiceImpl) compareSelectValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
+	return oldStr == newStr
+}
+
+// compareMultiselectValues compares multiselect property values as sets (order doesn't matter)
+func (s *PlaybookRunServiceImpl) compareMultiselectValues(oldValue, newValue json.RawMessage) bool {
+	var oldArray, newArray []string
+
+	if len(oldValue) > 0 && string(oldValue) != "null" {
+		if err := json.Unmarshal(oldValue, &oldArray); err != nil {
+			return false
+		}
+	}
+
+	if len(newValue) > 0 && string(newValue) != "null" {
+		if err := json.Unmarshal(newValue, &newArray); err != nil {
+			return false
+		}
+	}
+
+	if len(oldArray) != len(newArray) {
+		return false
+	}
+
+	newMap := make(map[string]struct{}, len(newArray))
+	for _, val := range newArray {
+		newMap[val] = struct{}{}
+	}
+	for _, oldVal := range oldArray {
+		if _, exists := newMap[oldVal]; !exists {
+			return false
+		}
+	}
+
+	return true
+}
+
+// normalizeStringValue converts a JSON value to a normalized string
+func (s *PlaybookRunServiceImpl) normalizeStringValue(value json.RawMessage) string {
+	if len(value) == 0 {
+		return ""
+	}
+
+	str := string(value)
+	if str == "null" {
+		return ""
+	}
+
+	// Try to unmarshal as string to handle quoted strings
+	var unquoted string
+	if err := json.Unmarshal(value, &unquoted); err == nil {
+		return unquoted
+	}
+
+	return str
+}
+
+// postPropertyChangeMessage posts a bot message when a property value changes
+func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID, propertyFieldID string, propertyField *PropertyField, newValue json.RawMessage) {
+	// Get playbook run for channel ID
+	run, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Error("failed to get playbook run for property change message")
+		return
+	}
+
+	// Get user info
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to get user for property change message")
+		return
+	}
+
+	// Format the new value for display
+	displayValue := s.formatPropertyValueForDisplay(propertyField, newValue)
+
+	// Post the message
+	message := fmt.Sprintf("@%s updated %s to %s", user.Username, propertyField.Name, displayValue)
+	_, err = s.poster.PostMessage(run.ChannelID, message)
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"user_id":           userID,
+			"playbook_run_id":   playbookRunID,
+			"property_field_id": propertyFieldID,
+			"channel_id":        run.ChannelID,
+		}).Error("failed to post property change message")
+	}
+}
+
+// formatPropertyValueForDisplay formats a property value for display in bot messages
+func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) string {
+	if len(value) == 0 || string(value) == "null" || string(value) == `""` {
+		return "(empty)"
+	}
+
+	switch propertyField.Type {
+	case "text":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value)
+		}
+		if len(stringValue) > propertyValueMaxDisplayLength {
+			return stringValue[:propertyValueMaxDisplayLength-3] + "..."
+		}
+		return stringValue
+
+	case "select":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value)
+		}
+		// Find the option label for this value
+		for _, option := range propertyField.Attrs.Options {
+			if option.GetID() == stringValue {
+				return option.GetName()
+			}
+		}
+		return stringValue
+
+	case "multiselect":
+		var arrayValue []string
+		if err := json.Unmarshal(value, &arrayValue); err != nil {
+			return string(value)
+		}
+		if len(arrayValue) == 0 {
+			return "(empty)"
+		}
+		// Convert option IDs to labels
+		var labels []string
+		for _, val := range arrayValue {
+			label := val // Default to ID if label not found
+			for _, option := range propertyField.Attrs.Options {
+				if option.GetID() == val {
+					label = option.GetName()
+					break
+				}
+			}
+			labels = append(labels, label)
+		}
+		return strings.Join(labels, ", ")
+
+	default:
+		return string(value)
+	}
 }
