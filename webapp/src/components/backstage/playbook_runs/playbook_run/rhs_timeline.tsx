@@ -108,7 +108,9 @@ const Container = styled.div`
     flex: 1;
     flex-direction: column;
 `;
-//
+
+// this is a comment
+
 const Filters = styled.div`
     display: flex;
     height: 40px;
