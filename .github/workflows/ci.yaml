@@ -128,7 +128,7 @@ jobs:
           aws-region: us-east-1         # change as appropriate
       - name: Upload dist to S3
         run: |
-          aws s3 cp dist/playbooks-*.tar.gz s3://${YOUR_S3_BUCKET}/builds/
+          aws s3 cp dist/playbooks-*.tar.gz s3://mattermost-plugin-pr-builds/mattermost-plugin-playbooks/
         env:
           YOUR_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
       - name: ci/ensure-build-on-all-platforms ## Verify builds on all platgorms *after* ci/build-for-upload to keep artifact small
