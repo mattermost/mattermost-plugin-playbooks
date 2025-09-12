@@ -94,8 +94,8 @@ jobs:
 
   dist:
     runs-on: ubuntu-22.04
-    needs:
-      - lint
+    # needs:
+    #   # - lint
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -112,13 +112,13 @@ jobs:
         run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
       - name: ci/build-for-upload
         run: make dist-ci
-      - name: ci/upload-build-artifact
-        if: github.event_name == 'pull_request' && success()
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
-        with:
-          name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
-          path: |
-            dist/playbooks-*.tar.gz
+      # - name: ci/upload-build-artifact
+      #   if: github.event_name == 'pull_request' && success()
+      #   uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+      #   with:
+      #     name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
+      #     path: |
+      #       dist/playbooks-*.tar.gz
           retention-days: 7 ## No need to keep build artifacts for more than 7 days
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
