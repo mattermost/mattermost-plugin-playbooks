@@ -647,7 +647,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 }
 
 func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, triggerID string) error {
-	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	currentPlaybookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -808,7 +808,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
-		originalRun, err = s.store.GetPlaybookRun(playbookRunID)
+		originalRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve playbook run before removing timeline event")
 		}
@@ -825,7 +825,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 		return err
 	}
 
-	playbookRunModified, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunModified, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -836,7 +836,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 }
 
 func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRunID, authorID string) (*model.Post, error) {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run for id '%s'", playbookRunID)
 	}
@@ -876,7 +876,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRun
 func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string, event *PlaybookRunWebhookEvent) {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		logger.WithError(err).Error("cannot send webhook on update, not able to get playbookRun")
 		return
@@ -924,7 +924,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, options StatusUpdateOptions) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1005,7 +1005,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 }
 
 func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, userID, triggerID string) error {
-	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	currentPlaybookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1083,7 +1083,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookR
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1177,7 +1177,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID string, enable bool) error {
 
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -1274,7 +1274,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToRestore, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToRestore, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1381,7 +1381,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
-		originalRun, err = s.store.GetPlaybookRun(id)
+		originalRun, err = s.GetPlaybookRun(id)
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve playbook run before GraphQL update")
 		}
@@ -1401,7 +1401,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	}
 
 	// Get the updated playbook run state after changes
-	currentRun, err := s.store.GetPlaybookRun(id)
+	currentRun, err := s.GetPlaybookRun(id)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run after GraphQL update")
 	}
@@ -1562,7 +1562,7 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 
 // IsOwner returns true if the userID is the owner for playbookRunID.
 func (s *PlaybookRunServiceImpl) IsOwner(playbookRunID, userID string) bool {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return false
 	}
@@ -1572,7 +1572,7 @@ func (s *PlaybookRunServiceImpl) IsOwner(playbookRunID, userID string) bool {
 // ChangeOwner processes a request from userID to change the owner for playbookRunID
 // to ownerID. Changing to the same ownerID is a no-op.
 func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID string) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return err
 	}
@@ -1994,7 +1994,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 
 	// Fetch the playbook run again, in case the slash command actually changed the run
 	// (e.g. `/playbook owner`).
-	playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err = s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to retrieve playbook run after running slash command")
 	}
@@ -2069,7 +2069,7 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 
 // AddChecklist adds a checklist to the specified run
 func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, checklist Checklist) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
@@ -2667,7 +2667,7 @@ func (s *PlaybookRunServiceImpl) GetOverdueUpdateRuns(userID string) ([]RunLink,
 }
 
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
 	}
@@ -3100,7 +3100,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 }
 
 func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, newRetrospective RetrospectiveUpdate) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3126,7 +3126,7 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID string, retrospective RetrospectiveUpdate) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToPublish, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToPublish, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3224,7 +3224,7 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 }
 
 func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID string) error {
-	playbookRunToCancel, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToCancel, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3274,7 +3274,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 
 // RequestJoinChannel posts a channel-join request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID string) error {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3303,7 +3303,7 @@ func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID s
 
 // RequestUpdate posts a status update request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3358,7 +3358,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return nil
 	}
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3403,7 +3403,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	}
 
 	// ws send run
-	playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err = s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
 	}
@@ -3526,7 +3526,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 
 	// ws send run
 	if len(usersToInvite) > 0 && sendWebsocket {
-		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+		playbookRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
 		}
@@ -3650,7 +3650,7 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 
 // Follow method lets user follow a specific playbook run
 func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
-	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
+	originalRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3659,7 +3659,7 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to follow the run `%s`", userID, playbookRunID)
 	}
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3670,7 +3670,7 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 
 // UnFollow method lets user unfollow a specific playbook run
 func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
-	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
+	originalRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3679,7 +3679,7 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to unfollow the run `%s`", userID, playbookRunID)
 	}
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
