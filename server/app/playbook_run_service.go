@@ -428,9 +428,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	s.metricsService.IncrementRunsCreatedCount(1)
 
 	// Add playbookRun data for audit
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRun.ID)
-	model.AddEventParameterToAuditRec(auditRec, "channelID", playbookRun.ChannelID)
-	model.AddEventParameterToAuditRec(auditRec, "finalOwnerID", playbookRun.OwnerUserID)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
 	auditRec.AddEventResultState(*playbookRun)
 
@@ -1162,9 +1159,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
 
 	if playbookRunToModify.CurrentStatus == StatusFinished {
-		// Mark as successful noop
 		auditRec.Success()
-		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		auditRec.AddEventResultState(*playbookRunToModify)
 		return nil
 	}
@@ -1393,9 +1388,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToRestore.TeamID)
 
 	if playbookRunToRestore.CurrentStatus != StatusFinished {
-		// Mark as successful noop
 		auditRec.Success()
-		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		auditRec.AddEventResultState(*playbookRunToRestore)
 		return nil
 	}
@@ -1727,9 +1720,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
 
 	if playbookRunToModify.OwnerUserID == ownerID {
-		// Mark as successful noop
 		auditRec.Success()
-		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		auditRec.AddEventResultState(*playbookRunToModify)
 		return nil
 	}
@@ -1840,9 +1831,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	}
 
 	if newState == itemToCheck.State {
-		// Mark as successful noop
 		auditRec.Success()
-		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -1978,9 +1967,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		originalRun = playbookRunToModify.Clone()
 	}
 	if assigneeID == itemToCheck.AssigneeID {
-		// Mark as successful noop
 		auditRec.Success()
-		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -3862,9 +3849,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	model.AddEventParameterToAuditRec(auditRec, "userIDsCount", len(userIDs))
 
 	if len(userIDs) == 0 {
-		// Mark as successful noop
 		auditRec.Success()
-		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -3990,9 +3975,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	usersToInvite := make([]string, 0)
 
 	if len(userIDs) == 0 {
-		// Mark as successful noop
 		auditRec.Success()
-		model.AddEventParameterToAuditRec(auditRec, "noop", true)
 		return nil
 	}
 
@@ -4002,8 +3985,6 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRun.TeamID)
 	model.AddEventParameterToAuditRec(auditRec, "currentParticipantCount", len(playbookRun.ParticipantIDs))
 
 	var originalRun *PlaybookRun

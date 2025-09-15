@@ -51,9 +51,6 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	defer s.pluginAPI.LogAuditRec(auditRec)
 
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbook.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "title", playbook.Title)
-	model.AddEventParameterToAuditRec(auditRec, "public", playbook.Public)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
 	playbook.CreateAt = model.GetMillis()
@@ -86,8 +83,6 @@ func (s *playbookService) Import(playbook Playbook, userID string) (string, erro
 	defer s.pluginAPI.LogAuditRec(auditRec)
 
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbook.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "title", playbook.Title)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
 	// Perform the actual operation
@@ -100,7 +95,7 @@ func (s *playbookService) Import(playbook Playbook, userID string) (string, erro
 
 	// Mark success and add result state
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "playbookID", newID)
+	model.AddEventParameterToAuditRec(auditRec, "newID", newID)
 	auditRec.AddEventResultState(playbook)
 
 	return newID, nil
@@ -127,9 +122,6 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 	defer s.pluginAPI.LogAuditRec(auditRec)
 
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbook.ID)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbook.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "title", playbook.Title)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
 	if playbook.DeleteAt != 0 {
@@ -158,9 +150,6 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 	defer s.pluginAPI.LogAuditRec(auditRec)
 
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbook.ID)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbook.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "title", playbook.Title)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
 	if playbook.ID == "" {
@@ -193,9 +182,6 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 	defer s.pluginAPI.LogAuditRec(auditRec)
 
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbook.ID)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbook.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "title", playbook.Title)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
 	if playbook.ID == "" {
