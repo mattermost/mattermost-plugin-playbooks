@@ -119,7 +119,7 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Uppdatera status"
+        "translation": "Skicka"
     },
     {
         "id": "app.user.run.update_status.reminder_for_next_update",
