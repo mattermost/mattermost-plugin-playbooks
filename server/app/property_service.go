@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	PropertyGroupPlaybooks = "playbooks"
-	PropertySearchPerPage  = 20
+	PropertyGroupPlaybooks    = "playbooks"
+	PropertySearchPerPage     = 20
+	PropertyBulkSearchPerPage = 1000
 )
 
 type propertyService struct {
@@ -95,21 +96,16 @@ func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField,
 }
 
 func (s *propertyService) GetRunPropertyFields(runID string) ([]PropertyField, error) {
-	mmPropertyFields, err := s.getAllPropertyFields(PropertyTargetTypeRun, runID)
+	fieldsMap, err := s.getRunsPropertyFields([]string{runID}, PropertySearchPerPage)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get run property fields")
 	}
 
-	propertyFields := make([]PropertyField, 0, len(mmPropertyFields))
-	for _, mmField := range mmPropertyFields {
-		propertyField, err := NewPropertyFieldFromMattermostPropertyField(mmField)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to convert run property field")
-		}
-		propertyFields = append(propertyFields, *propertyField)
+	if fields, exists := fieldsMap[runID]; exists {
+		return fields, nil
 	}
 
-	return propertyFields, nil
+	return []PropertyField{}, nil
 }
 
 func (s *propertyService) UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
@@ -160,13 +156,13 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 	opts := model.PropertyFieldSearchOpts{
 		GroupID:    s.groupID,
 		TargetType: targetType,
-		TargetID:   targetID,
+		TargetIDs:  []string{targetID},
 		PerPage:    PropertySearchPerPage,
 	}
 
 	var allFields []*model.PropertyField
 	for {
-		fields, err := s.api.Property.SearchPropertyFields(s.groupID, targetID, opts)
+		fields, err := s.api.Property.SearchPropertyFields(s.groupID, opts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to search property fields")
 		}
@@ -243,48 +239,28 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 }
 
 func (s *propertyService) GetRunPropertyValues(runID string) ([]PropertyValue, error) {
-	opts := model.PropertyValueSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: PropertyTargetTypeRun,
-		TargetID:   runID,
-		PerPage:    PropertySearchPerPage,
+	valuesMap, err := s.getRunsPropertyValues([]string{runID}, PropertySearchPerPage)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get run property values")
 	}
 
-	var allValues []PropertyValue
-	for {
-		values, err := s.api.Property.SearchPropertyValues(s.groupID, runID, opts)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to search property values")
-		}
-
-		for _, mmValue := range values {
-			allValues = append(allValues, PropertyValue(*mmValue))
-		}
-
-		if len(values) < PropertySearchPerPage {
-			break
-		}
-
-		lastValue := values[len(values)-1]
-		opts.Cursor = model.PropertyValueSearchCursor{
-			PropertyValueID: lastValue.ID,
-			CreateAt:        lastValue.CreateAt,
-		}
+	if values, exists := valuesMap[runID]; exists {
+		return values, nil
 	}
 
-	return allValues, nil
+	return []PropertyValue{}, nil
 }
 
 func (s *propertyService) GetRunPropertyValueByFieldID(runID, propertyFieldID string) (*PropertyValue, error) {
 	opts := model.PropertyValueSearchOpts{
 		GroupID:    s.groupID,
 		TargetType: PropertyTargetTypeRun,
-		TargetID:   runID,
+		TargetIDs:  []string{runID},
 		FieldID:    propertyFieldID,
 		PerPage:    1,
 	}
 
-	values, err := s.api.Property.SearchPropertyValues(s.groupID, runID, opts)
+	values, err := s.api.Property.SearchPropertyValues(s.groupID, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to search property value")
 	}
@@ -416,4 +392,98 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 	}
 
 	return registeredGroup.ID, nil
+}
+
+// GetRunsPropertyFields retrieves all property fields for multiple runs efficiently
+func (s *propertyService) GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error) {
+	return s.getRunsPropertyFields(runIDs, PropertyBulkSearchPerPage)
+}
+
+// GetRunsPropertyValues retrieves all property values for multiple runs efficiently
+func (s *propertyService) GetRunsPropertyValues(runIDs []string) (map[string][]PropertyValue, error) {
+	return s.getRunsPropertyValues(runIDs, PropertyBulkSearchPerPage)
+}
+
+// getRunsPropertyFields handles property field retrieval in a paginated way
+func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int) (map[string][]PropertyField, error) {
+	if len(runIDs) == 0 {
+		return make(map[string][]PropertyField), nil
+	}
+
+	opts := model.PropertyFieldSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		TargetIDs:  runIDs,
+		PerPage:    pageSize,
+	}
+
+	result := make(map[string][]PropertyField)
+
+	var allFields []*model.PropertyField
+	for {
+		fields, err := s.api.Property.SearchPropertyFields(s.groupID, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to search property fields")
+		}
+
+		allFields = append(allFields, fields...)
+
+		if len(fields) < pageSize {
+			break
+		}
+
+		opts.Cursor.PropertyFieldID = fields[len(fields)-1].ID
+		opts.Cursor.CreateAt = fields[len(fields)-1].CreateAt
+	}
+
+	for _, mmField := range allFields {
+		pf, err := NewPropertyFieldFromMattermostPropertyField(mmField)
+		if err != nil {
+			logrus.WithError(err).Warn("Failed to convert property field")
+			continue
+		}
+		result[mmField.TargetID] = append(result[mmField.TargetID], *pf)
+	}
+
+	return result, nil
+}
+
+// getRunsPropertyValues handles property value retrieval in a paginated way
+func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int) (map[string][]PropertyValue, error) {
+	if len(runIDs) == 0 {
+		return make(map[string][]PropertyValue), nil
+	}
+
+	opts := model.PropertyValueSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		TargetIDs:  runIDs,
+		PerPage:    pageSize,
+	}
+
+	result := make(map[string][]PropertyValue)
+
+	var allValues []*model.PropertyValue
+	for {
+		values, err := s.api.Property.SearchPropertyValues(s.groupID, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to search property values")
+		}
+
+		allValues = append(allValues, values...)
+
+		if len(values) < pageSize {
+			break
+		}
+
+		opts.Cursor.PropertyValueID = values[len(values)-1].ID
+		opts.Cursor.CreateAt = values[len(values)-1].CreateAt
+	}
+
+	for _, mmValue := range allValues {
+		pv := PropertyValue(*mmValue)
+		result[mmValue.TargetID] = append(result[mmValue.TargetID], pv)
+	}
+
+	return result, nil
 }

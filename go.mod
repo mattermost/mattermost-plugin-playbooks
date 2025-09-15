@@ -26,8 +26,8 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
-	github.com/mattermost/mattermost/server/public v0.1.18
-	github.com/mattermost/mattermost/server/v8 v8.0.0-20250908155829-4da2696ad7fa
+	github.com/mattermost/mattermost/server/public v0.1.19
+	github.com/mattermost/mattermost/server/v8 v8.0.0-20250911225601-78050bb0d35d
 	github.com/mattermost/morph v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
