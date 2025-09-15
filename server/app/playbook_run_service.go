@@ -215,7 +215,37 @@ func NewPlaybookRunService(
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
-	return s.store.GetPlaybookRuns(requesterInfo, options)
+	results, err := s.store.GetPlaybookRuns(requesterInfo, options)
+	if err != nil {
+		return nil, err
+	}
+
+	runIDs := make([]string, len(results.Items))
+	for i, run := range results.Items {
+		runIDs[i] = run.ID
+	}
+
+	fieldsMap, err := s.propertyService.GetRunsPropertyFields(runIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property fields for runs")
+	}
+
+	valuesMap, err := s.propertyService.GetRunsPropertyValues(runIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property values for runs")
+	}
+
+	for i := range results.Items {
+		runID := results.Items[i].ID
+		if fields, exists := fieldsMap[runID]; exists {
+			results.Items[i].PropertyFields = fields
+		}
+		if values, exists := valuesMap[runID]; exists {
+			results.Items[i].PropertyValues = values
+		}
+	}
+
+	return results, nil
 }
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
