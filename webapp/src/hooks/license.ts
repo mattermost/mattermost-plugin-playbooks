@@ -62,5 +62,6 @@ export function useAllowRequestUpdate() {
 // useAllowPlaybookAttributes returns whether playbook attributes are enabled
 export function useAllowPlaybookAttributes() {
     const settings = useSelector(globalSettings);
-    return settings?.enable_experimental_features ?? false;
+    const isEnterpriseLicensed = useSelector(isEnterpriseLicensedOrDevelopment);
+    return (settings?.enable_experimental_features ?? false) && isEnterpriseLicensed;
 }

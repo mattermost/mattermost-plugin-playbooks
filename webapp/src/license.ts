@@ -7,11 +7,13 @@ import {getConfig, getLicense} from 'mattermost-redux/selectors/entities/general
 const professional = 'professional';
 const enterprise = 'enterprise';
 const enterpriseAdvanced = 'advanced';
+const entry = 'entry';
 
 // isValidSkuShortName returns whether the SKU short name is one of the known strings;
-// namely: professional, enterprise or enterprise advanced.
+// namely: entry, professional, enterprise or enterprise advanced.
 const isValidSkuShortName = (license: Record<string, string>) => {
     switch (license?.SkuShortName) {
+    case entry:
     case professional:
     case enterprise:
     case enterpriseAdvanced:
@@ -31,7 +33,7 @@ export const isEnterpriseLicensedOrDevelopment = (state: GlobalState): boolean =
 };
 
 export const checkEnterpriseLicensed = (license: Record<string, string>) => {
-    if (license?.SkuShortName === enterprise || license?.SkuShortName === enterpriseAdvanced) {
+    if ([enterprise, entry, enterpriseAdvanced].includes(license?.SkuShortName)) {
         return true;
     }
 
