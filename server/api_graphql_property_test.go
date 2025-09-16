@@ -708,8 +708,8 @@ func TestGraphQLPropertyFieldsLicenseEnforcement(t *testing.T) {
 			Query:         testGetPropertyQuery,
 			OperationName: "PlaybookProperty",
 			Variables: map[string]any{
-				"playbookID":  e.BasicPlaybook.ID,
-				"propertyID":  propertyFieldID,
+				"playbookID": e.BasicPlaybook.ID,
+				"propertyID": propertyFieldID,
 			},
 		}, &response)
 		require.NoError(t, err)

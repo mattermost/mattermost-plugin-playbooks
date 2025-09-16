@@ -33,7 +33,6 @@ import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
 import CopyLink from 'src/components/widgets/copy_link';
 import {usePlaybook, useUpdatePlaybook, useUpdatePlaybookFavorite} from 'src/graphql/hooks';
-import {globalSettings} from 'src/selectors';
 import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
