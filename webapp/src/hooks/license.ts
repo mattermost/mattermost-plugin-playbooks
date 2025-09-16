@@ -4,6 +4,7 @@
 import {useSelector} from 'react-redux';
 
 import {isEnterpriseLicensedOrDevelopment, isProfessionalLicensedOrDevelopment} from 'src/license';
+import {globalSettings} from 'src/selectors';
 
 // useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
 // post to the timeline in the current team
@@ -56,4 +57,10 @@ export function useAllowMakePlaybookPrivate() {
 // requesting an update
 export function useAllowRequestUpdate() {
     return useSelector(isProfessionalLicensedOrDevelopment);
+}
+
+// useAllowPlaybookAttributes returns whether playbook attributes are enabled
+export function useAllowPlaybookAttributes() {
+    const settings = useSelector(globalSettings);
+    return settings?.enable_experimental_features ?? false;
 }

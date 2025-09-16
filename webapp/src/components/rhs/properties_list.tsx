@@ -2,10 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React, {useMemo} from 'react';
-import {useSelector} from 'react-redux';
 
 import {PropertyField, PropertyValue} from 'src/types/properties';
-import {globalSettings} from 'src/selectors';
+import {useAllowPlaybookAttributes} from 'src/hooks/license';
 
 import RHSProperty from 'src/components/rhs/rhs_property';
 
@@ -17,7 +16,7 @@ interface Props {
 }
 
 const PropertiesList = (props: Props) => {
-    const settings = useSelector(globalSettings);
+    const allowPlaybookAttributes = useAllowPlaybookAttributes();
 
     // Match property fields with their values using useMemo for performance
     const propertiesWithValues = useMemo(() => {
@@ -36,7 +35,7 @@ const PropertiesList = (props: Props) => {
         });
     }, [props.propertyFields, props.propertyValues]);
 
-    if (!settings?.enable_experimental_features || propertiesWithValues.length === 0) {
+    if (!allowPlaybookAttributes || propertiesWithValues.length === 0) {
         return null;
     }
 

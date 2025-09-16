@@ -24,6 +24,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
+import {useAllowPlaybookAttributes} from 'src/hooks/license';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
@@ -53,7 +54,7 @@ const PlaybookEditor = () => {
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
     const currentUserId = useSelector(getCurrentUserId);
-    const settings = useSelector(globalSettings);
+    const allowPlaybookAttributes = useAllowPlaybookAttributes();
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -241,7 +242,7 @@ const PlaybookEditor = () => {
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
-                {settings?.enable_experimental_features && (
+                {allowPlaybookAttributes && (
                     <NavItem
                         to={generatePath(path, {playbookId, tab: 'attributes'})}
                     >
@@ -269,7 +270,7 @@ const PlaybookEditor = () => {
                         stats={stats}
                     />
                 </Route>
-                {settings?.enable_experimental_features && (
+                {allowPlaybookAttributes && (
                     <Route
                         path={generatePath(path, {playbookId, tab: 'attributes'})}
                         exact={true}
