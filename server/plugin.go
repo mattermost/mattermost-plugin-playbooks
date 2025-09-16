@@ -157,16 +157,17 @@ func (p *Plugin) OnActivate() error {
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.metricsService)
-
-	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
 	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
 	propertyService, err := app.NewPropertyService(pluginAPIClient)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create property service")
 	}
 	p.propertyService = propertyService
+
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.metricsService, propertyService)
+
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 

@@ -2010,3 +2010,39 @@ func TestPopulateChecklistIDs(t *testing.T) {
 		require.Equal(t, expectedOrder, result[0].ItemsOrder, "ItemsOrder should match current order")
 	})
 }
+
+func TestBumpRunUpdatedAt(t *testing.T) {
+	db := setupTestDB(t)
+
+	team1id := model.NewId()
+	playbookStore := setupPlaybookStore(t, db)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+
+	playbook := NewPBBuilder().
+		WithTitle("Test Playbook").
+		WithTeamID(team1id).
+		ToPlaybook()
+
+	playbookID, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+
+	playbookRun := NewBuilder(t).
+		WithName("Test Run").
+		WithPlaybookID(playbookID).
+		WithTeamID(team1id).
+		ToPlaybookRun()
+
+	createdRun, err := playbookRunStore.CreatePlaybookRun(playbookRun)
+	require.NoError(t, err)
+
+	originalUpdateAt := createdRun.UpdateAt
+
+	time.Sleep(10 * time.Millisecond)
+
+	err = playbookRunStore.BumpRunUpdatedAt(createdRun.ID)
+	require.NoError(t, err)
+
+	updatedRun, err := playbookRunStore.GetPlaybookRun(createdRun.ID)
+	require.NoError(t, err)
+	require.Greater(t, updatedRun.UpdateAt, originalUpdateAt)
+}

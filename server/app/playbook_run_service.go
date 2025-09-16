@@ -4110,6 +4110,11 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 	if !s.propertyValuesEqual(propertyField, currentValue, value) {
 		s.postPropertyChangeMessage(userID, playbookRunID, propertyFieldID, propertyField, value)
+
+		// Update the playbook run's updated_at timestamp when property value changes
+		if err := s.store.BumpRunUpdatedAt(playbookRunID); err != nil {
+			return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
+		}
 	}
 
 	s.sendPlaybookRunUpdatedWS(playbookRunID)

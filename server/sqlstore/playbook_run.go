@@ -640,6 +640,18 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 	return nil
 }
 
+// BumpRunUpdatedAt updates the UpdateAt timestamp for a playbook run
+func (s *playbookRunStore) BumpRunUpdatedAt(playbookRunID string) error {
+	if _, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		return errors.Wrapf(err, "failed to bump UpdateAt for playbook run '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
 // CreateTimelineEvent creates the timeline event
 func (s *playbookRunStore) CreateTimelineEvent(event *app.TimelineEvent) (*app.TimelineEvent, error) {
 	if event.PlaybookRunID == "" {

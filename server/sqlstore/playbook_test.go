@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
@@ -2033,4 +2034,32 @@ func TestGetTopPlaybooks(t *testing.T) {
 		require.Equal(t, topPlaybooks.Items[2].NumRuns, 2)
 		require.Equal(t, topPlaybooks.Items[2].PlaybookID, playbooks[3].ID)
 	})
+}
+
+func TestBumpPlaybookUpdatedAt(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	team1id := model.NewId()
+	playbook := NewPBBuilder().
+		WithTitle("Test Playbook").
+		WithTeamID(team1id).
+		ToPlaybook()
+
+	id, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+
+	createdPlaybook, err := playbookStore.Get(id)
+	require.NoError(t, err)
+
+	originalUpdateAt := createdPlaybook.UpdateAt
+
+	time.Sleep(10 * time.Millisecond)
+
+	err = playbookStore.BumpPlaybookUpdatedAt(id)
+	require.NoError(t, err)
+
+	updatedPlaybook, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.Greater(t, updatedPlaybook.UpdateAt, originalUpdateAt)
 }
