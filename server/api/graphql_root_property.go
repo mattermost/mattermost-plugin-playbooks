@@ -23,6 +23,11 @@ func (r *PropertyRootResolver) PlaybookProperty(ctx context.Context, args struct
 	if err != nil {
 		return nil, err
 	}
+
+	if !c.licenceChecker.PlaybookAttributesAllowed() {
+		return nil, errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	}
+
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	// Check permissions to view the playbook
@@ -52,6 +57,11 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 	if err != nil {
 		return "", err
 	}
+
+	if !c.licenceChecker.PlaybookAttributesAllowed() {
+		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	}
+
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
@@ -88,6 +98,11 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 	if err != nil {
 		return "", err
 	}
+
+	if !c.licenceChecker.PlaybookAttributesAllowed() {
+		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	}
+
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
@@ -135,6 +150,11 @@ func (r *PropertyRootResolver) DeletePlaybookPropertyField(ctx context.Context, 
 	if err != nil {
 		return "", err
 	}
+
+	if !c.licenceChecker.PlaybookAttributesAllowed() {
+		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	}
+
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
@@ -179,6 +199,11 @@ func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args str
 	if err != nil {
 		return "", err
 	}
+
+	if !c.licenceChecker.PlaybookAttributesAllowed() {
+		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	}
+
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	// Extract the json.RawMessage from the JSONResolver
