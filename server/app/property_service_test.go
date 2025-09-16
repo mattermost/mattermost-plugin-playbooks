@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -570,4 +571,97 @@ func TestPropertyService_TestPropertyFieldsSortingOrder(t *testing.T) {
 		currOrder := PropertySortOrder(sortedFields[i])
 		assert.LessOrEqual(t, prevOrder, currOrder, "Sort orders should be in ascending order")
 	}
+}
+
+func TestPropertyService_validatePropertyLimit(t *testing.T) {
+	tests := []struct {
+		name          string
+		currentCount  int
+		countError    error
+		expectedError string
+		expectError   bool
+	}{
+		{
+			name:         "success when under limit",
+			currentCount: 10,
+			countError:   nil,
+			expectError:  false,
+		},
+		{
+			name:         "success when at limit minus one",
+			currentCount: MaxPropertiesPerPlaybook - 1, // 19
+			countError:   nil,
+			expectError:  false,
+		},
+		{
+			name:          "failure when at limit",
+			currentCount:  MaxPropertiesPerPlaybook, // 20
+			countError:    nil,
+			expectedError: "cannot create property field: playbook already has the maximum allowed number of properties (20)",
+			expectError:   true,
+		},
+		{
+			name:          "failure when over limit",
+			currentCount:  MaxPropertiesPerPlaybook + 5, // 25
+			countError:    nil,
+			expectedError: "cannot create property field: playbook already has the maximum allowed number of properties (20)",
+			expectError:   true,
+		},
+		{
+			name:         "success when zero properties",
+			currentCount: 0,
+			countError:   nil,
+			expectError:  false,
+		},
+		{
+			name:          "error when GetPropertyFieldsCount fails",
+			currentCount:  0,
+			countError:    assert.AnError,
+			expectedError: "failed to get current property count",
+			expectError:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a mock property service that overrides GetPropertyFieldsCount
+			s := &mockPropertyServiceForValidation{
+				currentCount: tt.currentCount,
+				countError:   tt.countError,
+			}
+
+			playbookID := model.NewId()
+			err := s.validatePropertyLimit(playbookID)
+
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+// mockPropertyServiceForValidation is a test double that implements only the methods needed for testing validatePropertyLimit
+type mockPropertyServiceForValidation struct {
+	currentCount int
+	countError   error
+}
+
+func (m *mockPropertyServiceForValidation) GetPropertyFieldsCount(playbookID string) (int, error) {
+	return m.currentCount, m.countError
+}
+
+func (m *mockPropertyServiceForValidation) validatePropertyLimit(playbookID string) error {
+	currentCount, err := m.GetPropertyFieldsCount(playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current property count")
+	}
+
+	if currentCount >= MaxPropertiesPerPlaybook {
+		return errors.Errorf("cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
+	}
+
+	return nil
 }

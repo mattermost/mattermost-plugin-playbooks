@@ -34,3 +34,5 @@ export const DateTimeFormats = {
 };
 
 export const CallsSlashCommandPrefix = '/call ';
+
+export const MAX_PROPERTIES_LIMIT = 20;

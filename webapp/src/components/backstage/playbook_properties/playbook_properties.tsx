@@ -33,6 +33,8 @@ import GenericModal from 'src/components/widgets/generic_modal';
 
 import {useProxyState} from 'src/hooks';
 
+import {MAX_PROPERTIES_LIMIT} from 'src/constants';
+
 import PropertyValuesInput from './property_values_input';
 import PropertyDotMenu from './property_dot_menu';
 import PropertyTypeSelector from './property_type_selector';
@@ -110,6 +112,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
     }, [deletePropertyField, playbookID]);
 
     const addProperty = useCallback(async () => {
+        if (properties.length >= MAX_PROPERTIES_LIMIT) {
+            return;
+        }
+
         const newPropertyField: PropertyFieldInput = {
             name: `Attribute ${properties.length + 1}`,
             type: PropertyFieldType.Text,
@@ -392,9 +398,20 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     </DragDropContext>
                 </TableContainer>
 
-                <AddPropertyButton onClick={addProperty}>
+                <AddPropertyButton
+                    onClick={addProperty}
+                    disabled={properties.length >= MAX_PROPERTIES_LIMIT}
+                    title={properties.length >= MAX_PROPERTIES_LIMIT ? formatMessage({defaultMessage: 'Maximum of {limit} attributes allowed'}, {limit: MAX_PROPERTIES_LIMIT}) : undefined}
+                >
                     <i className='icon-plus'/>
-                    <FormattedMessage defaultMessage='Add attribute'/>
+                    {properties.length >= MAX_PROPERTIES_LIMIT ? (
+                        <FormattedMessage
+                            defaultMessage='Maximum attributes reached ({limit})'
+                            values={{limit: MAX_PROPERTIES_LIMIT}}
+                        />
+                    ) : (
+                        <FormattedMessage defaultMessage='Add attribute'/>
+                    )}
                 </AddPropertyButton>
 
                 {deletingProperty && (
@@ -586,12 +603,17 @@ const AddPropertyButton = styled.button`
     align-self: flex-start;
     border-radius: 4px;
 
-    &:hover {
+    &:hover:not(:disabled) {
         background: rgba(var(--button-bg-rgb), 0.08);
     }
 
-    &:active {
+    &:active:not(:disabled) {
         background: rgba(var(--button-bg-rgb), 0.16);
+    }
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        cursor: not-allowed;
     }
 
     i {
