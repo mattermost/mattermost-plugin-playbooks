@@ -72,7 +72,6 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 
 	// Mark success and add result state
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "playbookID", newID)
 	auditRec.AddEventResultState(playbook)
 
 	return newID, nil
@@ -95,7 +94,6 @@ func (s *playbookService) Import(playbook Playbook, userID string) (string, erro
 
 	// Mark success and add result state
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "newID", newID)
 	auditRec.AddEventResultState(playbook)
 
 	return newID, nil
@@ -258,9 +256,6 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 	defer s.pluginAPI.LogAuditRec(auditRec)
 
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "originalPlaybookID", playbook.ID)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbook.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "originalTitle", playbook.Title)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "originalPlaybook", playbook)
 
 	logrus.WithFields(logrus.Fields{
@@ -291,8 +286,6 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 
 	// Mark success and add result state
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "newPlaybookID", playbookID)
-	model.AddEventParameterToAuditRec(auditRec, "newTitle", newPlaybook.Title)
 	auditRec.AddEventResultState(newPlaybook)
 
 	return playbookID, nil

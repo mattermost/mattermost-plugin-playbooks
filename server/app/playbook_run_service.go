@@ -308,16 +308,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRun.TeamID)
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
-	model.AddEventParameterToAuditRec(auditRec, "public", public)
+	if playbookRun != nil {
+		model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	}
 	if pb != nil {
-		model.AddEventParameterToAuditRec(auditRec, "playbookID", pb.ID)
-		model.AddEventParameterToAuditRec(auditRec, "playbookTitle", pb.Title)
+		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
 	}
-	if playbookRun.PostID != "" {
-		model.AddEventParameterToAuditRec(auditRec, "fromPostID", playbookRun.PostID)
-	}
+
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
 		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
@@ -427,8 +424,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	s.metricsService.IncrementRunsCreatedCount(1)
 
-	// Add playbookRun data for audit
-	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	// Add result for audit
 	auditRec.AddEventResultState(*playbookRun)
 
 	err = s.addPlaybookRunInitialMemberships(playbookRun, channel, createdChannel)
