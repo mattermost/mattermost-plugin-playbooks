@@ -73,7 +73,7 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Status bijwerken"
+        "translation": "Verzenden"
     },
     {
         "id": "app.user.run.update_status.reminder_for_next_update",

@@ -58,9 +58,7 @@ export const isProfessionalLicensedOrDevelopment = (state: GlobalState): boolean
 };
 
 export const checkProfessionalLicensed = (license: Record<string, string>) => {
-    if (license?.SkuShortName === professional ||
-        license?.SkuShortName === enterprise ||
-        license?.SkuShortName === enterpriseAdvanced) {
+    if ([professional, enterprise, entry, enterpriseAdvanced].includes(license?.SkuShortName)) {
         return true;
     }
 

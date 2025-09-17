@@ -133,7 +133,7 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Status aktualizacji"
+        "translation": "Post"
     },
     {
         "id": "app.user.run.update_status.reminder_for_next_update",
