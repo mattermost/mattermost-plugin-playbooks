@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
@@ -2044,22 +2043,16 @@ func TestBumpPlaybookUpdatedAt(t *testing.T) {
 	playbook := NewPBBuilder().
 		WithTitle("Test Playbook").
 		WithTeamID(team1id).
+		WithUpdateAt(1).
 		ToPlaybook()
 
 	id, err := playbookStore.Create(playbook)
 	require.NoError(t, err)
-
-	createdPlaybook, err := playbookStore.Get(id)
-	require.NoError(t, err)
-
-	originalUpdateAt := createdPlaybook.UpdateAt
-
-	time.Sleep(10 * time.Millisecond)
 
 	err = playbookStore.BumpPlaybookUpdatedAt(id)
 	require.NoError(t, err)
 
 	updatedPlaybook, err := playbookStore.Get(id)
 	require.NoError(t, err)
-	require.Greater(t, updatedPlaybook.UpdateAt, originalUpdateAt)
+	require.Greater(t, updatedPlaybook.UpdateAt, int64(1))
 }

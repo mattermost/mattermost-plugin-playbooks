@@ -2030,19 +2030,16 @@ func TestBumpRunUpdatedAt(t *testing.T) {
 		WithName("Test Run").
 		WithPlaybookID(playbookID).
 		WithTeamID(team1id).
+		WithUpdateAt(1).
 		ToPlaybookRun()
 
 	createdRun, err := playbookRunStore.CreatePlaybookRun(playbookRun)
 	require.NoError(t, err)
-
-	originalUpdateAt := createdRun.UpdateAt
-
-	time.Sleep(10 * time.Millisecond)
 
 	err = playbookRunStore.BumpRunUpdatedAt(createdRun.ID)
 	require.NoError(t, err)
 
 	updatedRun, err := playbookRunStore.GetPlaybookRun(createdRun.ID)
 	require.NoError(t, err)
-	require.Greater(t, updatedRun.UpdateAt, originalUpdateAt)
+	require.Greater(t, updatedRun.UpdateAt, int64(1))
 }
