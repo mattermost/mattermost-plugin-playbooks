@@ -267,3 +267,74 @@ func (s *PlaybooksService) GetAutoFollows(ctx context.Context, playbookID string
 
 	return followers, nil
 }
+
+// GetPropertyFields gets all property fields for a playbook.
+func (s *PlaybooksService) GetPropertyFields(ctx context.Context, playbookID string) ([]PropertyField, error) {
+	propertyFieldsURL := fmt.Sprintf("playbooks/%s/property_fields", playbookID)
+	req, err := s.client.newAPIRequest(http.MethodGet, propertyFieldsURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var fields []PropertyField
+	resp, err := s.client.do(ctx, req, &fields)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return fields, nil
+}
+
+// CreatePropertyField creates a new property field for a playbook.
+func (s *PlaybooksService) CreatePropertyField(ctx context.Context, playbookID string, field PropertyFieldRequest) (*PropertyField, error) {
+	propertyFieldsURL := fmt.Sprintf("playbooks/%s/property_fields", playbookID)
+	req, err := s.client.newAPIRequest(http.MethodPost, propertyFieldsURL, field)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyField := new(PropertyField)
+	resp, err := s.client.do(ctx, req, propertyField)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return propertyField, nil
+}
+
+// UpdatePropertyField updates an existing property field for a playbook.
+func (s *PlaybooksService) UpdatePropertyField(ctx context.Context, playbookID, fieldID string, field PropertyFieldRequest) (*PropertyField, error) {
+	propertyFieldURL := fmt.Sprintf("playbooks/%s/property_fields/%s", playbookID, fieldID)
+	req, err := s.client.newAPIRequest(http.MethodPut, propertyFieldURL, field)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyField := new(PropertyField)
+	resp, err := s.client.do(ctx, req, propertyField)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return propertyField, nil
+}
+
+// DeletePropertyField deletes a property field from a playbook.
+func (s *PlaybooksService) DeletePropertyField(ctx context.Context, playbookID, fieldID string) error {
+	propertyFieldURL := fmt.Sprintf("playbooks/%s/property_fields/%s", playbookID, fieldID)
+	req, err := s.client.newAPIRequest(http.MethodDelete, propertyFieldURL, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+
+	return nil
+}
