@@ -57,6 +57,11 @@ export interface PlaybookRun {
     type: PlaybookRunType
 }
 
+export interface PlaybookRunConnection extends Partial<PlaybookRun> {
+    team_id: string;
+    channel_id: string;
+}
+
 export interface StatusPost {
     id: string;
     create_at: number;
@@ -151,4 +156,16 @@ export interface PlaybookRunChecklistItem extends ChecklistItem {
     playbook_run_create_at: number;
     checklist_title: string;
     checklist_num: number;
+}
+
+export function isRun(run: undefined | null | PlaybookRun | PlaybookRunConnection): run is PlaybookRun {
+    if (run) {
+        const {id} = run;
+        return id != null && id.length > 0;
+    }
+    return false;
+}
+
+export function isRunConnection(run: PlaybookRun | PlaybookRunConnection): run is PlaybookRunConnection {
+    return isRun(run) === false;
 }

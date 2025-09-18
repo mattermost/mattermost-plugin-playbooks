@@ -3,7 +3,7 @@
 
 import Integrations from 'mattermost-redux/action_types/integrations';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import manifest from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
@@ -20,6 +20,7 @@ export const PLAYBOOK_ARCHIVED = manifest.id + '_playbook_archived';
 export const PLAYBOOK_RESTORED = manifest.id + '_playbook_restored';
 export const RECEIVED_PLAYBOOK_RUNS = manifest.id + '_received_playbook_runs';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = manifest.id + '_received_team_playbook_run_channels';
+export const RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS = manifest.id + '_received_team_playbook_run_connections';
 export const REMOVED_FROM_CHANNEL = manifest.id + '_removed_from_playbook_run_channel';
 export const RECEIVED_GLOBAL_SETTINGS = manifest.id + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = manifest.id + '_show_post_menu_modal';
@@ -103,6 +104,11 @@ export interface ReceivedPlaybookRuns {
 export interface ReceivedTeamPlaybookRuns {
     type: typeof RECEIVED_TEAM_PLAYBOOK_RUNS;
     playbookRuns: PlaybookRun[];
+}
+
+export interface ReceivedTeamPlaybookRunConnections{
+    type: typeof RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS;
+    playbookRuns: PlaybookRunConnection[];
 }
 
 export interface RemovedFromChannel {

@@ -6,7 +6,7 @@ import {combineReducers} from 'redux';
 import {Team} from '@mattermost/types/teams';
 import {Channel} from '@mattermost/types/channels';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, isRun} from 'src/types/playbook_run';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     CLOSE_BACKSTAGE_RHS,
@@ -27,10 +27,12 @@ import {
     RECEIVED_GLOBAL_SETTINGS,
     RECEIVED_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
+    RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS,
     RECEIVED_TOGGLE_RHS_ACTION,
     REMOVED_FROM_CHANNEL,
     ReceivedGlobalSettings,
     ReceivedPlaybookRuns,
+    ReceivedTeamPlaybookRunConnections,
     ReceivedTeamPlaybookRuns,
     ReceivedToggleRHSAction,
     RemovedFromChannel,
@@ -190,7 +192,13 @@ type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id']
  */
 const myPlaybookRunsByTeam = (
     state: TStateMyPlaybookRunsByTeam = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | WebsocketPlaybookRunIncrementalUpdateReceived
+    action:
+        PlaybookRunCreated |
+        PlaybookRunUpdated |
+        ReceivedTeamPlaybookRuns |
+        ReceivedTeamPlaybookRunConnections |
+        RemovedFromChannel |
+        WebsocketPlaybookRunIncrementalUpdateReceived
 ): TStateMyPlaybookRunsByTeam => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
@@ -217,6 +225,9 @@ const myPlaybookRunsByTeam = (
             },
         };
     }
+
+    // TODO https://mattermost.atlassian.net/browse/MM-65733
+    case RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS:
     case RECEIVED_TEAM_PLAYBOOK_RUNS: {
         const receivedTeamPlaybookRunsAction = action as ReceivedTeamPlaybookRuns;
         const playbookRuns = receivedTeamPlaybookRunsAction.playbookRuns;
@@ -288,7 +299,7 @@ const myPlaybookRunsByTeam = (
         }
 
         const currentRun = state[targetTeamId]?.[targetChannelId];
-        if (!currentRun) {
+        if (!isRun(currentRun)) {
             return state;
         }
 
