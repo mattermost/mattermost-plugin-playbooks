@@ -621,5 +621,158 @@ func TestGraphQLPropertyFields(t *testing.T) {
 		require.NotZero(t, getResponseAfterDelete.Data.PlaybookProperty.DeleteAt,
 			"Property field should be soft deleted")
 	})
+}
 
+func TestGraphQLPropertyFieldsLicenseEnforcement(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a property field while licensed
+	e.SetEnterpriseLicence()
+
+	testAddPropertyFieldQuery := `
+	mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+		addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+	}
+	`
+
+	var addResponse struct {
+		Data struct {
+			AddPlaybookPropertyField string `json:"addPlaybookPropertyField"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+
+	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         testAddPropertyFieldQuery,
+		OperationName: "AddPlaybookPropertyField",
+		Variables: map[string]any{
+			"playbookID": e.BasicPlaybook.ID,
+			"propertyField": map[string]any{
+				"name": "Test Field",
+				"type": "text",
+			},
+		},
+	}, &addResponse)
+	require.NoError(t, err)
+	require.Empty(t, addResponse.Errors, "Should be able to create property field with enterprise license")
+	propertyFieldID := addResponse.Data.AddPlaybookPropertyField
+
+	t.Run("add property field without license should fail", func(t *testing.T) {
+		e.RemoveLicence()
+
+		var response struct {
+			Data   json.RawMessage
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testAddPropertyFieldQuery,
+			OperationName: "AddPlaybookPropertyField",
+			Variables: map[string]any{
+				"playbookID": e.BasicPlaybook.ID,
+				"propertyField": map[string]any{
+					"name": "Unlicensed Field",
+					"type": "text",
+				},
+			},
+		}, &response)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors, "Should return error when not licensed")
+	})
+
+	t.Run("get property field without license should fail", func(t *testing.T) {
+		e.RemoveLicence()
+
+		testGetPropertyQuery := `
+		query PlaybookProperty($playbookID: String!, $propertyID: String!) {
+			playbookProperty(playbookID: $playbookID, propertyID: $propertyID) {
+				id
+				name
+			}
+		}
+		`
+
+		var response struct {
+			Data   json.RawMessage
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testGetPropertyQuery,
+			OperationName: "PlaybookProperty",
+			Variables: map[string]any{
+				"playbookID": e.BasicPlaybook.ID,
+				"propertyID": propertyFieldID,
+			},
+		}, &response)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors, "Should return error when not licensed")
+	})
+
+	t.Run("update property field without license should fail", func(t *testing.T) {
+		e.RemoveLicence()
+
+		testUpdatePropertyQuery := `
+		mutation UpdatePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!, $propertyField: PropertyFieldInput!) {
+			updatePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID, propertyField: $propertyField)
+		}
+		`
+
+		var response struct {
+			Data   json.RawMessage
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testUpdatePropertyQuery,
+			OperationName: "UpdatePlaybookPropertyField",
+			Variables: map[string]any{
+				"playbookID":      e.BasicPlaybook.ID,
+				"propertyFieldID": propertyFieldID,
+				"propertyField": map[string]any{
+					"name": "Updated Field",
+					"type": "text",
+				},
+			},
+		}, &response)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors, "Should return error when not licensed")
+	})
+
+	t.Run("delete property field without license should fail", func(t *testing.T) {
+		e.RemoveLicence()
+
+		testDeletePropertyQuery := `
+		mutation DeletePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!) {
+			deletePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID)
+		}
+		`
+
+		var response struct {
+			Data   json.RawMessage
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+
+		err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testDeletePropertyQuery,
+			OperationName: "DeletePlaybookPropertyField",
+			Variables: map[string]any{
+				"playbookID":      e.BasicPlaybook.ID,
+				"propertyFieldID": propertyFieldID,
+			},
+		}, &response)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors, "Should return error when not licensed")
+	})
 }

@@ -225,14 +225,21 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 		runIDs[i] = run.ID
 	}
 
-	fieldsMap, err := s.propertyService.GetRunsPropertyFields(runIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get property fields for runs")
-	}
+	// Default to empty maps
+	fieldsMap := make(map[string][]PropertyField)
+	valuesMap := make(map[string][]PropertyValue)
 
-	valuesMap, err := s.propertyService.GetRunsPropertyValues(runIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get property values for runs")
+	if s.licenseChecker.PlaybookAttributesAllowed() {
+		var err error
+		fieldsMap, err = s.propertyService.GetRunsPropertyFields(runIDs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get property fields for runs")
+		}
+
+		valuesMap, err = s.propertyService.GetRunsPropertyValues(runIDs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get property values for runs")
+		}
 	}
 
 	for i := range results.Items {
@@ -442,7 +449,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, errors.Wrap(err, "failed to create playbook run")
 	}
 
-	if pb != nil {
+	if pb != nil && s.licenseChecker.PlaybookAttributesAllowed() {
 		err = s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
 		if err != nil {
 			logger.WithError(err).Warn("failed to copy playbook properties to run")
@@ -1448,17 +1455,23 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 		return nil, err
 	}
 
-	propertyFields, err := s.propertyService.GetRunPropertyFields(playbookRunID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get run property fields")
-	}
-	playbookRun.PropertyFields = propertyFields
+	// Default to empty slices
+	playbookRun.PropertyFields = []PropertyField{}
+	playbookRun.PropertyValues = []PropertyValue{}
 
-	propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get run property values")
+	if s.licenseChecker.PlaybookAttributesAllowed() {
+		propertyFields, err := s.propertyService.GetRunPropertyFields(playbookRunID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get run property fields")
+		}
+		playbookRun.PropertyFields = propertyFields
+
+		propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get run property values")
+		}
+		playbookRun.PropertyValues = propertyValues
 	}
-	playbookRun.PropertyValues = propertyValues
 
 	return playbookRun, nil
 }

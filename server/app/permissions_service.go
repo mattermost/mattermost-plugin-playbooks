@@ -28,6 +28,7 @@ type LicenseChecker interface {
 	TimelineAllowed() bool
 	StatsAllowed() bool
 	ChecklistItemDueDateAllowed() bool
+	PlaybookAttributesAllowed() bool
 }
 
 type PermissionsService struct {
