@@ -21,10 +21,11 @@ const (
 )
 
 type playbookService struct {
-	store          PlaybookStore
-	poster         bot.Poster
-	api            *pluginapi.Client
-	metricsService *metrics.Metrics
+	store           PlaybookStore
+	poster          bot.Poster
+	api             *pluginapi.Client
+	metricsService  *metrics.Metrics
+	propertyService PropertyService
 }
 
 type InsightsOpts struct {
@@ -34,12 +35,13 @@ type InsightsOpts struct {
 }
 
 // NewPlaybookService returns a new playbook service
-func NewPlaybookService(store PlaybookStore, poster bot.Poster, api *pluginapi.Client, metricsService *metrics.Metrics) PlaybookService {
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, api *pluginapi.Client, metricsService *metrics.Metrics, propertyService PropertyService) PlaybookService {
 	return &playbookService{
-		store:          store,
-		poster:         poster,
-		api:            api,
-		metricsService: metricsService,
+		store:           store,
+		poster:          poster,
+		api:             api,
+		metricsService:  metricsService,
+		propertyService: propertyService,
 	}
 }
 
@@ -255,4 +257,45 @@ func licenseAndGuestCheck(s *playbookService, userID string, isMyInsights bool) 
 	}
 
 	return true, nil
+}
+
+// CreatePropertyField creates a property field for a playbook and bumps the playbook's updated_at
+func (s *playbookService) CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	createdField, err := s.propertyService.CreatePropertyField(playbookID, propertyField)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.store.BumpPlaybookUpdatedAt(playbookID); err != nil {
+		return nil, errors.Wrap(err, "failed to bump playbook timestamp")
+	}
+
+	return createdField, nil
+}
+
+// UpdatePropertyField updates a property field for a playbook and bumps the playbook's updated_at
+func (s *playbookService) UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	updatedField, err := s.propertyService.UpdatePropertyField(playbookID, propertyField)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.store.BumpPlaybookUpdatedAt(playbookID); err != nil {
+		return nil, errors.Wrap(err, "failed to bump playbook timestamp")
+	}
+
+	return updatedField, nil
+}
+
+// DeletePropertyField deletes a property field for a playbook and bumps the playbook's updated_at
+func (s *playbookService) DeletePropertyField(playbookID, propertyID string) error {
+	if err := s.propertyService.DeletePropertyField(propertyID); err != nil {
+		return err
+	}
+
+	if err := s.store.BumpPlaybookUpdatedAt(playbookID); err != nil {
+		return errors.Wrap(err, "failed to bump playbook timestamp")
+	}
+
+	return nil
 }

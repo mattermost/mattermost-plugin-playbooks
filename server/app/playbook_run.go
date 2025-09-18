@@ -1478,6 +1478,9 @@ type PlaybookRunStore interface {
 
 	// GetMetricsByIDs gets the metrics for playbook runs.
 	GetMetricsByIDs(playbookRunID []string) (map[string][]RunMetricData, error)
+
+	// BumpRunUpdatedAt updates the UpdateAt timestamp for a playbook run
+	BumpRunUpdatedAt(playbookRunID string) error
 }
 
 type JobOnceScheduler interface {

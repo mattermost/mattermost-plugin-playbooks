@@ -70,8 +70,8 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 	// Convert GraphQL input to PropertyField
 	propertyField := convertPropertyFieldInputToPropertyField(args.PropertyField)
 
-	// Create the property field using the service
-	createdField, err := c.propertyService.CreatePropertyField(args.PlaybookID, *propertyField)
+	// Create the property field using the playbook service
+	createdField, err := c.playbookService.CreatePropertyField(args.PlaybookID, *propertyField)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create property field")
 	}
@@ -118,8 +118,8 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 	propertyField := convertPropertyFieldInputToPropertyField(args.PropertyField)
 	propertyField.ID = args.PropertyFieldID
 
-	// Update the property field using the service
-	updatedField, err := c.propertyService.UpdatePropertyField(args.PlaybookID, *propertyField)
+	// Update the property field using the playbook service
+	updatedField, err := c.playbookService.UpdatePropertyField(args.PlaybookID, *propertyField)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to update property field")
 	}
@@ -161,8 +161,8 @@ func (r *PropertyRootResolver) DeletePlaybookPropertyField(ctx context.Context, 
 		return "", errors.New("property field does not belong to the specified playbook")
 	}
 
-	// Delete the property field using the service
-	err = c.propertyService.DeletePropertyField(args.PropertyFieldID)
+	// Delete the property field using the playbook service
+	err = c.playbookService.DeletePropertyField(args.PlaybookID, args.PropertyFieldID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to delete property field")
 	}
