@@ -29,6 +29,7 @@ import (
 )
 
 const checklistItemDescriptionCharLimit = 4000
+const propertyValueMaxDisplayLength = 50
 
 const (
 	// PlaybookRunCreatedWSEvent is for playbook run creation.
@@ -128,21 +129,19 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI        *pluginapi.Client
-	httpClient       *http.Client
-	configService    config.Service
-	store            PlaybookRunStore
-	poster           bot.Poster
-	scheduler        JobOnceScheduler
-	telemetry        PlaybookRunTelemetry
-	genericTelemetry GenericTelemetry
-	api              plugin.API
-	playbookService  PlaybookService
-	actionService    ChannelActionService
-	permissions      *PermissionsService
-	licenseChecker   LicenseChecker
-	metricsService   *metrics.Metrics
-	propertyService  PropertyService
+	pluginAPI       *pluginapi.Client
+	httpClient      *http.Client
+	configService   config.Service
+	store           PlaybookRunStore
+	poster          bot.Poster
+	scheduler       JobOnceScheduler
+	api             plugin.API
+	playbookService PlaybookService
+	actionService   ChannelActionService
+	permissions     *PermissionsService
+	licenseChecker  LicenseChecker
+	metricsService  *metrics.Metrics
+	propertyService PropertyService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -187,8 +186,6 @@ func NewPlaybookRunService(
 	poster bot.Poster,
 	configService config.Service,
 	scheduler JobOnceScheduler,
-	telemetry PlaybookRunTelemetry,
-	genericTelemetry GenericTelemetry,
 	api plugin.API,
 	playbookService PlaybookService,
 	channelActionService ChannelActionService,
@@ -197,20 +194,18 @@ func NewPlaybookRunService(
 	propertyService PropertyService,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
-		pluginAPI:        pluginAPI,
-		store:            store,
-		poster:           poster,
-		configService:    configService,
-		scheduler:        scheduler,
-		telemetry:        telemetry,
-		genericTelemetry: genericTelemetry,
-		httpClient:       httptools.MakeClient(pluginAPI),
-		api:              api,
-		playbookService:  playbookService,
-		actionService:    channelActionService,
-		licenseChecker:   licenseChecker,
-		metricsService:   metricsService,
-		propertyService:  propertyService,
+		pluginAPI:       pluginAPI,
+		store:           store,
+		poster:          poster,
+		configService:   configService,
+		scheduler:       scheduler,
+		httpClient:      httptools.MakeClient(pluginAPI),
+		api:             api,
+		playbookService: playbookService,
+		actionService:   channelActionService,
+		licenseChecker:  licenseChecker,
+		metricsService:  metricsService,
+		propertyService: propertyService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -220,7 +215,44 @@ func NewPlaybookRunService(
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
-	return s.store.GetPlaybookRuns(requesterInfo, options)
+	results, err := s.store.GetPlaybookRuns(requesterInfo, options)
+	if err != nil {
+		return nil, err
+	}
+
+	runIDs := make([]string, len(results.Items))
+	for i, run := range results.Items {
+		runIDs[i] = run.ID
+	}
+
+	// Default to empty maps
+	fieldsMap := make(map[string][]PropertyField)
+	valuesMap := make(map[string][]PropertyValue)
+
+	if s.licenseChecker.PlaybookAttributesAllowed() {
+		var err error
+		fieldsMap, err = s.propertyService.GetRunsPropertyFields(runIDs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get property fields for runs")
+		}
+
+		valuesMap, err = s.propertyService.GetRunsPropertyValues(runIDs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get property values for runs")
+		}
+	}
+
+	for i := range results.Items {
+		runID := results.Items[i].ID
+		if fields, exists := fieldsMap[runID]; exists {
+			results.Items[i].PropertyFields = fields
+		}
+		if values, exists := valuesMap[runID]; exists {
+			results.Items[i].PropertyValues = values
+		}
+	}
+
+	return results, nil
 }
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
@@ -417,14 +449,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, errors.Wrap(err, "failed to create playbook run")
 	}
 
-	if pb != nil {
+	if pb != nil && s.licenseChecker.PlaybookAttributesAllowed() {
 		err = s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
 		if err != nil {
 			logger.WithError(err).Warn("failed to copy playbook properties to run")
 		}
 	}
 
-	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
 	s.metricsService.IncrementRunsCreatedCount(1)
 
 	err = s.addPlaybookRunInitialMemberships(playbookRun, channel, createdChannel)
@@ -467,23 +498,12 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
-	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false)
+	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
 	if err != nil {
 		logrus.WithError(err).WithFields(map[string]any{
 			"playbookRunId":  playbookRun.ID,
 			"invitedUserIDs": invitedUserIDs,
 		}).Warn("failed to add invited users on playbook run creation")
-	}
-
-	if len(invitedUserIDs) > 0 {
-		s.genericTelemetry.Track(
-			telemetryRunParticipate,
-			map[string]any{
-				"count":          len(invitedUserIDs),
-				"trigger":        "invite_on_create",
-				"playbookrun_id": playbookRun.ID,
-			},
-		)
 	}
 
 	var reporter *model.User
@@ -511,7 +531,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 		if playbookRun.StatusUpdateBroadcastChannelsEnabled {
 			s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun, logger)
-			s.telemetry.RunAction(playbookRun, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRun.BroadcastChannelIDs))
 		}
 
 		// dm to users who are auto-following the playbook
@@ -635,7 +654,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 }
 
 func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, triggerID string) error {
-	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	currentPlaybookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -785,7 +804,6 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, *createdEvent)
 	playbookRun.UpdateAt = model.GetMillis()
 
-	s.telemetry.AddPostToTimeline(playbookRun, userID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRun.ID, originalRun, playbookRun)
 
 	return nil
@@ -797,7 +815,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
-		originalRun, err = s.store.GetPlaybookRun(playbookRunID)
+		originalRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve playbook run before removing timeline event")
 		}
@@ -814,19 +832,18 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 		return err
 	}
 
-	playbookRunModified, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunModified, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	s.telemetry.RemoveTimelineEvent(playbookRunModified, userID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunModified)
 
 	return nil
 }
 
 func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRunID, authorID string) (*model.Post, error) {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run for id '%s'", playbookRunID)
 	}
@@ -866,7 +883,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRun
 func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string, event *PlaybookRunWebhookEvent) {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		logger.WithError(err).Error("cannot send webhook on update, not able to get playbookRun")
 		return
@@ -914,7 +931,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, options StatusUpdateOptions) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -952,7 +969,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 
 	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify, logger)
-		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
 	}
 
 	err = s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
@@ -978,7 +994,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.telemetry.UpdateStatus(playbookRunToModify, userID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
@@ -991,14 +1006,13 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		}
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
-		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
 	}
 
 	return nil
 }
 
 func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, userID, triggerID string) error {
-	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	currentPlaybookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1076,7 +1090,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookR
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1111,7 +1125,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify, logger)
-		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
 	}
 
 	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
@@ -1152,7 +1165,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.telemetry.FinishPlaybookRun(playbookRunToModify, userID)
 	s.metricsService.IncrementRunsFinishedCount(1)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
@@ -1165,7 +1177,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		}
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
-		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
 	}
 
 	return nil
@@ -1173,7 +1184,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID string, enable bool) error {
 
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -1225,7 +1236,6 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 
 	if playbookRunToModify.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, statusUpdateMessage, playbookRunToModify, logger)
-		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToModify.BroadcastChannelIDs))
 	}
 
 	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate)
@@ -1262,7 +1272,6 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		}
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
-		s.telemetry.RunAction(playbookRunToModify, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToModify.WebhookOnStatusUpdateURLs))
 	}
 
 	return nil
@@ -1272,7 +1281,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToRestore, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToRestore, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -1307,7 +1316,6 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 
 	if playbookRunToRestore.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore, logger)
-		s.telemetry.RunAction(playbookRunToRestore, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastChannels, len(playbookRunToRestore.BroadcastChannelIDs))
 	}
 
 	event := &TimelineEvent{
@@ -1323,7 +1331,6 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.telemetry.RestorePlaybookRun(playbookRunToRestore, userID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
@@ -1335,7 +1342,6 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		}
 
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
-		s.telemetry.RunAction(playbookRunToRestore, userID, TriggerTypeStatusUpdatePosted, ActionTypeBroadcastWebhooks, len(playbookRunToRestore.WebhookOnStatusUpdateURLs))
 	}
 
 	return nil
@@ -1382,7 +1388,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		var err error
-		originalRun, err = s.store.GetPlaybookRun(id)
+		originalRun, err = s.GetPlaybookRun(id)
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve playbook run before GraphQL update")
 		}
@@ -1402,7 +1408,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	}
 
 	// Get the updated playbook run state after changes
-	currentRun, err := s.store.GetPlaybookRun(id)
+	currentRun, err := s.GetPlaybookRun(id)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run after GraphQL update")
 	}
@@ -1449,17 +1455,23 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 		return nil, err
 	}
 
-	propertyFields, err := s.propertyService.GetRunPropertyFields(playbookRunID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get run property fields")
-	}
-	playbookRun.PropertyFields = propertyFields
+	// Default to empty slices
+	playbookRun.PropertyFields = []PropertyField{}
+	playbookRun.PropertyValues = []PropertyValue{}
 
-	propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get run property values")
+	if s.licenseChecker.PlaybookAttributesAllowed() {
+		propertyFields, err := s.propertyService.GetRunPropertyFields(playbookRunID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get run property fields")
+		}
+		playbookRun.PropertyFields = propertyFields
+
+		propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get run property values")
+		}
+		playbookRun.PropertyValues = propertyValues
 	}
-	playbookRun.PropertyValues = propertyValues
 
 	return playbookRun, nil
 }
@@ -1563,7 +1575,7 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 
 // IsOwner returns true if the userID is the owner for playbookRunID.
 func (s *PlaybookRunServiceImpl) IsOwner(playbookRunID, userID string) bool {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return false
 	}
@@ -1573,7 +1585,7 @@ func (s *PlaybookRunServiceImpl) IsOwner(playbookRunID, userID string) bool {
 // ChangeOwner processes a request from userID to change the owner for playbookRunID
 // to ownerID. Changing to the same ownerID is a no-op.
 func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID string) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return err
 	}
@@ -1601,7 +1613,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	// add owner as user
-	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false)
+	err = s.AddParticipants(playbookRunID, []string{ownerID}, userID, false, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
@@ -1636,7 +1648,6 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.telemetry.ChangeOwner(playbookRunToModify, userID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	return nil
@@ -1695,12 +1706,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &itemToCheck, timestamp)
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
+	_, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run, is now in inconsistent state")
 	}
-
-	s.telemetry.ModifyCheckedState(playbookRunID, userID, itemToCheck, playbookRunToModify.OwnerUserID == userID)
 
 	detailsJSON, err := json.Marshal(details)
 	if err != nil {
@@ -1808,7 +1817,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			}
 		}
 		if !isParticipant {
-			err = s.AddParticipants(playbookRunID, []string{assigneeID}, userID, false)
+			err = s.AddParticipants(playbookRunID, []string{assigneeID}, userID, false, false)
 			if err != nil {
 				return errors.Wrapf(err, "failed to add assignee to run")
 			}
@@ -1831,8 +1840,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to send DM in SetAssignee")
 		}
 	}
-
-	s.telemetry.SetAssignee(playbookRunID, userID, itemToCheck)
 
 	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
 		stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, newAssigneeUserAtMention)
@@ -2000,7 +2007,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 
 	// Fetch the playbook run again, in case the slash command actually changed the run
 	// (e.g. `/playbook owner`).
-	playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err = s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to retrieve playbook run after running slash command")
 	}
@@ -2020,8 +2027,6 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to update playbook run recording run of slash command")
 	}
-
-	s.telemetry.RunTaskSlashCommand(playbookRunID, userID, itemToRun)
 
 	eventTime := model.GetMillis()
 	event := &TimelineEvent{
@@ -2071,14 +2076,13 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
 
 	return nil
 }
 
 // AddChecklist adds a checklist to the specified run
 func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, checklist Checklist) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
@@ -2098,7 +2102,6 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
 
 	return nil
 }
@@ -2134,7 +2137,6 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklist(playbookRunID, userID string
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.AddChecklist(playbookRunID, userID, duplicate)
 
 	return nil
 }
@@ -2151,8 +2153,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 		originalRun = playbookRunToModify.Clone()
 	}
 
-	oldChecklist := playbookRunToModify.Checklists[checklistNumber]
-
 	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists[:checklistNumber], playbookRunToModify.Checklists[checklistNumber+1:]...)
 
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
@@ -2161,7 +2161,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.RemoveChecklist(playbookRunID, userID, oldChecklist)
 
 	return nil
 }
@@ -2187,7 +2186,6 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.RenameChecklist(playbookRunID, userID, playbookRunToModify.Checklists[checklistNumber])
 
 	return nil
 }
@@ -2213,7 +2211,6 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
 
 	return nil
 }
@@ -2224,8 +2221,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	if err != nil {
 		return err
 	}
-
-	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2244,7 +2239,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.RemoveTask(playbookRunID, userID, checklistItem)
 
 	return nil
 }
@@ -2268,15 +2262,12 @@ func (s *PlaybookRunServiceImpl) SkipChecklist(playbookRunID, userID string, che
 	}
 	updateAllChecklistsAndItemsTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
 
-	checklist := playbookRunToModify.Checklists[checklistNumber]
-
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.SkipChecklist(playbookRunID, userID, checklist)
 
 	return nil
 }
@@ -2299,15 +2290,12 @@ func (s *PlaybookRunServiceImpl) RestoreChecklist(playbookRunID, userID string, 
 	}
 	updateAllChecklistsAndItemsTimestamps([]Checklist{playbookRunToModify.Checklists[checklistNumber]}, timestamp)
 
-	checklist := playbookRunToModify.Checklists[checklistNumber]
-
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.RestoreChecklist(playbookRunID, userID, checklist)
 
 	return nil
 }
@@ -2329,15 +2317,12 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], timestamp)
 
-	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.SkipTask(playbookRunID, userID, checklistItem)
 
 	return nil
 }
@@ -2357,15 +2342,12 @@ func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID stri
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
 
-	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.RestoreTask(playbookRunID, userID, checklistItem)
 
 	return nil
 }
@@ -2387,15 +2369,12 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber], 0)
 
-	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-
 	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.RenameTask(playbookRunID, userID, checklistItem)
 
 	return nil
 }
@@ -2438,7 +2417,6 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.MoveChecklist(playbookRunID, userID, checklistMoved)
 
 	return nil
 }
@@ -2505,7 +2483,6 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.MoveTask(playbookRunID, userID, itemMoved)
 
 	return nil
 }
@@ -2703,7 +2680,7 @@ func (s *PlaybookRunServiceImpl) GetOverdueUpdateRuns(userID string) ([]RunLink,
 }
 
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
 	}
@@ -2818,7 +2795,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		participants = append(participants, playbookRun.ReporterUserID)
 	}
-	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false)
+	err := s.AddParticipants(playbookRun.ID, participants, playbookRun.ReporterUserID, false, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to add owner/reporter as a participant")
 	}
@@ -3136,7 +3113,7 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunUpdatedWS(playbookRunID string, 
 }
 
 func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, newRetrospective RetrospectiveUpdate) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3155,7 +3132,6 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-	s.telemetry.UpdateRetrospective(playbookRunToModify, updaterID)
 
 	return nil
 }
@@ -3163,7 +3139,7 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID string, retrospective RetrospectiveUpdate) error {
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
-	playbookRunToPublish, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToPublish, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3221,7 +3197,6 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
-	s.telemetry.PublishRetrospective(playbookRunToPublish, publisherID)
 
 	return nil
 }
@@ -3262,7 +3237,7 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 }
 
 func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID string) error {
-	playbookRunToCancel, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRunToCancel, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3312,7 +3287,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 
 // RequestJoinChannel posts a channel-join request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID string) error {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3341,7 +3316,7 @@ func (s *PlaybookRunServiceImpl) RequestJoinChannel(playbookRunID, requesterID s
 
 // RequestUpdate posts a status update request message in the run's channel
 func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string) error {
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3396,7 +3371,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return nil
 	}
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3441,7 +3416,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	}
 
 	// ws send run
-	playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err = s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
 	}
@@ -3492,7 +3467,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	}
 }
 
-func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool) error {
+func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs []string, requesterUserID string, forceAddToChannel bool, sendWebsocket bool) error {
 	usersFailedToInvite := make([]string, 0)
 	usersToInvite := make([]string, 0)
 
@@ -3563,8 +3538,8 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 	}
 
 	// ws send run
-	if len(usersToInvite) > 0 {
-		playbookRun, err = s.store.GetPlaybookRun(playbookRunID)
+	if len(usersToInvite) > 0 && sendWebsocket {
+		playbookRun, err = s.GetPlaybookRun(playbookRunID)
 		if err != nil {
 			return errors.Wrap(err, "failed to refresh playbook run after timeline event creation")
 		}
@@ -3688,7 +3663,7 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 
 // Follow method lets user follow a specific playbook run
 func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
-	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
+	originalRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3697,11 +3672,10 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to follow the run `%s`", userID, playbookRunID)
 	}
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
-	s.telemetry.Follow(playbookRun, userID)
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
 	return nil
@@ -3709,7 +3683,7 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 
 // UnFollow method lets user unfollow a specific playbook run
 func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
-	originalRun, err := s.store.GetPlaybookRun(playbookRunID)
+	originalRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
@@ -3718,11 +3692,10 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to unfollow the run `%s`", userID, playbookRunID)
 	}
 
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
-	s.telemetry.Unfollow(playbookRun, userID)
 
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
@@ -4088,13 +4061,6 @@ func (s *PlaybookRunServiceImpl) MessageHasBeenPosted(post *model.Post) {
 							return
 						}
 						if t.IsTriggered(post) {
-							s.genericTelemetry.Track(
-								telemetryTaskActionsTriggered,
-								map[string]any{
-									"trigger":        ta.Trigger.Type,
-									"playbookrun_id": runID,
-								},
-							)
 							err := s.doActions(ta.Actions, runID, post.UserId, ChecklistItemStateClosed, checklistNum, itemNum)
 							if err != nil {
 								logrus.WithError(err).WithFields(logrus.Fields{
@@ -4124,13 +4090,6 @@ func (s *PlaybookRunServiceImpl) doActions(taskActions []Action, runID string, u
 				}
 			}
 		}
-		s.genericTelemetry.Track(
-			telemetryTaskActionsActionExecuted,
-			map[string]any{
-				"action":         action.Type,
-				"playbookrun_id": runID,
-			},
-		)
 	}
 	return nil
 }
@@ -4141,12 +4100,205 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 }
 
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
-func (s *PlaybookRunServiceImpl) SetRunPropertyValue(playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
+	propertyField, err := s.propertyService.GetPropertyField(propertyFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property field")
+	}
+
+	currentPropertyValue, err := s.propertyService.GetRunPropertyValueByFieldID(playbookRunID, propertyFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current property value")
+	}
+
+	var currentValue json.RawMessage
+	if currentPropertyValue != nil {
+		currentValue = currentPropertyValue.Value
+	}
+
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to upsert property value")
 	}
 
+	if !s.propertyValuesEqual(propertyField, currentValue, value) {
+		s.postPropertyChangeMessage(userID, playbookRunID, propertyFieldID, propertyField, value)
+
+		// Update the playbook run's updated_at timestamp when property value changes
+		if err := s.store.BumpRunUpdatedAt(playbookRunID); err != nil {
+			return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
+		}
+	}
+
 	s.sendPlaybookRunUpdatedWS(playbookRunID)
 	return propertyValue, nil
+}
+
+// propertyValuesEqual compares two property values for equality based on the property field type
+func (s *PlaybookRunServiceImpl) propertyValuesEqual(field *PropertyField, oldValue, newValue json.RawMessage) bool {
+	switch field.Type {
+	case "text":
+		return s.compareTextValues(oldValue, newValue)
+	case "select":
+		return s.compareSelectValues(oldValue, newValue)
+	case "multiselect":
+		return s.compareMultiselectValues(oldValue, newValue)
+	}
+	return s.compareTextValues(oldValue, newValue)
+}
+
+// compareTextValues compares text property values
+func (s *PlaybookRunServiceImpl) compareTextValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
+	return oldStr == newStr
+}
+
+// compareSelectValues compares select property values
+func (s *PlaybookRunServiceImpl) compareSelectValues(oldValue, newValue json.RawMessage) bool {
+	oldStr := s.normalizeStringValue(oldValue)
+	newStr := s.normalizeStringValue(newValue)
+	return oldStr == newStr
+}
+
+// compareMultiselectValues compares multiselect property values as sets (order doesn't matter)
+func (s *PlaybookRunServiceImpl) compareMultiselectValues(oldValue, newValue json.RawMessage) bool {
+	var oldArray, newArray []string
+
+	if len(oldValue) > 0 && string(oldValue) != "null" {
+		if err := json.Unmarshal(oldValue, &oldArray); err != nil {
+			return false
+		}
+	}
+
+	if len(newValue) > 0 && string(newValue) != "null" {
+		if err := json.Unmarshal(newValue, &newArray); err != nil {
+			return false
+		}
+	}
+
+	if len(oldArray) != len(newArray) {
+		return false
+	}
+
+	newMap := make(map[string]struct{}, len(newArray))
+	for _, val := range newArray {
+		newMap[val] = struct{}{}
+	}
+	for _, oldVal := range oldArray {
+		if _, exists := newMap[oldVal]; !exists {
+			return false
+		}
+	}
+
+	return true
+}
+
+// normalizeStringValue converts a JSON value to a normalized string
+func (s *PlaybookRunServiceImpl) normalizeStringValue(value json.RawMessage) string {
+	if len(value) == 0 {
+		return ""
+	}
+
+	str := string(value)
+	if str == "null" {
+		return ""
+	}
+
+	// Try to unmarshal as string to handle quoted strings
+	var unquoted string
+	if err := json.Unmarshal(value, &unquoted); err == nil {
+		return unquoted
+	}
+
+	return str
+}
+
+// postPropertyChangeMessage posts a bot message when a property value changes
+func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID, propertyFieldID string, propertyField *PropertyField, newValue json.RawMessage) {
+	// Get playbook run for channel ID
+	run, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Error("failed to get playbook run for property change message")
+		return
+	}
+
+	// Get user info
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to get user for property change message")
+		return
+	}
+
+	// Format the new value for display
+	displayValue := s.formatPropertyValueForDisplay(propertyField, newValue)
+
+	// Post the message
+	message := fmt.Sprintf("@%s updated %s to %s", user.Username, propertyField.Name, displayValue)
+	_, err = s.poster.PostMessage(run.ChannelID, message)
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"user_id":           userID,
+			"playbook_run_id":   playbookRunID,
+			"property_field_id": propertyFieldID,
+			"channel_id":        run.ChannelID,
+		}).Error("failed to post property change message")
+	}
+}
+
+// formatPropertyValueForDisplay formats a property value for display in bot messages
+func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) string {
+	if len(value) == 0 || string(value) == "null" || string(value) == `""` {
+		return "(empty)"
+	}
+
+	switch propertyField.Type {
+	case "text":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value)
+		}
+		if len(stringValue) > propertyValueMaxDisplayLength {
+			return stringValue[:propertyValueMaxDisplayLength-3] + "..."
+		}
+		return stringValue
+
+	case "select":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value)
+		}
+		// Find the option label for this value
+		for _, option := range propertyField.Attrs.Options {
+			if option.GetID() == stringValue {
+				return option.GetName()
+			}
+		}
+		return stringValue
+
+	case "multiselect":
+		var arrayValue []string
+		if err := json.Unmarshal(value, &arrayValue); err != nil {
+			return string(value)
+		}
+		if len(arrayValue) == 0 {
+			return "(empty)"
+		}
+		// Convert option IDs to labels
+		var labels []string
+		for _, val := range arrayValue {
+			label := val // Default to ID if label not found
+			for _, option := range propertyField.Attrs.Options {
+				if option.GetID() == val {
+					label = option.GetName()
+					break
+				}
+			}
+			labels = append(labels, label)
+		}
+		return strings.Join(labels, ", ")
+
+	default:
+		return string(value)
+	}
 }

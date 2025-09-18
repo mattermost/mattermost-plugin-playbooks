@@ -6,6 +6,7 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {useAllowPlaybookAttributes} from 'src/hooks/license';
 import PropertiesList from 'src/components/rhs/properties_list';
 
 import {Section, SectionHeader} from './rhs_info_styles';
@@ -17,6 +18,11 @@ interface Props {
 
 const RHSInfoProperties = (props: Props) => {
     const {formatMessage} = useIntl();
+    const allowPlaybookAttributes = useAllowPlaybookAttributes();
+
+    if (!allowPlaybookAttributes) {
+        return null;
+    }
 
     if (!props.run.property_fields || props.run.property_fields.length === 0) {
         return null;

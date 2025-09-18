@@ -66,7 +66,6 @@ const RHSRunDetailsTitle = (props: Props) => {
                 <FollowButton
                     runID={props.runID}
                     followState={metadata ? followState : undefined}
-                    trigger={'channel_rhs'}
                 />
             </FollowingWrapper>
         </RHSTitleContainer>

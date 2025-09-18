@@ -169,19 +169,6 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 				ORDER BY (CASE WHEN b.UserId IS NULL THEN 0 ELSE 1 END), rp.UserId
 			) x), ''
         ) AS ConcatenatedParticipantIDs`
-	if sqlStore.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		participantsCol = `
-        COALESCE(
-			(SELECT group_concat(rp.UserId separator ',')
-				FROM IR_Incident as i2
-					JOIN IR_Run_Participants as rp on rp.IncidentID = i2.ID
-					LEFT JOIN Bots b ON (b.UserId = rp.UserId)
-				WHERE i2.Id = i.Id
-				AND rp.IsParticipant = true
-				ORDER BY (CASE WHEN b.UserId IS NULL THEN 0 ELSE 1 END), rp.UserId
-			), ''
-        ) AS ConcatenatedParticipantIDs`
-	}
 
 	// When adding a PlaybookRun column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
@@ -339,15 +326,10 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		column := "i.Name"
-		searchString := options.SearchTerm
-
-		// Postgres performs a case-sensitive search, so we need to lowercase
+		// PostgreSQL performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
-		if s.store.db.DriverName() == model.DatabaseDriverPostgres {
-			column = "LOWER(i.Name)"
-			searchString = strings.ToLower(options.SearchTerm)
-		}
+		column := "LOWER(i.Name)"
+		searchString := strings.ToLower(options.SearchTerm)
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
@@ -653,6 +635,18 @@ func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt i
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
+// BumpRunUpdatedAt updates the UpdateAt timestamp for a playbook run
+func (s *playbookRunStore) BumpRunUpdatedAt(playbookRunID string) error {
+	if _, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		return errors.Wrapf(err, "failed to bump UpdateAt for playbook run '%s'", playbookRunID)
 	}
 
 	return nil
@@ -1176,11 +1170,7 @@ func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.Assign
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		OrderBy("i.Name")
 
-	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
-	} else {
-		query = query.Where(sq.Like{"i.ChecklistsJSON::text": fmt.Sprintf("%%\"%s\"%%", userID)})
-	}
+	query = query.Where(sq.Like{"i.ChecklistsJSON::text": fmt.Sprintf("%%\"%s\"%%", userID)})
 
 	if err := s.store.selectBuilder(s.store.db, &raw, query); err != nil {
 		return nil, errors.Wrap(err, "failed to query for assigned tasks")
@@ -1267,11 +1257,7 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 		Where(membershipClause).
 		OrderBy("i.Name")
 
-	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
-	} else {
-		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
-	}
+	query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
 
 	var ret []app.RunLink
 	if err := s.store.selectBuilder(s.store.db, &ret, query); err != nil {
@@ -1290,20 +1276,11 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 }
 
 func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
-	var err error
-	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		_, err = s.store.execBuilder(s.store.db, sq.
-			Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsFollower").
-			Values(playbookRunID, userID, isFollowing).
-			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", isFollowing))
-	} else {
-		_, err = s.store.execBuilder(s.store.db, sq.
-			Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsFollower").
-			Values(playbookRunID, userID, isFollowing).
-			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", isFollowing))
-	}
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Insert("IR_Run_Participants").
+		Columns("IncidentID", "UserID", "IsFollower").
+		Values(playbookRunID, userID, isFollowing).
+		Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", isFollowing))
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to upsert follower '%s' for run '%s'", userID, playbookRunID)
@@ -1354,11 +1331,7 @@ func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 		Where(sq.Eq{"StatusUpdateEnabled": true}).
 		Where(sq.NotEq{"PreviousReminder": 0})
 
-	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
-	} else {
-		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
-	}
+	query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
 
 	var count int64
 	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
@@ -1486,19 +1459,11 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 		if !validIDs[m.MetricConfigID] {
 			continue
 		}
-		if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-			_, err = s.store.execBuilder(q, sq.
-				Insert("IR_Metric").
-				Columns("IncidentID", "MetricConfigID", "Value", "Published").
-				Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).
-				Suffix("ON DUPLICATE KEY UPDATE Value = ?, Published = ?", m.Value, retrospectivePublished))
-		} else {
-			_, err = s.store.execBuilder(q, sq.
-				Insert("IR_Metric").
-				Columns("IncidentID", "MetricConfigID", "Value", "Published").
-				Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).
-				Suffix("ON CONFLICT (IncidentID,MetricConfigID) DO UPDATE SET Value = ?, Published = ?", m.Value, retrospectivePublished))
-		}
+		_, err = s.store.execBuilder(q, sq.
+			Insert("IR_Metric").
+			Columns("IncidentID", "MetricConfigID", "Value", "Published").
+			Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).
+			Suffix("ON CONFLICT (IncidentID,MetricConfigID) DO UPDATE SET Value = ?, Published = ?", m.Value, retrospectivePublished))
 		if err != nil {
 			return errors.Wrapf(err, "failed to upsert metric value '%s'", m.MetricConfigID)
 		}
@@ -1527,18 +1492,10 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		query = query.Values(playbookRunID, userID, isParticipating)
 	}
 
-	var err error
-	if s.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		_, err = s.store.execBuilder(
-			s.store.db,
-			query.Suffix("ON DUPLICATE KEY UPDATE IsParticipant = ?", isParticipating),
-		)
-	} else {
-		_, err = s.store.execBuilder(
-			s.store.db,
-			query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
-		)
-	}
+	_, err := s.store.execBuilder(
+		s.store.db,
+		query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
+	)
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)

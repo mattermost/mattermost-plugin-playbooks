@@ -32,95 +32,93 @@ func setupCategoryStore(t *testing.T, db *sqlx.DB) app.CategoryStore {
 }
 
 func TestCategories(t *testing.T) {
-	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		_ = setupSQLStore(t, db)
-		categoryStore := setupCategoryStore(t, db)
+	db := setupTestDB(t)
+	_ = setupSQLStore(t, db)
+	categoryStore := setupCategoryStore(t, db)
 
-		t.Run("create category, add items, get category", func(t *testing.T) {
-			userID1 := model.NewId()
-			teamID1 := model.NewId()
-			categoryID1 := model.NewId()
+	t.Run("create category, add items, get category", func(t *testing.T) {
+		userID1 := model.NewId()
+		teamID1 := model.NewId()
+		categoryID1 := model.NewId()
 
-			itemID1 := model.NewId()
-			itemID2 := model.NewId()
+		itemID1 := model.NewId()
+		itemID2 := model.NewId()
 
-			err := categoryStore.Create(app.Category{
-				ID:        categoryID1,
-				Name:      "cat1",
-				TeamID:    teamID1,
-				UserID:    userID1,
-				Collapsed: false,
-				CreateAt:  100,
-				UpdateAt:  100,
-			})
-			require.NoError(t, err)
-
-			err = categoryStore.AddItemToCategory(app.CategoryItem{ItemID: itemID1, Type: "p"}, categoryID1)
-			require.NoError(t, err)
-
-			cat, err := categoryStore.Get(categoryID1)
-			require.NoError(t, err)
-
-			require.Len(t, cat.Items, 1)
-
-			err = categoryStore.AddItemToCategory(app.CategoryItem{ItemID: itemID2, Type: "r"}, categoryID1)
-			require.NoError(t, err)
-
-			cat, err = categoryStore.Get(categoryID1)
-			require.NoError(t, err)
-
-			require.Len(t, cat.Items, 2)
+		err := categoryStore.Create(app.Category{
+			ID:        categoryID1,
+			Name:      "cat1",
+			TeamID:    teamID1,
+			UserID:    userID1,
+			Collapsed: false,
+			CreateAt:  100,
+			UpdateAt:  100,
 		})
+		require.NoError(t, err)
 
-		t.Run("create category, delete category, get category", func(t *testing.T) {
-			userID1 := model.NewId()
-			teamID1 := model.NewId()
-			categoryID1 := model.NewId()
+		err = categoryStore.AddItemToCategory(app.CategoryItem{ItemID: itemID1, Type: "p"}, categoryID1)
+		require.NoError(t, err)
 
-			err := categoryStore.Create(app.Category{
-				ID:        categoryID1,
-				Name:      "cat1",
-				TeamID:    teamID1,
-				UserID:    userID1,
-				Collapsed: false,
-				CreateAt:  100,
-				UpdateAt:  100,
-			})
-			require.NoError(t, err)
+		cat, err := categoryStore.Get(categoryID1)
+		require.NoError(t, err)
 
-			err = categoryStore.Delete(categoryID1)
-			require.NoError(t, err)
+		require.Len(t, cat.Items, 1)
 
-			cat, err := categoryStore.Get(categoryID1)
-			require.NoError(t, err)
-			require.NotEqual(t, cat.DeleteAt, 0)
+		err = categoryStore.AddItemToCategory(app.CategoryItem{ItemID: itemID2, Type: "r"}, categoryID1)
+		require.NoError(t, err)
+
+		cat, err = categoryStore.Get(categoryID1)
+		require.NoError(t, err)
+
+		require.Len(t, cat.Items, 2)
+	})
+
+	t.Run("create category, delete category, get category", func(t *testing.T) {
+		userID1 := model.NewId()
+		teamID1 := model.NewId()
+		categoryID1 := model.NewId()
+
+		err := categoryStore.Create(app.Category{
+			ID:        categoryID1,
+			Name:      "cat1",
+			TeamID:    teamID1,
+			UserID:    userID1,
+			Collapsed: false,
+			CreateAt:  100,
+			UpdateAt:  100,
 		})
+		require.NoError(t, err)
 
-		t.Run("create category, update category, get category", func(t *testing.T) {
-			userID1 := model.NewId()
-			teamID1 := model.NewId()
-			categoryID1 := model.NewId()
+		err = categoryStore.Delete(categoryID1)
+		require.NoError(t, err)
 
-			myCategory := app.Category{
-				ID:        categoryID1,
-				Name:      "cat1",
-				TeamID:    teamID1,
-				UserID:    userID1,
-				Collapsed: false,
-				CreateAt:  100,
-				UpdateAt:  100,
-			}
-			err := categoryStore.Create(myCategory)
-			require.NoError(t, err)
+		cat, err := categoryStore.Get(categoryID1)
+		require.NoError(t, err)
+		require.NotEqual(t, cat.DeleteAt, 0)
+	})
 
-			myCategory.Name = "cat2"
-			err = categoryStore.Update(myCategory)
-			require.NoError(t, err)
+	t.Run("create category, update category, get category", func(t *testing.T) {
+		userID1 := model.NewId()
+		teamID1 := model.NewId()
+		categoryID1 := model.NewId()
 
-			cat, err := categoryStore.Get(categoryID1)
-			require.NoError(t, err)
-			require.Equal(t, cat.Name, "cat2")
-		})
-	}
+		myCategory := app.Category{
+			ID:        categoryID1,
+			Name:      "cat1",
+			TeamID:    teamID1,
+			UserID:    userID1,
+			Collapsed: false,
+			CreateAt:  100,
+			UpdateAt:  100,
+		}
+		err := categoryStore.Create(myCategory)
+		require.NoError(t, err)
+
+		myCategory.Name = "cat2"
+		err = categoryStore.Update(myCategory)
+		require.NoError(t, err)
+
+		cat, err := categoryStore.Get(categoryID1)
+		require.NoError(t, err)
+		require.Equal(t, cat.Name, "cat2")
+	})
 }

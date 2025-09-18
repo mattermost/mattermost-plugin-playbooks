@@ -24,9 +24,10 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
-import {telemetryEventForPlaybook} from 'src/client';
+import {useAllowPlaybookAttributes} from 'src/hooks/license';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
+import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
 import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
@@ -52,6 +53,7 @@ const PlaybookEditor = () => {
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
     const currentUserId = useSelector(getCurrentUserId);
+    const allowPlaybookAttributes = useAllowPlaybookAttributes();
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -236,19 +238,23 @@ const PlaybookEditor = () => {
                 <NavItem
                     to={generatePath(path, {playbookId})}
                     exact={true}
-                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
+                {allowPlaybookAttributes && (
+                    <NavItem
+                        to={generatePath(path, {playbookId, tab: 'attributes'})}
+                    >
+                        {formatMessage({defaultMessage: 'Attributes'})}
+                    </NavItem>
+                )}
                 <NavItem
                     to={generatePath(path, {playbookId, tab: 'outline'})}
-                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_outline_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Outline'})}
                 </NavItem>
                 <NavItem
                     to={generatePath(path, {playbookId, tab: 'reports'})}
-                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_reports_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Reports'})}
                 </NavItem>
@@ -263,6 +269,16 @@ const PlaybookEditor = () => {
                         stats={stats}
                     />
                 </Route>
+                {allowPlaybookAttributes && (
+                    <Route
+                        path={generatePath(path, {playbookId, tab: 'attributes'})}
+                        exact={true}
+                    >
+                        <PlaybookProperties
+                            playbookID={playbook.id}
+                        />
+                    </Route>
+                )}
                 <Route
                     path={generatePath(path, {playbookId, tab: 'outline'})}
                     exact={true}
@@ -496,6 +512,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 
     ${PlaybookUsage},
+    ${PlaybookProperties},
     ${PlaybookKeyMetrics} {
         grid-area: aside/aside/aside-right/aside-right;
     }
@@ -543,6 +560,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         }
 
         ${PlaybookUsage},
+        ${PlaybookProperties},
         ${PlaybookKeyMetrics} {
             grid-area: content;
         }

@@ -126,9 +126,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
             commonTests();
 
             it('Following button can be toggled', () => {
-                // # Intercept all calls to telemetry
-                cy.interceptTelemetry();
-
                 getOverviewEntry('following').within(() => {
                     // * Verify that the user shows in the following list
                     cy.getStyledComponent('UserRow').within(() => {
@@ -150,21 +147,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     // * Verify that it now says Following
                     cy.findByRole('button', {name: /Following/}).should('exist');
                 });
-
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_unfollow',
-                        type: 'track',
-                        from: 'run_details',
-                        playbookrun_id: testRun.id,
-                    },
-                    {
-                        name: 'playbookrun_follow',
-                        type: 'track',
-                        from: 'run_details',
-                        playbookrun_id: testRun.id,
-                    },
-                ], {waitForCalls: 2});
             });
 
             it('click channel link navigates to run\'s channel', () => {

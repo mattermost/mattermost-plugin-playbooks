@@ -920,20 +920,11 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 }
 
 func (p *playbookStore) AutoFollow(playbookID, userID string) error {
-	var err error
-	if p.store.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		_, err = p.store.execBuilder(p.store.db, sq.
-			Insert("IR_PlaybookAutoFollow").
-			Columns("PlaybookID", "UserID").
-			Values(playbookID, userID).
-			Suffix("ON DUPLICATE KEY UPDATE playbookID = playbookID"))
-	} else {
-		_, err = p.store.execBuilder(p.store.db, sq.
-			Insert("IR_PlaybookAutoFollow").
-			Columns("PlaybookID", "UserID").
-			Values(playbookID, userID).
-			Suffix("ON CONFLICT (PlaybookID,UserID) DO NOTHING"))
-	}
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Insert("IR_PlaybookAutoFollow").
+		Columns("PlaybookID", "UserID").
+		Values(playbookID, userID).
+		Suffix("ON CONFLICT (PlaybookID,UserID) DO NOTHING"))
 	return errors.Wrapf(err, "failed to insert autofollowing '%s' for playbook '%s'", userID, playbookID)
 }
 
@@ -1257,4 +1248,16 @@ func GetTopPlaybooksInsightsListWithPagination(playbooks []*app.PlaybookInsight,
 	}
 
 	return &app.PlaybooksInsightsList{HasNext: hasNext, Items: playbooks}
+}
+
+// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
+func (p *playbookStore) BumpPlaybookUpdatedAt(playbookID string) error {
+	if _, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookID})); err != nil {
+		return errors.Wrapf(err, "failed to bump UpdateAt for playbook '%s'", playbookID)
+	}
+
+	return nil
 }

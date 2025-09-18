@@ -30,7 +30,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 
 	_ "time/tzdata" // for systems that don't have tzdata installed
 )
@@ -40,23 +39,6 @@ const (
 
 	metricsExposePort = ":9093"
 )
-
-const (
-	rudderDataplaneURL = "https://pdat.matterlytics.com"
-	rudderWriteKey     = "1ag0Mv7LPf5uJNhcnKomqg0ENFd"
-)
-
-type TelemetryClient interface {
-	app.PlaybookRunTelemetry
-	app.PlaybookTelemetry
-	app.GenericTelemetry
-	bot.Telemetry
-	app.UserInfoTelemetry
-	app.ChannelActionTelemetry
-	app.CategoryTelemetry
-	Enable() error
-	Disable() error
-}
 
 // Plugin implements the interface expected by the Mattermost server to communicate between the
 // server and plugin processes.
@@ -74,7 +56,6 @@ type Plugin struct {
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
-	telemetryClient      TelemetryClient
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
 
@@ -144,37 +125,6 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed save bot to config")
 	}
 
-	if rudderDataplaneURL == "" || rudderWriteKey == "" {
-		logrus.Warn("Rudder credentials are not set. Disabling analytics.")
-		p.telemetryClient = &telemetry.NoopTelemetry{}
-	} else {
-		telemetryID := pluginAPIClient.System.GetTelemetryID()
-		serverVersion := pluginAPIClient.System.GetServerVersion()
-		p.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, telemetryID, manifest.Version, serverVersion)
-		if err != nil {
-			return errors.Wrapf(err, "failed init telemetry client")
-		}
-	}
-
-	toggleTelemetry := func() {
-		diagnosticsFlag := pluginAPIClient.Configuration.GetConfig().LogSettings.EnableDiagnostics
-		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
-
-		if telemetryEnabled {
-			if err = p.telemetryClient.Enable(); err != nil {
-				logrus.WithError(err).Error("Telemetry could not be enabled")
-			}
-			return
-		}
-
-		if err = p.telemetryClient.Disable(); err != nil {
-			logrus.WithError(err).Error("Telemetry could not be disabled")
-		}
-	}
-
-	toggleTelemetry()
-	p.config.RegisterConfigChangeListener(toggleTelemetry)
-
 	setupTeamsTabApp := func() {
 		err := p.setupTeamsTabApp()
 		if err != nil {
@@ -189,7 +139,8 @@ func (p *Plugin) OnActivate() error {
 	})
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+	p.config.SetWebsocketPublisher(p.bot)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, scheduler)
@@ -206,16 +157,17 @@ func (p *Plugin) OnActivate() error {
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.metricsService)
-
-	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
-	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient, p.telemetryClient)
+	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
 	propertyService, err := app.NewPropertyService(pluginAPIClient)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create property service")
 	}
 	p.propertyService = propertyService
+
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.metricsService, propertyService)
+
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -225,8 +177,6 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 		scheduler,
-		p.telemetryClient,
-		p.telemetryClient,
 		p.API,
 		p.playbookService,
 		p.channelActionService,
@@ -288,7 +238,6 @@ func (p *Plugin) OnActivate() error {
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, statsStore, p.playbookService, p.permissions, p.licenseChecker)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config, p.playbookRunService, p.userInfoStore)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.telemetryClient, p.permissions)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer, p.bot)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
 	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
@@ -344,7 +293,7 @@ func (p *Plugin) OnConfigurationChange() error {
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
-		p.playbookRunService, p.playbookService, p.propertyService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
+		p.playbookRunService, p.playbookService, p.propertyService, p.config, p.userInfoStore, p.permissions)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)

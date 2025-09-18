@@ -37,6 +37,20 @@ type Attrs struct {
 	ParentID   string                                             `json:"parent_id"`
 }
 
+func PropertySortOrder(p *model.PropertyField) int {
+	value, ok := p.Attrs[PropertyAttrsSortOrder]
+	if !ok {
+		return 0
+	}
+
+	order, ok := value.(float64)
+	if !ok {
+		return 0
+	}
+
+	return int(order)
+}
+
 type PropertyField struct {
 	model.PropertyField
 	Attrs Attrs `json:"attrs"`
@@ -141,10 +155,16 @@ type PropertyService interface {
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
+	GetPropertyFieldsCount(playbookID string) (int, error)
 	GetRunPropertyFields(runID string) ([]PropertyField, error)
 	GetRunPropertyValues(runID string) ([]PropertyValue, error)
+	GetRunPropertyValueByFieldID(runID, propertyFieldID string) (*PropertyValue, error)
 	UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	DeletePropertyField(propertyID string) error
 	CopyPlaybookPropertiesToRun(playbookID, runID string) error
 	UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
+
+	// Bulk methods for retrieving properties for multiple runs
+	GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error)
+	GetRunsPropertyValues(runIDs []string) (map[string][]PropertyValue, error)
 }

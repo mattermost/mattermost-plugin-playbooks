@@ -24,9 +24,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
     });
 
     beforeEach(() => {
-        // # intercepts telemetry
-        cy.interceptTelemetry();
-
         // # Login as testUser
         cy.apiLogin(testUser);
 
@@ -101,25 +98,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                 cy.findByTestId('modal-confirm-button').click();
             });
 
-            // * Assert telemetry data
-            cy.expectTelemetryToContain([
-                {
-                    name: 'playbookrun_create',
-                    type: 'track',
-                    properties: {
-                        place: 'backstage_playbook_list',
-                        playbookId: testPlaybook.id,
-                        channelMode: 'create_new_channel',
-                        hasPlaybookChanged: false,
-                        hasNameChanged: true,
-                        hasSummaryChanged: false,
-                        hasChannelModeChanged: false,
-                        hasChannelIdChanged: false,
-                        hasPublicChanged: false,
-                    },
-                },
-            ]);
-
             // * Verify we are on RDP
             cy.url().should('include', '/playbooks/runs/');
             cy.url().should('include', '?from=run_modal');
@@ -154,25 +132,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
-
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'backstage_playbook_editor',
-                            playbookId: testPlaybook.id,
-                            channelMode: 'create_new_channel',
-                            hasPlaybookChanged: false,
-                            hasNameChanged: false,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        },
-                    },
-                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -212,25 +171,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
-
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'backstage_playbook_editor',
-                            playbookId: testPlaybook.id,
-                            channelMode: 'create_new_channel',
-                            hasPlaybookChanged: false,
-                            hasNameChanged: true,
-                            hasSummaryChanged: true,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        },
-                    },
-                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -295,25 +235,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'backstage_playbook_editor',
-                            playbookId: testPlaybook.id,
-                            channelMode: 'link_existing_channel',
-                            hasPlaybookChanged: false,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: true,
-                            hasChannelIdChanged: true,
-                            hasPublicChanged: false,
-                        },
-                    },
-                ]);
-
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
@@ -359,25 +280,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
-
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'backstage_playbook_editor',
-                            playbookId: testPlaybook.id,
-                            channelMode: 'link_existing_channel',
-                            hasPlaybookChanged: false,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        },
-                    },
-                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
@@ -429,25 +331,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                     cy.findByTestId('modal-confirm-button').click();
                 });
 
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'backstage_playbook_editor',
-                            playbookId: testPlaybook.id,
-                            channelMode: 'link_existing_channel',
-                            hasPlaybookChanged: false,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: false,
-                            hasChannelIdChanged: true,
-                            hasPublicChanged: false,
-                        },
-                    },
-                ]);
-
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');
                 cy.url().should('include', '?from=run_modal');
@@ -488,25 +371,6 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                     // # Click start button
                     cy.findByTestId('modal-confirm-button').click();
                 });
-
-                // * Assert telemetry data
-                cy.expectTelemetryToContain([
-                    {
-                        name: 'playbookrun_create',
-                        type: 'track',
-                        properties: {
-                            place: 'backstage_playbook_editor',
-                            playbookId: testPlaybook.id,
-                            channelMode: 'create_new_channel',
-                            hasPlaybookChanged: false,
-                            hasNameChanged: true,
-                            hasSummaryChanged: false,
-                            hasChannelModeChanged: true,
-                            hasChannelIdChanged: false,
-                            hasPublicChanged: false,
-                        },
-                    },
-                ]);
 
                 // * Verify we are on RDP
                 cy.url().should('include', '/playbooks/runs/');

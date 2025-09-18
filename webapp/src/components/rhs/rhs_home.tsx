@@ -20,14 +20,11 @@ import {
     renderView,
 } from 'src/components/rhs/rhs_shared';
 import {displayPlaybookCreateModal} from 'src/actions';
-import {telemetryEventForTemplate} from 'src/client';
-import {useCanCreatePlaybooksInTeam, useViewTelemetry} from 'src/hooks';
+import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
 import PlaybookListSvg from 'src/components/assets/illustrations/playbook_list_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
-
-import {GeneralViewTarget} from 'src/types/telemetry';
 
 import {RHSTitleText} from './rhs_title_common';
 
@@ -112,12 +109,7 @@ const RHSHome = () => {
     const dispatch = useDispatch();
     const currentTeamId = useSelector(getCurrentTeamId);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(currentTeamId || '');
-    useViewTelemetry(GeneralViewTarget.ChannelsRHSHome, 'fixed');
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
-        if (template) {
-            telemetryEventForTemplate(template.title, 'use_template_option');
-        }
-
         dispatch(displayPlaybookCreateModal({startingTemplate: template?.title}));
     };
 

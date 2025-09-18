@@ -10,7 +10,6 @@ import {ApolloClient, NormalizedCacheObject, gql} from '@apollo/client';
 
 import {matchPath} from 'react-router-dom';
 
-import {telemetryEventForPlaybookRun} from 'src/client';
 import {currentPlaybookRun, inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
@@ -78,18 +77,6 @@ export function makeRHSOpener(store: Store<GlobalState>, graphqlClient: ApolloCl
         }
 
         const searchParams = new URLSearchParams(url.searchParams);
-
-        if (searchParams.has('telem_action') && searchParams.has('telem_run_id')) {
-            // Record and remove telemetry
-            const action = searchParams.get('telem_action') || '';
-            const runId = searchParams.get('telem_run_id')?.match(/^\w+$/)?.[0] || '';
-            if (action && runId) {
-                telemetryEventForPlaybookRun(runId, action);
-            }
-            searchParams.delete('telem_action');
-            searchParams.delete('telem_run_id');
-            browserHistory.replace({pathname: url.pathname, search: searchParams.toString()});
-        }
 
         // Only consider opening the RHS if the channel has changed and wasn't already seen as
         // a playbook run.

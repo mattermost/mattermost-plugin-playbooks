@@ -227,6 +227,18 @@ else
 endif
 endif
 
+## Builds the server, if it exists, for only linux architectures for ci or cloud uploads.
+.PHONY: server-ci
+server-ci:
+ifneq ($(HAS_SERVER),)
+ifneq ($(MM_DEBUG),)
+	$(info DEBUG mode is on; to disable, unset MM_DEBUG)
+endif
+	mkdir -p server/dist;
+	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-amd64;
+	cd server && env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build $(GO_BUILD_FLAGS) $(GO_BUILD_GCFLAGS) -trimpath -o dist/plugin-linux-arm64;
+endif
+
 ## Ensures NPM dependencies are installed without having to run this all the time.
 webapp/node_modules: $(wildcard webapp/package.json)
 ifneq ($(HAS_WEBAPP),)
@@ -290,6 +302,10 @@ endif
 ## Builds and bundles the plugin.
 .PHONY: dist
 dist: apply server webapp bundle
+
+## Builds and bundles the plugin for ci or cloud uploads.
+.PHONY: dist-ci
+dist-ci: apply server-ci webapp bundle
 
 ## Builds and installs the plugin to a server.
 .PHONY: deploy

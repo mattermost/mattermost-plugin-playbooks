@@ -18,10 +18,9 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import {PlaybookRunEventTarget} from 'src/types/telemetry';
 import {findLastUpdatedWithDefault} from 'src/utils';
 import {usePlaybookName, useRunMetadata} from 'src/hooks';
-import {followPlaybookRun, telemetryEvent, unfollowPlaybookRun} from 'src/client';
+import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -184,16 +183,11 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 
     const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
-        const eventTarget = isFollowing ? PlaybookRunEventTarget.Unfollow : PlaybookRunEventTarget.Follow;
         action(id)
             .then(() => {
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setIsFollowing(!isFollowing);
                 setFollowers(newFollowers);
-                telemetryEvent(eventTarget, {
-                    playbookrun_id: id,
-                    from: 'run_list',
-                });
             })
             .catch(() => {
                 setIsFollowing(isFollowing);

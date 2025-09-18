@@ -29,7 +29,7 @@ export const useFavoriteRun = (teamID: string, runID: string): [boolean, () => v
     return [isFavoriteRun, toggleFavorite];
 };
 
-export const useParticipateInRun = (playbookRun: PlaybookRun | undefined, from: 'channel_rhs'|'run_details') => {
+export const useParticipateInRun = (playbookRun: PlaybookRun | undefined) => {
     const [showParticipateConfirm, setShowParticipateConfirm] = useState(false);
 
     const ParticipateConfirmModal = (
@@ -37,7 +37,6 @@ export const useParticipateInRun = (playbookRun: PlaybookRun | undefined, from: 
             playbookRun={playbookRun}
             show={showParticipateConfirm}
             hideModal={() => setShowParticipateConfirm(false)}
-            from={from}
         />
     );
     return {

@@ -25,7 +25,7 @@ import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/
 import manifest from 'src/manifest';
 import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
-import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
+import {makeAttachToPlaybookRunAction, makeStartPlaybookRunAction} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
@@ -46,6 +46,7 @@ import {
     handleWebsocketPlaybookRunUpdated,
     handleWebsocketPlaybookRunUpdatedIncremental,
     handleWebsocketPostEditedOrDeleted,
+    handleWebsocketSettingsChanged,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
 } from 'src/websocket_events';
@@ -56,6 +57,7 @@ import {
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL,
+    WEBSOCKET_SETTINGS_CHANGED,
 } from 'src/types/websocket_events';
 import {
     fetchGlobalSettings,
@@ -200,8 +202,8 @@ export default class Plugin {
         };
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
         registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
-        registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
-        registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
+        registry.registerPostDropdownMenuAction(makeStartPlaybookRunAction(store));
+        registry.registerPostDropdownMenuAction(makeAttachToPlaybookRunAction(store));
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
         registry.registerRootComponent(LoginHook);
@@ -240,6 +242,7 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED, handleWebsocketPlaybookCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_ARCHIVED, handleWebsocketPlaybookArchived(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RESTORED, handleWebsocketPlaybookRestored(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_SETTINGS_CHANGED, handleWebsocketSettingsChanged(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));

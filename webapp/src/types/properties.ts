@@ -3,40 +3,23 @@
 
 // Types that match the actual HTTP API response structure for properties
 
-export interface PropertyFieldOption {
-    id: string;
-    name: string;
-    color?: string;
-}
+import type {
+    FieldVisibility,
+    PropertyField as PropertyFieldBase,
+    PropertyFieldOption,
+    PropertyValue as PropertyValueBase,
+} from '@mattermost/types/properties';
 
-export interface PropertyFieldAttrs {
-    visibility: string;
-    sort_order: number;
-    options: PropertyFieldOption[] | null;
-    parent_id: string;
-}
+export type PropertyField = PropertyFieldBase & {
+    target_type: 'playbook' | 'run';
+    attrs: {
+        visibility: FieldVisibility;
+        sort_order: number;
+        options: PropertyFieldOption[] | null;
+        parent_id?: string;
+    };
+};
 
-export interface PropertyField {
-    id: string;
-    group_id: string;
-    name: string;
-    type: string;
-    target_id: string;
-    target_type: string;
-    create_at: number;
-    update_at: number;
-    delete_at: number;
-    attrs: PropertyFieldAttrs;
-}
-
-export interface PropertyValue {
-    id: string;
-    target_id: string;
-    target_type: string;
-    group_id: string;
-    field_id: string; // Note: snake_case, not camelCase
-    value: string | string[];
-    create_at: number;
-    update_at: number;
-    delete_at: number;
+export type PropertyValue = PropertyValueBase<string | string[]> & {
+    field_id: string;
 }

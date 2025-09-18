@@ -21,11 +21,11 @@ const (
 )
 
 type playbookService struct {
-	store          PlaybookStore
-	poster         bot.Poster
-	telemetry      PlaybookTelemetry
-	api            *pluginapi.Client
-	metricsService *metrics.Metrics
+	store           PlaybookStore
+	poster          bot.Poster
+	api             *pluginapi.Client
+	metricsService  *metrics.Metrics
+	propertyService PropertyService
 }
 
 type InsightsOpts struct {
@@ -35,13 +35,13 @@ type InsightsOpts struct {
 }
 
 // NewPlaybookService returns a new playbook service
-func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api *pluginapi.Client, metricsService *metrics.Metrics) PlaybookService {
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, api *pluginapi.Client, metricsService *metrics.Metrics, propertyService PropertyService) PlaybookService {
 	return &playbookService{
-		store:          store,
-		poster:         poster,
-		telemetry:      telemetry,
-		api:            api,
-		metricsService: metricsService,
+		store:           store,
+		poster:          poster,
+		api:             api,
+		metricsService:  metricsService,
+		propertyService: propertyService,
 	}
 }
 
@@ -54,8 +54,6 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 		return "", err
 	}
 	playbook.ID = newID
-
-	s.telemetry.CreatePlaybook(playbook, userID)
 
 	s.poster.PublishWebsocketEventToTeam(playbookCreatedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
@@ -71,7 +69,6 @@ func (s *playbookService) Import(playbook Playbook, userID string) (string, erro
 		return "", err
 	}
 	playbook.ID = newID
-	s.telemetry.ImportPlaybook(playbook, userID)
 	return newID, nil
 }
 
@@ -102,8 +99,6 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.telemetry.UpdatePlaybook(playbook, userID)
-
 	return nil
 }
 
@@ -116,7 +111,6 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.telemetry.DeletePlaybook(playbook, userID)
 	s.metricsService.IncrementPlaybookArchivedCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
@@ -139,7 +133,6 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.telemetry.RestorePlaybook(playbook, userID)
 	s.metricsService.IncrementPlaybookRestoredCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
@@ -155,11 +148,10 @@ func (s *playbookService) AutoFollow(playbookID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to auto-follow the playbook `%s`", userID, playbookID)
 	}
 
-	playbook, err := s.store.Get(playbookID)
+	_, err := s.store.Get(playbookID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
-	s.telemetry.AutoFollowPlaybook(playbook, userID)
 	return nil
 }
 
@@ -169,11 +161,10 @@ func (s *playbookService) AutoUnfollow(playbookID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to auto-unfollow the playbook `%s`", userID, playbookID)
 	}
 
-	playbook, err := s.store.Get(playbookID)
+	_, err := s.store.Get(playbookID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
-	s.telemetry.AutoUnfollowPlaybook(playbook, userID)
 	return nil
 }
 
@@ -266,4 +257,45 @@ func licenseAndGuestCheck(s *playbookService, userID string, isMyInsights bool) 
 	}
 
 	return true, nil
+}
+
+// CreatePropertyField creates a property field for a playbook and bumps the playbook's updated_at
+func (s *playbookService) CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	createdField, err := s.propertyService.CreatePropertyField(playbookID, propertyField)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.store.BumpPlaybookUpdatedAt(playbookID); err != nil {
+		return nil, errors.Wrap(err, "failed to bump playbook timestamp")
+	}
+
+	return createdField, nil
+}
+
+// UpdatePropertyField updates a property field for a playbook and bumps the playbook's updated_at
+func (s *playbookService) UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	updatedField, err := s.propertyService.UpdatePropertyField(playbookID, propertyField)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.store.BumpPlaybookUpdatedAt(playbookID); err != nil {
+		return nil, errors.Wrap(err, "failed to bump playbook timestamp")
+	}
+
+	return updatedField, nil
+}
+
+// DeletePropertyField deletes a property field for a playbook and bumps the playbook's updated_at
+func (s *playbookService) DeletePropertyField(playbookID, propertyID string) error {
+	if err := s.propertyService.DeletePropertyField(propertyID); err != nil {
+		return err
+	}
+
+	if err := s.store.BumpPlaybookUpdatedAt(playbookID); err != nil {
+		return errors.Wrap(err, "failed to bump playbook timestamp")
+	}
+
+	return nil
 }

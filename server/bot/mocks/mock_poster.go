@@ -208,6 +208,18 @@ func (mr *MockPosterMockRecorder) PostMessageWithAttachments(channelID, attachme
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessageWithAttachments", reflect.TypeOf((*MockPoster)(nil).PostMessageWithAttachments), varargs...)
 }
 
+// PublishWebsocketEventGlobal mocks base method.
+func (m *MockPoster) PublishWebsocketEventGlobal(event string, payload interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventGlobal", event, payload)
+}
+
+// PublishWebsocketEventGlobal indicates an expected call of PublishWebsocketEventGlobal.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventGlobal(event, payload interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventGlobal", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventGlobal), event, payload)
+}
+
 // PublishWebsocketEventToChannel mocks base method.
 func (m *MockPoster) PublishWebsocketEventToChannel(event string, payload interface{}, channelID string) {
 	m.ctrl.T.Helper()
@@ -254,51 +266,4 @@ func (m *MockPoster) SystemEphemeralPost(userID, channelID string, post *model.P
 func (mr *MockPosterMockRecorder) SystemEphemeralPost(userID, channelID, post interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SystemEphemeralPost", reflect.TypeOf((*MockPoster)(nil).SystemEphemeralPost), userID, channelID, post)
-}
-
-// MockTelemetry is a mock of Telemetry interface.
-type MockTelemetry struct {
-	ctrl     *gomock.Controller
-	recorder *MockTelemetryMockRecorder
-}
-
-// MockTelemetryMockRecorder is the mock recorder for MockTelemetry.
-type MockTelemetryMockRecorder struct {
-	mock *MockTelemetry
-}
-
-// NewMockTelemetry creates a new mock instance.
-func NewMockTelemetry(ctrl *gomock.Controller) *MockTelemetry {
-	mock := &MockTelemetry{ctrl: ctrl}
-	mock.recorder = &MockTelemetryMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTelemetry) EXPECT() *MockTelemetryMockRecorder {
-	return m.recorder
-}
-
-// NotifyAdmins mocks base method.
-func (m *MockTelemetry) NotifyAdmins(userID, action string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyAdmins", userID, action)
-}
-
-// NotifyAdmins indicates an expected call of NotifyAdmins.
-func (mr *MockTelemetryMockRecorder) NotifyAdmins(userID, action interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyAdmins", reflect.TypeOf((*MockTelemetry)(nil).NotifyAdmins), userID, action)
-}
-
-// StartTrial mocks base method.
-func (m *MockTelemetry) StartTrial(userID, action string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartTrial", userID, action)
-}
-
-// StartTrial indicates an expected call of StartTrial.
-func (mr *MockTelemetryMockRecorder) StartTrial(userID, action interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartTrial", reflect.TypeOf((*MockTelemetry)(nil).StartTrial), userID, action)
 }

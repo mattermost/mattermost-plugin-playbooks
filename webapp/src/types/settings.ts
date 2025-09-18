@@ -2,14 +2,18 @@
 // See LICENSE.txt for license information.
 
 export interface GlobalSettings {
-    link_run_to_existing_channel_enabled: boolean
+    link_run_to_existing_channel_enabled: boolean;
+    enable_experimental_features: boolean;
 }
 
 const defaults: GlobalSettings = {
     link_run_to_existing_channel_enabled: false,
+    enable_experimental_features: false,
 };
 
-export function globalSettingsSetDefaults(globalSettings?: Partial<GlobalSettings>): GlobalSettings {
+export function globalSettingsSetDefaults(
+    globalSettings?: Partial<GlobalSettings>,
+): GlobalSettings {
     // If we didn't get anything just return defaults
     if (!globalSettings) {
         return defaults;

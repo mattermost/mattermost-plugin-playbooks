@@ -30,21 +30,6 @@ func (sqlStore *SQLStore) getSystemValue(q queryer, key string) (string, error) 
 
 // setSystemValue updates the IR_System table for the given key.
 func (sqlStore *SQLStore) setSystemValue(e queryExecer, key, value string) error {
-	// MySQL reports 0 rows affected in the update below when the key and value
-	// already exist. We can use its native support for upsert instead. Postgres
-	// 9.4 does not have native support for upsert, but it reports 1 row
-	// affected even when the key and value are already present.
-	if sqlStore.db.DriverName() == DeprecatedDatabaseDriverMysql {
-		_, err := sqlStore.execBuilder(e,
-			sq.Insert("IR_System").
-				Columns("SKey", "SValue").
-				Values(key, value).
-				Suffix("ON DUPLICATE KEY UPDATE SValue = ?", value),
-		)
-
-		return err
-	}
-
 	result, err := sqlStore.execBuilder(e,
 		sq.Update("IR_System").
 			Set("SValue", value).

@@ -159,6 +159,12 @@ func (b *Bot) PublishWebsocketEventToUser(event string, payload interface{}, use
 	})
 }
 
+// PublishWebsocketEventGlobal sends a websocket event with payload to all connected users
+func (b *Bot) PublishWebsocketEventGlobal(event string, payload interface{}) {
+	payloadMap := b.makePayloadMap(payload)
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{})
+}
+
 func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool) error {
 	author, err := b.pluginAPI.User.Get(authorUserID)
 	if err != nil {
@@ -280,8 +286,6 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 			}
 		}(admin.Id)
 	}
-
-	b.telemetry.NotifyAdmins(authorUserID, messageType)
 
 	return nil
 }
