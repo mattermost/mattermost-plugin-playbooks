@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {FIVE_SEC, TWO_SEC, TEN_SEC} from '../../../../tests/fixtures/timeouts';
+import {FIVE_SEC, TWO_SEC, TEN_SEC, ONE_SEC} from '../../../../tests/fixtures/timeouts';
 
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
@@ -174,6 +174,8 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
                 cy.findAllByTestId('webhooks-input').
                     invoke('css', 'text-decoration').
                     should('equal', 'line-through solid rgba(63, 67, 80, 0.48)');
+
+                cy.wait(ONE_SEC);
 
                 // # Edit webhooks
                 cy.findAllByTestId('webhooks-input').type('http://hook1.com{enter}http://hook2.com{enter}http://hook3.com{enter}');
