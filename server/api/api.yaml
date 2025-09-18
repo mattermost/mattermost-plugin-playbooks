@@ -1681,6 +1681,286 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/playbooks/{id}/property_fields:
+    get:
+      summary: Get property fields for a playbook
+      operationId: getPlaybookPropertyFields
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to retrieve property fields from.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: List of property fields for the playbook.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PropertyField"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      summary: Create a property field for a playbook
+      operationId: createPlaybookPropertyField
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to create a property field for.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      requestBody:
+        description: Property field creation payload
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyFieldRequest"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{"name": "Priority", "type": "select", "attrs": {"options": [{"name": "High", "color": "#ff0000"}]}}'
+      responses:
+        201:
+          description: Property field created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyField"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/playbooks/{id}/property_fields/{field_id}:
+    put:
+      summary: Update a property field for a playbook
+      operationId: updatePlaybookPropertyField
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook containing the property field.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: field_id
+          in: path
+          required: true
+          description: ID of the property field to update.
+          schema:
+            type: string
+            example: p7fj3k2l5m8n9q1r4s6t8v0w2x
+      requestBody:
+        description: Property field update payload
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyFieldRequest"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields/p7fj3k2l5m8n9q1r4s6t8v0w2x' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{"name": "Updated Priority", "type": "select", "attrs": {"options": [{"name": "Critical", "color": "#ff0000"}]}}'
+      responses:
+        200:
+          description: Property field updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyField"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      summary: Delete a property field for a playbook
+      operationId: deletePlaybookPropertyField
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook containing the property field.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: field_id
+          in: path
+          required: true
+          description: ID of the property field to delete.
+          schema:
+            type: string
+            example: p7fj3k2l5m8n9q1r4s6t8v0w2x
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields/p7fj3k2l5m8n9q1r4s6t8v0w2x' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Property field deleted successfully.
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/runs/{id}/property_fields:
+    get:
+      summary: Get property fields for a playbook run
+      operationId: getRunPropertyFields
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook run to retrieve property fields from.
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/property_fields' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: List of property fields for the playbook run.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PropertyField"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/runs/{id}/property_values:
+    get:
+      summary: Get property values for a playbook run
+      operationId: getRunPropertyValues
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook run to retrieve property values from.
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/property_values' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: List of property values for the playbook run.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PropertyValue"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/runs/{id}/property_fields/{field_id}/value:
+    put:
+      summary: Set a property value for a playbook run
+      operationId: setRunPropertyValue
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook run to set property value for.
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: field_id
+          in: path
+          required: true
+          description: ID of the property field to set value for.
+          schema:
+            type: string
+            example: p7fj3k2l5m8n9q1r4s6t8v0w2x
+      requestBody:
+        description: Property value payload
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyValueRequest"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/property_fields/p7fj3k2l5m8n9q1r4s6t8v0w2x/value' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{"value": "\"High Priority Issue\""}'
+      responses:
+        200:
+          description: Property value set successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyValue"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
   /plugins/playbooks/api/v0/playbooks/{id}/autofollows:
     get:
       summary: Get the list of followers' user IDs of a playbook
@@ -2074,3 +2354,152 @@ components:
               type: string
               description: Absolute URL to the playbook run's details.
               example: https://example.com/ad-1/playbooks/runs/playbookRunID
+    PropertyField:
+      type: object
+      properties:
+        id:
+          type: string
+          description: A unique, 26 characters long, alphanumeric identifier for the property field.
+          example: p7fj3k2l5m8n9q1r4s6t8v0w2x
+        type:
+          type: string
+          description: The type of the property field.
+          enum:
+            - text
+            - select
+            - multiselect
+          example: select
+        name:
+          type: string
+          description: The name of the property field.
+          example: Priority
+        description:
+          type: string
+          description: The description of the property field.
+          example: Issue priority level
+        create_at:
+          type: integer
+          format: int64
+          description: The property field creation timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1602235338837
+        update_at:
+          type: integer
+          format: int64
+          description: The property field update timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1602235338837
+        delete_at:
+          type: integer
+          format: int64
+          description: The property field deletion timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if not deleted.
+          example: 0
+        attrs:
+          type: object
+          description: Additional attributes for the property field (options for select fields, visibility, etc.).
+          additionalProperties: true
+          example:
+            visibility: "when_set"
+            sortOrder: 1.0
+            options:
+              - id: "opt1"
+                name: "High"
+                color: "#ff0000"
+    PropertyValue:
+      type: object
+      properties:
+        id:
+          type: string
+          description: A unique, 26 characters long, alphanumeric identifier for the property value.
+          example: v8z9a1b2c3d4e5f6g7h8i9j0k1l
+        field_id:
+          type: string
+          description: The identifier of the property field this value belongs to.
+          example: p7fj3k2l5m8n9q1r4s6t8v0w2x
+        value:
+          type: string
+          format: json
+          description: The JSON-encoded value of the property.
+          example: "\"High Priority\""
+        create_at:
+          type: integer
+          format: int64
+          description: The property value creation timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1602235338837
+        update_at:
+          type: integer
+          format: int64
+          description: The property value update timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1602235338837
+        delete_at:
+          type: integer
+          format: int64
+          description: The property value deletion timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if not deleted.
+          example: 0
+    PropertyFieldRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: The name of the property field.
+          example: Priority
+        type:
+          type: string
+          description: The type of the property field.
+          enum:
+            - text
+            - select
+            - multiselect
+          example: select
+        attrs:
+          type: object
+          description: Additional attributes for the property field.
+          properties:
+            visibility:
+              type: string
+              enum:
+                - hidden
+                - when_set
+                - always
+              description: When to show this field.
+              example: when_set
+            sortOrder:
+              type: number
+              description: Display order of the field.
+              example: 1.0
+            options:
+              type: array
+              description: Available options for select/multiselect fields.
+              items:
+                type: object
+                required:
+                  - name
+                properties:
+                  id:
+                    type: string
+                    description: Option ID (generated if not provided).
+                    example: opt1
+                  name:
+                    type: string
+                    description: Display name of the option.
+                    example: High
+                  color:
+                    type: string
+                    description: Color associated with the option.
+                    example: "#ff0000"
+            parentID:
+              type: string
+              description: Parent field ID for hierarchical fields.
+              example: parent_field_id
+          additionalProperties: true
+    PropertyValueRequest:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          format: json
+          description: The JSON-encoded value to set for the property.
+          example: "\"High Priority Issue\""

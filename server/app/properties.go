@@ -151,6 +151,21 @@ func NewPropertyFieldFromMattermostPropertyField(mmpf *model.PropertyField) (*Pr
 	}, nil
 }
 
+// PropertyServiceReader defines read-only operations for property services used by handlers
+type PropertyServiceReader interface {
+	// GetPropertyField gets a single property field by ID
+	GetPropertyField(propertyID string) (*PropertyField, error)
+
+	// GetPropertyFields gets all property fields for a playbook
+	GetPropertyFields(playbookID string) ([]PropertyField, error)
+
+	// GetRunPropertyFields gets all property fields for a run
+	GetRunPropertyFields(runID string) ([]PropertyField, error)
+
+	// GetRunPropertyValues gets all property values for a run
+	GetRunPropertyValues(runID string) ([]PropertyValue, error)
+}
+
 type PropertyService interface {
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)

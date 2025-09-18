@@ -250,7 +250,7 @@ type PlaybookRunListOptions struct {
 	// StartedLT filters playbook runs that were started before the unix time given (in millis).
 	// A value of 0 means the filter is ignored (which is the default).
 	StartedLT int64 `url:"started_lt,omitempty"`
-	
+
 	// ActivitySince, if not zero, returns playbook runs that have had any activity since this timestamp.
 	// Activity includes creation, updates, or completion that occurred after this timestamp (in milliseconds).
 	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
@@ -275,10 +275,10 @@ const (
 )
 
 type GetPlaybookRunsResults struct {
-	TotalCount  int           `json:"total_count"`
-	PageCount   int           `json:"page_count"`
-	HasMore     bool          `json:"has_more"`
-	Items       []PlaybookRun `json:"items"`
+	TotalCount int           `json:"total_count"`
+	PageCount  int           `json:"page_count"`
+	HasMore    bool          `json:"has_more"`
+	Items      []PlaybookRun `json:"items"`
 }
 
 // StatusUpdateOptions are the fields required to update a playbook run's status
