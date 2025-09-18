@@ -769,11 +769,8 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRun.ID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", playbookRun)
 	model.AddEventParameterToAuditRec(auditRec, "postID", post.Id)
-	model.AddEventParameterToAuditRec(auditRec, "summaryLength", len(summary))
-	model.AddEventParameterToAuditRec(auditRec, "postMessageLength", len(post.Message))
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRun.ID,
 		CreateAt:      model.GetMillis(),
@@ -809,7 +806,6 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "timelineEventID", createdEvent.ID)
 	model.AddEventParameterToAuditRec(auditRec, "eventCreateAt", createdEvent.CreateAt)
-	model.AddEventParameterToAuditRec(auditRec, "summary", summary)
 	auditRec.AddEventResultState(*playbookRun)
 
 	return nil
@@ -846,7 +842,6 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 
 	// Add current context to audit
 	model.AddEventParameterToAuditRec(auditRec, "eventType", string(event.EventType))
-	model.AddEventParameterToAuditRec(auditRec, "eventSummary", event.Summary)
 	model.AddEventParameterToAuditRec(auditRec, "eventCreateAt", event.CreateAt)
 
 	event.DeleteAt = model.GetMillis()
@@ -867,7 +862,6 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 
 	// Mark success and add result state for audit
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunModified.Name)
 	model.AddEventParameterToAuditRec(auditRec, "deletedAt", event.DeleteAt)
 	auditRec.AddEventResultState(*playbookRunModified)
 
@@ -967,8 +961,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-	model.AddEventParameterToAuditRec(auditRec, "messageLength", len(options.Message))
-	model.AddEventParameterToAuditRec(auditRec, "reminderSeconds", int64(options.Reminder/time.Second))
 
 	logger := logrus.WithField("playbook_run_id", playbookRunID)
 
@@ -1150,7 +1142,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToModify.CurrentStatus)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
 
@@ -1265,7 +1256,6 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentlyEnabled", playbookRunToModify.StatusUpdateEnabled)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
 
@@ -1379,7 +1369,6 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToRestore.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentStatus", playbookRunToRestore.CurrentStatus)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToRestore.TeamID)
 
@@ -1494,7 +1483,6 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 
 	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", id)
-	model.AddEventParameterToAuditRec(auditRec, "fieldsCount", len(setmap))
 
 	// Capture field names being updated (for audit visibility)
 	fieldNames := make([]string, 0, len(setmap))
@@ -1514,9 +1502,6 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 			return err
 		}
 		originalRun = originalRun.Clone()
-
-		// Add current context to audit
-		model.AddEventParameterToAuditRec(auditRec, "runName", originalRun.Name)
 	}
 
 	now := model.GetMillis()
@@ -1546,7 +1531,6 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 
 	// Mark success and add result state for audit
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "finalRunName", currentRun.Name)
 	model.AddEventParameterToAuditRec(auditRec, "updateAt", now)
 	auditRec.AddEventResultState(*currentRun)
 
@@ -1711,7 +1695,6 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentOwnerID", playbookRunToModify.OwnerUserID)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRunToModify.TeamID)
 
@@ -1779,8 +1762,8 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 
 	// Mark success and add result state for audit
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "oldOwnerUsername", oldOwner.Username)
-	model.AddEventParameterToAuditRec(auditRec, "newOwnerUsername", newOwner.Username)
+	model.AddEventParameterToAuditRec(auditRec, "oldOwnerId", oldOwner.Id)
+	model.AddEventParameterToAuditRec(auditRec, "newOwnerId", newOwner.Id)
 	model.AddEventParameterToAuditRec(auditRec, "changeTimestamp", eventTime)
 	auditRec.AddEventResultState(*playbookRunToModify)
 
@@ -1817,7 +1800,6 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentState", itemToCheck.State)
 
@@ -1912,7 +1894,6 @@ func (s *PlaybookRunServiceImpl) ToggleCheckedState(playbookRunID, userID string
 	item := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", item.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentState", item.State)
 
@@ -1954,7 +1935,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentAssigneeID", itemToCheck.AssigneeID)
 
@@ -2051,8 +2031,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 
 	// Mark success and add result state for audit
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "oldAssigneeUserAtMention", oldAssigneeUserAtMention)
-	model.AddEventParameterToAuditRec(auditRec, "newAssigneeUserAtMention", newAssigneeUserAtMention)
 	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
 	auditRec.AddEventResultState(*playbookRunToModify)
 
@@ -2143,7 +2121,6 @@ func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedat
 	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentDueDate", itemToCheck.DueDate)
 
@@ -2315,7 +2292,6 @@ func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, chec
 	}
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentChecklistCount", len(playbookRunToModify.Checklists))
 
 	var originalRun *PlaybookRun
@@ -2398,7 +2374,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, c
 
 	// Add current context to audit
 	checklistToRemove := playbookRunToModify.Checklists[checklistNumber]
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", checklistToRemove.Title)
 	model.AddEventParameterToAuditRec(auditRec, "checklistItemCount", len(checklistToRemove.Items))
 	model.AddEventParameterToAuditRec(auditRec, "currentChecklistCount", len(playbookRunToModify.Checklists))
@@ -2447,7 +2422,6 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 
 	// Add current context to audit
 	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentTitle", currentChecklist.Title)
 
 	var originalRun *PlaybookRun
@@ -2486,7 +2460,6 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
 	model.AddEventParameterToAuditRec(auditRec, "itemTitle", checklistItem.Title)
 	model.AddEventParameterToAuditRec(auditRec, "itemCommand", checklistItem.Command)
-	model.AddEventParameterToAuditRec(auditRec, "itemDescription", checklistItem.Description)
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
 		err := errors.Wrapf(err, "failed to verify checklist parameters for adding item (runID: %s, checklistNumber: %d)", playbookRunID, checklistNumber)
@@ -2496,7 +2469,6 @@ func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, 
 
 	// Add current context to audit
 	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", currentChecklist.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentItemCount", len(currentChecklist.Items))
 
@@ -2545,7 +2517,6 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	// Add current context to audit
 	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
 	itemToRemove := currentChecklist.Items[itemNumber]
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "checklistTitle", currentChecklist.Title)
 	model.AddEventParameterToAuditRec(auditRec, "itemTitle", itemToRemove.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentItemCount", len(currentChecklist.Items))
@@ -2698,9 +2669,6 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
 	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
 	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
-	model.AddEventParameterToAuditRec(auditRec, "newTitleLength", len(newTitle))
-	model.AddEventParameterToAuditRec(auditRec, "newCommandLength", len(newCommand))
-	model.AddEventParameterToAuditRec(auditRec, "newDescriptionLength", len(newDescription))
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -2708,10 +2676,8 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 
 	// Add current context to audit
 	item := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentTitle", item.Title)
 	model.AddEventParameterToAuditRec(auditRec, "currentCommand", item.Command)
-	model.AddEventParameterToAuditRec(auditRec, "currentDescription", item.Description)
 
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -2734,7 +2700,6 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "finalTitle", newTitle)
 	model.AddEventParameterToAuditRec(auditRec, "finalCommand", newCommand)
-	model.AddEventParameterToAuditRec(auditRec, "finalDescription", newDescription)
 	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
@@ -3490,7 +3455,6 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID st
 	}
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToModify.Name)
 	model.AddEventParameterToAuditRec(auditRec, "previousRetrospectiveLength", len(playbookRunToModify.Retrospective))
 	model.AddEventParameterToAuditRec(auditRec, "previousMetricsCount", len(playbookRunToModify.MetricsData))
 
@@ -3540,7 +3504,6 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	}
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToPublish.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentlyPublished", playbookRunToPublish.RetrospectivePublishedAt > 0)
 	model.AddEventParameterToAuditRec(auditRec, "wasAlreadyCanceled", playbookRunToPublish.RetrospectiveWasCanceled)
 
@@ -3611,7 +3574,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	// Mark success and add result state for audit
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "publishedAt", now)
-	model.AddEventParameterToAuditRec(auditRec, "publisherUsername", publisherUser.Username)
+	model.AddEventParameterToAuditRec(auditRec, "publisherId", publisherID)
 	model.AddEventParameterToAuditRec(auditRec, "retrospectiveURL", retrospectiveURL)
 	auditRec.AddEventResultState(*playbookRunToPublish)
 
@@ -3668,7 +3631,6 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	}
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRunToCancel.Name)
 	model.AddEventParameterToAuditRec(auditRec, "currentlyPublished", playbookRunToCancel.RetrospectivePublishedAt > 0)
 	model.AddEventParameterToAuditRec(auditRec, "currentRetrospectiveLength", len(playbookRunToCancel.Retrospective))
 
@@ -3723,7 +3685,7 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	// Mark success and add result state for audit
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "canceledAt", now)
-	model.AddEventParameterToAuditRec(auditRec, "cancelerUsername", cancelerUser.Username)
+	model.AddEventParameterToAuditRec(auditRec, "cancelerID", cancelerID)
 	auditRec.AddEventResultState(*playbookRunToCancel)
 
 	return nil
@@ -3774,7 +3736,6 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	}
 
 	// Add current context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
 	model.AddEventParameterToAuditRec(auditRec, "channelID", playbookRun.ChannelID)
 
 	var originalRun *PlaybookRun
@@ -3826,7 +3787,6 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 
 	// Mark success and add result state for audit
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "requesterUsername", requesterUser.Username)
 	model.AddEventParameterToAuditRec(auditRec, "postID", post.Id)
 	model.AddEventParameterToAuditRec(auditRec, "timelineEventID", event.ID)
 	auditRec.AddEventResultState(*playbookRun)
@@ -3855,7 +3815,6 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", playbookRun.Name)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", playbookRun.TeamID)
 	model.AddEventParameterToAuditRec(auditRec, "currentParticipantCount", len(playbookRun.ParticipantIDs))
 
@@ -4188,7 +4147,6 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", originalRun.Name)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", originalRun.TeamID)
 
 	if err := s.store.Follow(playbookRunID, userID); err != nil {
@@ -4222,7 +4180,6 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	}
 
 	// Add current run context to audit
-	model.AddEventParameterToAuditRec(auditRec, "runName", originalRun.Name)
 	model.AddEventParameterToAuditRec(auditRec, "teamID", originalRun.TeamID)
 
 	if err := s.store.Unfollow(playbookRunID, userID); err != nil {

@@ -221,8 +221,6 @@ func (r PlaybookRun) GetItemsOrder() []string {
 func (r PlaybookRun) Auditable() map[string]any {
 	return map[string]any{
 		"id":             r.ID,
-		"name":           r.Name,
-		"summary":        r.Summary,
 		"owner_user_id":  r.OwnerUserID,
 		"team_id":        r.TeamID,
 		"channel_id":     r.ChannelID,
