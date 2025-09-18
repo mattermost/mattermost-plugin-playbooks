@@ -210,7 +210,7 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Durumu güncelle"
+        "translation": "Gönder"
     },
     {
         "id": "app.user.run.update_status.reminder_for_next_update",
