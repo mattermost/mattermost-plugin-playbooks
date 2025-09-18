@@ -178,7 +178,9 @@ describe('playbooks > edit status update', {testIsolation: true}, () => {
                 cy.wait(ONE_SEC);
 
                 // # Edit webhooks
-                cy.findAllByTestId('webhooks-input').type('http://hook1.com{enter}http://hook2.com{enter}http://hook3.com{enter}');
+                cy.findAllByTestId('webhooks-input').
+                    should('be.visible').
+                    type('http://hook1.com{enter}http://hook2.com{enter}http://hook3.com{enter}', {delay: 100});
                 cy.findAllByTestId('checklist-item-save-button').click();
 
                 cy.wait(FIVE_SEC);
