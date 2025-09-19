@@ -119,6 +119,10 @@ jobs:
           cache: "npm"
           cache-dependency-path: webapp/package-lock.json
 
+      - name: ci/get-short-sha
+        id: short-sha
+        run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+        
       - name: ci/setup-chainctl
         uses: chainguard-dev/setup-chainctl@v0.3.2
         with:
@@ -217,6 +221,15 @@ jobs:
             dist-fips/*.tar.gz
           retention-days: 7
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1         # change as appropriate
+      - name: Upload dist to S3
+        run: |
+          aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
 
   test-postgres13:
     runs-on: ubuntu-22.04
