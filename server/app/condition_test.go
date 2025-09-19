@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCondition_Evaluate(t *testing.T) {
+func TestConditionExpr_Evaluate(t *testing.T) {
 	propertyFields, propertyValues := createTestFieldsAndValues(t)
 
 	t.Run("is condition - match", func(t *testing.T) {
@@ -250,7 +250,7 @@ func TestCondition_Evaluate(t *testing.T) {
 	})
 }
 
-func TestCondition_JSON(t *testing.T) {
+func TestConditionExpr_JSON(t *testing.T) {
 	t.Run("marshal and unmarshal simple is condition", func(t *testing.T) {
 		original := &ConditionExpr{
 			Is: &ComparisonCondition{
@@ -610,7 +610,7 @@ func TestIsNotFunction(t *testing.T) {
 	})
 }
 
-func TestCondition_Validate(t *testing.T) {
+func TestConditionExpr_Validate(t *testing.T) {
 	propertyFields, _ := createTestFieldsAndValues(t)
 
 	t.Run("valid is condition", func(t *testing.T) {
@@ -848,7 +848,7 @@ func TestComparisonCondition_Validate(t *testing.T) {
 	})
 }
 
-func TestCondition_Sanitize(t *testing.T) {
+func TestConditionExpr_Sanitize(t *testing.T) {
 	t.Run("sanitize is condition", func(t *testing.T) {
 		condition := &ConditionExpr{
 			Is: &ComparisonCondition{
@@ -1041,7 +1041,7 @@ func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) 
 	return fields, values
 }
 
-func TestCondition_ToString(t *testing.T) {
+func TestConditionExpr_ToString(t *testing.T) {
 	propertyFields, _ := createTestFieldsAndValues(t)
 
 	t.Run("simple is condition", func(t *testing.T) {
