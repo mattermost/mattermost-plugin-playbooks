@@ -1249,3 +1249,15 @@ func GetTopPlaybooksInsightsListWithPagination(playbooks []*app.PlaybookInsight,
 
 	return &app.PlaybooksInsightsList{HasNext: hasNext, Items: playbooks}
 }
+
+// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
+func (p *playbookStore) BumpPlaybookUpdatedAt(playbookID string) error {
+	if _, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookID})); err != nil {
+		return errors.Wrapf(err, "failed to bump UpdateAt for playbook '%s'", playbookID)
+	}
+
+	return nil
+}

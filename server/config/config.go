@@ -43,4 +43,7 @@ type Service interface {
 	// IsIncrementalUpdatesEnabled returns true when incremental WebSocket updates are enabled.
 	// This allows the server to send only changed fields in WebSocket events instead of full objects.
 	IsIncrementalUpdatesEnabled() bool
+
+	// IsExperimentalFeaturesEnabled returns true when experimental features are enabled.
+	IsExperimentalFeaturesEnabled() bool
 }

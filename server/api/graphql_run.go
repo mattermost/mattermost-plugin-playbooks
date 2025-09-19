@@ -226,6 +226,25 @@ func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {
 	return float64(r.PlaybookRun.TimelineEvents[len(r.PlaybookRun.TimelineEvents)-1].EventAt)
 }
 
+func (r *RunResolver) PropertyFields(ctx context.Context) ([]*PropertyFieldResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFields, err := c.propertyService.GetRunPropertyFields(r.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFieldResolvers := make([]*PropertyFieldResolver, 0, len(propertyFields))
+	for _, propertyField := range propertyFields {
+		propertyFieldResolvers = append(propertyFieldResolvers, &PropertyFieldResolver{propertyField: propertyField})
+	}
+
+	return propertyFieldResolvers, nil
+}
+
 type RunConnectionResolver struct {
 	results app.GetPlaybookRunsResults
 	page    int
