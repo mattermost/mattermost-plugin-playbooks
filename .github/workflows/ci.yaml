@@ -109,7 +109,7 @@ jobs:
           cache: false
       - name: ci/get-short-sha
         id: short-sha
-        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
       - name: ci/build-for-upload
         run: make dist-ci
       - name: ci/upload-build-artifact
@@ -120,6 +120,15 @@ jobs:
           path: |
             dist/playbooks-*.tar.gz
           retention-days: 7 ## No need to keep build artifacts for more than 7 days
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1         # change as appropriate
+      - name: Upload dist to S3
+        run: |
+          aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
       - name: ci/ensure-build-on-all-platforms ## Verify builds on all platgorms *after* ci/build-for-upload to keep artifact small
         run: make dist
 

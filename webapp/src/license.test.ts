@@ -22,6 +22,7 @@ describe('license checks', () => {
 
     const withProfessionalName = withSkuName('professional');
     const withEnterpriseName = withSkuName('enterprise');
+    const withEntryName = withSkuName('entry');
     const withEnterpriseAdvancedName = withSkuName('advanced');
     const withUnknownName = withSkuName('unknown');
 
@@ -32,6 +33,7 @@ describe('license checks', () => {
 
     const professional = withProfessionalName(baseLicense);
     const enterprise = withEnterpriseName(baseLicense);
+    const entry = withEntryName(baseLicense);
     const enterpriseAdvanced = withEnterpriseAdvancedName(baseLicense);
     const unknownSku = withUnknownName(baseLicense);
 
@@ -70,6 +72,18 @@ describe('license checks', () => {
 
         it('Enterprise Advanced SKU name with LDAP disabled', () => {
             expect(checkProfessionalLicensed(withLDAPDisabled(enterpriseAdvanced))).toBe(true);
+        });
+
+        it('Entry SKU name', () => {
+            expect(checkProfessionalLicensed(entry)).toBe(true);
+        });
+
+        it('Entry SKU name with LDAP enabled', () => {
+            expect(checkProfessionalLicensed(withLDAPEnabled(entry))).toBe(true);
+        });
+
+        it('Entry SKU name with LDAP disabled', () => {
+            expect(checkProfessionalLicensed(withLDAPDisabled(entry))).toBe(true);
         });
 
         it('Unknown SKU name', () => {
@@ -120,6 +134,18 @@ describe('license checks', () => {
 
         it('Enterprise Advanced SKU name with Message Export disabled', () => {
             expect(checkEnterpriseLicensed(withMessageExportDisabled(enterpriseAdvanced))).toBe(true);
+        });
+
+        it('Entry SKU name', () => {
+            expect(checkEnterpriseLicensed(entry)).toBe(true);
+        });
+
+        it('Entry SKU name with Message Export enabled', () => {
+            expect(checkEnterpriseLicensed(withMessageExportEnabled(entry))).toBe(true);
+        });
+
+        it('Entry SKU name with Message Export disabled', () => {
+            expect(checkEnterpriseLicensed(withMessageExportDisabled(entry))).toBe(true);
         });
 
         it('Unknown SKU name', () => {
