@@ -1,5 +1,6 @@
 name: ci
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -13,7 +14,7 @@ defaults:
 
 env:
   TERM: xterm
-  GO_VERSION: 1.24.0
+  GO_VERSION: 1.24.6
 
 jobs:
   lint:
@@ -96,6 +97,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - lint
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC authentication with Chainguard identity
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -107,19 +111,116 @@ jobs:
         with:
           go-version: "${{ env.GO_VERSION }}"
           cache: false
+
+      - name: ci/setup-node
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: webapp/package-lock.json
+
       - name: ci/get-short-sha
         id: short-sha
         run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-      - name: ci/build-for-upload
-        run: make dist-ci
-      - name: ci/upload-build-artifact
-        if: github.event_name == 'pull_request' && success()
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        
+      - name: ci/setup-chainctl
+        uses: chainguard-dev/setup-chainctl@v0.3.2
         with:
-          name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
+          identity: ${{ secrets.CHAINGUARD_IDENTITY }}
+
+      - name: ci/debug-chainctl-status
+        run: |
+          echo "=== Debugging chainctl Status ==="
+          echo "chainctl version:"
+          chainctl version || echo "chainctl not available"
+          
+          echo "chainctl auth status:"
+          chainctl auth status || echo "chainctl auth status failed"
+          
+          echo "Environment variables:"
+          echo "CHAINCTL_CONFIG: '$CHAINCTL_CONFIG'"
+          
+          echo "Docker config check:"
+          ls -la ~/.docker/ 2>/dev/null || echo "No ~/.docker directory"
+          
+          if [ -f ~/.docker/config.json ]; then
+            echo "Docker config exists, checking for cgr.dev:"
+            grep -q "cgr.dev" ~/.docker/config.json && echo "✅ cgr.dev found in Docker config" || echo "❌ cgr.dev not found in Docker config"
+          fi
+
+      - name: ci/cache-webapp-node-modules
+        id: cache-webapp-node-modules
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-webapp-node-modules-
+
+      - name: ci/setup-webapp-npm-deps
+        if: steps.cache-webapp-node-modules.outputs.cache-hit != 'true'
+        env:
+          NODE_ENV: development
+        run: |
+          cd webapp
+          npm install --ignore-scripts --no-save --legacy-peer-deps
+
+      - name: ci/build-both-distributions
+        env:
+          GO_VERSION: ${{ env.GO_VERSION }}
+        run: make dist-all
+
+      - name: ci/display-signing-parameters
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "📦 Plugin Artifact Signing Parameters"
+          echo "===================================="
+          
+          # Extract plugin version using manifest tool (handles git versioning)
+          PLUGIN_VERSION=$(build/bin/manifest version)
+          # Strip SHA suffix if present (e.g., "2.4.1+d44d4f1b" -> "2.4.1")
+          PLUGIN_VERSION=$(echo "$PLUGIN_VERSION" | sed 's/+.*$//')
+          # Add 'v' prefix for consistency with other plugin packages
+          if [[ ! $PLUGIN_VERSION == v* ]]; then
+            PLUGIN_VERSION="v${PLUGIN_VERSION}"
+          fi
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          
+          echo ""
+          echo "To sign artifacts from this PR, run the following command:"
+          echo ""
+          echo "gh workflow run sign-plugin-pr-artifacts.yaml \\"
+          echo "  --repo mattermost/delivery-platform \\"
+          echo "  --field repository_full_name=\"${{ github.repository }}\" \\"
+          echo "  --field pr_number=\"${{ github.event.number }}\" \\"
+          echo "  --field commit_sha=\"${{ github.sha }}\" \\"
+          echo "  --field run_id=\"${{ github.run_id }}\" \\"
+          echo "  --field plugin_version=\"${PLUGIN_VERSION}\" \\"
+          echo "  --field include_fips=true"
+          echo ""
+          echo "Or use the GitHub web interface with these values:"
+          echo "- Repository Full Name: ${{ github.repository }}"
+          echo "- PR Number: ${{ github.event.number }}"
+          echo "- Commit SHA: ${{ github.sha }}"
+          echo "- Run ID: ${{ github.run_id }}"
+          echo "- Plugin Version: ${PLUGIN_VERSION}"
+          echo "- Include FIPS: true"
+          echo ""
+          echo "Expected artifact naming:"
+          echo "- mattermost-plugin-playbooks-${PLUGIN_VERSION}+${SHORT_SHA}-linux-amd64.tar.gz"
+          echo "- mattermost-plugin-playbooks-${PLUGIN_VERSION}+${SHORT_SHA}-fips-linux-amd64.tar.gz"
+          echo ""
+          echo "Artifacts will be available at:"
+          echo "https://plugins.releases.mattermost.com/pr/mattermost-plugin-playbooks/pr-${{ github.event.number }}-${SHORT_SHA}/"
+
+      - name: ci/upload-all-artifacts
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.5.0
+        with:
+          name: all-plugin-artifacts
           path: |
-            dist/playbooks-*.tar.gz
-          retention-days: 7 ## No need to keep build artifacts for more than 7 days
+            dist/*.tar.gz
+            dist-fips/*.tar.gz
+          retention-days: 7
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
         with:
@@ -129,10 +230,8 @@ jobs:
       - name: Upload dist to S3
         run: |
           aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
-      - name: ci/ensure-build-on-all-platforms ## Verify builds on all platgorms *after* ci/build-for-upload to keep artifact small
-        run: make dist
 
-  test-Postgres13:
+  test-postgres13:
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -272,7 +371,7 @@ jobs:
     if: always()
     needs:
       - e2e-cypress-tests
-      - test-Postgres13
+      - test-postgres13
     runs-on: ubuntu-22.04
     permissions:
       checks: write
