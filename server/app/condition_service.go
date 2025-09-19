@@ -4,8 +4,6 @@
 package app
 
 import (
-	"encoding/json"
-
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 )
@@ -49,23 +47,21 @@ func (s *conditionService) Create(userID string, condition Condition) (*Conditio
 
 	condition.ConditionExpr.Sanitize()
 
-	storedCondition := NewStoredCondition(condition)
-
-	createdStored, err := s.store.CreateCondition(condition.PlaybookID, storedCondition)
+	createdCondition, err := s.store.CreateCondition(condition.PlaybookID, condition)
 	if err != nil {
 		return nil, err
 	}
 
-	return &createdStored.Condition, nil
+	return createdCondition, nil
 }
 
 // Get retrieves a stored condition by ID
 func (s *conditionService) Get(userID, playbookID, conditionID string) (*Condition, error) {
-	storedCondition, err := s.store.GetCondition(playbookID, conditionID)
+	condition, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
 		return nil, err
 	}
-	return &storedCondition.Condition, nil
+	return condition, nil
 }
 
 // Update updates an existing stored condition
@@ -98,14 +94,12 @@ func (s *conditionService) Update(userID string, condition Condition) (*Conditio
 
 	condition.ConditionExpr.Sanitize()
 
-	storedCondition := NewStoredCondition(condition)
-
-	updatedStored, err := s.store.UpdateCondition(condition.PlaybookID, storedCondition)
+	updatedCondition, err := s.store.UpdateCondition(condition.PlaybookID, condition)
 	if err != nil {
 		return nil, err
 	}
 
-	return &updatedStored.Condition, nil
+	return updatedCondition, nil
 }
 
 // Delete soft-deletes a stored condition
@@ -124,97 +118,10 @@ func (s *conditionService) Delete(userID, playbookID, conditionID string) error 
 
 // GetConditions retrieves stored conditions with filtering
 func (s *conditionService) GetConditions(userID, playbookID string, options ConditionFilterOptions) ([]Condition, error) {
-	storedConditions, err := s.store.GetConditions(playbookID, options)
+	conditions, err := s.store.GetConditions(playbookID, options)
 	if err != nil {
 		return nil, err
 	}
 
-	conditions := make([]Condition, 0, len(storedConditions))
-	for _, storedCondition := range storedConditions {
-		conditions = append(conditions, storedCondition.Condition)
-	}
-
 	return conditions, nil
-}
-
-// extractPropertyFieldIDs recursively extracts all property field IDs from a condition
-func extractPropertyFieldIDs(condition ConditionExpr) []string {
-	var fieldIDs []string
-	fieldIDSet := make(map[string]struct{})
-
-	extractFromCondition(condition, fieldIDSet)
-
-	for fieldID := range fieldIDSet {
-		fieldIDs = append(fieldIDs, fieldID)
-	}
-
-	return fieldIDs
-}
-
-func extractFromCondition(condition ConditionExpr, fieldIDSet map[string]struct{}) {
-	if condition.And != nil {
-		for _, subCondition := range condition.And {
-			extractFromCondition(subCondition, fieldIDSet)
-		}
-	}
-
-	if condition.Or != nil {
-		for _, subCondition := range condition.Or {
-			extractFromCondition(subCondition, fieldIDSet)
-		}
-	}
-
-	if condition.Is != nil {
-		fieldIDSet[condition.Is.FieldID] = struct{}{}
-	}
-
-	if condition.IsNot != nil {
-		fieldIDSet[condition.IsNot.FieldID] = struct{}{}
-	}
-}
-
-// extractPropertyOptionsIDs recursively extracts all property options IDs from a condition
-func extractPropertyOptionsIDs(condition ConditionExpr) []string {
-	var optionsIDs []string
-	optionsIDSet := make(map[string]struct{})
-
-	extractOptionsFromCondition(condition, optionsIDSet)
-
-	for optionsID := range optionsIDSet {
-		optionsIDs = append(optionsIDs, optionsID)
-	}
-
-	return optionsIDs
-}
-
-func extractOptionsFromCondition(condition ConditionExpr, optionsIDSet map[string]struct{}) {
-	if condition.And != nil {
-		for _, subCondition := range condition.And {
-			extractOptionsFromCondition(subCondition, optionsIDSet)
-		}
-	}
-
-	if condition.Or != nil {
-		for _, subCondition := range condition.Or {
-			extractOptionsFromCondition(subCondition, optionsIDSet)
-		}
-	}
-
-	if condition.Is != nil {
-		extractOptionsFromComparison(condition.Is, optionsIDSet)
-	}
-
-	if condition.IsNot != nil {
-		extractOptionsFromComparison(condition.IsNot, optionsIDSet)
-	}
-}
-
-func extractOptionsFromComparison(comparison *ComparisonCondition, optionsIDSet map[string]struct{}) {
-	var arrayValue []string
-	if err := json.Unmarshal(comparison.Value, &arrayValue); err == nil {
-		// Successfully unmarshaled as array (select/multiselect fields)
-		for _, optionID := range arrayValue {
-			optionsIDSet[optionID] = struct{}{}
-		}
-	}
 }

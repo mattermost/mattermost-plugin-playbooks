@@ -515,22 +515,6 @@ type Condition struct {
 	DeleteAt      int64         `json:"delete_at"`
 }
 
-// StoredCondition represents a condition as stored in the database
-type StoredCondition struct {
-	Condition
-	PropertyFieldIDs   []string `json:"property_field_ids"`
-	PropertyOptionsIDs []string `json:"property_options_ids"`
-}
-
-// NewStoredCondition creates a StoredCondition from a public Condition
-func NewStoredCondition(condition Condition) StoredCondition {
-	return StoredCondition{
-		Condition:          condition,
-		PropertyFieldIDs:   extractPropertyFieldIDs(condition.ConditionExpr),
-		PropertyOptionsIDs: extractPropertyOptionsIDs(condition.ConditionExpr),
-	}
-}
-
 // IsValid validates a condition
 func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) error {
 	if isCreation && c.ID != "" {
@@ -581,9 +565,9 @@ type ConditionService interface {
 
 // ConditionStore defines database operations for stored conditions
 type ConditionStore interface {
-	CreateCondition(playbookID string, condition StoredCondition) (*StoredCondition, error)
-	GetCondition(playbookID, conditionID string) (*StoredCondition, error)
-	UpdateCondition(playbookID string, condition StoredCondition) (*StoredCondition, error)
+	CreateCondition(playbookID string, condition Condition) (*Condition, error)
+	GetCondition(playbookID, conditionID string) (*Condition, error)
+	UpdateCondition(playbookID string, condition Condition) (*Condition, error)
 	DeleteCondition(playbookID, conditionID string) error
-	GetConditions(playbookID string, options ConditionFilterOptions) ([]StoredCondition, error)
+	GetConditions(playbookID string, options ConditionFilterOptions) ([]Condition, error)
 }

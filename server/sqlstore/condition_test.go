@@ -35,361 +35,557 @@ func setupConditionStore(t *testing.T, db *sqlx.DB) (app.ConditionStore, app.Pla
 }
 
 func TestConditionStore(t *testing.T) {
-	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		_ = setupTables(t, db)
-		conditionStore, playbookStore := setupConditionStore(t, db)
+	db := setupTestDB(t)
+	_ = setupTables(t, db)
+	conditionStore, playbookStore := setupConditionStore(t, db)
 
-		t.Run("create and get condition", func(t *testing.T) {
-			conditionID := model.NewId()
+	t.Run("create and get condition", func(t *testing.T) {
+		conditionID := model.NewId()
 
-			// Create test playbook first
-			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
-			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
 
-			condition := app.StoredCondition{
-				Condition: app.Condition{
-					ID:         conditionID,
-					PlaybookID: playbookID,
-					RunID:      "",
-					ConditionExpr: app.ConditionExpr{
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      "",
+			ConditionExpr: app.ConditionExpr{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id","high_id"]`),
+				},
+			},
+			CreateAt: 1234567890,
+			UpdateAt: 1234567890,
+			DeleteAt: 0,
+		}
+
+		created, err := conditionStore.CreateCondition(playbookID, condition)
+		require.NoError(t, err)
+		require.NotNil(t, created)
+		require.NotEmpty(t, created.ID)
+		require.Equal(t, playbookID, created.PlaybookID)
+		require.Equal(t, condition.ConditionExpr, created.ConditionExpr)
+
+		retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
+		require.NoError(t, err)
+		require.NotNil(t, retrieved)
+		require.Equal(t, created.ID, retrieved.ID)
+		require.Equal(t, playbookID, retrieved.PlaybookID)
+		require.Equal(t, condition.ConditionExpr, retrieved.ConditionExpr)
+	})
+
+	t.Run("create condition with complex nested expression", func(t *testing.T) {
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		condition := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			ConditionExpr: app.ConditionExpr{
+				And: []app.ConditionExpr{
+					{
 						Is: &app.ComparisonCondition{
 							FieldID: "severity_id",
-							Value:   json.RawMessage(`["critical_id", "high_id"]`),
+							Value:   json.RawMessage(`["critical_id"]`),
 						},
 					},
-					CreateAt: 1234567890,
-					UpdateAt: 1234567890,
-					DeleteAt: 0,
-				},
-				PropertyFieldIDs:   []string{"severity_id"},
-				PropertyOptionsIDs: []string{"critical_id", "high_id"},
-			}
-
-			created, err := conditionStore.CreateCondition(playbookID, condition)
-			require.NoError(t, err)
-			require.NotNil(t, created)
-			require.NotEmpty(t, created.ID)
-			require.Equal(t, playbookID, created.PlaybookID)
-			require.Equal(t, condition.PropertyFieldIDs, created.PropertyFieldIDs)
-			require.Equal(t, condition.PropertyOptionsIDs, created.PropertyOptionsIDs)
-
-			retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
-			require.NoError(t, err)
-			require.NotNil(t, retrieved)
-			require.Equal(t, created.ID, retrieved.ID)
-			require.Equal(t, playbookID, retrieved.PlaybookID)
-			require.Equal(t, condition.PropertyFieldIDs, retrieved.PropertyFieldIDs)
-			require.Equal(t, condition.PropertyOptionsIDs, retrieved.PropertyOptionsIDs)
-		})
-
-		t.Run("create condition with complex nested expression", func(t *testing.T) {
-			// Create test playbook first
-			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
-			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
-
-			condition := app.StoredCondition{
-				Condition: app.Condition{
-					ID:         model.NewId(),
-					PlaybookID: playbookID,
-					ConditionExpr: app.ConditionExpr{
-						And: []app.ConditionExpr{
+					{
+						Or: []app.ConditionExpr{
+							{
+								IsNot: &app.ComparisonCondition{
+									FieldID: "acknowledged_id",
+									Value:   json.RawMessage(`"true"`),
+								},
+							},
 							{
 								Is: &app.ComparisonCondition{
-									FieldID: "severity_id",
-									Value:   json.RawMessage(`["critical_id"]`),
-								},
-							},
-							{
-								Or: []app.ConditionExpr{
-									{
-										IsNot: &app.ComparisonCondition{
-											FieldID: "acknowledged_id",
-											Value:   json.RawMessage(`"true"`),
-										},
-									},
-									{
-										Is: &app.ComparisonCondition{
-											FieldID: "categories_id",
-											Value:   json.RawMessage(`["cat_a_id", "cat_b_id"]`),
-										},
-									},
+									FieldID: "categories_id",
+									Value:   json.RawMessage(`["cat_a_id","cat_b_id"]`),
 								},
 							},
 						},
 					},
-					CreateAt: 1234567890,
-					UpdateAt: 1234567890,
 				},
-				PropertyFieldIDs:   []string{"severity_id", "acknowledged_id", "categories_id"},
-				PropertyOptionsIDs: []string{"critical_id", "cat_a_id", "cat_b_id"},
-			}
+			},
+			CreateAt: 1234567890,
+			UpdateAt: 1234567890,
+		}
 
-			created, err := conditionStore.CreateCondition(playbookID, condition)
-			require.NoError(t, err)
-			require.NotNil(t, created)
+		created, err := conditionStore.CreateCondition(playbookID, condition)
+		require.NoError(t, err)
+		require.NotNil(t, created)
 
-			retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
+		retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
+		require.NoError(t, err)
+		require.NotNil(t, retrieved)
+		require.Equal(t, created.ID, retrieved.ID)
+		require.Equal(t, playbookID, retrieved.PlaybookID)
+		require.Equal(t, condition.ConditionExpr, retrieved.ConditionExpr)
+
+		// Verify the complex nested structure is preserved
+		require.NotNil(t, retrieved.ConditionExpr.And)
+		require.Len(t, retrieved.ConditionExpr.And, 2)
+		require.NotNil(t, retrieved.ConditionExpr.And[0].Is)
+		require.Equal(t, "severity_id", retrieved.ConditionExpr.And[0].Is.FieldID)
+		require.NotNil(t, retrieved.ConditionExpr.And[1].Or)
+		require.Len(t, retrieved.ConditionExpr.And[1].Or, 2)
+	})
+
+	t.Run("update condition", func(t *testing.T) {
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		condition := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			ConditionExpr: app.ConditionExpr{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["low_id"]`),
+				},
+			},
+			CreateAt: 1234567890,
+			UpdateAt: 1234567890,
+		}
+
+		created, err := conditionStore.CreateCondition(playbookID, condition)
+		require.NoError(t, err)
+
+		// Update the condition
+		created.ConditionExpr = app.ConditionExpr{
+			IsNot: &app.ComparisonCondition{
+				FieldID: "status_id",
+				Value:   json.RawMessage(`["closed_id","archived_id"]`),
+			},
+		}
+
+		updated, err := conditionStore.UpdateCondition(playbookID, *created)
+		require.NoError(t, err)
+		require.NotNil(t, updated)
+		require.Equal(t, created.ID, updated.ID)
+		require.GreaterOrEqual(t, updated.UpdateAt, created.UpdateAt)
+		require.Equal(t, "status_id", updated.ConditionExpr.IsNot.FieldID)
+
+		// Verify changes persisted
+		retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
+		require.NoError(t, err)
+		require.Equal(t, updated.ConditionExpr, retrieved.ConditionExpr)
+	})
+
+	t.Run("delete condition", func(t *testing.T) {
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		condition := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			ConditionExpr: app.ConditionExpr{
+				Is: &app.ComparisonCondition{
+					FieldID: "priority_id",
+					Value:   json.RawMessage(`["urgent_id"]`),
+				},
+			},
+			CreateAt: 1234567890,
+			UpdateAt: 1234567890,
+		}
+
+		created, err := conditionStore.CreateCondition(playbookID, condition)
+		require.NoError(t, err)
+
+		err = conditionStore.DeleteCondition(playbookID, created.ID)
+		require.NoError(t, err)
+
+		// Should not be retrievable after deletion
+		_, err = conditionStore.GetCondition(playbookID, created.ID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "condition not found")
+	})
+
+	t.Run("get multiple conditions", func(t *testing.T) {
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		// Create multiple conditions
+		conditions := []app.Condition{
+			{
+				ID:         model.NewId(),
+				PlaybookID: playbookID,
+				ConditionExpr: app.ConditionExpr{
+					Is: &app.ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				CreateAt: 1000,
+				UpdateAt: 1000,
+			},
+			{
+				ID:         model.NewId(),
+				PlaybookID: playbookID,
+				ConditionExpr: app.ConditionExpr{
+					IsNot: &app.ComparisonCondition{
+						FieldID: "status_id",
+						Value:   json.RawMessage(`["closed_id"]`),
+					},
+				},
+				CreateAt: 2000,
+				UpdateAt: 2000,
+			},
+		}
+
+		for _, condition := range conditions {
+			_, err := conditionStore.CreateCondition(playbookID, condition)
 			require.NoError(t, err)
-			require.NotNil(t, retrieved)
-			require.Len(t, retrieved.PropertyFieldIDs, 3)
-			require.Len(t, retrieved.PropertyOptionsIDs, 3)
-			require.Contains(t, retrieved.PropertyFieldIDs, "severity_id")
-			require.Contains(t, retrieved.PropertyFieldIDs, "acknowledged_id")
-			require.Contains(t, retrieved.PropertyFieldIDs, "categories_id")
-			require.Contains(t, retrieved.PropertyOptionsIDs, "critical_id")
-			require.Contains(t, retrieved.PropertyOptionsIDs, "cat_a_id")
-			require.Contains(t, retrieved.PropertyOptionsIDs, "cat_b_id")
+		}
+
+		retrieved, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{})
+		require.NoError(t, err)
+		require.Len(t, retrieved, 2)
+
+		// Test pagination
+		retrieved, err = conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{
+			PerPage: 1,
+			Page:    0,
 		})
+		require.NoError(t, err)
+		require.Len(t, retrieved, 1)
+	})
 
-		t.Run("update condition", func(t *testing.T) {
-			// Create test playbook first
-			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
-			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
+	t.Run("get conditions with run filter", func(t *testing.T) {
+		runID := model.NewId()
 
-			condition := app.StoredCondition{
-				Condition: app.Condition{
-					ID:         model.NewId(),
-					PlaybookID: playbookID,
-					ConditionExpr: app.ConditionExpr{
-						Is: &app.ComparisonCondition{
-							FieldID: "severity_id",
-							Value:   json.RawMessage(`["low_id"]`),
-						},
-					},
-					CreateAt: 1234567890,
-					UpdateAt: 1234567890,
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		// Create conditions - one for playbook, one for run
+		playbookCondition := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			RunID:      "",
+			ConditionExpr: app.ConditionExpr{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["high_id"]`),
 				},
-				PropertyFieldIDs:   []string{"severity_id"},
-				PropertyOptionsIDs: []string{"low_id"},
-			}
+			},
+			CreateAt: 1000,
+			UpdateAt: 1000,
+		}
 
-			created, err := conditionStore.CreateCondition(playbookID, condition)
-			require.NoError(t, err)
-
-			// Update the condition
-			created.ConditionExpr = app.ConditionExpr{
+		runCondition := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: app.ConditionExpr{
 				IsNot: &app.ComparisonCondition{
 					FieldID: "status_id",
-					Value:   json.RawMessage(`["closed_id", "archived_id"]`),
+					Value:   json.RawMessage(`["resolved_id"]`),
 				},
-			}
-			created.PropertyFieldIDs = []string{"status_id"}
-			created.PropertyOptionsIDs = []string{"closed_id", "archived_id"}
+			},
+			CreateAt: 2000,
+			UpdateAt: 2000,
+		}
 
-			updated, err := conditionStore.UpdateCondition(playbookID, *created)
-			require.NoError(t, err)
-			require.NotNil(t, updated)
-			require.Equal(t, created.ID, updated.ID)
-			require.GreaterOrEqual(t, updated.UpdateAt, created.UpdateAt)
-			require.Equal(t, []string{"status_id"}, updated.PropertyFieldIDs)
-			require.Equal(t, []string{"closed_id", "archived_id"}, updated.PropertyOptionsIDs)
+		_, err = conditionStore.CreateCondition(playbookID, playbookCondition)
+		require.NoError(t, err)
+		_, err = conditionStore.CreateCondition(playbookID, runCondition)
+		require.NoError(t, err)
 
-			// Verify changes persisted
-			retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
-			require.NoError(t, err)
-			require.Equal(t, updated.PropertyFieldIDs, retrieved.PropertyFieldIDs)
-			require.Equal(t, updated.PropertyOptionsIDs, retrieved.PropertyOptionsIDs)
+		// Get all conditions (should return both)
+		allConditions, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{})
+		require.NoError(t, err)
+		require.Len(t, allConditions, 2)
+
+		// Get only run conditions
+		runConditions, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{
+			RunID: runID,
 		})
+		require.NoError(t, err)
+		require.Len(t, runConditions, 1)
+		require.Equal(t, runID, runConditions[0].RunID)
+	})
 
-		t.Run("delete condition", func(t *testing.T) {
-			// Create test playbook first
-			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
-			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
+	t.Run("condition not found error", func(t *testing.T) {
+		playbookID := model.NewId()
+		nonExistentID := model.NewId()
 
-			condition := app.StoredCondition{
-				Condition: app.Condition{
-					ID:         model.NewId(),
-					PlaybookID: playbookID,
-					ConditionExpr: app.ConditionExpr{
-						Is: &app.ComparisonCondition{
-							FieldID: "priority_id",
-							Value:   json.RawMessage(`["urgent_id"]`),
-						},
-					},
-					CreateAt: 1234567890,
-					UpdateAt: 1234567890,
+		_, err := conditionStore.GetCondition(playbookID, nonExistentID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "condition not found")
+	})
+
+	t.Run("auto-generate ID on create", func(t *testing.T) {
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		condition := app.Condition{
+			ID:         "", // Empty ID should be auto-generated
+			PlaybookID: playbookID,
+			ConditionExpr: app.ConditionExpr{
+				Is: &app.ComparisonCondition{
+					FieldID: "test_field",
+					Value:   json.RawMessage(`["test_value"]`),
 				},
-				PropertyFieldIDs:   []string{"priority_id"},
-				PropertyOptionsIDs: []string{"urgent_id"},
-			}
+			},
+			CreateAt: 1234567890,
+			UpdateAt: 1234567890,
+		}
 
-			created, err := conditionStore.CreateCondition(playbookID, condition)
-			require.NoError(t, err)
+		created, err := conditionStore.CreateCondition(playbookID, condition)
+		require.NoError(t, err)
+		require.NotEmpty(t, created.ID)
+		require.Len(t, created.ID, 26) // Mattermost ID length
+	})
 
-			err = conditionStore.DeleteCondition(playbookID, created.ID)
-			require.NoError(t, err)
+	t.Run("verify database storage of extracted field and option IDs", func(t *testing.T) {
+		// Create test playbook first
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
 
-			// Should not be retrievable after deletion
-			_, err = conditionStore.GetCondition(playbookID, created.ID)
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "condition not found")
-		})
-
-		t.Run("get multiple conditions", func(t *testing.T) {
-			// Create test playbook first
-			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
-			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
-
-			// Create multiple conditions
-			conditions := []app.StoredCondition{
-				{
-					Condition: app.Condition{
-						ID:         model.NewId(),
-						PlaybookID: playbookID,
-						ConditionExpr: app.ConditionExpr{
-							Is: &app.ComparisonCondition{
-								FieldID: "severity_id",
-								Value:   json.RawMessage(`["critical_id"]`),
-							},
-						},
-						CreateAt: 1000,
-						UpdateAt: 1000,
-					},
-					PropertyFieldIDs:   []string{"severity_id"},
-					PropertyOptionsIDs: []string{"critical_id"},
-				},
-				{
-					Condition: app.Condition{
-						ID:         model.NewId(),
-						PlaybookID: playbookID,
-						ConditionExpr: app.ConditionExpr{
-							IsNot: &app.ComparisonCondition{
-								FieldID: "status_id",
-								Value:   json.RawMessage(`["closed_id"]`),
-							},
-						},
-						CreateAt: 2000,
-						UpdateAt: 2000,
-					},
-					PropertyFieldIDs:   []string{"status_id"},
-					PropertyOptionsIDs: []string{"closed_id"},
-				},
-			}
-
-			for _, condition := range conditions {
-				_, err := conditionStore.CreateCondition(playbookID, condition)
-				require.NoError(t, err)
-			}
-
-			retrieved, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{})
-			require.NoError(t, err)
-			require.Len(t, retrieved, 2)
-
-			// Test pagination
-			retrieved, err = conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{
-				PerPage: 1,
-				Page:    0,
-			})
-			require.NoError(t, err)
-			require.Len(t, retrieved, 1)
-		})
-
-		t.Run("get conditions with run filter", func(t *testing.T) {
-			runID := model.NewId()
-
-			// Create test playbook first
-			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
-			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
-
-			// Create conditions - one for playbook, one for run
-			playbookCondition := app.StoredCondition{
-				Condition: app.Condition{
-					ID:         model.NewId(),
-					PlaybookID: playbookID,
-					RunID:      "",
-					ConditionExpr: app.ConditionExpr{
+		// Create a complex condition with multiple fields and options
+		condition := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			ConditionExpr: app.ConditionExpr{
+				And: []app.ConditionExpr{
+					{
 						Is: &app.ComparisonCondition{
 							FieldID: "severity_id",
-							Value:   json.RawMessage(`["high_id"]`),
+							Value:   json.RawMessage(`["critical_id","high_id"]`),
 						},
 					},
-					CreateAt: 1000,
-					UpdateAt: 1000,
-				},
-				PropertyFieldIDs:   []string{"severity_id"},
-				PropertyOptionsIDs: []string{"high_id"},
-			}
-
-			runCondition := app.StoredCondition{
-				Condition: app.Condition{
-					ID:         model.NewId(),
-					PlaybookID: playbookID,
-					RunID:      runID,
-					ConditionExpr: app.ConditionExpr{
+					{
 						IsNot: &app.ComparisonCondition{
 							FieldID: "status_id",
-							Value:   json.RawMessage(`["resolved_id"]`),
+							Value:   json.RawMessage(`["closed_id","archived_id"]`),
 						},
 					},
-					CreateAt: 2000,
-					UpdateAt: 2000,
 				},
-				PropertyFieldIDs:   []string{"status_id"},
-				PropertyOptionsIDs: []string{"resolved_id"},
-			}
+			},
+			CreateAt: 1234567890,
+			UpdateAt: 1234567890,
+		}
 
-			_, err = conditionStore.CreateCondition(playbookID, playbookCondition)
-			require.NoError(t, err)
-			_, err = conditionStore.CreateCondition(playbookID, runCondition)
-			require.NoError(t, err)
+		// Store the condition
+		created, err := conditionStore.CreateCondition(playbookID, condition)
+		require.NoError(t, err)
+		require.NotNil(t, created)
 
-			// Get all conditions (should return both)
-			allConditions, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{})
-			require.NoError(t, err)
-			require.Len(t, allConditions, 2)
+		// Manually query the database to check the JSON fields
+		var result struct {
+			PropertyFieldIDs   json.RawMessage `db:"propertyfieldids"`
+			PropertyOptionsIDs json.RawMessage `db:"propertyoptionsids"`
+		}
+		query := "SELECT propertyfieldids, propertyoptionsids FROM IR_Condition WHERE id = $1"
+		err = db.Get(&result, query, created.ID)
+		require.NoError(t, err)
 
-			// Get only run conditions
-			runConditions, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{
-				RunID: runID,
-			})
-			require.NoError(t, err)
-			require.Len(t, runConditions, 1)
-			require.Equal(t, runID, runConditions[0].RunID)
-		})
+		// Parse the stored JSON and verify the extracted field IDs
+		var fieldIDs []string
+		err = json.Unmarshal(result.PropertyFieldIDs, &fieldIDs)
+		require.NoError(t, err)
+		require.Len(t, fieldIDs, 2)
+		require.Contains(t, fieldIDs, "severity_id")
+		require.Contains(t, fieldIDs, "status_id")
 
-		t.Run("condition not found error", func(t *testing.T) {
-			playbookID := model.NewId()
-			nonExistentID := model.NewId()
+		// Parse the stored JSON and verify the extracted option IDs
+		var optionIDs []string
+		err = json.Unmarshal(result.PropertyOptionsIDs, &optionIDs)
+		require.NoError(t, err)
+		require.Len(t, optionIDs, 4)
+		require.Contains(t, optionIDs, "critical_id")
+		require.Contains(t, optionIDs, "high_id")
+		require.Contains(t, optionIDs, "closed_id")
+		require.Contains(t, optionIDs, "archived_id")
+	})
+}
 
-			_, err := conditionStore.GetCondition(playbookID, nonExistentID)
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "condition not found")
-		})
+func TestExtractPropertyFieldIDs(t *testing.T) {
+	t.Run("simple is condition", func(t *testing.T) {
+		condition := app.ConditionExpr{
+			Is: &app.ComparisonCondition{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`["critical_id"]`),
+			},
+		}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 1)
+		require.Contains(t, fieldIDs, "severity_id")
+	})
 
-		t.Run("auto-generate ID on create", func(t *testing.T) {
-			// Create test playbook first
-			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
-			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
+	t.Run("simple isNot condition", func(t *testing.T) {
+		condition := app.ConditionExpr{
+			IsNot: &app.ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage(`"true"`),
+			},
+		}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 1)
+		require.Contains(t, fieldIDs, "acknowledged_id")
+	})
 
-			condition := app.StoredCondition{
-				Condition: app.Condition{
-					ID:         "", // Empty ID should be auto-generated
-					PlaybookID: playbookID,
-					ConditionExpr: app.ConditionExpr{
-						Is: &app.ComparisonCondition{
-							FieldID: "test_field",
-							Value:   json.RawMessage(`["test_value"]`),
+	t.Run("and condition with multiple fields", func(t *testing.T) {
+		condition := app.ConditionExpr{
+			And: []app.ConditionExpr{
+				{
+					Is: &app.ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					IsNot: &app.ComparisonCondition{
+						FieldID: "acknowledged_id",
+						Value:   json.RawMessage(`"true"`),
+					},
+				},
+			},
+		}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 2)
+		require.Contains(t, fieldIDs, "severity_id")
+		require.Contains(t, fieldIDs, "acknowledged_id")
+	})
+
+	t.Run("or condition with multiple fields", func(t *testing.T) {
+		condition := app.ConditionExpr{
+			Or: []app.ConditionExpr{
+				{
+					Is: &app.ComparisonCondition{
+						FieldID: "status_id",
+						Value:   json.RawMessage(`["open_id"]`),
+					},
+				},
+				{
+					Is: &app.ComparisonCondition{
+						FieldID: "priority_id",
+						Value:   json.RawMessage(`["high_priority_id"]`),
+					},
+				},
+			},
+		}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 2)
+		require.Contains(t, fieldIDs, "status_id")
+		require.Contains(t, fieldIDs, "priority_id")
+	})
+
+	t.Run("nested conditions with multiple fields", func(t *testing.T) {
+		condition := app.ConditionExpr{
+			And: []app.ConditionExpr{
+				{
+					Is: &app.ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					Or: []app.ConditionExpr{
+						{
+							Is: &app.ComparisonCondition{
+								FieldID: "status_id",
+								Value:   json.RawMessage(`["open_id"]`),
+							},
+						},
+						{
+							IsNot: &app.ComparisonCondition{
+								FieldID: "acknowledged_id",
+								Value:   json.RawMessage(`"true"`),
+							},
 						},
 					},
-					CreateAt: 1234567890,
-					UpdateAt: 1234567890,
 				},
-				PropertyFieldIDs:   []string{"test_field"},
-				PropertyOptionsIDs: []string{"test_value"},
-			}
+			},
+		}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 3)
+		require.Contains(t, fieldIDs, "severity_id")
+		require.Contains(t, fieldIDs, "status_id")
+		require.Contains(t, fieldIDs, "acknowledged_id")
+	})
 
-			created, err := conditionStore.CreateCondition(playbookID, condition)
-			require.NoError(t, err)
-			require.NotEmpty(t, created.ID)
-			require.Len(t, created.ID, 26) // Mattermost ID length
-		})
-	}
+	t.Run("duplicate field IDs are deduplicated", func(t *testing.T) {
+		condition := app.ConditionExpr{
+			And: []app.ConditionExpr{
+				{
+					Is: &app.ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					IsNot: &app.ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["low_id"]`),
+					},
+				},
+			},
+		}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 1)
+		require.Contains(t, fieldIDs, "severity_id")
+	})
+
+	t.Run("empty condition returns empty slice", func(t *testing.T) {
+		condition := app.ConditionExpr{}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 0)
+	})
+
+	t.Run("complex nested structure with duplicates", func(t *testing.T) {
+		condition := app.ConditionExpr{
+			Or: []app.ConditionExpr{
+				{
+					And: []app.ConditionExpr{
+						{
+							Is: &app.ComparisonCondition{
+								FieldID: "field1",
+								Value:   json.RawMessage(`"value1"`),
+							},
+						},
+						{
+							IsNot: &app.ComparisonCondition{
+								FieldID: "field2",
+								Value:   json.RawMessage(`"value2"`),
+							},
+						},
+					},
+				},
+				{
+					Is: &app.ComparisonCondition{
+						FieldID: "field1", // duplicate
+						Value:   json.RawMessage(`"different_value"`),
+					},
+				},
+				{
+					IsNot: &app.ComparisonCondition{
+						FieldID: "field3",
+						Value:   json.RawMessage(`"value3"`),
+					},
+				},
+			},
+		}
+		fieldIDs := extractPropertyFieldIDs(condition)
+		require.Len(t, fieldIDs, 3)
+		require.Contains(t, fieldIDs, "field1")
+		require.Contains(t, fieldIDs, "field2")
+		require.Contains(t, fieldIDs, "field3")
+	})
 }

@@ -64,45 +64,41 @@ func NewConditionStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Condit
 }
 
 // CreateCondition creates a new stored condition
-func (c *conditionStore) CreateCondition(playbookID string, condition app.StoredCondition) (*app.StoredCondition, error) {
+func (c *conditionStore) CreateCondition(playbookID string, condition app.Condition) (*app.Condition, error) {
 	if condition.ID == "" {
 		condition.ID = model.NewId()
+	}
+
+	// Set timestamps if not provided
+	now := model.GetMillis()
+	if condition.CreateAt == 0 {
+		condition.CreateAt = now
+	}
+	if condition.UpdateAt == 0 {
+		condition.UpdateAt = now
 	}
 
 	// Ensure condition belongs to the specified playbook
 	condition.PlaybookID = playbookID
 
-	now := model.GetMillis()
-	condition.CreateAt = now
-	condition.UpdateAt = now
-
-	conditionExprJSON, err := json.Marshal(condition.ConditionExpr)
+	// Convert to database representation
+	dbCondition, err := c.toConditionForDB(condition)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal condition expression")
-	}
-
-	propertyFieldIDsJSON, err := json.Marshal(condition.PropertyFieldIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal property field IDs")
-	}
-
-	propertyOptionsIDsJSON, err := json.Marshal(condition.PropertyOptionsIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal property options IDs")
+		return nil, errors.Wrap(err, "failed to convert condition for database")
 	}
 
 	_, err = c.store.execBuilder(c.store.db, c.queryBuilder.
 		Insert("IR_Condition").
 		SetMap(map[string]any{
-			"ID":                 condition.ID,
-			"ConditionExpr":      conditionExprJSON,
-			"PlaybookID":         condition.PlaybookID,
-			"RunID":              condition.RunID,
-			"PropertyFieldIDs":   propertyFieldIDsJSON,
-			"PropertyOptionsIDs": propertyOptionsIDsJSON,
-			"CreateAt":           condition.CreateAt,
-			"UpdateAt":           condition.UpdateAt,
-			"DeleteAt":           condition.DeleteAt,
+			"ID":                 dbCondition.ID,
+			"ConditionExpr":      dbCondition.ConditionExpr,
+			"PlaybookID":         dbCondition.PlaybookID,
+			"RunID":              dbCondition.RunID,
+			"PropertyFieldIDs":   dbCondition.PropertyFieldIDs,
+			"PropertyOptionsIDs": dbCondition.PropertyOptionsIDs,
+			"CreateAt":           dbCondition.CreateAt,
+			"UpdateAt":           dbCondition.UpdateAt,
+			"DeleteAt":           dbCondition.DeleteAt,
 		}))
 
 	if err != nil {
@@ -113,7 +109,7 @@ func (c *conditionStore) CreateCondition(playbookID string, condition app.Stored
 }
 
 // GetCondition retrieves a stored condition by ID
-func (c *conditionStore) GetCondition(playbookID, conditionID string) (*app.StoredCondition, error) {
+func (c *conditionStore) GetCondition(playbookID, conditionID string) (*app.Condition, error) {
 	var sqlCondition conditionForDB
 
 	err := c.store.getBuilder(c.store.db, &sqlCondition, c.conditionSelect.
@@ -129,44 +125,38 @@ func (c *conditionStore) GetCondition(playbookID, conditionID string) (*app.Stor
 		return nil, errors.Wrap(err, "failed to get condition")
 	}
 
-	condition, err := c.toCondition(sqlCondition)
+	condition, err := c.fromConditionForDB(sqlCondition)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to convert condition from database")
 	}
 
 	return &condition, nil
 }
 
 // UpdateCondition updates an existing stored condition
-func (c *conditionStore) UpdateCondition(playbookID string, condition app.StoredCondition) (*app.StoredCondition, error) {
-	condition.UpdateAt = model.GetMillis()
-
-	conditionExprJSON, err := json.Marshal(condition.ConditionExpr)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal condition expression")
+func (c *conditionStore) UpdateCondition(playbookID string, condition app.Condition) (*app.Condition, error) {
+	// Set UpdateAt if not provided
+	if condition.UpdateAt == 0 {
+		condition.UpdateAt = model.GetMillis()
 	}
 
-	propertyFieldIDsJSON, err := json.Marshal(condition.PropertyFieldIDs)
+	// Convert to database representation
+	dbCondition, err := c.toConditionForDB(condition)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal property field IDs")
-	}
-
-	propertyOptionsIDsJSON, err := json.Marshal(condition.PropertyOptionsIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal property options IDs")
+		return nil, errors.Wrap(err, "failed to convert condition for database")
 	}
 
 	_, err = c.store.execBuilder(c.store.db, c.queryBuilder.
 		Update("IR_Condition").
 		SetMap(map[string]any{
-			"ConditionExpr":      conditionExprJSON,
-			"RunID":              condition.RunID,
-			"PropertyFieldIDs":   propertyFieldIDsJSON,
-			"PropertyOptionsIDs": propertyOptionsIDsJSON,
-			"UpdateAt":           condition.UpdateAt,
+			"ConditionExpr":      dbCondition.ConditionExpr,
+			"RunID":              dbCondition.RunID,
+			"PropertyFieldIDs":   dbCondition.PropertyFieldIDs,
+			"PropertyOptionsIDs": dbCondition.PropertyOptionsIDs,
+			"UpdateAt":           dbCondition.UpdateAt,
 		}).
 		Where(sq.Eq{
-			"ID":         condition.ID,
+			"ID":         dbCondition.ID,
 			"PlaybookID": playbookID,
 			"DeleteAt":   0,
 		}))
@@ -197,7 +187,7 @@ func (c *conditionStore) DeleteCondition(playbookID, conditionID string) error {
 }
 
 // GetConditions retrieves stored conditions with filtering
-func (c *conditionStore) GetConditions(playbookID string, options app.ConditionFilterOptions) ([]app.StoredCondition, error) {
+func (c *conditionStore) GetConditions(playbookID string, options app.ConditionFilterOptions) ([]app.Condition, error) {
 	query := c.conditionSelect.
 		Where(sq.Eq{"PlaybookID": playbookID}).
 		OrderBy("CreateAt DESC")
@@ -220,11 +210,11 @@ func (c *conditionStore) GetConditions(playbookID string, options app.ConditionF
 		return nil, errors.Wrap(err, "failed to get conditions")
 	}
 
-	conditions := make([]app.StoredCondition, 0, len(sqlConditions))
+	conditions := make([]app.Condition, 0, len(sqlConditions))
 	for _, sqlCondition := range sqlConditions {
-		condition, err := c.toCondition(sqlCondition)
+		condition, err := c.fromConditionForDB(sqlCondition)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to convert condition from database")
 		}
 		conditions = append(conditions, condition)
 	}
@@ -232,33 +222,135 @@ func (c *conditionStore) GetConditions(playbookID string, options app.ConditionF
 	return conditions, nil
 }
 
-func (c *conditionStore) toCondition(sqlCondition conditionForDB) (app.StoredCondition, error) {
+func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Condition, error) {
 	var conditionExpr app.ConditionExpr
 	if err := json.Unmarshal(sqlCondition.ConditionExpr, &conditionExpr); err != nil {
-		return app.StoredCondition{}, errors.Wrap(err, "failed to unmarshal condition expression")
+		return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition expression")
 	}
 
-	var propertyFieldIDs []string
-	if err := json.Unmarshal(sqlCondition.PropertyFieldIDs, &propertyFieldIDs); err != nil {
-		return app.StoredCondition{}, errors.Wrap(err, "failed to unmarshal property field IDs")
-	}
-
-	var propertyOptionsIDs []string
-	if err := json.Unmarshal(sqlCondition.PropertyOptionsIDs, &propertyOptionsIDs); err != nil {
-		return app.StoredCondition{}, errors.Wrap(err, "failed to unmarshal property options IDs")
-	}
-
-	return app.StoredCondition{
-		Condition: app.Condition{
-			ID:            sqlCondition.ID,
-			ConditionExpr: conditionExpr,
-			PlaybookID:    sqlCondition.PlaybookID,
-			RunID:         sqlCondition.RunID,
-			CreateAt:      sqlCondition.CreateAt,
-			UpdateAt:      sqlCondition.UpdateAt,
-			DeleteAt:      sqlCondition.DeleteAt,
-		},
-		PropertyFieldIDs:   propertyFieldIDs,
-		PropertyOptionsIDs: propertyOptionsIDs,
+	return app.Condition{
+		ID:            sqlCondition.ID,
+		ConditionExpr: conditionExpr,
+		PlaybookID:    sqlCondition.PlaybookID,
+		RunID:         sqlCondition.RunID,
+		CreateAt:      sqlCondition.CreateAt,
+		UpdateAt:      sqlCondition.UpdateAt,
+		DeleteAt:      sqlCondition.DeleteAt,
 	}, nil
+}
+
+// toConditionForDB converts an app.Condition to conditionForDB for database operations
+func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionForDB, error) {
+	// Extract metadata for storage
+	propertyFieldIDs := extractPropertyFieldIDs(condition.ConditionExpr)
+	propertyOptionsIDs := extractPropertyOptionsIDs(condition.ConditionExpr)
+
+	conditionExprJSON, err := json.Marshal(condition.ConditionExpr)
+	if err != nil {
+		return conditionForDB{}, errors.Wrap(err, "failed to marshal condition expression")
+	}
+
+	propertyFieldIDsJSON, err := json.Marshal(propertyFieldIDs)
+	if err != nil {
+		return conditionForDB{}, errors.Wrap(err, "failed to marshal property field IDs")
+	}
+
+	propertyOptionsIDsJSON, err := json.Marshal(propertyOptionsIDs)
+	if err != nil {
+		return conditionForDB{}, errors.Wrap(err, "failed to marshal property options IDs")
+	}
+
+	return conditionForDB{
+		ID:                 condition.ID,
+		PlaybookID:         condition.PlaybookID,
+		RunID:              condition.RunID,
+		CreateAt:           condition.CreateAt,
+		UpdateAt:           condition.UpdateAt,
+		DeleteAt:           condition.DeleteAt,
+		ConditionExpr:      conditionExprJSON,
+		PropertyFieldIDs:   propertyFieldIDsJSON,
+		PropertyOptionsIDs: propertyOptionsIDsJSON,
+	}, nil
+}
+
+// extractPropertyFieldIDs recursively extracts all property field IDs from a condition
+func extractPropertyFieldIDs(condition app.ConditionExpr) []string {
+	var fieldIDs []string
+	fieldIDSet := make(map[string]struct{})
+
+	extractFromCondition(condition, fieldIDSet)
+
+	for fieldID := range fieldIDSet {
+		fieldIDs = append(fieldIDs, fieldID)
+	}
+
+	return fieldIDs
+}
+
+func extractFromCondition(condition app.ConditionExpr, fieldIDSet map[string]struct{}) {
+	if condition.And != nil {
+		for _, subCondition := range condition.And {
+			extractFromCondition(subCondition, fieldIDSet)
+		}
+	}
+
+	if condition.Or != nil {
+		for _, subCondition := range condition.Or {
+			extractFromCondition(subCondition, fieldIDSet)
+		}
+	}
+
+	if condition.Is != nil {
+		fieldIDSet[condition.Is.FieldID] = struct{}{}
+	}
+
+	if condition.IsNot != nil {
+		fieldIDSet[condition.IsNot.FieldID] = struct{}{}
+	}
+}
+
+// extractPropertyOptionsIDs recursively extracts all property options IDs from a condition
+func extractPropertyOptionsIDs(condition app.ConditionExpr) []string {
+	var optionsIDs []string
+	optionsIDSet := make(map[string]struct{})
+
+	extractOptionsFromCondition(condition, optionsIDSet)
+
+	for optionsID := range optionsIDSet {
+		optionsIDs = append(optionsIDs, optionsID)
+	}
+
+	return optionsIDs
+}
+
+func extractOptionsFromCondition(condition app.ConditionExpr, optionsIDSet map[string]struct{}) {
+	if condition.And != nil {
+		for _, subCondition := range condition.And {
+			extractOptionsFromCondition(subCondition, optionsIDSet)
+		}
+	}
+
+	if condition.Or != nil {
+		for _, subCondition := range condition.Or {
+			extractOptionsFromCondition(subCondition, optionsIDSet)
+		}
+	}
+
+	if condition.Is != nil {
+		extractOptionsFromComparison(condition.Is, optionsIDSet)
+	}
+
+	if condition.IsNot != nil {
+		extractOptionsFromComparison(condition.IsNot, optionsIDSet)
+	}
+}
+
+func extractOptionsFromComparison(comparison *app.ComparisonCondition, optionsIDSet map[string]struct{}) {
+	var arrayValue []string
+	if err := json.Unmarshal(comparison.Value, &arrayValue); err == nil {
+		// Successfully unmarshaled as array (select/multiselect fields)
+		for _, optionID := range arrayValue {
+			optionsIDSet[optionID] = struct{}{}
+		}
+	}
 }
