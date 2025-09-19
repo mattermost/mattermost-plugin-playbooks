@@ -237,27 +237,6 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 	}, nil
 }
 
-// GetConditionCount returns the number of non-deleted conditions for a playbook
-func (c *conditionStore) GetConditionCount(playbookID string) (int, error) {
-	query := c.queryBuilder.
-		Select("COUNT(*)").
-		From("IR_Condition").
-		Where(sq.Eq{"PlaybookID": playbookID}).
-		Where(sq.Eq{"DeleteAt": 0})
-
-	sqlQuery, args, err := query.ToSql()
-	if err != nil {
-		return 0, errors.Wrapf(err, "failed to build condition count query for playbook %s", playbookID)
-	}
-
-	var count int
-	if err := c.store.db.Get(&count, sqlQuery, args...); err != nil {
-		return 0, errors.Wrapf(err, "failed to get condition count for playbook %s", playbookID)
-	}
-
-	return count, nil
-}
-
 // GetPlaybookConditions returns conditions for a playbook with pagination
 func (c *conditionStore) GetPlaybookConditions(playbookID string, page, perPage int) ([]app.Condition, error) {
 	return c.getConditionsWithFilter(playbookID, "", page, perPage)
@@ -310,16 +289,16 @@ func (c *conditionStore) getConditionsWithFilter(playbookID, runID string, page,
 
 // GetPlaybookConditionCount returns the number of non-deleted conditions for a playbook
 func (c *conditionStore) GetPlaybookConditionCount(playbookID string) (int, error) {
-	return c.getConditionCountWithFilter(playbookID, "")
+	return c.getConditionCount(playbookID, "")
 }
 
 // GetRunConditionCount returns the number of non-deleted conditions for a specific run
 func (c *conditionStore) GetRunConditionCount(playbookID, runID string) (int, error) {
-	return c.getConditionCountWithFilter(playbookID, runID)
+	return c.getConditionCount(playbookID, runID)
 }
 
-// getConditionCountWithFilter is a private helper method for counting conditions
-func (c *conditionStore) getConditionCountWithFilter(playbookID, runID string) (int, error) {
+// getConditionCount is a private helper method for counting conditions
+func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error) {
 	query := c.queryBuilder.
 		Select("COUNT(*)").
 		From("IR_Condition").
