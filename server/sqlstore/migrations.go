@@ -1684,4 +1684,37 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.64.0"),
+		toVersion:   semver.MustParse("0.65.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_Condition (
+					ID TEXT PRIMARY KEY,
+					ConditionExpr JSON NOT NULL,
+					PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
+					RunID TEXT DEFAULT '',
+					PropertyFieldIDs JSON NOT NULL,
+					PropertyOptionsIDs JSON NOT NULL,
+					CreateAt BIGINT NOT NULL,
+					UpdateAt BIGINT NOT NULL DEFAULT 0,
+					DeleteAt BIGINT NOT NULL DEFAULT 0
+				)
+			`); err != nil {
+				return errors.Wrapf(err, "failed creating table IR_Condition")
+			}
+
+			if _, err := e.Exec(createPGIndex("IR_Condition_PlaybookID", "IR_Condition", "PlaybookID")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_PlaybookID")
+			}
+			if _, err := e.Exec(createPGIndex("IR_Condition_RunID", "IR_Condition", "RunID")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_RunID")
+			}
+			if _, err := e.Exec(createPGIndex("IR_Condition_DeleteAt", "IR_Condition", "DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_DeleteAt")
+			}
+
+			return nil
+		},
+	},
 }
