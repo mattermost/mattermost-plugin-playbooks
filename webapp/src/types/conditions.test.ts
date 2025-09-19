@@ -16,7 +16,7 @@ const createTextField = (id: string): PropertyField => ({
     update_at: 123456789,
     delete_at: 0,
     attrs: {
-        visibility: 'default',
+        visibility: 'when_set',
         sort_order: 0,
         options: null,
         parent_id: '',
@@ -34,7 +34,7 @@ const createSelectField = (id: string): PropertyField => ({
     update_at: 123456789,
     delete_at: 0,
     attrs: {
-        visibility: 'default',
+        visibility: 'when_set',
         sort_order: 0,
         options: [
             {id: 'option1', name: 'Option 1'},
@@ -57,7 +57,7 @@ const createMultiselectField = (id: string): PropertyField => ({
     update_at: 123456789,
     delete_at: 0,
     attrs: {
-        visibility: 'default',
+        visibility: 'when_set',
         sort_order: 0,
         options: [
             {id: 'cat_a', name: 'Category A'},
