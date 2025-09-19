@@ -47,7 +47,7 @@ func TestConditionService_Create_Limit(t *testing.T) {
 
 		// Mock count to return under limit
 		mockStore.EXPECT().
-			GetConditionCount(playbookID).
+			GetPlaybookConditionCount(playbookID).
 			Return(app.MaxConditionsPerPlaybook-1, nil)
 
 		// Mock successful creation
@@ -63,7 +63,7 @@ func TestConditionService_Create_Limit(t *testing.T) {
 		mockPoster.EXPECT().
 			PublishWebsocketEventToTeam("condition_created", &createdCondition, teamID)
 
-		result, err := service.Create(userID, *condition, teamID)
+		result, err := service.CreatePlaybookCondition(userID, *condition, teamID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, createdCondition.ID, result.ID)
@@ -77,10 +77,10 @@ func TestConditionService_Create_Limit(t *testing.T) {
 
 		// Mock count to return at limit
 		mockStore.EXPECT().
-			GetConditionCount(playbookID).
+			GetPlaybookConditionCount(playbookID).
 			Return(app.MaxConditionsPerPlaybook, nil)
 
-		result, err := service.Create(userID, *condition, teamID)
+		result, err := service.CreatePlaybookCondition(userID, *condition, teamID)
 		require.Error(t, err)
 		require.Nil(t, result)
 		require.Contains(t, err.Error(), "cannot create condition: playbook already has the maximum allowed number of conditions")
@@ -95,10 +95,10 @@ func TestConditionService_Create_Limit(t *testing.T) {
 
 		// Mock count to return over limit
 		mockStore.EXPECT().
-			GetConditionCount(playbookID).
+			GetPlaybookConditionCount(playbookID).
 			Return(app.MaxConditionsPerPlaybook+5, nil)
 
-		result, err := service.Create(userID, *condition, teamID)
+		result, err := service.CreatePlaybookCondition(userID, *condition, teamID)
 		require.Error(t, err)
 		require.Nil(t, result)
 		require.Contains(t, err.Error(), "cannot create condition: playbook already has the maximum allowed number of conditions")

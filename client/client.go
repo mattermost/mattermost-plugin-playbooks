@@ -51,6 +51,10 @@ type Client struct {
 	Reminders *RemindersService
 	// TabApp is a collection of methods used to interact with playbooks from the tabapp.
 	TabApp *TabAppService
+	// PlaybookConditions is a collection of methods used to interact with playbook conditions.
+	PlaybookConditions *PlaybookConditionsService
+	// RunConditions is a collection of methods used to interact with run conditions.
+	RunConditions *RunConditionsService
 }
 
 // New creates a new instance of Client using the configuration from the given Mattermost Client.
@@ -78,6 +82,8 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c.Stats = &StatsService{c}
 	c.Reminders = &RemindersService{c}
 	c.TabApp = &TabAppService{c}
+	c.PlaybookConditions = &PlaybookConditionsService{c}
+	c.RunConditions = &RunConditionsService{c}
 	return c, nil
 }
 

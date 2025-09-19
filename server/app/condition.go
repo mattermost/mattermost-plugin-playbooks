@@ -547,29 +547,35 @@ func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) err
 	return nil
 }
 
-// ConditionFilterOptions provides filtering options for listing conditions
-type ConditionFilterOptions struct {
-	PlaybookID string
-	RunID      string
-	Page       int
-	PerPage    int
+// GetConditionsResults contains the results of the GetConditions call
+type GetConditionsResults struct {
+	TotalCount int         `json:"total_count"`
+	PageCount  int         `json:"page_count"`
+	HasMore    bool        `json:"has_more"`
+	Items      []Condition `json:"items"`
 }
 
 // ConditionService provides methods for managing stored conditions
 type ConditionService interface {
-	Create(userID string, condition Condition, teamID string) (*Condition, error)
-	Get(userID, playbookID, conditionID string) (*Condition, error)
-	Update(userID string, condition Condition, teamID string) (*Condition, error)
-	Delete(userID, playbookID, conditionID string, teamID string) error
-	GetConditions(userID, playbookID string, options ConditionFilterOptions) ([]Condition, error)
+	// Playbooks: RW
+	GetPlaybookConditions(userID, playbookID string, page, perPage int) (*GetConditionsResults, error)
+	GetPlaybookCondition(userID, playbookID, conditionID string) (*Condition, error)
+	CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error)
+	UpdatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error)
+	DeletePlaybookCondition(userID, playbookID, conditionID string, teamID string) error
+
+	// Runs: RO
+	GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error)
 }
 
 // ConditionStore defines database operations for stored conditions
 type ConditionStore interface {
 	CreateCondition(playbookID string, condition Condition) (*Condition, error)
-	GetCondition(playbookID, conditionID string) (*Condition, error)
+	GetCondition(playbookID, conditionID string) (*Condition, error) // Internal use only for Update/Delete
 	UpdateCondition(playbookID string, condition Condition) (*Condition, error)
 	DeleteCondition(playbookID, conditionID string) error
-	GetConditions(playbookID string, options ConditionFilterOptions) ([]Condition, error)
-	GetConditionCount(playbookID string) (int, error)
+	GetPlaybookConditions(playbookID string, page, perPage int) ([]Condition, error)
+	GetRunConditions(playbookID, runID string, page, perPage int) ([]Condition, error)
+	GetPlaybookConditionCount(playbookID string) (int, error)
+	GetRunConditionCount(playbookID, runID string) (int, error)
 }

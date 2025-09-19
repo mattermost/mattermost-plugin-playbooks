@@ -249,15 +249,12 @@ func TestConditionStore(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		retrieved, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{})
+		retrieved, err := conditionStore.GetPlaybookConditions(playbookID, 0, 20)
 		require.NoError(t, err)
 		require.Len(t, retrieved, 2)
 
 		// Test pagination
-		retrieved, err = conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{
-			PerPage: 1,
-			Page:    0,
-		})
+		retrieved, err = conditionStore.GetPlaybookConditions(playbookID, 0, 1)
 		require.NoError(t, err)
 		require.Len(t, retrieved, 1)
 	})
@@ -304,15 +301,8 @@ func TestConditionStore(t *testing.T) {
 		_, err = conditionStore.CreateCondition(playbookID, runCondition)
 		require.NoError(t, err)
 
-		// Get all conditions (should return both)
-		allConditions, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{})
-		require.NoError(t, err)
-		require.Len(t, allConditions, 2)
-
 		// Get only run conditions
-		runConditions, err := conditionStore.GetConditions(playbookID, app.ConditionFilterOptions{
-			RunID: runID,
-		})
+		runConditions, err := conditionStore.GetRunConditions(playbookID, runID, 0, 20)
 		require.NoError(t, err)
 		require.Len(t, runConditions, 1)
 		require.Equal(t, runID, runConditions[0].RunID)
@@ -422,7 +412,7 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 
 		// Initially should have 0 conditions
-		count, err := conditionStore.GetConditionCount(playbookID)
+		count, err := conditionStore.GetPlaybookConditionCount(playbookID)
 		require.NoError(t, err)
 		require.Equal(t, 0, count)
 
@@ -444,7 +434,7 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 
 		// Should now have 1 condition
-		count, err = conditionStore.GetConditionCount(playbookID)
+		count, err = conditionStore.GetPlaybookConditionCount(playbookID)
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
 
@@ -466,7 +456,7 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 
 		// Should now have 2 conditions
-		count, err = conditionStore.GetConditionCount(playbookID)
+		count, err = conditionStore.GetPlaybookConditionCount(playbookID)
 		require.NoError(t, err)
 		require.Equal(t, 2, count)
 
@@ -475,7 +465,7 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 
 		// Should now have 1 condition (deleted ones don't count)
-		count, err = conditionStore.GetConditionCount(playbookID)
+		count, err = conditionStore.GetPlaybookConditionCount(playbookID)
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
 	})

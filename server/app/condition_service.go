@@ -31,8 +31,8 @@ func NewConditionService(store ConditionStore, propertyService PropertyService, 
 	}
 }
 
-// Create creates a new stored condition
-func (s *conditionService) Create(userID string, condition Condition, teamID string) (*Condition, error) {
+// CreatePlaybookCondition creates a new stored condition for a playbook
+func (s *conditionService) CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
 	propertyFields, err := s.propertyService.GetPropertyFields(condition.PlaybookID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get property fields for validation")
@@ -52,7 +52,7 @@ func (s *conditionService) Create(userID string, condition Condition, teamID str
 	}
 
 	// Check condition limit for playbook
-	currentCount, err := s.store.GetConditionCount(condition.PlaybookID)
+	currentCount, err := s.store.GetPlaybookConditionCount(condition.PlaybookID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current condition count")
 	}
@@ -76,8 +76,8 @@ func (s *conditionService) Create(userID string, condition Condition, teamID str
 	return createdCondition, nil
 }
 
-// Get retrieves a stored condition by ID
-func (s *conditionService) Get(userID, playbookID, conditionID string) (*Condition, error) {
+// GetPlaybookCondition retrieves a stored playbook condition by ID
+func (s *conditionService) GetPlaybookCondition(userID, playbookID, conditionID string) (*Condition, error) {
 	condition, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
 		return nil, err
@@ -85,8 +85,8 @@ func (s *conditionService) Get(userID, playbookID, conditionID string) (*Conditi
 	return condition, nil
 }
 
-// Update updates an existing stored condition
-func (s *conditionService) Update(userID string, condition Condition, teamID string) (*Condition, error) {
+// UpdatePlaybookCondition updates an existing stored condition for a playbook
+func (s *conditionService) UpdatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
 	existing, err := s.store.GetCondition(condition.PlaybookID, condition.ID)
 	if err != nil {
 		return nil, err
@@ -128,8 +128,8 @@ func (s *conditionService) Update(userID string, condition Condition, teamID str
 	return updatedCondition, nil
 }
 
-// Delete soft-deletes a stored condition
-func (s *conditionService) Delete(userID, playbookID, conditionID string, teamID string) error {
+// DeletePlaybookCondition soft-deletes a stored condition for a playbook
+func (s *conditionService) DeletePlaybookCondition(userID, playbookID, conditionID string, teamID string) error {
 	existing, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
 		return err
@@ -147,14 +147,62 @@ func (s *conditionService) Delete(userID, playbookID, conditionID string, teamID
 	return s.store.DeleteCondition(playbookID, conditionID)
 }
 
-// GetConditions retrieves stored conditions with filtering
-func (s *conditionService) GetConditions(userID, playbookID string, options ConditionFilterOptions) ([]Condition, error) {
-	conditions, err := s.store.GetConditions(playbookID, options)
+// GetPlaybookConditions retrieves stored conditions for a playbook
+func (s *conditionService) GetPlaybookConditions(userID, playbookID string, page, perPage int) (*GetConditionsResults, error) {
+	fetchConditions := func() ([]Condition, error) {
+		return s.store.GetPlaybookConditions(playbookID, page, perPage)
+	}
+
+	fetchCount := func() (int, error) {
+		return s.store.GetPlaybookConditionCount(playbookID)
+	}
+
+	return s.getConditions(fetchConditions, fetchCount, page, perPage)
+}
+
+// GetRunConditions retrieves stored conditions for a run
+func (s *conditionService) GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error) {
+	fetchConditions := func() ([]Condition, error) {
+		return s.store.GetRunConditions(playbookID, runID, page, perPage)
+	}
+
+	fetchCount := func() (int, error) {
+		return s.store.GetRunConditionCount(playbookID, runID)
+	}
+
+	return s.getConditions(fetchConditions, fetchCount, page, perPage)
+}
+
+// getConditions is a private helper that handles common pagination logic
+func (s *conditionService) getConditions(
+	fetchConditions func() ([]Condition, error),
+	fetchCount func() (int, error),
+	page, perPage int,
+) (*GetConditionsResults, error) {
+	conditions, err := fetchConditions()
 	if err != nil {
 		return nil, err
 	}
 
-	return conditions, nil
+	totalCount, err := fetchCount()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get total condition count")
+	}
+
+	// Calculate pagination info
+	pageCount := (totalCount + perPage - 1) / perPage
+	if pageCount == 0 {
+		pageCount = 1
+	}
+
+	hasMore := (page+1)*perPage < totalCount
+
+	return &GetConditionsResults{
+		TotalCount: totalCount,
+		PageCount:  pageCount,
+		HasMore:    hasMore,
+		Items:      conditions,
+	}, nil
 }
 
 func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {

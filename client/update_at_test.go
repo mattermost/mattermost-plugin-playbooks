@@ -99,14 +99,14 @@ func TestChecklistItemUpdateAtSerialization(t *testing.T) {
 func TestNestedUpdateAtSerialization(t *testing.T) {
 	// Create a nested structure to test the complete serialization path
 	now := time.Now().UnixMilli()
-	
+
 	// Create a checklist item with UpdateAt
 	item := ChecklistItem{
 		ID:       "test-item-id",
 		Title:    "Test Item",
 		UpdateAt: now,
 	}
-	
+
 	// Create a checklist with the item
 	checklist := Checklist{
 		ID:       "test-checklist-id",
@@ -114,7 +114,7 @@ func TestNestedUpdateAtSerialization(t *testing.T) {
 		UpdateAt: now + 1000, // 1 second later
 		Items:    []ChecklistItem{item},
 	}
-	
+
 	// Create a PlaybookRun with the checklist
 	run := PlaybookRun{
 		ID:         "test-run-id",
@@ -123,16 +123,16 @@ func TestNestedUpdateAtSerialization(t *testing.T) {
 		UpdateAt:   now + 2000, // 2 seconds later
 		Checklists: []Checklist{checklist},
 	}
-	
+
 	// Serialize to JSON
 	jsonData, err := json.Marshal(run)
 	require.NoError(t, err, "Failed to marshal nested structure to JSON")
-	
+
 	// Deserialize from JSON
 	var decodedRun PlaybookRun
 	err = json.Unmarshal(jsonData, &decodedRun)
 	require.NoError(t, err, "Failed to unmarshal nested structure from JSON")
-	
+
 	// Validate the UpdateAt fields were preserved at all levels
 	assert.Equal(t, run.UpdateAt, decodedRun.UpdateAt, "Run UpdateAt should be preserved")
 	require.Len(t, decodedRun.Checklists, 1, "Should have one checklist")

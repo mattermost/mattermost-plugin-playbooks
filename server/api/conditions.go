@@ -6,12 +6,18 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+)
+
+const (
+	DefaultPerPage = 20
+	MaxPerPage     = 200
 )
 
 // NewConditionHandler creates the condition API handler and sets up routes
@@ -34,7 +40,6 @@ func NewConditionHandler(router *mux.Router, conditionService app.ConditionServi
 	playbookConditionsRouter.HandleFunc("", withContext(handler.createPlaybookCondition)).Methods(http.MethodPost)
 
 	playbookConditionRouter := playbookConditionsRouter.PathPrefix("/{conditionID:[A-Za-z0-9]+}").Subrouter()
-	playbookConditionRouter.HandleFunc("", withContext(handler.getPlaybookCondition)).Methods(http.MethodGet)
 	playbookConditionRouter.HandleFunc("", withContext(handler.updatePlaybookCondition)).Methods(http.MethodPut)
 	playbookConditionRouter.HandleFunc("", withContext(handler.deletePlaybookCondition)).Methods(http.MethodDelete)
 
@@ -43,9 +48,6 @@ func NewConditionHandler(router *mux.Router, conditionService app.ConditionServi
 	runRouter := runsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	runConditionsRouter := runRouter.PathPrefix("/conditions").Subrouter()
 	runConditionsRouter.HandleFunc("", withContext(handler.getRunConditions)).Methods(http.MethodGet)
-
-	runConditionRouter := runConditionsRouter.PathPrefix("/{conditionID:[A-Za-z0-9]+}").Subrouter()
-	runConditionRouter.HandleFunc("", withContext(handler.getRunCondition)).Methods(http.MethodGet)
 
 	return handler
 }
@@ -74,60 +76,15 @@ func (h *ConditionHandler) getPlaybookConditions(c *Context, w http.ResponseWrit
 		return
 	}
 
-	options := app.ConditionFilterOptions{
-		PlaybookID: playbookID,
-	}
+	page, perPage := parsePaginationParams(r.URL.Query())
 
-	// Parse pagination parameters
-	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-		if page, err := strconv.Atoi(pageStr); err == nil && page >= 0 {
-			options.Page = page
-		}
-	}
-
-	if perPageStr := r.URL.Query().Get("per_page"); perPageStr != "" {
-		if perPage, err := strconv.Atoi(perPageStr); err == nil && perPage > 0 {
-			if perPage > 200 {
-				perPage = 200 // Maximum limit
-			}
-			options.PerPage = perPage
-		}
-	}
-
-	conditions, err := h.conditionService.GetConditions(userID, playbookID, options)
+	results, err := h.conditionService.GetPlaybookConditions(userID, playbookID, page, perPage)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	ReturnJSON(w, conditions, http.StatusOK)
-}
-
-// getPlaybookCondition handles GET /api/v0/playbooks/{id}/conditions/{conditionID}
-func (h *ConditionHandler) getPlaybookCondition(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID := r.Header.Get("Mattermost-User-ID")
-	playbookID := vars["id"]
-	conditionID := vars["conditionID"]
-
-	// Permission check
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
-		return
-	}
-
-	condition, err := h.conditionService.Get(userID, playbookID, conditionID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	// Verify condition belongs to this playbook
-	if condition.PlaybookID != playbookID {
-		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "condition not found", nil)
-		return
-	}
-
-	ReturnJSON(w, condition, http.StatusOK)
+	ReturnJSON(w, results, http.StatusOK)
 }
 
 // getRunConditions handles GET /api/v0/runs/{id}/conditions
@@ -148,67 +105,15 @@ func (h *ConditionHandler) getRunConditions(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	options := app.ConditionFilterOptions{
-		RunID: runID,
-	}
+	page, perPage := parsePaginationParams(r.URL.Query())
 
-	// Parse pagination parameters
-	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-		if page, err := strconv.Atoi(pageStr); err == nil && page >= 0 {
-			options.Page = page
-		}
-	}
-
-	if perPageStr := r.URL.Query().Get("per_page"); perPageStr != "" {
-		if perPage, err := strconv.Atoi(perPageStr); err == nil && perPage > 0 {
-			if perPage > 200 {
-				perPage = 200 // Maximum limit
-			}
-			options.PerPage = perPage
-		}
-	}
-
-	conditions, err := h.conditionService.GetConditions(userID, run.PlaybookID, options)
+	results, err := h.conditionService.GetRunConditions(userID, run.PlaybookID, runID, page, perPage)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	ReturnJSON(w, conditions, http.StatusOK)
-}
-
-// getRunCondition handles GET /api/v0/runs/{id}/conditions/{conditionID}
-func (h *ConditionHandler) getRunCondition(c *Context, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID := r.Header.Get("Mattermost-User-ID")
-	runID := vars["id"]
-	conditionID := vars["conditionID"]
-
-	// Permission check for run view
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, runID)) {
-		return
-	}
-
-	// Get the run to find the playbookID
-	run, err := h.playbookRunService.GetPlaybookRun(runID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	condition, err := h.conditionService.Get(userID, run.PlaybookID, conditionID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	// Verify condition belongs to this run
-	if condition.RunID != runID {
-		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "condition not found", nil)
-		return
-	}
-
-	ReturnJSON(w, condition, http.StatusOK)
+	ReturnJSON(w, results, http.StatusOK)
 }
 
 // WRITE operations (playbook conditions only - run conditions are read-only)
@@ -240,7 +145,7 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 	// Set playbook ID from URL
 	condition.PlaybookID = playbookID
 
-	createdCondition, err := h.conditionService.Create(userID, condition, playbook.TeamID)
+	createdCondition, err := h.conditionService.CreatePlaybookCondition(userID, condition, playbook.TeamID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -270,7 +175,7 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 	}
 
 	// Get existing condition
-	existing, err := h.conditionService.Get(userID, playbookID, conditionID)
+	existing, err := h.conditionService.GetPlaybookCondition(userID, playbookID, conditionID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -292,7 +197,7 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 	condition.ID = conditionID
 	condition.PlaybookID = playbookID
 
-	updatedCondition, err := h.conditionService.Update(userID, condition, playbook.TeamID)
+	updatedCondition, err := h.conditionService.UpdatePlaybookCondition(userID, condition, playbook.TeamID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -321,7 +226,7 @@ func (h *ConditionHandler) deletePlaybookCondition(c *Context, w http.ResponseWr
 	}
 
 	// Get existing condition
-	existing, err := h.conditionService.Get(userID, playbookID, conditionID)
+	existing, err := h.conditionService.GetPlaybookCondition(userID, playbookID, conditionID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -339,10 +244,34 @@ func (h *ConditionHandler) deletePlaybookCondition(c *Context, w http.ResponseWr
 		return
 	}
 
-	if err := h.conditionService.Delete(userID, playbookID, conditionID, playbook.TeamID); err != nil {
+	if err := h.conditionService.DeletePlaybookCondition(userID, playbookID, conditionID, playbook.TeamID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// parsePaginationParams parses page and per_page query parameters from url.Values
+func parsePaginationParams(query url.Values) (page, perPage int) {
+	perPage = DefaultPerPage
+
+	// Parse page parameter
+	if pageStr := query.Get("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p >= 0 {
+			page = p
+		}
+	}
+
+	// Parse per_page parameter, only override default if valid
+	if perPageStr := query.Get("per_page"); perPageStr != "" {
+		if pp, err := strconv.Atoi(perPageStr); err == nil && pp > 0 {
+			if pp > MaxPerPage {
+				pp = MaxPerPage
+			}
+			perPage = pp
+		}
+	}
+
+	return page, perPage
 }
