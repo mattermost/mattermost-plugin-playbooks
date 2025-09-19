@@ -6,6 +6,7 @@ package app
 import (
 	"encoding/json"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 )
 
@@ -27,6 +28,16 @@ func (s *conditionService) Create(userID string, condition Condition) (*Conditio
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get property fields for validation")
 	}
+
+	// Set metadata for creation
+	if condition.ID != "" {
+		return nil, errors.New("condition ID should not be specified for creation")
+	}
+	condition.ID = model.NewId()
+
+	now := model.GetMillis()
+	condition.CreateAt = now
+	condition.UpdateAt = now
 
 	if err := condition.IsValid(true, propertyFields); err != nil {
 		return nil, err
@@ -71,6 +82,10 @@ func (s *conditionService) Update(userID string, condition Condition) (*Conditio
 	if condition.RunID != "" {
 		return nil, errors.New("cannot associate existing condition with a run - run conditions are system managed")
 	}
+
+	// Preserve immutable fields from existing condition
+	condition.CreateAt = existing.CreateAt
+	condition.UpdateAt = model.GetMillis()
 
 	propertyFields, err := s.propertyService.GetPropertyFields(condition.PlaybookID)
 	if err != nil {

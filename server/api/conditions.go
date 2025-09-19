@@ -241,12 +241,6 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 	// Set playbook ID from URL
 	condition.PlaybookID = playbookID
 
-	// Set creation metadata (service will handle field extraction and sanitization)
-	condition.ID = model.NewId()
-	now := model.GetMillis()
-	condition.CreateAt = now
-	condition.UpdateAt = now
-
 	createdCondition, err := h.conditionService.Create(userID, condition)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -295,14 +289,9 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 		return
 	}
 
-	// Force condition metadata from URL and existing data
+	// Set condition metadata from URL
 	condition.ID = conditionID
 	condition.PlaybookID = playbookID
-	condition.RunID = existing.RunID
-	condition.CreateAt = existing.CreateAt
-
-	// Set update timestamp (service will handle field extraction and sanitization)
-	condition.UpdateAt = model.GetMillis()
 
 	updatedCondition, err := h.conditionService.Update(userID, condition)
 	if err != nil {
