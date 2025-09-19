@@ -72,7 +72,7 @@ func (h *ConditionHandler) getPlaybookConditions(c *Context, w http.ResponseWrit
 	playbookID := vars["id"]
 
 	// Permission check
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookViewConditions(userID, playbookID)) {
 		return
 	}
 
@@ -94,7 +94,7 @@ func (h *ConditionHandler) getRunConditions(c *Context, w http.ResponseWriter, r
 	runID := vars["id"]
 
 	// Permission check for run view
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, runID)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunViewConditions(userID, runID)) {
 		return
 	}
 
@@ -132,7 +132,7 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 	}
 
 	// Permission check
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageProperties(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageConditions(userID, playbook)) {
 		return
 	}
 
@@ -170,7 +170,7 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 	}
 
 	// Permission check
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageProperties(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageConditions(userID, playbook)) {
 		return
 	}
 
@@ -221,7 +221,7 @@ func (h *ConditionHandler) deletePlaybookCondition(c *Context, w http.ResponseWr
 	}
 
 	// Permission check
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageProperties(userID, playbook)) {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookManageConditions(userID, playbook)) {
 		return
 	}
 
