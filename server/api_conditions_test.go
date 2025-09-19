@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,43 +36,13 @@ func TestPlaybookConditionsCRUD(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, playbooksGroup)
 
-	// Create options using the proper model function
-	options := model.PropertyOptions[*model.PluginPropertyOption]{
-		model.NewPluginPropertyOption("high_id", "High"),
-		model.NewPluginPropertyOption("medium_id", "Medium"),
-		model.NewPluginPropertyOption("low_id", "Low"),
-	}
-
-	// Add a property field to the playbook
-	appPropertyField := app.PropertyField{
-		PropertyField: model.PropertyField{
-			Name:       "Priority",
-			Type:       model.PropertyFieldTypeSelect,
-			GroupID:    playbooksGroup.ID,
-			TargetType: "playbook",
-			TargetID:   playbookID,
-		},
-		Attrs: app.Attrs{
-			Options: options,
-		},
-	}
-
-	// Convert to Mattermost PropertyField for the service call
-	propertyField := appPropertyField.ToMattermostPropertyField()
-
-	selectField, err := e.A.PropertyService().CreatePropertyField(propertyField)
+	// Create property fields
+	selectPropertyField := createSelectPropertyField("Priority", playbooksGroup.ID, playbookID, []string{"High", "Medium", "Low"})
+	selectField, err := e.A.PropertyService().CreatePropertyField(selectPropertyField)
 	require.NoError(t, err)
 	require.NotEmpty(t, selectField)
 
-	// Create a text field
-	textPropertyField := &model.PropertyField{
-		Name:       "Description",
-		Type:       model.PropertyFieldTypeText,
-		GroupID:    playbooksGroup.ID,
-		TargetType: "playbook",
-		TargetID:   playbookID,
-	}
-
+	textPropertyField := createTextPropertyField("Description", playbooksGroup.ID, playbookID)
 	textField, err := e.A.PropertyService().CreatePropertyField(textPropertyField)
 	require.NoError(t, err)
 	require.NotEmpty(t, textField)
@@ -99,15 +70,7 @@ func TestPlaybookConditionsCRUD(t *testing.T) {
 	require.NotEmpty(t, optionNameToID["Low"], "Could not find Low option ID")
 
 	// Create condition using the select field
-	selectCondition := client.Condition{
-		PlaybookID: playbookID,
-		ConditionExpr: client.ConditionExpr{
-			Is: &client.ComparisonCondition{
-				FieldID: selectField.ID,
-				Value:   json.RawMessage(`["` + optionNameToID["High"] + `"]`),
-			},
-		},
-	}
+	selectCondition := createSelectCondition(playbookID, selectField.ID, optionNameToID["High"])
 
 	createdSelectCondition, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, selectCondition)
 	require.NoError(t, err)
@@ -119,15 +82,7 @@ func TestPlaybookConditionsCRUD(t *testing.T) {
 	assert.Equal(t, json.RawMessage(`["`+optionNameToID["High"]+`"]`), createdSelectCondition.ConditionExpr.Is.Value)
 
 	// Create condition using the text field
-	textCondition := client.Condition{
-		PlaybookID: playbookID,
-		ConditionExpr: client.ConditionExpr{
-			Is: &client.ComparisonCondition{
-				FieldID: textField.ID,
-				Value:   json.RawMessage(`"urgent"`),
-			},
-		},
-	}
+	textCondition := createTextCondition(playbookID, textField.ID, "urgent")
 
 	createdTextCondition, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, textCondition)
 	require.NoError(t, err)
@@ -223,4 +178,62 @@ func TestPlaybookConditionsCRUD(t *testing.T) {
 	assert.Equal(t, createdSelectCondition.ID, remainingCondition.ID)
 	assert.Equal(t, selectField.ID, remainingCondition.ConditionExpr.Is.FieldID)
 	assert.Equal(t, json.RawMessage(`["`+optionNameToID["Low"]+`"]`), remainingCondition.ConditionExpr.Is.Value)
+}
+
+// Helper functions for creating property fields
+func createSelectPropertyField(name, groupID, playbookID string, optionNames []string) *model.PropertyField {
+	options := make(model.PropertyOptions[*model.PluginPropertyOption], len(optionNames))
+	for i, optionName := range optionNames {
+		options[i] = model.NewPluginPropertyOption(strings.ToLower(optionName)+"_id", optionName)
+	}
+
+	appField := app.PropertyField{
+		PropertyField: model.PropertyField{
+			Name:       name,
+			Type:       model.PropertyFieldTypeSelect,
+			GroupID:    groupID,
+			TargetType: "playbook",
+			TargetID:   playbookID,
+		},
+		Attrs: app.Attrs{
+			Options: options,
+		},
+	}
+
+	return appField.ToMattermostPropertyField()
+}
+
+func createTextPropertyField(name, groupID, playbookID string) *model.PropertyField {
+	return &model.PropertyField{
+		Name:       name,
+		Type:       model.PropertyFieldTypeText,
+		GroupID:    groupID,
+		TargetType: "playbook",
+		TargetID:   playbookID,
+	}
+}
+
+// Helper functions for creating conditions
+func createSelectCondition(playbookID, fieldID, optionID string) client.Condition {
+	return client.Condition{
+		PlaybookID: playbookID,
+		ConditionExpr: client.ConditionExpr{
+			Is: &client.ComparisonCondition{
+				FieldID: fieldID,
+				Value:   json.RawMessage(`["` + optionID + `"]`),
+			},
+		},
+	}
+}
+
+func createTextCondition(playbookID, fieldID, textValue string) client.Condition {
+	return client.Condition{
+		PlaybookID: playbookID,
+		ConditionExpr: client.ConditionExpr{
+			Is: &client.ComparisonCondition{
+				FieldID: fieldID,
+				Value:   json.RawMessage(`"` + textValue + `"`),
+			},
+		},
+	}
 }
