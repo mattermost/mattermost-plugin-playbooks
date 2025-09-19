@@ -957,7 +957,7 @@ func (s *playbookRunStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_Metric, IR_MetricConfig, IR_PlaybookMember, IR_Run_Participants, IR_PlaybookAutoFollow, IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_Condition, IR_Metric, IR_MetricConfig, IR_PlaybookMember, IR_Run_Participants, IR_PlaybookAutoFollow, IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 

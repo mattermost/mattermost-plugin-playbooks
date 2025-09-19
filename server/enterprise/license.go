@@ -63,3 +63,8 @@ func (e *LicenseChecker) ChecklistItemDueDateAllowed() bool {
 func (e *LicenseChecker) PlaybookAttributesAllowed() bool {
 	return e.isAtLeastE20Licensed()
 }
+
+// ConditionalPlaybooksAllowed returns true if the conditional playbooks feature is allowed with the current license.
+func (e *LicenseChecker) ConditionalPlaybooksAllowed() bool {
+	return e.isAtLeastE20Licensed()
+}
