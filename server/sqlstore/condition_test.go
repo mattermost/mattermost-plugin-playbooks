@@ -89,7 +89,6 @@ func TestConditionStore(t *testing.T) {
 			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
 			playbookID, err := playbookStore.Create(playbook)
 			require.NoError(t, err)
-			require.NoError(t, err)
 
 			condition := app.StoredCondition{
 				Condition: app.Condition{
@@ -150,7 +149,6 @@ func TestConditionStore(t *testing.T) {
 			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
 			playbookID, err := playbookStore.Create(playbook)
 			require.NoError(t, err)
-			require.NoError(t, err)
 
 			condition := app.StoredCondition{
 				Condition: app.Condition{
@@ -202,7 +200,6 @@ func TestConditionStore(t *testing.T) {
 			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
 			playbookID, err := playbookStore.Create(playbook)
 			require.NoError(t, err)
-			require.NoError(t, err)
 
 			condition := app.StoredCondition{
 				Condition: app.Condition{
@@ -237,7 +234,6 @@ func TestConditionStore(t *testing.T) {
 			// Create test playbook first
 			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
 			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
 			require.NoError(t, err)
 
 			// Create multiple conditions
@@ -300,7 +296,6 @@ func TestConditionStore(t *testing.T) {
 			// Create test playbook first
 			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
 			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
 			require.NoError(t, err)
 
 			// Create conditions - one for playbook, one for run
@@ -372,7 +367,6 @@ func TestConditionStore(t *testing.T) {
 			// Create test playbook first
 			playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
 			playbookID, err := playbookStore.Create(playbook)
-			require.NoError(t, err)
 			require.NoError(t, err)
 
 			condition := app.StoredCondition{
