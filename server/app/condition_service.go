@@ -39,11 +39,6 @@ func (s *conditionService) Create(userID string, condition Condition, teamID str
 	}
 
 	// Set metadata for creation
-	if condition.ID != "" {
-		return nil, errors.New("condition ID should not be specified for creation")
-	}
-	condition.ID = model.NewId()
-
 	now := model.GetMillis()
 	condition.CreateAt = now
 	condition.UpdateAt = now
@@ -54,6 +49,16 @@ func (s *conditionService) Create(userID string, condition Condition, teamID str
 
 	if condition.RunID != "" {
 		return nil, errors.New("cannot create conditions with RunID - run conditions are system managed")
+	}
+
+	// Check condition limit for playbook
+	currentCount, err := s.store.GetConditionCount(condition.PlaybookID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current condition count")
+	}
+
+	if currentCount >= MaxConditionsPerPlaybook {
+		return nil, errors.Errorf("cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
 	}
 
 	condition.ConditionExpr.Sanitize()

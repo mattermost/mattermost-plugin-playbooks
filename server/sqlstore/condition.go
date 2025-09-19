@@ -273,84 +273,23 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 	}, nil
 }
 
-// extractPropertyFieldIDs recursively extracts all property field IDs from a condition
-func extractPropertyFieldIDs(condition app.ConditionExpr) []string {
-	var fieldIDs []string
-	fieldIDSet := make(map[string]struct{})
+// GetConditionCount returns the number of non-deleted conditions for a playbook
+func (c *conditionStore) GetConditionCount(playbookID string) (int, error) {
+	query := c.queryBuilder.
+		Select("COUNT(*)").
+		From("IR_Condition").
+		Where(sq.Eq{"PlaybookID": playbookID}).
+		Where(sq.Eq{"DeleteAt": 0})
 
-	extractFromCondition(condition, fieldIDSet)
-
-	for fieldID := range fieldIDSet {
-		fieldIDs = append(fieldIDs, fieldID)
+	sqlQuery, args, err := query.ToSql()
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to build condition count query for playbook %s", playbookID)
 	}
 
-	return fieldIDs
-}
-
-func extractFromCondition(condition app.ConditionExpr, fieldIDSet map[string]struct{}) {
-	if condition.And != nil {
-		for _, subCondition := range condition.And {
-			extractFromCondition(subCondition, fieldIDSet)
-		}
+	var count int
+	if err := c.store.db.Get(&count, sqlQuery, args...); err != nil {
+		return 0, errors.Wrapf(err, "failed to get condition count for playbook %s", playbookID)
 	}
 
-	if condition.Or != nil {
-		for _, subCondition := range condition.Or {
-			extractFromCondition(subCondition, fieldIDSet)
-		}
-	}
-
-	if condition.Is != nil {
-		fieldIDSet[condition.Is.FieldID] = struct{}{}
-	}
-
-	if condition.IsNot != nil {
-		fieldIDSet[condition.IsNot.FieldID] = struct{}{}
-	}
-}
-
-// extractPropertyOptionsIDs recursively extracts all property options IDs from a condition
-func extractPropertyOptionsIDs(condition app.ConditionExpr) []string {
-	var optionsIDs []string
-	optionsIDSet := make(map[string]struct{})
-
-	extractOptionsFromCondition(condition, optionsIDSet)
-
-	for optionsID := range optionsIDSet {
-		optionsIDs = append(optionsIDs, optionsID)
-	}
-
-	return optionsIDs
-}
-
-func extractOptionsFromCondition(condition app.ConditionExpr, optionsIDSet map[string]struct{}) {
-	if condition.And != nil {
-		for _, subCondition := range condition.And {
-			extractOptionsFromCondition(subCondition, optionsIDSet)
-		}
-	}
-
-	if condition.Or != nil {
-		for _, subCondition := range condition.Or {
-			extractOptionsFromCondition(subCondition, optionsIDSet)
-		}
-	}
-
-	if condition.Is != nil {
-		extractOptionsFromComparison(condition.Is, optionsIDSet)
-	}
-
-	if condition.IsNot != nil {
-		extractOptionsFromComparison(condition.IsNot, optionsIDSet)
-	}
-}
-
-func extractOptionsFromComparison(comparison *app.ComparisonCondition, optionsIDSet map[string]struct{}) {
-	var arrayValue []string
-	if err := json.Unmarshal(comparison.Value, &arrayValue); err == nil {
-		// Successfully unmarshaled as array (select/multiselect fields)
-		for _, optionID := range arrayValue {
-			optionsIDSet[optionID] = struct{}{}
-		}
-	}
+	return count, nil
 }

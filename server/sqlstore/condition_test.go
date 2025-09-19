@@ -414,178 +414,69 @@ func TestConditionStore(t *testing.T) {
 		require.Contains(t, optionIDs, "closed_id")
 		require.Contains(t, optionIDs, "archived_id")
 	})
-}
 
-func TestExtractPropertyFieldIDs(t *testing.T) {
-	t.Run("simple is condition", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			Is: &app.ComparisonCondition{
-				FieldID: "severity_id",
-				Value:   json.RawMessage(`["critical_id"]`),
-			},
-		}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 1)
-		require.Contains(t, fieldIDs, "severity_id")
-	})
+	t.Run("get condition count", func(t *testing.T) {
+		// Create test playbook
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
 
-	t.Run("simple isNot condition", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			IsNot: &app.ComparisonCondition{
-				FieldID: "acknowledged_id",
-				Value:   json.RawMessage(`"true"`),
-			},
-		}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 1)
-		require.Contains(t, fieldIDs, "acknowledged_id")
-	})
+		// Initially should have 0 conditions
+		count, err := conditionStore.GetConditionCount(playbookID)
+		require.NoError(t, err)
+		require.Equal(t, 0, count)
 
-	t.Run("and condition with multiple fields", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			And: []app.ConditionExpr{
-				{
-					Is: &app.ComparisonCondition{
-						FieldID: "severity_id",
-						Value:   json.RawMessage(`["critical_id"]`),
-					},
-				},
-				{
-					IsNot: &app.ComparisonCondition{
-						FieldID: "acknowledged_id",
-						Value:   json.RawMessage(`"true"`),
-					},
+		// Create first condition
+		condition1 := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			ConditionExpr: app.ConditionExpr{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
 				},
 			},
+			CreateAt: model.GetMillis(),
+			UpdateAt: model.GetMillis(),
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 2)
-		require.Contains(t, fieldIDs, "severity_id")
-		require.Contains(t, fieldIDs, "acknowledged_id")
-	})
 
-	t.Run("or condition with multiple fields", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			Or: []app.ConditionExpr{
-				{
-					Is: &app.ComparisonCondition{
-						FieldID: "status_id",
-						Value:   json.RawMessage(`["open_id"]`),
-					},
-				},
-				{
-					Is: &app.ComparisonCondition{
-						FieldID: "priority_id",
-						Value:   json.RawMessage(`["high_priority_id"]`),
-					},
+		_, err = conditionStore.CreateCondition(playbookID, condition1)
+		require.NoError(t, err)
+
+		// Should now have 1 condition
+		count, err = conditionStore.GetConditionCount(playbookID)
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+
+		// Create second condition
+		condition2 := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			ConditionExpr: app.ConditionExpr{
+				IsNot: &app.ComparisonCondition{
+					FieldID: "status_id",
+					Value:   json.RawMessage(`"resolved"`),
 				},
 			},
+			CreateAt: model.GetMillis(),
+			UpdateAt: model.GetMillis(),
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 2)
-		require.Contains(t, fieldIDs, "status_id")
-		require.Contains(t, fieldIDs, "priority_id")
-	})
 
-	t.Run("nested conditions with multiple fields", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			And: []app.ConditionExpr{
-				{
-					Is: &app.ComparisonCondition{
-						FieldID: "severity_id",
-						Value:   json.RawMessage(`["critical_id"]`),
-					},
-				},
-				{
-					Or: []app.ConditionExpr{
-						{
-							Is: &app.ComparisonCondition{
-								FieldID: "status_id",
-								Value:   json.RawMessage(`["open_id"]`),
-							},
-						},
-						{
-							IsNot: &app.ComparisonCondition{
-								FieldID: "acknowledged_id",
-								Value:   json.RawMessage(`"true"`),
-							},
-						},
-					},
-				},
-			},
-		}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 3)
-		require.Contains(t, fieldIDs, "severity_id")
-		require.Contains(t, fieldIDs, "status_id")
-		require.Contains(t, fieldIDs, "acknowledged_id")
-	})
+		_, err = conditionStore.CreateCondition(playbookID, condition2)
+		require.NoError(t, err)
 
-	t.Run("duplicate field IDs are deduplicated", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			And: []app.ConditionExpr{
-				{
-					Is: &app.ComparisonCondition{
-						FieldID: "severity_id",
-						Value:   json.RawMessage(`["critical_id"]`),
-					},
-				},
-				{
-					IsNot: &app.ComparisonCondition{
-						FieldID: "severity_id",
-						Value:   json.RawMessage(`["low_id"]`),
-					},
-				},
-			},
-		}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 1)
-		require.Contains(t, fieldIDs, "severity_id")
-	})
+		// Should now have 2 conditions
+		count, err = conditionStore.GetConditionCount(playbookID)
+		require.NoError(t, err)
+		require.Equal(t, 2, count)
 
-	t.Run("empty condition returns empty slice", func(t *testing.T) {
-		condition := app.ConditionExpr{}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 0)
-	})
+		// Soft delete first condition
+		err = conditionStore.DeleteCondition(playbookID, condition1.ID)
+		require.NoError(t, err)
 
-	t.Run("complex nested structure with duplicates", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			Or: []app.ConditionExpr{
-				{
-					And: []app.ConditionExpr{
-						{
-							Is: &app.ComparisonCondition{
-								FieldID: "field1",
-								Value:   json.RawMessage(`"value1"`),
-							},
-						},
-						{
-							IsNot: &app.ComparisonCondition{
-								FieldID: "field2",
-								Value:   json.RawMessage(`"value2"`),
-							},
-						},
-					},
-				},
-				{
-					Is: &app.ComparisonCondition{
-						FieldID: "field1", // duplicate
-						Value:   json.RawMessage(`"different_value"`),
-					},
-				},
-				{
-					IsNot: &app.ComparisonCondition{
-						FieldID: "field3",
-						Value:   json.RawMessage(`"value3"`),
-					},
-				},
-			},
-		}
-		fieldIDs := extractPropertyFieldIDs(condition)
-		require.Len(t, fieldIDs, 3)
-		require.Contains(t, fieldIDs, "field1")
-		require.Contains(t, fieldIDs, "field2")
-		require.Contains(t, fieldIDs, "field3")
+		// Should now have 1 condition (deleted ones don't count)
+		count, err = conditionStore.GetConditionCount(playbookID)
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
 	})
 }

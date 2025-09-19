@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	MaxConditionDepth = 1 // Maximum nesting depth allowed for and/or conditions
+	MaxConditionDepth        = 1    // Maximum nesting depth allowed for and/or conditions
+	MaxConditionsPerPlaybook = 1000 // Maximum number of conditions per playbook
 )
 
 type ConditionExpr struct {
@@ -570,4 +571,5 @@ type ConditionStore interface {
 	UpdateCondition(playbookID string, condition Condition) (*Condition, error)
 	DeleteCondition(playbookID, conditionID string) error
 	GetConditions(playbookID string, options ConditionFilterOptions) ([]Condition, error)
+	GetConditionCount(playbookID string) (int, error)
 }
