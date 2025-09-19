@@ -32,6 +32,7 @@ type PlaybookRunHandler struct {
 	config             config.Service
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
+	propertyService    app.PropertyServiceReader
 	permissions        *app.PermissionsService
 	licenseChecker     app.LicenseChecker
 	pluginAPI          *pluginapi.Client
@@ -43,6 +44,7 @@ func NewPlaybookRunHandler(
 	router *mux.Router,
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
+	propertyService app.PropertyServiceReader,
 	permissions *app.PermissionsService,
 	licenseChecker app.LicenseChecker,
 	api *pluginapi.Client,
@@ -53,6 +55,7 @@ func NewPlaybookRunHandler(
 		ErrorHandler:       &ErrorHandler{},
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
+		propertyService:    propertyService,
 		pluginAPI:          api,
 		poster:             poster,
 		config:             configService,
@@ -132,6 +135,13 @@ func NewPlaybookRunHandler(
 	followersRouter.HandleFunc("", withContext(handler.follow)).Methods(http.MethodPut)
 	followersRouter.HandleFunc("", withContext(handler.unfollow)).Methods(http.MethodDelete)
 	followersRouter.HandleFunc("", withContext(handler.getFollowers)).Methods(http.MethodGet)
+
+	propertyFieldsRouter := playbookRunRouter.PathPrefix("/property_fields").Subrouter()
+	propertyFieldsRouter.HandleFunc("", withContext(handler.getRunPropertyFields)).Methods(http.MethodGet)
+	propertyFieldsRouter.HandleFunc("/{fieldID:[A-Za-z0-9]+}/value", withContext(handler.setRunPropertyValue)).Methods(http.MethodPut)
+
+	propertyValuesRouter := playbookRunRouter.PathPrefix("/property_values").Subrouter()
+	propertyValuesRouter.HandleFunc("", withContext(handler.getRunPropertyValues)).Methods(http.MethodGet)
 
 	return handler
 }
@@ -1960,4 +1970,70 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	}
 
 	return &options, nil
+}
+
+func (h *PlaybookRunHandler) getRunPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		return
+	}
+
+	propertyFields, err := h.propertyService.GetRunPropertyFields(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, propertyFields, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) getRunPropertyValues(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		return
+	}
+
+	propertyValues, err := h.propertyService.GetRunPropertyValues(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, propertyValues, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) setRunPropertyValue(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookRunID := vars["id"]
+	fieldID := vars["fieldID"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
+		return
+	}
+
+	var valueRequest struct {
+		Value json.RawMessage `json:"value"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&valueRequest); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	propertyValue, err := h.playbookRunService.SetRunPropertyValue(userID, playbookRunID, fieldID, valueRequest.Value)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, propertyValue, http.StatusOK)
 }

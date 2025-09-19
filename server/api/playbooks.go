@@ -27,22 +27,32 @@ import (
 type PlaybookHandler struct {
 	*ErrorHandler
 	playbookService app.PlaybookService
+	propertyService app.PropertyServiceReader
 	pluginAPI       *pluginapi.Client
 	config          config.Service
 	permissions     *app.PermissionsService
+	licenseChecker  app.LicenseChecker
 }
 
 const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
+type PropertyFieldRequest struct {
+	Name  string                   `json:"name"`
+	Type  string                   `json:"type"`
+	Attrs *PropertyFieldAttrsInput `json:"attrs,omitempty"`
+}
+
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, propertyService app.PropertyServiceReader, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		ErrorHandler:    &ErrorHandler{},
 		playbookService: playbookService,
+		propertyService: propertyService,
 		pluginAPI:       api,
 		config:          configService,
 		permissions:     permissions,
+		licenseChecker:  licenseChecker,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -60,6 +70,13 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("/duplicate", withContext(handler.duplicatePlaybook)).Methods(http.MethodPost)
+
+	propertyFieldsRouter := playbookRouter.PathPrefix("/property_fields").Subrouter()
+	propertyFieldsRouter.HandleFunc("", withContext(handler.getPlaybookPropertyFields)).Methods(http.MethodGet)
+	propertyFieldsRouter.HandleFunc("", withContext(handler.createPlaybookPropertyField)).Methods(http.MethodPost)
+	propertyFieldRouter := propertyFieldsRouter.PathPrefix("/{fieldID:[A-Za-z0-9]+}").Subrouter()
+	propertyFieldRouter.HandleFunc("", withContext(handler.updatePlaybookPropertyField)).Methods(http.MethodPut)
+	propertyFieldRouter.HandleFunc("", withContext(handler.deletePlaybookPropertyField)).Methods(http.MethodDelete)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowsRouter.HandleFunc("", withContext(handler.getAutoFollows)).Methods(http.MethodGet)
@@ -810,4 +827,191 @@ func GetStartOfDayForTimeRange(timeRange string, location *time.Location) (*time
 		return nil, errors.New("Invalid time range")
 	}
 	return &resultTime, nil
+}
+
+func (h *PlaybookHandler) getPlaybookPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	logger := c.logger.WithField("playbook_id", playbookID)
+
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.permissions.PlaybookView(userID, playbookID); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return
+	}
+
+	propertyFields, err := h.propertyService.GetPropertyFields(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	ReturnJSON(w, propertyFields, http.StatusOK)
+}
+
+func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	logger := c.logger.WithField("playbook_id", playbookID)
+
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	var request PropertyFieldRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	propertyFieldInput := convertRequestToPropertyFieldInput(request)
+	propertyField := convertPropertyFieldInputToPropertyField(propertyFieldInput)
+
+	createdField, err := h.playbookService.CreatePropertyField(playbookID, *propertyField)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	ReturnJSON(w, createdField, http.StatusCreated)
+}
+
+func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	fieldID := vars["fieldID"]
+	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
+
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	existingField, err := h.propertyService.GetPropertyField(fieldID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if existingField.TargetID != playbookID {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field does not belong to the specified playbook", errors.New("property field does not belong to the specified playbook"))
+		return
+	}
+
+	var request PropertyFieldRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	propertyFieldInput := convertRequestToPropertyFieldInput(request)
+	propertyField := convertPropertyFieldInputToPropertyField(propertyFieldInput)
+	propertyField.ID = fieldID
+
+	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	ReturnJSON(w, updatedField, http.StatusOK)
+}
+
+func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	fieldID := vars["fieldID"]
+	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
+
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	existingField, err := h.propertyService.GetPropertyField(fieldID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if existingField.TargetID != playbookID {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field does not belong to the specified playbook", errors.New("property field does not belong to the specified playbook"))
+		return
+	}
+
+	if err := h.playbookService.DeletePropertyField(playbookID, fieldID); err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func convertRequestToPropertyFieldInput(request PropertyFieldRequest) PropertyFieldInput {
+	return PropertyFieldInput{
+		Name:  request.Name,
+		Type:  model.PropertyFieldType(request.Type),
+		Attrs: request.Attrs,
+	}
 }
