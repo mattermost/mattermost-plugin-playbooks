@@ -556,10 +556,10 @@ type ConditionFilterOptions struct {
 
 // ConditionService provides methods for managing stored conditions
 type ConditionService interface {
-	Create(userID string, condition Condition) (*Condition, error)
+	Create(userID string, condition Condition, teamID string) (*Condition, error)
 	Get(userID, playbookID, conditionID string) (*Condition, error)
-	Update(userID string, condition Condition) (*Condition, error)
-	Delete(userID, playbookID, conditionID string) error
+	Update(userID string, condition Condition, teamID string) (*Condition, error)
+	Delete(userID, playbookID, conditionID string, teamID string) error
 	GetConditions(userID, playbookID string, options ConditionFilterOptions) ([]Condition, error)
 }
 

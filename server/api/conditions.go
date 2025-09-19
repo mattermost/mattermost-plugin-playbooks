@@ -240,7 +240,7 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 	// Set playbook ID from URL
 	condition.PlaybookID = playbookID
 
-	createdCondition, err := h.conditionService.Create(userID, condition)
+	createdCondition, err := h.conditionService.Create(userID, condition, playbook.TeamID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -292,7 +292,7 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 	condition.ID = conditionID
 	condition.PlaybookID = playbookID
 
-	updatedCondition, err := h.conditionService.Update(userID, condition)
+	updatedCondition, err := h.conditionService.Update(userID, condition, playbook.TeamID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -339,7 +339,7 @@ func (h *ConditionHandler) deletePlaybookCondition(c *Context, w http.ResponseWr
 		return
 	}
 
-	if err := h.conditionService.Delete(userID, playbookID, conditionID); err != nil {
+	if err := h.conditionService.Delete(userID, playbookID, conditionID, playbook.TeamID); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
