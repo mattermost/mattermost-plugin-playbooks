@@ -18,6 +18,6 @@ describe('conditions JSON test cases', () => {
                 );
                 expect(result).toBe(testCase.shouldPass);
             });
-        };
+        }
     });
 });
