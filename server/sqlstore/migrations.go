@@ -1691,11 +1691,11 @@ var migrations = []Migration{
 			if _, err := e.Exec(`
 				CREATE TABLE IF NOT EXISTS IR_Condition (
 					ID TEXT PRIMARY KEY,
-					ConditionExpr JSON NOT NULL,
+					ConditionExpr JSONB NOT NULL,
 					PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
 					RunID TEXT DEFAULT '',
-					PropertyFieldIDs JSON NOT NULL,
-					PropertyOptionsIDs JSON NOT NULL,
+					PropertyFieldIDs JSONB NOT NULL,
+					PropertyOptionsIDs JSONB NOT NULL,
 					CreateAt BIGINT NOT NULL,
 					UpdateAt BIGINT NOT NULL DEFAULT 0,
 					DeleteAt BIGINT NOT NULL DEFAULT 0

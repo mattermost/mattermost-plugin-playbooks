@@ -54,7 +54,7 @@ func TestConditionStore(t *testing.T) {
 			ConditionExpr: app.ConditionExpr{
 				Is: &app.ComparisonCondition{
 					FieldID: "severity_id",
-					Value:   json.RawMessage(`["critical_id","high_id"]`),
+					Value:   json.RawMessage(`["critical_id", "high_id"]`),
 				},
 			},
 			CreateAt: 1234567890,
@@ -74,7 +74,7 @@ func TestConditionStore(t *testing.T) {
 		require.NotNil(t, retrieved)
 		require.Equal(t, created.ID, retrieved.ID)
 		require.Equal(t, playbookID, retrieved.PlaybookID)
-		require.Equal(t, condition.ConditionExpr, retrieved.ConditionExpr)
+		require.EqualValues(t, condition.ConditionExpr, retrieved.ConditionExpr)
 	})
 
 	t.Run("create condition with complex nested expression", func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestConditionStore(t *testing.T) {
 							{
 								Is: &app.ComparisonCondition{
 									FieldID: "categories_id",
-									Value:   json.RawMessage(`["cat_a_id","cat_b_id"]`),
+									Value:   json.RawMessage(`["cat_a_id", "cat_b_id"]`),
 								},
 							},
 						},
@@ -125,7 +125,7 @@ func TestConditionStore(t *testing.T) {
 		require.NotNil(t, retrieved)
 		require.Equal(t, created.ID, retrieved.ID)
 		require.Equal(t, playbookID, retrieved.PlaybookID)
-		require.Equal(t, condition.ConditionExpr, retrieved.ConditionExpr)
+		require.EqualValues(t, condition.ConditionExpr, retrieved.ConditionExpr)
 
 		// Verify the complex nested structure is preserved
 		require.NotNil(t, retrieved.ConditionExpr.And)
@@ -162,7 +162,7 @@ func TestConditionStore(t *testing.T) {
 		created.ConditionExpr = app.ConditionExpr{
 			IsNot: &app.ComparisonCondition{
 				FieldID: "status_id",
-				Value:   json.RawMessage(`["closed_id","archived_id"]`),
+				Value:   json.RawMessage(`["closed_id", "archived_id"]`),
 			},
 		}
 
@@ -357,13 +357,13 @@ func TestConditionStore(t *testing.T) {
 					{
 						Is: &app.ComparisonCondition{
 							FieldID: "severity_id",
-							Value:   json.RawMessage(`["critical_id","high_id"]`),
+							Value:   json.RawMessage(`["critical_id", "high_id"]`),
 						},
 					},
 					{
 						IsNot: &app.ComparisonCondition{
 							FieldID: "status_id",
-							Value:   json.RawMessage(`["closed_id","archived_id"]`),
+							Value:   json.RawMessage(`["closed_id", "archived_id"]`),
 						},
 					},
 				},
