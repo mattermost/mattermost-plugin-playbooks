@@ -410,6 +410,15 @@ type PlaybookService interface {
 
 	// Get top playbooks for users
 	GetTopPlaybooksForUser(teamID, userID string, opts *InsightsOpts) (*PlaybooksInsightsList, error)
+
+	// CreatePropertyField creates a property field for a playbook and bumps the playbook's updated_at
+	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
+
+	// UpdatePropertyField updates a property field for a playbook and bumps the playbook's updated_at
+	UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
+
+	// DeletePropertyField deletes a property field for a playbook and bumps the playbook's updated_at
+	DeletePropertyField(playbookID, propertyID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -487,6 +496,9 @@ type PlaybookStore interface {
 
 	// RemovePlaybookMember removes a user from a playbook
 	RemovePlaybookMember(id string, memberID string) error
+
+	// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
+	BumpPlaybookUpdatedAt(playbookID string) error
 }
 
 const (

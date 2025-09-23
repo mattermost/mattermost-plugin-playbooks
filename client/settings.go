@@ -9,6 +9,7 @@ import (
 )
 
 type GlobalSettings struct {
+	EnableExperimentalFeatures bool `json:"enable_experimental_features"`
 }
 
 // SettingsService handles communication with the settings related methods.

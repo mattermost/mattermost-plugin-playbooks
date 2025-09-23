@@ -20,6 +20,38 @@ export interface EditingMetric {
     metric: Metric;
 }
 
+// Convert GraphQL FullPlaybook to PlaybookWithChecklist format for legacy components
+const convertToPlaybookWithChecklist = (playbook: FullPlaybook): PlaybookWithChecklist => {
+    if (!playbook) {
+        throw new Error('Playbook is required');
+    }
+
+    return {
+        ...playbook,
+
+        // Add missing calculated fields with default values
+        num_stages: playbook.checklists?.length || 0,
+        num_steps: playbook.checklists?.reduce((total, checklist) => total + (checklist.items?.length || 0), 0) || 0,
+        num_runs: 0, // This would need to be fetched separately
+        num_actions: 0, // This would need to be calculated
+        last_run_at: 0, // This would need to be fetched separately
+        active_runs: 0, // This would need to be fetched separately
+        // Convert GraphQL PropertyField format to TypeScript PropertyField format
+        propertyFields: (playbook.propertyFields || []).map((field) => ({
+            ...field,
+            createAt: field.create_at,
+            updateAt: field.update_at,
+            deleteAt: field.delete_at,
+            groupID: field.group_id,
+            attrs: {
+                ...field.attrs,
+                parentId: field.attrs?.parent_id || '',
+                sortOrder: field.attrs?.sort_order || 0,
+            },
+        })),
+    } as PlaybookWithChecklist;
+};
+
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
@@ -69,9 +101,10 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
                 <Metrics
-                    playbook={playbook as PlaybookWithChecklist} // TODO reduce prop scope to min-essentials
+                    playbook={convertToPlaybookWithChecklist(playbook)} // TODO reduce prop scope to min-essentials
                     setPlaybook={async (update) => {
-                        await savePlaybook({...playbook, ...typeof update === 'function' ? update(playbook as PlaybookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
+                        const playbookWithChecklist = convertToPlaybookWithChecklist(playbook);
+                        await savePlaybook({...playbook, ...typeof update === 'function' ? update(playbookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
                         refetch();
                     }}
                     curEditingMetric={curEditingMetric}

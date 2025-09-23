@@ -49,7 +49,7 @@ func MakeTransport(pluginAPI *pluginapi.Client) *httpservice.MattermostTransport
 
 		// If there is an error getting the self-assigned IPs, default to the secure option
 		if err != nil {
-			return errors.New("IP not allowed: error checking own IP")
+			return errors.New("unable to determine if IP is own IP")
 		}
 
 		// If it's not a reserved IP and it's not self-assigned IP, accept the IP
@@ -58,7 +58,7 @@ func MakeTransport(pluginAPI *pluginapi.Client) *httpservice.MattermostTransport
 		}
 
 		if pluginAPI.Configuration.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections == nil {
-			return errors.New("IP not allowed: reserved or own IP without explicit permission")
+			return errors.New("IP is reserved or own IP and AllowedUntrustedInternalConnections is not configured")
 		}
 
 		// In the case it's the self-assigned IP, enforce that it needs to be explicitly added to the AllowedUntrustedInternalConnections
@@ -67,7 +67,7 @@ func MakeTransport(pluginAPI *pluginapi.Client) *httpservice.MattermostTransport
 				return nil
 			}
 		}
-		return errors.New("IP not allowed: not in allowed untrusted internal connections")
+		return errors.New("IP is not in AllowedUntrustedInternalConnections")
 	}
 
 	return httpservice.NewTransport(insecure, allowHost, allowIP)
