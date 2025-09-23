@@ -165,7 +165,3 @@ export function isRun(run: undefined | null | PlaybookRun | PlaybookRunConnectio
     }
     return false;
 }
-
-export function isRunConnection(run: PlaybookRun | PlaybookRunConnection): run is PlaybookRunConnection {
-    return isRun(run) === false;
-}

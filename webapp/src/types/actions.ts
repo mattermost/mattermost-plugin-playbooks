@@ -106,7 +106,7 @@ export interface ReceivedTeamPlaybookRuns {
     playbookRuns: PlaybookRun[];
 }
 
-export interface ReceivedTeamPlaybookRunConnections{
+export interface ReceivedTeamPlaybookRunConnections {
     type: typeof RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS;
     playbookRuns: PlaybookRunConnection[];
 }
