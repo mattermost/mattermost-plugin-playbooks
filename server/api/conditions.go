@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
@@ -136,16 +137,23 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 		return
 	}
 
-	var condition app.Condition
-	if err := json.NewDecoder(r.Body).Decode(&condition); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode condition", err)
+	var conditionRequest ConditionRequest
+	if err := json.NewDecoder(r.Body).Decode(&conditionRequest); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode condition request", err)
 		return
 	}
 
 	// Set playbook ID from URL
-	condition.PlaybookID = playbookID
+	conditionRequest.PlaybookID = playbookID
 
-	createdCondition, err := h.conditionService.CreatePlaybookCondition(userID, condition, playbook.TeamID)
+	// Convert request to domain model
+	condition, err := conditionRequest.ToCondition()
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid condition format", err)
+		return
+	}
+
+	createdCondition, err := h.conditionService.CreatePlaybookCondition(userID, *condition, playbook.TeamID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -187,17 +195,24 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 		return
 	}
 
-	var condition app.Condition
-	if err := json.NewDecoder(r.Body).Decode(&condition); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode condition", err)
+	var conditionRequest ConditionRequest
+	if err := json.NewDecoder(r.Body).Decode(&conditionRequest); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode condition request", err)
 		return
 	}
 
 	// Set condition metadata from URL
-	condition.ID = conditionID
-	condition.PlaybookID = playbookID
+	conditionRequest.ID = conditionID
+	conditionRequest.PlaybookID = playbookID
 
-	updatedCondition, err := h.conditionService.UpdatePlaybookCondition(userID, condition, playbook.TeamID)
+	// Convert request to domain model
+	condition, err := conditionRequest.ToCondition()
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid condition format", err)
+		return
+	}
+
+	updatedCondition, err := h.conditionService.UpdatePlaybookCondition(userID, *condition, playbook.TeamID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -274,4 +289,53 @@ func parsePaginationParams(query url.Values) (page, perPage int) {
 	}
 
 	return page, perPage
+}
+
+// ConditionRequest represents a condition request from the API
+type ConditionRequest struct {
+	ID            string          `json:"id"`
+	ConditionExpr json.RawMessage `json:"condition_expr"`
+	Version       int             `json:"version"`
+	PlaybookID    string          `json:"playbook_id"`
+	RunID         string          `json:"run_id,omitempty"`
+	CreateAt      int64           `json:"create_at"`
+	UpdateAt      int64           `json:"update_at"`
+	DeleteAt      int64           `json:"delete_at"`
+}
+
+// ToCondition converts a ConditionRequest to a Condition
+func (cr *ConditionRequest) ToCondition() (*app.Condition, error) {
+	// Enforce version requirement
+	if cr.Version == 0 {
+		return nil, errors.New("version is required and cannot be 0")
+	}
+
+	condition := &app.Condition{
+		ID:         cr.ID,
+		Version:    cr.Version,
+		PlaybookID: cr.PlaybookID,
+		RunID:      cr.RunID,
+		CreateAt:   cr.CreateAt,
+		UpdateAt:   cr.UpdateAt,
+		DeleteAt:   cr.DeleteAt,
+	}
+
+	// ConditionExpr is required
+	if cr.ConditionExpr == nil || string(cr.ConditionExpr) == "null" {
+		return nil, errors.New("condition_expr is required and cannot be null")
+	}
+
+	// Handle versioned condition expression
+	switch condition.Version {
+	case 1:
+		var exprV1 app.ConditionExprV1
+		if err := json.Unmarshal(cr.ConditionExpr, &exprV1); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal condition expression v1")
+		}
+		condition.ConditionExpr = &exprV1
+	default:
+		return nil, errors.Errorf("unsupported condition version: %d", condition.Version)
+	}
+
+	return condition, nil
 }

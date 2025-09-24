@@ -88,6 +88,7 @@ func TestConditionStore(t *testing.T) {
 
 		condition := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			ConditionExpr: &app.ConditionExprV1{
 				And: []app.ConditionExprV1{
@@ -115,7 +116,6 @@ func TestConditionStore(t *testing.T) {
 					},
 				},
 			},
-			Version:  1,
 			CreateAt: 1234567890,
 			UpdateAt: 1234567890,
 		}
@@ -150,6 +150,7 @@ func TestConditionStore(t *testing.T) {
 
 		condition := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
@@ -195,6 +196,7 @@ func TestConditionStore(t *testing.T) {
 
 		condition := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
@@ -228,6 +230,7 @@ func TestConditionStore(t *testing.T) {
 		conditions := []app.Condition{
 			{
 				ID:         model.NewId(),
+				Version:    1,
 				PlaybookID: playbookID,
 				ConditionExpr: &app.ConditionExprV1{
 					Is: &app.ComparisonCondition{
@@ -240,6 +243,7 @@ func TestConditionStore(t *testing.T) {
 			},
 			{
 				ID:         model.NewId(),
+				Version:    1,
 				PlaybookID: playbookID,
 				ConditionExpr: &app.ConditionExprV1{
 					IsNot: &app.ComparisonCondition{
@@ -278,6 +282,7 @@ func TestConditionStore(t *testing.T) {
 		// Create conditions - one for playbook, one for run
 		playbookCondition := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			RunID:      "",
 			ConditionExpr: &app.ConditionExprV1{
@@ -292,6 +297,7 @@ func TestConditionStore(t *testing.T) {
 
 		runCondition := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			RunID:      runID,
 			ConditionExpr: &app.ConditionExprV1{
@@ -333,6 +339,7 @@ func TestConditionStore(t *testing.T) {
 
 		condition := app.Condition{
 			ID:         "", // Empty ID should be auto-generated
+			Version:    1,
 			PlaybookID: playbookID,
 			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
@@ -359,6 +366,7 @@ func TestConditionStore(t *testing.T) {
 		// Create a complex condition with multiple fields and options
 		condition := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			ConditionExpr: &app.ConditionExprV1{
 				And: []app.ConditionExprV1{
@@ -427,6 +435,7 @@ func TestConditionStore(t *testing.T) {
 		// Create first condition
 		condition1 := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
@@ -449,6 +458,7 @@ func TestConditionStore(t *testing.T) {
 		// Create second condition
 		condition2 := app.Condition{
 			ID:         model.NewId(),
+			Version:    1,
 			PlaybookID: playbookID,
 			ConditionExpr: &app.ConditionExprV1{
 				IsNot: &app.ComparisonCondition{

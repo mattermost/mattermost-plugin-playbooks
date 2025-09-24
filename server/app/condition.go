@@ -5,12 +5,12 @@ package app
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -618,17 +618,7 @@ func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) err
 }
 
 func (c *Condition) Sanitize() {
-	// Set version if not provided
-	if c.Version == 0 {
-		c.Version = CurrentConditionVersion
-	}
-
 	c.ConditionExpr.Sanitize()
-}
-
-// GetConditionExpression returns the condition expression
-func (c *Condition) GetConditionExpression() ConditionExpression {
-	return c.ConditionExpr
 }
 
 // GetConditionsResults contains the results of the GetConditions call

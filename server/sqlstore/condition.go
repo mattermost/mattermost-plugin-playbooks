@@ -80,11 +80,6 @@ func (c *conditionStore) CreateCondition(playbookID string, condition app.Condit
 		condition.UpdateAt = now
 	}
 
-	// Set version if not provided
-	if condition.Version == 0 {
-		condition.Version = app.CurrentConditionVersion
-	}
-
 	// Ensure condition belongs to the specified playbook
 	condition.PlaybookID = playbookID
 
@@ -207,12 +202,7 @@ func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Co
 		}
 		conditionExpr = &expr
 	default:
-		// Default to current version
-		var expr app.ConditionExprV1
-		if err := json.Unmarshal(sqlCondition.ConditionExpr, &expr); err != nil {
-			return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition expression")
-		}
-		conditionExpr = &expr
+		return app.Condition{}, errors.Errorf("unsupported condition version: %d", sqlCondition.Version)
 	}
 
 	return app.Condition{
@@ -230,8 +220,7 @@ func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Co
 // toConditionForDB converts an app.Condition to conditionForDB for database operations
 func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionForDB, error) {
 	// Extract metadata for storage using the versioned expression
-	expr := condition.GetConditionExpression()
-	propertyFieldIDs, propertyOptionsIDs := expr.ExtractPropertyIDs()
+	propertyFieldIDs, propertyOptionsIDs := condition.ConditionExpr.ExtractPropertyIDs()
 
 	// Marshal the condition expression to JSON for storage
 	conditionExprJSON, err := json.Marshal(condition.ConditionExpr)
