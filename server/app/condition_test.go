@@ -1367,7 +1367,7 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 
 	t.Run("and condition", func(t *testing.T) {
 		condition := &ConditionExprV1{
-			And: []*ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -1389,7 +1389,7 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 
 	t.Run("or condition", func(t *testing.T) {
 		condition := &ConditionExprV1{
-			Or: []*ConditionExprV1{
+			Or: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "priority_id",
@@ -1411,7 +1411,7 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 
 	t.Run("nested conditions", func(t *testing.T) {
 		condition := &ConditionExprV1{
-			And: []*ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -1419,7 +1419,7 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 					},
 				},
 				{
-					Or: []*ConditionExprV1{
+					Or: []ConditionExprV1{
 						{
 							Is: &ComparisonCondition{
 								FieldID: "status_id",
@@ -1443,7 +1443,7 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 
 	t.Run("mixed field types", func(t *testing.T) {
 		condition := &ConditionExprV1{
-			And: []*ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "text_field",
@@ -1478,7 +1478,7 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 
 	t.Run("duplicate field and option IDs are deduplicated", func(t *testing.T) {
 		condition := &ConditionExprV1{
-			And: []*ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
