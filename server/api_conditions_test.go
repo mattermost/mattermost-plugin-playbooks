@@ -217,7 +217,8 @@ func createTextPropertyField(name, groupID, playbookID string) *model.PropertyFi
 func createSelectCondition(playbookID, fieldID, optionID string) client.Condition {
 	return client.Condition{
 		PlaybookID: playbookID,
-		ConditionExpr: client.ConditionExpr{
+		Version:    1,
+		ConditionExpr: client.ConditionExprV1{
 			Is: &client.ComparisonCondition{
 				FieldID: fieldID,
 				Value:   json.RawMessage(`["` + optionID + `"]`),
@@ -229,7 +230,8 @@ func createSelectCondition(playbookID, fieldID, optionID string) client.Conditio
 func createTextCondition(playbookID, fieldID, textValue string) client.Condition {
 	return client.Condition{
 		PlaybookID: playbookID,
-		ConditionExpr: client.ConditionExpr{
+		Version:    1,
+		ConditionExpr: client.ConditionExprV1{
 			Is: &client.ComparisonCondition{
 				FieldID: fieldID,
 				Value:   json.RawMessage(`"` + textValue + `"`),

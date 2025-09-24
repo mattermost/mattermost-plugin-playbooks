@@ -18,18 +18,19 @@ type PlaybookConditionsService struct {
 
 // Condition represents a condition that can be applied to playbooks and runs.
 type Condition struct {
-	ID            string        `json:"id"`
-	ConditionExpr ConditionExpr `json:"condition_expr"`
-	PlaybookID    string        `json:"playbook_id"`
-	RunID         string        `json:"run_id,omitempty"`
-	CreateAt      int64         `json:"create_at"`
-	UpdateAt      int64         `json:"update_at"`
+	ID            string          `json:"id"`
+	ConditionExpr ConditionExprV1 `json:"condition_expr"`
+	Version       int             `json:"version"`
+	PlaybookID    string          `json:"playbook_id"`
+	RunID         string          `json:"run_id,omitempty"`
+	CreateAt      int64           `json:"create_at"`
+	UpdateAt      int64           `json:"update_at"`
 }
 
-// ConditionExpr represents a logical condition expression.
-type ConditionExpr struct {
-	And []ConditionExpr `json:"and,omitempty"`
-	Or  []ConditionExpr `json:"or,omitempty"`
+// ConditionExprV1 represents a logical condition expression.
+type ConditionExprV1 struct {
+	And []ConditionExprV1 `json:"and,omitempty"`
+	Or  []ConditionExprV1 `json:"or,omitempty"`
 
 	Is    *ComparisonCondition `json:"is,omitempty"`
 	IsNot *ComparisonCondition `json:"isNot,omitempty"`
