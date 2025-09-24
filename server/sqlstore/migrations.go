@@ -1704,14 +1704,11 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating table IR_Condition")
 			}
 
-			if _, err := e.Exec(createPGIndex("IR_Condition_PlaybookID", "IR_Condition", "PlaybookID")); err != nil {
-				return errors.Wrapf(err, "failed creating index IR_Condition_PlaybookID")
+			if _, err := e.Exec(createPGIndex("IR_Condition_PlaybookID_DeleteAt", "IR_Condition", "PlaybookID, DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_PlaybookID_DeleteAt")
 			}
-			if _, err := e.Exec(createPGIndex("IR_Condition_RunID", "IR_Condition", "RunID")); err != nil {
-				return errors.Wrapf(err, "failed creating index IR_Condition_RunID")
-			}
-			if _, err := e.Exec(createPGIndex("IR_Condition_DeleteAt", "IR_Condition", "DeleteAt")); err != nil {
-				return errors.Wrapf(err, "failed creating index IR_Condition_DeleteAt")
+			if _, err := e.Exec(createPGIndex("IR_Condition_PlaybookID_RunID_DeleteAt", "IR_Condition", "PlaybookID, RunID, DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_PlaybookID_RunID_DeleteAt")
 			}
 
 			return nil
