@@ -12,34 +12,37 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
-func TestExtractPropertyFieldIDs(t *testing.T) {
+func TestExtractPropertyIDs(t *testing.T) {
 	t.Run("simple is condition", func(t *testing.T) {
-		condition := app.ConditionExpr{
+		condition := app.ConditionExprV1{
 			Is: &app.ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["critical_id"]`),
 			},
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		fieldIDs, optionsIDs := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 1)
 		require.Contains(t, fieldIDs, "severity_id")
+		require.Len(t, optionsIDs, 1)
+		require.Contains(t, optionsIDs, "critical_id")
 	})
 
 	t.Run("simple isNot condition", func(t *testing.T) {
-		condition := app.ConditionExpr{
+		condition := app.ConditionExprV1{
 			IsNot: &app.ComparisonCondition{
 				FieldID: "acknowledged_id",
 				Value:   json.RawMessage(`"true"`),
 			},
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		fieldIDs, optionsIDs := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 1)
 		require.Contains(t, fieldIDs, "acknowledged_id")
+		require.Len(t, optionsIDs, 0) // text field doesn't extract options
 	})
 
 	t.Run("and condition with multiple fields", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			And: []app.ConditionExpr{
+		condition := app.ConditionExprV1{
+			And: []app.ConditionExprV1{
 				{
 					Is: &app.ComparisonCondition{
 						FieldID: "severity_id",
@@ -54,15 +57,15 @@ func TestExtractPropertyFieldIDs(t *testing.T) {
 				},
 			},
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		fieldIDs, _ := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 2)
 		require.Contains(t, fieldIDs, "severity_id")
 		require.Contains(t, fieldIDs, "acknowledged_id")
 	})
 
 	t.Run("or condition with multiple fields", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			Or: []app.ConditionExpr{
+		condition := app.ConditionExprV1{
+			Or: []app.ConditionExprV1{
 				{
 					Is: &app.ComparisonCondition{
 						FieldID: "status_id",
@@ -77,15 +80,15 @@ func TestExtractPropertyFieldIDs(t *testing.T) {
 				},
 			},
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		fieldIDs, _ := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 2)
 		require.Contains(t, fieldIDs, "status_id")
 		require.Contains(t, fieldIDs, "priority_id")
 	})
 
 	t.Run("nested conditions with multiple fields", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			And: []app.ConditionExpr{
+		condition := app.ConditionExprV1{
+			And: []app.ConditionExprV1{
 				{
 					Is: &app.ComparisonCondition{
 						FieldID: "severity_id",
@@ -93,7 +96,7 @@ func TestExtractPropertyFieldIDs(t *testing.T) {
 					},
 				},
 				{
-					Or: []app.ConditionExpr{
+					Or: []app.ConditionExprV1{
 						{
 							Is: &app.ComparisonCondition{
 								FieldID: "status_id",
@@ -110,7 +113,7 @@ func TestExtractPropertyFieldIDs(t *testing.T) {
 				},
 			},
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		fieldIDs, _ := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 3)
 		require.Contains(t, fieldIDs, "severity_id")
 		require.Contains(t, fieldIDs, "status_id")
@@ -118,8 +121,8 @@ func TestExtractPropertyFieldIDs(t *testing.T) {
 	})
 
 	t.Run("duplicate field IDs are deduplicated", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			And: []app.ConditionExpr{
+		condition := app.ConditionExprV1{
+			And: []app.ConditionExprV1{
 				{
 					Is: &app.ComparisonCondition{
 						FieldID: "severity_id",
@@ -134,22 +137,22 @@ func TestExtractPropertyFieldIDs(t *testing.T) {
 				},
 			},
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		fieldIDs, _ := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 1)
 		require.Contains(t, fieldIDs, "severity_id")
 	})
 
 	t.Run("empty condition returns empty slice", func(t *testing.T) {
-		condition := app.ConditionExpr{}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		condition := app.ConditionExprV1{}
+		fieldIDs, _ := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 0)
 	})
 
 	t.Run("complex nested structure with duplicates", func(t *testing.T) {
-		condition := app.ConditionExpr{
-			Or: []app.ConditionExpr{
+		condition := app.ConditionExprV1{
+			Or: []app.ConditionExprV1{
 				{
-					And: []app.ConditionExpr{
+					And: []app.ConditionExprV1{
 						{
 							Is: &app.ComparisonCondition{
 								FieldID: "field1",
@@ -178,7 +181,7 @@ func TestExtractPropertyFieldIDs(t *testing.T) {
 				},
 			},
 		}
-		fieldIDs := extractPropertyFieldIDs(condition)
+		fieldIDs, _ := condition.ExtractPropertyIDs()
 		require.Len(t, fieldIDs, 3)
 		require.Contains(t, fieldIDs, "field1")
 		require.Contains(t, fieldIDs, "field2")

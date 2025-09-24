@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type ConditionExprTestCase struct {
+type ConditionExprV1TestCase struct {
 	Name       string          `json:"name"`
 	Fields     []PropertyField `json:"fields"`
 	Values     []PropertyValue `json:"values"`
-	Condition  ConditionExpr   `json:"condition"`
+	Condition  ConditionExprV1 `json:"condition"`
 	ShouldPass bool            `json:"shouldPass"`
 }
 
@@ -26,7 +26,7 @@ func TestConditionJSONTestCases(t *testing.T) {
 	jsonData, err := os.ReadFile(jsonPath)
 	require.NoError(t, err, "Failed to read JSON test cases file")
 
-	var testCases []ConditionExprTestCase
+	var testCases []ConditionExprV1TestCase
 	err = json.Unmarshal(jsonData, &testCases)
 	require.NoError(t, err, "Failed to unmarshal JSON test cases")
 

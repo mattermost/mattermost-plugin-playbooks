@@ -61,7 +61,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 		return nil, errors.Errorf("cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
 	}
 
-	condition.ConditionExpr.Sanitize()
+	condition.Sanitize()
 
 	createdCondition, err := s.store.CreateCondition(condition.PlaybookID, condition)
 	if err != nil {
@@ -113,7 +113,7 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 		return nil, err
 	}
 
-	condition.ConditionExpr.Sanitize()
+	condition.Sanitize()
 
 	updatedCondition, err := s.store.UpdateCondition(condition.PlaybookID, condition)
 	if err != nil {

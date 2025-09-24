@@ -51,12 +51,13 @@ func TestConditionStore(t *testing.T) {
 			ID:         conditionID,
 			PlaybookID: playbookID,
 			RunID:      "",
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
 					FieldID: "severity_id",
 					Value:   json.RawMessage(`["critical_id", "high_id"]`),
 				},
 			},
+			Version:  1,
 			CreateAt: 1234567890,
 			UpdateAt: 1234567890,
 			DeleteAt: 0,
@@ -68,6 +69,7 @@ func TestConditionStore(t *testing.T) {
 		require.NotEmpty(t, created.ID)
 		require.Equal(t, playbookID, created.PlaybookID)
 		require.Equal(t, condition.ConditionExpr, created.ConditionExpr)
+		require.Equal(t, condition.Version, created.Version)
 
 		retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
 		require.NoError(t, err)
@@ -75,6 +77,7 @@ func TestConditionStore(t *testing.T) {
 		require.Equal(t, created.ID, retrieved.ID)
 		require.Equal(t, playbookID, retrieved.PlaybookID)
 		require.EqualValues(t, condition.ConditionExpr, retrieved.ConditionExpr)
+		require.Equal(t, condition.Version, retrieved.Version)
 	})
 
 	t.Run("create condition with complex nested expression", func(t *testing.T) {
@@ -86,8 +89,8 @@ func TestConditionStore(t *testing.T) {
 		condition := app.Condition{
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
-			ConditionExpr: app.ConditionExpr{
-				And: []app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
+				And: []app.ConditionExprV1{
 					{
 						Is: &app.ComparisonCondition{
 							FieldID: "severity_id",
@@ -95,7 +98,7 @@ func TestConditionStore(t *testing.T) {
 						},
 					},
 					{
-						Or: []app.ConditionExpr{
+						Or: []app.ConditionExprV1{
 							{
 								IsNot: &app.ComparisonCondition{
 									FieldID: "acknowledged_id",
@@ -112,6 +115,7 @@ func TestConditionStore(t *testing.T) {
 					},
 				},
 			},
+			Version:  1,
 			CreateAt: 1234567890,
 			UpdateAt: 1234567890,
 		}
@@ -125,15 +129,17 @@ func TestConditionStore(t *testing.T) {
 		require.NotNil(t, retrieved)
 		require.Equal(t, created.ID, retrieved.ID)
 		require.Equal(t, playbookID, retrieved.PlaybookID)
-		require.EqualValues(t, condition.ConditionExpr, retrieved.ConditionExpr)
+		require.Equal(t, condition.Version, retrieved.Version)
 
 		// Verify the complex nested structure is preserved
-		require.NotNil(t, retrieved.ConditionExpr.And)
-		require.Len(t, retrieved.ConditionExpr.And, 2)
-		require.NotNil(t, retrieved.ConditionExpr.And[0].Is)
-		require.Equal(t, "severity_id", retrieved.ConditionExpr.And[0].Is.FieldID)
-		require.NotNil(t, retrieved.ConditionExpr.And[1].Or)
-		require.Len(t, retrieved.ConditionExpr.And[1].Or, 2)
+		retrievedExprV1, ok := retrieved.ConditionExpr.(*app.ConditionExprV1)
+		require.True(t, ok)
+		require.NotNil(t, retrievedExprV1.And)
+		require.Len(t, retrievedExprV1.And, 2)
+		require.NotNil(t, retrievedExprV1.And[0].Is)
+		require.Equal(t, "severity_id", retrievedExprV1.And[0].Is.FieldID)
+		require.NotNil(t, retrievedExprV1.And[1].Or)
+		require.Len(t, retrievedExprV1.And[1].Or, 2)
 	})
 
 	t.Run("update condition", func(t *testing.T) {
@@ -145,7 +151,7 @@ func TestConditionStore(t *testing.T) {
 		condition := app.Condition{
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
 					FieldID: "severity_id",
 					Value:   json.RawMessage(`["low_id"]`),
@@ -159,7 +165,7 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 
 		// Update the condition
-		created.ConditionExpr = app.ConditionExpr{
+		created.ConditionExpr = &app.ConditionExprV1{
 			IsNot: &app.ComparisonCondition{
 				FieldID: "status_id",
 				Value:   json.RawMessage(`["closed_id", "archived_id"]`),
@@ -171,7 +177,9 @@ func TestConditionStore(t *testing.T) {
 		require.NotNil(t, updated)
 		require.Equal(t, created.ID, updated.ID)
 		require.GreaterOrEqual(t, updated.UpdateAt, created.UpdateAt)
-		require.Equal(t, "status_id", updated.ConditionExpr.IsNot.FieldID)
+		updatedExprV1, ok := updated.ConditionExpr.(*app.ConditionExprV1)
+		require.True(t, ok)
+		require.Equal(t, "status_id", updatedExprV1.IsNot.FieldID)
 
 		// Verify changes persisted
 		retrieved, err := conditionStore.GetCondition(playbookID, created.ID)
@@ -188,7 +196,7 @@ func TestConditionStore(t *testing.T) {
 		condition := app.Condition{
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
 					FieldID: "priority_id",
 					Value:   json.RawMessage(`["urgent_id"]`),
@@ -221,7 +229,7 @@ func TestConditionStore(t *testing.T) {
 			{
 				ID:         model.NewId(),
 				PlaybookID: playbookID,
-				ConditionExpr: app.ConditionExpr{
+				ConditionExpr: &app.ConditionExprV1{
 					Is: &app.ComparisonCondition{
 						FieldID: "severity_id",
 						Value:   json.RawMessage(`["critical_id"]`),
@@ -233,7 +241,7 @@ func TestConditionStore(t *testing.T) {
 			{
 				ID:         model.NewId(),
 				PlaybookID: playbookID,
-				ConditionExpr: app.ConditionExpr{
+				ConditionExpr: &app.ConditionExprV1{
 					IsNot: &app.ComparisonCondition{
 						FieldID: "status_id",
 						Value:   json.RawMessage(`["closed_id"]`),
@@ -272,7 +280,7 @@ func TestConditionStore(t *testing.T) {
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
 			RunID:      "",
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
 					FieldID: "severity_id",
 					Value:   json.RawMessage(`["high_id"]`),
@@ -286,7 +294,7 @@ func TestConditionStore(t *testing.T) {
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
 			RunID:      runID,
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				IsNot: &app.ComparisonCondition{
 					FieldID: "status_id",
 					Value:   json.RawMessage(`["resolved_id"]`),
@@ -326,7 +334,7 @@ func TestConditionStore(t *testing.T) {
 		condition := app.Condition{
 			ID:         "", // Empty ID should be auto-generated
 			PlaybookID: playbookID,
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
 					FieldID: "test_field",
 					Value:   json.RawMessage(`["test_value"]`),
@@ -352,8 +360,8 @@ func TestConditionStore(t *testing.T) {
 		condition := app.Condition{
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
-			ConditionExpr: app.ConditionExpr{
-				And: []app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
+				And: []app.ConditionExprV1{
 					{
 						Is: &app.ComparisonCondition{
 							FieldID: "severity_id",
@@ -420,7 +428,7 @@ func TestConditionStore(t *testing.T) {
 		condition1 := app.Condition{
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				Is: &app.ComparisonCondition{
 					FieldID: "severity_id",
 					Value:   json.RawMessage(`["critical_id"]`),
@@ -442,7 +450,7 @@ func TestConditionStore(t *testing.T) {
 		condition2 := app.Condition{
 			ID:         model.NewId(),
 			PlaybookID: playbookID,
-			ConditionExpr: app.ConditionExpr{
+			ConditionExpr: &app.ConditionExprV1{
 				IsNot: &app.ComparisonCondition{
 					FieldID: "status_id",
 					Value:   json.RawMessage(`"resolved"`),

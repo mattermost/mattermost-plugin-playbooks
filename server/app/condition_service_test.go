@@ -31,7 +31,7 @@ func TestConditionService_Create_Limit(t *testing.T) {
 
 	condition := &app.Condition{
 		PlaybookID: playbookID,
-		ConditionExpr: app.ConditionExpr{
+		ConditionExpr: &app.ConditionExprV1{
 			Is: &app.ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["critical_id"]`),

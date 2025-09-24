@@ -18,6 +18,7 @@ type conditionForDB struct {
 	ID                 string
 	PlaybookID         string
 	RunID              string
+	Version            int
 	CreateAt           int64
 	UpdateAt           int64
 	DeleteAt           int64
@@ -45,6 +46,7 @@ func NewConditionStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Condit
 			"ConditionExpr",
 			"PlaybookID",
 			"RunID",
+			"Version",
 			"PropertyFieldIDs",
 			"PropertyOptionsIDs",
 			"CreateAt",
@@ -78,6 +80,11 @@ func (c *conditionStore) CreateCondition(playbookID string, condition app.Condit
 		condition.UpdateAt = now
 	}
 
+	// Set version if not provided
+	if condition.Version == 0 {
+		condition.Version = app.CurrentConditionVersion
+	}
+
 	// Ensure condition belongs to the specified playbook
 	condition.PlaybookID = playbookID
 
@@ -94,6 +101,7 @@ func (c *conditionStore) CreateCondition(playbookID string, condition app.Condit
 			"ConditionExpr":      dbCondition.ConditionExpr,
 			"PlaybookID":         dbCondition.PlaybookID,
 			"RunID":              dbCondition.RunID,
+			"Version":            dbCondition.Version,
 			"PropertyFieldIDs":   dbCondition.PropertyFieldIDs,
 			"PropertyOptionsIDs": dbCondition.PropertyOptionsIDs,
 			"CreateAt":           dbCondition.CreateAt,
@@ -151,6 +159,7 @@ func (c *conditionStore) UpdateCondition(playbookID string, condition app.Condit
 		SetMap(map[string]any{
 			"ConditionExpr":      dbCondition.ConditionExpr,
 			"RunID":              dbCondition.RunID,
+			"Version":            dbCondition.Version,
 			"PropertyFieldIDs":   dbCondition.PropertyFieldIDs,
 			"PropertyOptionsIDs": dbCondition.PropertyOptionsIDs,
 			"UpdateAt":           dbCondition.UpdateAt,
@@ -187,14 +196,29 @@ func (c *conditionStore) DeleteCondition(playbookID, conditionID string) error {
 }
 
 func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Condition, error) {
-	var conditionExpr app.ConditionExpr
-	if err := json.Unmarshal(sqlCondition.ConditionExpr, &conditionExpr); err != nil {
-		return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition expression")
+	// Convert from JSON to appropriate version
+	var conditionExpr app.ConditionExpression
+
+	switch sqlCondition.Version {
+	case 1:
+		var expr app.ConditionExprV1
+		if err := json.Unmarshal(sqlCondition.ConditionExpr, &expr); err != nil {
+			return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition expression")
+		}
+		conditionExpr = &expr
+	default:
+		// Default to current version
+		var expr app.ConditionExprV1
+		if err := json.Unmarshal(sqlCondition.ConditionExpr, &expr); err != nil {
+			return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition expression")
+		}
+		conditionExpr = &expr
 	}
 
 	return app.Condition{
 		ID:            sqlCondition.ID,
 		ConditionExpr: conditionExpr,
+		Version:       sqlCondition.Version,
 		PlaybookID:    sqlCondition.PlaybookID,
 		RunID:         sqlCondition.RunID,
 		CreateAt:      sqlCondition.CreateAt,
@@ -205,10 +229,11 @@ func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Co
 
 // toConditionForDB converts an app.Condition to conditionForDB for database operations
 func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionForDB, error) {
-	// Extract metadata for storage
-	propertyFieldIDs := extractPropertyFieldIDs(condition.ConditionExpr)
-	propertyOptionsIDs := extractPropertyOptionsIDs(condition.ConditionExpr)
+	// Extract metadata for storage using the versioned expression
+	expr := condition.GetConditionExpression()
+	propertyFieldIDs, propertyOptionsIDs := expr.ExtractPropertyIDs()
 
+	// Marshal the condition expression to JSON for storage
 	conditionExprJSON, err := json.Marshal(condition.ConditionExpr)
 	if err != nil {
 		return conditionForDB{}, errors.Wrap(err, "failed to marshal condition expression")
@@ -228,6 +253,7 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 		ID:                 condition.ID,
 		PlaybookID:         condition.PlaybookID,
 		RunID:              condition.RunID,
+		Version:            condition.Version,
 		CreateAt:           condition.CreateAt,
 		UpdateAt:           condition.UpdateAt,
 		DeleteAt:           condition.DeleteAt,

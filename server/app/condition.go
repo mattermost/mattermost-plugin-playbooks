@@ -16,11 +16,21 @@ import (
 const (
 	MaxConditionDepth        = 1    // Maximum nesting depth allowed for and/or conditions
 	MaxConditionsPerPlaybook = 1000 // Maximum number of conditions per playbook
+	CurrentConditionVersion  = 1    // Current version of condition expressions
 )
 
-type ConditionExpr struct {
-	And []ConditionExpr `json:"and,omitempty"`
-	Or  []ConditionExpr `json:"or,omitempty"`
+// ConditionExpression interface for version-aware condition expressions
+type ConditionExpression interface {
+	Evaluate(propertyFields []PropertyField, propertyValues []PropertyValue) bool
+	Sanitize()
+	Validate(propertyFields []PropertyField) error
+	ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string)
+	ToString(propertyFields []PropertyField) string
+}
+
+type ConditionExprV1 struct {
+	And []ConditionExprV1 `json:"and,omitempty"`
+	Or  []ConditionExprV1 `json:"or,omitempty"`
 
 	Is    *ComparisonCondition `json:"is,omitempty"`
 	IsNot *ComparisonCondition `json:"isNot,omitempty"`
@@ -32,7 +42,7 @@ type ComparisonCondition struct {
 }
 
 // Evaluate checks if the condition matches the given property fields and values
-func (c *ConditionExpr) Evaluate(propertyFields []PropertyField, propertyValues []PropertyValue) bool {
+func (c *ConditionExprV1) Evaluate(propertyFields []PropertyField, propertyValues []PropertyValue) bool {
 	// fieldID -> PropertyField
 	fieldMap := make(map[string]PropertyField)
 	for _, field := range propertyFields {
@@ -49,12 +59,12 @@ func (c *ConditionExpr) Evaluate(propertyFields []PropertyField, propertyValues 
 }
 
 // Validate ensures the condition is structurally valid and references valid field options
-func (c *ConditionExpr) Validate(propertyFields []PropertyField) error {
+func (c *ConditionExprV1) Validate(propertyFields []PropertyField) error {
 	return c.validate(0, propertyFields)
 }
 
 // Sanitize trims whitespace from condition values
-func (c *ConditionExpr) Sanitize() {
+func (c *ConditionExprV1) Sanitize() {
 	if c.And != nil {
 		for i := range c.And {
 			c.And[i].Sanitize()
@@ -76,7 +86,7 @@ func (c *ConditionExpr) Sanitize() {
 	}
 }
 
-func (c *ConditionExpr) evaluate(fieldMap map[string]PropertyField, valueMap map[string]PropertyValue) bool {
+func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap map[string]PropertyValue) bool {
 	if c.And != nil {
 		for _, condition := range c.And {
 			if !condition.evaluate(fieldMap, valueMap) {
@@ -126,7 +136,7 @@ func (c *ConditionExpr) evaluate(fieldMap map[string]PropertyField, valueMap map
 	return true
 }
 
-func (c *ConditionExpr) validate(currentDepth int, propertyFields []PropertyField) error {
+func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyField) error {
 	conditionCount := 0
 
 	if c.And != nil {
@@ -342,7 +352,7 @@ func isNot(propertyField PropertyField, propertyValue PropertyValue, conditionVa
 }
 
 // ToString returns a human-readable string representation of the condition
-func (c *ConditionExpr) ToString(propertyFields []PropertyField) string {
+func (c *ConditionExprV1) ToString(propertyFields []PropertyField) string {
 	fieldMap := make(map[string]PropertyField)
 	for _, field := range propertyFields {
 		fieldMap[field.ID] = field
@@ -351,7 +361,61 @@ func (c *ConditionExpr) ToString(propertyFields []PropertyField) string {
 	return c.toString(fieldMap, false)
 }
 
-func (c *ConditionExpr) toString(fieldMap map[string]PropertyField, needsParens bool) string {
+// ExtractPropertyIDs returns all field IDs and options IDs used in this condition
+func (c *ConditionExprV1) ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string) {
+	fieldIDSet := make(map[string]struct{})
+	optionsIDSet := make(map[string]struct{})
+
+	c.extractIDs(fieldIDSet, optionsIDSet)
+
+	// Convert sets to slices
+	for fieldID := range fieldIDSet {
+		fieldIDs = append(fieldIDs, fieldID)
+	}
+	for optionsID := range optionsIDSet {
+		optionsIDs = append(optionsIDs, optionsID)
+	}
+
+	return fieldIDs, optionsIDs
+}
+
+// extractIDs recursively extracts field and option IDs
+func (c *ConditionExprV1) extractIDs(fieldIDSet map[string]struct{}, optionsIDSet map[string]struct{}) {
+	if c.And != nil {
+		for _, condition := range c.And {
+			condition.extractIDs(fieldIDSet, optionsIDSet)
+		}
+	}
+
+	if c.Or != nil {
+		for _, condition := range c.Or {
+			condition.extractIDs(fieldIDSet, optionsIDSet)
+		}
+	}
+
+	if c.Is != nil {
+		fieldIDSet[c.Is.FieldID] = struct{}{}
+		c.Is.extractOptionsIDs(optionsIDSet)
+	}
+
+	if c.IsNot != nil {
+		fieldIDSet[c.IsNot.FieldID] = struct{}{}
+		c.IsNot.extractOptionsIDs(optionsIDSet)
+	}
+}
+
+// extractOptionsIDs extracts option IDs from a comparison condition
+func (cc *ComparisonCondition) extractOptionsIDs(optionsIDSet map[string]struct{}) {
+	var arrayValue []string
+	if err := json.Unmarshal(cc.Value, &arrayValue); err == nil {
+		// Successfully unmarshaled as array (select/multiselect fields)
+		for _, optionID := range arrayValue {
+			optionsIDSet[optionID] = struct{}{}
+		}
+	}
+}
+
+func (c *ConditionExprV1) toString(fieldMap map[string]PropertyField, needsParens bool) string {
 	if c.And != nil {
 		var parts []string
 		for _, condition := range c.And {
@@ -507,13 +571,14 @@ func (cc *ComparisonCondition) formatUnknownFieldValue() string {
 
 // Condition represents a condition in the public API
 type Condition struct {
-	ID            string        `json:"id"`
-	ConditionExpr ConditionExpr `json:"condition_expr"`
-	PlaybookID    string        `json:"playbook_id"`
-	RunID         string        `json:"run_id,omitempty"`
-	CreateAt      int64         `json:"create_at"`
-	UpdateAt      int64         `json:"update_at"`
-	DeleteAt      int64         `json:"delete_at"`
+	ID            string              `json:"id"`
+	ConditionExpr ConditionExpression `json:"condition_expr"`
+	Version       int                 `json:"version"`
+	PlaybookID    string              `json:"playbook_id"`
+	RunID         string              `json:"run_id,omitempty"`
+	CreateAt      int64               `json:"create_at"`
+	UpdateAt      int64               `json:"update_at"`
+	DeleteAt      int64               `json:"delete_at"`
 }
 
 // IsValid validates a condition
@@ -539,12 +604,31 @@ func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) err
 		}
 	}
 
+	// Validate the condition expression is not nil
+	if c.ConditionExpr == nil {
+		return errors.New("condition expression is required")
+	}
+
 	// Validate the condition expression structure
 	if err := c.ConditionExpr.Validate(propertyFields); err != nil {
 		return fmt.Errorf("invalid condition expression: %w", err)
 	}
 
 	return nil
+}
+
+func (c *Condition) Sanitize() {
+	// Set version if not provided
+	if c.Version == 0 {
+		c.Version = CurrentConditionVersion
+	}
+
+	c.ConditionExpr.Sanitize()
+}
+
+// GetConditionExpression returns the condition expression
+func (c *Condition) GetConditionExpression() ConditionExpression {
+	return c.ConditionExpr
 }
 
 // GetConditionsResults contains the results of the GetConditions call

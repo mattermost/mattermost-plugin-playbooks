@@ -1694,6 +1694,7 @@ var migrations = []Migration{
 					ConditionExpr JSONB NOT NULL,
 					PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
 					RunID TEXT DEFAULT '',
+					Version BIGINT NOT NULL DEFAULT 1,
 					PropertyFieldIDs JSONB NOT NULL,
 					PropertyOptionsIDs JSONB NOT NULL,
 					CreateAt BIGINT NOT NULL,

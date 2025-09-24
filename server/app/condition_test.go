@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConditionExpr_Evaluate(t *testing.T) {
+func TestConditionExprV1_Evaluate(t *testing.T) {
 	propertyFields, propertyValues := createTestFieldsAndValues(t)
 
 	t.Run("is condition - match", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["critical_id"]`),
@@ -25,7 +25,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("is condition - no match", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["low_id"]`),
@@ -35,7 +35,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("is condition - field not exists", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "nonexistent_id",
 				Value:   json.RawMessage(`["critical_id"]`),
@@ -45,7 +45,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("isNot condition - match", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "acknowledged_id",
 				Value:   json.RawMessage(`"true"`),
@@ -55,7 +55,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("isNot condition - no match", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["critical_id"]`),
@@ -65,7 +65,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("isNot condition - field not exists", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "nonexistent_id",
 				Value:   json.RawMessage(`["critical_id"]`),
@@ -75,8 +75,8 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("and condition - all true", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -95,8 +95,8 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("and condition - one false", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -115,8 +115,8 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("or condition - one true", func(t *testing.T) {
-		condition := &ConditionExpr{
-			Or: []ConditionExpr{
+		condition := &ConditionExprV1{
+			Or: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -135,8 +135,8 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("or condition - all false", func(t *testing.T) {
-		condition := &ConditionExpr{
-			Or: []ConditionExpr{
+		condition := &ConditionExprV1{
+			Or: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -155,8 +155,8 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("nested conditions", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -164,7 +164,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 					},
 				},
 				{
-					Or: []ConditionExpr{
+					Or: []ConditionExprV1{
 						{
 							Is: &ComparisonCondition{
 								FieldID: "status_id",
@@ -185,7 +185,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("multiselect - is condition matches one of values", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "categories_id",
 				Value:   json.RawMessage(`["cat_b_id"]`),
@@ -195,7 +195,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("multiselect - is condition no match", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "categories_id",
 				Value:   json.RawMessage(`["cat_z_id"]`),
@@ -205,7 +205,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("multiselect - isNot condition when value not in array", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "categories_id",
 				Value:   json.RawMessage(`["cat_z_id"]`),
@@ -215,7 +215,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("multiselect - isNot condition when value in array", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "categories_id",
 				Value:   json.RawMessage(`["cat_b_id"]`),
@@ -225,12 +225,12 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("empty condition", func(t *testing.T) {
-		condition := &ConditionExpr{}
+		condition := &ConditionExprV1{}
 		require.True(t, condition.Evaluate(propertyFields, propertyValues))
 	})
 
 	t.Run("text field case insensitive match", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "acknowledged_id",
 				Value:   json.RawMessage(`"FALSE"`), // uppercase should match lowercase "false" in test data
@@ -240,7 +240,7 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 
 	t.Run("text field case insensitive no match", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "acknowledged_id",
 				Value:   json.RawMessage(`"FALSE"`), // uppercase should match lowercase "false" in test data, so isNot should return false
@@ -250,9 +250,9 @@ func TestConditionExpr_Evaluate(t *testing.T) {
 	})
 }
 
-func TestConditionExpr_JSON(t *testing.T) {
+func TestConditionExprV1_JSON(t *testing.T) {
 	t.Run("marshal and unmarshal simple is condition", func(t *testing.T) {
-		original := &ConditionExpr{
+		original := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["Critical"]`),
@@ -262,7 +262,7 @@ func TestConditionExpr_JSON(t *testing.T) {
 		data, err := json.Marshal(original)
 		require.NoError(t, err)
 
-		var unmarshaled ConditionExpr
+		var unmarshaled ConditionExprV1
 		err = json.Unmarshal(data, &unmarshaled)
 		require.NoError(t, err)
 
@@ -275,8 +275,8 @@ func TestConditionExpr_JSON(t *testing.T) {
 	})
 
 	t.Run("marshal and unmarshal nested conditions", func(t *testing.T) {
-		original := &ConditionExpr{
-			And: []ConditionExpr{
+		original := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -284,7 +284,7 @@ func TestConditionExpr_JSON(t *testing.T) {
 					},
 				},
 				{
-					Or: []ConditionExpr{
+					Or: []ConditionExprV1{
 						{
 							Is: &ComparisonCondition{
 								FieldID: "status_id",
@@ -305,7 +305,7 @@ func TestConditionExpr_JSON(t *testing.T) {
 		data, err := json.Marshal(original)
 		require.NoError(t, err)
 
-		var unmarshaled ConditionExpr
+		var unmarshaled ConditionExprV1
 		err = json.Unmarshal(data, &unmarshaled)
 		require.NoError(t, err)
 
@@ -337,7 +337,7 @@ func TestConditionExpr_JSON(t *testing.T) {
 			]
 		}`
 
-		var condition ConditionExpr
+		var condition ConditionExprV1
 		err := json.Unmarshal([]byte(jsonStr), &condition)
 		require.NoError(t, err)
 
@@ -610,11 +610,11 @@ func TestIsNotFunction(t *testing.T) {
 	})
 }
 
-func TestConditionExpr_Validate(t *testing.T) {
+func TestConditionExprV1_Validate(t *testing.T) {
 	propertyFields, _ := createTestFieldsAndValues(t)
 
 	t.Run("valid is condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["critical_id"]`),
@@ -624,7 +624,7 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("valid isNot condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "acknowledged_id",
 				Value:   json.RawMessage(`"true"`),
@@ -634,8 +634,8 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("valid and condition", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -654,8 +654,8 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("valid or condition", func(t *testing.T) {
-		condition := &ConditionExpr{
-			Or: []ConditionExpr{
+		condition := &ConditionExprV1{
+			Or: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -674,14 +674,14 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("empty condition fails", func(t *testing.T) {
-		condition := &ConditionExpr{}
+		condition := &ConditionExprV1{}
 		err := condition.Validate(propertyFields)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "condition must have at least one operation")
 	})
 
 	t.Run("multiple operations fails", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["critical_id"]`),
@@ -697,8 +697,8 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("empty and condition fails", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{},
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{},
 		}
 		err := condition.Validate(propertyFields)
 		require.Error(t, err)
@@ -706,8 +706,8 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("empty or condition fails", func(t *testing.T) {
-		condition := &ConditionExpr{
-			Or: []ConditionExpr{},
+		condition := &ConditionExprV1{
+			Or: []ConditionExprV1{},
 		}
 		err := condition.Validate(propertyFields)
 		require.Error(t, err)
@@ -715,8 +715,8 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("nested condition validation fails", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "",
@@ -731,8 +731,8 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("depth limit validation - valid depth", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "field1",
@@ -752,10 +752,10 @@ func TestConditionExpr_Validate(t *testing.T) {
 	})
 
 	t.Run("depth limit validation - exceeds depth", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
-					Or: []ConditionExpr{
+					Or: []ConditionExprV1{
 						{
 							Is: &ComparisonCondition{
 								FieldID: "field1",
@@ -848,9 +848,9 @@ func TestComparisonCondition_Validate(t *testing.T) {
 	})
 }
 
-func TestConditionExpr_Sanitize(t *testing.T) {
+func TestConditionExprV1_Sanitize(t *testing.T) {
 	t.Run("sanitize is condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "field1",
 				Value:   json.RawMessage(`"  trimmed value  "`),
@@ -861,7 +861,7 @@ func TestConditionExpr_Sanitize(t *testing.T) {
 	})
 
 	t.Run("sanitize isNot condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "field1",
 				Value:   json.RawMessage(`"\t  spaced\n  "`),
@@ -872,8 +872,8 @@ func TestConditionExpr_Sanitize(t *testing.T) {
 	})
 
 	t.Run("sanitize nested and conditions", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "field1",
@@ -894,8 +894,8 @@ func TestConditionExpr_Sanitize(t *testing.T) {
 	})
 
 	t.Run("sanitize nested or conditions", func(t *testing.T) {
-		condition := &ConditionExpr{
-			Or: []ConditionExpr{
+		condition := &ConditionExprV1{
+			Or: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "field1",
@@ -1041,11 +1041,11 @@ func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) 
 	return fields, values
 }
 
-func TestConditionExpr_ToString(t *testing.T) {
+func TestConditionExprV1_ToString(t *testing.T) {
 	propertyFields, _ := createTestFieldsAndValues(t)
 
 	t.Run("simple is condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "severity_id",
 				Value:   json.RawMessage(`["critical_id"]`),
@@ -1056,7 +1056,7 @@ func TestConditionExpr_ToString(t *testing.T) {
 	})
 
 	t.Run("simple isNot condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "acknowledged_id",
 				Value:   json.RawMessage(`"false"`),
@@ -1067,7 +1067,7 @@ func TestConditionExpr_ToString(t *testing.T) {
 	})
 
 	t.Run("single value array condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "status_id",
 				Value:   json.RawMessage(`["open_id"]`),
@@ -1078,7 +1078,7 @@ func TestConditionExpr_ToString(t *testing.T) {
 	})
 
 	t.Run("multi value array condition", func(t *testing.T) {
-		condition := &ConditionExpr{
+		condition := &ConditionExprV1{
 			IsNot: &ComparisonCondition{
 				FieldID: "categories_id",
 				Value:   json.RawMessage(`["cat_a_id", "cat_b_id"]`),
@@ -1089,8 +1089,8 @@ func TestConditionExpr_ToString(t *testing.T) {
 	})
 
 	t.Run("and condition", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -1110,8 +1110,8 @@ func TestConditionExpr_ToString(t *testing.T) {
 	})
 
 	t.Run("or condition", func(t *testing.T) {
-		condition := &ConditionExpr{
-			Or: []ConditionExpr{
+		condition := &ConditionExprV1{
+			Or: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -1131,8 +1131,8 @@ func TestConditionExpr_ToString(t *testing.T) {
 	})
 
 	t.Run("nested conditions", func(t *testing.T) {
-		condition := &ConditionExpr{
-			And: []ConditionExpr{
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
 				{
 					Is: &ComparisonCondition{
 						FieldID: "severity_id",
@@ -1140,7 +1140,7 @@ func TestConditionExpr_ToString(t *testing.T) {
 					},
 				},
 				{
-					Or: []ConditionExpr{
+					Or: []ConditionExprV1{
 						{
 							Is: &ComparisonCondition{
 								FieldID: "status_id",
@@ -1164,7 +1164,7 @@ func TestConditionExpr_ToString(t *testing.T) {
 }
 
 func TestCondition_IsValid(t *testing.T) {
-	validConditionExpr := ConditionExpr{
+	validConditionExprV1 := &ConditionExprV1{
 		Is: &ComparisonCondition{
 			FieldID: "test_field",
 			Value:   json.RawMessage(`"test_value"`),
@@ -1183,7 +1183,7 @@ func TestCondition_IsValid(t *testing.T) {
 
 	t.Run("creation validation - valid condition", func(t *testing.T) {
 		condition := Condition{
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "",
 		}
@@ -1194,7 +1194,7 @@ func TestCondition_IsValid(t *testing.T) {
 	t.Run("creation validation - ID should not be specified", func(t *testing.T) {
 		condition := Condition{
 			ID:            "condition_123",
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "",
 		}
@@ -1205,7 +1205,7 @@ func TestCondition_IsValid(t *testing.T) {
 
 	t.Run("creation validation - playbook ID required", func(t *testing.T) {
 		condition := Condition{
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "",
 			RunID:         "",
 		}
@@ -1216,7 +1216,7 @@ func TestCondition_IsValid(t *testing.T) {
 
 	t.Run("creation validation - run conditions cannot be created directly", func(t *testing.T) {
 		condition := Condition{
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "run_123",
 		}
@@ -1228,7 +1228,7 @@ func TestCondition_IsValid(t *testing.T) {
 	t.Run("update validation - valid condition", func(t *testing.T) {
 		condition := Condition{
 			ID:            "condition_123",
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "",
 		}
@@ -1239,7 +1239,7 @@ func TestCondition_IsValid(t *testing.T) {
 	t.Run("update validation - ID required for updates", func(t *testing.T) {
 		condition := Condition{
 			ID:            "",
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "",
 		}
@@ -1251,7 +1251,7 @@ func TestCondition_IsValid(t *testing.T) {
 	t.Run("update validation - playbook ID required", func(t *testing.T) {
 		condition := Condition{
 			ID:            "condition_123",
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "",
 			RunID:         "",
 		}
@@ -1263,7 +1263,7 @@ func TestCondition_IsValid(t *testing.T) {
 	t.Run("update validation - run conditions cannot be modified", func(t *testing.T) {
 		condition := Condition{
 			ID:            "condition_123",
-			ConditionExpr: validConditionExpr,
+			ConditionExpr: validConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "run_123",
 		}
@@ -1273,12 +1273,12 @@ func TestCondition_IsValid(t *testing.T) {
 	})
 
 	t.Run("validation - invalid condition expression", func(t *testing.T) {
-		invalidConditionExpr := ConditionExpr{
+		invalidConditionExprV1 := ConditionExprV1{
 			// Empty condition - should fail validation
 		}
 		condition := Condition{
 			ID:            "condition_123",
-			ConditionExpr: invalidConditionExpr,
+			ConditionExpr: &invalidConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "",
 		}
@@ -1288,10 +1288,10 @@ func TestCondition_IsValid(t *testing.T) {
 	})
 
 	t.Run("validation - multiple validation errors prioritize by order", func(t *testing.T) {
-		invalidConditionExpr := ConditionExpr{}
+		invalidConditionExprV1 := ConditionExprV1{}
 		condition := Condition{
 			ID:            "",
-			ConditionExpr: invalidConditionExpr,
+			ConditionExpr: &invalidConditionExprV1,
 			PlaybookID:    "",
 			RunID:         "",
 		}
@@ -1301,7 +1301,7 @@ func TestCondition_IsValid(t *testing.T) {
 	})
 
 	t.Run("validation - condition expression with invalid field type", func(t *testing.T) {
-		invalidConditionExpr := ConditionExpr{
+		invalidConditionExprV1 := ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "test_field",
 				Value:   json.RawMessage(`["array", "value"]`),
@@ -1309,7 +1309,7 @@ func TestCondition_IsValid(t *testing.T) {
 		}
 		condition := Condition{
 			ID:            "condition_123",
-			ConditionExpr: invalidConditionExpr,
+			ConditionExpr: &invalidConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "",
 		}
@@ -1321,7 +1321,7 @@ func TestCondition_IsValid(t *testing.T) {
 	})
 
 	t.Run("validation - condition expression structural validation works", func(t *testing.T) {
-		invalidConditionExpr := ConditionExpr{
+		invalidConditionExprV1 := ConditionExprV1{
 			Is: &ComparisonCondition{
 				FieldID: "",
 				Value:   json.RawMessage(`"test"`),
@@ -1329,7 +1329,7 @@ func TestCondition_IsValid(t *testing.T) {
 		}
 		condition := Condition{
 			ID:            "condition_123",
-			ConditionExpr: invalidConditionExpr,
+			ConditionExpr: &invalidConditionExprV1,
 			PlaybookID:    "playbook_123",
 			RunID:         "",
 		}
@@ -1337,5 +1337,164 @@ func TestCondition_IsValid(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "invalid condition expression")
 		require.Contains(t, err.Error(), "field_id cannot be empty")
+	})
+}
+
+func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
+	t.Run("simple is condition", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`["critical_id"]`),
+			},
+		}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.Equal(t, []string{"severity_id"}, fieldIDs)
+		require.Equal(t, []string{"critical_id"}, optionIDs)
+	})
+
+	t.Run("simple isNot condition", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage(`"false"`),
+			},
+		}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.Equal(t, []string{"acknowledged_id"}, fieldIDs)
+		require.Empty(t, optionIDs) // text fields don't contribute option IDs
+	})
+
+	t.Run("and condition", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []*ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					IsNot: &ComparisonCondition{
+						FieldID: "status_id",
+						Value:   json.RawMessage(`["open_id", "closed_id"]`),
+					},
+				},
+			},
+		}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.ElementsMatch(t, []string{"severity_id", "status_id"}, fieldIDs)
+		require.ElementsMatch(t, []string{"critical_id", "open_id", "closed_id"}, optionIDs)
+	})
+
+	t.Run("or condition", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Or: []*ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "priority_id",
+						Value:   json.RawMessage(`["high_priority_id"]`),
+					},
+				},
+				{
+					IsNot: &ComparisonCondition{
+						FieldID: "categories_id",
+						Value:   json.RawMessage(`["cat_a_id", "cat_b_id"]`),
+					},
+				},
+			},
+		}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.ElementsMatch(t, []string{"priority_id", "categories_id"}, fieldIDs)
+		require.ElementsMatch(t, []string{"high_priority_id", "cat_a_id", "cat_b_id"}, optionIDs)
+	})
+
+	t.Run("nested conditions", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []*ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					Or: []*ConditionExprV1{
+						{
+							Is: &ComparisonCondition{
+								FieldID: "status_id",
+								Value:   json.RawMessage(`["open_id"]`),
+							},
+						},
+						{
+							IsNot: &ComparisonCondition{
+								FieldID: "acknowledged_id",
+								Value:   json.RawMessage(`"true"`),
+							},
+						},
+					},
+				},
+			},
+		}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.ElementsMatch(t, []string{"severity_id", "status_id", "acknowledged_id"}, fieldIDs)
+		require.ElementsMatch(t, []string{"critical_id", "open_id"}, optionIDs) // "true" is not an option ID for text field
+	})
+
+	t.Run("mixed field types", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []*ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "text_field",
+						Value:   json.RawMessage(`"some text"`),
+					},
+				},
+				{
+					Is: &ComparisonCondition{
+						FieldID: "select_field",
+						Value:   json.RawMessage(`["option1_id"]`),
+					},
+				},
+				{
+					Is: &ComparisonCondition{
+						FieldID: "multiselect_field",
+						Value:   json.RawMessage(`["option2_id", "option3_id"]`),
+					},
+				},
+			},
+		}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.ElementsMatch(t, []string{"text_field", "select_field", "multiselect_field"}, fieldIDs)
+		require.ElementsMatch(t, []string{"option1_id", "option2_id", "option3_id"}, optionIDs)
+	})
+
+	t.Run("empty condition", func(t *testing.T) {
+		condition := &ConditionExprV1{}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.Empty(t, fieldIDs)
+		require.Empty(t, optionIDs)
+	})
+
+	t.Run("duplicate field and option IDs are deduplicated", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []*ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "severity_id",
+						Value:   json.RawMessage(`["critical_id"]`),
+					},
+				},
+				{
+					IsNot: &ComparisonCondition{
+						FieldID: "severity_id",                      // duplicate field
+						Value:   json.RawMessage(`["critical_id"]`), // duplicate option
+					},
+				},
+			},
+		}
+		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
+		require.Equal(t, []string{"severity_id"}, fieldIDs)  // should be deduplicated
+		require.Equal(t, []string{"critical_id"}, optionIDs) // should be deduplicated
 	})
 }
