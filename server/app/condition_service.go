@@ -21,20 +21,30 @@ type conditionService struct {
 	store           ConditionStore
 	propertyService PropertyService
 	poster          bot.Poster
+	auditor         Auditor
 }
 
-func NewConditionService(store ConditionStore, propertyService PropertyService, poster bot.Poster) ConditionService {
+func NewConditionService(store ConditionStore, propertyService PropertyService, poster bot.Poster, auditor Auditor) ConditionService {
 	return &conditionService{
 		store:           store,
 		propertyService: propertyService,
 		poster:          poster,
+		auditor:         auditor,
 	}
 }
 
 // CreatePlaybookCondition creates a new stored condition for a playbook
 func (s *conditionService) CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
+	auditRec := s.auditor.MakeAuditRecord("createCondition", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", teamID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", condition.PlaybookID)
+
 	propertyFields, err := s.propertyService.GetPropertyFields(condition.PlaybookID)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, errors.Wrap(err, "failed to get property fields for validation")
 	}
 
@@ -44,27 +54,34 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	condition.UpdateAt = now
 
 	if err := condition.IsValid(true, propertyFields); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
 
 	if condition.RunID != "" {
-		return nil, errors.New("cannot create conditions with RunID - run conditions are system managed")
+		err := errors.New("cannot create conditions with RunID - run conditions are system managed")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	// Check condition limit for playbook
 	currentCount, err := s.store.GetPlaybookConditionCount(condition.PlaybookID)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, errors.Wrap(err, "failed to get current condition count")
 	}
 
 	if currentCount >= MaxConditionsPerPlaybook {
-		return nil, errors.Errorf("cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
+		err := errors.Errorf("cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	condition.Sanitize()
 
 	createdCondition, err := s.store.CreateCondition(condition.PlaybookID, condition)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
 
@@ -72,6 +89,9 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 		// Log but don't fail the operation for websocket errors
 		logrus.WithError(err).WithField("condition_id", createdCondition.ID).Error("failed to send condition created websocket event")
 	}
+
+	auditRec.Success()
+	auditRec.AddEventResultState(createdCondition)
 
 	return createdCondition, nil
 }
@@ -87,17 +107,30 @@ func (s *conditionService) GetPlaybookCondition(userID, playbookID, conditionID 
 
 // UpdatePlaybookCondition updates an existing stored condition for a playbook
 func (s *conditionService) UpdatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
+	auditRec := s.auditor.MakeAuditRecord("updateCondition", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", teamID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", condition.PlaybookID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "condition", &condition)
+
 	existing, err := s.store.GetCondition(condition.PlaybookID, condition.ID)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
 
 	if existing.RunID != "" {
-		return nil, errors.New("cannot modify conditions associated with a run - run conditions are read-only")
+		err := errors.New("cannot modify conditions associated with a run - run conditions are read-only")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	if condition.RunID != "" {
-		return nil, errors.New("cannot associate existing condition with a run - run conditions are system managed")
+		err := errors.New("cannot associate existing condition with a run - run conditions are system managed")
+		auditRec.AddErrorDesc(err.Error())
+		return nil, err
 	}
 
 	// Preserve immutable fields from existing condition
@@ -106,10 +139,12 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 
 	propertyFields, err := s.propertyService.GetPropertyFields(condition.PlaybookID)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, errors.Wrap(err, "failed to get property fields for validation")
 	}
 
 	if err := condition.IsValid(false, propertyFields); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
 
@@ -117,6 +152,7 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 
 	updatedCondition, err := s.store.UpdateCondition(condition.PlaybookID, condition)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
 
@@ -125,18 +161,34 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 		logrus.WithError(err).WithField("condition_id", updatedCondition.ID).Error("failed to send condition updated websocket event")
 	}
 
+	auditRec.Success()
+	auditRec.AddEventResultState(updatedCondition)
+
 	return updatedCondition, nil
 }
 
 // DeletePlaybookCondition soft-deletes a stored condition for a playbook
 func (s *conditionService) DeletePlaybookCondition(userID, playbookID, conditionID string, teamID string) error {
+	auditRec := s.auditor.MakeAuditRecord("deleteCondition", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "teamID", teamID)
+	model.AddEventParameterToAuditRec(auditRec, "playbookID", playbookID)
+	model.AddEventParameterToAuditRec(auditRec, "conditionID", conditionID)
+
 	existing, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 
+	model.AddEventParameterAuditableToAuditRec(auditRec, "condition", existing)
+
 	if existing.RunID != "" {
-		return errors.New("cannot delete conditions associated with a run - run conditions are read-only")
+		err := errors.New("cannot delete conditions associated with a run - run conditions are read-only")
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	if err := s.sendConditionDeletedWS(existing, teamID); err != nil {
@@ -144,7 +196,15 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 		logrus.WithError(err).WithField("condition_id", existing.ID).Error("failed to send condition deleted websocket event")
 	}
 
-	return s.store.DeleteCondition(playbookID, conditionID)
+	err = s.store.DeleteCondition(playbookID, conditionID)
+	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	auditRec.Success()
+
+	return nil
 }
 
 // GetPlaybookConditions retrieves stored conditions for a playbook

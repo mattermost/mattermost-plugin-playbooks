@@ -26,6 +26,7 @@ type ConditionExpression interface {
 	Validate(propertyFields []PropertyField) error
 	ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string)
 	ToString(propertyFields []PropertyField) string
+	Auditable() map[string]any
 }
 
 type ConditionExprV1 struct {
@@ -220,6 +221,14 @@ func (cc *ComparisonCondition) Sanitize() {
 	}
 }
 
+// Auditable returns a map representation of the comparison condition for audit purposes
+func (cc *ComparisonCondition) Auditable() map[string]any {
+	return map[string]any{
+		"field_id": cc.FieldID,
+		"value":    cc.Value,
+	}
+}
+
 func (cc *ComparisonCondition) validateValueForFieldType(field PropertyField) error {
 	switch field.Type {
 	case model.PropertyFieldTypeText:
@@ -377,6 +386,37 @@ func (c *ConditionExprV1) ExtractPropertyIDs() (fieldIDs []string, optionsIDs []
 	}
 
 	return fieldIDs, optionsIDs
+}
+
+// Auditable returns a map representation of the condition expression for audit purposes
+func (c *ConditionExprV1) Auditable() map[string]any {
+	result := make(map[string]any)
+
+	if c.And != nil {
+		andConditions := make([]map[string]any, len(c.And))
+		for i, condition := range c.And {
+			andConditions[i] = condition.Auditable()
+		}
+		result["and"] = andConditions
+	}
+
+	if c.Or != nil {
+		orConditions := make([]map[string]any, len(c.Or))
+		for i, condition := range c.Or {
+			orConditions[i] = condition.Auditable()
+		}
+		result["or"] = orConditions
+	}
+
+	if c.Is != nil {
+		result["is"] = c.Is.Auditable()
+	}
+
+	if c.IsNot != nil {
+		result["isNot"] = c.IsNot.Auditable()
+	}
+
+	return result
 }
 
 // extractIDs recursively extracts field and option IDs
@@ -619,6 +659,20 @@ func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) err
 
 func (c *Condition) Sanitize() {
 	c.ConditionExpr.Sanitize()
+}
+
+// Auditable returns a map representation of the condition for audit purposes
+func (c *Condition) Auditable() map[string]any {
+	return map[string]any{
+		"id":             c.ID,
+		"version":        c.Version,
+		"playbook_id":    c.PlaybookID,
+		"run_id":         c.RunID,
+		"create_at":      c.CreateAt,
+		"update_at":      c.UpdateAt,
+		"delete_at":      c.DeleteAt,
+		"condition_expr": c.ConditionExpr.Auditable(),
+	}
 }
 
 // GetConditionsResults contains the results of the GetConditions call
