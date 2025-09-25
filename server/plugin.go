@@ -52,6 +52,7 @@ type Plugin struct {
 	permissions          *app.PermissionsService
 	channelActionService app.ChannelActionService
 	categoryService      app.CategoryService
+	conditionService     app.ConditionService
 	propertyService      app.PropertyService
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
@@ -154,6 +155,7 @@ func (p *Plugin) OnActivate() error {
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
+	conditionStore := sqlstore.NewConditionStore(apiClient, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
@@ -165,6 +167,9 @@ func (p *Plugin) OnActivate() error {
 	p.propertyService = propertyService
 
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.metricsService, propertyService)
+
+	auditorService := app.NewAuditorService(p.API)
+	p.conditionService = app.NewConditionService(conditionStore, propertyService, p.bot, auditorService)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
@@ -242,6 +247,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
 	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
 	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
+	api.NewConditionHandler(p.handler.APIRouter, p.conditionService, p.playbookService, p.playbookRunService, p.propertyService, p.permissions, pluginAPIClient)
 	api.NewTabAppHandler(
 		p.handler,
 		p.playbookRunService,

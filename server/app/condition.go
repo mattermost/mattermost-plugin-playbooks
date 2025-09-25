@@ -5,21 +5,33 @@ package app
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/pkg/errors"
 )
 
 const (
-	MaxConditionDepth = 1 // Maximum nesting depth allowed for and/or conditions
+	MaxConditionDepth        = 1    // Maximum nesting depth allowed for and/or conditions
+	MaxConditionsPerPlaybook = 1000 // Maximum number of conditions per playbook
+	CurrentConditionVersion  = 1    // Current version of condition expressions
 )
 
-type Condition struct {
-	And []Condition `json:"and,omitempty"`
-	Or  []Condition `json:"or,omitempty"`
+// ConditionExpression interface for version-aware condition expressions
+type ConditionExpression interface {
+	Evaluate(propertyFields []PropertyField, propertyValues []PropertyValue) bool
+	Sanitize()
+	Validate(propertyFields []PropertyField) error
+	ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string)
+	ToString(propertyFields []PropertyField) string
+	Auditable() map[string]any
+}
+
+type ConditionExprV1 struct {
+	And []ConditionExprV1 `json:"and,omitempty"`
+	Or  []ConditionExprV1 `json:"or,omitempty"`
 
 	Is    *ComparisonCondition `json:"is,omitempty"`
 	IsNot *ComparisonCondition `json:"isNot,omitempty"`
@@ -31,7 +43,7 @@ type ComparisonCondition struct {
 }
 
 // Evaluate checks if the condition matches the given property fields and values
-func (c *Condition) Evaluate(propertyFields []PropertyField, propertyValues []PropertyValue) bool {
+func (c *ConditionExprV1) Evaluate(propertyFields []PropertyField, propertyValues []PropertyValue) bool {
 	// fieldID -> PropertyField
 	fieldMap := make(map[string]PropertyField)
 	for _, field := range propertyFields {
@@ -48,12 +60,12 @@ func (c *Condition) Evaluate(propertyFields []PropertyField, propertyValues []Pr
 }
 
 // Validate ensures the condition is structurally valid and references valid field options
-func (c *Condition) Validate(propertyFields []PropertyField) error {
+func (c *ConditionExprV1) Validate(propertyFields []PropertyField) error {
 	return c.validate(0, propertyFields)
 }
 
 // Sanitize trims whitespace from condition values
-func (c *Condition) Sanitize() {
+func (c *ConditionExprV1) Sanitize() {
 	if c.And != nil {
 		for i := range c.And {
 			c.And[i].Sanitize()
@@ -75,7 +87,7 @@ func (c *Condition) Sanitize() {
 	}
 }
 
-func (c *Condition) evaluate(fieldMap map[string]PropertyField, valueMap map[string]PropertyValue) bool {
+func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap map[string]PropertyValue) bool {
 	if c.And != nil {
 		for _, condition := range c.And {
 			if !condition.evaluate(fieldMap, valueMap) {
@@ -125,7 +137,7 @@ func (c *Condition) evaluate(fieldMap map[string]PropertyField, valueMap map[str
 	return true
 }
 
-func (c *Condition) validate(currentDepth int, propertyFields []PropertyField) error {
+func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyField) error {
 	conditionCount := 0
 
 	if c.And != nil {
@@ -206,6 +218,14 @@ func (cc *ComparisonCondition) Sanitize() {
 		trimmed := strings.TrimSpace(stringValue)
 		sanitized, _ := json.Marshal(trimmed)
 		cc.Value = sanitized
+	}
+}
+
+// Auditable returns a map representation of the comparison condition for audit purposes
+func (cc *ComparisonCondition) Auditable() map[string]any {
+	return map[string]any{
+		"field_id": cc.FieldID,
+		"value":    cc.Value,
 	}
 }
 
@@ -341,7 +361,7 @@ func isNot(propertyField PropertyField, propertyValue PropertyValue, conditionVa
 }
 
 // ToString returns a human-readable string representation of the condition
-func (c *Condition) ToString(propertyFields []PropertyField) string {
+func (c *ConditionExprV1) ToString(propertyFields []PropertyField) string {
 	fieldMap := make(map[string]PropertyField)
 	for _, field := range propertyFields {
 		fieldMap[field.ID] = field
@@ -350,7 +370,92 @@ func (c *Condition) ToString(propertyFields []PropertyField) string {
 	return c.toString(fieldMap, false)
 }
 
-func (c *Condition) toString(fieldMap map[string]PropertyField, needsParens bool) string {
+// ExtractPropertyIDs returns all field IDs and options IDs used in this condition
+func (c *ConditionExprV1) ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string) {
+	fieldIDSet := make(map[string]struct{})
+	optionsIDSet := make(map[string]struct{})
+
+	c.extractIDs(fieldIDSet, optionsIDSet)
+
+	// Convert sets to slices
+	for fieldID := range fieldIDSet {
+		fieldIDs = append(fieldIDs, fieldID)
+	}
+	for optionsID := range optionsIDSet {
+		optionsIDs = append(optionsIDs, optionsID)
+	}
+
+	return fieldIDs, optionsIDs
+}
+
+// Auditable returns a map representation of the condition expression for audit purposes
+func (c *ConditionExprV1) Auditable() map[string]any {
+	result := make(map[string]any)
+
+	if c.And != nil {
+		andConditions := make([]map[string]any, len(c.And))
+		for i, condition := range c.And {
+			andConditions[i] = condition.Auditable()
+		}
+		result["and"] = andConditions
+	}
+
+	if c.Or != nil {
+		orConditions := make([]map[string]any, len(c.Or))
+		for i, condition := range c.Or {
+			orConditions[i] = condition.Auditable()
+		}
+		result["or"] = orConditions
+	}
+
+	if c.Is != nil {
+		result["is"] = c.Is.Auditable()
+	}
+
+	if c.IsNot != nil {
+		result["isNot"] = c.IsNot.Auditable()
+	}
+
+	return result
+}
+
+// extractIDs recursively extracts field and option IDs
+func (c *ConditionExprV1) extractIDs(fieldIDSet map[string]struct{}, optionsIDSet map[string]struct{}) {
+	if c.And != nil {
+		for _, condition := range c.And {
+			condition.extractIDs(fieldIDSet, optionsIDSet)
+		}
+	}
+
+	if c.Or != nil {
+		for _, condition := range c.Or {
+			condition.extractIDs(fieldIDSet, optionsIDSet)
+		}
+	}
+
+	if c.Is != nil {
+		fieldIDSet[c.Is.FieldID] = struct{}{}
+		c.Is.extractOptionsIDs(optionsIDSet)
+	}
+
+	if c.IsNot != nil {
+		fieldIDSet[c.IsNot.FieldID] = struct{}{}
+		c.IsNot.extractOptionsIDs(optionsIDSet)
+	}
+}
+
+// extractOptionsIDs extracts option IDs from a comparison condition
+func (cc *ComparisonCondition) extractOptionsIDs(optionsIDSet map[string]struct{}) {
+	var arrayValue []string
+	if err := json.Unmarshal(cc.Value, &arrayValue); err == nil {
+		// Successfully unmarshaled as array (select/multiselect fields)
+		for _, optionID := range arrayValue {
+			optionsIDSet[optionID] = struct{}{}
+		}
+	}
+}
+
+func (c *ConditionExprV1) toString(fieldMap map[string]PropertyField, needsParens bool) string {
 	if c.And != nil {
 		var parts []string
 		for _, condition := range c.And {
@@ -502,4 +607,103 @@ func (cc *ComparisonCondition) formatUnknownFieldValue() string {
 	}
 
 	return string(cc.Value)
+}
+
+// Condition represents a condition in the public API
+type Condition struct {
+	ID            string              `json:"id"`
+	ConditionExpr ConditionExpression `json:"condition_expr"`
+	Version       int                 `json:"version"`
+	PlaybookID    string              `json:"playbook_id"`
+	RunID         string              `json:"run_id,omitempty"`
+	CreateAt      int64               `json:"create_at"`
+	UpdateAt      int64               `json:"update_at"`
+	DeleteAt      int64               `json:"delete_at"`
+}
+
+// IsValid validates a condition
+func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) error {
+	if isCreation && c.ID != "" {
+		return errors.New("condition ID should not be specified for creation")
+	}
+
+	if !isCreation && c.ID == "" {
+		return errors.New("condition ID is required for updates")
+	}
+
+	if c.PlaybookID == "" {
+		return errors.New("playbook ID is required")
+	}
+
+	// Run conditions are read-only - cannot be created, updated, or deleted via API
+	if c.RunID != "" {
+		if isCreation {
+			return errors.New("run conditions cannot be created directly")
+		} else {
+			return errors.New("run conditions cannot be modified")
+		}
+	}
+
+	// Validate the condition expression is not nil
+	if c.ConditionExpr == nil {
+		return errors.New("condition expression is required")
+	}
+
+	// Validate the condition expression structure
+	if err := c.ConditionExpr.Validate(propertyFields); err != nil {
+		return fmt.Errorf("invalid condition expression: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Condition) Sanitize() {
+	c.ConditionExpr.Sanitize()
+}
+
+// Auditable returns a map representation of the condition for audit purposes
+func (c *Condition) Auditable() map[string]any {
+	return map[string]any{
+		"id":             c.ID,
+		"version":        c.Version,
+		"playbook_id":    c.PlaybookID,
+		"run_id":         c.RunID,
+		"create_at":      c.CreateAt,
+		"update_at":      c.UpdateAt,
+		"delete_at":      c.DeleteAt,
+		"condition_expr": c.ConditionExpr.Auditable(),
+	}
+}
+
+// GetConditionsResults contains the results of the GetConditions call
+type GetConditionsResults struct {
+	TotalCount int         `json:"total_count"`
+	PageCount  int         `json:"page_count"`
+	HasMore    bool        `json:"has_more"`
+	Items      []Condition `json:"items"`
+}
+
+// ConditionService provides methods for managing stored conditions
+type ConditionService interface {
+	// Playbooks: RW
+	GetPlaybookConditions(userID, playbookID string, page, perPage int) (*GetConditionsResults, error)
+	GetPlaybookCondition(userID, playbookID, conditionID string) (*Condition, error)
+	CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error)
+	UpdatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error)
+	DeletePlaybookCondition(userID, playbookID, conditionID string, teamID string) error
+
+	// Runs: RO
+	GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error)
+}
+
+// ConditionStore defines database operations for stored conditions
+type ConditionStore interface {
+	CreateCondition(playbookID string, condition Condition) (*Condition, error)
+	GetCondition(playbookID, conditionID string) (*Condition, error) // Internal use only for Update/Delete
+	UpdateCondition(playbookID string, condition Condition) (*Condition, error)
+	DeleteCondition(playbookID, conditionID string) error
+	GetPlaybookConditions(playbookID string, page, perPage int) ([]Condition, error)
+	GetRunConditions(playbookID, runID string, page, perPage int) ([]Condition, error)
+	GetPlaybookConditionCount(playbookID string) (int, error)
+	GetRunConditionCount(playbookID, runID string) (int, error)
 }
