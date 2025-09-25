@@ -698,6 +698,15 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.UpdateAt != item.UpdateAt {
 				fields["update_at"] = item.UpdateAt
 			}
+			if prev.ConditionID != item.ConditionID {
+				fields["condition_id"] = item.ConditionID
+			}
+			if prev.ConditionAction != item.ConditionAction {
+				fields["condition_action"] = item.ConditionAction
+			}
+			if prev.ConditionReason != item.ConditionReason {
+				fields["condition_reason"] = item.ConditionReason
+			}
 
 			// Only add update if there are changes
 			if len(fields) > 0 {

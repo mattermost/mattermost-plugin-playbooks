@@ -27,6 +27,7 @@ type ConditionExpression interface {
 	ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string)
 	ToString(propertyFields []PropertyField) string
 	Auditable() map[string]any
+	SwapPropertyIDs(fieldMappings, optionMappings map[string]string) error
 }
 
 type ConditionExprV1 struct {
@@ -419,6 +420,43 @@ func (c *ConditionExprV1) Auditable() map[string]any {
 	return result
 }
 
+// SwapPropertyIDs translates field IDs in the condition expression
+func (c *ConditionExprV1) SwapPropertyIDs(fieldMappings, optionMappings map[string]string) error {
+	// Handle And conditions
+	for i := range c.And {
+		if err := c.And[i].SwapPropertyIDs(fieldMappings, optionMappings); err != nil {
+			return err
+		}
+	}
+
+	// Handle Or conditions
+	for i := range c.Or {
+		if err := c.Or[i].SwapPropertyIDs(fieldMappings, optionMappings); err != nil {
+			return err
+		}
+	}
+
+	// Handle Is conditions
+	if c.Is != nil {
+		if newFieldID, exists := fieldMappings[c.Is.FieldID]; exists {
+			c.Is.FieldID = newFieldID
+		} else {
+			return errors.Errorf("no field mapping found for field ID %s", c.Is.FieldID)
+		}
+	}
+
+	// Handle IsNot conditions
+	if c.IsNot != nil {
+		if newFieldID, exists := fieldMappings[c.IsNot.FieldID]; exists {
+			c.IsNot.FieldID = newFieldID
+		} else {
+			return errors.Errorf("no field mapping found for field ID %s", c.IsNot.FieldID)
+		}
+	}
+
+	return nil
+}
+
 // extractIDs recursively extracts field and option IDs
 func (c *ConditionExprV1) extractIDs(fieldIDSet map[string]struct{}, optionsIDSet map[string]struct{}) {
 	if c.And != nil {
@@ -694,6 +732,12 @@ type ConditionService interface {
 
 	// Runs: RO
 	GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error)
+
+	// Copy conditions from playbook to run with field ID mappings, returns old condition ID to new condition mapping
+	CopyPlaybookConditionsToRun(playbookID, runID string, fieldMappings, optionMappings map[string]string) (map[string]*Condition, error)
+
+	// Evaluate conditions for a run when a property field changes
+	EvaluateConditionsForPlaybookRun(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
 }
 
 // ConditionStore defines database operations for stored conditions
@@ -706,4 +750,44 @@ type ConditionStore interface {
 	GetRunConditions(playbookID, runID string, page, perPage int) ([]Condition, error)
 	GetPlaybookConditionCount(playbookID string) (int, error)
 	GetRunConditionCount(playbookID, runID string) (int, error)
+	GetConditionsByRunAndFieldID(runID, fieldID string) ([]Condition, error)
+}
+
+type ConditionAction string
+
+const (
+	ConditionActionNone   ConditionAction = ""
+	ConditionActionHidden ConditionAction = "hidden"
+)
+
+// ChecklistConditionChanges represents condition changes for a single checklist
+type ChecklistConditionChanges struct {
+	Added  int
+	Hidden int
+}
+
+// ConditionEvaluationResult represents the result of evaluating conditions for a run
+type ConditionEvaluationResult struct {
+	// Changes per checklist, keyed by checklist title
+	ChecklistChanges map[string]*ChecklistConditionChanges
+}
+
+// AnythingChanged returns true if any conditions resulted in visibility changes
+func (r *ConditionEvaluationResult) AnythingChanged() bool {
+	for _, changes := range r.ChecklistChanges {
+		if changes.Added > 0 || changes.Hidden > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// AnythingAdded returns true if any tasks were shown/added to checklists
+func (r *ConditionEvaluationResult) AnythingAdded() bool {
+	for _, changes := range r.ChecklistChanges {
+		if changes.Added > 0 {
+			return true
+		}
+	}
+	return false
 }

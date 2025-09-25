@@ -36,11 +36,12 @@ func (m *MockPropertyService) EXPECT() *MockPropertyServiceMockRecorder {
 }
 
 // CopyPlaybookPropertiesToRun mocks base method.
-func (m *MockPropertyService) CopyPlaybookPropertiesToRun(arg0, arg1 string) error {
+func (m *MockPropertyService) CopyPlaybookPropertiesToRun(arg0, arg1 string) (*app.PropertyCopyResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CopyPlaybookPropertiesToRun", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*app.PropertyCopyResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CopyPlaybookPropertiesToRun indicates an expected call of CopyPlaybookPropertiesToRun.

@@ -6,6 +6,7 @@ package sqlstore
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost/server/public/model"
@@ -335,4 +336,33 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 	}
 
 	return count, nil
+}
+
+// GetConditionsByRunAndFieldID retrieves all conditions for a given run and field ID
+func (c *conditionStore) GetConditionsByRunAndFieldID(runID, fieldID string) ([]app.Condition, error) {
+	query := c.conditionSelect.
+		Where(sq.Eq{"RunID": runID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where("PropertyFieldIDs @> ?", fmt.Sprintf(`["%s"]`, fieldID))
+
+	sqlQuery, args, err := query.ToSql()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to build condition query for runID %s fieldID %s", runID, fieldID)
+	}
+
+	var sqlConditions []conditionForDB
+	if err := c.store.db.Select(&sqlConditions, sqlQuery, args...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get conditions for runID %s fieldID %s", runID, fieldID)
+	}
+
+	conditions := make([]app.Condition, 0, len(sqlConditions))
+	for _, sqlCondition := range sqlConditions {
+		condition, err := c.fromConditionForDB(sqlCondition)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert condition from DB for runID %s", runID)
+		}
+		conditions = append(conditions, condition)
+	}
+
+	return conditions, nil
 }
