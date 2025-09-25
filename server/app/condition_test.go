@@ -1498,3 +1498,72 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 		require.Equal(t, []string{"critical_id"}, optionIDs) // should be deduplicated
 	})
 }
+
+func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
+	fieldMappings := map[string]string{
+		"old_severity_id":     "new_severity_id",
+		"old_status_id":       "new_status_id",
+		"old_acknowledged_id": "new_acknowledged_id",
+		"old_priority_id":     "new_priority_id",
+	}
+
+	optionMappings := map[string]string{
+		"old_critical_id": "new_critical_id",
+		"old_open_id":     "new_open_id",
+	}
+
+	t.Run("swaps field IDs in nested conditions", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "old_severity_id",
+						Value:   json.RawMessage(`["old_critical_id"]`),
+					},
+				},
+				{
+					Or: []ConditionExprV1{
+						{
+							Is: &ComparisonCondition{
+								FieldID: "old_status_id",
+								Value:   json.RawMessage(`["old_open_id"]`),
+							},
+						},
+						{
+							IsNot: &ComparisonCondition{
+								FieldID: "old_acknowledged_id",
+								Value:   json.RawMessage(`"true"`),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		err := condition.SwapPropertyIDs(fieldMappings, optionMappings)
+		require.NoError(t, err)
+		require.Equal(t, "new_severity_id", condition.And[0].Is.FieldID)
+		require.Equal(t, "new_status_id", condition.And[1].Or[0].Is.FieldID)
+		require.Equal(t, "new_acknowledged_id", condition.And[1].Or[1].IsNot.FieldID)
+	})
+
+	t.Run("returns error for missing field mapping", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "unmapped_field_id",
+				Value:   json.RawMessage(`["value"]`),
+			},
+		}
+
+		err := condition.SwapPropertyIDs(fieldMappings, optionMappings)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "no field mapping found for field ID unmapped_field_id")
+	})
+
+	t.Run("empty condition does not fail", func(t *testing.T) {
+		condition := &ConditionExprV1{}
+
+		err := condition.SwapPropertyIDs(fieldMappings, optionMappings)
+		require.NoError(t, err)
+	})
+}
