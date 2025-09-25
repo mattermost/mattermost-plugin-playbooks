@@ -1700,3 +1700,19 @@ func PropertyFieldsEqual(a, b []PropertyField) bool {
 func PropertyValuesEqual(a, b []PropertyValue) bool {
 	return reflect.DeepEqual(a, b)
 }
+
+// SwapConditionIDs updates checklist item condition IDs using the provided mapping
+func (pr *PlaybookRun) SwapConditionIDs(conditionMapping map[string]*Condition) {
+	for i := range pr.Checklists {
+		for j := range pr.Checklists[i].Items {
+			item := &pr.Checklists[i].Items[j]
+			if item.ConditionID != "" {
+				if newCondition, exists := conditionMapping[item.ConditionID]; exists {
+					item.ConditionID = newCondition.ID
+					item.ConditionAction = ConditionActionHidden
+					item.ConditionReason = newCondition.ConditionExpr.ToString(pr.PropertyFields)
+				}
+			}
+		}
+	}
+}

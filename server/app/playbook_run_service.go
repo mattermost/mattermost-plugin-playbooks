@@ -467,7 +467,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 					logger.WithError(err).Warn("failed to copy playbook conditions to run")
 				} else {
 					// Update checklist item condition IDs to reference the new condition IDs
-					s.updateChecklistItemConditionIDs(playbookRun, conditionMapping)
+					playbookRun.SwapConditionIDs(conditionMapping)
 
 					// Save the updated playbook run with correct condition IDs
 					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
@@ -4357,18 +4357,3 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 	}
 }
 
-// updateChecklistItemConditionIDs updates checklist item condition IDs using the provided mapping
-func (s *PlaybookRunServiceImpl) updateChecklistItemConditionIDs(playbookRun *PlaybookRun, conditionMapping map[string]*Condition) {
-	for i := range playbookRun.Checklists {
-		for j := range playbookRun.Checklists[i].Items {
-			item := &playbookRun.Checklists[i].Items[j]
-			if item.ConditionID != "" {
-				if newCondition, exists := conditionMapping[item.ConditionID]; exists {
-					item.ConditionID = newCondition.ID
-					item.ConditionAction = ConditionActionHidden
-					item.ConditionReason = newCondition.ConditionExpr.ToString(playbookRun.PropertyFields)
-				}
-			}
-		}
-	}
-}
