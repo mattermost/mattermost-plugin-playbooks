@@ -13,7 +13,7 @@ import {matchPath} from 'react-router-dom';
 import {currentPlaybookRun, inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {receivedTeamPlaybookRuns, toggleRHS} from 'src/actions';
+import {receivedTeamPlaybookRunConnections, toggleRHS} from 'src/actions';
 import {browserHistory} from 'src/webapp_globals';
 
 const RunsOnTeamQuery = gql`
@@ -73,7 +73,7 @@ export function makeRHSOpener(store: Store<GlobalState>, graphqlClient: ApolloCl
             });
 
             const runs = fetched.data.runs.edges.map((edge: any) => edge.node);
-            store.dispatch(receivedTeamPlaybookRuns(runs));
+            store.dispatch(receivedTeamPlaybookRunConnections(runs));
         }
 
         const searchParams = new URLSearchParams(url.searchParams);

@@ -770,6 +770,19 @@ func CleanChecklistIDs(checklists []Checklist, existingChecklists []Checklist) {
 	}
 }
 
+// Auditable implements the model.Auditable interface for audit logging
+func (p Playbook) Auditable() map[string]any {
+	return map[string]any{
+		"id":        p.ID,
+		"title":     p.Title,
+		"public":    p.Public,
+		"team_id":   p.TeamID,
+		"create_at": p.CreateAt,
+		"update_at": p.UpdateAt,
+		"delete_at": p.DeleteAt,
+	}
+}
+
 // Value represents a ChannelPlaybookMode as a type writable into the DB
 func (cpm ChannelPlaybookMode) Value() (driver.Value, error) {
 	return cpm.MarshalText()

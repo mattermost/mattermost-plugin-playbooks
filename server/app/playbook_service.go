@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -24,6 +25,7 @@ type playbookService struct {
 	store           PlaybookStore
 	poster          bot.Poster
 	api             *pluginapi.Client
+	pluginAPI       plugin.API
 	metricsService  *metrics.Metrics
 	propertyService PropertyService
 }
@@ -35,22 +37,31 @@ type InsightsOpts struct {
 }
 
 // NewPlaybookService returns a new playbook service
-func NewPlaybookService(store PlaybookStore, poster bot.Poster, api *pluginapi.Client, metricsService *metrics.Metrics, propertyService PropertyService) PlaybookService {
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, api *pluginapi.Client, pluginAPI plugin.API, metricsService *metrics.Metrics, propertyService PropertyService) PlaybookService {
 	return &playbookService{
 		store:           store,
 		poster:          poster,
 		api:             api,
+		pluginAPI:       pluginAPI,
 		metricsService:  metricsService,
 		propertyService: propertyService,
 	}
 }
 
 func (s *playbookService) Create(playbook Playbook, userID string) (string, error) {
+	auditRec := plugin.MakeAuditRecord("createPlaybook", model.AuditStatusFail)
+	defer s.pluginAPI.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
+
 	playbook.CreateAt = model.GetMillis()
 	playbook.UpdateAt = playbook.CreateAt
 
+	// Perform the actual operation
 	newID, err := s.store.Create(playbook)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return "", err
 	}
 	playbook.ID = newID
@@ -60,15 +71,33 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	}, playbook.TeamID)
 
 	s.metricsService.IncrementPlaybookCreatedCount(1)
+
+	// Mark success and add result state
+	auditRec.Success()
+	auditRec.AddEventResultState(playbook)
+
 	return newID, nil
 }
 
 func (s *playbookService) Import(playbook Playbook, userID string) (string, error) {
+	auditRec := plugin.MakeAuditRecord("importPlaybook", model.AuditStatusFail)
+	defer s.pluginAPI.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
+
+	// Perform the actual operation
 	newID, err := s.Create(playbook, userID)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return "", err
 	}
 	playbook.ID = newID
+
+	// Mark success and add result state
+	auditRec.Success()
+	auditRec.AddEventResultState(playbook)
+
 	return newID, nil
 }
 
@@ -89,25 +118,49 @@ func (s *playbookService) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamI
 }
 
 func (s *playbookService) Update(playbook Playbook, userID string) error {
+	auditRec := plugin.MakeAuditRecord("updatePlaybook", model.AuditStatusFail)
+	defer s.pluginAPI.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
+
 	if playbook.DeleteAt != 0 {
-		return errors.New("cannot update a playbook that is archived")
+		err := errors.New("cannot update a playbook that is archived")
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	playbook.UpdateAt = model.GetMillis()
 
+	// Perform the actual operation
 	if err := s.store.Update(playbook); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
+
+	// Mark success and add result state
+	auditRec.Success()
+	auditRec.AddEventResultState(playbook)
 
 	return nil
 }
 
 func (s *playbookService) Archive(playbook Playbook, userID string) error {
+	auditRec := plugin.MakeAuditRecord("archivePlaybook", model.AuditStatusFail)
+	defer s.pluginAPI.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
+
 	if playbook.ID == "" {
-		return errors.New("can't archive a playbook without an ID")
+		err := errors.New("can't archive a playbook without an ID")
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
+	// Perform the actual operation
 	if err := s.store.Archive(playbook.ID); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 
@@ -117,19 +170,36 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
+	// Mark success and add result state
+	auditRec.Success()
+	auditRec.AddEventResultState(playbook)
+
 	return nil
 }
 
 func (s *playbookService) Restore(playbook Playbook, userID string) error {
+	auditRec := plugin.MakeAuditRecord("restorePlaybook", model.AuditStatusFail)
+	defer s.pluginAPI.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
+
 	if playbook.ID == "" {
-		return errors.New("can't restore a playbook without an ID")
+		err := errors.New("can't restore a playbook without an ID")
+		auditRec.AddErrorDesc(err.Error())
+		return err
 	}
 
 	if playbook.DeleteAt == 0 {
+		// Already restored, mark as success
+		auditRec.Success()
+		auditRec.AddEventResultState(playbook)
 		return nil
 	}
 
+	// Perform the actual operation
 	if err := s.store.Restore(playbook.ID); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 
@@ -138,6 +208,10 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
+
+	// Mark success and add result state
+	auditRec.Success()
+	auditRec.AddEventResultState(playbook)
 
 	return nil
 }
@@ -180,7 +254,13 @@ func (s *playbookService) GetAutoFollows(playbookID string) ([]string, error) {
 
 // Duplicate duplicates a playbook
 func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, error) {
-	logger := logrus.WithFields(logrus.Fields{
+	auditRec := plugin.MakeAuditRecord("duplicatePlaybook", model.AuditStatusFail)
+	defer s.pluginAPI.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "originalPlaybook", playbook)
+
+	logrus.WithFields(logrus.Fields{
 		"original_playbook_id": playbook.ID,
 		"user_id":              userID,
 	})
@@ -199,12 +279,17 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 		Roles:  []string{PlaybookRoleMember, PlaybookRoleAdmin},
 	}}
 
+	// Perform the actual operation
 	playbookID, err := s.Create(newPlaybook, userID)
 	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return "", err
 	}
 
-	logger.WithField("playbook_id", playbookID).Debug("Duplicated playbook")
+	// Mark success and add result state
+	auditRec.Success()
+	auditRec.AddEventResultState(newPlaybook)
+
 	return playbookID, nil
 }
 

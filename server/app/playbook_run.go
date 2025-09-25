@@ -223,6 +223,23 @@ func (r PlaybookRun) GetItemsOrder() []string {
 	return itemsOrder
 }
 
+// Auditable implements the model.Auditable interface for audit logging
+func (r PlaybookRun) Auditable() map[string]any {
+	return map[string]any{
+		"id":             r.ID,
+		"owner_user_id":  r.OwnerUserID,
+		"team_id":        r.TeamID,
+		"channel_id":     r.ChannelID,
+		"playbook_id":    r.PlaybookID,
+		"current_status": r.CurrentStatus,
+		"create_at":      r.CreateAt,
+		"update_at":      r.UpdateAt,
+		"end_at":         r.EndAt,
+		"type":           r.Type,
+		"public":         len(r.BroadcastChannelIDs) > 0,
+	}
+}
+
 // PlaybookRunUpdate represents an incremental update to a playbook run
 type PlaybookRunUpdate struct {
 	// ID is the unique identifier of the playbook run.

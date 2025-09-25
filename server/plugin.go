@@ -166,7 +166,7 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.propertyService = propertyService
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.metricsService, propertyService)
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.API, p.metricsService, propertyService)
 
 	auditorService := app.NewAuditorService(p.API)
 	p.conditionService = app.NewConditionService(conditionStore, propertyService, p.bot, auditorService)
