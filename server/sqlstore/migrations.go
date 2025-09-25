@@ -1724,11 +1724,6 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating index IR_Condition_RunID_DeleteAt")
 			}
 
-			// Add GIN index for JSONB containment queries on PropertyFieldIDs
-			if _, err := e.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS IR_Condition_PropertyFieldIDs_gin ON IR_Condition USING gin (PropertyFieldIDs)"); err != nil {
-				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyFieldIDs_gin")
-			}
-
 			return nil
 		},
 	},
