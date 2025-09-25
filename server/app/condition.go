@@ -756,8 +756,8 @@ type ConditionStore interface {
 type ConditionAction string
 
 const (
-	ConditionActionNone               ConditionAction = ""
-	ConditionActionHidden             ConditionAction = "hidden"
+	ConditionActionNone                 ConditionAction = ""
+	ConditionActionHidden               ConditionAction = "hidden"
 	ConditionActionShownBecauseModified ConditionAction = "shown_because_modified"
 )
 

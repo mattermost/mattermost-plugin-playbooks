@@ -4356,4 +4356,3 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 		return string(value)
 	}
 }
-

@@ -1715,4 +1715,21 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.65.0"),
+		toVersion:   semver.MustParse("0.66.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Add index for GetConditionsByRunAndFieldID query pattern
+			if _, err := e.Exec(createPGIndex("IR_Condition_RunID_DeleteAt", "IR_Condition", "RunID, DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_RunID_DeleteAt")
+			}
+
+			// Add GIN index for JSONB containment queries on PropertyFieldIDs
+			if _, err := e.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS IR_Condition_PropertyFieldIDs_gin ON IR_Condition USING gin (PropertyFieldIDs)"); err != nil {
+				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyFieldIDs_gin")
+			}
+
+			return nil
+		},
+	},
 }
