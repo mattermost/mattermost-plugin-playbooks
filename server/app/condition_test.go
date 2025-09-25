@@ -1567,3 +1567,88 @@ func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+func TestConditionEvaluationResult_AnythingChanged(t *testing.T) {
+	t.Run("returns false for empty result", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}
+		require.False(t, result.AnythingChanged())
+	})
+
+	t.Run("returns false when no changes", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 0},
+				"Checklist 2": {Added: 0, Hidden: 0},
+			},
+		}
+		require.False(t, result.AnythingChanged())
+	})
+
+	t.Run("returns true when items added", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 2, Hidden: 0},
+			},
+		}
+		require.True(t, result.AnythingChanged())
+	})
+
+	t.Run("returns true when items hidden", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 3},
+			},
+		}
+		require.True(t, result.AnythingChanged())
+	})
+
+	t.Run("returns true when both added and hidden", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 1, Hidden: 2},
+				"Checklist 2": {Added: 0, Hidden: 0},
+			},
+		}
+		require.True(t, result.AnythingChanged())
+	})
+}
+
+func TestConditionEvaluationResult_AnythingAdded(t *testing.T) {
+	t.Run("returns false for empty result", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("returns false when no items added", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 5},
+				"Checklist 2": {Added: 0, Hidden: 0},
+			},
+		}
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("returns true when items added", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 1, Hidden: 0},
+			},
+		}
+		require.True(t, result.AnythingAdded())
+	})
+
+	t.Run("returns true when items added even with hidden items", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 2},
+				"Checklist 2": {Added: 3, Hidden: 1},
+			},
+		}
+		require.True(t, result.AnythingAdded())
+	})
+}
