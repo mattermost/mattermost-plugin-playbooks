@@ -5,6 +5,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -253,5 +254,115 @@ func TestConditionService_Delete(t *testing.T) {
 
 		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
 		require.NoError(t, err)
+	})
+}
+
+func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockConditionStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	service := app.NewConditionService(mockStore, mockPropertyService, mockPoster, mockAuditor)
+
+	playbookID := model.NewId()
+	runID := model.NewId()
+	conditionID1 := model.NewId()
+	conditionID2 := model.NewId()
+
+	fieldMappings := map[string]string{
+		"old_severity_id": "new_severity_id",
+		"old_status_id":   "new_status_id",
+	}
+
+	optionMappings := map[string]string{
+		"old_critical_id": "new_critical_id",
+		"old_open_id":     "new_open_id",
+	}
+
+	playbookConditions := []app.Condition{
+		{
+			ID:         conditionID1,
+			PlaybookID: playbookID,
+			CreateAt:   model.GetMillis() - 1000,
+			UpdateAt:   model.GetMillis() - 1000,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "old_severity_id",
+					Value:   json.RawMessage(`["old_critical_id"]`),
+				},
+			},
+		},
+		{
+			ID:         conditionID2,
+			PlaybookID: playbookID,
+			CreateAt:   model.GetMillis() - 500,
+			UpdateAt:   model.GetMillis() - 500,
+			ConditionExpr: &app.ConditionExprV1{
+				IsNot: &app.ComparisonCondition{
+					FieldID: "old_status_id",
+					Value:   json.RawMessage(`["old_open_id"]`),
+				},
+			},
+		},
+	}
+
+	t.Run("success copy conditions", func(t *testing.T) {
+		mockStore.EXPECT().
+			GetPlaybookConditions(playbookID, 0, 1000).
+			Return(playbookConditions, nil)
+
+		newConditionID1 := model.NewId()
+		newConditionID2 := model.NewId()
+
+		// Mock successful creation for both conditions
+		mockStore.EXPECT().
+			CreateCondition(playbookID, gomock.Any()).
+			DoAndReturn(func(playbookID string, condition app.Condition) (*app.Condition, error) {
+				created := condition
+				if condition.ConditionExpr.(*app.ConditionExprV1).Is != nil {
+					created.ID = newConditionID1
+				} else {
+					created.ID = newConditionID2
+				}
+				created.CreateAt = model.GetMillis()
+				created.UpdateAt = created.CreateAt
+				return &created, nil
+			}).
+			Times(2)
+
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, fieldMappings, optionMappings)
+		require.NoError(t, err)
+		require.Len(t, result, 2)
+		require.Contains(t, result, conditionID1)
+		require.Contains(t, result, conditionID2)
+		require.Equal(t, runID, result[conditionID1].RunID)
+		require.Equal(t, runID, result[conditionID2].RunID)
+		require.Equal(t, "new_severity_id", result[conditionID1].ConditionExpr.(*app.ConditionExprV1).Is.FieldID)
+		require.Equal(t, "new_status_id", result[conditionID2].ConditionExpr.(*app.ConditionExprV1).IsNot.FieldID)
+	})
+
+	t.Run("success with no playbook conditions", func(t *testing.T) {
+		mockStore.EXPECT().
+			GetPlaybookConditions(playbookID, 0, 1000).
+			Return([]app.Condition{}, nil)
+
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, fieldMappings, optionMappings)
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+
+	t.Run("error getting playbook conditions", func(t *testing.T) {
+		mockStore.EXPECT().
+			GetPlaybookConditions(playbookID, 0, 1000).
+			Return(nil, errors.New("database error"))
+
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, fieldMappings, optionMappings)
+		require.Error(t, err)
+		require.Nil(t, result)
+		require.Contains(t, err.Error(), "failed to get playbook conditions")
 	})
 }
