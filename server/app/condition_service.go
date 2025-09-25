@@ -376,13 +376,22 @@ func (s *conditionService) EvaluateConditionsForPlaybookRun(playbookRun *Playboo
 			}
 
 			item.ConditionReason = res.Reason
+
+			// Check if item was recently modified (assignee or state change)
+			wasRecentlyModified := (item.AssigneeModified > 0 || item.StateModified > 0)
+
 			if res.Met && item.ConditionAction == ConditionActionHidden {
 				result.ChecklistChanges[checklist.Title].Added++
 				item.ConditionAction = ConditionActionNone
 			}
-			if !res.Met && item.ConditionAction != ConditionActionHidden {
-				result.ChecklistChanges[checklist.Title].Hidden++
-				item.ConditionAction = ConditionActionHidden
+			if !res.Met {
+				// If condition is not met but item was recently modified, mark as shown_because_modified instead of hidden
+				if wasRecentlyModified && item.ConditionAction != ConditionActionHidden && item.ConditionAction != ConditionActionShownBecauseModified {
+					item.ConditionAction = ConditionActionShownBecauseModified
+				} else if !wasRecentlyModified && item.ConditionAction != ConditionActionHidden {
+					result.ChecklistChanges[checklist.Title].Hidden++
+					item.ConditionAction = ConditionActionHidden
+				}
 			}
 		}
 	}
