@@ -4138,17 +4138,12 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
-	var currentPropertyValue *PropertyValue
+	var currentValue json.RawMessage
 	for _, pfv := range run.PropertyValues {
 		if pfv.FieldID == propertyFieldID {
-			currentPropertyValue = &pfv
+			currentValue = pfv.Value
 			break
 		}
-	}
-
-	var currentValue json.RawMessage
-	if currentPropertyValue != nil {
-		currentValue = currentPropertyValue.Value
 	}
 
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
