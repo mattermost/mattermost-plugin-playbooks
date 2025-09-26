@@ -273,14 +273,29 @@ func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
 	conditionID1 := model.NewId()
 	conditionID2 := model.NewId()
 
-	fieldMappings := map[string]string{
-		"old_severity_id": "new_severity_id",
-		"old_status_id":   "new_status_id",
-	}
-
-	optionMappings := map[string]string{
-		"old_critical_id": "new_critical_id",
-		"old_open_id":     "new_open_id",
+	propertyMappings := &app.PropertyCopyResult{
+		FieldMappings: map[string]string{
+			"old_severity_id": "new_severity_id",
+			"old_status_id":   "new_status_id",
+		},
+		OptionMappings: map[string]string{
+			"old_critical_id": "new_critical_id",
+			"old_open_id":     "new_open_id",
+		},
+		CopiedFields: []app.PropertyField{
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_severity_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_status_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+		},
 	}
 
 	playbookConditions := []app.Condition{
@@ -334,7 +349,7 @@ func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
 			}).
 			Times(2)
 
-		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, fieldMappings, optionMappings)
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
 		require.NoError(t, err)
 		require.Len(t, result, 2)
 		require.Contains(t, result, conditionID1)
@@ -350,7 +365,7 @@ func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
 			GetPlaybookConditions(playbookID, 0, 1000).
 			Return([]app.Condition{}, nil)
 
-		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, fieldMappings, optionMappings)
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
 		require.NoError(t, err)
 		require.Empty(t, result)
 	})
@@ -360,14 +375,14 @@ func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
 			GetPlaybookConditions(playbookID, 0, 1000).
 			Return(nil, errors.New("database error"))
 
-		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, fieldMappings, optionMappings)
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
 		require.Error(t, err)
 		require.Nil(t, result)
 		require.Contains(t, err.Error(), "failed to get playbook conditions")
 	})
 }
 
-func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
+func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -438,7 +453,7 @@ func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsForPlaybookRun(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -494,7 +509,7 @@ func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsForPlaybookRun(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -550,7 +565,7 @@ func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsForPlaybookRun(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -605,7 +620,7 @@ func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsForPlaybookRun(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -634,7 +649,7 @@ func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{}, nil)
 
-		result, err := service.EvaluateConditionsForPlaybookRun(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Empty(t, result.ChecklistChanges)
@@ -652,7 +667,7 @@ func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return(nil, errors.New("database error"))
 
-		result, err := service.EvaluateConditionsForPlaybookRun(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
 		require.Error(t, err)
 		require.Nil(t, result)
 		require.Contains(t, err.Error(), "failed to get conditions for playbook run")
@@ -728,7 +743,7 @@ func TestConditionService_EvaluateConditionsForPlaybookRun(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition1, condition2}, nil)
 
-		result, err := service.EvaluateConditionsForPlaybookRun(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 

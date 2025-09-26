@@ -1500,16 +1500,43 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 }
 
 func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
-	fieldMappings := map[string]string{
-		"old_severity_id":     "new_severity_id",
-		"old_status_id":       "new_status_id",
-		"old_acknowledged_id": "new_acknowledged_id",
-		"old_priority_id":     "new_priority_id",
-	}
-
-	optionMappings := map[string]string{
-		"old_critical_id": "new_critical_id",
-		"old_open_id":     "new_open_id",
+	propertyMappings := &PropertyCopyResult{
+		FieldMappings: map[string]string{
+			"old_severity_id":     "new_severity_id",
+			"old_status_id":       "new_status_id",
+			"old_acknowledged_id": "new_acknowledged_id",
+			"old_priority_id":     "new_priority_id",
+		},
+		OptionMappings: map[string]string{
+			"old_critical_id": "new_critical_id",
+			"old_open_id":     "new_open_id",
+		},
+		CopiedFields: []PropertyField{
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_severity_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_status_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_acknowledged_id",
+					Type: model.PropertyFieldTypeText,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_priority_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+		},
 	}
 
 	t.Run("swaps field IDs in nested conditions", func(t *testing.T) {
@@ -1540,7 +1567,7 @@ func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
 			},
 		}
 
-		err := condition.SwapPropertyIDs(fieldMappings, optionMappings)
+		err := condition.SwapPropertyIDs(propertyMappings)
 		require.NoError(t, err)
 		require.Equal(t, "new_severity_id", condition.And[0].Is.FieldID)
 		require.Equal(t, "new_status_id", condition.And[1].Or[0].Is.FieldID)
@@ -1555,7 +1582,7 @@ func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
 			},
 		}
 
-		err := condition.SwapPropertyIDs(fieldMappings, optionMappings)
+		err := condition.SwapPropertyIDs(propertyMappings)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "no field mapping found for field ID unmapped_field_id")
 	})
@@ -1563,8 +1590,45 @@ func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
 	t.Run("empty condition does not fail", func(t *testing.T) {
 		condition := &ConditionExprV1{}
 
-		err := condition.SwapPropertyIDs(fieldMappings, optionMappings)
+		err := condition.SwapPropertyIDs(propertyMappings)
 		require.NoError(t, err)
+	})
+
+	t.Run("swaps option IDs for select/multiselect fields", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "old_severity_id",
+						Value:   json.RawMessage(`["old_critical_id"]`),
+					},
+				},
+				{
+					IsNot: &ComparisonCondition{
+						FieldID: "old_status_id",
+						Value:   json.RawMessage(`["old_open_id"]`),
+					},
+				},
+			},
+		}
+
+		err := condition.SwapPropertyIDs(propertyMappings)
+		require.NoError(t, err)
+
+		// Check that field IDs are swapped
+		require.Equal(t, "new_severity_id", condition.And[0].Is.FieldID)
+		require.Equal(t, "new_status_id", condition.And[1].IsNot.FieldID)
+
+		// Check that option IDs are also swapped for select fields
+		var severityOptions []string
+		err = json.Unmarshal(condition.And[0].Is.Value, &severityOptions)
+		require.NoError(t, err)
+		require.Equal(t, []string{"new_critical_id"}, severityOptions)
+
+		var statusOptions []string
+		err = json.Unmarshal(condition.And[1].IsNot.Value, &statusOptions)
+		require.NoError(t, err)
+		require.Equal(t, []string{"new_open_id"}, statusOptions)
 	})
 }
 

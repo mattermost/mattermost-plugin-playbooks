@@ -20,6 +20,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -476,7 +477,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 			// Copy conditions from playbook to run using the field mappings if license allows
 			if s.licenseChecker.ConditionalPlaybooksAllowed() {
-				conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(pb.ID, playbookRun.ID, propertyCopyResult.FieldMappings, propertyCopyResult.OptionMappings)
+				conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(pb.ID, playbookRun.ID, propertyCopyResult)
 				if err != nil {
 					logger.WithError(err).Warn("failed to copy playbook conditions to run")
 				} else {
@@ -4726,11 +4727,26 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		return nil, errors.Wrap(err, "failed to upsert property value")
 	}
 
+	// replace it in the run object we have at hand
+	var found bool
+	for i, pfv := range run.PropertyValues {
+		if pfv.FieldID == propertyFieldID {
+			run.PropertyValues[i] = *propertyValue
+			found = true
+			break
+		}
+	}
+	if !found {
+		run.PropertyValues = append(run.PropertyValues, *propertyValue)
+	}
+
 	if !s.propertyValuesEqual(propertyField, currentValue, value) {
-		evaluationResult, err := s.conditionService.EvaluateConditionsForPlaybookRun(run, propertyFieldID)
+		evaluationResult, err := s.conditionService.EvaluateConditionsOnValueChanged(run, propertyFieldID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to evaluate property conditions")
 		}
+
+		mlog.Info("evaluation result", mlog.String("playbook_run_id", playbookRunID), mlog.String("property_field_id", propertyFieldID), mlog.Any("result", evaluationResult))
 
 		s.postPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
 

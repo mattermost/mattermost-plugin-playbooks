@@ -10,10 +10,14 @@ import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entit
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
+import {Condition} from 'src/types/conditions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
     actionSetGlobalSettings,
+    conditionCreated,
+    conditionDeleted,
+    conditionUpdated,
     playbookArchived,
     playbookCreated,
     playbookRestored,
@@ -269,5 +273,39 @@ export function handleWebsocketSettingsChanged(getState: GetStateFunc, dispatch:
             const freshSettings = await fetchGlobalSettings();
             dispatch(actionSetGlobalSettings(freshSettings));
         }
+    };
+}
+
+// Condition websocket handlers
+export function handleWebsocketConditionCreated(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const condition = JSON.parse(msg.data.payload) as Condition;
+        dispatch(conditionCreated(condition));
+    };
+}
+
+export function handleWebsocketConditionUpdated(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const condition = JSON.parse(msg.data.payload) as Condition;
+        dispatch(conditionUpdated(condition));
+    };
+}
+
+export function handleWebsocketConditionDeleted(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const condition = JSON.parse(msg.data.payload) as Condition;
+        dispatch(conditionDeleted(condition.id, condition.playbook_id));
     };
 }

@@ -320,6 +320,13 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, runConditions, 1)
 		require.Equal(t, runID, runConditions[0].RunID)
+
+		// Get only playbook conditions - should exclude run conditions
+		playbookConditions, err := conditionStore.GetPlaybookConditions(playbookID, 0, 20)
+		require.NoError(t, err)
+		require.Len(t, playbookConditions, 1)
+		require.Equal(t, "", playbookConditions[0].RunID)
+		require.Equal(t, playbookCondition.ID, playbookConditions[0].ID)
 	})
 
 	t.Run("condition not found error", func(t *testing.T) {

@@ -155,7 +155,11 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 
 	createdCondition, err := h.conditionService.CreatePlaybookCondition(userID, *condition, playbook.TeamID)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		if errors.Is(err, app.ErrMalformedCondition) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid condition expression", err)
+		} else {
+			h.HandleError(w, c.logger, err)
+		}
 		return
 	}
 
@@ -214,7 +218,11 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 
 	updatedCondition, err := h.conditionService.UpdatePlaybookCondition(userID, *condition, playbook.TeamID)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		if errors.Is(err, app.ErrMalformedCondition) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid condition expression", err)
+		} else {
+			h.HandleError(w, c.logger, err)
+		}
 		return
 	}
 

@@ -36,7 +36,7 @@ func NewConditionService(store ConditionStore, propertyService PropertyService, 
 }
 
 // CopyPlaybookConditionsToRun copies conditions from a playbook to a run, translating field IDs
-func (s *conditionService) CopyPlaybookConditionsToRun(playbookID, runID string, fieldMappings, optionMappings map[string]string) (map[string]*Condition, error) {
+func (s *conditionService) CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error) {
 	// Get all conditions for the playbook
 	playbookConditions, err := s.store.GetPlaybookConditions(playbookID, 0, 1000)
 	if err != nil {
@@ -58,7 +58,7 @@ func (s *conditionService) CopyPlaybookConditionsToRun(playbookID, runID string,
 		runCondition.UpdateAt = runCondition.CreateAt
 
 		// Translate field IDs in the condition expression
-		if err := runCondition.ConditionExpr.SwapPropertyIDs(fieldMappings, optionMappings); err != nil {
+		if err := runCondition.ConditionExpr.SwapPropertyIDs(propertyMappings); err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
 				"condition_id": condition.ID,
 				"playbook_id":  playbookID,
@@ -113,7 +113,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 
 	if err := condition.IsValid(true, propertyFields); err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return nil, errors.Wrap(ErrMalformedCondition, err.Error())
 	}
 
 	if condition.RunID != "" {
@@ -203,7 +203,7 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 
 	if err := condition.IsValid(false, propertyFields); err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return nil, errors.Wrap(ErrMalformedCondition, err.Error())
 	}
 
 	condition.Sanitize()
@@ -328,7 +328,7 @@ type conditionEvalResult struct {
 	Reason string
 }
 
-func (s *conditionService) EvaluateConditionsForPlaybookRun(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
+func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
 	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
@@ -380,17 +380,22 @@ func (s *conditionService) EvaluateConditionsForPlaybookRun(playbookRun *Playboo
 			// Check if item was recently modified (assignee or state change)
 			wasRecentlyModified := (item.AssigneeModified > 0 || item.StateModified > 0)
 
-			if res.Met && item.ConditionAction == ConditionActionHidden {
-				result.ChecklistChanges[checklist.Title].Added++
+			currentConditionAction := item.ConditionAction
+			if res.Met {
 				item.ConditionAction = ConditionActionNone
+				if currentConditionAction == ConditionActionHidden {
+					result.ChecklistChanges[checklist.Title].Added++
+				}
 			}
+
 			if !res.Met {
-				// If condition is not met but item was recently modified, mark as shown_because_modified instead of hidden
-				if wasRecentlyModified && item.ConditionAction != ConditionActionHidden && item.ConditionAction != ConditionActionShownBecauseModified {
+				if wasRecentlyModified {
 					item.ConditionAction = ConditionActionShownBecauseModified
-				} else if !wasRecentlyModified && item.ConditionAction != ConditionActionHidden {
-					result.ChecklistChanges[checklist.Title].Hidden++
+				} else {
 					item.ConditionAction = ConditionActionHidden
+					if currentConditionAction != ConditionActionHidden {
+						result.ChecklistChanges[checklist.Title].Hidden++
+					}
 				}
 			}
 		}

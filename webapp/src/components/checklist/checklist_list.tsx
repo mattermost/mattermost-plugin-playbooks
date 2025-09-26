@@ -83,6 +83,7 @@ const ChecklistList = ({
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
                 taskActions: ci.task_actions,
+                conditionID: ci.condition_id,
             })),
         }));
         const updates: PlaybookUpdates = {

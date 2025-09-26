@@ -11,6 +11,7 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -27,7 +28,7 @@ type ConditionExpression interface {
 	ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string)
 	ToString(propertyFields []PropertyField) string
 	Auditable() map[string]any
-	SwapPropertyIDs(fieldMappings, optionMappings map[string]string) error
+	SwapPropertyIDs(propertyMappings *PropertyCopyResult) error
 }
 
 type ConditionExprV1 struct {
@@ -330,6 +331,8 @@ func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue
 			return false
 		}
 
+		logrus.Debugf("is select: conditionArray=%v, propertyString=%s", conditionArray, propertyString)
+
 		return slices.Contains(conditionArray, propertyString)
 
 	case model.PropertyFieldTypeMultiselect:
@@ -421,36 +424,32 @@ func (c *ConditionExprV1) Auditable() map[string]any {
 }
 
 // SwapPropertyIDs translates field IDs in the condition expression
-func (c *ConditionExprV1) SwapPropertyIDs(fieldMappings, optionMappings map[string]string) error {
+func (c *ConditionExprV1) SwapPropertyIDs(propertyMappings *PropertyCopyResult) error {
 	// Handle And conditions
 	for i := range c.And {
-		if err := c.And[i].SwapPropertyIDs(fieldMappings, optionMappings); err != nil {
+		if err := c.And[i].SwapPropertyIDs(propertyMappings); err != nil {
 			return err
 		}
 	}
 
 	// Handle Or conditions
 	for i := range c.Or {
-		if err := c.Or[i].SwapPropertyIDs(fieldMappings, optionMappings); err != nil {
+		if err := c.Or[i].SwapPropertyIDs(propertyMappings); err != nil {
 			return err
 		}
 	}
 
 	// Handle Is conditions
 	if c.Is != nil {
-		if newFieldID, exists := fieldMappings[c.Is.FieldID]; exists {
-			c.Is.FieldID = newFieldID
-		} else {
-			return errors.Errorf("no field mapping found for field ID %s", c.Is.FieldID)
+		if err := c.Is.SwapPropertyIDs(propertyMappings); err != nil {
+			return err
 		}
 	}
 
 	// Handle IsNot conditions
 	if c.IsNot != nil {
-		if newFieldID, exists := fieldMappings[c.IsNot.FieldID]; exists {
-			c.IsNot.FieldID = newFieldID
-		} else {
-			return errors.Errorf("no field mapping found for field ID %s", c.IsNot.FieldID)
+		if err := c.IsNot.SwapPropertyIDs(propertyMappings); err != nil {
+			return err
 		}
 	}
 
@@ -480,6 +479,60 @@ func (c *ConditionExprV1) extractIDs(fieldIDSet map[string]struct{}, optionsIDSe
 		fieldIDSet[c.IsNot.FieldID] = struct{}{}
 		c.IsNot.extractOptionsIDs(optionsIDSet)
 	}
+}
+
+// SwapPropertyIDs translates field and option IDs in the comparison condition
+func (cc *ComparisonCondition) SwapPropertyIDs(propertyMappings *PropertyCopyResult) error {
+	// Find the new field ID
+	newFieldID, exists := propertyMappings.FieldMappings[cc.FieldID]
+	if !exists {
+		return errors.Errorf("no field mapping found for field ID %s", cc.FieldID)
+	}
+
+	// Find the corresponding PropertyField to check its type
+	var targetField *PropertyField
+	for _, field := range propertyMappings.CopiedFields {
+		if field.ID == newFieldID {
+			targetField = &field
+			break
+		}
+	}
+
+	if targetField == nil {
+		return errors.Errorf("could not find copied field info for new field ID %s", newFieldID)
+	}
+
+	// Update the field ID
+	cc.FieldID = newFieldID
+
+	// For select/multiselect fields, translate option IDs in the value
+	switch targetField.Type {
+	case model.PropertyFieldTypeSelect, model.PropertyFieldTypeMultiselect:
+		var arrayValue []string
+		if err := json.Unmarshal(cc.Value, &arrayValue); err == nil {
+			// Successfully unmarshaled as array, translate option IDs
+			translatedValues := make([]string, len(arrayValue))
+			for i, optionID := range arrayValue {
+				if newOptionID, exists := propertyMappings.OptionMappings[optionID]; exists {
+					translatedValues[i] = newOptionID
+				} else {
+					// If no mapping exists, keep the original value
+					translatedValues[i] = optionID
+				}
+			}
+
+			// Marshal back to JSON
+			newValue, err := json.Marshal(translatedValues)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal translated option values")
+			}
+			cc.Value = newValue
+		}
+	default:
+		// For text and other field types, no option translation needed
+	}
+
+	return nil
 }
 
 // extractOptionsIDs extracts option IDs from a comparison condition
@@ -734,10 +787,10 @@ type ConditionService interface {
 	GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error)
 
 	// Copy conditions from playbook to run with field ID mappings, returns old condition ID to new condition mapping
-	CopyPlaybookConditionsToRun(playbookID, runID string, fieldMappings, optionMappings map[string]string) (map[string]*Condition, error)
+	CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
 
 	// Evaluate conditions for a run when a property field changes
-	EvaluateConditionsForPlaybookRun(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
+	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
 }
 
 // ConditionStore defines database operations for stored conditions

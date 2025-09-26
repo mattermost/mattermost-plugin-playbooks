@@ -373,6 +373,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 task_actions: taskActions,
                                 state_modified: 0,
                                 assignee_modified: 0,
+                                condition_id: '',
+                                condition_action: '',
+                                condition_reason: '',
                             };
                             if (props.playbookRunId) {
                                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);

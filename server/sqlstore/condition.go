@@ -23,9 +23,9 @@ type conditionForDB struct {
 	CreateAt           int64
 	UpdateAt           int64
 	DeleteAt           int64
-	ConditionExpr      []byte
-	PropertyFieldIDs   []byte
-	PropertyOptionsIDs []byte
+	ConditionExpr      string
+	PropertyFieldIDs   string
+	PropertyOptionsIDs string
 }
 
 // conditionStore is a sql store for conditions. Use NewConditionStore to create it.
@@ -198,7 +198,7 @@ func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Co
 	switch sqlCondition.Version {
 	case 1:
 		var expr app.ConditionExprV1
-		if err := json.Unmarshal(sqlCondition.ConditionExpr, &expr); err != nil {
+		if err := json.Unmarshal([]byte(sqlCondition.ConditionExpr), &expr); err != nil {
 			return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition expression")
 		}
 		conditionExpr = &expr
@@ -247,9 +247,9 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 		CreateAt:           condition.CreateAt,
 		UpdateAt:           condition.UpdateAt,
 		DeleteAt:           condition.DeleteAt,
-		ConditionExpr:      conditionExprJSON,
-		PropertyFieldIDs:   propertyFieldIDsJSON,
-		PropertyOptionsIDs: propertyOptionsIDsJSON,
+		ConditionExpr:      string(conditionExprJSON),
+		PropertyFieldIDs:   string(propertyFieldIDsJSON),
+		PropertyOptionsIDs: string(propertyOptionsIDsJSON),
 	}, nil
 }
 
@@ -271,6 +271,9 @@ func (c *conditionStore) getConditionsWithFilter(playbookID, runID string, page,
 
 	if runID != "" {
 		query = query.Where(sq.Eq{"RunID": runID})
+	} else {
+		// For playbook conditions, explicitly filter for empty RunID
+		query = query.Where(sq.Eq{"RunID": ""})
 	}
 
 	// Add pagination
@@ -323,6 +326,9 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 
 	if runID != "" {
 		query = query.Where(sq.Eq{"RunID": runID})
+	} else {
+		// For playbook conditions, explicitly filter for empty RunID
+		query = query.Where(sq.Eq{"RunID": ""})
 	}
 
 	sqlQuery, args, err := query.ToSql()

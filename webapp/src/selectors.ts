@@ -333,3 +333,21 @@ export const selectHasOverdueTasks = createSelector(
     selectMyTasks,
     (myTasks) => myTasks.some((checklistItem) => isTaskOverdue(checklistItem))
 );
+
+// Condition selectors
+export const getMyConditions = (state: GlobalState) => pluginState(state).myConditions || {};
+
+export const getMyConditionsPerPlaybook = (state: GlobalState) => pluginState(state).myConditionsPerPlaybook || {};
+
+export const getConditionsByPlaybookId = createSelector(
+    'getConditionsByPlaybookId',
+    [
+        getMyConditions,
+        getMyConditionsPerPlaybook,
+        (state: GlobalState, playbookId: string) => playbookId,
+    ],
+    (conditions, conditionsPerPlaybook, playbookId) => {
+        const conditionIds = conditionsPerPlaybook[playbookId] || [];
+        return conditionIds.map((id: string) => conditions[id]).filter(Boolean);
+    }
+);
