@@ -1723,6 +1723,10 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyFieldIDs_GIN")
 			}
 
+			if _, err := e.Exec(createPGGINIndex("IR_Condition_PropertyOptionsIDs_GIN", "IR_Condition", "PropertyOptionsIDs")); err != nil {
+				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyOptionsIDs_GIN")
+			}
+
 			return nil
 		},
 	},
