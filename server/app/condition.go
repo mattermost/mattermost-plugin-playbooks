@@ -11,7 +11,6 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -324,8 +323,6 @@ func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue
 		if err := json.Unmarshal(propertyValue.Value, &propertyString); err != nil {
 			return false
 		}
-
-		logrus.Debugf("is select: conditionArray=%v, propertyString=%s", conditionArray, propertyString)
 
 		return slices.Contains(conditionArray, propertyString)
 
