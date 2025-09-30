@@ -38,7 +38,7 @@ func NewConditionService(store ConditionStore, propertyService PropertyService, 
 // CopyPlaybookConditionsToRun copies conditions from a playbook to a run, translating field IDs
 func (s *conditionService) CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error) {
 	// Get all conditions for the playbook
-	playbookConditions, err := s.store.GetPlaybookConditions(playbookID, 0, 1000)
+	playbookConditions, err := s.store.GetPlaybookConditions(playbookID, 0, MaxConditionsPerPlaybook)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get playbook conditions")
 	}
@@ -423,7 +423,7 @@ func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun)
 		}, nil
 	}
 
-	conditions, err := s.store.GetRunConditions(playbookRun.PlaybookID, playbookRun.ID, 0, 1000)
+	conditions, err := s.store.GetRunConditions(playbookRun.PlaybookID, playbookRun.ID, 0, MaxConditionsPerPlaybook)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
 	}

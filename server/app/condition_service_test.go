@@ -327,7 +327,7 @@ func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
 
 	t.Run("success copy conditions", func(t *testing.T) {
 		mockStore.EXPECT().
-			GetPlaybookConditions(playbookID, 0, 1000).
+			GetPlaybookConditions(playbookID, 0, app.MaxConditionsPerPlaybook).
 			Return(playbookConditions, nil)
 
 		newConditionID1 := model.NewId()
@@ -362,7 +362,7 @@ func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
 
 	t.Run("success with no playbook conditions", func(t *testing.T) {
 		mockStore.EXPECT().
-			GetPlaybookConditions(playbookID, 0, 1000).
+			GetPlaybookConditions(playbookID, 0, app.MaxConditionsPerPlaybook).
 			Return([]app.Condition{}, nil)
 
 		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
@@ -372,7 +372,7 @@ func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
 
 	t.Run("error getting playbook conditions", func(t *testing.T) {
 		mockStore.EXPECT().
-			GetPlaybookConditions(playbookID, 0, 1000).
+			GetPlaybookConditions(playbookID, 0, app.MaxConditionsPerPlaybook).
 			Return(nil, errors.New("database error"))
 
 		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
