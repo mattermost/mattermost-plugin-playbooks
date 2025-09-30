@@ -184,6 +184,9 @@ func (r *PropertyRootResolver) DeletePlaybookPropertyField(ctx context.Context, 
 	// Delete the property field using the playbook service
 	err = c.playbookService.DeletePropertyField(args.PlaybookID, args.PropertyFieldID)
 	if err != nil {
+		if errors.Is(err, app.ErrPropertyFieldInUse) {
+			return "", newGraphQLError(err)
+		}
 		return "", errors.Wrap(err, "failed to delete property field")
 	}
 

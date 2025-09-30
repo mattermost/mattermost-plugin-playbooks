@@ -776,3 +776,129 @@ func TestGraphQLPropertyFieldsLicenseEnforcement(t *testing.T) {
 		require.NotEmpty(t, response.Errors, "Should return error when not licensed")
 	})
 }
+
+func TestPropertyFieldDeletionWithConditions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Test Playbook for Property Deletion",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	testAddPropertyFieldQuery := `
+	mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+		addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+	}
+	`
+	var createResponse struct {
+		Data struct {
+			AddPlaybookPropertyField string `json:"addPlaybookPropertyField"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         testAddPropertyFieldQuery,
+		OperationName: "AddPlaybookPropertyField",
+		Variables: map[string]any{
+			"playbookID": playbookID,
+			"propertyField": map[string]any{
+				"name": "Status",
+				"type": "select",
+				"attrs": map[string]any{
+					"options": []map[string]any{
+						{"name": "Active"},
+						{"name": "Inactive"},
+					},
+				},
+			},
+		},
+	}, &createResponse)
+	require.NoError(t, err)
+	require.Empty(t, createResponse.Errors)
+
+	fieldID := createResponse.Data.AddPlaybookPropertyField
+
+	playbooksGroup, err := e.A.PropertyService().GetPropertyGroup("playbooks")
+	require.NoError(t, err)
+	require.NotNil(t, playbooksGroup)
+
+	mmCreatedField, err := e.A.PropertyService().GetPropertyField(playbooksGroup.ID, fieldID)
+	require.NoError(t, err)
+	require.NotNil(t, mmCreatedField)
+
+	appCreatedField, err := app.NewPropertyFieldFromMattermostPropertyField(mmCreatedField)
+	require.NoError(t, err)
+	require.NotEmpty(t, appCreatedField.Attrs.Options)
+
+	optionID := appCreatedField.Attrs.Options[0].GetID()
+
+	condition := client.Condition{
+		PlaybookID: playbookID,
+		Version:    1,
+		ConditionExpr: client.ConditionExprV1{
+			Is: &client.ComparisonCondition{
+				FieldID: fieldID,
+				Value:   json.RawMessage(`["` + optionID + `"]`),
+			},
+		},
+	}
+
+	createdCondition, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, condition)
+	require.NoError(t, err)
+	require.NotNil(t, createdCondition)
+	require.NotEmpty(t, createdCondition.ID)
+
+	testDeletePropertyFieldQuery := `
+	mutation DeletePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!) {
+		deletePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID)
+	}
+	`
+	var deleteResponse struct {
+		Data struct {
+			DeletePlaybookPropertyField string `json:"deletePlaybookPropertyField"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         testDeletePropertyFieldQuery,
+		OperationName: "DeletePlaybookPropertyField",
+		Variables: map[string]any{
+			"playbookID":      playbookID,
+			"propertyFieldID": fieldID,
+		},
+	}, &deleteResponse)
+	require.NoError(t, err)
+	require.NotEmpty(t, deleteResponse.Errors)
+	require.Contains(t, deleteResponse.Errors[0].Message, "property field is in use")
+	require.Contains(t, deleteResponse.Errors[0].Message, "1 condition(s)")
+
+	err = e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, createdCondition.ID)
+	require.NoError(t, err)
+
+	var deleteResponse2 struct {
+		Data struct {
+			DeletePlaybookPropertyField string `json:"deletePlaybookPropertyField"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         testDeletePropertyFieldQuery,
+		OperationName: "DeletePlaybookPropertyField",
+		Variables: map[string]any{
+			"playbookID":      playbookID,
+			"propertyFieldID": fieldID,
+		},
+	}, &deleteResponse2)
+	require.NoError(t, err)
+	require.Empty(t, deleteResponse2.Errors)
+	require.Equal(t, fieldID, deleteResponse2.Data.DeletePlaybookPropertyField)
+}

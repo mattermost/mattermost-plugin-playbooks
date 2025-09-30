@@ -22,3 +22,6 @@ var ErrMalformedPlaybookRun = errors.New("malformed")
 
 // ErrDuplicateEntry occurs when failing to insert because the entry already existed.
 var ErrDuplicateEntry = errors.New("duplicate entry")
+
+// ErrPropertyFieldInUse occurs when trying to delete a property field that is referenced by conditions.
+var ErrPropertyFieldInUse = errors.New("property field is in use")

@@ -22,13 +22,15 @@ const (
 )
 
 type propertyService struct {
-	api     *pluginapi.Client
-	groupID string
+	api            *pluginapi.Client
+	groupID        string
+	conditionStore ConditionStore
 }
 
-func NewPropertyService(api *pluginapi.Client) (PropertyService, error) {
+func NewPropertyService(api *pluginapi.Client, conditionStore ConditionStore) (PropertyService, error) {
 	service := &propertyService{
-		api: api,
+		api:            api,
+		conditionStore: conditionStore,
 	}
 
 	// Get or create the property group
@@ -176,8 +178,21 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 	return resultField, nil
 }
 
-func (s *propertyService) DeletePropertyField(propertyID string) error {
-	err := s.api.Property.DeletePropertyField(s.groupID, propertyID)
+func (s *propertyService) DeletePropertyField(playbookID string, propertyID string) error {
+	count, err := s.conditionStore.CountConditionsUsingPropertyField(playbookID, propertyID)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if property field is in use")
+	}
+
+	if count > 0 {
+		field, err := s.GetPropertyField(propertyID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get property field")
+		}
+		return errors.Wrapf(ErrPropertyFieldInUse, "cannot delete property field '%s': it is referenced by %d condition(s). Please remove or update the conditions before deleting this field", field.Name, count)
+	}
+
+	err = s.api.Property.DeletePropertyField(s.groupID, propertyID)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete property field")
 	}

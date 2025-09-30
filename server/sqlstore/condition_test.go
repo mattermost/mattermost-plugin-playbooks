@@ -487,4 +487,117 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
 	})
+
+	t.Run("count conditions using property field", func(t *testing.T) {
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		propertyFieldID1 := "field_123"
+		propertyFieldID2 := "field_456"
+
+		t.Run("no conditions returns zero", func(t *testing.T) {
+			count, err := conditionStore.CountConditionsUsingPropertyField(playbookID, propertyFieldID1)
+			require.NoError(t, err)
+			require.Equal(t, 0, count)
+		})
+
+		t.Run("single condition using field", func(t *testing.T) {
+			condition1 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID1,
+						Value:   json.RawMessage(`["value1"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, condition1)
+			require.NoError(t, err)
+
+			count, err := conditionStore.CountConditionsUsingPropertyField(playbookID, propertyFieldID1)
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+		})
+
+		t.Run("multiple conditions using same field", func(t *testing.T) {
+			condition2 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					And: []app.ConditionExprV1{
+						{
+							Is: &app.ComparisonCondition{
+								FieldID: propertyFieldID1,
+								Value:   json.RawMessage(`["value2"]`),
+							},
+						},
+						{
+							IsNot: &app.ComparisonCondition{
+								FieldID: propertyFieldID2,
+								Value:   json.RawMessage(`["value3"]`),
+							},
+						},
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, condition2)
+			require.NoError(t, err)
+
+			count, err := conditionStore.CountConditionsUsingPropertyField(playbookID, propertyFieldID1)
+			require.NoError(t, err)
+			require.Equal(t, 2, count)
+
+			count, err = conditionStore.CountConditionsUsingPropertyField(playbookID, propertyFieldID2)
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+		})
+
+		t.Run("deleted conditions not counted", func(t *testing.T) {
+			conditions, err := conditionStore.GetPlaybookConditions(playbookID, 0, 10)
+			require.NoError(t, err)
+			require.NotEmpty(t, conditions)
+
+			err = conditionStore.DeleteCondition(playbookID, conditions[0].ID)
+			require.NoError(t, err)
+
+			count, err := conditionStore.CountConditionsUsingPropertyField(playbookID, propertyFieldID1)
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+		})
+
+		t.Run("run conditions are not counted", func(t *testing.T) {
+			runID := model.NewId()
+			runCondition := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				RunID:      runID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID1,
+						Value:   json.RawMessage(`["run_value"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, runCondition)
+			require.NoError(t, err)
+
+			count, err := conditionStore.CountConditionsUsingPropertyField(playbookID, propertyFieldID1)
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+		})
+	})
 }

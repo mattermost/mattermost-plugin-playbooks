@@ -336,3 +336,30 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 
 	return count, nil
 }
+
+func (c *conditionStore) CountConditionsUsingPropertyField(playbookID, propertyFieldID string) (int, error) {
+	propertyFieldIDJSON, err := json.Marshal([]string{propertyFieldID})
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to marshal property field ID %s", propertyFieldID)
+	}
+
+	query := c.queryBuilder.
+		Select("COUNT(*)").
+		From("IR_Condition").
+		Where(sq.Eq{"PlaybookID": playbookID}).
+		Where(sq.Eq{"RunID": ""}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Expr("PropertyFieldIDs @> ?", propertyFieldIDJSON))
+
+	sqlQuery, args, err := query.ToSql()
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to build count query for property field %s in playbook %s", propertyFieldID, playbookID)
+	}
+
+	var count int
+	if err := c.store.db.Get(&count, sqlQuery, args...); err != nil {
+		return 0, errors.Wrapf(err, "failed to count conditions using property field %s in playbook %s", propertyFieldID, playbookID)
+	}
+
+	return count, nil
+}
