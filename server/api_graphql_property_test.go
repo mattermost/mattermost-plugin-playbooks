@@ -1050,8 +1050,8 @@ func gqlCreateConditionWithOptions(t *testing.T, e *TestEnvironment, playbookID,
 	require.NoError(t, err)
 
 	condition := client.Condition{
-		PlaybookID: playbookID,
-		Version:    1,
+		PlaybookID:    playbookID,
+		Version:       1,
 		ConditionExpr: client.ConditionExprV1{},
 	}
 
