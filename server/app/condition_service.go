@@ -328,29 +328,14 @@ type conditionEvalResult struct {
 	Reason string
 }
 
-func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
-	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
-	}
-
+// applyConditionResults updates checklist items based on evaluated condition results
+func (s *conditionService) applyConditionResults(
+	playbookRun *PlaybookRun,
+	conditionResults map[string]conditionEvalResult,
+	conditionIDs []string,
+) *ConditionEvaluationResult {
 	result := &ConditionEvaluationResult{
 		ChecklistChanges: make(map[string]*ChecklistConditionChanges),
-	}
-
-	if len(conditions) == 0 {
-		return result, nil
-	}
-
-	conditionIDs := make([]string, 0, len(conditions))
-	conditionResults := make(map[string]conditionEvalResult, len(conditions))
-	for _, condition := range conditions {
-		conditionIDs = append(conditionIDs, condition.ID)
-
-		conditionResults[condition.ID] = conditionEvalResult{
-			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
-			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
-		}
 	}
 
 	for c := range playbookRun.Checklists {
@@ -358,7 +343,9 @@ func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *Playboo
 
 		for i := range checklist.Items {
 			item := &checklist.Items[i]
-			if !slices.Contains(conditionIDs, item.ConditionID) {
+
+			// Skip items without conditions or not in the condition set
+			if item.ConditionID == "" || !slices.Contains(conditionIDs, item.ConditionID) {
 				continue
 			}
 
@@ -377,18 +364,17 @@ func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *Playboo
 
 			item.ConditionReason = res.Reason
 
-			// Check if item was recently modified (assignee or state change)
-			wasRecentlyModified := (item.AssigneeModified > 0 || item.StateModified > 0)
-
 			currentConditionAction := item.ConditionAction
+
 			if res.Met {
 				item.ConditionAction = ConditionActionNone
 				if currentConditionAction == ConditionActionHidden {
 					result.ChecklistChanges[checklist.Title].Added++
 				}
-			}
+			} else {
+				// Check if item was recently modified (assignee or state change)
+				wasRecentlyModified := (item.AssigneeModified > 0 || item.StateModified > 0)
 
-			if !res.Met {
 				if wasRecentlyModified {
 					item.ConditionAction = ConditionActionShownBecauseModified
 				} else {
@@ -401,7 +387,33 @@ func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *Playboo
 		}
 	}
 
-	return result, nil
+	return result
+}
+
+func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
+	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
+	}
+
+	if len(conditions) == 0 {
+		return &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}, nil
+	}
+
+	conditionIDs := make([]string, 0, len(conditions))
+	conditionResults := make(map[string]conditionEvalResult, len(conditions))
+	for _, condition := range conditions {
+		conditionIDs = append(conditionIDs, condition.ID)
+
+		conditionResults[condition.ID] = conditionEvalResult{
+			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
+			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
+		}
+	}
+
+	return s.applyConditionResults(playbookRun, conditionResults, conditionIDs), nil
 }
 
 func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error) {
@@ -416,55 +428,24 @@ func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun)
 		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
 	}
 
-	result := &ConditionEvaluationResult{
-		ChecklistChanges: make(map[string]*ChecklistConditionChanges),
-	}
-
 	if len(conditions) == 0 {
-		return result, nil
+		return &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}, nil
 	}
 
+	conditionIDs := make([]string, 0, len(conditions))
 	conditionResults := make(map[string]conditionEvalResult, len(conditions))
 	for _, condition := range conditions {
+		conditionIDs = append(conditionIDs, condition.ID)
+
 		conditionResults[condition.ID] = conditionEvalResult{
 			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
 			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
 		}
 	}
 
-	for c := range playbookRun.Checklists {
-		checklist := &playbookRun.Checklists[c]
-
-		for i := range checklist.Items {
-			item := &checklist.Items[i]
-			if item.ConditionID == "" {
-				continue
-			}
-
-			res, ok := conditionResults[item.ConditionID]
-			if !ok {
-				continue
-			}
-
-			if result.ChecklistChanges[checklist.Title] == nil {
-				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{
-					Added:  0,
-					Hidden: 0,
-				}
-			}
-
-			item.ConditionReason = res.Reason
-
-			if res.Met {
-				item.ConditionAction = ConditionActionNone
-			} else {
-				item.ConditionAction = ConditionActionHidden
-				result.ChecklistChanges[checklist.Title].Hidden++
-			}
-		}
-	}
-
-	return result, nil
+	return s.applyConditionResults(playbookRun, conditionResults, conditionIDs), nil
 }
 
 func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {

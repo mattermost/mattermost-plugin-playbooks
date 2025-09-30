@@ -114,6 +114,7 @@ func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap m
 			return false
 		}
 
+		// Missing values are treated as empty and handled by is()
 		value := valueMap[c.Is.FieldID]
 		return is(field, value, c.Is.Value)
 	}
@@ -124,6 +125,7 @@ func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap m
 			return true
 		}
 
+		// Missing values are treated as empty and handled by isNot()
 		value := valueMap[c.IsNot.FieldID]
 		return isNot(field, value, c.IsNot.Value)
 	}
