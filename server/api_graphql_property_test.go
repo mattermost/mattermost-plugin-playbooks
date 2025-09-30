@@ -902,3 +902,222 @@ func TestPropertyFieldDeletionWithConditions(t *testing.T) {
 	require.Empty(t, deleteResponse2.Errors)
 	require.Equal(t, fieldID, deleteResponse2.Data.DeletePlaybookPropertyField)
 }
+
+func TestPropertyOptionRemovalWithConditions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Test Complex Option Updates",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	testAddPropertyFieldQuery := `
+	mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+		addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+	}
+	`
+	var createResponse struct {
+		Data struct {
+			AddPlaybookPropertyField string `json:"addPlaybookPropertyField"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         testAddPropertyFieldQuery,
+		OperationName: "AddPlaybookPropertyField",
+		Variables: map[string]any{
+			"playbookID": playbookID,
+			"propertyField": map[string]any{
+				"name": "Status",
+				"type": "select",
+				"attrs": map[string]any{
+					"options": []map[string]any{
+						{"name": "Todo"},
+						{"name": "In Progress"},
+						{"name": "Done"},
+						{"name": "Blocked"},
+						{"name": "Archived"},
+					},
+				},
+			},
+		},
+	}, &createResponse)
+	require.NoError(t, err)
+	require.Empty(t, createResponse.Errors)
+
+	fieldID := createResponse.Data.AddPlaybookPropertyField
+
+	playbooksGroup, err := e.A.PropertyService().GetPropertyGroup("playbooks")
+	require.NoError(t, err)
+
+	mmCreatedField, err := e.A.PropertyService().GetPropertyField(playbooksGroup.ID, fieldID)
+	require.NoError(t, err)
+
+	appCreatedField, err := app.NewPropertyFieldFromMattermostPropertyField(mmCreatedField)
+	require.NoError(t, err)
+	require.Len(t, appCreatedField.Attrs.Options, 5)
+
+	todoID := appCreatedField.Attrs.Options[0].GetID()
+	inProgressID := appCreatedField.Attrs.Options[1].GetID()
+	doneID := appCreatedField.Attrs.Options[2].GetID()
+	blockedID := appCreatedField.Attrs.Options[3].GetID()
+	archivedID := appCreatedField.Attrs.Options[4].GetID()
+
+	condition1 := client.Condition{
+		PlaybookID: playbookID,
+		Version:    1,
+		ConditionExpr: client.ConditionExprV1{
+			Is: &client.ComparisonCondition{
+				FieldID: fieldID,
+				Value:   json.RawMessage(`["` + todoID + `"]`),
+			},
+		},
+	}
+
+	condition2 := client.Condition{
+		PlaybookID: playbookID,
+		Version:    1,
+		ConditionExpr: client.ConditionExprV1{
+			IsNot: &client.ComparisonCondition{
+				FieldID: fieldID,
+				Value:   json.RawMessage(`["` + doneID + `"]`),
+			},
+		},
+	}
+
+	condition3 := client.Condition{
+		PlaybookID: playbookID,
+		Version:    1,
+		ConditionExpr: client.ConditionExprV1{
+			Is: &client.ComparisonCondition{
+				FieldID: fieldID,
+				Value:   json.RawMessage(`["` + doneID + `", "` + archivedID + `"]`),
+			},
+		},
+	}
+
+	createdCondition1, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, condition1)
+	require.NoError(t, err)
+	createdCondition2, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, condition2)
+	require.NoError(t, err)
+	createdCondition3, err := e.PlaybooksClient.PlaybookConditions.Create(context.Background(), playbookID, condition3)
+	require.NoError(t, err)
+
+	testUpdatePropertyFieldQuery := `
+	mutation UpdatePlaybookPropertyField($playbookID: String!, $propertyFieldID: String!, $propertyField: PropertyFieldInput!) {
+		updatePlaybookPropertyField(playbookID: $playbookID, propertyFieldID: $propertyFieldID, propertyField: $propertyField)
+	}
+	`
+
+	t.Run("removing multiple options with mixed usage", func(t *testing.T) {
+		var updateResponse struct {
+			Data struct {
+				UpdatePlaybookPropertyField string `json:"updatePlaybookPropertyField"`
+			} `json:"data"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+		err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testUpdatePropertyFieldQuery,
+			OperationName: "UpdatePlaybookPropertyField",
+			Variables: map[string]any{
+				"playbookID":      playbookID,
+				"propertyFieldID": fieldID,
+				"propertyField": map[string]any{
+					"name": "Status",
+					"type": "select",
+					"attrs": map[string]any{
+						"options": []map[string]any{
+							{"id": inProgressID, "name": "In Progress"},
+							{"id": blockedID, "name": "Blocked"},
+						},
+					},
+				},
+			},
+		}, &updateResponse)
+		require.NoError(t, err)
+		require.NotEmpty(t, updateResponse.Errors)
+		require.Contains(t, updateResponse.Errors[0].Message, "property options are in use")
+		require.Contains(t, updateResponse.Errors[0].Message, "Todo")
+		require.Contains(t, updateResponse.Errors[0].Message, "Done")
+		require.Contains(t, updateResponse.Errors[0].Message, "Archived")
+	})
+
+	t.Run("keeping used options allows update", func(t *testing.T) {
+		var updateResponse struct {
+			Data struct {
+				UpdatePlaybookPropertyField string `json:"updatePlaybookPropertyField"`
+			} `json:"data"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+		err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testUpdatePropertyFieldQuery,
+			OperationName: "UpdatePlaybookPropertyField",
+			Variables: map[string]any{
+				"playbookID":      playbookID,
+				"propertyFieldID": fieldID,
+				"propertyField": map[string]any{
+					"name": "Status",
+					"type": "select",
+					"attrs": map[string]any{
+						"options": []map[string]any{
+							{"id": todoID, "name": "Todo"},
+							{"id": doneID, "name": "Done"},
+							{"id": archivedID, "name": "Archived"},
+							{"name": "New Option"},
+						},
+					},
+				},
+			},
+		}, &updateResponse)
+		require.NoError(t, err)
+		require.Empty(t, updateResponse.Errors)
+		require.Equal(t, fieldID, updateResponse.Data.UpdatePlaybookPropertyField)
+	})
+
+	t.Run("after deleting conditions can remove all options", func(t *testing.T) {
+		err = e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, createdCondition1.ID)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, createdCondition2.ID)
+		require.NoError(t, err)
+		err = e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, createdCondition3.ID)
+		require.NoError(t, err)
+
+		var updateResponse struct {
+			Data struct {
+				UpdatePlaybookPropertyField string `json:"updatePlaybookPropertyField"`
+			} `json:"data"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+		err = e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+			Query:         testUpdatePropertyFieldQuery,
+			OperationName: "UpdatePlaybookPropertyField",
+			Variables: map[string]any{
+				"playbookID":      playbookID,
+				"propertyFieldID": fieldID,
+				"propertyField": map[string]any{
+					"name": "Status",
+					"type": "select",
+					"attrs": map[string]any{
+						"options": []map[string]any{
+							{"name": "Completely New"},
+						},
+					},
+				},
+			},
+		}, &updateResponse)
+		require.NoError(t, err)
+		require.Empty(t, updateResponse.Errors)
+		require.Equal(t, fieldID, updateResponse.Data.UpdatePlaybookPropertyField)
+	})
+}

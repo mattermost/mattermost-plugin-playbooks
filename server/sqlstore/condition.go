@@ -10,6 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
@@ -362,4 +363,63 @@ func (c *conditionStore) CountConditionsUsingPropertyField(playbookID, propertyF
 	}
 
 	return count, nil
+}
+
+func (c *conditionStore) CountConditionsUsingPropertyOptions(playbookID string, propertyOptionIDs []string) (map[string]int, error) {
+	if len(propertyOptionIDs) == 0 {
+		return make(map[string]int), nil
+	}
+
+	placeholders := sq.Placeholders(len(propertyOptionIDs))
+	args := make([]any, len(propertyOptionIDs))
+	for i, optionID := range propertyOptionIDs {
+		args[i] = optionID
+	}
+
+	query := c.queryBuilder.
+		Select("PropertyOptionsIDs").
+		From("IR_Condition").
+		Where(sq.Eq{"PlaybookID": playbookID}).
+		Where(sq.Eq{"RunID": ""}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Expr("PropertyOptionsIDs ??| ARRAY["+placeholders+"]", args...))
+
+	sqlQuery, sqlArgs, err := query.ToSql()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to build query for conditions in playbook %s", playbookID)
+	}
+
+	var propertyOptionsIDsList []json.RawMessage
+	if err := c.store.db.Select(&propertyOptionsIDsList, sqlQuery, sqlArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get conditions for playbook %s", playbookID)
+	}
+
+	result := make(map[string]int)
+	optionIDSet := make(map[string]bool)
+	for _, optionID := range propertyOptionIDs {
+		optionIDSet[optionID] = true
+	}
+
+	for _, propertyOptionsIDsBytes := range propertyOptionsIDsList {
+		if len(propertyOptionsIDsBytes) == 0 {
+			continue
+		}
+
+		var optionIDs []string
+		if err := json.Unmarshal(propertyOptionsIDsBytes, &optionIDs); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id": playbookID,
+				"raw_data":    string(propertyOptionsIDsBytes),
+			}).Warn("failed to unmarshal PropertyOptionsIDs from condition, skipping")
+			continue
+		}
+
+		for _, optionID := range optionIDs {
+			if optionIDSet[optionID] {
+				result[optionID]++
+			}
+		}
+	}
+
+	return result, nil
 }

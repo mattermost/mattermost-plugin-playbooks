@@ -136,6 +136,9 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 	// Update the property field using the playbook service
 	updatedField, err := c.playbookService.UpdatePropertyField(args.PlaybookID, *propertyField)
 	if err != nil {
+		if errors.Is(err, app.ErrPropertyOptionsInUse) {
+			return "", newGraphQLError(err)
+		}
 		return "", errors.Wrap(err, "failed to update property field")
 	}
 

@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -154,6 +155,27 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 		return nil, errors.Wrap(err, "failed to get existing property field")
 	}
 
+	// Check if any options are being removed and validate they are not in use
+	if propertyField.SupportsOptions() {
+		existingPropertyField, err := NewPropertyFieldFromMattermostPropertyField(existingField)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert existing property field")
+		}
+
+		removedOptionIDs := s.findRemovedOptions(existingPropertyField.Attrs.Options, propertyField.Attrs.Options)
+		if len(removedOptionIDs) > 0 {
+			optionsInUse, err := s.conditionStore.CountConditionsUsingPropertyOptions(playbookID, removedOptionIDs)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to check if property options are in use")
+			}
+
+			if len(optionsInUse) > 0 {
+				optionNames := s.getOptionNames(existingPropertyField.Attrs.Options, optionsInUse)
+				return nil, errors.Wrapf(ErrPropertyOptionsInUse, "cannot remove property options: %s. Please remove or update the conditions before removing these options", optionNames)
+			}
+		}
+	}
+
 	// Convert the input to Mattermost property field
 	mmPropertyField := propertyField.ToMattermostPropertyField()
 
@@ -176,6 +198,38 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 	}
 
 	return resultField, nil
+}
+
+func (s *propertyService) findRemovedOptions(oldOptions, newOptions model.PropertyOptions[*model.PluginPropertyOption]) []string {
+	newOptionIDs := make(map[string]bool)
+	for _, option := range newOptions {
+		newOptionIDs[option.GetID()] = true
+	}
+
+	var removedIDs []string
+	for _, option := range oldOptions {
+		if !newOptionIDs[option.GetID()] {
+			removedIDs = append(removedIDs, option.GetID())
+		}
+	}
+
+	return removedIDs
+}
+
+func (s *propertyService) getOptionNames(options model.PropertyOptions[*model.PluginPropertyOption], optionsInUse map[string]int) string {
+	var names []string
+	for _, option := range options {
+		if count, exists := optionsInUse[option.GetID()]; exists {
+			var countStr string
+			if count == 1 {
+				countStr = "1 condition"
+			} else {
+				countStr = fmt.Sprintf("%d conditions", count)
+			}
+			names = append(names, fmt.Sprintf("'%s' (used by %s)", option.GetName(), countStr))
+		}
+	}
+	return strings.Join(names, ", ")
 }
 
 func (s *propertyService) DeletePropertyField(playbookID string, propertyID string) error {

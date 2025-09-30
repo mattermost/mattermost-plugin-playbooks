@@ -600,4 +600,255 @@ func TestConditionStore(t *testing.T) {
 			require.Equal(t, 1, count)
 		})
 	})
+
+	t.Run("count conditions using property options", func(t *testing.T) {
+		playbook := NewPBBuilder().WithTitle("Test Playbook Options").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		propertyFieldID := "field_with_options"
+		optionID1 := "option_abc"
+		optionID2 := "option_def"
+		optionID3 := "option_ghi"
+
+		t.Run("empty option list returns empty map", func(t *testing.T) {
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{})
+			require.NoError(t, err)
+			require.Empty(t, result)
+		})
+
+		t.Run("no conditions returns empty map", func(t *testing.T) {
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionID1, optionID2})
+			require.NoError(t, err)
+			require.Empty(t, result)
+		})
+
+		t.Run("single condition using one option", func(t *testing.T) {
+			condition1 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionID1 + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, condition1)
+			require.NoError(t, err)
+
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionID1, optionID2})
+			require.NoError(t, err)
+			require.Equal(t, 1, len(result))
+			require.Equal(t, 1, result[optionID1])
+		})
+
+		t.Run("multiple conditions using same option", func(t *testing.T) {
+			condition2 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionID1 + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, condition2)
+			require.NoError(t, err)
+
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionID1})
+			require.NoError(t, err)
+			require.Equal(t, 1, len(result))
+			require.Equal(t, 2, result[optionID1])
+		})
+
+		t.Run("condition using multiple options", func(t *testing.T) {
+			condition3 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionID2 + `", "` + optionID3 + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, condition3)
+			require.NoError(t, err)
+
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionID1, optionID2, optionID3})
+			require.NoError(t, err)
+			require.Equal(t, 3, len(result))
+			require.Equal(t, 2, result[optionID1])
+			require.Equal(t, 1, result[optionID2])
+			require.Equal(t, 1, result[optionID3])
+		})
+
+		t.Run("deleted conditions not counted", func(t *testing.T) {
+			conditions, err := conditionStore.GetPlaybookConditions(playbookID, 0, 10)
+			require.NoError(t, err)
+			require.NotEmpty(t, conditions)
+
+			err = conditionStore.DeleteCondition(playbookID, conditions[0].ID)
+			require.NoError(t, err)
+
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionID1})
+			require.NoError(t, err)
+			require.Equal(t, 1, result[optionID1])
+		})
+
+		t.Run("run conditions are not counted", func(t *testing.T) {
+			runID := model.NewId()
+			runCondition := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				RunID:      runID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionID1 + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, runCondition)
+			require.NoError(t, err)
+
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionID1})
+			require.NoError(t, err)
+			require.Equal(t, 1, result[optionID1])
+		})
+	})
+
+	t.Run("complex option update scenarios", func(t *testing.T) {
+		playbook := NewPBBuilder().WithTitle("Test Complex Scenarios").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		propertyFieldID := "field_complex"
+		optionA := "option_a"
+		optionB := "option_b"
+		optionC := "option_c"
+		optionD := "option_d"
+		optionE := "option_e"
+
+		t.Run("removing multiple options with mixed usage", func(t *testing.T) {
+			condition1 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionA + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			condition2 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionC + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, condition1)
+			require.NoError(t, err)
+			_, err = conditionStore.CreateCondition(playbookID, condition2)
+			require.NoError(t, err)
+
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionA, optionB, optionC, optionD})
+			require.NoError(t, err)
+			require.Equal(t, 2, len(result))
+			require.Equal(t, 1, result[optionA])
+			require.Equal(t, 1, result[optionC])
+			require.NotContains(t, result, optionB)
+			require.NotContains(t, result, optionD)
+		})
+
+		t.Run("same option referenced by multiple conditions", func(t *testing.T) {
+			condition3 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionE + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			condition4 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					IsNot: &app.ComparisonCondition{
+						FieldID: propertyFieldID,
+						Value:   json.RawMessage(`["` + optionE + `"]`),
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			condition5 := app.Condition{
+				ID:         model.NewId(),
+				Version:    1,
+				PlaybookID: playbookID,
+				ConditionExpr: &app.ConditionExprV1{
+					And: []app.ConditionExprV1{
+						{
+							Is: &app.ComparisonCondition{
+								FieldID: propertyFieldID,
+								Value:   json.RawMessage(`["` + optionE + `"]`),
+							},
+						},
+					},
+				},
+				CreateAt: model.GetMillis(),
+				UpdateAt: model.GetMillis(),
+			}
+
+			_, err := conditionStore.CreateCondition(playbookID, condition3)
+			require.NoError(t, err)
+			_, err = conditionStore.CreateCondition(playbookID, condition4)
+			require.NoError(t, err)
+			_, err = conditionStore.CreateCondition(playbookID, condition5)
+			require.NoError(t, err)
+
+			result, err := conditionStore.CountConditionsUsingPropertyOptions(playbookID, []string{optionE})
+			require.NoError(t, err)
+			require.Equal(t, 1, len(result))
+			require.Equal(t, 3, result[optionE])
+		})
+	})
 }
