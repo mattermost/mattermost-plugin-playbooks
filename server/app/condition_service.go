@@ -404,6 +404,69 @@ func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *Playboo
 	return result, nil
 }
 
+func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error) {
+	if playbookRun.PlaybookID == "" {
+		return &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}, nil
+	}
+
+	conditions, err := s.store.GetRunConditions(playbookRun.PlaybookID, playbookRun.ID, 0, 1000)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
+	}
+
+	result := &ConditionEvaluationResult{
+		ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+	}
+
+	if len(conditions) == 0 {
+		return result, nil
+	}
+
+	conditionResults := make(map[string]conditionEvalResult, len(conditions))
+	for _, condition := range conditions {
+		conditionResults[condition.ID] = conditionEvalResult{
+			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
+			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
+		}
+	}
+
+	for c := range playbookRun.Checklists {
+		checklist := &playbookRun.Checklists[c]
+
+		for i := range checklist.Items {
+			item := &checklist.Items[i]
+			if item.ConditionID == "" {
+				continue
+			}
+
+			res, ok := conditionResults[item.ConditionID]
+			if !ok {
+				continue
+			}
+
+			if result.ChecklistChanges[checklist.Title] == nil {
+				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{
+					Added:  0,
+					Hidden: 0,
+				}
+			}
+
+			item.ConditionReason = res.Reason
+
+			if res.Met {
+				item.ConditionAction = ConditionActionNone
+			} else {
+				item.ConditionAction = ConditionActionHidden
+				result.ChecklistChanges[checklist.Title].Hidden++
+			}
+		}
+	}
+
+	return result, nil
+}
+
 func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
 	s.poster.PublishWebsocketEventToTeam(conditionCreatedWSEvent, condition, teamID)
 	return nil

@@ -248,6 +248,122 @@ func TestConditionExprV1_Evaluate(t *testing.T) {
 		}
 		require.False(t, condition.Evaluate(propertyFields, propertyValues))
 	})
+
+	t.Run("text field IS with no value set - should return false", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_text_field_id",
+				Name: "Unset Text Field",
+				Type: model.PropertyFieldTypeText,
+			},
+		})
+
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "unset_text_field_id",
+				Value:   json.RawMessage(`"123"`),
+			},
+		}
+		require.False(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("text field IS NOT with no value set - should return true", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_text_field_id",
+				Name: "Unset Text Field",
+				Type: model.PropertyFieldTypeText,
+			},
+		})
+
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "unset_text_field_id",
+				Value:   json.RawMessage(`"123"`),
+			},
+		}
+		// No value set, so it is indeed "not 123", so this should return true
+		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("select field IS with no value set - should return false", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_select_field_id",
+				Name: "Unset Select Field",
+				Type: model.PropertyFieldTypeSelect,
+			},
+			Attrs: Attrs{
+				Options: model.PropertyOptions[*model.PluginPropertyOption]{
+					model.NewPluginPropertyOption("option1_id", "Option 1"),
+					model.NewPluginPropertyOption("option2_id", "Option 2"),
+				},
+			},
+		})
+
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "unset_select_field_id",
+				Value:   json.RawMessage(`["option1_id"]`),
+			},
+		}
+		require.False(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("select field IS NOT with no value set - should return true", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_select_field_id",
+				Name: "Unset Select Field",
+				Type: model.PropertyFieldTypeSelect,
+			},
+			Attrs: Attrs{
+				Options: model.PropertyOptions[*model.PluginPropertyOption]{
+					model.NewPluginPropertyOption("option1_id", "Option 1"),
+					model.NewPluginPropertyOption("option2_id", "Option 2"),
+				},
+			},
+		})
+
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "unset_select_field_id",
+				Value:   json.RawMessage(`["option1_id"]`),
+			},
+		}
+		// No value set, so it is indeed "not option1_id", so this should return true
+		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("multiselect field IS NOT with no value set - should return true", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_multiselect_field_id",
+				Name: "Unset Multiselect Field",
+				Type: model.PropertyFieldTypeMultiselect,
+			},
+			Attrs: Attrs{
+				Options: model.PropertyOptions[*model.PluginPropertyOption]{
+					model.NewPluginPropertyOption("tag1_id", "Tag 1"),
+					model.NewPluginPropertyOption("tag2_id", "Tag 2"),
+				},
+			},
+		})
+
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "unset_multiselect_field_id",
+				Value:   json.RawMessage(`["tag1_id"]`),
+			},
+		}
+		// No value set, so it is indeed "not tag1_id", so this should return true
+		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
 }
 
 func TestConditionExprV1_JSON(t *testing.T) {

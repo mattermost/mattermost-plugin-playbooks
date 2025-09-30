@@ -114,11 +114,7 @@ func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap m
 			return false
 		}
 
-		value, valueExists := valueMap[c.Is.FieldID]
-		if !valueExists {
-			return false
-		}
-
+		value := valueMap[c.Is.FieldID]
 		return is(field, value, c.Is.Value)
 	}
 
@@ -128,11 +124,7 @@ func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap m
 			return true
 		}
 
-		value, valueExists := valueMap[c.IsNot.FieldID]
-		if !valueExists {
-			return true
-		}
-
+		value := valueMap[c.IsNot.FieldID]
 		return isNot(field, value, c.IsNot.Value)
 	}
 
@@ -791,6 +783,9 @@ type ConditionService interface {
 
 	// Evaluate conditions for a run when a property field changes
 	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
+
+	// Evaluate all conditions for a run (typically called on run creation)
+	EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error)
 }
 
 // ConditionStore defines database operations for stored conditions

@@ -484,7 +484,15 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 					// Update checklist item condition IDs to reference the new condition IDs
 					playbookRun.SwapConditionIDs(conditionMapping)
 
-					// Save the updated playbook run with correct condition IDs
+					// Evaluate all conditions to set initial visibility state
+					if len(conditionMapping) > 0 {
+						_, err = s.conditionService.EvaluateAllConditionsForRun(playbookRun)
+						if err != nil {
+							logger.WithError(err).Warn("failed to evaluate conditions for run")
+						}
+					}
+
+					// Save the updated playbook run with correct condition IDs and visibility states
 					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
 					if err != nil {
 						logger.WithError(err).Warn("failed to update playbook run with new condition IDs")
