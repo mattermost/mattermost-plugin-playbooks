@@ -1715,4 +1715,15 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.65.0"),
+		toVersion:   semver.MustParse("0.66.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(createPGGINIndex("IR_Condition_PropertyFieldIDs_GIN", "IR_Condition", "PropertyFieldIDs")); err != nil {
+				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyFieldIDs_GIN")
+			}
+
+			return nil
+		},
+	},
 }
