@@ -80,12 +80,10 @@ interface ChecklistItemProps {
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
 
-    const julienDevSuffixForConditionActions = (props.checklistItem.condition_id === '') ? '' : ` (CA: ${props.checklistItem.condition_action})`;
-
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
-    const [titleValue, setTitleValue] = useState(props.checklistItem.title + julienDevSuffixForConditionActions);
+    const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
     const [command, setCommand] = useState(props.checklistItem.command);
     const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
@@ -101,8 +99,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     useUpdateEffect(() => {
-        setTitleValue(props.checklistItem.title + julienDevSuffixForConditionActions);
-    }, [props.checklistItem.title, julienDevSuffixForConditionActions]);
+        setTitleValue(props.checklistItem.title);
+    }, [props.checklistItem.title]);
 
     useUpdateEffect(() => {
         setDescValue(props.checklistItem.description);
