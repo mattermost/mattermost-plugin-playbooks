@@ -226,7 +226,15 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 			}
 		}
 
-		if !isGraphQLErrorable(response.Errors[0]) {
+		// Check if the underlying error (Err field) is graphQLErrorable, not the QueryError wrapper
+		var isErrorable bool
+		if response.Errors[0].Err != nil {
+			isErrorable = isGraphQLErrorable(response.Errors[0].Err)
+		} else {
+			isErrorable = isGraphQLErrorable(response.Errors[0])
+		}
+
+		if !isErrorable {
 			response.Errors[0].Message = "Error while executing your request"
 		}
 		response.Errors[0].Locations = []graphql_errors.Location{{Line: 0, Column: 0}}

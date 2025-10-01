@@ -350,7 +350,7 @@ func (c *conditionStore) CountConditionsUsingPropertyField(playbookID, propertyF
 		Where(sq.Eq{"PlaybookID": playbookID}).
 		Where(sq.Eq{"RunID": ""}).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Expr("PropertyFieldIDs @> ?", propertyFieldIDJSON))
+		Where(sq.Expr("PropertyFieldIDs @> ?::jsonb", string(propertyFieldIDJSON)))
 
 	sqlQuery, args, err := query.ToSql()
 	if err != nil {
