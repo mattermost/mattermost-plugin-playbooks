@@ -53,14 +53,20 @@ const TextProperty = (props: Props) => {
 
     if (!displayValue) {
         return (
-            <TextDisplay onClick={handleStartEdit}>
+            <TextDisplay
+                onClick={handleStartEdit}
+                data-testid='property-value'
+            >
                 <EmptyState/>
             </TextDisplay>
         );
     }
 
     return (
-        <TextDisplay onClick={handleStartEdit}>
+        <TextDisplay
+            onClick={handleStartEdit}
+            data-testid='property-value'
+        >
             {displayValue}
         </TextDisplay>
     );

@@ -68,7 +68,10 @@ const MultiselectProperty = (props: Props) => {
 
     if (!displayValue || !Array.isArray(displayValue) || displayValue.length === 0) {
         return (
-            <EmptyMultiselectDisplay onClick={handleStartEdit}>
+            <EmptyMultiselectDisplay
+                onClick={handleStartEdit}
+                data-testid='property-value'
+            >
                 <EmptyState/>
             </EmptyMultiselectDisplay>
         );
@@ -79,7 +82,7 @@ const MultiselectProperty = (props: Props) => {
         .filter(Boolean);
 
     return (
-        <ChipsContainer>
+        <ChipsContainer data-testid='property-value'>
             {selectedLabels.map((label, index) => (
                 <PropertyChip
                     key={index}
