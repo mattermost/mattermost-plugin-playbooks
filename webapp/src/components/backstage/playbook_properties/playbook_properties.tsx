@@ -191,7 +191,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     };
 
                     const target = (
-                        <TypeIconButton onClick={() => setEditingTypeId(info.row.original.id)}>
+                        <TypeIconButton
+                            onClick={() => setEditingTypeId(info.row.original.id)}
+                            aria-label='Change property type'
+                        >
                             <TypeIcon/>
                         </TypeIconButton>
                     );
@@ -373,6 +376,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                                     <TableRow
                                                         ref={dragProvided.innerRef}
                                                         {...dragProvided.draggableProps}
+                                                        data-testid='property-field-row'
                                                     >
                                                         {row.getVisibleCells().map((cell) => (
                                                             <TableCell

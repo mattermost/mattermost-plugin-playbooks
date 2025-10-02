@@ -108,6 +108,8 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
         <Container>
             <StyledInput
                 ref={inputRef}
+                type='text'
+                aria-label='Property name'
                 value={localValue ?? field.name}
                 placeholder={originalValue || field.name}
                 onChange={handleChange}
