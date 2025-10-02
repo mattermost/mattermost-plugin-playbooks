@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {ReactTestRendererJSON} from 'react-test-renderer';
 
 import {emptyChecklistItem} from 'src/types/playbook';
 
@@ -56,9 +56,16 @@ describe('ConditionIndicator', () => {
         const tree = component.toJSON();
 
         expect(tree).toBeTruthy();
-        expect(tree?.props['data-tooltip']).toBe('conditionally rendered: Priority is "High"');
-        expect(tree?.children[0].children[0].props['data-color']).toBe('rgba(var(--center-channel-color-rgb), 0.56)');
-        expect(tree?.children[0].children[0].props['data-size']).toBe(14);
+        expect(Array.isArray(tree)).toBe(false);
+        if (tree && !Array.isArray(tree) && tree.children) {
+            expect(tree.props['data-tooltip']).toBe('conditionally rendered: Priority is "High"');
+            const child = tree.children[0] as ReactTestRendererJSON;
+            if (child.children) {
+                const grandchild = child.children[0] as ReactTestRendererJSON;
+                expect(grandchild.props['data-color']).toBe('rgba(var(--center-channel-color-rgb), 0.56)');
+                expect(grandchild.props['data-size']).toBe(14);
+            }
+        }
     });
 
     it('should render red icon for shown_because_modified', () => {
@@ -75,8 +82,15 @@ describe('ConditionIndicator', () => {
         const tree = component.toJSON();
 
         expect(tree).toBeTruthy();
-        expect(tree?.props['data-tooltip']).toBe('conditionally rendered: Item modified by user');
-        expect(tree?.children[0].children[0].props['data-color']).toBe('var(--error-text)');
-        expect(tree?.children[0].children[0].props['data-size']).toBe(14);
+        expect(Array.isArray(tree)).toBe(false);
+        if (tree && !Array.isArray(tree) && tree.children) {
+            expect(tree.props['data-tooltip']).toBe('conditionally rendered: Item modified by user');
+            const child = tree.children[0] as ReactTestRendererJSON;
+            if (child.children) {
+                const grandchild = child.children[0] as ReactTestRendererJSON;
+                expect(grandchild.props['data-color']).toBe('var(--error-text)');
+                expect(grandchild.props['data-size']).toBe(14);
+            }
+        }
     });
 });
