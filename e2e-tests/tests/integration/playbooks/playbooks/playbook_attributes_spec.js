@@ -21,28 +21,20 @@
  * - CRUD operations (Create, Read, Update, Delete)
  * - Different attribute types (text, select, multi-select)
  * - Select field options management
- * - Attribute limits (MAX_PROPERTIES_LIMIT)
- * - Drag-and-drop reordering
+ * - Attribute limits (MAX_PROPERTIES_LIMIT = 20)
  * - Duplicate functionality
- * - Input validation and error handling
- * - Data persistence across page reloads
- * - Integration with playbook system
- * - Edge cases and UI responsiveness
  *
  * Related Features:
  * - GraphQL API: property_fields_graphql_spec.js
  * - Similar feature: edit_metrics_spec.js
  * - Component: webapp/src/components/backstage/playbook_properties/playbook_properties.tsx
+ * - API Command: cy.apiAddPropertyField() in tests/support/api/playbooks.js
  *
  * Test Data:
  * - Creates a fresh playbook for each test via beforeEach
  * - Uses testUser and testTeam from apiInitSetup
  * - Cleans up via testIsolation: true
- *
- * Known Limitations:
- * - Drag-and-drop tests may be flaky; increase wait times if needed
- * - Some selectors depend on data-testid attributes being present in the component
- * - Network error simulation may need adjustment based on actual error handling
+ * - Hybrid approach: Uses API for setup (speed), UI for final actions (behavior verification)
  */
 
 describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
@@ -567,3 +559,29 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         cy.wait(500);
     }
 });
+
+/**
+ * MANUAL VERIFICATION CHECKLIST
+ *
+ * Before considering this test suite complete, verify:
+ *
+ * □ All tests pass when run individually
+ * □ All tests pass when run as a suite
+ * □ Tests pass consistently (run 3 times to check for flakiness)
+ * □ Tests work against both local and remote servers
+ * □ Test execution time is reasonable (<5 minutes total)
+ * □ No hardcoded waits except where absolutely necessary
+ * □ All helper functions are actually used
+ * □ Data-testid attributes exist in the component
+ * □ GraphQL mutations work correctly
+ * □ Cleanup happens properly (no leftover data)
+ * □ Tests follow existing conventions from other spec files
+ * □ Comments are clear and follow the # and * convention
+ * □ Test names clearly describe what they test
+ * □ No console errors during test execution
+ * □ Screenshots/videos of failures are helpful for debugging
+ *
+ * Run commands:
+ * - Single file: npm run cypress:run -- --spec="tests/integration/playbooks/playbooks/playbook_attributes_spec.js"
+ * - Open interactive: npm run cypress:open
+ */
