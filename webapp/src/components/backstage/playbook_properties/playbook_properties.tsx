@@ -116,8 +116,17 @@ const PlaybookProperties = ({playbookID}: Props) => {
             return;
         }
 
+        // Find the highest number in existing "Attribute X" names
+        const attributeNumbers = properties
+            .map((prop) => {
+                const match = prop.name.match(/^Attribute (\d+)$/);
+                return match ? parseInt(match[1], 10) : 0;
+            })
+            .filter((num) => num > 0);
+        const nextNumber = attributeNumbers.length > 0 ? Math.max(...attributeNumbers) + 1 : 1;
+
         const newPropertyField: PropertyFieldInput = {
-            name: `Attribute ${properties.length + 1}`,
+            name: `Attribute ${nextNumber}`,
             type: PropertyFieldType.Text,
             attrs: {
                 visibility: 'when_set',
@@ -126,7 +135,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
         };
 
         await addPropertyField(playbookID, newPropertyField);
-    }, [addPropertyField, playbookID, properties.length]);
+    }, [addPropertyField, playbookID, properties]);
 
     const handleDragEnd = useCallback(async (result: any) => {
         if (!result.destination) {

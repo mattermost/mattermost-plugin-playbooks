@@ -302,6 +302,83 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         });
     });
 
+    describe('attribute limits', () => {
+        it('can add attributes up to MAX_PROPERTIES_LIMIT', () => {
+            // # Get the max limit
+            const maxLimit = 20;
+
+            // # Add 19 attributes via API for speed
+            for (let i = 0; i < maxLimit - 1; i++) {
+                cy.apiAddPropertyField(testPlaybook.id, {
+                    name: `Attribute ${i + 1}`,
+                    type: 'text',
+                    attrs: {
+                        visibility: 'when_set',
+                        sortOrder: i,
+                    },
+                });
+            }
+
+            // # Navigate to attributes section
+            navigateToAttributes();
+
+            // * Verify 19 attributes exist
+            cy.findAllByTestId('property-field-row').should('have.length', maxLimit - 1);
+
+            // # Add the last attribute via UI to test button state change
+            addAttribute();
+
+            // * Verify all attributes were created
+            cy.findAllByTestId('property-field-row').should('have.length', maxLimit);
+
+            // * Verify add button is disabled with appropriate message
+            cy.findByRole('button', {name: /maximum attributes reached/i}).
+                should('be.disabled');
+        });
+
+        it('can add new attribute after deleting when at limit', () => {
+            const maxLimit = 20;
+
+            // # Add 19 attributes via API for speed
+            for (let i = 0; i < maxLimit - 1; i++) {
+                cy.apiAddPropertyField(testPlaybook.id, {
+                    name: `Attribute ${i + 1}`,
+                    type: 'text',
+                    attrs: {
+                        visibility: 'when_set',
+                        sortOrder: i,
+                    },
+                });
+            }
+
+            // # Navigate to attributes section
+            navigateToAttributes();
+
+            // * Verify 19 attributes exist
+            cy.findAllByTestId('property-field-row').should('have.length', maxLimit - 1);
+
+            // # Add the last attribute via UI to reach the limit
+            addAttribute();
+
+            // * Verify add button is disabled with appropriate message
+            cy.findByRole('button', {name: /maximum attributes reached/i}).
+                should('be.disabled');
+
+            // # Delete one attribute
+            deleteAttribute(0);
+
+            // * Verify add button is now enabled
+            cy.findByRole('button', {name: /add.*attribute/i}).
+                should('not.be.disabled');
+
+            // # Add a new attribute
+            addAttribute();
+
+            // * Verify we're back at the limit
+            cy.findAllByTestId('property-field-row').should('have.length', maxLimit);
+        });
+    });
+
     // Helper Functions
 
     /**
@@ -313,25 +390,27 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
     /**
      * Add a new attribute with specified parameters
-     * @param {string} name - The attribute name
+     * @param {string} name - The attribute name (optional, uses default "Attribute X" if not provided)
      * @param {string} type - The attribute type (text, select, multiselect, etc.)
      * @param {Array} options - Array of option strings for select types
      */
-    function addAttribute(name, type = 'text', options = []) {
+    function addAttribute(name = null, type = 'text', options = []) {
         // # Click add attribute button
         cy.findByRole('button', {name: /add.*attribute/i}).click();
 
         // # Wait for GraphQL mutation
         cy.wait(500);
 
-        // # Find the newly added row and fill in the name
-        cy.findAllByTestId('property-field-row').last().within(() => {
-            cy.findByLabelText('Property name').clear().type(name);
-        });
-        cy.get('body').click(0, 0);
+        // # Fill in the name only if provided
+        if (name) {
+            cy.findAllByTestId('property-field-row').last().within(() => {
+                cy.findByLabelText('Property name').clear().type(name);
+            });
+            cy.get('body').click(0, 0);
 
-        // # Wait for GraphQL mutation
-        cy.wait(500);
+            // # Wait for GraphQL mutation
+            cy.wait(500);
+        }
 
         // # Change type if not text
         if (type !== 'text') {
