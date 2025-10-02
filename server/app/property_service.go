@@ -98,7 +98,11 @@ func (s *propertyService) GetPropertyField(propertyID string) (*PropertyField, e
 }
 
 func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField, error) {
-	mmPropertyFields, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, playbookID)
+	return s.GetPropertyFieldsSince(playbookID, 0)
+}
+
+func (s *propertyService) GetPropertyFieldsSince(playbookID string, updatedSince int64) ([]PropertyField, error) {
+	mmPropertyFields, err := s.getAllPropertyFieldsSince(PropertyTargetTypePlaybook, playbookID, updatedSince)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get property fields")
 	}
@@ -129,7 +133,11 @@ func (s *propertyService) GetPropertyFieldsCount(playbookID string) (int, error)
 }
 
 func (s *propertyService) GetRunPropertyFields(runID string) ([]PropertyField, error) {
-	fieldsMap, err := s.getRunsPropertyFields([]string{runID}, PropertySearchPerPage)
+	return s.GetRunPropertyFieldsSince(runID, 0)
+}
+
+func (s *propertyService) GetRunPropertyFieldsSince(runID string, updatedSince int64) ([]PropertyField, error) {
+	fieldsMap, err := s.getRunsPropertyFields([]string{runID}, PropertySearchPerPage, updatedSince)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get run property fields")
 	}
@@ -186,11 +194,16 @@ func (s *propertyService) DeletePropertyField(propertyID string) error {
 }
 
 func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*model.PropertyField, error) {
+	return s.getAllPropertyFieldsSince(targetType, targetID, 0)
+}
+
+func (s *propertyService) getAllPropertyFieldsSince(targetType, targetID string, updatedSince int64) ([]*model.PropertyField, error) {
 	opts := model.PropertyFieldSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: targetType,
-		TargetIDs:  []string{targetID},
-		PerPage:    PropertySearchPerPage,
+		GroupID:       s.groupID,
+		TargetType:    targetType,
+		TargetIDs:     []string{targetID},
+		SinceUpdateAt: updatedSince,
+		PerPage:       PropertySearchPerPage,
 	}
 
 	var allFields []*model.PropertyField
@@ -307,7 +320,11 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 }
 
 func (s *propertyService) GetRunPropertyValues(runID string) ([]PropertyValue, error) {
-	valuesMap, err := s.getRunsPropertyValues([]string{runID}, PropertySearchPerPage)
+	return s.GetRunPropertyValuesSince(runID, 0)
+}
+
+func (s *propertyService) GetRunPropertyValuesSince(runID string, updatedSince int64) ([]PropertyValue, error) {
+	valuesMap, err := s.getRunsPropertyValues([]string{runID}, PropertySearchPerPage, updatedSince)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get run property values")
 	}
@@ -464,25 +481,26 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 
 // GetRunsPropertyFields retrieves all property fields for multiple runs efficiently
 func (s *propertyService) GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error) {
-	return s.getRunsPropertyFields(runIDs, PropertyBulkSearchPerPage)
+	return s.getRunsPropertyFields(runIDs, PropertyBulkSearchPerPage, 0)
 }
 
 // GetRunsPropertyValues retrieves all property values for multiple runs efficiently
 func (s *propertyService) GetRunsPropertyValues(runIDs []string) (map[string][]PropertyValue, error) {
-	return s.getRunsPropertyValues(runIDs, PropertyBulkSearchPerPage)
+	return s.getRunsPropertyValues(runIDs, PropertyBulkSearchPerPage, 0)
 }
 
 // getRunsPropertyFields handles property field retrieval in a paginated way
-func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int) (map[string][]PropertyField, error) {
+func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int, updatedSince int64) (map[string][]PropertyField, error) {
 	if len(runIDs) == 0 {
 		return make(map[string][]PropertyField), nil
 	}
 
 	opts := model.PropertyFieldSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: PropertyTargetTypeRun,
-		TargetIDs:  runIDs,
-		PerPage:    pageSize,
+		GroupID:       s.groupID,
+		TargetType:    PropertyTargetTypeRun,
+		TargetIDs:     runIDs,
+		SinceUpdateAt: updatedSince,
+		PerPage:       pageSize,
 	}
 
 	result := make(map[string][]PropertyField)
@@ -517,16 +535,17 @@ func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int) (
 }
 
 // getRunsPropertyValues handles property value retrieval in a paginated way
-func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int) (map[string][]PropertyValue, error) {
+func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int, updatedSince int64) (map[string][]PropertyValue, error) {
 	if len(runIDs) == 0 {
 		return make(map[string][]PropertyValue), nil
 	}
 
 	opts := model.PropertyValueSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: PropertyTargetTypeRun,
-		TargetIDs:  runIDs,
-		PerPage:    pageSize,
+		GroupID:       s.groupID,
+		TargetType:    PropertyTargetTypeRun,
+		TargetIDs:     runIDs,
+		SinceUpdateAt: updatedSince,
+		PerPage:       pageSize,
 	}
 
 	result := make(map[string][]PropertyValue)

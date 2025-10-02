@@ -172,20 +172,35 @@ type PropertyServiceReader interface {
 	// GetPropertyFields gets all property fields for a playbook
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
 
+	// GetPropertyFieldsSince gets all property fields for a playbook since a given timestamp
+	// updatedSince: optional timestamp in milliseconds - only return fields updated after this time (0 = all)
+	GetPropertyFieldsSince(playbookID string, updatedSince int64) ([]PropertyField, error)
+
 	// GetRunPropertyFields gets all property fields for a run
 	GetRunPropertyFields(runID string) ([]PropertyField, error)
 
+	// GetRunPropertyFieldsSince gets all property fields for a run since a given timestamp
+	// updatedSince: optional timestamp in milliseconds - only return fields updated after this time (0 = all)
+	GetRunPropertyFieldsSince(runID string, updatedSince int64) ([]PropertyField, error)
+
 	// GetRunPropertyValues gets all property values for a run
 	GetRunPropertyValues(runID string) ([]PropertyValue, error)
+
+	// GetRunPropertyValuesSince gets all property values for a run since a given timestamp
+	// updatedSince: optional timestamp in milliseconds - only return values updated after this time (0 = all)
+	GetRunPropertyValuesSince(runID string, updatedSince int64) ([]PropertyValue, error)
 }
 
 type PropertyService interface {
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
+	GetPropertyFieldsSince(playbookID string, updatedSince int64) ([]PropertyField, error)
 	GetPropertyFieldsCount(playbookID string) (int, error)
 	GetRunPropertyFields(runID string) ([]PropertyField, error)
+	GetRunPropertyFieldsSince(runID string, updatedSince int64) ([]PropertyField, error)
 	GetRunPropertyValues(runID string) ([]PropertyValue, error)
+	GetRunPropertyValuesSince(runID string, updatedSince int64) ([]PropertyValue, error)
 	GetRunPropertyValueByFieldID(runID, propertyFieldID string) (*PropertyValue, error)
 	UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	DeletePropertyField(propertyID string) error

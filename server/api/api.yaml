@@ -1697,10 +1697,18 @@ paths:
           schema:
             type: string
             example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: updated_since
+          in: query
+          required: false
+          description: Filter results to only include property fields updated after this timestamp (Unix time in milliseconds).
+          schema:
+            type: integer
+            format: int64
+            example: 1602235338837
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields?updated_since=1602235338837' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1711,6 +1719,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PropertyField"
+        400:
+          $ref: "#/components/responses/400"
         403:
           $ref: "#/components/responses/403"
         500:
@@ -1857,10 +1867,18 @@ paths:
           schema:
             type: string
             example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: updated_since
+          in: query
+          required: false
+          description: Filter results to only include property fields updated after this timestamp (Unix time in milliseconds).
+          schema:
+            type: integer
+            format: int64
+            example: 1602235338837
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/property_fields' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/property_fields?updated_since=1602235338837' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1871,6 +1889,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PropertyField"
+        400:
+          $ref: "#/components/responses/400"
         403:
           $ref: "#/components/responses/403"
         500:
@@ -1892,10 +1912,18 @@ paths:
           schema:
             type: string
             example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: updated_since
+          in: query
+          required: false
+          description: Filter results to only include property values updated after this timestamp (Unix time in milliseconds).
+          schema:
+            type: integer
+            format: int64
+            example: 1602235338837
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/property_values' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/property_values?updated_since=1602235338837' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1906,6 +1934,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PropertyValue"
+        400:
+          $ref: "#/components/responses/400"
         403:
           $ref: "#/components/responses/403"
         500:
