@@ -268,9 +268,18 @@ func (s *PlaybooksService) GetAutoFollows(ctx context.Context, playbookID string
 	return followers, nil
 }
 
-// GetPropertyFields gets all property fields for a playbook.
+// GetPropertyFields gets all property fields for a playbook. It is a wrapper around GetPropertyFieldsSince with updatedSince set to 0.
 func (s *PlaybooksService) GetPropertyFields(ctx context.Context, playbookID string) ([]PropertyField, error) {
+	return s.GetPropertyFieldsSince(ctx, playbookID, 0)
+}
+
+// GetPropertyFieldsSince gets all property fields for a playbook.
+// updatedSince: optional timestamp in milliseconds - only return fields updated after this time (0 = all)
+func (s *PlaybooksService) GetPropertyFieldsSince(ctx context.Context, playbookID string, updatedSince int64) ([]PropertyField, error) {
 	propertyFieldsURL := fmt.Sprintf("playbooks/%s/property_fields", playbookID)
+	if updatedSince > 0 {
+		propertyFieldsURL = fmt.Sprintf("%s?updated_since=%d", propertyFieldsURL, updatedSince)
+	}
 	req, err := s.client.newAPIRequest(http.MethodGet, propertyFieldsURL, nil)
 	if err != nil {
 		return nil, err

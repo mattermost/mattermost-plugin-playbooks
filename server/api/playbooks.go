@@ -846,7 +846,18 @@ func (h *PlaybookHandler) getPlaybookPropertyFields(c *Context, w http.ResponseW
 		return
 	}
 
-	propertyFields, err := h.propertyService.GetPropertyFields(playbookID)
+	// Parse optional updated_since query parameter
+	var updatedSince int64 = 0
+	if updatedSinceStr := r.URL.Query().Get("updated_since"); updatedSinceStr != "" {
+		parsed, err := strconv.ParseInt(updatedSinceStr, 10, 64)
+		if err != nil {
+			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid updated_since parameter", err)
+			return
+		}
+		updatedSince = parsed
+	}
+
+	propertyFields, err := h.propertyService.GetPropertyFieldsSince(playbookID, updatedSince)
 	if err != nil {
 		h.HandleError(w, logger, err)
 		return

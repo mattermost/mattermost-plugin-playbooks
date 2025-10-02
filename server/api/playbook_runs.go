@@ -1982,7 +1982,18 @@ func (h *PlaybookRunHandler) getRunPropertyFields(c *Context, w http.ResponseWri
 		return
 	}
 
-	propertyFields, err := h.propertyService.GetRunPropertyFields(playbookRunID)
+	// Parse optional updated_since query parameter
+	var updatedSince int64 = 0
+	if updatedSinceStr := r.URL.Query().Get("updated_since"); updatedSinceStr != "" {
+		parsed, err := strconv.ParseInt(updatedSinceStr, 10, 64)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid updated_since parameter", err)
+			return
+		}
+		updatedSince = parsed
+	}
+
+	propertyFields, err := h.propertyService.GetRunPropertyFieldsSince(playbookRunID, updatedSince)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -2001,7 +2012,18 @@ func (h *PlaybookRunHandler) getRunPropertyValues(c *Context, w http.ResponseWri
 		return
 	}
 
-	propertyValues, err := h.propertyService.GetRunPropertyValues(playbookRunID)
+	// Parse optional updated_since query parameter
+	var updatedSince int64 = 0
+	if updatedSinceStr := r.URL.Query().Get("updated_since"); updatedSinceStr != "" {
+		parsed, err := strconv.ParseInt(updatedSinceStr, 10, 64)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid updated_since parameter", err)
+			return
+		}
+		updatedSince = parsed
+	}
+
+	propertyValues, err := h.propertyService.GetRunPropertyValuesSince(playbookRunID, updatedSince)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
