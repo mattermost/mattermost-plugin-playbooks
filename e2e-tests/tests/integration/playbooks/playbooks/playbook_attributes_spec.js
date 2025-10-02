@@ -379,6 +379,79 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         });
     });
 
+    describe('duplicate attribute', () => {
+        it('can duplicate a text attribute', () => {
+            // # Navigate and create an attribute
+            navigateToAttributes();
+            addAttribute('Original Field', 'text');
+
+            // # Duplicate the attribute
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByTestId('menuButton').click();
+            });
+            cy.findByText(/duplicate/i).click();
+
+            // # Wait for duplication
+            cy.wait(500);
+
+            // * Verify duplicate was created with "Copy" suffix
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByLabelText('Property name').should('have.value', 'Original Field');
+            });
+            cy.findAllByTestId('property-field-row').eq(1).within(() => {
+                cy.findByLabelText('Property name').should('have.value', 'Original Field Copy');
+            });
+
+            // * Verify we now have 2 attributes
+            cy.findAllByTestId('property-field-row').should('have.length', 2);
+        });
+
+        it('can duplicate a select attribute with all its options', () => {
+            // # Navigate and create a select attribute
+            navigateToAttributes();
+            addAttribute('Priority', 'select', ['High', 'Medium', 'Low']);
+
+            // # Duplicate the attribute
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByTestId('menuButton').click();
+            });
+            cy.findByText(/duplicate/i).click();
+
+            // # Wait for duplication
+            cy.wait(500);
+
+            // * Verify duplicate has the same options
+            cy.findAllByTestId('property-field-row').eq(1).within(() => {
+                cy.findByLabelText('Property name').should('have.value', 'Priority Copy');
+                cy.findByText('High').should('exist');
+                cy.findByText('Medium').should('exist');
+                cy.findByText('Low').should('exist');
+            });
+        });
+
+        it('duplicated attribute can be edited independently', () => {
+            // # Navigate and create an attribute
+            navigateToAttributes();
+            addAttribute('Original', 'text');
+
+            // # Duplicate it
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByTestId('menuButton').click();
+            });
+            cy.findByText(/duplicate/i).click();
+
+            // # Wait for duplication
+            cy.wait(500);
+
+            // # Edit the duplicate's name
+            editAttributeName(1, 'Modified Copy');
+
+            // * Verify original is unchanged
+            verifyAttribute(0, 'Original');
+            verifyAttribute(1, 'Modified Copy');
+        });
+    });
+
     // Helper Functions
 
     /**
@@ -428,7 +501,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findAllByTestId('property-field-row').last().within(() => {
                 // # First, add the first desired option (can't remove Option 1 until we have another option)
                 cy.findByTestId('property-values-input').click();
-                cy.findByLabelText('Property values').type(`${options[0]}{enter}`);
+                cy.findByLabelText('Property values').type(`${options[0]}{enter}`, {delay: 50});
                 cy.wait(100);
 
                 // # Now remove the default "Option 1"
@@ -438,7 +511,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 // # Add remaining options
                 for (let i = 1; i < options.length; i++) {
                     cy.findByTestId('property-values-input').click();
-                    cy.findByLabelText('Property values').type(`${options[i]}{enter}`);
+                    cy.findByLabelText('Property values').type(`${options[i]}{enter}`, {delay: 50});
                     cy.wait(100);
                 }
             });
