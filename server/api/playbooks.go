@@ -900,8 +900,7 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	propertyFieldInput := convertRequestToPropertyFieldInput(request)
-	propertyField := convertPropertyFieldInputToPropertyField(propertyFieldInput)
+	propertyField := convertRequestToPropertyField(request)
 
 	createdField, err := h.playbookService.CreatePropertyField(playbookID, *propertyField)
 	if err != nil {
@@ -958,8 +957,7 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	propertyFieldInput := convertRequestToPropertyFieldInput(request)
-	propertyField := convertPropertyFieldInputToPropertyField(propertyFieldInput)
+	propertyField := convertRequestToPropertyField(request)
 	propertyField.ID = fieldID
 
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
@@ -1019,10 +1017,12 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func convertRequestToPropertyFieldInput(request PropertyFieldRequest) PropertyFieldInput {
-	return PropertyFieldInput{
+func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyField {
+	field := PropertyFieldInput{
 		Name:  request.Name,
 		Type:  model.PropertyFieldType(request.Type),
 		Attrs: request.Attrs,
 	}
+
+	return convertPropertyFieldInputToPropertyField(field)
 }
