@@ -339,20 +339,44 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/attributes`);
             });
 
-            // # Remove Region attribute
-            cy.findByText('Region').parent().parent().within(() => {
-                cy.findByLabelText('Delete').click();
+            // # Remove Region attribute (should be at index 1)
+            cy.findAllByTestId('property-field-row').eq(1).within(() => {
+                cy.findByTestId('menuButton').click();
             });
-            cy.findByText('Delete attribute').click();
+            cy.findByText(/delete/i).click();
+            cy.get('#confirm-property-delete-modal').should('be.visible');
+            cy.findByRole('button', {name: /delete/i}).click();
+            cy.wait(500);
 
             // # Add new attribute
-            cy.findByText('+ Add attribute').click();
-            cy.findByPlaceholderText('Attribute name').type('Environment');
-            cy.findByText('Select').click();
-            cy.findByPlaceholderText('Add an option').type('Dev{enter}');
-            cy.findByPlaceholderText('Add an option').type('Staging{enter}');
-            cy.findByPlaceholderText('Add an option').type('Prod{enter}');
-            cy.findByText('Done').click();
+            cy.findByRole('button', {name: /add.*attribute/i}).click();
+            cy.wait(500);
+
+            // # Set attribute name
+            cy.findAllByTestId('property-field-row').last().within(() => {
+                cy.findByLabelText('Property name').clear().type('Environment');
+            });
+            cy.get('body').click(0, 0);
+            cy.wait(500);
+
+            // # Change type to select
+            cy.findAllByTestId('property-field-row').last().within(() => {
+                cy.findByRole('button', {name: 'Change property type'}).trigger('click');
+            });
+            cy.findByText(/^select$/i).click();
+            cy.wait(500);
+
+            // # Add options
+            cy.findAllByTestId('property-field-row').last().within(() => {
+                cy.findByTestId('property-values-input').click();
+                cy.findByLabelText('Property values').type('Dev{enter}', {delay: 50});
+                cy.wait(100);
+                cy.findByText('Option 1').parent().find('svg').click();
+                cy.wait(100);
+                cy.findByLabelText('Property values').type('Staging{enter}', {delay: 50});
+                cy.wait(100);
+                cy.findByLabelText('Property values').type('Prod{enter}', {delay: 50});
+            });
 
             // # Navigate back to run
             navigateToRun();
