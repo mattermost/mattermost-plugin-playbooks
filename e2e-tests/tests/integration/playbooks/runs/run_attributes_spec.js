@@ -20,6 +20,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             testTeam = team;
             testUser = user;
         });
+        cy.apiEnsureFeatureFlag('EnableExperimentalFeatures', true);
     });
 
     beforeEach(() => {
