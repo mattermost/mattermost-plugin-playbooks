@@ -21,13 +21,13 @@ interface Props {
 
 const MultiselectProperty = (props: Props) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [displayValue, setDisplayValue] = useState<string[] | null>(
-        Array.isArray(props.value?.value) ? props.value.value : null
+    const [displayValue, setDisplayValue] = useState<string[] | undefined>(
+        Array.isArray(props.value?.value) ? props.value.value : undefined
     );
-    const [tempValue, setTempValue] = useState<string[] | null>(null);
+    const [tempValue, setTempValue] = useState<string[] | null | undefined>(undefined);
 
     useUpdateEffect(() => {
-        const newValue = Array.isArray(props.value?.value) ? props.value.value : null;
+        const newValue = Array.isArray(props.value?.value) ? props.value.value : undefined;
         setDisplayValue(newValue);
     }, [props.value?.value]);
 
@@ -37,16 +37,14 @@ const MultiselectProperty = (props: Props) => {
 
     const handleStartEdit = () => {
         setIsEditing(true);
-        setTempValue(displayValue);
+        setTempValue(displayValue ?? null);
     };
 
     const handleStopEdit = () => {
         setIsEditing(false);
-        if (tempValue !== null) {
-            setDisplayValue(tempValue);
-            props.onValueChange(tempValue);
-        }
-        setTempValue(null);
+        setDisplayValue(tempValue ?? undefined);
+        props.onValueChange(tempValue ?? null);
+        setTempValue(undefined);
     };
 
     const selectOptions = props.field.attrs?.options?.map((option) => ({
@@ -54,11 +52,15 @@ const MultiselectProperty = (props: Props) => {
         label: option.name,
     })) || [];
 
+    // initialValue is displayValue IF tempValue does not have a value yet (undefined when not set), but as
+    // soon as it has a string[] or null, it has priority.
+    const initialValue = tempValue === undefined ? displayValue : tempValue;
+
     if (isEditing) {
         return (
             <PropertySelectInput
                 options={selectOptions}
-                initialValue={tempValue || displayValue || undefined}
+                initialValue={initialValue || undefined}
                 onValueChange={(value) => handleValueChange(Array.isArray(value) ? value : null)}
                 onBlur={handleStopEdit}
                 isMulti={true}

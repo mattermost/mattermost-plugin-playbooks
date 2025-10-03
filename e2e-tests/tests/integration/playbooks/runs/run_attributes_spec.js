@@ -217,7 +217,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 clickAttributeToEdit('Priority');
 
                 // # Click clear indicator
-                cy.get('div.property-select__clear-indicator').click();
+                getAttributeRow('Priority').within(() => {
+                    cy.get('div.property-select__clear-indicator').click();
+                });
                 cy.wait(500);
 
                 // * Verify empty state returns
@@ -238,9 +240,15 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                     cy.contains('Feature').should('exist');
                 });
 
-                // # Click to edit and clear
+                // # Click to edit
                 clickAttributeToEdit('Labels');
-                cy.findByText('Clear').click();
+
+                cy.wait(500);
+
+                // # Click clear indicator
+                getAttributeRow('Labels').within(() => {
+                    cy.get('div.property-select__clear-indicator').realClick();
+                });
                 cy.wait(500);
 
                 // * Verify empty state returns

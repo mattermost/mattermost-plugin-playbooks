@@ -9,6 +9,7 @@
 
 import dayjs from 'dayjs';
 import localforage from 'localforage';
+import 'cypress-real-events';
 
 import '@testing-library/cypress/add-commands';
 import 'cypress-file-upload';
