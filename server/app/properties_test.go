@@ -211,6 +211,51 @@ func TestPropertyField_SanitizeAndValidate(t *testing.T) {
 		require.Equal(t, validName, pf.Attrs.Options[0].GetName())
 		require.Equal(t, validColor, pf.Attrs.Options[0].GetValue("color"))
 	})
+
+	t.Run("preserves valid value_type url", func(t *testing.T) {
+		pf := &PropertyField{
+			PropertyField: model.PropertyField{
+				Type: model.PropertyFieldTypeText,
+			},
+			Attrs: Attrs{
+				ValueType: "url",
+			},
+		}
+
+		err := pf.SanitizeAndValidate()
+		require.NoError(t, err)
+		require.Equal(t, "url", pf.Attrs.ValueType)
+	})
+
+	t.Run("preserves empty value_type", func(t *testing.T) {
+		pf := &PropertyField{
+			PropertyField: model.PropertyField{
+				Type: model.PropertyFieldTypeText,
+			},
+			Attrs: Attrs{
+				ValueType: "",
+			},
+		}
+
+		err := pf.SanitizeAndValidate()
+		require.NoError(t, err)
+		require.Equal(t, "", pf.Attrs.ValueType)
+	})
+
+	t.Run("converts invalid value_type to empty string", func(t *testing.T) {
+		pf := &PropertyField{
+			PropertyField: model.PropertyField{
+				Type: model.PropertyFieldTypeText,
+			},
+			Attrs: Attrs{
+				ValueType: "invalid_type",
+			},
+		}
+
+		err := pf.SanitizeAndValidate()
+		require.NoError(t, err)
+		require.Equal(t, "", pf.Attrs.ValueType)
+	})
 }
 
 func TestPropertyField_ToMattermostPropertyField(t *testing.T) {
@@ -235,6 +280,7 @@ func TestPropertyField_ToMattermostPropertyField(t *testing.T) {
 			SortOrder:  5.0,
 			Options:    model.PropertyOptions[*model.PluginPropertyOption]{option1, option2},
 			ParentID:   "parent-id",
+			ValueType:  "url",
 		},
 	}
 
@@ -253,6 +299,7 @@ func TestPropertyField_ToMattermostPropertyField(t *testing.T) {
 	require.Equal(t, PropertyFieldVisibilityAlways, result.Attrs[PropertyAttrsVisibility])
 	require.Equal(t, 5.0, result.Attrs[PropertyAttrsSortOrder])
 	require.Equal(t, "parent-id", result.Attrs[PropertyAttrsParentID])
+	require.Equal(t, "url", result.Attrs[PropertyAttrsValueType])
 
 	options, ok := result.Attrs[model.PropertyFieldAttributeOptions].(model.PropertyOptions[*model.PluginPropertyOption])
 	require.True(t, ok)
@@ -283,6 +330,7 @@ func TestNewPropertyFieldFromMattermostPropertyField(t *testing.T) {
 			PropertyAttrsSortOrder:              5.0,
 			model.PropertyFieldAttributeOptions: model.PropertyOptions[*model.PluginPropertyOption]{option1, option2},
 			PropertyAttrsParentID:               "parent-id",
+			PropertyAttrsValueType:              "url",
 		},
 	}
 
@@ -303,6 +351,7 @@ func TestNewPropertyFieldFromMattermostPropertyField(t *testing.T) {
 	require.Equal(t, PropertyFieldVisibilityAlways, result.Attrs.Visibility)
 	require.Equal(t, 5.0, result.Attrs.SortOrder)
 	require.Equal(t, "parent-id", result.Attrs.ParentID)
+	require.Equal(t, "url", result.Attrs.ValueType)
 	require.Len(t, result.Attrs.Options, 2)
 	require.Equal(t, optionID1, result.Attrs.Options[0].GetID())
 	require.Equal(t, "Option 1", result.Attrs.Options[0].GetName())
