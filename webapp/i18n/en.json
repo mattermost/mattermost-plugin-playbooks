@@ -527,6 +527,7 @@
   "mw9jVA": "Add a title",
   "n1SlGq": "Attach Checklist Items to Condition",
   "nc8QpJ": "Recent Activity",
+  "nfdxZY": "conditionally rendered: {reason}",
   "ngjbAO": "Edit property type",
   "nkCCM2": "You will not be reminded again.",
   "nqVby7": "<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked",
