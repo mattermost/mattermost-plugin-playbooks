@@ -196,8 +196,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
                 cy.findByTestId('property-values-input').click();
                 cy.findByLabelText('Property values').type('Closed{enter}');
-                cy.wait(100);
             });
+            cy.waitForGraphQLQueries();
 
             // # Click outside to save
             cy.get('body').click(0, 0);
@@ -467,17 +467,17 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 // # First, add the first desired option (can't remove Option 1 until we have another option)
                 cy.findByTestId('property-values-input').click();
                 cy.findByLabelText('Property values').type(`${options[0]}{enter}`, {delay: 50});
-                cy.wait(100);
+                cy.waitForGraphQLQueries();
 
                 // # Now remove the default "Option 1"
                 cy.findByText('Option 1').parent().find('svg').click();
-                cy.wait(100);
+                cy.waitForGraphQLQueries();
 
                 // # Add remaining options
                 for (let i = 1; i < options.length; i++) {
                     cy.findByTestId('property-values-input').click();
                     cy.findByLabelText('Property values').type(`${options[i]}{enter}`, {delay: 50});
-                    cy.wait(100);
+                    cy.waitForGraphQLQueries();
                 }
             });
         }
