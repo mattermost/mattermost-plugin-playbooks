@@ -194,10 +194,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Add another option
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
-                cy.findByTestId('property-values-input').click();
-                cy.findByLabelText('Property values').type('Closed{enter}');
+                addNewOption('Closed');
             });
-            cy.waitForGraphQLQueries();
 
             // # Click outside to save
             cy.get('body').click(0, 0);
@@ -427,6 +425,19 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
     }
 
     /**
+     * Add a new option to a select/multi-select attribute
+     * @param {string} optionText - The text of the option to add
+     */
+    function addNewOption(optionText) {
+        cy.findByTestId('property-values-input').then(($el) => {
+            const rect = $el[0].getBoundingClientRect();
+            cy.wrap($el).click(rect.width - 10, rect.height - 10);
+        });
+        cy.findByLabelText('Property values').realType(`${optionText}{enter}`);
+        cy.waitForGraphQLQueries();
+    }
+
+    /**
      * Add a new attribute with specified parameters
      * @param {string} name - The attribute name (optional, uses default "Attribute X" if not provided)
      * @param {string} type - The attribute type (text, select, multiselect, etc.)
@@ -465,9 +476,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         if (options.length > 0 && (type === 'select' || type === 'multi-select')) {
             cy.findAllByTestId('property-field-row').last().within(() => {
                 // # First, add the first desired option (can't remove Option 1 until we have another option)
-                cy.findByTestId('property-values-input').click();
-                cy.findByLabelText('Property values').type(`${options[0]}{enter}`, {delay: 50});
-                cy.waitForGraphQLQueries();
+                addNewOption(options[0]);
 
                 // # Now remove the default "Option 1"
                 cy.findByText('Option 1').parent().find('svg').click();
@@ -475,9 +484,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
                 // # Add remaining options
                 for (let i = 1; i < options.length; i++) {
-                    cy.findByTestId('property-values-input').click();
-                    cy.findByLabelText('Property values').type(`${options[i]}{enter}`, {delay: 50});
-                    cy.waitForGraphQLQueries();
+                    addNewOption(options[i]);
                 }
             });
         }
