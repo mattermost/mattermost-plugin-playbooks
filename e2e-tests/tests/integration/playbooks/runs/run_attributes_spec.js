@@ -115,6 +115,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 {name: 'Notes', type: 'text'},
                 {name: 'Priority', type: 'select', options: ['Low', 'Medium', 'High']},
                 {name: 'Labels', type: 'multiselect', options: ['Bug', 'Feature', 'Enhancement']},
+                {name: 'Documentation', type: 'text', valueType: 'url'},
             ]);
 
             // # Start a run
@@ -140,6 +141,79 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // * Verify value persists
                 verifyAttributeValue('Notes', 'Initial implementation notes');
+            });
+
+            it('can edit URL attribute and displays as clickable link', () => {
+                // # Edit URL attribute with a real URL
+                const testUrl = 'https://docs.mattermost.com';
+                editTextAttribute('Documentation', testUrl);
+                cy.wait(500);
+
+                // * Verify URL is displayed as a clickable link
+                getAttributeRow('Documentation').within(() => {
+                    cy.get('a')
+                        .should('exist')
+                        .should('have.attr', 'href', testUrl)
+                        .should('have.attr', 'target', '_blank')
+                        .should('have.attr', 'rel', 'noopener noreferrer')
+                        .should('contain', testUrl);
+                });
+
+                // # Capture current URL before navigating away
+                cy.url().as('currentUrl');
+
+                // * Verify the link is clickable and navigates correctly
+                getAttributeRow('Documentation').within(() => {
+                    // # Remove target attribute to navigate in same window
+                    cy.get('a').invoke('removeAttr', 'target').click();
+                });
+
+                // * Verify navigation occurred (wait for new page to load)
+                cy.url().should('include', 'docs.mattermost.com');
+
+                // # Go back to the run page
+                cy.go('back');
+
+                // * Verify we're back on the run page
+                cy.get('@currentUrl').then((currentUrl) => {
+                    cy.url().should('include', currentUrl);
+                });
+
+                // # Click on the wrapper (not on the link) to start editing
+                getAttributeRow('Documentation').within(() => {
+                    cy.findByTestId('property-value').then(($el) => {
+                        const rect = $el[0].getBoundingClientRect();
+                        cy.wrap($el).click(rect.width - 10, rect.height - 10);
+                    });
+                });
+
+                // * Verify input field appears (in edit mode)
+                getAttributeRow('Documentation').within(() => {
+                    cy.get('input').should('exist').should('have.value', testUrl);
+                });
+
+                // # Update the URL
+                const newUrl = 'https://github.com/mattermost';
+                cy.focused().clear().type(newUrl);
+                cy.get('body').click(0, 0);
+                cy.wait(500);
+
+                // * Verify new URL is displayed as a link
+                getAttributeRow('Documentation').within(() => {
+                    cy.get('a')
+                        .should('have.attr', 'href', newUrl)
+                        .should('contain', newUrl);
+                });
+
+                // # Reload page
+                cy.reload();
+
+                // * Verify URL persists and is still a clickable link
+                getAttributeRow('Documentation').within(() => {
+                    cy.get('a')
+                        .should('have.attr', 'href', newUrl)
+                        .should('contain', newUrl);
+                });
             });
 
             it('can edit select attribute value', () => {
@@ -279,6 +353,79 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 });
             });
 
+            it('can edit URL attribute and displays as clickable link', () => {
+                // # Edit URL attribute with a real URL
+                const testUrl = 'https://docs.mattermost.com';
+                editTextAttribute('Documentation', testUrl);
+                cy.wait(500);
+
+                // * Verify URL is displayed as a clickable link
+                getAttributeRow('Documentation').within(() => {
+                    cy.get('a')
+                        .should('exist')
+                        .should('have.attr', 'href', testUrl)
+                        .should('have.attr', 'target', '_blank')
+                        .should('have.attr', 'rel', 'noopener noreferrer')
+                        .should('contain', testUrl);
+                });
+
+                // * Verify message posted in channel
+                cy.get('#postListContent').within(() => {
+                    cy.contains('Documentation').should('exist');
+                });
+
+                // # Capture current URL before navigating away
+                cy.url().as('currentUrl');
+
+                // * Verify the link is clickable and navigates correctly
+                getAttributeRow('Documentation').within(() => {
+                    // # Remove target attribute to navigate in same window
+                    cy.get('a').invoke('removeAttr', 'target').click();
+                });
+
+                // * Verify navigation occurred (wait for new page to load)
+                cy.url().should('include', 'docs.mattermost.com');
+
+                // # Go back to the channel
+                cy.go('back');
+
+                // * Verify we're back on the channel page
+                cy.get('@currentUrl').then((currentUrl) => {
+                    cy.url().should('include', currentUrl);
+                });
+
+                // # Click on the wrapper (not on the link) to start editing
+                getAttributeRow('Documentation').within(() => {
+                    cy.findByTestId('property-value').then(($el) => {
+                        const rect = $el[0].getBoundingClientRect();
+                        cy.wrap($el).click(rect.width - 10, rect.height - 10);
+                    });
+                });
+
+                // * Verify input field appears (in edit mode)
+                getAttributeRow('Documentation').within(() => {
+                    cy.get('input').should('exist').should('have.value', testUrl);
+                });
+
+                // # Update the URL
+                const newUrl = 'https://github.com/mattermost';
+                cy.focused().clear().type(newUrl);
+                cy.get('body').click(0, 0);
+                cy.wait(500);
+
+                // * Verify new URL is displayed as a link
+                getAttributeRow('Documentation').within(() => {
+                    cy.get('a')
+                        .should('have.attr', 'href', newUrl)
+                        .should('contain', newUrl);
+                });
+
+                // * Verify update message posted in channel
+                cy.get('#postListContent').within(() => {
+                    cy.contains('Documentation').should('exist');
+                });
+            });
+
             it('can edit select attribute value and see post', () => {
                 // # Edit select attribute
                 editSelectAttribute('Priority', 'Medium');
@@ -408,7 +555,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
     /**
      * Create a playbook with specified attributes
-     * @param {Array} attributes - Array of attribute objects {name, type, options}
+     * @param {Array} attributes - Array of attribute objects {name, type, options, valueType}
      */
     function createPlaybookWithAttributes(attributes) {
         cy.apiCreatePlaybook({
@@ -429,6 +576,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                         visibility: 'always',
                         sortOrder: index + 1,
                         options: attr.options ? attr.options.map((opt) => ({name: opt})) : undefined,
+                        valueType: attr.valueType,
                     },
                 });
             });
