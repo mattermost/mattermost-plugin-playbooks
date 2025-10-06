@@ -51,15 +51,23 @@ const TextProperty = (props: Props) => {
         );
     }
 
+    let content: React.ReactNode;
+
     if (!displayValue) {
-        return (
-            <TextDisplay
-                onClick={handleStartEdit}
-                data-testid='property-value'
+        content = <EmptyState/>;
+    } else if (props.field.attrs?.value_type === 'url') {
+        content = (
+            <URLLink
+                href={displayValue}
+                target='_blank'
+                rel='noopener noreferrer'
+                onClick={(e) => e.stopPropagation()}
             >
-                <EmptyState/>
-            </TextDisplay>
+                {displayValue}
+            </URLLink>
         );
+    } else {
+        content = displayValue;
     }
 
     return (
@@ -67,7 +75,7 @@ const TextProperty = (props: Props) => {
             onClick={handleStartEdit}
             data-testid='property-value'
         >
-            {displayValue}
+            {content}
         </TextDisplay>
     );
 };
@@ -86,6 +94,20 @@ const TextDisplay = styled.div`
         border-radius: 4px;
         margin: 0 -4px;
         padding: 4px;
+    }
+`;
+
+const URLLink = styled.a`
+    color: var(--button-bg);
+    text-decoration: none;
+    word-break: break-all;
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    &:visited {
+        color: var(--button-bg);
     }
 `;
 
