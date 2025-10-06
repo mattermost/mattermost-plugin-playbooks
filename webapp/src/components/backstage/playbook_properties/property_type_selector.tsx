@@ -8,8 +8,11 @@ import {
     CheckIcon,
     ChevronDownCircleOutlineIcon,
     FormatListBulletedIcon,
+    LinkVariantIcon,
     MenuVariantIcon,
 } from '@mattermost/compass-icons/components';
+
+import {FieldType} from '@mattermost/types/properties';
 
 import type {PropertyField} from 'src/types/properties';
 
@@ -26,7 +29,7 @@ interface Props {
     target: React.ReactElement;
 }
 
-type PropertyType = 'text' | 'select' | 'multiselect';
+type PropertyType = 'text' | 'select' | 'multiselect' | 'url';
 
 type TypeOption = {
     value: PropertyType;
@@ -43,6 +46,11 @@ const TYPE_OPTIONS: Array<{
         type: 'text',
         icon: MenuVariantIcon,
         label: 'Text',
+    },
+    {
+        type: 'url',
+        icon: LinkVariantIcon,
+        label: 'URL',
     },
     {
         type: 'select',
@@ -68,7 +76,30 @@ const PropertyTypeSelector = ({
         if (!option) {
             return;
         }
-        const nextField = {...field, type: option.type, attrs: {...field.attrs}};
+
+        let actualType: FieldType = 'text';
+        let valueType: string | undefined = field.attrs?.value_type;
+
+        switch (option.type) {
+        case 'url':
+            actualType = 'text';
+            valueType = 'url';
+            break;
+        case 'text':
+            actualType = 'text';
+            valueType = '';
+            break;
+        case 'select':
+            actualType = 'select';
+            valueType = '';
+            break;
+        case 'multiselect':
+            actualType = 'multiselect';
+            valueType = '';
+            break;
+        }
+
+        const nextField = {...field, type: actualType, attrs: {...field.attrs, value_type: valueType}};
 
         if (!supportsOptions(nextField) && hasOptions(nextField)) {
             // Remove options if not supported
@@ -92,6 +123,8 @@ const PropertyTypeSelector = ({
 
     const typeOptions: TypeOption[] = TYPE_OPTIONS.map((option) => {
         const Icon = option.icon;
+        const isSelected = option.type === 'url' ? field.type === 'text' && field.attrs?.value_type === 'url' : option.type === field.type && (!field.attrs?.value_type || field.attrs.value_type === '');
+
         return {
             value: option.type,
             type: option.type,
@@ -101,7 +134,7 @@ const PropertyTypeSelector = ({
                         <Icon size={18}/>
                         {option.label}
                     </ItemLeft>
-                    {field.type === option.type && (
+                    {isSelected && (
                         <CheckIcon
                             size={16}
                             color='var(--button-bg)'
@@ -112,7 +145,12 @@ const PropertyTypeSelector = ({
         };
     });
 
-    const selectedOption = typeOptions.find((option) => option.type === field.type);
+    const selectedOption = typeOptions.find((option) => {
+        if (option.type === 'url') {
+            return field.type === 'text' && field.attrs?.value_type === 'url';
+        }
+        return option.type === field.type && (!field.attrs?.value_type || field.attrs.value_type === '');
+    });
 
     return (
         <Dropdown
