@@ -135,6 +135,23 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
         });
 
+        it('can create a URL attribute', () => {
+            // # Navigate to attributes section
+            navigateToAttributes();
+
+            // # Add a URL attribute
+            addAttribute('Documentation Link', 'url');
+
+            // * Verify attribute was created
+            verifyAttribute(0, 'Documentation Link');
+
+            // # Reload page
+            cy.reload();
+
+            // * Verify attribute persists
+            verifyAttribute(0, 'Documentation Link');
+        });
+
         it('shows experimental feature banner', () => {
             // # Navigate to attributes section and add an attribute
             navigateToAttributes();
