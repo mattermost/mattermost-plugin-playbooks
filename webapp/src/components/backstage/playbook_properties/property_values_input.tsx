@@ -111,7 +111,6 @@ const ClickableMultiValue = (props: {
     setFieldOptions: (options: Array<{id: string; name: string; color?: string}>) => void;
     formatMessage: (descriptor: {defaultMessage: string}) => string;
 }) => {
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const [editValue, setEditValue] = useState(props.data.label);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -119,14 +118,13 @@ const ClickableMultiValue = (props: {
         setEditValue(props.data.label);
     }, [props.data.label]);
 
-    useEffect(() => {
-        if (dropdownOpen && inputRef.current) {
-            setTimeout(() => {
-                inputRef.current?.focus();
-                inputRef.current?.select();
-            }, 10);
+    const onDropdownChange = (isOpen: boolean) => {
+        if (isOpen) {
+            inputRef.current?.focus();
+        } else {
+            handleRename();
         }
-    }, [dropdownOpen]);
+    };
 
     const handleRename = () => {
         const trimmedValue = editValue.trim();
@@ -142,7 +140,6 @@ const ClickableMultiValue = (props: {
                     option.id === props.data.id ? {...option, name: trimmedValue} : option
                 ));
                 props.setFieldOptions(updatedOptions);
-                setDropdownOpen(false);
             }
         }
     };
@@ -164,22 +161,19 @@ const ClickableMultiValue = (props: {
         if (e.key === 'Enter') {
             handleRename();
         } else if (e.key === 'Escape') {
-            setDropdownOpen(false);
             setEditValue(props.data.label);
         }
     };
 
+    const handleBlur = () => {
+        handleRename();
+    };
+
     return (
         <Dropdown
-            isOpen={dropdownOpen}
-            onOpenChange={setDropdownOpen}
+            onOpenChange={onDropdownChange}
             target={
-                <MultiValueContainer
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setDropdownOpen(!dropdownOpen);
-                    }}
-                >
+                <MultiValueContainer>
                     <MultiValueLabel>{props.data.label}</MultiValueLabel>
                 </MultiValueContainer>
             }
@@ -191,7 +185,7 @@ const ClickableMultiValue = (props: {
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        onBlur={handleRename}
+                        onBlur={handleBlur}
                         maxLength={255}
                         placeholder={props.formatMessage({defaultMessage: 'Enter value name'})}
                     />
@@ -200,7 +194,6 @@ const ClickableMultiValue = (props: {
                     <DropdownMenuItem
                         onClick={() => {
                             handleDelete();
-                            setDropdownOpen(false);
                         }}
                     >
                         <IconWrapper className='destructive'>
