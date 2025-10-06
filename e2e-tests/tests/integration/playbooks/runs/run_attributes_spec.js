@@ -151,12 +151,12 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // * Verify URL is displayed as a clickable link
                 getAttributeRow('Documentation').within(() => {
-                    cy.get('a')
-                        .should('exist')
-                        .should('have.attr', 'href', testUrl)
-                        .should('have.attr', 'target', '_blank')
-                        .should('have.attr', 'rel', 'noopener noreferrer')
-                        .should('contain', testUrl);
+                    cy.get('a').
+                        should('exist').
+                        should('have.attr', 'href', testUrl).
+                        should('have.attr', 'target', '_blank').
+                        should('have.attr', 'rel', 'noopener noreferrer').
+                        should('contain', testUrl);
                 });
 
                 // # Capture current URL before navigating away
@@ -200,9 +200,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // * Verify new URL is displayed as a link
                 getAttributeRow('Documentation').within(() => {
-                    cy.get('a')
-                        .should('have.attr', 'href', newUrl)
-                        .should('contain', newUrl);
+                    cy.get('a').
+                        should('have.attr', 'href', newUrl).
+                        should('contain', newUrl);
                 });
 
                 // # Reload page
@@ -210,9 +210,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // * Verify URL persists and is still a clickable link
                 getAttributeRow('Documentation').within(() => {
-                    cy.get('a')
-                        .should('have.attr', 'href', newUrl)
-                        .should('contain', newUrl);
+                    cy.get('a').
+                        should('have.attr', 'href', newUrl).
+                        should('contain', newUrl);
                 });
             });
 
@@ -361,12 +361,12 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // * Verify URL is displayed as a clickable link
                 getAttributeRow('Documentation').within(() => {
-                    cy.get('a')
-                        .should('exist')
-                        .should('have.attr', 'href', testUrl)
-                        .should('have.attr', 'target', '_blank')
-                        .should('have.attr', 'rel', 'noopener noreferrer')
-                        .should('contain', testUrl);
+                    cy.get('a').
+                        should('exist').
+                        should('have.attr', 'href', testUrl).
+                        should('have.attr', 'target', '_blank').
+                        should('have.attr', 'rel', 'noopener noreferrer').
+                        should('contain', testUrl);
                 });
 
                 // * Verify message posted in channel
@@ -415,9 +415,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // * Verify new URL is displayed as a link
                 getAttributeRow('Documentation').within(() => {
-                    cy.get('a')
-                        .should('have.attr', 'href', newUrl)
-                        .should('contain', newUrl);
+                    cy.get('a').
+                        should('have.attr', 'href', newUrl).
+                        should('contain', newUrl);
                 });
 
                 // * Verify update message posted in channel
