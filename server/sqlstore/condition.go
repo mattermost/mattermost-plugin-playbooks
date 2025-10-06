@@ -346,10 +346,15 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 
 // GetConditionsByRunAndFieldID retrieves all conditions for a given run and field ID
 func (c *conditionStore) GetConditionsByRunAndFieldID(runID, fieldID string) ([]app.Condition, error) {
+	fieldIDArray, err := json.Marshal([]string{fieldID})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal fieldID array for runID %s fieldID %s", runID, fieldID)
+	}
+
 	query := c.conditionSelect.
 		Where(sq.Eq{"RunID": runID}).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where("PropertyFieldIDs @> ?", fmt.Sprintf(`["%s"]`, fieldID))
+		Where("PropertyFieldIDs @> ?", string(fieldIDArray))
 
 	sqlQuery, args, err := query.ToSql()
 	if err != nil {
