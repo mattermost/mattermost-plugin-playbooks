@@ -335,15 +335,15 @@ export const selectHasOverdueTasks = createSelector(
 );
 
 // Condition selectors
-export const getMyConditions = (state: GlobalState) => pluginState(state).myConditions || {};
+export const getConditions = (state: GlobalState) => pluginState(state).conditions || {};
 
-export const getMyConditionsPerPlaybook = (state: GlobalState) => pluginState(state).myConditionsPerPlaybook || {};
+export const getConditionsPerPlaybook = (state: GlobalState) => pluginState(state).conditionsPerPlaybook || {};
 
 export const getConditionsByPlaybookId = createSelector(
     'getConditionsByPlaybookId',
     [
-        getMyConditions,
-        getMyConditionsPerPlaybook,
+        getConditions,
+        getConditionsPerPlaybook,
         (state: GlobalState, playbookId: string) => playbookId,
     ],
     (conditions, conditionsPerPlaybook, playbookId) => {

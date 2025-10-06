@@ -102,8 +102,8 @@ function clientId(state = '', action: SetClientId) {
     }
 }
 
-type TStateMyConditions = Record<Condition['id'], Condition>;
-type TStateMyConditionsPerPlaybook = Record<Playbook['id'], Condition['id'][]>;
+type TStateConditions = Record<Condition['id'], Condition>;
+type TStateConditionsPerPlaybook = Record<Playbook['id'], Condition['id'][]>;
 
 type TStateMyPlaybookRuns = Record<PlaybookRun['id'], PlaybookRun>;
 
@@ -198,10 +198,10 @@ const myPlaybookRuns = (
 /**
  * @returns a map of conditionId -> condition for all conditions
  */
-const myConditions = (
-    state: TStateMyConditions = {},
+const conditions = (
+    state: TStateConditions = {},
     action: ReceivedPlaybookConditions | ConditionCreated | ConditionUpdated | ConditionDeleted
-): TStateMyConditions => {
+): TStateConditions => {
     switch (action.type) {
     case RECEIVED_PLAYBOOK_CONDITIONS: {
         const receivedAction = action as ReceivedPlaybookConditions;
@@ -233,10 +233,10 @@ const myConditions = (
 /**
  * @returns a map of playbookId -> conditionId[] for all playbook conditions
  */
-const myConditionsPerPlaybook = (
-    state: TStateMyConditionsPerPlaybook = {},
+const conditionsPerPlaybook = (
+    state: TStateConditionsPerPlaybook = {},
     action: ReceivedPlaybookConditions | ConditionCreated | ConditionUpdated | ConditionDeleted
-): TStateMyConditionsPerPlaybook => {
+): TStateConditionsPerPlaybook => {
     switch (action.type) {
     case RECEIVED_PLAYBOOK_CONDITIONS: {
         const receivedAction = action as ReceivedPlaybookConditions;
@@ -571,8 +571,8 @@ const reducer = combineReducers({
     clientId,
     myPlaybookRuns,
     myPlaybookRunsByTeam,
-    myConditions,
-    myConditionsPerPlaybook,
+    conditions,
+    conditionsPerPlaybook,
     globalSettings,
     postMenuModalVisibility,
     channelActionsModalVisibility,
