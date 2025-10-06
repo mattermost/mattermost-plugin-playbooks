@@ -2280,6 +2280,51 @@ components:
           type: string
           description: A detailed description of the checklist item, formatted with Markdown.
           example: Ask the customer for more information in [Zendesk](https://www.zendesk.com/).
+        delete_at:
+          type: integer
+          format: int64
+          description: The timestamp for the last time the item was skipped, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item was never skipped.
+          example: 1607774621321
+        due_date:
+          type: integer
+          format: int64
+          description: The timestamp for the due date of the checklist item, formatted as the number of milliseconds since the Unix epoch. It equals 0 if not set. For playbooks, this is a relative timestamp; for runs, this is an absolute timestamp.
+          example: 1607774621321
+        task_actions:
+          type: array
+          description: An array of all the task actions associated with this task.
+          items:
+            type: object
+            properties:
+              trigger:
+                type: object
+                description: The trigger configuration for the task action.
+              actions:
+                type: array
+                description: The actions to be executed when the trigger is activated.
+                items:
+                  type: object
+        update_at:
+          type: integer
+          format: int64
+          description: The timestamp for when this checklist item was last modified, formatted as the number of milliseconds since the Unix epoch.
+          example: 1607774621321
+        condition_id:
+          type: string
+          description: The ID of the condition that created this checklist item, if any. Empty string if the item was not created by a condition.
+          example: 6f6nsgxzoq84fqh1dnlyivgafd
+        condition_action:
+          type: string
+          enum:
+            - ""
+            - hidden
+            - shown_because_modified
+          description: A string that represents the action created as a result of a condition evaluation. Empty string means no action, 'hidden' means the item is hidden due to condition not being met, 'shown_because_modified' means the item is shown despite condition not being met because it was recently modified.
+          example: hidden
+        condition_reason:
+          type: string
+          description: A string representation of the condition that affects this checklist item. Empty string if no condition is associated with this item.
+          example: "Severity is Critical AND Status is not Closed"
     Error:
       type: object
       required:
