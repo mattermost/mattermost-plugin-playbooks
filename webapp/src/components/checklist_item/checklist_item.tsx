@@ -32,6 +32,7 @@ import AssignTo from './assign_to';
 import Command from './command';
 import {CancelSaveButtons, CheckBoxButton} from './inputs';
 import {DueDateButton} from './duedate';
+import ConditionIndicator from './condition_indicator';
 
 import TaskActions from './task_actions';
 import {haveAtleastOneEnabledAction} from './task_actions_modal';
@@ -330,6 +331,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                     onReadOnlyInteract={props.onReadOnlyInteract}
                 />
+                <ConditionIndicator checklistItem={props.checklistItem}/>
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
                 >
@@ -484,7 +486,7 @@ export const CheckboxContainer = styled.div`
 
 const ChecklistItemTitleWrapper = styled.div`
     display: flex;
-    width: 100%;
+    flex: 1;
     flex-direction: column;
 `;
 

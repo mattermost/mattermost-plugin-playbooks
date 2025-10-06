@@ -21,7 +21,12 @@ type RunResolver struct {
 func (r *RunResolver) NumTasks() int32 {
 	total := 0
 	for _, checklist := range r.PlaybookRun.Checklists {
-		total += len(checklist.Items)
+		for _, item := range checklist.Items {
+			if item.ConditionAction == app.ConditionActionHidden {
+				continue
+			}
+			total++
+		}
 	}
 	return int32(total)
 }
@@ -32,6 +37,9 @@ func (r *RunResolver) NumTasksClosed() int32 {
 	closed := 0
 	for _, checklist := range r.PlaybookRun.Checklists {
 		for _, item := range checklist.Items {
+			if item.ConditionAction == app.ConditionActionHidden {
+				continue
+			}
 			if item.State == app.ChecklistItemStateClosed || item.State == app.ChecklistItemStateSkipped {
 				closed++
 			}
