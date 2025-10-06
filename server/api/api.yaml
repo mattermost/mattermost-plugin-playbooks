@@ -1714,6 +1714,252 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/playbooks/{id}/conditions:
+    get:
+      summary: List playbook conditions
+      description: Retrieve a paged list of conditions for a playbook.
+      operationId: getPlaybookConditions
+      security:
+        - BearerAuth: []
+      tags:
+        - Conditions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to retrieve conditions from.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: page
+          in: query
+          description: Zero-based index of the page to request.
+          required: false
+          example: 0
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: per_page
+          in: query
+          description: Number of conditions to return per page.
+          required: false
+          example: 20
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/conditions' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: A paged list of playbook conditions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionList"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      summary: Create a playbook condition
+      description: Create a new condition for a playbook.
+      operationId: createPlaybookCondition
+      security:
+        - BearerAuth: []
+      tags:
+        - Conditions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to create a condition for.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      requestBody:
+        description: Condition payload.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Condition"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/conditions' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{"version": 1, "condition_expr": {"is": {"field_id": "status", "value": "\"active\""}}}'
+      responses:
+        201:
+          description: Created condition.
+          headers:
+            Location:
+              description: Location of the created condition.
+              schema:
+                type: string
+                example: /api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/conditions/abc123
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Condition"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/playbooks/{id}/conditions/{conditionID}:
+    put:
+      summary: Update a playbook condition
+      description: Update an existing condition for a playbook.
+      operationId: updatePlaybookCondition
+      security:
+        - BearerAuth: []
+      tags:
+        - Conditions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: conditionID
+          in: path
+          required: true
+          description: ID of the condition to update.
+          schema:
+            type: string
+            example: abc123def456ghi789
+      requestBody:
+        description: Updated condition payload.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Condition"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/conditions/abc123' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{"version": 1, "condition_expr": {"is": {"field_id": "priority", "value": "\"high\""}}}'
+      responses:
+        200:
+          description: Updated condition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Condition"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      summary: Delete a playbook condition
+      description: Delete a condition from a playbook. Run conditions cannot be deleted as they are read-only snapshots.
+      operationId: deletePlaybookCondition
+      security:
+        - BearerAuth: []
+      tags:
+        - Conditions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+        - name: conditionID
+          in: path
+          required: true
+          description: ID of the condition to delete.
+          schema:
+            type: string
+            example: abc123def456ghi789
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/conditions/abc123' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Condition successfully deleted.
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/runs/{id}/conditions:
+    get:
+      summary: List run conditions
+      description: Retrieve a paged list of conditions for a run. Run conditions are read-only snapshots copied from the playbook.
+      operationId: getRunConditions
+      security:
+        - BearerAuth: []
+      tags:
+        - Conditions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the run to retrieve conditions from.
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: page
+          in: query
+          description: Zero-based index of the page to request.
+          required: false
+          example: 0
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: per_page
+          in: query
+          description: Number of conditions to return per page.
+          required: false
+          example: 20
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme/conditions' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: A paged list of run conditions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionList"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
 components:
   securitySchemes:
     BearerAuth:
@@ -2074,3 +2320,103 @@ components:
               type: string
               description: Absolute URL to the playbook run's details.
               example: https://example.com/ad-1/playbooks/runs/playbookRunID
+    Condition:
+      type: object
+      required:
+        - version
+        - condition_expr
+      properties:
+        id:
+          type: string
+          description: A unique, 26 characters long, alphanumeric identifier for the condition.
+          example: abc123def456ghi789
+        condition_expr:
+          $ref: "#/components/schemas/ConditionExprV1"
+        version:
+          type: integer
+          format: int32
+          description: Version number of the condition expression format. Currently only version 1 is supported.
+          example: 1
+        playbook_id:
+          type: string
+          description: The identifier of the playbook this condition belongs to.
+          example: iz0g457ikesz55dhxcfa0fk9yy
+        run_id:
+          type: string
+          description: If this is a run condition (read-only snapshot), the identifier of the run. Empty for playbook conditions.
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        create_at:
+          type: integer
+          format: int64
+          description: The condition creation timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1606807976289
+        update_at:
+          type: integer
+          format: int64
+          description: The condition update timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1606807976289
+    ConditionExprV1:
+      type: object
+      description: A logical condition expression that can combine multiple conditions using AND/OR operators, or perform field comparisons using Is/IsNot operators.
+      properties:
+        and:
+          type: array
+          description: Logical AND operation. All conditions in the array must be true.
+          items:
+            $ref: "#/components/schemas/ConditionExprV1"
+        or:
+          type: array
+          description: Logical OR operation. At least one condition in the array must be true.
+          items:
+            $ref: "#/components/schemas/ConditionExprV1"
+        is:
+          $ref: "#/components/schemas/ComparisonCondition"
+        isNot:
+          $ref: "#/components/schemas/ComparisonCondition"
+      example:
+        and:
+          - is:
+              field_id: status
+              value: '"active"'
+          - or:
+              - is:
+                  field_id: priority
+                  value: '"high"'
+              - is:
+                  field_id: priority
+                  value: '"critical"'
+    ComparisonCondition:
+      type: object
+      required:
+        - field_id
+        - value
+      properties:
+        field_id:
+          type: string
+          description: The identifier of the field to compare against.
+          example: status
+        value:
+          description: The value to compare with. Format depends on the field type. Stored as JSON.
+          example: '"active"'
+    ConditionList:
+      type: object
+      properties:
+        total_count:
+          type: integer
+          description: The total number of conditions in the list, regardless of paging.
+          format: int32
+          example: 10
+        page_count:
+          type: integer
+          description: The total number of pages. This depends on the total number of conditions and the per_page parameter.
+          format: int32
+          example: 1
+        has_more:
+          type: boolean
+          description: A boolean describing whether there are more pages after the currently returned.
+          example: false
+        items:
+          type: array
+          description: The conditions in this page.
+          items:
+            $ref: "#/components/schemas/Condition"
