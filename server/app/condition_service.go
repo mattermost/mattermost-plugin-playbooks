@@ -4,8 +4,6 @@
 package app
 
 import (
-	"slices"
-
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -332,7 +330,6 @@ type conditionEvalResult struct {
 func (s *conditionService) applyConditionResults(
 	playbookRun *PlaybookRun,
 	conditionResults map[string]conditionEvalResult,
-	conditionIDs []string,
 ) *ConditionEvaluationResult {
 	result := &ConditionEvaluationResult{
 		ChecklistChanges: make(map[string]*ChecklistConditionChanges),
@@ -344,8 +341,8 @@ func (s *conditionService) applyConditionResults(
 		for i := range checklist.Items {
 			item := &checklist.Items[i]
 
-			// Skip items without conditions or not in the condition set
-			if item.ConditionID == "" || !slices.Contains(conditionIDs, item.ConditionID) {
+			// Skip items without conditions
+			if item.ConditionID == "" {
 				continue
 			}
 
@@ -390,6 +387,17 @@ func (s *conditionService) applyConditionResults(
 	return result
 }
 
+func (s *conditionService) evaluateConditions(playbookRun *PlaybookRun, conditions []Condition) map[string]conditionEvalResult {
+	conditionResults := make(map[string]conditionEvalResult, len(conditions))
+	for _, condition := range conditions {
+		conditionResults[condition.ID] = conditionEvalResult{
+			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
+			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
+		}
+	}
+	return conditionResults
+}
+
 func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
 	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
 	if err != nil {
@@ -402,18 +410,8 @@ func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *Playboo
 		}, nil
 	}
 
-	conditionIDs := make([]string, 0, len(conditions))
-	conditionResults := make(map[string]conditionEvalResult, len(conditions))
-	for _, condition := range conditions {
-		conditionIDs = append(conditionIDs, condition.ID)
-
-		conditionResults[condition.ID] = conditionEvalResult{
-			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
-			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
-		}
-	}
-
-	return s.applyConditionResults(playbookRun, conditionResults, conditionIDs), nil
+	conditionResults := s.evaluateConditions(playbookRun, conditions)
+	return s.applyConditionResults(playbookRun, conditionResults), nil
 }
 
 func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error) {
@@ -434,18 +432,8 @@ func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun)
 		}, nil
 	}
 
-	conditionIDs := make([]string, 0, len(conditions))
-	conditionResults := make(map[string]conditionEvalResult, len(conditions))
-	for _, condition := range conditions {
-		conditionIDs = append(conditionIDs, condition.ID)
-
-		conditionResults[condition.ID] = conditionEvalResult{
-			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
-			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
-		}
-	}
-
-	return s.applyConditionResults(playbookRun, conditionResults, conditionIDs), nil
+	conditionResults := s.evaluateConditions(playbookRun, conditions)
+	return s.applyConditionResults(playbookRun, conditionResults), nil
 }
 
 func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
