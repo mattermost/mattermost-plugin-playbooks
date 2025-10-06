@@ -17,7 +17,7 @@ import {
 
 import classNames from 'classnames';
 
-import {FloatingPortal} from '@floating-ui/react-dom-interactions';
+import {FloatingPortal} from '@floating-ui/react';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {playbookRunUpdated} from 'src/actions';

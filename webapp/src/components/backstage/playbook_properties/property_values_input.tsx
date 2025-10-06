@@ -307,7 +307,6 @@ const RenameInput = styled.input`
 
 const DropdownInputContainer = styled.div`
     padding: 10px;
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const IconWrapper = styled.div`
