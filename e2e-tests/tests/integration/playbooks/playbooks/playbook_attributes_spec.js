@@ -224,6 +224,72 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 cy.findByText('Closed').should('exist');
             });
         });
+
+        it('can update an existing option value', () => {
+            // # Navigate and create a select attribute with options
+            navigateToAttributes();
+            addAttribute('Priority', 'select', ['Low', 'High']);
+
+            // # Click on an existing option to edit it
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                getOptionEditor('Low').within(() => {
+                    cy.findByPlaceholderText('Enter value name').clear().type('Medium{enter}');
+                });
+            });
+
+            cy.waitForGraphQLQueries();
+
+            // # Click outside to save
+            cy.get('body').click(0, 0);
+            cy.wait(500);
+
+            // * Verify the option was updated
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByText('Medium').should('exist');
+                cy.findByText('Low').should('not.exist');
+                cy.findByText('High').should('exist');
+            });
+        });
+
+        it('can delete an option value', () => {
+            // # Navigate and create a select attribute with multiple options
+            navigateToAttributes();
+            addAttribute('Status', 'select', ['Open', 'In Progress', 'Closed']);
+
+            // # Click on an option to open the dropdown and delete it
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                getOptionEditor('In Progress').within(() => {
+                    cy.findByText('Delete').click();
+                });
+            });
+
+            cy.waitForGraphQLQueries();
+
+            // # Click outside to save
+            cy.get('body').click(0, 0);
+            cy.wait(500);
+
+            // * Verify the option was deleted
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByText('Open').should('exist');
+                cy.findByText('In Progress').should('not.exist');
+                cy.findByText('Closed').should('exist');
+            });
+        });
+
+        it('cannot delete the last option', () => {
+            // # Navigate and create a select attribute with one option
+            navigateToAttributes();
+            addAttribute('Category', 'select', ['Single']);
+
+            // # Click on the only option to open the dropdown
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                // * Verify the Delete option is not available
+                getOptionEditor('Single').within(() => {
+                    cy.findByText('Delete').should('not.exist');
+                });
+            });
+        });
     });
 
     describe('delete attribute', () => {
@@ -439,6 +505,29 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function navigateToAttributes() {
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/attributes`);
+    }
+
+    /**
+     * Open the option editor for a specific option and return the floating UI element
+     * @param {string} optionText - The text of the option to edit
+     * @returns {Cypress.Chainable} The floating UI element for chaining
+     */
+    function getOptionEditor(optionText) {
+        cy.findByText(optionText).parent().as('targetOption');
+        cy.get('@targetOption').click();
+
+        cy.waitUntil(() =>
+            cy.get('@targetOption').then(($el) => $el.attr('aria-controls') !== undefined)
+        , {
+            errorMsg: 'aria-controls attribute not found on option element',
+            timeout: 2000,
+            interval: 100,
+        });
+
+        return cy.get('@targetOption').invoke('attr', 'aria-controls').then((ariaControls) => {
+            const escapedId = ariaControls.replace(/:/g, '\\:');
+            return cy.document().its('body').find(`#${escapedId}`);
+        });
     }
 
     /**
