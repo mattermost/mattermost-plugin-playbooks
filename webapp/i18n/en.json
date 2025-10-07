@@ -1,6 +1,7 @@
 {
   "+/x2FM": "Select a playbook",
   "+8G9qr": "Default text for the retrospective.",
+  "+JSDQk": "Property name",
   "+RhnH+": "Empty",
   "+Tmpup": "You automatically receive updates when this playbook is run.",
   "+hddg7": "Add to run timeline",
@@ -64,6 +65,7 @@
   "4GjZsL": "Total Playbooks",
   "4Hrh5B": "{name} changed status from {summary}",
   "4Iqlfe": "You've joined this run.",
+  "4ZfQeg": "Property values",
   "4alprY": "Playbook Templates",
   "4aupaG": "The playbook {title} was successfully restored.",
   "4cwL43": "With archived",
@@ -152,6 +154,7 @@
   "DnBhRg": "Add People",
   "DqTQOp": "Once",
   "DtCplA": "{numParticipants, plural, =1 {<b>#</b> participant} other {<b>#</b> participants}}",
+  "DyUU6G": "Change property type",
   "EQpfkS": "Finished",
   "EVSn9A": "Start a run",
   "EWz2w5": "Run Playbook",

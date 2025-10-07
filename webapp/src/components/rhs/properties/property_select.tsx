@@ -71,7 +71,10 @@ const SelectProperty = (props: Props) => {
     const displayLabel = getDisplayLabel();
     if (!displayLabel) {
         return (
-            <EmptySelectDisplay onClick={handleStartEdit}>
+            <EmptySelectDisplay
+                onClick={handleStartEdit}
+                data-testid='property-value'
+            >
                 <EmptyState/>
             </EmptySelectDisplay>
         );
@@ -81,6 +84,7 @@ const SelectProperty = (props: Props) => {
         <PropertyChip
             label={displayLabel}
             onClick={handleStartEdit}
+            data-testid='property-value'
         />
     );
 };

@@ -71,7 +71,10 @@ const TextProperty = (props: Props) => {
     }
 
     return (
-        <TextDisplay onClick={handleStartEdit}>
+        <TextDisplay
+            onClick={handleStartEdit}
+            data-testid='property-value'
+        >
             {content}
         </TextDisplay>
     );

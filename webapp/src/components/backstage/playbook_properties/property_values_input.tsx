@@ -113,13 +113,14 @@ const PropertyValuesInput = ({
     }
 
     return (
-        <Container>
+        <Container data-testid='property-values-input'>
             <CreatableSelect<Option, true>
                 components={customComponents}
                 inputValue={query}
                 isClearable={true}
                 isMulti={true}
                 menuIsOpen={false}
+                aria-label={formatMessage({defaultMessage: 'Property values'})}
                 onChange={(newValues) => {
                     if (!newValues) {
                         return;
