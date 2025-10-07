@@ -454,7 +454,14 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         cy.findAllByText(/^Option \d+$/).last().parent().as('optionElement');
         cy.get('@optionElement').click();
 
-        cy.get('@optionElement').should('have.attr', 'aria-controls');
+        cy.waitUntil(() =>
+            cy.get('@optionElement').then(($el) => $el.attr('aria-controls') !== undefined)
+        , {
+            errorMsg: 'aria-controls attribute not found on option element',
+            timeout: 2000,
+            interval: 100,
+        });
+
         cy.get('@optionElement').invoke('attr', 'aria-controls').then((ariaControls) => {
             const escapedId = ariaControls.replace(/:/g, '\\:');
             cy.document().its('body').find(`#${escapedId}`).within(() => {
