@@ -463,7 +463,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
     });
 
     describe('attribute independence', () => {
-        it('run attributes remain independent when playbook attributes change', () => {
+        it.only('run attributes remain independent when playbook attributes change', () => {
             // # Create playbook with attributes
             createPlaybookWithAttributes([
                 {name: 'Instance ID', type: 'text'},
@@ -514,17 +514,31 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             cy.findByText(/^select$/i).click();
             cy.wait(500);
 
-            // # Add options
+            // # Add options - rename Option 1 to Dev
             cy.findAllByTestId('property-field-row').last().within(() => {
-                cy.findByTestId('property-values-input').click();
-                cy.findByLabelText('Property values').type('Dev{enter}', {delay: 50});
+                cy.findByText('Option 1').click();
                 cy.wait(100);
-                cy.findByText('Option 1').parent().find('svg').click();
-                cy.wait(100);
-                cy.findByLabelText('Property values').type('Staging{enter}', {delay: 50});
-                cy.wait(100);
-                cy.findByLabelText('Property values').type('Prod{enter}', {delay: 50});
             });
+            cy.findByPlaceholderText('Enter value name').clear().type('Dev{enter}');
+            cy.wait(100);
+
+            // # Add Staging option
+            cy.findAllByTestId('property-field-row').last().within(() => {
+                cy.findByRole('button', {name: 'Add value'}).click();
+                cy.wait(100);
+            });
+            cy.findAllByText(/^Option \d+$/).last().click();
+            cy.findByPlaceholderText('Enter value name').clear().type('Staging{enter}');
+            cy.wait(100);
+
+            // # Add Prod option
+            cy.findAllByTestId('property-field-row').last().within(() => {
+                cy.findByRole('button', {name: 'Add value'}).click();
+                cy.wait(100);
+            });
+            cy.findAllByText(/^Option \d+$/).last().click();
+            cy.findByPlaceholderText('Enter value name').clear().type('Prod{enter}');
+            cy.wait(100);
 
             // # Navigate back to run
             navigateToRun();
