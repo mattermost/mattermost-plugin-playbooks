@@ -13,6 +13,10 @@ import {Checklist, ChecklistItem, emptyChecklistItem} from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {Condition} from 'src/types/conditions';
+import {PropertyField} from 'src/types/properties';
+
+import ConditionalGroup from './conditional_group';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -29,6 +33,9 @@ interface Props {
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean
     itemButtonsFormat?: ItemButtonsFormat;
     onReadOnlyInteract?: () => void;
+    conditions?: Condition[];
+    propertyFields?: PropertyField[];
+    onDeleteCondition?: (conditionId: string) => void;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -72,12 +79,57 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
+    // Group items by condition_id
+    const groupedItems: {[key: string]: ChecklistItem[]} = {};
+    const ungroupedItems: ChecklistItem[] = [];
+    const itemIndexMap = new Map<ChecklistItem, number>(); // Track original indices
+
+    props.checklist.items.forEach((item, index) => {
+        itemIndexMap.set(item, index);
+
+        // Filter items based on showItem prop
+        if (props.showItem && !props.showItem(item, myUser.id)) {
+            return;
+        }
+
+        if (item.condition_id) {
+            if (!groupedItems[item.condition_id]) {
+                groupedItems[item.condition_id] = [];
+            }
+            groupedItems[item.condition_id].push(item);
+        } else {
+            ungroupedItems.push(item);
+        }
+    });
+
     // Use item IDs for unique React keys, fallback to title-based keys for items without IDs
     const rawKeys = props.checklist.items.map((item) => item.id || (props.id + item.title));
     const keys = generateKeys(rawKeys);
 
-    return (
+    const renderChecklistItem = (checklistItem: ChecklistItem, index: number) => {
+        return (
+            <DraggableChecklistItem
+                key={keys[index]}
+                playbookRun={props.playbookRun}
+                playbookId={props.playbookId}
+                readOnly={props.readOnly}
+                checklistIndex={props.checklistIndex}
+                item={checklistItem}
+                itemIndex={index}
+                newItem={false}
+                cancelAddingItem={() => {
+                    setAddingItem(false);
+                }}
+                onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
+                onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
+                onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
+                itemButtonsFormat={props.itemButtonsFormat}
+                onReadOnlyInteract={props.onReadOnlyInteract}
+            />
+        );
+    };
 
+    return (
         <Droppable
             droppableId={props.checklistIndex.toString()}
             direction='vertical'
@@ -89,34 +141,40 @@ const GenericChecklist = (props: Props) => {
                         ref={droppableProvided.innerRef}
                         {...droppableProvided.droppableProps}
                     >
-                        {props.checklist.items.map((checklistItem: ChecklistItem, index: number) => {
-                            // filtering here because we need to maintain the index values
-                            // because we refer to checklist items by their index
-                            if (props.showItem ? !props.showItem(checklistItem, myUser.id) : false) {
-                                return null;
+                        {/* Render ungrouped items first */}
+                        {ungroupedItems.map((checklistItem: ChecklistItem) => {
+                            const index = itemIndexMap.get(checklistItem)!;
+                            return renderChecklistItem(checklistItem, index);
+                        })}
+
+                        {/* Render conditional groups */}
+                        {props.conditions && props.propertyFields && Object.keys(groupedItems).map((conditionId) => {
+                            const condition = props.conditions!.find((c) => c.id === conditionId);
+                            if (!condition) {
+                                // If condition not found, render items as ungrouped
+                                return groupedItems[conditionId].map((checklistItem) => {
+                                    const index = itemIndexMap.get(checklistItem)!;
+                                    return renderChecklistItem(checklistItem, index);
+                                });
                             }
 
                             return (
-                                <DraggableChecklistItem
-                                    key={keys[index]}
-                                    playbookRun={props.playbookRun}
-                                    playbookId={props.playbookId}
-                                    readOnly={props.readOnly}
+                                <ConditionalGroup
+                                    key={conditionId}
+                                    condition={condition}
+                                    items={groupedItems[conditionId]}
                                     checklistIndex={props.checklistIndex}
-                                    item={checklistItem}
-                                    itemIndex={index}
-                                    newItem={false}
-                                    cancelAddingItem={() => {
-                                        setAddingItem(false);
-                                    }}
-                                    onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
-                                    onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
-                                    onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
-                                    itemButtonsFormat={props.itemButtonsFormat}
-                                    onReadOnlyInteract={props.onReadOnlyInteract}
-                                />
+                                    propertyFields={props.propertyFields!}
+                                    onDeleteCondition={props.onDeleteCondition}
+                                >
+                                    {groupedItems[conditionId].map((checklistItem) => {
+                                        const index = itemIndexMap.get(checklistItem)!;
+                                        return renderChecklistItem(checklistItem, index);
+                                    })}
+                                </ConditionalGroup>
                             );
                         })}
+
                         {addingItem &&
                             <DraggableChecklistItem
                                 key={'new_checklist_item'}

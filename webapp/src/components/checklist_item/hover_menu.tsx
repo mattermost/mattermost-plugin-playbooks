@@ -46,6 +46,9 @@ export interface Props {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     onItemOpenChange?: (isOpen: boolean) => void;
+    onAddConditional?: () => void;
+    hasCondition?: boolean;
+    onRemoveFromCondition?: () => void;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -113,6 +116,22 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     <DropdownIcon className='icon-content-copy icon-16'/>
                     {formatMessage({defaultMessage: 'Duplicate task'})}
                 </StyledDropdownMenuItem>
+                {props.playbookRunId === undefined && !props.hasCondition && props.onAddConditional &&
+                    <StyledDropdownMenuItem
+                        onClick={() => props.onAddConditional?.()}
+                    >
+                        <DropdownIcon className='icon-source-branch icon-16'/>
+                        {formatMessage({defaultMessage: 'Add conditional'})}
+                    </StyledDropdownMenuItem>
+                }
+                {props.playbookRunId === undefined && props.hasCondition && props.onRemoveFromCondition &&
+                    <StyledDropdownMenuItem
+                        onClick={() => props.onRemoveFromCondition?.()}
+                    >
+                        <DropdownIcon className='icon-exit-to-app icon-16'/>
+                        {formatMessage({defaultMessage: 'Remove from conditional'})}
+                    </StyledDropdownMenuItem>
+                }
                 {props.playbookRunId !== undefined &&
                     <StyledDropdownMenuItem
                         onClick={() => {

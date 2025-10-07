@@ -75,7 +75,9 @@ interface ChecklistItemProps {
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
     participantUserIds: string[];
-    onReadOnlyInteract?: () => void
+    onReadOnlyInteract?: () => void;
+    onAddConditional?: () => void;
+    onRemoveFromCondition?: () => void;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -315,6 +317,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
                         onItemOpenChange={setIsHoverMenuItemOpen}
+                        onAddConditional={props.onAddConditional}
+                        hasCondition={Boolean(props.checklistItem.condition_id)}
+                        onRemoveFromCondition={props.onRemoveFromCondition}
                     />
                 }
                 <DragButton

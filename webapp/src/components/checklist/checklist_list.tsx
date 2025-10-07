@@ -28,6 +28,7 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
+import {usePlaybookConditions} from 'src/hooks/conditions';
 import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {getDistinctAssignees} from 'src/utils';
 
@@ -69,6 +70,7 @@ const ChecklistList = ({
     const [isDragging, setIsDragging] = useState(false);
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
+    const {conditions, refetch: refetchConditions} = usePlaybookConditions(inPlaybook?.id || '');
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
@@ -167,6 +169,21 @@ const ChecklistList = ({
         const newChecklists = [...checklists];
         newChecklists[index] = {...newChecklist};
         setChecklistsForPlaybook(newChecklists);
+    };
+
+    const onDeleteCondition = (conditionId: string) => {
+        // Remove condition from all items that reference it
+        const newChecklists = checklists.map((checklist) => ({
+            ...checklist,
+            items: checklist.items.map((item) => ({
+                ...item,
+                condition_id: item.condition_id === conditionId ? '' : item.condition_id,
+            })),
+        }));
+        setChecklistsForPlaybook(newChecklists);
+
+        // Note: Server-side condition deletion would happen via API call here
+        // For now, we just remove the reference from items
     };
 
     const onDragStart = () => {
@@ -380,6 +397,12 @@ const ChecklistList = ({
                                                     showItem={showItem}
                                                     itemButtonsFormat={itemButtonsFormat}
                                                     onReadOnlyInteract={onReadOnlyInteract}
+                                                    conditions={conditions}
+                                                    propertyFields={playbook?.propertyFields.map((pf) => ({
+                                                        ...pf,
+                                                        target_type: 'playbook' as const,
+                                                    })) || []}
+                                                    onDeleteCondition={onDeleteCondition}
                                                 />
                                             </CollapsibleChecklist>
                                         );
