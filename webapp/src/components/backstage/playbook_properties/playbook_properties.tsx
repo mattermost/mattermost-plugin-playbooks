@@ -16,7 +16,12 @@ import {
 } from '@tanstack/react-table';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {ChevronDownCircleOutlineIcon, FormatListBulletedIcon, MenuVariantIcon} from '@mattermost/compass-icons/components';
+import {
+    ChevronDownCircleOutlineIcon,
+    FormatListBulletedIcon,
+    LinkVariantIcon,
+    MenuVariantIcon,
+} from '@mattermost/compass-icons/components';
 
 import {
     FullPlaybook,
@@ -101,6 +106,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 visibility: updatedProperty.attrs.visibility,
                 sortOrder: updatedProperty.attrs.sort_order,
                 options: updatedProperty.attrs.options,
+                valueType: updatedProperty.attrs.value_type,
             },
         };
 
@@ -180,7 +186,12 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     const TypeIcon = () => {
                         switch (info.row.original.type) {
                         case 'text':
-                            return <MenuVariantIcon size={16}/>;
+                            switch (info.row.original.attrs?.value_type) {
+                            case 'url':
+                                return <LinkVariantIcon size={16}/>;
+                            default:
+                                return <MenuVariantIcon size={16}/>;
+                            }
                         case 'select':
                             return <ChevronDownCircleOutlineIcon size={16}/>;
                         case 'multiselect':

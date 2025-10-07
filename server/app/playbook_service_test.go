@@ -30,6 +30,7 @@ func TestPlaybookService_CreatePropertyField(t *testing.T) {
 		mockStore,
 		mockPoster,
 		nil, // api client
+		nil, // pluginAPI
 		&metrics.Metrics{},
 		mockPropertyService,
 	)
@@ -117,6 +118,7 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 		mockStore,
 		mockPoster,
 		nil,
+		nil, // pluginAPI
 		&metrics.Metrics{},
 		mockPropertyService,
 	)
@@ -205,6 +207,7 @@ func TestPlaybookService_DeletePropertyField(t *testing.T) {
 		mockStore,
 		mockPoster,
 		nil,
+		nil, // pluginAPI
 		&metrics.Metrics{},
 		mockPropertyService,
 	)

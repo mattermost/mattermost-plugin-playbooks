@@ -15,6 +15,7 @@ const (
 	PropertyAttrsSortOrder  = "sort_order"
 	PropertyAttrsVisibility = "visibility"
 	PropertyAttrsParentID   = "parent_id"
+	PropertyAttrsValueType  = "value_type"
 
 	// Visibility
 	PropertyFieldVisibilityHidden  = "hidden"
@@ -35,6 +36,7 @@ type Attrs struct {
 	SortOrder  float64                                            `json:"sort_order"`
 	Options    model.PropertyOptions[*model.PluginPropertyOption] `json:"options"`
 	ParentID   string                                             `json:"parent_id"`
+	ValueType  string                                             `json:"value_type"`
 }
 
 func PropertySortOrder(p *model.PropertyField) int {
@@ -118,6 +120,10 @@ func (p *PropertyField) SanitizeAndValidate() error {
 	}
 	p.Attrs.Visibility = visibility
 
+	if p.Attrs.ValueType != "" && p.Attrs.ValueType != "url" {
+		p.Attrs.ValueType = ""
+	}
+
 	return nil
 }
 
@@ -129,6 +135,7 @@ func (p *PropertyField) ToMattermostPropertyField() *model.PropertyField {
 		PropertyAttrsSortOrder:              p.Attrs.SortOrder,
 		model.PropertyFieldAttributeOptions: p.Attrs.Options,
 		PropertyAttrsParentID:               p.Attrs.ParentID,
+		PropertyAttrsValueType:              p.Attrs.ValueType,
 	}
 	return &mmpf
 }
