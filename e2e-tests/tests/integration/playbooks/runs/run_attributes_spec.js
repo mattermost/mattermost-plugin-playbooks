@@ -463,7 +463,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
     });
 
     describe('attribute independence', () => {
-        it.only('run attributes remain independent when playbook attributes change', () => {
+        it('run attributes remain independent when playbook attributes change', () => {
             // # Create playbook with attributes
             createPlaybookWithAttributes([
                 {name: 'Instance ID', type: 'text'},
