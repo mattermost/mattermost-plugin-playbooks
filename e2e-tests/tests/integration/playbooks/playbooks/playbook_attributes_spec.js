@@ -445,12 +445,22 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      * Add a new option to a select/multi-select attribute
      * @param {string} optionText - The text of the option to add
      */
-    function addNewOption(optionText) {
-        cy.findByTestId('property-values-input').then(($el) => {
-            const rect = $el[0].getBoundingClientRect();
-            cy.wrap($el).click(rect.width - 10, rect.height - 10);
+    function addNewOption(optionText, isFirstOption = false) {
+        if (!isFirstOption) {
+            cy.findByRole('button', {name: 'Add value'}).click();
+            cy.waitForGraphQLQueries();
+        }
+
+        cy.findAllByText(/^Option \d+$/).last().parent().as('optionElement');
+        cy.get('@optionElement').click();
+
+        cy.get('@optionElement').should('have.attr', 'aria-controls');
+        cy.get('@optionElement').invoke('attr', 'aria-controls').then((ariaControls) => {
+            const escapedId = ariaControls.replace(/:/g, '\\:');
+            cy.document().its('body').find(`#${escapedId}`).within(() => {
+                cy.findByPlaceholderText('Enter value name').clear().type(`${optionText}{enter}`);
+            });
         });
-        cy.findByLabelText('Property values').realType(`${optionText}{enter}`);
         cy.waitForGraphQLQueries();
     }
 
@@ -492,12 +502,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Add options for select types
         if (options.length > 0 && (type === 'select' || type === 'multi-select')) {
             cy.findAllByTestId('property-field-row').last().within(() => {
-                // # First, add the first desired option (can't remove Option 1 until we have another option)
-                addNewOption(options[0]);
-
-                // # Now remove the default "Option 1"
-                cy.findByText('Option 1').parent().find('svg').click();
-                cy.waitForGraphQLQueries();
+                // # Rename the first option (Option 1)
+                addNewOption(options[0], true);
 
                 // # Add remaining options
                 for (let i = 1; i < options.length; i++) {
