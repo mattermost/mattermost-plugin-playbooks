@@ -77,7 +77,7 @@ const PropertyValuesInput = ({
     }
 
     return (
-        <Container>
+        <Container data-testid='property-values-input'>
             <ValuesContainer>
                 {field.attrs.options?.map((option) => (
                     <ClickableMultiValue
@@ -95,6 +95,7 @@ const PropertyValuesInput = ({
                     <AddButton
                         onClick={addNewValue}
                         title={formatMessage({defaultMessage: 'Add value'})}
+                        aria-label={formatMessage({defaultMessage: 'Add value'})}
                     >
                         <PlusIcon size={16}/>
                     </AddButton>

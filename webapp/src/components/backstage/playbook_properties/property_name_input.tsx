@@ -9,6 +9,8 @@ import React, {
 } from 'react';
 import styled from 'styled-components';
 
+import {useIntl} from 'react-intl';
+
 import type {PropertyField} from 'src/types/properties';
 
 interface Props {
@@ -23,6 +25,8 @@ export interface PropertyNameInputRef {
 }
 
 const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updateField, existingNames}, ref) => {
+    const {formatMessage} = useIntl();
+
     const [localValue, setLocalValue] = useState<string | null>(null);
     const [originalValue, setOriginalValue] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -108,6 +112,8 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
         <Container>
             <StyledInput
                 ref={inputRef}
+                type='text'
+                aria-label={formatMessage({defaultMessage: 'Property name'})}
                 value={localValue ?? field.name}
                 placeholder={originalValue || field.name}
                 onChange={handleChange}
