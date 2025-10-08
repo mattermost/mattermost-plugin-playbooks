@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "@apollo/client": "3.7.3",
-    "@floating-ui/react-dom-interactions": "0.6.3",
+    "@floating-ui/react": "0.26.28",
     "@mattermost/client": "10.9.0",
     "@mattermost/compass-icons": "0.1.32",
     "@mattermost/types": "10.9.0",

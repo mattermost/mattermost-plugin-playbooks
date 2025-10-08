@@ -35,5 +35,15 @@ declare namespace Cypress {
     type DeepPartial = import('@mattermost/types/utilities').DeepPartial;
     interface Chainable {
         tab: (options?: {shift?: boolean}) => Chainable<JQuery>;
+        waitForNetworkIdle: (options?: {
+            idleTime?: number;
+            timeout?: number;
+            method?: string;
+            urlPattern?: string | RegExp;
+        }) => Chainable<void>;
+        waitForGraphQLQueries: (options?: {
+            idleTime?: number;
+            timeout?: number;
+        }) => Chainable<void>;
     }
 }

@@ -7,7 +7,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
 
-import {Placement} from '@floating-ui/react-dom-interactions';
+import {Placement} from '@floating-ui/react';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';

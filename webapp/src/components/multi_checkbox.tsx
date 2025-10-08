@@ -3,7 +3,7 @@
 
 import React, {ComponentProps} from 'react';
 import styled from 'styled-components';
-import {Placement} from '@floating-ui/react-dom';
+import {Placement} from '@floating-ui/react';
 
 import DotMenu from 'src/components/dot_menu';
 import {CheckboxContainer} from 'src/components/checklist_item/checklist_item';

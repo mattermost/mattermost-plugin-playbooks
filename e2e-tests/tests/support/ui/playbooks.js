@@ -172,11 +172,12 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     // # Get the interactive dialog modal.
     cy.getStatusUpdateDialog().within(() => {
         // # remove what's there if applicable, and type the new update in the textbox.
-        cy.findByTestId('update_run_status_textbox').clear().type(message);
+        cy.findByTestId('update_run_status_textbox').clear().realType(message);
 
         if (reminderQuery) {
             cy.get('#reminder_timer_datetime').within(() => {
-                cy.get('input').type(reminderQuery, {delay: TIMEOUTS.TWO_HUNDRED_MILLIS, force: true}).wait(TIMEOUTS.ONE_SEC).type('{enter}');
+                cy.get('#react-select-2-input').focus().realType(reminderQuery).wait(TIMEOUTS.ONE_SEC);
+                cy.get('#react-select-2-input').focus().type('{enter}');
             });
         }
 
@@ -270,4 +271,3 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
         cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
     });
 });
-

@@ -830,7 +830,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     cy.findByTestId('status-update-broadcast-channels').click();
 
                     // # select a private channel
-                    cy.get('#floating-ui-root').within(() => {
+                    cy.get('#playbook-automation-broadcast').within(() => {
                         cy.get('input').type(`${testPrivateChannel.display_name}{enter}{esc}`);
                     });
 
@@ -853,7 +853,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     cy.findByTestId('status-update-broadcast-channels').click();
 
                     // * Verify channel name displayed
-                    cy.get('#floating-ui-root').within(() => {
+                    cy.get('#playbook-automation-broadcast').within(() => {
                         cy.findByText(testPrivateChannel.display_name).should('be.visible');
                     });
                 });
