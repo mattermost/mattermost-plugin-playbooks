@@ -5,6 +5,7 @@ package app
 
 import (
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/shared/i18n"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -354,15 +355,15 @@ func (s *conditionService) applyConditionResults(
 			// Initialize checklist changes if not exists
 			if result.ChecklistChanges[checklist.Title] == nil {
 				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{
-					Added:  0,
-					Hidden: 0,
+					Added:      0,
+					Hidden:     0,
+					hasChanges: false,
 				}
 			}
 
 			item.ConditionReason = res.Reason
 
 			currentConditionAction := item.ConditionAction
-
 			if res.Met {
 				item.ConditionAction = ConditionActionNone
 				if currentConditionAction == ConditionActionHidden {
@@ -373,6 +374,7 @@ func (s *conditionService) applyConditionResults(
 				wasRecentlyModified := (item.AssigneeModified > 0 || item.StateModified > 0)
 
 				if wasRecentlyModified {
+					item.ConditionReason = i18n.T("playbooks.checklist.condition.reason.modified")
 					item.ConditionAction = ConditionActionShownBecauseModified
 				} else {
 					item.ConditionAction = ConditionActionHidden
@@ -380,6 +382,10 @@ func (s *conditionService) applyConditionResults(
 						result.ChecklistChanges[checklist.Title].Hidden++
 					}
 				}
+			}
+
+			if currentConditionAction != item.ConditionAction {
+				result.ChecklistChanges[checklist.Title].hasChanges = true
 			}
 		}
 	}

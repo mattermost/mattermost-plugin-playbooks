@@ -810,8 +810,9 @@ const (
 
 // ChecklistConditionChanges represents condition changes for a single checklist
 type ChecklistConditionChanges struct {
-	Added  int
-	Hidden int
+	Added      int
+	Hidden     int
+	hasChanges bool
 }
 
 // ConditionEvaluationResult represents the result of evaluating conditions for a run
@@ -823,7 +824,7 @@ type ConditionEvaluationResult struct {
 // AnythingChanged returns true if any conditions resulted in visibility changes
 func (r *ConditionEvaluationResult) AnythingChanged() bool {
 	for _, changes := range r.ChecklistChanges {
-		if changes.Added > 0 || changes.Hidden > 0 {
+		if changes.hasChanges {
 			return true
 		}
 	}

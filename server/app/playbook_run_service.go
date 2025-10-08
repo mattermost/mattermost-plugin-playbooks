@@ -20,7 +20,6 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
-	"github.com/mattermost/mattermost/server/public/shared/mlog"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -4753,8 +4752,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to evaluate property conditions")
 		}
-
-		mlog.Info("evaluation result", mlog.String("playbook_run_id", playbookRunID), mlog.String("property_field_id", propertyFieldID), mlog.Any("result", evaluationResult))
 
 		s.postPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
 

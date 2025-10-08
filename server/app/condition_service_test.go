@@ -518,6 +518,60 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.False(t, result.AnythingAdded())
 	})
 
+	t.Run("condition met - item already visible (no change)", func(t *testing.T) {
+		// Condition that evaluates to true (met)
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"critical_id"`), // Matches condition
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:              model.NewId(),
+							Title:           "Test Item",
+							ConditionID:     conditionID,
+							ConditionAction: app.ConditionActionNone, // Already visible
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
+		require.False(t, result.AnythingChanged())
+	})
+
 	t.Run("condition not met - item with recent assignee modification shown_because_modified", func(t *testing.T) {
 		// Condition that evaluates to false (not met)
 		condition := app.Condition{
@@ -569,8 +623,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
-		require.False(t, result.AnythingChanged())
+		require.True(t, result.AnythingChanged())
 	})
 
 	t.Run("condition not met - item with recent state modification shown_because_modified", func(t *testing.T) {
@@ -624,8 +679,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
-		require.False(t, result.AnythingChanged())
+		require.True(t, result.AnythingChanged())
 	})
 
 	t.Run("no conditions for field", func(t *testing.T) {
@@ -943,8 +999,9 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
-		require.False(t, result.AnythingChanged())
+		require.True(t, result.AnythingChanged())
 	})
 
 	t.Run("no conditions for run", func(t *testing.T) {
