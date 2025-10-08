@@ -1,19 +1,16 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {
-    type FocusEventHandler,
-    type KeyboardEventHandler,
-    useEffect,
-    useMemo,
-    useRef,
-} from 'react';
-import {FormattedMessage, useIntl} from 'react-intl';
-import {components} from 'react-select';
-import CreatableSelect, {type CreatableProps} from 'react-select/creatable';
+import React, {useEffect, useRef, useState} from 'react';
+import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
+import {PlusIcon, TrashCanOutlineIcon} from '@mattermost/compass-icons/components';
+
 import type {PropertyField} from 'src/types/properties';
+import Dropdown from 'src/components/dropdown';
+import {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
+import Tooltip from 'src/components/widgets/tooltip';
 
 type Props = {
     field: PropertyField;
@@ -21,39 +18,33 @@ type Props = {
 };
 
 type Option = {label: string; id: string; value: string};
-type SelectProps = CreatableProps<Option, true> & {
-    components?: any;
-    styles?: any;
-};
 
 const PropertyValuesInput = ({
     field,
     updateField,
 }: Props) => {
     const {formatMessage} = useIntl();
-    const [query, setQuery] = React.useState('');
-    const [showLastOptionError, setShowLastOptionError] = React.useState(false);
-    const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const isQueryValid = useMemo(() => !checkForDuplicates(field.attrs.options, query.trim()), [field.attrs.options, query]);
 
-    useEffect(() => {
-        return () => {
-            if (errorTimeoutRef.current) {
-                clearTimeout(errorTimeoutRef.current);
-            }
-        };
-    }, []);
+    const generateDefaultName = () => {
+        const currentOptions = field.attrs.options || [];
+        const existingNames = new Set(currentOptions.map((option) => option.name.toLowerCase()));
 
-    const addValue = (name: string) => {
-        const trimmedName = name.trim();
-        if (!trimmedName) {
-            return;
+        let counter = 1;
+        let defaultName = `Option ${counter}`;
+
+        while (existingNames.has(defaultName.toLowerCase())) {
+            counter++;
+            defaultName = `Option ${counter}`;
         }
 
+        return defaultName;
+    };
+
+    const addNewValue = () => {
         const currentOptions = field.attrs.options || [];
         const newOption = {
             id: '', // temporary id, real id assigned by server
-            name: trimmedName,
+            name: generateDefaultName(),
         };
         updateField({
             ...field,
@@ -74,33 +65,6 @@ const PropertyValuesInput = ({
         });
     };
 
-    const processQuery = (newQuery: string) => {
-        addValue(newQuery);
-        setQuery('');
-    };
-
-    const handleKeyDown: KeyboardEventHandler = (event) => {
-        if (!query || !isQueryValid) {
-            return;
-        }
-
-        switch (event.key) {
-        case 'Enter':
-        case 'Tab':
-            processQuery(query);
-            event.preventDefault();
-        }
-    };
-
-    const handleOnBlur: FocusEventHandler = (event) => {
-        if (!query || !isQueryValid) {
-            return;
-        }
-
-        processQuery(query);
-        event.preventDefault();
-    };
-
     if (field.type !== 'multiselect' && field.type !== 'select') {
         return (
             <Container>
@@ -114,133 +78,134 @@ const PropertyValuesInput = ({
 
     return (
         <Container data-testid='property-values-input'>
-            <CreatableSelect<Option, true>
-                components={customComponents}
-                inputValue={query}
-                isClearable={true}
-                isMulti={true}
-                menuIsOpen={false}
-                aria-label={formatMessage({defaultMessage: 'Property values'})}
-                onChange={(newValues) => {
-                    if (!newValues) {
-                        return;
-                    }
-
-                    // Prevent removing the last option
-                    if (newValues.length === 0 && (field.attrs.options?.length || 0) > 0) {
-                        setShowLastOptionError(true);
-
-                        // Clear any existing timeout
-                        if (errorTimeoutRef.current) {
-                            clearTimeout(errorTimeoutRef.current);
-                        }
-
-                        // Set new timeout
-                        errorTimeoutRef.current = setTimeout(() => {
-                            setShowLastOptionError(false);
-                            errorTimeoutRef.current = null;
-                        }, 3000);
-                        return;
-                    }
-
-                    const options = newValues.map(({value, id}) => ({
-                        id: id || `option-${Date.now()}`,
-                        name: value,
-                    }));
-                    setFieldOptions(options);
-                }}
-                onInputChange={(newValue) => setQuery(newValue)}
-                onKeyDown={handleKeyDown}
-                onBlur={handleOnBlur}
-                placeholder={formatMessage({defaultMessage: 'Add values…'})}
-                value={field.attrs.options?.map((option) => ({
-                    label: option.name,
-                    value: option.name,
-                    id: option.id,
-                })) || []}
-                styles={styles}
-            />
-            {!isQueryValid && (
-                <ErrorText>
-                    <FormattedMessage
-                        defaultMessage='Values must be unique.'
+            <ValuesContainer>
+                {field.attrs.options?.map((option) => (
+                    <ClickableMultiValue
+                        key={option.id}
+                        data={{label: option.name, value: option.name, id: option.id}}
+                        field={field}
+                        setFieldOptions={setFieldOptions}
+                        formatMessage={formatMessage}
                     />
-                </ErrorText>
-            )}
-            {showLastOptionError && (
-                <ErrorText>
-                    <FormattedMessage
-                        defaultMessage='Cannot remove the last option. Add another option first.'
-                    />
-                </ErrorText>
-            )}
+                ))}
+                <Tooltip
+                    id='add_value_tooltip'
+                    content={formatMessage({defaultMessage: 'Add value'})}
+                >
+                    <AddButton
+                        onClick={addNewValue}
+                        title={formatMessage({defaultMessage: 'Add value'})}
+                        aria-label={formatMessage({defaultMessage: 'Add value'})}
+                    >
+                        <PlusIcon size={16}/>
+                    </AddButton>
+                </Tooltip>
+            </ValuesContainer>
         </Container>
     );
 };
 
-const checkForDuplicates = <T extends {name: string}>(options: Maybe<Array<T>>, newValue: string) => {
-    return options?.some((option) => option.name === newValue);
-};
+// Custom MultiValue component with dropdown functionality
+const ClickableMultiValue = (props: {
+    data: Option;
+    field: PropertyField;
+    setFieldOptions: (options: Array<{id: string; name: string; color?: string}>) => void;
+    formatMessage: (descriptor: {defaultMessage: string}) => string;
+}) => {
+    const [editValue, setEditValue] = useState(props.data.label);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-const customComponents: SelectProps['components'] = {
-    DropdownIndicator: undefined,
-    ClearIndicator: undefined,
-    IndicatorsContainer: () => null,
-    Input: (props: any) => {
-        return (
-            <components.Input
-                {...props}
-                maxLength={255}
-            />
-        );
-    },
-};
+    useEffect(() => {
+        setEditValue(props.data.label);
+    }, [props.data.label]);
 
-const styles: SelectProps['styles'] = {
-    multiValue: (base: any) => ({
-        ...base,
-        borderRadius: '12px',
-        paddingLeft: '6px',
-        paddingTop: '1px',
-        paddingBottom: '1px',
-        backgroundColor: 'rgba(var(--center-channel-color-rgb), 0.08)',
-    }),
-    multiValueLabel: (base: any) => ({
-        ...base,
-        color: 'var(--center-channel-color)',
-        fontFamily: 'Open Sans',
-        fontSize: '12px',
-        fontStyle: 'normal',
-        fontWeight: 600,
-        lineHeight: '16px',
-    }),
-    multiValueRemove: (base: any) => ({
-        ...base,
-        cursor: 'pointer',
-        color: 'var(--center-channel-color)',
-        borderRadius: '0 12px 12px 0',
-        '&:hover': {
-            backgroundColor: 'rgba(var(--center-channel-color-rgb), 0.08)',
-            color: 'var(--center-channel-color)',
-        },
-    }),
-    control: (base: any, props: any) => ({
-        ...base,
-        minHeight: '40px',
-        overflowY: 'auto',
-        border: 'none',
-        borderRadius: '0',
-        background: 'transparent',
-        ...props.isFocused && {
-            border: 'none',
-            boxShadow: 'none',
-            background: 'rgba(var(--button-bg-rgb), 0.08)',
-        },
-        '&:hover': {
-            background: 'rgba(var(--button-bg-rgb), 0.08)',
-            cursor: 'text',
-        },
-    }),
+    const onDropdownChange = (isOpen: boolean) => {
+        if (isOpen) {
+            inputRef.current?.focus();
+        } else {
+            handleRename();
+        }
+    };
+
+    const handleRename = () => {
+        const trimmedValue = editValue.trim();
+        if (trimmedValue && trimmedValue !== props.data.label) {
+            // Check for duplicates
+            const existingOptions = props.field.attrs.options || [];
+            const isDuplicate = existingOptions.some((option) =>
+                option.name === trimmedValue && option.id !== props.data.id
+            );
+
+            if (!isDuplicate) {
+                const updatedOptions = existingOptions.map((option) => (
+                    option.id === props.data.id ? {...option, name: trimmedValue} : option
+                ));
+                props.setFieldOptions(updatedOptions);
+            }
+        }
+    };
+
+    const handleDelete = () => {
+        const currentOptions = props.field.attrs.options || [];
+
+        // Prevent deleting the last option
+        if (currentOptions.length <= 1) {
+            return;
+        }
+
+        const updatedOptions = currentOptions.filter((option) => option.id !== props.data.id);
+        props.setFieldOptions(updatedOptions);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+            handleRename();
+        } else if (e.key === 'Escape') {
+            setEditValue(props.data.label);
+        }
+    };
+
+    const handleBlur = () => {
+        handleRename();
+    };
+
+    return (
+        <Dropdown
+            onOpenChange={onDropdownChange}
+            target={
+                <MultiValueContainer>
+                    <MultiValueLabel>{props.data.label}</MultiValueLabel>
+                </MultiValueContainer>
+            }
+        >
+            <DropdownMenu>
+                <DropdownInputContainer>
+                    <RenameInput
+                        ref={inputRef}
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onBlur={handleBlur}
+                        maxLength={255}
+                        placeholder={props.formatMessage({defaultMessage: 'Enter value name'})}
+                    />
+                </DropdownInputContainer>
+                {props.field.attrs.options && props.field.attrs.options.length > 1 && (
+                    <DropdownMenuItem
+                        onClick={() => {
+                            handleDelete();
+                        }}
+                    >
+                        <IconWrapper className='destructive'>
+                            <TrashCanOutlineIcon size={16}/>
+                            {props.formatMessage({defaultMessage: 'Delete'})}
+                        </IconWrapper>
+                    </DropdownMenuItem>
+                )}
+            </DropdownMenu>
+        </Dropdown>
+    );
 };
 
 const Container = styled.div`
@@ -251,15 +216,112 @@ const Container = styled.div`
     justify-content: center;
 `;
 
+const ValuesContainer = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    min-height: 40px;
+    background: transparent;
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.08);
+    }
+`;
+
+const AddButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    cursor: pointer;
+    font-family: 'Open Sans';
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+
+    &:hover {
+        color: var(--center-channel-color);
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+    }
+
+    &:active {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
 const EmptyValues = styled.div`
     padding: 4px 8px;
 `;
 
-const ErrorText = styled.div`
-    margin-top: 4px;
-    color: var(--error-text);
+const MultiValueContainer = styled.div`
+    border-radius: 4px;
+    padding: 4px 12px;
+    background-color: rgba(var(--center-channel-color-rgb), 0.08);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+        background-color: rgba(var(--center-channel-color-rgb), 0.12);
+    }
+`;
+
+const MultiValueLabel = styled.span`
+    color: var(--center-channel-color);
+    font-family: 'Open Sans';
     font-size: 12px;
+    font-style: normal;
+    font-weight: 600;
     line-height: 16px;
+`;
+
+const RenameInput = styled.input`
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    outline: none;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-family: 'Open Sans';
+    font-size: 14px;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 20px;
+    width: 100%;
+    padding: 8px 12px;
+
+    &:focus {
+        border-color: var(--button-bg);
+        box-shadow: 0 0 0 2px rgba(var(--button-bg-rgb), 0.2);
+    }
+
+    &::placeholder {
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
+`;
+
+const DropdownInputContainer = styled.div`
+    padding: 10px;
+`;
+
+const IconWrapper = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &.destructive {
+        color: var(--error-text);
+
+        &:hover {
+            color: var(--error-text);
+        }
+    }
 `;
 
 export default PropertyValuesInput;

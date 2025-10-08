@@ -224,6 +224,72 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                 cy.findByText('Closed').should('exist');
             });
         });
+
+        it('can update an existing option value', () => {
+            // # Navigate and create a select attribute with options
+            navigateToAttributes();
+            addAttribute('Priority', 'select', ['Low', 'High']);
+
+            // # Click on an existing option to edit it
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                getOptionEditor('Low').within(() => {
+                    cy.findByPlaceholderText('Enter value name').clear().type('Medium{enter}');
+                });
+            });
+
+            cy.waitForGraphQLQueries();
+
+            // # Click outside to save
+            cy.get('body').click(0, 0);
+            cy.wait(500);
+
+            // * Verify the option was updated
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByText('Medium').should('exist');
+                cy.findByText('Low').should('not.exist');
+                cy.findByText('High').should('exist');
+            });
+        });
+
+        it('can delete an option value', () => {
+            // # Navigate and create a select attribute with multiple options
+            navigateToAttributes();
+            addAttribute('Status', 'select', ['Open', 'In Progress', 'Closed']);
+
+            // # Click on an option to open the dropdown and delete it
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                getOptionEditor('In Progress').within(() => {
+                    cy.findByText('Delete').click();
+                });
+            });
+
+            cy.waitForGraphQLQueries();
+
+            // # Click outside to save
+            cy.get('body').click(0, 0);
+            cy.wait(500);
+
+            // * Verify the option was deleted
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                cy.findByText('Open').should('exist');
+                cy.findByText('In Progress').should('not.exist');
+                cy.findByText('Closed').should('exist');
+            });
+        });
+
+        it('cannot delete the last option', () => {
+            // # Navigate and create a select attribute with one option
+            navigateToAttributes();
+            addAttribute('Category', 'select', ['Single']);
+
+            // # Click on the only option to open the dropdown
+            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+                // * Verify the Delete option is not available
+                getOptionEditor('Single').within(() => {
+                    cy.findByText('Delete').should('not.exist');
+                });
+            });
+        });
     });
 
     describe('delete attribute', () => {
@@ -442,15 +508,55 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
     }
 
     /**
+     * Open the option editor for a specific option and return the floating UI element
+     * @param {string} optionText - The text of the option to edit
+     * @returns {Cypress.Chainable} The floating UI element for chaining
+     */
+    function getOptionEditor(optionText) {
+        cy.findByText(optionText).parent().as('targetOption');
+        cy.get('@targetOption').click();
+
+        cy.waitUntil(() =>
+            cy.get('@targetOption').then(($el) => $el.attr('aria-controls') !== undefined)
+        , {
+            errorMsg: 'aria-controls attribute not found on option element',
+            timeout: 2000,
+            interval: 100,
+        });
+
+        return cy.get('@targetOption').invoke('attr', 'aria-controls').then((ariaControls) => {
+            const escapedId = ariaControls.replace(/:/g, '\\:');
+            return cy.document().its('body').find(`#${escapedId}`);
+        });
+    }
+
+    /**
      * Add a new option to a select/multi-select attribute
      * @param {string} optionText - The text of the option to add
      */
-    function addNewOption(optionText) {
-        cy.findByTestId('property-values-input').then(($el) => {
-            const rect = $el[0].getBoundingClientRect();
-            cy.wrap($el).click(rect.width - 10, rect.height - 10);
+    function addNewOption(optionText, isFirstOption = false) {
+        if (!isFirstOption) {
+            cy.findByRole('button', {name: 'Add value'}).click();
+            cy.waitForGraphQLQueries();
+        }
+
+        cy.findAllByText(/^Option \d+$/).last().parent().as('optionElement');
+        cy.get('@optionElement').click();
+
+        cy.waitUntil(() =>
+            cy.get('@optionElement').then(($el) => $el.attr('aria-controls') !== undefined)
+        , {
+            errorMsg: 'aria-controls attribute not found on option element',
+            timeout: 2000,
+            interval: 100,
         });
-        cy.findByLabelText('Property values').realType(`${optionText}{enter}`);
+
+        cy.get('@optionElement').invoke('attr', 'aria-controls').then((ariaControls) => {
+            const escapedId = ariaControls.replace(/:/g, '\\:');
+            cy.document().its('body').find(`#${escapedId}`).within(() => {
+                cy.findByPlaceholderText('Enter value name').clear().type(`${optionText}{enter}`);
+            });
+        });
         cy.waitForGraphQLQueries();
     }
 
@@ -492,12 +598,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Add options for select types
         if (options.length > 0 && (type === 'select' || type === 'multi-select')) {
             cy.findAllByTestId('property-field-row').last().within(() => {
-                // # First, add the first desired option (can't remove Option 1 until we have another option)
-                addNewOption(options[0]);
-
-                // # Now remove the default "Option 1"
-                cy.findByText('Option 1').parent().find('svg').click();
-                cy.waitForGraphQLQueries();
+                // # Rename the first option (Option 1)
+                addNewOption(options[0], true);
 
                 // # Add remaining options
                 for (let i = 1; i < options.length; i++) {

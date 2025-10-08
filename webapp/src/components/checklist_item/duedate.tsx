@@ -13,7 +13,7 @@ import {
 } from 'luxon';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
-import {Placement} from '@floating-ui/react-dom-interactions';
+import {Placement} from '@floating-ui/react';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from 'src/components/datetime_selector';
 import {

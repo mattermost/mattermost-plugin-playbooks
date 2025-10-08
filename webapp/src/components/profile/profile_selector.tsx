@@ -10,7 +10,7 @@ import {getCurrentUserId, makeGetProfilesByIdsAndUsernames} from 'mattermost-red
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 
-import {Placement} from '@floating-ui/react-dom-interactions';
+import {Placement} from '@floating-ui/react';
 
 import {useUpdateEffect} from 'react-use';
 
