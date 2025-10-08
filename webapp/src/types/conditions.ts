@@ -3,13 +3,22 @@
 
 import {PropertyField, PropertyValue} from './properties';
 
-// TypeScript types that match the Go condition system in server/app/condition.go
+export type Condition = {
+    id: string;
+    version: number;
+    condition_expr: ConditionExprV1;
+    playbook_id: string;
+    run_id?: string;
+    create_at: number;
+    update_at: number;
+    delete_at: number;
+}
 
-export interface Condition {
+export interface ConditionExprV1 {
 
     // Logical operators (mutually exclusive with comparison operators)
-    and?: Condition[];
-    or?: Condition[];
+    and?: ConditionExprV1[];
+    or?: ConditionExprV1[];
 
     // Comparison operators (mutually exclusive with logical operators)
     is?: ComparisonCondition;
@@ -28,7 +37,7 @@ export interface ComparisonCondition {
 
 // Execute function that matches the Go Evaluate method
 export const executeCondition = (
-    condition: Condition,
+    condition: ConditionExprV1,
     propertyFields: PropertyField[],
     propertyValues: PropertyValue[]
 ): boolean => {
@@ -46,7 +55,7 @@ export const executeCondition = (
 };
 
 const evaluate = (
-    condition: Condition,
+    condition: ConditionExprV1,
     fieldMap: Map<PropertyField['id'], PropertyField>,
     valueMap: Map<PropertyValue['field_id'], PropertyValue>
 ): boolean => {

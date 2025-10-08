@@ -39,6 +39,9 @@ import reducer from 'src/reducer';
 import {
     handleReconnect,
     handleWebsocketChannelUpdated,
+    handleWebsocketConditionCreated,
+    handleWebsocketConditionDeleted,
+    handleWebsocketConditionUpdated,
     handleWebsocketPlaybookArchived,
     handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookRestored,
@@ -51,6 +54,9 @@ import {
     handleWebsocketUserRemoved,
 } from 'src/websocket_events';
 import {
+    WEBSOCKET_CONDITION_CREATED,
+    WEBSOCKET_CONDITION_DELETED,
+    WEBSOCKET_CONDITION_UPDATED,
     WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_RESTORED,
@@ -243,6 +249,9 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_ARCHIVED, handleWebsocketPlaybookArchived(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RESTORED, handleWebsocketPlaybookRestored(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_SETTINGS_CHANGED, handleWebsocketSettingsChanged(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_CREATED, handleWebsocketConditionCreated(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_UPDATED, handleWebsocketConditionUpdated(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_DELETED, handleWebsocketConditionDeleted(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));

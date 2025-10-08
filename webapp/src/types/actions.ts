@@ -9,6 +9,7 @@ import manifest from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {PresetTemplate} from 'src/components/templates/template_data';
+import {Condition} from 'src/types/conditions';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = manifest.id + '_toggle_rhs';
 export const SET_RHS_OPEN = manifest.id + '_set_rhs_open';
@@ -37,6 +38,12 @@ export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = manifest.id + '_set_every_che
 export const SET_CHECKLIST_COLLAPSED_STATE = manifest.id + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = manifest.id + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = manifest.id + '_set_checklist_items_filter';
+export const RECEIVED_PLAYBOOK_CONDITIONS = manifest.id + '_received_playbook_conditions';
+
+// Condition websocket action types
+export const CONDITION_CREATED = manifest.id + '_condition_created';
+export const CONDITION_UPDATED = manifest.id + '_condition_updated';
+export const CONDITION_DELETED = manifest.id + '_condition_deleted';
 
 // Backstage RHS related action types
 // Note That this is not the same as channel RHS management
@@ -109,6 +116,28 @@ export interface ReceivedTeamPlaybookRuns {
 export interface ReceivedTeamPlaybookRunConnections {
     type: typeof RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS;
     playbookRuns: PlaybookRunConnection[];
+}
+
+export interface ReceivedPlaybookConditions {
+    type: typeof RECEIVED_PLAYBOOK_CONDITIONS;
+    playbookId: string;
+    conditions: Condition[];
+}
+
+export interface ConditionCreated {
+    type: typeof CONDITION_CREATED;
+    condition: Condition;
+}
+
+export interface ConditionUpdated {
+    type: typeof CONDITION_UPDATED;
+    condition: Condition;
+}
+
+export interface ConditionDeleted {
+    type: typeof CONDITION_DELETED;
+    conditionId: string;
+    playbookId: string;
 }
 
 export interface RemovedFromChannel {

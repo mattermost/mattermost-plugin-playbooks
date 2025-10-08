@@ -19,6 +19,9 @@ mprocs.yaml
 # VS Code
 .vscode
 
+# Zed
+.zed
+
 # Notice
 .notice-work
 .aider*

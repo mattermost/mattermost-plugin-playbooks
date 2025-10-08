@@ -108,6 +108,21 @@ func (mr *MockConditionStoreMockRecorder) GetCondition(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCondition", reflect.TypeOf((*MockConditionStore)(nil).GetCondition), arg0, arg1)
 }
 
+// GetConditionsByRunAndFieldID mocks base method.
+func (m *MockConditionStore) GetConditionsByRunAndFieldID(arg0, arg1 string) ([]app.Condition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConditionsByRunAndFieldID", arg0, arg1)
+	ret0, _ := ret[0].([]app.Condition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConditionsByRunAndFieldID indicates an expected call of GetConditionsByRunAndFieldID.
+func (mr *MockConditionStoreMockRecorder) GetConditionsByRunAndFieldID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConditionsByRunAndFieldID", reflect.TypeOf((*MockConditionStore)(nil).GetConditionsByRunAndFieldID), arg0, arg1)
+}
+
 // GetPlaybookConditionCount mocks base method.
 func (m *MockConditionStore) GetPlaybookConditionCount(arg0 string) (int, error) {
 	m.ctrl.T.Helper()

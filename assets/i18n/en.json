@@ -206,5 +206,9 @@
   {
     "id": "app.user.run.update_status.title",
     "translation": "Status update"
+  },
+  {
+    "id": "playbooks.checklist.condition.reason.modified",
+    "translation": "shown because the task was modified"
   }
 ]

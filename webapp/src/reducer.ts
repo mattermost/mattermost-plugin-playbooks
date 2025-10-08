@@ -8,9 +8,17 @@ import {Channel} from '@mattermost/types/channels';
 
 import {PlaybookRun, isRun} from 'src/types/playbook_run';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
+import {Condition} from 'src/types/conditions';
+import {ChecklistItemsFilter, Playbook} from 'src/types/playbook';
 import {
     CLOSE_BACKSTAGE_RHS,
+    CONDITION_CREATED,
+    CONDITION_DELETED,
+    CONDITION_UPDATED,
     CloseBackstageRHS,
+    ConditionCreated,
+    ConditionDeleted,
+    ConditionUpdated,
     HIDE_CHANNEL_ACTIONS_MODAL,
     HIDE_PLAYBOOK_ACTIONS_MODAL,
     HIDE_POST_MENU_MODAL,
@@ -25,12 +33,14 @@ import {
     PlaybookRunCreated,
     PlaybookRunUpdated,
     RECEIVED_GLOBAL_SETTINGS,
+    RECEIVED_PLAYBOOK_CONDITIONS,
     RECEIVED_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS,
     RECEIVED_TOGGLE_RHS_ACTION,
     REMOVED_FROM_CHANNEL,
     ReceivedGlobalSettings,
+    ReceivedPlaybookConditions,
     ReceivedPlaybookRuns,
     ReceivedTeamPlaybookRunConnections,
     ReceivedTeamPlaybookRuns,
@@ -64,7 +74,6 @@ import {
     WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
-import {ChecklistItemsFilter} from 'src/types/playbook';
 import {applyIncrementalUpdate} from 'src/utils/playbook_run_updates';
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -92,6 +101,9 @@ function clientId(state = '', action: SetClientId) {
         return state;
     }
 }
+
+type TStateConditions = Record<Condition['id'], Condition>;
+type TStateConditionsPerPlaybook = Record<Playbook['id'], Condition['id'][]>;
 
 type TStateMyPlaybookRuns = Record<PlaybookRun['id'], PlaybookRun>;
 
@@ -178,6 +190,82 @@ const myPlaybookRuns = (
         };
     }
 
+    default:
+        return state;
+    }
+};
+
+/**
+ * @returns a map of conditionId -> condition for all conditions
+ */
+const conditions = (
+    state: TStateConditions = {},
+    action: ReceivedPlaybookConditions | ConditionCreated | ConditionUpdated | ConditionDeleted
+): TStateConditions => {
+    switch (action.type) {
+    case RECEIVED_PLAYBOOK_CONDITIONS: {
+        const receivedAction = action as ReceivedPlaybookConditions;
+        const newState = {...state};
+        receivedAction.conditions.forEach((condition) => {
+            newState[condition.id] = condition;
+        });
+        return newState;
+    }
+    case CONDITION_CREATED:
+    case CONDITION_UPDATED: {
+        const conditionAction = action as ConditionCreated | ConditionUpdated;
+        return {
+            ...state,
+            [conditionAction.condition.id]: conditionAction.condition,
+        };
+    }
+    case CONDITION_DELETED: {
+        const deletedAction = action as ConditionDeleted;
+        const newState = {...state};
+        delete newState[deletedAction.conditionId];
+        return newState;
+    }
+    default:
+        return state;
+    }
+};
+
+/**
+ * @returns a map of playbookId -> conditionId[] for all playbook conditions
+ */
+const conditionsPerPlaybook = (
+    state: TStateConditionsPerPlaybook = {},
+    action: ReceivedPlaybookConditions | ConditionCreated | ConditionUpdated | ConditionDeleted
+): TStateConditionsPerPlaybook => {
+    switch (action.type) {
+    case RECEIVED_PLAYBOOK_CONDITIONS: {
+        const receivedAction = action as ReceivedPlaybookConditions;
+        const conditionIds = receivedAction.conditions.map((condition) => condition.id);
+        return {
+            ...state,
+            [receivedAction.playbookId]: conditionIds,
+        };
+    }
+    case CONDITION_CREATED: {
+        const createdAction = action as ConditionCreated;
+        const currentConditions = state[createdAction.condition.playbook_id] || [];
+        return {
+            ...state,
+            [createdAction.condition.playbook_id]: [...currentConditions, createdAction.condition.id],
+        };
+    }
+    case CONDITION_UPDATED: {
+        // No change needed for updates, the condition ID stays the same
+        return state;
+    }
+    case CONDITION_DELETED: {
+        const deletedAction = action as ConditionDeleted;
+        const currentConditions = state[deletedAction.playbookId] || [];
+        return {
+            ...state,
+            [deletedAction.playbookId]: currentConditions.filter((id) => id !== deletedAction.conditionId),
+        };
+    }
     default:
         return state;
     }
@@ -483,6 +571,8 @@ const reducer = combineReducers({
     clientId,
     myPlaybookRuns,
     myPlaybookRunsByTeam,
+    conditions,
+    conditionsPerPlaybook,
     globalSettings,
     postMenuModalVisibility,
     channelActionsModalVisibility,

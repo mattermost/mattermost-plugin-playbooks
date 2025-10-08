@@ -129,6 +129,10 @@ type ChecklistItemResolver struct {
 	app.ChecklistItem
 }
 
+func (r *ChecklistItemResolver) ConditionAction() string {
+	return string(r.ChecklistItem.ConditionAction)
+}
+
 func (r *ChecklistItemResolver) StateModified() float64 {
 	return float64(r.ChecklistItem.StateModified)
 }
@@ -235,6 +239,7 @@ type UpdateChecklistItem struct {
 	LastSkipped      float64           `json:"delete_at"`
 	DueDate          float64           `json:"due_date"`
 	TaskActions      *[]app.TaskAction `json:"task_actions"`
+	ConditionID      string            `json:"condition_id"`
 }
 
 func (ci *UpdateChecklistItem) GetAssigneeID() string {
