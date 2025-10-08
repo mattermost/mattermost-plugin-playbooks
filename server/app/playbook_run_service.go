@@ -129,19 +129,20 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI       *pluginapi.Client
-	httpClient      *http.Client
-	configService   config.Service
-	store           PlaybookRunStore
-	poster          bot.Poster
-	scheduler       JobOnceScheduler
-	api             plugin.API
-	playbookService PlaybookService
-	actionService   ChannelActionService
-	permissions     *PermissionsService
-	licenseChecker  LicenseChecker
-	metricsService  *metrics.Metrics
-	propertyService PropertyService
+	pluginAPI        *pluginapi.Client
+	httpClient       *http.Client
+	configService    config.Service
+	store            PlaybookRunStore
+	poster           bot.Poster
+	scheduler        JobOnceScheduler
+	api              plugin.API
+	playbookService  PlaybookService
+	actionService    ChannelActionService
+	permissions      *PermissionsService
+	licenseChecker   LicenseChecker
+	metricsService   *metrics.Metrics
+	propertyService  PropertyService
+	conditionService ConditionService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -192,20 +193,22 @@ func NewPlaybookRunService(
 	licenseChecker LicenseChecker,
 	metricsService *metrics.Metrics,
 	propertyService PropertyService,
+	conditionService ConditionService,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
-		pluginAPI:       pluginAPI,
-		store:           store,
-		poster:          poster,
-		configService:   configService,
-		scheduler:       scheduler,
-		httpClient:      httptools.MakeClient(pluginAPI),
-		api:             api,
-		playbookService: playbookService,
-		actionService:   channelActionService,
-		licenseChecker:  licenseChecker,
-		metricsService:  metricsService,
-		propertyService: propertyService,
+		pluginAPI:        pluginAPI,
+		store:            store,
+		poster:           poster,
+		configService:    configService,
+		scheduler:        scheduler,
+		httpClient:       httptools.MakeClient(pluginAPI),
+		api:              api,
+		playbookService:  playbookService,
+		actionService:    channelActionService,
+		licenseChecker:   licenseChecker,
+		metricsService:   metricsService,
+		propertyService:  propertyService,
+		conditionService: conditionService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -464,9 +467,37 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if pb != nil && s.licenseChecker.PlaybookAttributesAllowed() {
-		err = s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
+		propertyCopyResult, err := s.propertyService.CopyPlaybookPropertiesToRun(pb.ID, playbookRun.ID)
 		if err != nil {
 			logger.WithError(err).Warn("failed to copy playbook properties to run")
+		} else {
+			// Assign the copied property fields to the run
+			playbookRun.PropertyFields = propertyCopyResult.CopiedFields
+
+			// Copy conditions from playbook to run using the field mappings if license allows
+			if s.licenseChecker.ConditionalPlaybooksAllowed() {
+				conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(pb.ID, playbookRun.ID, propertyCopyResult)
+				if err != nil {
+					logger.WithError(err).Warn("failed to copy playbook conditions to run")
+				} else {
+					// Update checklist item condition IDs to reference the new condition IDs
+					playbookRun.SwapConditionIDs(conditionMapping)
+
+					// Evaluate all conditions to set initial visibility state
+					if len(conditionMapping) > 0 {
+						_, err = s.conditionService.EvaluateAllConditionsForRun(playbookRun)
+						if err != nil {
+							logger.WithError(err).Warn("failed to evaluate conditions for run")
+						}
+					}
+
+					// Save the updated playbook run with correct condition IDs and visibility states
+					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+					if err != nil {
+						logger.WithError(err).Warn("failed to update playbook run with new condition IDs")
+					}
+				}
+			}
 		}
 	}
 
@@ -4676,19 +4707,26 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
 func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	propertyField, err := s.propertyService.GetPropertyField(propertyFieldID)
+	run, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get property field")
+		return nil, errors.Wrap(err, "failed to get playbook run")
 	}
 
-	currentPropertyValue, err := s.propertyService.GetRunPropertyValueByFieldID(playbookRunID, propertyFieldID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current property value")
+	// get the property field at play:
+	var propertyField *PropertyField
+	for _, pf := range run.PropertyFields {
+		if pf.ID == propertyFieldID {
+			propertyField = &pf
+			break
+		}
 	}
 
 	var currentValue json.RawMessage
-	if currentPropertyValue != nil {
-		currentValue = currentPropertyValue.Value
+	for _, pfv := range run.PropertyValues {
+		if pfv.FieldID == propertyFieldID {
+			currentValue = pfv.Value
+			break
+		}
 	}
 
 	propertyValue, err := s.propertyService.UpsertRunPropertyValue(playbookRunID, propertyFieldID, value)
@@ -4696,12 +4734,36 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		return nil, errors.Wrap(err, "failed to upsert property value")
 	}
 
-	if !s.propertyValuesEqual(propertyField, currentValue, value) {
-		s.postPropertyChangeMessage(userID, playbookRunID, propertyFieldID, propertyField, value)
+	// replace it in the run object we have at hand
+	var found bool
+	for i, pfv := range run.PropertyValues {
+		if pfv.FieldID == propertyFieldID {
+			run.PropertyValues[i] = *propertyValue
+			found = true
+			break
+		}
+	}
+	if !found {
+		run.PropertyValues = append(run.PropertyValues, *propertyValue)
+	}
 
-		// Update the playbook run's updated_at timestamp when property value changes
-		if err := s.store.BumpRunUpdatedAt(playbookRunID); err != nil {
-			return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
+	if !s.propertyValuesEqual(propertyField, currentValue, value) {
+		evaluationResult, err := s.conditionService.EvaluateConditionsOnValueChanged(run, propertyFieldID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to evaluate property conditions")
+		}
+
+		s.postPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
+
+		if evaluationResult.AnythingChanged() {
+			if _, err := s.store.UpdatePlaybookRun(run); err != nil {
+				return nil, errors.Wrap(err, "failed to update playbook run")
+			}
+		} else {
+			// Update the playbook run's updated_at timestamp when property value changes
+			if err := s.store.BumpRunUpdatedAt(playbookRunID); err != nil {
+				return nil, errors.Wrap(err, "failed to bump playbook run timestamp")
+			}
 		}
 	}
 
@@ -4790,14 +4852,7 @@ func (s *PlaybookRunServiceImpl) normalizeStringValue(value json.RawMessage) str
 }
 
 // postPropertyChangeMessage posts a bot message when a property value changes
-func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID, propertyFieldID string, propertyField *PropertyField, newValue json.RawMessage) {
-	// Get playbook run for channel ID
-	run, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Error("failed to get playbook run for property change message")
-		return
-	}
-
+func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID string, run *PlaybookRun, propertyField *PropertyField, newValue json.RawMessage, evaluationResult *ConditionEvaluationResult) {
 	// Get user info
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
@@ -4808,14 +4863,34 @@ func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID, playbookRunID
 	// Format the new value for display
 	displayValue := s.formatPropertyValueForDisplay(propertyField, newValue)
 
-	// Post the message
+	// Build base message
 	message := fmt.Sprintf("@%s updated %s to %s", user.Username, propertyField.Name, displayValue)
+
+	// Add condition changes if any
+	if evaluationResult != nil && evaluationResult.AnythingAdded() {
+		var parts []string
+		for checklistTitle, changes := range evaluationResult.ChecklistChanges {
+			if changes.Added > 0 {
+				if changes.Added == 1 {
+					parts = append(parts, fmt.Sprintf("the addition of 1 new task to **%s** checklist", checklistTitle))
+				} else {
+					parts = append(parts, fmt.Sprintf("the addition of %d new tasks to **%s** checklist", changes.Added, checklistTitle))
+				}
+			}
+		}
+
+		if len(parts) > 0 {
+			message += ", resulting in " + strings.Join(parts, ", ")
+		}
+	}
+
+	// Post the message
 	_, err = s.poster.PostMessage(run.ChannelID, message)
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
 			"user_id":           userID,
-			"playbook_run_id":   playbookRunID,
-			"property_field_id": propertyFieldID,
+			"playbook_run_id":   run.ID,
+			"property_field_id": propertyField.ID,
 			"channel_id":        run.ChannelID,
 		}).Error("failed to post property change message")
 	}

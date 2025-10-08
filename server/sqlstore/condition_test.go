@@ -320,6 +320,13 @@ func TestConditionStore(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, runConditions, 1)
 		require.Equal(t, runID, runConditions[0].RunID)
+
+		// Get only playbook conditions - should exclude run conditions
+		playbookConditions, err := conditionStore.GetPlaybookConditions(playbookID, 0, 20)
+		require.NoError(t, err)
+		require.Len(t, playbookConditions, 1)
+		require.Equal(t, "", playbookConditions[0].RunID)
+		require.Equal(t, playbookCondition.ID, playbookConditions[0].ID)
 	})
 
 	t.Run("condition not found error", func(t *testing.T) {
@@ -486,5 +493,170 @@ func TestConditionStore(t *testing.T) {
 		count, err = conditionStore.GetPlaybookConditionCount(playbookID)
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
+	})
+
+	t.Run("get conditions by run and field ID", func(t *testing.T) {
+		runID := model.NewId()
+		fieldID := "severity_id"
+
+		// Create test playbook
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		// Create condition 1: matches both runID and fieldID
+		condition1 := app.Condition{
+			ID:         model.NewId(),
+			Version:    1,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: fieldID,
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+			CreateAt: model.GetMillis(),
+			UpdateAt: model.GetMillis(),
+		}
+
+		// Create condition 2: matches runID and fieldID (complex condition)
+		condition2 := app.Condition{
+			ID:         model.NewId(),
+			Version:    1,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				And: []app.ConditionExprV1{
+					{
+						Is: &app.ComparisonCondition{
+							FieldID: fieldID,
+							Value:   json.RawMessage(`["high_id"]`),
+						},
+					},
+					{
+						IsNot: &app.ComparisonCondition{
+							FieldID: "status_id",
+							Value:   json.RawMessage(`["resolved_id"]`),
+						},
+					},
+				},
+			},
+			CreateAt: model.GetMillis(),
+			UpdateAt: model.GetMillis(),
+		}
+
+		// Create condition 3: matches runID but different fieldID
+		condition3 := app.Condition{
+			ID:         model.NewId(),
+			Version:    1,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "priority_id",
+					Value:   json.RawMessage(`["urgent_id"]`),
+				},
+			},
+			CreateAt: model.GetMillis(),
+			UpdateAt: model.GetMillis(),
+		}
+
+		// Create condition 4: matches fieldID but different runID
+		condition4 := app.Condition{
+			ID:         model.NewId(),
+			Version:    1,
+			PlaybookID: playbookID,
+			RunID:      model.NewId(), // Different run ID
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: fieldID,
+					Value:   json.RawMessage(`["medium_id"]`),
+				},
+			},
+			CreateAt: model.GetMillis(),
+			UpdateAt: model.GetMillis(),
+		}
+
+		// Store all conditions
+		_, err = conditionStore.CreateCondition(playbookID, condition1)
+		require.NoError(t, err)
+		_, err = conditionStore.CreateCondition(playbookID, condition2)
+		require.NoError(t, err)
+		_, err = conditionStore.CreateCondition(playbookID, condition3)
+		require.NoError(t, err)
+		_, err = conditionStore.CreateCondition(playbookID, condition4)
+		require.NoError(t, err)
+
+		// Query conditions by runID and fieldID
+		results, err := conditionStore.GetConditionsByRunAndFieldID(runID, fieldID)
+		require.NoError(t, err)
+		require.Len(t, results, 2) // Should return conditions 1 and 2
+
+		// Verify we got the correct conditions
+		resultIDs := make([]string, len(results))
+		for i, result := range results {
+			resultIDs[i] = result.ID
+			require.Equal(t, playbookID, result.PlaybookID)
+			require.Equal(t, runID, result.RunID)
+		}
+		require.Contains(t, resultIDs, condition1.ID)
+		require.Contains(t, resultIDs, condition2.ID)
+		require.NotContains(t, resultIDs, condition3.ID)
+		require.NotContains(t, resultIDs, condition4.ID)
+	})
+
+	t.Run("get conditions by run and field ID - no matches", func(t *testing.T) {
+		nonExistentRunID := model.NewId()
+		nonExistentFieldID := "non_existent_field"
+
+		results, err := conditionStore.GetConditionsByRunAndFieldID(nonExistentRunID, nonExistentFieldID)
+		require.NoError(t, err)
+		require.Empty(t, results)
+	})
+
+	t.Run("get conditions by run and field ID - ignores deleted conditions", func(t *testing.T) {
+		runID := model.NewId()
+		fieldID := "severity_id"
+
+		// Create test playbook
+		playbook := NewPBBuilder().WithTitle("Test Playbook").ToPlaybook()
+		playbookID, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+
+		// Create condition
+		condition := app.Condition{
+			ID:         model.NewId(),
+			Version:    1,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: fieldID,
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+			CreateAt: model.GetMillis(),
+			UpdateAt: model.GetMillis(),
+		}
+
+		// Store condition
+		created, err := conditionStore.CreateCondition(playbookID, condition)
+		require.NoError(t, err)
+
+		// Should find the condition
+		results, err := conditionStore.GetConditionsByRunAndFieldID(runID, fieldID)
+		require.NoError(t, err)
+		require.Len(t, results, 1)
+		require.Equal(t, created.ID, results[0].ID)
+
+		// Delete the condition
+		err = conditionStore.DeleteCondition(playbookID, created.ID)
+		require.NoError(t, err)
+
+		// Should not find the deleted condition
+		results, err = conditionStore.GetConditionsByRunAndFieldID(runID, fieldID)
+		require.NoError(t, err)
+		require.Empty(t, results)
 	})
 }

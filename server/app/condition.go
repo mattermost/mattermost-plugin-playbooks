@@ -27,6 +27,7 @@ type ConditionExpression interface {
 	ExtractPropertyIDs() (fieldIDs []string, optionsIDs []string)
 	ToString(propertyFields []PropertyField) string
 	Auditable() map[string]any
+	SwapPropertyIDs(propertyMappings *PropertyCopyResult) error
 }
 
 type ConditionExprV1 struct {
@@ -112,11 +113,8 @@ func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap m
 			return false
 		}
 
-		value, valueExists := valueMap[c.Is.FieldID]
-		if !valueExists {
-			return false
-		}
-
+		// Missing values are treated as empty and handled by is()
+		value := valueMap[c.Is.FieldID]
 		return is(field, value, c.Is.Value)
 	}
 
@@ -126,11 +124,8 @@ func (c *ConditionExprV1) evaluate(fieldMap map[string]PropertyField, valueMap m
 			return true
 		}
 
-		value, valueExists := valueMap[c.IsNot.FieldID]
-		if !valueExists {
-			return true
-		}
-
+		// Missing values are treated as empty and handled by isNot()
+		value := valueMap[c.IsNot.FieldID]
 		return isNot(field, value, c.IsNot.Value)
 	}
 
@@ -419,6 +414,39 @@ func (c *ConditionExprV1) Auditable() map[string]any {
 	return result
 }
 
+// SwapPropertyIDs translates field IDs in the condition expression
+func (c *ConditionExprV1) SwapPropertyIDs(propertyMappings *PropertyCopyResult) error {
+	// Handle And conditions
+	for i := range c.And {
+		if err := c.And[i].SwapPropertyIDs(propertyMappings); err != nil {
+			return err
+		}
+	}
+
+	// Handle Or conditions
+	for i := range c.Or {
+		if err := c.Or[i].SwapPropertyIDs(propertyMappings); err != nil {
+			return err
+		}
+	}
+
+	// Handle Is conditions
+	if c.Is != nil {
+		if err := c.Is.SwapPropertyIDs(propertyMappings); err != nil {
+			return err
+		}
+	}
+
+	// Handle IsNot conditions
+	if c.IsNot != nil {
+		if err := c.IsNot.SwapPropertyIDs(propertyMappings); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // extractIDs recursively extracts field and option IDs
 func (c *ConditionExprV1) extractIDs(fieldIDSet map[string]struct{}, optionsIDSet map[string]struct{}) {
 	if c.And != nil {
@@ -442,6 +470,60 @@ func (c *ConditionExprV1) extractIDs(fieldIDSet map[string]struct{}, optionsIDSe
 		fieldIDSet[c.IsNot.FieldID] = struct{}{}
 		c.IsNot.extractOptionsIDs(optionsIDSet)
 	}
+}
+
+// SwapPropertyIDs translates field and option IDs in the comparison condition
+func (cc *ComparisonCondition) SwapPropertyIDs(propertyMappings *PropertyCopyResult) error {
+	// Find the new field ID
+	newFieldID, exists := propertyMappings.FieldMappings[cc.FieldID]
+	if !exists {
+		return errors.Errorf("no field mapping found for field ID %s", cc.FieldID)
+	}
+
+	// Find the corresponding PropertyField to check its type
+	var targetField *PropertyField
+	for _, field := range propertyMappings.CopiedFields {
+		if field.ID == newFieldID {
+			targetField = &field
+			break
+		}
+	}
+
+	if targetField == nil {
+		return errors.Errorf("could not find copied field info for new field ID %s", newFieldID)
+	}
+
+	// Update the field ID
+	cc.FieldID = newFieldID
+
+	// For select/multiselect fields, translate option IDs in the value
+	switch targetField.Type {
+	case model.PropertyFieldTypeSelect, model.PropertyFieldTypeMultiselect:
+		var arrayValue []string
+		if err := json.Unmarshal(cc.Value, &arrayValue); err == nil {
+			// Successfully unmarshaled as array, translate option IDs
+			translatedValues := make([]string, len(arrayValue))
+			for i, optionID := range arrayValue {
+				if newOptionID, exists := propertyMappings.OptionMappings[optionID]; exists {
+					translatedValues[i] = newOptionID
+				} else {
+					// If no mapping exists, keep the original value
+					translatedValues[i] = optionID
+				}
+			}
+
+			// Marshal back to JSON
+			newValue, err := json.Marshal(translatedValues)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal translated option values")
+			}
+			cc.Value = newValue
+		}
+	default:
+		// For text and other field types, no option translation needed
+	}
+
+	return nil
 }
 
 // extractOptionsIDs extracts option IDs from a comparison condition
@@ -694,6 +776,15 @@ type ConditionService interface {
 
 	// Runs: RO
 	GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error)
+
+	// Copy conditions from playbook to run with field ID mappings, returns old condition ID to new condition mapping
+	CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
+
+	// Evaluate conditions for a run when a property field changes
+	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
+
+	// Evaluate all conditions for a run (typically called on run creation)
+	EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error)
 }
 
 // ConditionStore defines database operations for stored conditions
@@ -706,4 +797,46 @@ type ConditionStore interface {
 	GetRunConditions(playbookID, runID string, page, perPage int) ([]Condition, error)
 	GetPlaybookConditionCount(playbookID string) (int, error)
 	GetRunConditionCount(playbookID, runID string) (int, error)
+	GetConditionsByRunAndFieldID(runID, fieldID string) ([]Condition, error)
+}
+
+type ConditionAction string
+
+const (
+	ConditionActionNone                 ConditionAction = ""
+	ConditionActionHidden               ConditionAction = "hidden"
+	ConditionActionShownBecauseModified ConditionAction = "shown_because_modified"
+)
+
+// ChecklistConditionChanges represents condition changes for a single checklist
+type ChecklistConditionChanges struct {
+	Added      int
+	Hidden     int
+	hasChanges bool
+}
+
+// ConditionEvaluationResult represents the result of evaluating conditions for a run
+type ConditionEvaluationResult struct {
+	// Changes per checklist, keyed by checklist title
+	ChecklistChanges map[string]*ChecklistConditionChanges
+}
+
+// AnythingChanged returns true if any conditions resulted in visibility changes
+func (r *ConditionEvaluationResult) AnythingChanged() bool {
+	for _, changes := range r.ChecklistChanges {
+		if changes.hasChanges {
+			return true
+		}
+	}
+	return false
+}
+
+// AnythingAdded returns true if any tasks were shown/added to checklists
+func (r *ConditionEvaluationResult) AnythingAdded() bool {
+	for _, changes := range r.ChecklistChanges {
+		if changes.Added > 0 {
+			return true
+		}
+	}
+	return false
 }

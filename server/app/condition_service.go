@@ -5,6 +5,7 @@ package app
 
 import (
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/shared/i18n"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -33,6 +34,62 @@ func NewConditionService(store ConditionStore, propertyService PropertyService, 
 	}
 }
 
+// CopyPlaybookConditionsToRun copies conditions from a playbook to a run, translating field IDs
+func (s *conditionService) CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error) {
+	// Get all conditions for the playbook
+	playbookConditions, err := s.store.GetPlaybookConditions(playbookID, 0, MaxConditionsPerPlaybook)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get playbook conditions")
+	}
+
+	// Map from old condition ID to new copied condition
+	conditionMapping := make(map[string]*Condition)
+	if len(playbookConditions) == 0 {
+		return conditionMapping, nil
+	}
+
+	// Copy each condition with translated field IDs
+	for _, condition := range playbookConditions {
+		runCondition := condition
+		runCondition.ID = ""
+		runCondition.RunID = runID // Set the run ID, keep original PlaybookID
+		runCondition.CreateAt = model.GetMillis()
+		runCondition.UpdateAt = runCondition.CreateAt
+
+		// Translate field IDs in the condition expression
+		if err := runCondition.ConditionExpr.SwapPropertyIDs(propertyMappings); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"condition_id": condition.ID,
+				"playbook_id":  playbookID,
+				"run_id":       runID,
+			}).Warn("failed to translate field IDs in condition, skipping")
+			continue
+		}
+
+		// Create the condition for the run
+		createdCondition, err := s.store.CreateCondition(playbookID, runCondition)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"condition_id": condition.ID,
+				"playbook_id":  playbookID,
+				"run_id":       runID,
+			}).Warn("failed to create run condition, skipping")
+			continue
+		}
+
+		// Map old condition ID to new copied condition
+		conditionMapping[condition.ID] = createdCondition
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"playbook_id":       playbookID,
+		"run_id":            runID,
+		"conditions_copied": len(playbookConditions),
+	}).Info("copied playbook conditions to run")
+
+	return conditionMapping, nil
+}
+
 // CreatePlaybookCondition creates a new stored condition for a playbook
 func (s *conditionService) CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
 	auditRec := s.auditor.MakeAuditRecord("createCondition", model.AuditStatusFail)
@@ -55,7 +112,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 
 	if err := condition.IsValid(true, propertyFields); err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return nil, errors.Wrap(ErrMalformedCondition, err.Error())
 	}
 
 	if condition.RunID != "" {
@@ -145,7 +202,7 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 
 	if err := condition.IsValid(false, propertyFields); err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return nil, errors.Wrap(ErrMalformedCondition, err.Error())
 	}
 
 	condition.Sanitize()
@@ -263,6 +320,126 @@ func (s *conditionService) getConditions(
 		HasMore:    hasMore,
 		Items:      conditions,
 	}, nil
+}
+
+type conditionEvalResult struct {
+	Met    bool
+	Reason string
+}
+
+// applyConditionResults updates checklist items based on evaluated condition results
+func (s *conditionService) applyConditionResults(
+	playbookRun *PlaybookRun,
+	conditionResults map[string]conditionEvalResult,
+) *ConditionEvaluationResult {
+	result := &ConditionEvaluationResult{
+		ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+	}
+
+	for c := range playbookRun.Checklists {
+		checklist := &playbookRun.Checklists[c]
+
+		for i := range checklist.Items {
+			item := &checklist.Items[i]
+
+			// Skip items without conditions
+			if item.ConditionID == "" {
+				continue
+			}
+
+			res, ok := conditionResults[item.ConditionID]
+			if !ok {
+				continue
+			}
+
+			// Initialize checklist changes if not exists
+			if result.ChecklistChanges[checklist.Title] == nil {
+				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{
+					Added:      0,
+					Hidden:     0,
+					hasChanges: false,
+				}
+			}
+
+			item.ConditionReason = res.Reason
+
+			currentConditionAction := item.ConditionAction
+			if res.Met {
+				item.ConditionAction = ConditionActionNone
+				if currentConditionAction == ConditionActionHidden {
+					result.ChecklistChanges[checklist.Title].Added++
+				}
+			} else {
+				// Check if item was recently modified (assignee or state change)
+				wasRecentlyModified := (item.AssigneeModified > 0 || item.StateModified > 0)
+
+				if wasRecentlyModified {
+					item.ConditionReason = i18n.T("playbooks.checklist.condition.reason.modified")
+					item.ConditionAction = ConditionActionShownBecauseModified
+				} else {
+					item.ConditionAction = ConditionActionHidden
+					if currentConditionAction != ConditionActionHidden {
+						result.ChecklistChanges[checklist.Title].Hidden++
+					}
+				}
+			}
+
+			if currentConditionAction != item.ConditionAction {
+				result.ChecklistChanges[checklist.Title].hasChanges = true
+			}
+		}
+	}
+
+	return result
+}
+
+func (s *conditionService) evaluateConditions(playbookRun *PlaybookRun, conditions []Condition) map[string]conditionEvalResult {
+	conditionResults := make(map[string]conditionEvalResult, len(conditions))
+	for _, condition := range conditions {
+		conditionResults[condition.ID] = conditionEvalResult{
+			Met:    condition.ConditionExpr.Evaluate(playbookRun.PropertyFields, playbookRun.PropertyValues),
+			Reason: condition.ConditionExpr.ToString(playbookRun.PropertyFields),
+		}
+	}
+	return conditionResults
+}
+
+func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
+	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
+	}
+
+	if len(conditions) == 0 {
+		return &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}, nil
+	}
+
+	conditionResults := s.evaluateConditions(playbookRun, conditions)
+	return s.applyConditionResults(playbookRun, conditionResults), nil
+}
+
+func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error) {
+	if playbookRun.PlaybookID == "" {
+		return &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}, nil
+	}
+
+	conditions, err := s.store.GetRunConditions(playbookRun.PlaybookID, playbookRun.ID, 0, MaxConditionsPerPlaybook)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
+	}
+
+	if len(conditions) == 0 {
+		return &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}, nil
+	}
+
+	conditionResults := s.evaluateConditions(playbookRun, conditions)
+	return s.applyConditionResults(playbookRun, conditionResults), nil
 }
 
 func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {

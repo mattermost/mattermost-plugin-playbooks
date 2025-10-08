@@ -5,6 +5,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -253,5 +254,893 @@ func TestConditionService_Delete(t *testing.T) {
 
 		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
 		require.NoError(t, err)
+	})
+}
+
+func TestConditionService_CopyPlaybookConditionsToRun(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockConditionStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	service := app.NewConditionService(mockStore, mockPropertyService, mockPoster, mockAuditor)
+
+	playbookID := model.NewId()
+	runID := model.NewId()
+	conditionID1 := model.NewId()
+	conditionID2 := model.NewId()
+
+	propertyMappings := &app.PropertyCopyResult{
+		FieldMappings: map[string]string{
+			"old_severity_id": "new_severity_id",
+			"old_status_id":   "new_status_id",
+		},
+		OptionMappings: map[string]string{
+			"old_critical_id": "new_critical_id",
+			"old_open_id":     "new_open_id",
+		},
+		CopiedFields: []app.PropertyField{
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_severity_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_status_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+		},
+	}
+
+	playbookConditions := []app.Condition{
+		{
+			ID:         conditionID1,
+			PlaybookID: playbookID,
+			CreateAt:   model.GetMillis() - 1000,
+			UpdateAt:   model.GetMillis() - 1000,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "old_severity_id",
+					Value:   json.RawMessage(`["old_critical_id"]`),
+				},
+			},
+		},
+		{
+			ID:         conditionID2,
+			PlaybookID: playbookID,
+			CreateAt:   model.GetMillis() - 500,
+			UpdateAt:   model.GetMillis() - 500,
+			ConditionExpr: &app.ConditionExprV1{
+				IsNot: &app.ComparisonCondition{
+					FieldID: "old_status_id",
+					Value:   json.RawMessage(`["old_open_id"]`),
+				},
+			},
+		},
+	}
+
+	t.Run("success copy conditions", func(t *testing.T) {
+		mockStore.EXPECT().
+			GetPlaybookConditions(playbookID, 0, app.MaxConditionsPerPlaybook).
+			Return(playbookConditions, nil)
+
+		newConditionID1 := model.NewId()
+		newConditionID2 := model.NewId()
+
+		// Mock successful creation for both conditions
+		mockStore.EXPECT().
+			CreateCondition(playbookID, gomock.Any()).
+			DoAndReturn(func(playbookID string, condition app.Condition) (*app.Condition, error) {
+				created := condition
+				if condition.ConditionExpr.(*app.ConditionExprV1).Is != nil {
+					created.ID = newConditionID1
+				} else {
+					created.ID = newConditionID2
+				}
+				created.CreateAt = model.GetMillis()
+				created.UpdateAt = created.CreateAt
+				return &created, nil
+			}).
+			Times(2)
+
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
+		require.NoError(t, err)
+		require.Len(t, result, 2)
+		require.Contains(t, result, conditionID1)
+		require.Contains(t, result, conditionID2)
+		require.Equal(t, runID, result[conditionID1].RunID)
+		require.Equal(t, runID, result[conditionID2].RunID)
+		require.Equal(t, "new_severity_id", result[conditionID1].ConditionExpr.(*app.ConditionExprV1).Is.FieldID)
+		require.Equal(t, "new_status_id", result[conditionID2].ConditionExpr.(*app.ConditionExprV1).IsNot.FieldID)
+	})
+
+	t.Run("success with no playbook conditions", func(t *testing.T) {
+		mockStore.EXPECT().
+			GetPlaybookConditions(playbookID, 0, app.MaxConditionsPerPlaybook).
+			Return([]app.Condition{}, nil)
+
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+
+	t.Run("error getting playbook conditions", func(t *testing.T) {
+		mockStore.EXPECT().
+			GetPlaybookConditions(playbookID, 0, app.MaxConditionsPerPlaybook).
+			Return(nil, errors.New("database error"))
+
+		result, err := service.CopyPlaybookConditionsToRun(playbookID, runID, propertyMappings)
+		require.Error(t, err)
+		require.Nil(t, result)
+		require.Contains(t, err.Error(), "failed to get playbook conditions")
+	})
+}
+
+func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockConditionStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	service := app.NewConditionService(mockStore, mockPropertyService, mockPoster, mockAuditor)
+
+	runID := model.NewId()
+	playbookID := model.NewId()
+	conditionID := model.NewId()
+	changedFieldID := "severity_id"
+
+	propertyFields := []app.PropertyField{
+		{
+			PropertyField: model.PropertyField{
+				ID:   "severity_id",
+				Name: "Severity",
+				Type: model.PropertyFieldTypeSelect,
+			},
+		},
+	}
+
+	t.Run("condition met - hidden item becomes visible", func(t *testing.T) {
+		// Condition that evaluates to true (met)
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"critical_id"`), // Matches condition
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:              model.NewId(),
+							Title:           "Test Item",
+							ConditionID:     conditionID,
+							ConditionAction: app.ConditionActionHidden, // Initially hidden
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Added)
+		require.True(t, result.AnythingChanged())
+		require.True(t, result.AnythingAdded())
+	})
+
+	t.Run("condition not met - visible item becomes hidden (no recent modifications)", func(t *testing.T) {
+		// Condition that evaluates to false (not met)
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"low_id"`), // Does not match condition
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:               model.NewId(),
+							Title:            "Test Item",
+							ConditionID:      conditionID,
+							ConditionAction:  app.ConditionActionNone, // Initially visible
+							AssigneeModified: 0,                       // Not modified
+							StateModified:    0,                       // Not modified
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Hidden)
+		require.True(t, result.AnythingChanged())
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("condition met - item already visible (no change)", func(t *testing.T) {
+		// Condition that evaluates to true (met)
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"critical_id"`), // Matches condition
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:              model.NewId(),
+							Title:           "Test Item",
+							ConditionID:     conditionID,
+							ConditionAction: app.ConditionActionNone, // Already visible
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
+		require.False(t, result.AnythingChanged())
+	})
+
+	t.Run("condition not met - item with recent assignee modification shown_because_modified", func(t *testing.T) {
+		// Condition that evaluates to false (not met)
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"low_id"`), // Does not match condition
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:               model.NewId(),
+							Title:            "Test Item",
+							ConditionID:      conditionID,
+							ConditionAction:  app.ConditionActionNone,
+							AssigneeModified: model.GetMillis(), // Recently modified
+							StateModified:    0,
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
+		require.True(t, result.AnythingChanged())
+	})
+
+	t.Run("condition not met - item with recent state modification shown_because_modified", func(t *testing.T) {
+		// Condition that evaluates to false (not met)
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"low_id"`), // Does not match condition
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:               model.NewId(),
+							Title:            "Test Item",
+							ConditionID:      conditionID,
+							ConditionAction:  app.ConditionActionNone,
+							AssigneeModified: 0,
+							StateModified:    model.GetMillis(), // Recently modified
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
+		require.True(t, result.AnythingChanged())
+	})
+
+	t.Run("no conditions for field", func(t *testing.T) {
+		playbookRun := &app.PlaybookRun{
+			ID:         runID,
+			PlaybookID: playbookID,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:    model.NewId(),
+							Title: "Test Item",
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Empty(t, result.ChecklistChanges)
+		require.False(t, result.AnythingChanged())
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("error getting conditions", func(t *testing.T) {
+		playbookRun := &app.PlaybookRun{
+			ID:         runID,
+			PlaybookID: playbookID,
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return(nil, errors.New("database error"))
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.Error(t, err)
+		require.Nil(t, result)
+		require.Contains(t, err.Error(), "failed to get conditions for playbook run")
+	})
+
+	t.Run("multiple checklists and items", func(t *testing.T) {
+		// Condition that evaluates to true for first item, false for second
+		condition1 := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		condition2 := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["high_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"critical_id"`),
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Checklist 1",
+					Items: []app.ChecklistItem{
+						{
+							ID:              model.NewId(),
+							Title:           "Item 1",
+							ConditionID:     condition1.ID,
+							ConditionAction: app.ConditionActionHidden,
+						},
+					},
+				},
+				{
+					Title: "Checklist 2",
+					Items: []app.ChecklistItem{
+						{
+							ID:               model.NewId(),
+							Title:            "Item 2",
+							ConditionID:      condition2.ID,
+							ConditionAction:  app.ConditionActionNone,
+							AssigneeModified: 0,
+							StateModified:    0,
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition1, condition2}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+
+		// First item: condition met, should become visible
+		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Checklist 1"].Added)
+
+		// Second item: condition not met, should become hidden
+		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[1].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Checklist 2"].Hidden)
+
+		require.True(t, result.AnythingChanged())
+		require.True(t, result.AnythingAdded())
+	})
+}
+
+func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockConditionStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	service := app.NewConditionService(mockStore, mockPropertyService, mockPoster, mockAuditor)
+
+	runID := model.NewId()
+	playbookID := model.NewId()
+	conditionID := model.NewId()
+
+	propertyFields := []app.PropertyField{
+		{
+			PropertyField: model.PropertyField{
+				ID:   "severity_id",
+				Name: "Severity",
+				Type: model.PropertyFieldTypeSelect,
+			},
+		},
+	}
+
+	t.Run("condition met - hidden item becomes visible", func(t *testing.T) {
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"critical_id"`),
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:              model.NewId(),
+							Title:           "Test Item",
+							ConditionID:     conditionID,
+							ConditionAction: app.ConditionActionHidden,
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetRunConditions(playbookID, runID, 0, app.MaxConditionsPerPlaybook).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateAllConditionsForRun(playbookRun)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Added)
+		require.True(t, result.AnythingChanged())
+		require.True(t, result.AnythingAdded())
+	})
+
+	t.Run("condition not met - visible item becomes hidden", func(t *testing.T) {
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"low_id"`),
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:               model.NewId(),
+							Title:            "Test Item",
+							ConditionID:      conditionID,
+							ConditionAction:  app.ConditionActionNone,
+							AssigneeModified: 0,
+							StateModified:    0,
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetRunConditions(playbookID, runID, 0, app.MaxConditionsPerPlaybook).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateAllConditionsForRun(playbookRun)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Hidden)
+		require.True(t, result.AnythingChanged())
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("condition not met - item with recent modification shown_because_modified", func(t *testing.T) {
+		condition := app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"low_id"`),
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:               model.NewId(),
+							Title:            "Test Item",
+							ConditionID:      conditionID,
+							ConditionAction:  app.ConditionActionNone,
+							AssigneeModified: model.GetMillis(),
+							StateModified:    0,
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetRunConditions(playbookID, runID, 0, app.MaxConditionsPerPlaybook).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateAllConditionsForRun(playbookRun)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
+		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
+		require.True(t, result.AnythingChanged())
+	})
+
+	t.Run("no conditions for run", func(t *testing.T) {
+		playbookRun := &app.PlaybookRun{
+			ID:         runID,
+			PlaybookID: playbookID,
+			Checklists: []app.Checklist{
+				{
+					Title: "Test Checklist",
+					Items: []app.ChecklistItem{
+						{
+							ID:    model.NewId(),
+							Title: "Test Item",
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetRunConditions(playbookID, runID, 0, app.MaxConditionsPerPlaybook).
+			Return([]app.Condition{}, nil)
+
+		result, err := service.EvaluateAllConditionsForRun(playbookRun)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Empty(t, result.ChecklistChanges)
+		require.False(t, result.AnythingChanged())
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("error getting conditions", func(t *testing.T) {
+		playbookRun := &app.PlaybookRun{
+			ID:         runID,
+			PlaybookID: playbookID,
+		}
+
+		mockStore.EXPECT().
+			GetRunConditions(playbookID, runID, 0, app.MaxConditionsPerPlaybook).
+			Return(nil, errors.New("database error"))
+
+		result, err := service.EvaluateAllConditionsForRun(playbookRun)
+		require.Error(t, err)
+		require.Nil(t, result)
+		require.Contains(t, err.Error(), "failed to get conditions for playbook run")
+	})
+
+	t.Run("empty playbook ID", func(t *testing.T) {
+		playbookRun := &app.PlaybookRun{
+			ID:         runID,
+			PlaybookID: "",
+		}
+
+		result, err := service.EvaluateAllConditionsForRun(playbookRun)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Empty(t, result.ChecklistChanges)
+	})
+
+	t.Run("multiple checklists and items", func(t *testing.T) {
+		condition1 := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["critical_id"]`),
+				},
+			},
+		}
+
+		condition2 := app.Condition{
+			ID:         model.NewId(),
+			PlaybookID: playbookID,
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["high_id"]`),
+				},
+			},
+		}
+
+		propertyValues := []app.PropertyValue{
+			{
+				FieldID: "severity_id",
+				Value:   json.RawMessage(`"critical_id"`),
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: propertyValues,
+			Checklists: []app.Checklist{
+				{
+					Title: "Checklist 1",
+					Items: []app.ChecklistItem{
+						{
+							ID:              model.NewId(),
+							Title:           "Item 1",
+							ConditionID:     condition1.ID,
+							ConditionAction: app.ConditionActionHidden,
+						},
+					},
+				},
+				{
+					Title: "Checklist 2",
+					Items: []app.ChecklistItem{
+						{
+							ID:               model.NewId(),
+							Title:            "Item 2",
+							ConditionID:      condition2.ID,
+							ConditionAction:  app.ConditionActionNone,
+							AssigneeModified: 0,
+							StateModified:    0,
+						},
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetRunConditions(playbookID, runID, 0, app.MaxConditionsPerPlaybook).
+			Return([]app.Condition{condition1, condition2}, nil)
+
+		result, err := service.EvaluateAllConditionsForRun(playbookRun)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+
+		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Checklist 1"].Added)
+
+		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[1].Items[0].ConditionAction)
+		require.Equal(t, 1, result.ChecklistChanges["Checklist 2"].Hidden)
+
+		require.True(t, result.AnythingChanged())
+		require.True(t, result.AnythingAdded())
 	})
 }

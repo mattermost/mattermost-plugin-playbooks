@@ -75,6 +75,9 @@ type ChecklistItem struct {
 	LastSkipped      int64        `json:"delete_at"`
 	DueDate          int64        `json:"due_date"`
 	TaskActions      []TaskAction `json:"task_actions"`
+	ConditionID      string       `json:"condition_id"`
+	ConditionAction  string       `json:"condition_action"`
+	ConditionReason  string       `json:"condition_reason"`
 	UpdateAt         int64        `json:"update_at"`
 }
 

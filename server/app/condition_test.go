@@ -248,6 +248,122 @@ func TestConditionExprV1_Evaluate(t *testing.T) {
 		}
 		require.False(t, condition.Evaluate(propertyFields, propertyValues))
 	})
+
+	t.Run("text field IS with no value set - should return false", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_text_field_id",
+				Name: "Unset Text Field",
+				Type: model.PropertyFieldTypeText,
+			},
+		})
+
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "unset_text_field_id",
+				Value:   json.RawMessage(`"123"`),
+			},
+		}
+		require.False(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("text field IS NOT with no value set - should return true", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_text_field_id",
+				Name: "Unset Text Field",
+				Type: model.PropertyFieldTypeText,
+			},
+		})
+
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "unset_text_field_id",
+				Value:   json.RawMessage(`"123"`),
+			},
+		}
+		// No value set, so it is indeed "not 123", so this should return true
+		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("select field IS with no value set - should return false", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_select_field_id",
+				Name: "Unset Select Field",
+				Type: model.PropertyFieldTypeSelect,
+			},
+			Attrs: Attrs{
+				Options: model.PropertyOptions[*model.PluginPropertyOption]{
+					model.NewPluginPropertyOption("option1_id", "Option 1"),
+					model.NewPluginPropertyOption("option2_id", "Option 2"),
+				},
+			},
+		})
+
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "unset_select_field_id",
+				Value:   json.RawMessage(`["option1_id"]`),
+			},
+		}
+		require.False(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("select field IS NOT with no value set - should return true", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_select_field_id",
+				Name: "Unset Select Field",
+				Type: model.PropertyFieldTypeSelect,
+			},
+			Attrs: Attrs{
+				Options: model.PropertyOptions[*model.PluginPropertyOption]{
+					model.NewPluginPropertyOption("option1_id", "Option 1"),
+					model.NewPluginPropertyOption("option2_id", "Option 2"),
+				},
+			},
+		})
+
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "unset_select_field_id",
+				Value:   json.RawMessage(`["option1_id"]`),
+			},
+		}
+		// No value set, so it is indeed "not option1_id", so this should return true
+		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
+
+	t.Run("multiselect field IS NOT with no value set - should return true", func(t *testing.T) {
+		// Create field without corresponding value
+		fieldsWithExtra := append(propertyFields, PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "unset_multiselect_field_id",
+				Name: "Unset Multiselect Field",
+				Type: model.PropertyFieldTypeMultiselect,
+			},
+			Attrs: Attrs{
+				Options: model.PropertyOptions[*model.PluginPropertyOption]{
+					model.NewPluginPropertyOption("tag1_id", "Tag 1"),
+					model.NewPluginPropertyOption("tag2_id", "Tag 2"),
+				},
+			},
+		})
+
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "unset_multiselect_field_id",
+				Value:   json.RawMessage(`["tag1_id"]`),
+			},
+		}
+		// No value set, so it is indeed "not tag1_id", so this should return true
+		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
+	})
 }
 
 func TestConditionExprV1_JSON(t *testing.T) {
@@ -1496,5 +1612,223 @@ func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {
 		fieldIDs, optionIDs := condition.ExtractPropertyIDs()
 		require.Equal(t, []string{"severity_id"}, fieldIDs)  // should be deduplicated
 		require.Equal(t, []string{"critical_id"}, optionIDs) // should be deduplicated
+	})
+}
+
+func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
+	propertyMappings := &PropertyCopyResult{
+		FieldMappings: map[string]string{
+			"old_severity_id":     "new_severity_id",
+			"old_status_id":       "new_status_id",
+			"old_acknowledged_id": "new_acknowledged_id",
+			"old_priority_id":     "new_priority_id",
+		},
+		OptionMappings: map[string]string{
+			"old_critical_id": "new_critical_id",
+			"old_open_id":     "new_open_id",
+		},
+		CopiedFields: []PropertyField{
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_severity_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_status_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_acknowledged_id",
+					Type: model.PropertyFieldTypeText,
+				},
+			},
+			{
+				PropertyField: model.PropertyField{
+					ID:   "new_priority_id",
+					Type: model.PropertyFieldTypeSelect,
+				},
+			},
+		},
+	}
+
+	t.Run("swaps field IDs in nested conditions", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "old_severity_id",
+						Value:   json.RawMessage(`["old_critical_id"]`),
+					},
+				},
+				{
+					Or: []ConditionExprV1{
+						{
+							Is: &ComparisonCondition{
+								FieldID: "old_status_id",
+								Value:   json.RawMessage(`["old_open_id"]`),
+							},
+						},
+						{
+							IsNot: &ComparisonCondition{
+								FieldID: "old_acknowledged_id",
+								Value:   json.RawMessage(`"true"`),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		err := condition.SwapPropertyIDs(propertyMappings)
+		require.NoError(t, err)
+		require.Equal(t, "new_severity_id", condition.And[0].Is.FieldID)
+		require.Equal(t, "new_status_id", condition.And[1].Or[0].Is.FieldID)
+		require.Equal(t, "new_acknowledged_id", condition.And[1].Or[1].IsNot.FieldID)
+	})
+
+	t.Run("returns error for missing field mapping", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "unmapped_field_id",
+				Value:   json.RawMessage(`["value"]`),
+			},
+		}
+
+		err := condition.SwapPropertyIDs(propertyMappings)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "no field mapping found for field ID unmapped_field_id")
+	})
+
+	t.Run("empty condition does not fail", func(t *testing.T) {
+		condition := &ConditionExprV1{}
+
+		err := condition.SwapPropertyIDs(propertyMappings)
+		require.NoError(t, err)
+	})
+
+	t.Run("swaps option IDs for select/multiselect fields", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			And: []ConditionExprV1{
+				{
+					Is: &ComparisonCondition{
+						FieldID: "old_severity_id",
+						Value:   json.RawMessage(`["old_critical_id"]`),
+					},
+				},
+				{
+					IsNot: &ComparisonCondition{
+						FieldID: "old_status_id",
+						Value:   json.RawMessage(`["old_open_id"]`),
+					},
+				},
+			},
+		}
+
+		err := condition.SwapPropertyIDs(propertyMappings)
+		require.NoError(t, err)
+
+		// Check that field IDs are swapped
+		require.Equal(t, "new_severity_id", condition.And[0].Is.FieldID)
+		require.Equal(t, "new_status_id", condition.And[1].IsNot.FieldID)
+
+		// Check that option IDs are also swapped for select fields
+		var severityOptions []string
+		err = json.Unmarshal(condition.And[0].Is.Value, &severityOptions)
+		require.NoError(t, err)
+		require.Equal(t, []string{"new_critical_id"}, severityOptions)
+
+		var statusOptions []string
+		err = json.Unmarshal(condition.And[1].IsNot.Value, &statusOptions)
+		require.NoError(t, err)
+		require.Equal(t, []string{"new_open_id"}, statusOptions)
+	})
+}
+
+func TestConditionEvaluationResult_AnythingChanged(t *testing.T) {
+	t.Run("returns false for empty result", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}
+		require.False(t, result.AnythingChanged())
+	})
+
+	t.Run("returns false when no changes", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 0, hasChanges: false},
+				"Checklist 2": {Added: 0, Hidden: 0, hasChanges: false},
+			},
+		}
+		require.False(t, result.AnythingChanged())
+	})
+
+	t.Run("returns true when items added", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 2, Hidden: 0, hasChanges: true},
+			},
+		}
+		require.True(t, result.AnythingChanged())
+	})
+
+	t.Run("returns true when items hidden", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 3, hasChanges: true},
+			},
+		}
+		require.True(t, result.AnythingChanged())
+	})
+
+	t.Run("returns true when both added and hidden", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 1, Hidden: 2, hasChanges: true},
+				"Checklist 2": {Added: 0, Hidden: 0, hasChanges: false},
+			},
+		}
+		require.True(t, result.AnythingChanged())
+	})
+}
+
+func TestConditionEvaluationResult_AnythingAdded(t *testing.T) {
+	t.Run("returns false for empty result", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("returns false when no items added", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 5},
+				"Checklist 2": {Added: 0, Hidden: 0},
+			},
+		}
+		require.False(t, result.AnythingAdded())
+	})
+
+	t.Run("returns true when items added", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 1, Hidden: 0},
+			},
+		}
+		require.True(t, result.AnythingAdded())
+	})
+
+	t.Run("returns true when items added even with hidden items", func(t *testing.T) {
+		result := &ConditionEvaluationResult{
+			ChecklistChanges: map[string]*ChecklistConditionChanges{
+				"Checklist 1": {Added: 0, Hidden: 2},
+				"Checklist 2": {Added: 3, Hidden: 1},
+			},
+		}
+		require.True(t, result.AnythingAdded())
 	})
 }

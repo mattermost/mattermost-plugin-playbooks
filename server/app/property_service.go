@@ -220,21 +220,52 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 	return allFields, nil
 }
 
-func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) error {
+func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) (*PropertyCopyResult, error) {
 	playbookProperties, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, playbookID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get playbook properties")
+		return nil, errors.Wrap(err, "failed to get playbook properties")
 	}
+
+	fieldMappings := make(map[string]string)
+	optionMappings := make(map[string]string)
+	var copiedFields []PropertyField
 
 	for _, playbookProperty := range playbookProperties {
 		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to duplicate property field %s for run", playbookProperty.Name)
+			return nil, errors.Wrapf(err, "failed to duplicate property field %s for run", playbookProperty.Name)
 		}
 
-		_, err = s.api.Property.CreatePropertyField(runProperty)
+		createdFieldMM, err := s.api.Property.CreatePropertyField(runProperty)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create run property field for %s", playbookProperty.Name)
+			return nil, errors.Wrapf(err, "failed to create run property field for %s", playbookProperty.Name)
+		}
+
+		// Convert the created field back to our PropertyField type to access typed options
+		createdField, err := NewPropertyFieldFromMattermostPropertyField(createdFieldMM)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert created property field %s", playbookProperty.Name)
+		}
+
+		// Track field ID mapping: old playbook field ID -> new run field ID
+		fieldMappings[playbookProperty.ID] = createdField.ID
+
+		// Add to copied fields array
+		copiedFields = append(copiedFields, *createdField)
+
+		// Track option ID mappings if field supports options
+		if createdField.SupportsOptions() {
+			playbookField, err := NewPropertyFieldFromMattermostPropertyField(playbookProperty)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to convert playbook property field %s", playbookProperty.Name)
+			}
+
+			// Map old option IDs to new option IDs
+			for i, playbookOption := range playbookField.Attrs.Options {
+				if i < len(createdField.Attrs.Options) {
+					optionMappings[playbookOption.GetID()] = createdField.Attrs.Options[i].GetID()
+				}
+			}
 		}
 	}
 
@@ -244,7 +275,11 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 		"fields_copied": len(playbookProperties),
 	}).Info("copied playbook properties to run")
 
-	return nil
+	return &PropertyCopyResult{
+		FieldMappings:  fieldMappings,
+		OptionMappings: optionMappings,
+		CopiedFields:   copiedFields,
+	}, nil
 }
 
 func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.PropertyField, runID string) (*model.PropertyField, error) {

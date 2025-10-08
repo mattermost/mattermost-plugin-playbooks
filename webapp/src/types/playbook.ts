@@ -128,6 +128,9 @@ export interface ChecklistItem {
     due_date: number;
     task_actions: TaskAction[];
     update_at?: number; // Timestamp for idempotency checks
+    condition_id: string;
+    condition_action: string;
+    condition_reason: string;
 }
 
 export interface TaskAction {
@@ -235,6 +238,9 @@ export function emptyChecklistItem(): ChecklistItem {
         state_modified: 0,
         assignee_modified: 0,
         assignee_id: '',
+        condition_id: '',
+        condition_action: '',
+        condition_reason: '',
     };
 }
 
@@ -249,6 +255,9 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state_modified: 0,
     assignee_modified: 0,
     assignee_id: '',
+    condition_id: '',
+    condition_action: '',
+    condition_reason: '',
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Condition, executeCondition} from './conditions';
+import {ConditionExprV1, executeCondition} from './conditions';
 import {PropertyField, PropertyValue} from './properties';
 
 // Test data helpers
@@ -119,7 +119,7 @@ describe('conditions', () => {
 
         describe('text field conditions', () => {
             it('should match case-insensitive text', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'text1',
                         value: 'hello world',
@@ -131,7 +131,7 @@ describe('conditions', () => {
             });
 
             it('should match mixed case text', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'text1',
                         value: 'HeLLo WoRLd',
@@ -143,7 +143,7 @@ describe('conditions', () => {
             });
 
             it('should not match different text', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'text1',
                         value: 'Goodbye',
@@ -155,7 +155,7 @@ describe('conditions', () => {
             });
 
             it('should handle isNot for text fields', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     isNot: {
                         field_id: 'text1',
                         value: 'goodbye',
@@ -167,7 +167,7 @@ describe('conditions', () => {
             });
 
             it('should reject array values for text fields', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'text1',
                         value: ['hello', 'world'],
@@ -181,7 +181,7 @@ describe('conditions', () => {
 
         describe('select field conditions', () => {
             it('should match exact select value', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'select1',
                         value: ['option1'],
@@ -193,7 +193,7 @@ describe('conditions', () => {
             });
 
             it('should not match case-insensitive select value', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'select1',
                         value: ['OPTION1'],
@@ -205,7 +205,7 @@ describe('conditions', () => {
             });
 
             it('should handle isNot for select fields', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     isNot: {
                         field_id: 'select1',
                         value: ['option2'],
@@ -217,7 +217,7 @@ describe('conditions', () => {
             });
 
             it('should reject string values for select fields', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'select1',
                         value: 'option1',
@@ -231,7 +231,7 @@ describe('conditions', () => {
 
         describe('multiselect field conditions', () => {
             it('should match when condition value is in property array (any of logic)', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'multi1',
                         value: ['cat_a'],
@@ -243,7 +243,7 @@ describe('conditions', () => {
             });
 
             it('should match when multiple condition values match', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'multi1',
                         value: ['cat_a', 'cat_c'],
@@ -255,7 +255,7 @@ describe('conditions', () => {
             });
 
             it('should not match when no condition values are in property array', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'multi1',
                         value: ['cat_z'],
@@ -267,7 +267,7 @@ describe('conditions', () => {
             });
 
             it('should handle isNot for multiselect fields', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     isNot: {
                         field_id: 'multi1',
                         value: ['cat_z'],
@@ -279,7 +279,7 @@ describe('conditions', () => {
             });
 
             it('should reject string values for multiselect fields', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'multi1',
                         value: 'cat_a',
@@ -293,7 +293,7 @@ describe('conditions', () => {
 
         describe('logical operators', () => {
             it('should handle AND with all true conditions', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     and: [
                         {
                             is: {
@@ -315,7 +315,7 @@ describe('conditions', () => {
             });
 
             it('should handle AND with one false condition', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     and: [
                         {
                             is: {
@@ -337,7 +337,7 @@ describe('conditions', () => {
             });
 
             it('should handle OR with one true condition', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     or: [
                         {
                             is: {
@@ -359,7 +359,7 @@ describe('conditions', () => {
             });
 
             it('should handle OR with all false conditions', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     or: [
                         {
                             is: {
@@ -381,7 +381,7 @@ describe('conditions', () => {
             });
 
             it('should handle nested conditions', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     and: [
                         {
                             is: {
@@ -415,7 +415,7 @@ describe('conditions', () => {
 
         describe('edge cases', () => {
             it('should return false for non-existent field', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'nonexistent',
                         value: 'anything',
@@ -427,7 +427,7 @@ describe('conditions', () => {
             });
 
             it('should return true for isNot with non-existent field', () => {
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     isNot: {
                         field_id: 'nonexistent',
                         value: 'anything',
@@ -440,7 +440,7 @@ describe('conditions', () => {
 
             it('should return false for field without value', () => {
                 const fieldWithoutValue = createTextField('empty');
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'empty',
                         value: 'anything',
@@ -452,7 +452,7 @@ describe('conditions', () => {
             });
 
             it('should return true for empty condition', () => {
-                const condition: Condition = {};
+                const condition: ConditionExprV1 = {};
 
                 const result = executeCondition(condition, propertyFields, propertyValues);
                 expect(result).toBe(true);
@@ -460,7 +460,7 @@ describe('conditions', () => {
 
             it('should return false for empty property value', () => {
                 const emptyValue = createTextValue('text1', '');
-                const condition: Condition = {
+                const condition: ConditionExprV1 = {
                     is: {
                         field_id: 'text1',
                         value: 'anything',

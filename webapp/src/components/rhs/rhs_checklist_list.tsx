@@ -117,6 +117,13 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
     };
 
     const showItem = (checklistItem: ChecklistItem, myId: string) => {
+        // Hide items with condition_action = "hidden"
+        // This check must come FIRST to ensure hidden items stay hidden
+        // regardless of other filter settings
+        if (checklistItem.condition_action === 'hidden') {
+            return false;
+        }
+
         if (checklistItemsFilter.all) {
             return true;
         }

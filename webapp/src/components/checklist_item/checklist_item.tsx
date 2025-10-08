@@ -32,6 +32,7 @@ import AssignTo from './assign_to';
 import Command from './command';
 import {CancelSaveButtons, CheckBoxButton} from './inputs';
 import {DueDateButton} from './duedate';
+import ConditionIndicator from './condition_indicator';
 
 import TaskActions from './task_actions';
 import {haveAtleastOneEnabledAction} from './task_actions_modal';
@@ -79,6 +80,7 @@ interface ChecklistItemProps {
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
+
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
@@ -329,6 +331,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                     onReadOnlyInteract={props.onReadOnlyInteract}
                 />
+                <ConditionIndicator checklistItem={props.checklistItem}/>
                 <ChecklistItemTitleWrapper
                     onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
                 >
@@ -373,6 +376,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 task_actions: taskActions,
                                 state_modified: 0,
                                 assignee_modified: 0,
+                                condition_id: '',
+                                condition_action: '',
+                                condition_reason: '',
                             };
                             if (props.playbookRunId) {
                                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
@@ -480,7 +486,7 @@ export const CheckboxContainer = styled.div`
 
 const ChecklistItemTitleWrapper = styled.div`
     display: flex;
-    width: 100%;
+    flex: 1;
     flex-direction: column;
 `;
 

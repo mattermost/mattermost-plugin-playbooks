@@ -113,6 +113,7 @@ input ChecklistItemUpdates {
 	commandLastRun: Float!
 	dueDate: Float!
 	taskActions: [TaskActionUpdates!]
+	conditionID: String!
 }
 
 input TaskActionUpdates {
@@ -206,6 +207,9 @@ type ChecklistItem {
 	commandLastRun: Float!
 	dueDate: Float!
 	taskActions: [TaskAction!]!
+	conditionID: String!
+	conditionAction: String!
+	conditionReason: String!
 }
 
 type TaskAction {

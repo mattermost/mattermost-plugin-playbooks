@@ -188,6 +188,7 @@ func (p *Plugin) OnActivate() error {
 		p.licenseChecker,
 		p.metricsService,
 		p.propertyService,
+		p.conditionService,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {

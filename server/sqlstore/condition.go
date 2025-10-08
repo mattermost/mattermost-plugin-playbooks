@@ -22,9 +22,9 @@ type conditionForDB struct {
 	CreateAt           int64
 	UpdateAt           int64
 	DeleteAt           int64
-	ConditionExpr      []byte
-	PropertyFieldIDs   []byte
-	PropertyOptionsIDs []byte
+	ConditionExpr      string
+	PropertyFieldIDs   string
+	PropertyOptionsIDs string
 }
 
 // conditionStore is a sql store for conditions. Use NewConditionStore to create it.
@@ -197,7 +197,7 @@ func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Co
 	switch sqlCondition.Version {
 	case 1:
 		var expr app.ConditionExprV1
-		if err := json.Unmarshal(sqlCondition.ConditionExpr, &expr); err != nil {
+		if err := json.Unmarshal([]byte(sqlCondition.ConditionExpr), &expr); err != nil {
 			return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition expression")
 		}
 		conditionExpr = &expr
@@ -246,9 +246,9 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 		CreateAt:           condition.CreateAt,
 		UpdateAt:           condition.UpdateAt,
 		DeleteAt:           condition.DeleteAt,
-		ConditionExpr:      conditionExprJSON,
-		PropertyFieldIDs:   propertyFieldIDsJSON,
-		PropertyOptionsIDs: propertyOptionsIDsJSON,
+		ConditionExpr:      string(conditionExprJSON),
+		PropertyFieldIDs:   string(propertyFieldIDsJSON),
+		PropertyOptionsIDs: string(propertyOptionsIDsJSON),
 	}, nil
 }
 
@@ -270,6 +270,9 @@ func (c *conditionStore) getConditionsWithFilter(playbookID, runID string, page,
 
 	if runID != "" {
 		query = query.Where(sq.Eq{"RunID": runID})
+	} else {
+		// For playbook conditions, explicitly filter for empty RunID
+		query = query.Where(sq.Eq{"RunID": ""})
 	}
 
 	// Add pagination
@@ -322,6 +325,9 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 
 	if runID != "" {
 		query = query.Where(sq.Eq{"RunID": runID})
+	} else {
+		// For playbook conditions, explicitly filter for empty RunID
+		query = query.Where(sq.Eq{"RunID": ""})
 	}
 
 	sqlQuery, args, err := query.ToSql()
@@ -335,4 +341,38 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 	}
 
 	return count, nil
+}
+
+// GetConditionsByRunAndFieldID retrieves all conditions for a given run and field ID
+func (c *conditionStore) GetConditionsByRunAndFieldID(runID, fieldID string) ([]app.Condition, error) {
+	fieldIDArray, err := json.Marshal([]string{fieldID})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal fieldID array for runID %s fieldID %s", runID, fieldID)
+	}
+
+	query := c.conditionSelect.
+		Where(sq.Eq{"RunID": runID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where("PropertyFieldIDs @> ?", string(fieldIDArray))
+
+	sqlQuery, args, err := query.ToSql()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to build condition query for runID %s fieldID %s", runID, fieldID)
+	}
+
+	var sqlConditions []conditionForDB
+	if err := c.store.db.Select(&sqlConditions, sqlQuery, args...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get conditions for runID %s fieldID %s", runID, fieldID)
+	}
+
+	conditions := make([]app.Condition, 0, len(sqlConditions))
+	for _, sqlCondition := range sqlConditions {
+		condition, err := c.fromConditionForDB(sqlCondition)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert condition from DB for runID %s", runID)
+		}
+		conditions = append(conditions, condition)
+	}
+
+	return conditions, nil
 }

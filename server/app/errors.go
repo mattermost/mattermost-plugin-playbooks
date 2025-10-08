@@ -20,5 +20,8 @@ var ErrPlaybookRunActive = errors.New("already active")
 // ErrMalformedPlaybookRun occurs when a playbook run is not valid.
 var ErrMalformedPlaybookRun = errors.New("malformed")
 
+// ErrMalformedCondition occurs when a condition is not valid.
+var ErrMalformedCondition = errors.New("malformed condition")
+
 // ErrDuplicateEntry occurs when failing to insert because the entry already existed.
 var ErrDuplicateEntry = errors.New("duplicate entry")
