@@ -361,6 +361,7 @@ input PropertyFieldAttrsInput {
 	sortOrder: Float
 	options: [PropertyOptionInput!]
 	parentID: String
+	valueType: String
 }
 
 input PropertyFieldInput {
@@ -380,6 +381,7 @@ type PropertyFieldAttrs {
 	sortOrder: Float!
 	options: [PropertyOption!]
 	parentID: String
+	valueType: String
 }
 
 type PropertyField {

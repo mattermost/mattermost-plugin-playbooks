@@ -92,6 +92,7 @@ query Playbook($id: String!) {
 					color
 				}
 				parent_id: parentID
+				value_type: valueType
 			}
 			create_at: createAt
 			update_at: updateAt
@@ -133,6 +134,7 @@ query PlaybookProperty($playbookID: String!, $propertyID: String!) {
 				color
 			}
 			parent_id: parentID
+			value_type: valueType
 		}
 		create_at: createAt
 		update_at: updateAt

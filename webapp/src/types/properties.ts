@@ -17,6 +17,7 @@ export type PropertyField = PropertyFieldBase & {
         sort_order: number;
         options: PropertyFieldOption[] | null;
         parent_id?: string;
+        value_type?: string;
     };
 };
 

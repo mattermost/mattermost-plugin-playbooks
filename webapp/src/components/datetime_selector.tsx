@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import {DateTime, Duration} from 'luxon';
 import debounce from 'debounce';
 
-import {Placement} from '@floating-ui/react-dom-interactions';
+import {Placement} from '@floating-ui/react';
 
 import Dropdown from 'src/components/dropdown';
 

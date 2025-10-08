@@ -5,7 +5,7 @@ import React from 'react';
 import {useSelector} from 'react-redux';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
-import {Placement} from '@floating-ui/react-dom-interactions';
+import {Placement} from '@floating-ui/react';
 import {GlobalState} from '@mattermost/types/store';
 
 import {OVERLAY_DELAY} from 'src/constants';

@@ -60,7 +60,7 @@ const RHSProperty = (props: Props) => {
     };
 
     return (
-        <PropertyRow>
+        <PropertyRow data-testid={`run-property-${props.field.name.toLowerCase().replace(/\s+/g, '-')}`}>
             <PropertyLabel>{props.field.name}</PropertyLabel>
             {renderPropertyComponent()}
         </PropertyRow>

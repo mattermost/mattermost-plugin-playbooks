@@ -7,11 +7,15 @@ import styled from 'styled-components';
 interface Props {
     label: string;
     onClick?: () => void;
+    'data-testid'?: string;
 }
 
 const PropertyChip = (props: Props) => {
     return (
-        <ChipContainer onClick={props.onClick}>
+        <ChipContainer
+            onClick={props.onClick}
+            data-testid={props['data-testid']}
+        >
             {props.label}
         </ChipContainer>
     );

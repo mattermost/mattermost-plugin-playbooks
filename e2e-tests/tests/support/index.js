@@ -9,6 +9,7 @@
 
 import dayjs from 'dayjs';
 import localforage from 'localforage';
+import 'cypress-real-events';
 
 import '@testing-library/cypress/add-commands';
 import 'cypress-file-upload';
@@ -28,6 +29,7 @@ import './fetch_commands';
 import './keycloak_commands';
 import './ldap_commands';
 import './ldap_server_commands';
+import './network_commands';
 import './okta_commands';
 import './saml_commands';
 import './shell';
