@@ -45,8 +45,8 @@ const ConditionIndicator = ({checklistItem}: ConditionIndicatorProps) => {
 };
 
 const IconWrapper = styled.span`
-    margin-top: 4px;
-    margin-right: 2px;
+    margin-right: 6px;
+    transform: rotate(90deg);
 `;
 
 export default ConditionIndicator;
