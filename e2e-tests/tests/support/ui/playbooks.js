@@ -171,8 +171,12 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
 
     // # Get the interactive dialog modal.
     cy.getStatusUpdateDialog().within(() => {
+        cy.wait(3 * TIMEOUTS.ONE_HUNDRED_MILLIS);
+
         // # remove what's there if applicable, and type the new update in the textbox.
-        cy.findByTestId('update_run_status_textbox').clear().realType(message);
+        cy.findByTestId('update_run_status_textbox').clear().focus().realType(message);
+
+        cy.wait(TIMEOUTS.ONE_HUNDRED_MILLIS);
 
         if (reminderQuery) {
             cy.get('#reminder_timer_datetime').within(() => {
