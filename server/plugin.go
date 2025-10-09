@@ -160,7 +160,7 @@ func (p *Plugin) OnActivate() error {
 	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
 	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
-	propertyService, err := app.NewPropertyService(pluginAPIClient)
+	propertyService, err := app.NewPropertyService(pluginAPIClient, conditionStore)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create property service")
 	}
