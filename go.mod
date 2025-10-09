@@ -157,7 +157,6 @@ require (
 	github.com/splitio/go-toolkit/v5 v5.4.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/throttled/throttled v2.2.5+incompatible // indirect
 	github.com/tinylib/msgp v1.2.5 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
