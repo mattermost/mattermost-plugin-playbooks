@@ -62,3 +62,8 @@ export function useAllowRequestUpdate() {
 export function useAllowPlaybookAttributes() {
     return useSelector(isEnterpriseLicensedOrDevelopment);
 }
+
+// useAllowConditionalPlaybooks returns whether conditional playbooks are enabled
+export function useAllowConditionalPlaybooks() {
+    return useSelector(isEnterpriseLicensedOrDevelopment);
+}
