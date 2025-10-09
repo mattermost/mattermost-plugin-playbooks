@@ -46,7 +46,7 @@ const TextWithTooltip = (props: Props) => {
         resizeListener();
     });
 
-    const setRef = useCallback((node) => {
+    const setRef = useCallback((node: HTMLElement | null) => {
         ref.current = node;
         resizeListener();
     }, []);

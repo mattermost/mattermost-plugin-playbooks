@@ -152,7 +152,7 @@ export default class Plugin {
 
         registry.registerTranslations((locale: string) => {
             try {
-                // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports
+                // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports, no-warning-comments
                 return require(`../i18n/${locale}.json`); // TODO make async, this increases bundle size exponentially
             } catch {
                 return {};
