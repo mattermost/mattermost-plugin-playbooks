@@ -237,7 +237,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     const target = (
                         <TypeIconButton
                             onClick={() => setEditingTypeId(info.row.original.id)}
-                            aria-label={formatMessage({defaultMessage: 'Change property type'})}
+                            aria-label={formatMessage({defaultMessage: 'Change attribute type'})}
                         >
                             <TypeIcon/>
                         </TypeIconButton>
