@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -22,13 +23,15 @@ const (
 )
 
 type propertyService struct {
-	api     *pluginapi.Client
-	groupID string
+	api            *pluginapi.Client
+	groupID        string
+	conditionStore ConditionStore
 }
 
-func NewPropertyService(api *pluginapi.Client) (PropertyService, error) {
+func NewPropertyService(api *pluginapi.Client, conditionStore ConditionStore) (PropertyService, error) {
 	service := &propertyService{
-		api: api,
+		api:            api,
+		conditionStore: conditionStore,
 	}
 
 	// Get or create the property group
@@ -152,6 +155,34 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 		return nil, errors.Wrap(err, "failed to get existing property field")
 	}
 
+	// Check if the type is changing and validate it's allowed
+	if existingField.Type != propertyField.Type {
+		if err := s.validatePropertyFieldTypeChange(existingField, propertyField, playbookID); err != nil {
+			return nil, err
+		}
+	}
+
+	// Check if any options are being removed and validate they are not in use
+	if propertyField.SupportsOptions() {
+		existingPropertyField, err := NewPropertyFieldFromMattermostPropertyField(existingField)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert existing property field")
+		}
+
+		removedOptionIDs := s.findRemovedOptions(existingPropertyField.Attrs.Options, propertyField.Attrs.Options)
+		if len(removedOptionIDs) > 0 {
+			optionsInUse, err := s.conditionStore.CountConditionsUsingPropertyOptions(playbookID, removedOptionIDs)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to check if property options are in use")
+			}
+
+			if len(optionsInUse) > 0 {
+				optionNames := s.getOptionNames(existingPropertyField.Attrs.Options, optionsInUse)
+				return nil, errors.Wrapf(ErrPropertyOptionsInUse, "cannot remove property options: %s. Please remove or update the conditions before removing these options", optionNames)
+			}
+		}
+	}
+
 	// Convert the input to Mattermost property field
 	mmPropertyField := propertyField.ToMattermostPropertyField()
 
@@ -176,8 +207,66 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 	return resultField, nil
 }
 
-func (s *propertyService) DeletePropertyField(propertyID string) error {
-	err := s.api.Property.DeletePropertyField(s.groupID, propertyID)
+func (s *propertyService) findRemovedOptions(oldOptions, newOptions model.PropertyOptions[*model.PluginPropertyOption]) []string {
+	newOptionIDs := make(map[string]bool)
+	for _, option := range newOptions {
+		newOptionIDs[option.GetID()] = true
+	}
+
+	var removedIDs []string
+	for _, option := range oldOptions {
+		if !newOptionIDs[option.GetID()] {
+			removedIDs = append(removedIDs, option.GetID())
+		}
+	}
+
+	return removedIDs
+}
+
+func (s *propertyService) getOptionNames(options model.PropertyOptions[*model.PluginPropertyOption], optionsInUse map[string]int) string {
+	var names []string
+	for _, option := range options {
+		if count, exists := optionsInUse[option.GetID()]; exists {
+			var countStr string
+			if count == 1 {
+				countStr = "1 condition"
+			} else {
+				countStr = fmt.Sprintf("%d conditions", count)
+			}
+			names = append(names, fmt.Sprintf("'%s' (used by %s)", option.GetName(), countStr))
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
+func (s *propertyService) validatePropertyFieldTypeChange(existingField *model.PropertyField, updatedField PropertyField, playbookID string) error {
+	count, err := s.conditionStore.CountConditionsUsingPropertyField(playbookID, updatedField.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if property field is in use")
+	}
+
+	if count > 0 {
+		return errors.Wrapf(ErrPropertyFieldTypeChangeNotAllowed, "cannot change type of property field '%s' from '%s' to '%s': it is referenced by %d condition(s). Please remove or update the conditions before changing the field type", updatedField.Name, existingField.Type, updatedField.Type, count)
+	}
+
+	return nil
+}
+
+func (s *propertyService) DeletePropertyField(playbookID string, propertyID string) error {
+	count, err := s.conditionStore.CountConditionsUsingPropertyField(playbookID, propertyID)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if property field is in use")
+	}
+
+	if count > 0 {
+		field, err := s.GetPropertyField(propertyID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get property field")
+		}
+		return errors.Wrapf(ErrPropertyFieldInUse, "cannot delete property field '%s': it is referenced by %d condition(s). Please remove or update the conditions before deleting this field", field.Name, count)
+	}
+
+	err = s.api.Property.DeletePropertyField(s.groupID, propertyID)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete property field")
 	}

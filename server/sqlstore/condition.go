@@ -10,6 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
@@ -341,6 +342,92 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 	}
 
 	return count, nil
+}
+
+func (c *conditionStore) CountConditionsUsingPropertyField(playbookID, propertyFieldID string) (int, error) {
+	propertyFieldIDJSON, err := json.Marshal([]string{propertyFieldID})
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to marshal property field ID %s", propertyFieldID)
+	}
+
+	query := c.queryBuilder.
+		Select("COUNT(*)").
+		From("IR_Condition").
+		Where(sq.Eq{"PlaybookID": playbookID}).
+		Where(sq.Eq{"RunID": ""}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Expr("PropertyFieldIDs @> ?::jsonb", string(propertyFieldIDJSON)))
+
+	sqlQuery, args, err := query.ToSql()
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to build count query for property field %s in playbook %s", propertyFieldID, playbookID)
+	}
+
+	var count int
+	if err := c.store.db.Get(&count, sqlQuery, args...); err != nil {
+		return 0, errors.Wrapf(err, "failed to count conditions using property field %s in playbook %s", propertyFieldID, playbookID)
+	}
+
+	return count, nil
+}
+
+func (c *conditionStore) CountConditionsUsingPropertyOptions(playbookID string, propertyOptionIDs []string) (map[string]int, error) {
+	if len(propertyOptionIDs) == 0 {
+		return make(map[string]int), nil
+	}
+
+	placeholders := sq.Placeholders(len(propertyOptionIDs))
+	args := make([]any, len(propertyOptionIDs))
+	for i, optionID := range propertyOptionIDs {
+		args[i] = optionID
+	}
+
+	query := c.queryBuilder.
+		Select("PropertyOptionsIDs").
+		From("IR_Condition").
+		Where(sq.Eq{"PlaybookID": playbookID}).
+		Where(sq.Eq{"RunID": ""}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Expr("PropertyOptionsIDs ??| ARRAY["+placeholders+"]", args...))
+
+	sqlQuery, sqlArgs, err := query.ToSql()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to build query for conditions in playbook %s", playbookID)
+	}
+
+	var propertyOptionsIDsList []json.RawMessage
+	if err := c.store.db.Select(&propertyOptionsIDsList, sqlQuery, sqlArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get conditions for playbook %s", playbookID)
+	}
+
+	result := make(map[string]int)
+	optionIDSet := make(map[string]bool)
+	for _, optionID := range propertyOptionIDs {
+		optionIDSet[optionID] = true
+	}
+
+	for _, propertyOptionsIDsBytes := range propertyOptionsIDsList {
+		if len(propertyOptionsIDsBytes) == 0 {
+			continue
+		}
+
+		var optionIDs []string
+		if err := json.Unmarshal(propertyOptionsIDsBytes, &optionIDs); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id": playbookID,
+				"raw_data":    string(propertyOptionsIDsBytes),
+			}).Warn("failed to unmarshal PropertyOptionsIDs from condition, skipping")
+			continue
+		}
+
+		for _, optionID := range optionIDs {
+			if optionIDSet[optionID] {
+				result[optionID]++
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // GetConditionsByRunAndFieldID retrieves all conditions for a given run and field ID

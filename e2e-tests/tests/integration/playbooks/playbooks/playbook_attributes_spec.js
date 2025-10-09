@@ -189,7 +189,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Click on type button to change type
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
-                cy.findByRole('button', {name: 'Change property type'}).click();
+                cy.findByRole('button', {name: 'Change attribute type'}).click();
             });
 
             // # Select new type
@@ -587,7 +587,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Change type if not text
         if (type !== 'text') {
             cy.findAllByTestId('property-field-row').last().within(() => {
-                cy.findByRole('button', {name: 'Change property type'}).trigger('click');
+                cy.findByRole('button', {name: 'Change attribute type'}).trigger('click');
             });
 
             // # Select the type from dropdown
@@ -650,7 +650,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function editAttributeName(index, newName) {
         cy.findAllByTestId('property-field-row').eq(index).within(() => {
-            cy.findByLabelText('Property name').clear().type(newName);
+            cy.findByLabelText('Attribute name').clear().type(newName);
         });
 
         // # Click outside to trigger save

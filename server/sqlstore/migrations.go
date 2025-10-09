@@ -1719,6 +1719,21 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.65.0"),
 		toVersion:   semver.MustParse("0.66.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(createPGGINIndex("IR_Condition_PropertyFieldIDs_GIN", "IR_Condition", "PropertyFieldIDs")); err != nil {
+				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyFieldIDs_GIN")
+			}
+
+			if _, err := e.Exec(createPGGINIndex("IR_Condition_PropertyOptionsIDs_GIN", "IR_Condition", "PropertyOptionsIDs")); err != nil {
+				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyOptionsIDs_GIN")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.66.0"),
+		toVersion:   semver.MustParse("0.67.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			// Add index for GetConditionsByRunAndFieldID query pattern
 			if _, err := e.Exec(createPGIndex("IR_Condition_RunID_DeleteAt", "IR_Condition", "RunID, DeleteAt")); err != nil {
 				return errors.Wrapf(err, "failed creating index IR_Condition_RunID_DeleteAt")

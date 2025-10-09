@@ -42,6 +42,19 @@ var createUniquePGIndex = func(indexName, tableName, columns string) string {
 	`, indexName, indexName, tableName, columns)
 }
 
+var createPGGINIndex = func(indexName, tableName, column string) string {
+	return fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			IF to_regclass('%s') IS NULL THEN
+				CREATE INDEX %s ON %s USING GIN (%s);
+			END IF;
+		END
+		$$;
+	`, indexName, indexName, tableName, column)
+}
+
 var addColumnToPGTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
 	_, err := e.Exec(fmt.Sprintf(`
 		DO

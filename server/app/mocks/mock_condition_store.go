@@ -34,6 +34,36 @@ func (m *MockConditionStore) EXPECT() *MockConditionStoreMockRecorder {
 	return m.recorder
 }
 
+// CountConditionsUsingPropertyField mocks base method.
+func (m *MockConditionStore) CountConditionsUsingPropertyField(arg0, arg1 string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountConditionsUsingPropertyField", arg0, arg1)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountConditionsUsingPropertyField indicates an expected call of CountConditionsUsingPropertyField.
+func (mr *MockConditionStoreMockRecorder) CountConditionsUsingPropertyField(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountConditionsUsingPropertyField", reflect.TypeOf((*MockConditionStore)(nil).CountConditionsUsingPropertyField), arg0, arg1)
+}
+
+// CountConditionsUsingPropertyOptions mocks base method.
+func (m *MockConditionStore) CountConditionsUsingPropertyOptions(arg0 string, arg1 []string) (map[string]int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountConditionsUsingPropertyOptions", arg0, arg1)
+	ret0, _ := ret[0].(map[string]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountConditionsUsingPropertyOptions indicates an expected call of CountConditionsUsingPropertyOptions.
+func (mr *MockConditionStoreMockRecorder) CountConditionsUsingPropertyOptions(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountConditionsUsingPropertyOptions", reflect.TypeOf((*MockConditionStore)(nil).CountConditionsUsingPropertyOptions), arg0, arg1)
+}
+
 // CreateCondition mocks base method.
 func (m *MockConditionStore) CreateCondition(arg0 string, arg1 app.Condition) (*app.Condition, error) {
 	m.ctrl.T.Helper()

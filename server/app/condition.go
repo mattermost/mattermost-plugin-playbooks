@@ -797,6 +797,8 @@ type ConditionStore interface {
 	GetRunConditions(playbookID, runID string, page, perPage int) ([]Condition, error)
 	GetPlaybookConditionCount(playbookID string) (int, error)
 	GetRunConditionCount(playbookID, runID string) (int, error)
+	CountConditionsUsingPropertyField(playbookID, propertyFieldID string) (int, error)
+	CountConditionsUsingPropertyOptions(playbookID string, propertyOptionIDs []string) (map[string]int, error)
 	GetConditionsByRunAndFieldID(runID, fieldID string) ([]Condition, error)
 }
 
