@@ -190,7 +190,7 @@ func TestRunCreation(t *testing.T) {
 					tc.permissionsPrep()
 				}
 
-				result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
+				result, err := e.ServerClient.DoAPIPost(context.Background(), e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes))
 				tc.expected(t, result, err)
 			})
 		}
@@ -401,7 +401,7 @@ func TestCreateRunInExistingChannel(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		assert.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
+		result, err := e.ServerClient.DoAPIPost(context.Background(), e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", string(dialogRequestBytes))
 
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusCreated, result.StatusCode)
@@ -502,7 +502,7 @@ func TestRunRetrieval(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete", func(t *testing.T) {
-		resp, err := e.ServerClient.DoAPIRequest(context.Background(), "GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", "")
+		resp, err := e.ServerClient.DoAPIGet(context.Background(), e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "")
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
@@ -588,7 +588,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
+		result, err := e.ServerClient.DoAPIPost(context.Background(), e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes))
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
@@ -610,7 +610,7 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		dialogRequestBytes, err := json.Marshal(dialogRequest)
 		require.NoError(t, err)
 
-		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", dialogRequestBytes, "")
+		result, err := e.ServerClient.DoAPIPost(context.Background(), e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes))
 		require.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, result.StatusCode)
 
@@ -1368,7 +1368,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
+		result, err := e.ServerClient.DoAPIPost(context.Background(), e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes))
 		require.Error(t, err)
 		require.Equal(t, http.StatusForbidden, result.StatusCode)
 	})
@@ -1412,7 +1412,7 @@ func TestIgnoreKeywords(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make the request
-		result, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", reqBytes, "")
+		result, err := e.ServerClient.DoAPIPost(context.Background(), e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/signal/keywords/ignore-thread", string(reqBytes))
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, result.StatusCode)
 	})
