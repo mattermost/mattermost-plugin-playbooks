@@ -16,6 +16,7 @@ type PropertyFieldAttrsInput struct {
 	SortOrder  *float64               `json:"sortOrder"`
 	Options    *[]PropertyOptionInput `json:"options"`
 	ParentID   *string                `json:"parentID"`
+	ValueType  *string                `json:"valueType"`
 }
 
 type PropertyFieldInput struct {

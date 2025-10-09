@@ -287,6 +287,10 @@ func convertPropertyFieldInputToPropertyField(input PropertyFieldInput) *app.Pro
 			attrs.ParentID = *input.Attrs.ParentID
 		}
 
+		if input.Attrs.ValueType != nil {
+			attrs.ValueType = *input.Attrs.ValueType
+		}
+
 		propertyField.Attrs = attrs
 	} else {
 		propertyField.Attrs = app.Attrs{

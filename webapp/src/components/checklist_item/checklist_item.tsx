@@ -8,7 +8,7 @@ import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from '@mattermost/types/users';
 
-import {FloatingPortal} from '@floating-ui/react-dom-interactions';
+import {FloatingPortal} from '@floating-ui/react';
 
 import {
     clientAddChecklistItem,

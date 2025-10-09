@@ -82,6 +82,13 @@ func (r *PropertyFieldAttrsResolver) Options(ctx context.Context) *[]*PropertyOp
 	return &resolvers
 }
 
+func (r *PropertyFieldAttrsResolver) ValueType(ctx context.Context) *string {
+	if r.attrs.ValueType == "" {
+		return nil
+	}
+	return &r.attrs.ValueType
+}
+
 func (r *PropertyOptionResolver) ID(ctx context.Context) string {
 	return r.option.GetID()
 }

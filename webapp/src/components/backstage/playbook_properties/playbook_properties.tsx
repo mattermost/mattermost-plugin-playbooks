@@ -16,7 +16,12 @@ import {
 } from '@tanstack/react-table';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {ChevronDownCircleOutlineIcon, FormatListBulletedIcon, MenuVariantIcon} from '@mattermost/compass-icons/components';
+import {
+    ChevronDownCircleOutlineIcon,
+    FormatListBulletedIcon,
+    LinkVariantIcon,
+    MenuVariantIcon,
+} from '@mattermost/compass-icons/components';
 
 import {
     FullPlaybook,
@@ -101,6 +106,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 visibility: updatedProperty.attrs.visibility,
                 sortOrder: updatedProperty.attrs.sort_order,
                 options: updatedProperty.attrs.options,
+                valueType: updatedProperty.attrs.value_type,
             },
         };
 
@@ -116,8 +122,17 @@ const PlaybookProperties = ({playbookID}: Props) => {
             return;
         }
 
+        // Find the highest number in existing "Attribute X" names
+        const attributeNumbers = properties
+            .map((prop) => {
+                const match = prop.name.match(/^Attribute (\d+)$/);
+                return match ? parseInt(match[1], 10) : 0;
+            })
+            .filter((num) => num > 0);
+        const nextNumber = attributeNumbers.length > 0 ? Math.max(...attributeNumbers) + 1 : 1;
+
         const newPropertyField: PropertyFieldInput = {
-            name: `Attribute ${properties.length + 1}`,
+            name: `Attribute ${nextNumber}`,
             type: PropertyFieldType.Text,
             attrs: {
                 visibility: 'when_set',
@@ -126,7 +141,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
         };
 
         await addPropertyField(playbookID, newPropertyField);
-    }, [addPropertyField, playbookID, properties.length]);
+    }, [addPropertyField, playbookID, properties]);
 
     const handleDragEnd = useCallback(async (result: any) => {
         if (!result.destination) {
@@ -180,7 +195,12 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     const TypeIcon = () => {
                         switch (info.row.original.type) {
                         case 'text':
-                            return <MenuVariantIcon size={16}/>;
+                            switch (info.row.original.attrs?.value_type) {
+                            case 'url':
+                                return <LinkVariantIcon size={16}/>;
+                            default:
+                                return <MenuVariantIcon size={16}/>;
+                            }
                         case 'select':
                             return <ChevronDownCircleOutlineIcon size={16}/>;
                         case 'multiselect':
@@ -191,7 +211,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     };
 
                     const target = (
-                        <TypeIconButton onClick={() => setEditingTypeId(info.row.original.id)}>
+                        <TypeIconButton
+                            onClick={() => setEditingTypeId(info.row.original.id)}
+                            aria-label={formatMessage({defaultMessage: 'Change property type'})}
+                        >
                             <TypeIcon/>
                         </TypeIconButton>
                     );
@@ -373,6 +396,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                                     <TableRow
                                                         ref={dragProvided.innerRef}
                                                         {...dragProvided.draggableProps}
+                                                        data-testid='property-field-row'
                                                     >
                                                         {row.getVisibleCells().map((cell) => (
                                                             <TableCell
