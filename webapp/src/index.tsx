@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Root, createRoot} from 'react-dom/client';
+import {render, unmountComponentAtNode} from 'react-dom';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {GlobalState} from '@mattermost/types/store';
@@ -145,7 +145,6 @@ export default class Plugin {
     activityFunc?: () => void;
 
     stylesContainer?: Element;
-    stylesRoot?: Root;
 
     doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
@@ -309,8 +308,7 @@ export default class Plugin {
     public initialize(registry: any, store: Store<GlobalState>): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
-        this.stylesRoot = createRoot(this.stylesContainer);
-        this.stylesRoot.render(<><GlobalSelectStyle/></>);
+        render(<><GlobalSelectStyle/></>, this.stylesContainer);
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
@@ -360,13 +358,8 @@ export default class Plugin {
             document.removeEventListener('click', this.activityFunc);
             delete this.activityFunc;
         }
-        if (this.stylesRoot) {
-            this.stylesRoot.unmount();
-            delete this.stylesRoot;
-        }
         if (this.stylesContainer) {
-            document.body.removeChild(this.stylesContainer);
-            delete this.stylesContainer;
+            unmountComponentAtNode(this.stylesContainer);
         }
     }
 }
