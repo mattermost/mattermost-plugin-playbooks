@@ -67,7 +67,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Edit the default name
             cy.findAllByTestId('property-field-row').first().within(() => {
-                cy.findByLabelText('Property name').clear().type('Priority');
+                cy.findByLabelText('Attribute name').clear().type('Priority');
             });
 
             // # Save by clicking outside
@@ -431,10 +431,10 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify duplicate was created with "Copy" suffix
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
-                cy.findByLabelText('Property name').should('have.value', 'Original Field');
+                cy.findByLabelText('Attribute name').should('have.value', 'Original Field');
             });
             cy.findAllByTestId('property-field-row').eq(1).within(() => {
-                cy.findByLabelText('Property name').should('have.value', 'Original Field Copy');
+                cy.findByLabelText('Attribute name').should('have.value', 'Original Field Copy');
             });
 
             // * Verify we now have 2 attributes
@@ -457,7 +457,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify duplicate has the same options
             cy.findAllByTestId('property-field-row').eq(1).within(() => {
-                cy.findByLabelText('Property name').should('have.value', 'Priority Copy');
+                cy.findByLabelText('Attribute name').should('have.value', 'Priority Copy');
                 cy.findByText('High').should('exist');
                 cy.findByText('Medium').should('exist');
                 cy.findByText('Low').should('exist');
@@ -565,7 +565,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Fill in the name only if provided
         if (name) {
             cy.findAllByTestId('property-field-row').last().within(() => {
-                cy.findByLabelText('Property name').clear().type(name);
+                cy.findByLabelText('Attribute name').clear().type(name);
             });
             cy.get('body').click(0, 0);
 
@@ -609,7 +609,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function verifyAttribute(index, name) {
         cy.findAllByTestId('property-field-row').eq(index).within(() => {
-            cy.findByLabelText('Property name').should('have.value', name);
+            cy.findByLabelText('Attribute name').should('have.value', name);
         });
     }
 
