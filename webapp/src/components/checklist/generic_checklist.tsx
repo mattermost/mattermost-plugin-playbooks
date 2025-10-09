@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
@@ -16,7 +16,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {Condition, ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
 
-import ConditionalGroup from './conditional_group';
+import ConditionHeader from './condition_header';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -38,6 +38,7 @@ interface Props {
     onDeleteCondition?: (conditionId: string) => void;
     onCreateCondition?: (expr: ConditionExprV1, itemIndex: number) => void;
     onUpdateCondition?: (conditionId: string, expr: ConditionExprV1) => void;
+    newlyCreatedConditionIds?: Set<string>;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -140,109 +141,90 @@ const GenericChecklist = (props: Props) => {
         props.onUpdateChecklist(newChecklist);
     };
 
-    // Group items by condition_id and create ordered list
-    const groupedItems: {[key: string]: ChecklistItem[]} = {};
-    const itemIndexMap = new Map<ChecklistItem, number>(); // Track original indices
-    const conditionFirstIndex = new Map<string, number>(); // Track first occurrence of each condition
-
-    // Build groups and track indices
-    props.checklist.items.forEach((item, index) => {
-        itemIndexMap.set(item, index);
-
-        // Filter items based on showItem prop
-        if (props.showItem && !props.showItem(item, myUser.id)) {
-            return;
+    // Helper to determine if we should show the condition header for this item
+    const shouldShowConditionHeader = (item: ChecklistItem, index: number): boolean => {
+        if (!item.condition_id) {
+            return false;
         }
 
-        if (item.condition_id) {
-            if (!groupedItems[item.condition_id]) {
-                groupedItems[item.condition_id] = [];
-                conditionFirstIndex.set(item.condition_id, index);
-            }
-            groupedItems[item.condition_id].push(item);
+        // Show header if:
+        // 1. This is the first item in the list, OR
+        // 2. The previous item has a different condition_id (or no condition)
+        if (index === 0) {
+            return true;
         }
-    });
 
-    // Create ordered list of items and groups
-    type OrderedEntry = {
-        type: 'item' | 'group';
-        item?: ChecklistItem;
-        conditionId?: string;
-        index: number; // Position in original array
+        const prevItem = props.checklist.items[index - 1];
+        return prevItem.condition_id !== item.condition_id;
     };
-
-    const orderedEntries: OrderedEntry[] = [];
-    const processedConditions = new Set<string>();
-
-    props.checklist.items.forEach((item, index) => {
-        // Skip filtered items
-        if (props.showItem && !props.showItem(item, myUser.id)) {
-            return;
-        }
-
-        if (item.condition_id) {
-            // Add condition group only once at the first item's position
-            if (!processedConditions.has(item.condition_id)) {
-                orderedEntries.push({
-                    type: 'group',
-                    conditionId: item.condition_id,
-                    index: conditionFirstIndex.get(item.condition_id) || index,
-                });
-                processedConditions.add(item.condition_id);
-            }
-        } else {
-            // Regular ungrouped item
-            orderedEntries.push({
-                type: 'item',
-                item,
-                index,
-            });
-        }
-    });
 
     // Use item IDs for unique React keys, fallback to title-based keys for items without IDs
     const rawKeys = props.checklist.items.map((item) => item.id || (props.id + item.title));
     const keys = generateKeys(rawKeys);
 
-    const renderChecklistItem = (checklistItem: ChecklistItem, index: number, dragIndex?: number) => {
-        // dragIndex is used for the Draggable component (group-relative position)
-        // index is used for all callbacks (flat array position)
-        const draggableIndex = dragIndex === undefined ? index : dragIndex;
+    const renderChecklistItem = (checklistItem: ChecklistItem, index: number) => {
+        const condition = checklistItem.condition_id ? props.conditions?.find((c) => c.id === checklistItem.condition_id) : undefined;
+
+        const hasCondition = Boolean(checklistItem.condition_id);
 
         return (
-            <DraggableChecklistItem
-                key={keys[index]}
-                playbookRun={props.playbookRun}
-                playbookId={props.playbookId}
-                readOnly={props.readOnly}
-                dragDisabled={addingItem || editingItemIndex !== null}
-                checklistIndex={props.checklistIndex}
-                item={checklistItem}
-                itemIndex={draggableIndex}
-                newItem={false}
-                cancelAddingItem={() => {
-                    setAddingItem(false);
-                }}
-                onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
-                onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
-                onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
-                itemButtonsFormat={props.itemButtonsFormat}
-                onReadOnlyInteract={props.onReadOnlyInteract}
-                onAddConditional={canAddConditional ? () => onOpenConditionEditor(index) : undefined}
-                onRemoveFromCondition={() => onRemoveFromCondition(index)}
-                onAssignToCondition={(conditionId) => onAssignToCondition(index, conditionId)}
-                availableConditions={(props.conditions || []).filter((condition) => {
-                    const currentItem = props.checklist.items[index];
-                    // Only show conditions that:
-                    // 1. Have at least one item
-                    // 2. Are not the condition this item is already in
-                    return condition.id !== currentItem.condition_id &&
-                        props.checklist.items.some((item) => item.condition_id === condition.id);
-                })}
-                onEditingChange={(isEditing) => {
-                    setEditingItemIndex(isEditing ? index : null);
-                }}
-            />
+            <React.Fragment key={keys[index]}>
+                {shouldShowConditionHeader(checklistItem, index) && condition && (
+                    <ConditionalHeaderWrapper>
+                        <ConditionHeader
+                            condition={condition}
+                            propertyFields={props.propertyFields || []}
+                            checklistIndex={props.checklistIndex}
+                            startEditing={props.newlyCreatedConditionIds?.has(condition.id)}
+                            onUpdate={(expr) => {
+                                if (props.onUpdateCondition) {
+                                    props.onUpdateCondition(condition.id, expr);
+                                }
+                            }}
+                            onDelete={() => {
+                                if (props.onDeleteCondition) {
+                                    props.onDeleteCondition(condition.id);
+                                }
+                            }}
+                        />
+                    </ConditionalHeaderWrapper>
+                )}
+                <ConditionalTaskWrapper $hasCondition={hasCondition}>
+                    <DraggableChecklistItem
+                        playbookRun={props.playbookRun}
+                        playbookId={props.playbookId}
+                        readOnly={props.readOnly}
+                        dragDisabled={addingItem || editingItemIndex !== null}
+                        checklistIndex={props.checklistIndex}
+                        item={checklistItem}
+                        itemIndex={index}
+                        newItem={false}
+                        cancelAddingItem={() => {
+                            setAddingItem(false);
+                        }}
+                        onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
+                        onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
+                        onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
+                        itemButtonsFormat={props.itemButtonsFormat}
+                        onReadOnlyInteract={props.onReadOnlyInteract}
+                        onAddConditional={canAddConditional ? () => onOpenConditionEditor(index) : undefined}
+                        onRemoveFromCondition={() => onRemoveFromCondition(index)}
+                        onAssignToCondition={(conditionId) => onAssignToCondition(index, conditionId)}
+                        availableConditions={(props.conditions || []).filter((cond) => {
+                            const currentItem = props.checklist.items[index];
+
+                            // Only show conditions that:
+                            // 1. Have at least one item
+                            // 2. Are not the condition this item is already in
+                            return cond.id !== currentItem.condition_id &&
+                            props.checklist.items.some((item) => item.condition_id === cond.id);
+                        })}
+                        onEditingChange={(isEditing) => {
+                            setEditingItemIndex(isEditing ? index : null);
+                        }}
+                    />
+                </ConditionalTaskWrapper>
+            </React.Fragment>
         );
     };
 
@@ -262,48 +244,14 @@ const GenericChecklist = (props: Props) => {
                         ref={droppableProvided.innerRef}
                         {...droppableProvided.droppableProps}
                     >
-                        {/* Render items and groups in order */}
-                        {orderedEntries.map((entry, entryIdx) => {
-                            if (entry.type === 'item' && entry.item) {
-                                const index = itemIndexMap.get(entry.item)!;
-                                return renderChecklistItem(entry.item, index);
+                        {/* Render all items in flat list with condition headers */}
+                        {props.checklist.items.map((item, index) => {
+                            // Skip filtered items
+                            if (props.showItem && !props.showItem(item, myUser.id)) {
+                                return null;
                             }
 
-                            if (entry.type === 'group' && entry.conditionId) {
-                                const conditionId = entry.conditionId;
-                                const condition = props.conditions?.find((c) => c.id === conditionId);
-
-                                if (!condition) {
-                                    // If condition not found, render items as ungrouped
-                                    return groupedItems[conditionId]?.map((checklistItem) => {
-                                        const index = itemIndexMap.get(checklistItem)!;
-                                        return renderChecklistItem(checklistItem, index);
-                                    });
-                                }
-
-                                return (
-                                    <ConditionalGroup
-                                        key={conditionId}
-                                        condition={condition}
-                                        items={groupedItems[conditionId] || []}
-                                        checklistIndex={props.checklistIndex}
-                                        itemIndex={entryIdx}
-                                        propertyFields={props.propertyFields || []}
-                                        onDeleteCondition={props.onDeleteCondition}
-                                        onUpdateCondition={props.onUpdateCondition}
-                                        dragDisabled={isDragDropDisabled}
-                                    >
-                                        {(groupedItems[conditionId] || []).map((checklistItem, groupItemIndex) => {
-                                            const originalIndex = itemIndexMap.get(checklistItem)!;
-
-                                            // Pass both originalIndex (for callbacks) and groupItemIndex (for dragging)
-                                            return renderChecklistItem(checklistItem, originalIndex, groupItemIndex);
-                                        })}
-                                    </ConditionalGroup>
-                                );
-                            }
-
-                            return null;
+                            return renderChecklistItem(item, index);
                         })}
 
                         {addingItem &&
@@ -323,7 +271,7 @@ const GenericChecklist = (props: Props) => {
                                 onAddChecklistItem={onAddChecklistItem}
                                 itemButtonsFormat={props.itemButtonsFormat}
                                 onReadOnlyInteract={props.onReadOnlyInteract}
-                                onEditingChange={(isEditing) => {
+                                onEditingChange={() => {
                                     // New item is always in editing mode, so we don't need to track it separately
                                     // addingItem state already handles disabling drag & drop
                                 }}
@@ -394,5 +342,16 @@ export const generateKeys = (arr: string[]): string[] => {
     }
     return keys;
 };
+
+const ConditionalHeaderWrapper = styled.div`
+`;
+
+const ConditionalTaskWrapper = styled.div<{$hasCondition: boolean}>`
+    ${({$hasCondition}) => $hasCondition && css`
+        margin-left: 15px;
+        padding-left: 5px;
+        border-left: 2px solid rgba(var(--center-channel-color-rgb), 0.16);
+    `}
+`;
 
 export default GenericChecklist;

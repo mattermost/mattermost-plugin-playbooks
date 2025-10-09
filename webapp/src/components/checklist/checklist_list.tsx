@@ -74,6 +74,7 @@ const ChecklistList = ({
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+    const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition, refetch: refetchConditions} = usePlaybookConditions(inPlaybook?.id || '');
@@ -201,6 +202,9 @@ const ChecklistList = ({
                 playbook_id: playbook?.id || '',
             });
 
+            // Mark this condition as newly created so it starts in edit mode
+            setNewlyCreatedConditionIds((prev) => new Set(prev).add(result.id));
+
             // Refetch conditions to get the latest data
             refetchConditions();
 
@@ -216,6 +220,15 @@ const ChecklistList = ({
                 items: newItems,
             };
             setChecklistsForPlaybook(newChecklists);
+
+            // Remove from newly created set after a short delay to allow initial edit
+            setTimeout(() => {
+                setNewlyCreatedConditionIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(result.id);
+                    return next;
+                });
+            }, 100);
         } catch (error) {
             console.error('Failed to create condition:', error); // eslint-disable-line no-console
         }
@@ -265,153 +278,39 @@ const ChecklistList = ({
 
         // Move a checklist item, either inside of the same checklist, or between checklists
         if (result.type === 'checklist-item') {
-            // Parse droppableIds to detect conditional groups
-            // Format: "condition-{conditionId}-checklist-{checklistIdx}" or just "{checklistIdx}"
-            const parseDroppableId = (droppableId: string): {checklistIdx: number; conditionId?: string} => {
-                const conditionMatch = droppableId.match(/^condition-(.+)-checklist-(\d+)$/);
-                if (conditionMatch) {
-                    return {
-                        conditionId: conditionMatch[1],
-                        checklistIdx: parseInt(conditionMatch[2], 10),
-                    };
-                }
-                return {checklistIdx: parseInt(droppableId, 10)};
-            };
+            // Simple flat list - droppableId is just the checklist index
+            const srcChecklistIdx = parseInt(result.source.droppableId, 10);
+            const dstChecklistIdx = parseInt(result.destination.droppableId, 10);
 
-            const src = parseDroppableId(result.source.droppableId);
-            const dst = parseDroppableId(result.destination.droppableId);
+            if (srcChecklistIdx === dstChecklistIdx) {
+                // Moving within the same checklist - simple reorder
+                const newChecklistItems = [...checklists[srcChecklistIdx].items];
+                const [moved] = newChecklistItems.splice(srcIdx, 1);
+                newChecklistItems.splice(dstIdx, 0, moved);
 
-            // Helper to get the actual flat array index from a conditional group index
-            const getFlatIndex = (checklistIdx: number, conditionId: string | undefined, groupIndex: number): number => {
-                if (!conditionId) {
-                    // Not in a conditional group - find the nth item without a condition_id
-                    const items = checklists[checklistIdx].items;
-                    let count = 0;
-                    for (let i = 0; i < items.length; i++) {
-                        if (!items[i].condition_id) {
-                            if (count === groupIndex) {
-                                return i;
-                            }
-                            count++;
-                        }
-                    }
-                    return -1;
-                }
-
-                // In a conditional group - find the nth item with this condition_id
-                const items = checklists[checklistIdx].items;
-                let count = 0;
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].condition_id === conditionId) {
-                        if (count === groupIndex) {
-                            return i;
-                        }
-                        count++;
-                    }
-                }
-                return -1;
-            };
-
-            // Helper to calculate where to insert in the flat array
-            const calculateInsertionIndex = (checklistIdx: number, conditionId: string | undefined, groupIndex: number, items: ChecklistItem[]): number => {
-                if (!conditionId) {
-                    // Inserting into main area (no condition)
-                    // Find the position of the nth non-conditional item
-                    let count = 0;
-                    for (let i = 0; i < items.length; i++) {
-                        if (!items[i].condition_id) {
-                            if (count === groupIndex) {
-                                return i;
-                            }
-                            count++;
-                        }
-                    }
-
-                    // If we're inserting at the end, return the length
-                    return items.length;
-                }
-
-                // Inserting into a conditional group
-                // Find the position of the nth item with this condition_id
-                let count = 0;
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].condition_id === conditionId) {
-                        if (count === groupIndex) {
-                            return i;
-                        }
-                        count++;
-                    }
-                }
-
-                // If we're inserting at the end of the group, find the position after the last item
-                // in this condition group
-                for (let i = items.length - 1; i >= 0; i--) {
-                    if (items[i].condition_id === conditionId) {
-                        return i + 1;
-                    }
-                }
-
-                // Group doesn't exist yet - this shouldn't happen
-                return items.length;
-            };
-
-            if (src.checklistIdx === dst.checklistIdx) {
-                // Moving within the same checklist
-                const newChecklistItems = [...checklists[src.checklistIdx].items];
-
-                // Get actual indices in the flat array
-                const actualSrcIdx = getFlatIndex(src.checklistIdx, src.conditionId, srcIdx);
-                if (actualSrcIdx === -1) {
-                    return;
-                }
-
-                // Remove the item
-                const [removed] = newChecklistItems.splice(actualSrcIdx, 1);
-
-                // Update condition_id if moving between groups
-                const updatedItem = dst.conditionId === src.conditionId ? removed : {...removed, condition_id: dst.conditionId || ''};
-
-                // Calculate where to insert (after removal, so indices may have shifted)
-                const actualDstIdx = calculateInsertionIndex(dst.checklistIdx, dst.conditionId, dstIdx, newChecklistItems);
-
-                // Insert the item
-                newChecklistItems.splice(actualDstIdx, 0, updatedItem);
-
-                newChecklists[src.checklistIdx] = {
-                    ...newChecklists[src.checklistIdx],
+                newChecklists[srcChecklistIdx] = {
+                    ...newChecklists[srcChecklistIdx],
                     items: newChecklistItems,
                 };
             } else {
                 // Moving between different checklists
-                const srcChecklist = checklists[src.checklistIdx];
-                const dstChecklist = checklists[dst.checklistIdx];
-
-                // Get actual source index
-                const actualSrcIdx = getFlatIndex(src.checklistIdx, src.conditionId, srcIdx);
-                if (actualSrcIdx === -1) {
-                    return;
-                }
+                const srcChecklist = checklists[srcChecklistIdx];
+                const dstChecklist = checklists[dstChecklistIdx];
 
                 // Remove from source
                 const newSrcChecklistItems = [...srcChecklist.items];
-                const [moved] = newSrcChecklistItems.splice(actualSrcIdx, 1);
-
-                // Update condition_id if moving between groups
-                const updatedItem = dst.conditionId === src.conditionId ? moved : {...moved, condition_id: dst.conditionId || ''};
-
-                // Calculate destination index
-                const newDstChecklistItems = [...dstChecklist.items];
-                const actualDstIdx = calculateInsertionIndex(dst.checklistIdx, dst.conditionId, dstIdx, newDstChecklistItems);
+                const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
 
                 // Insert into destination
-                newDstChecklistItems.splice(actualDstIdx, 0, updatedItem);
+                const newDstChecklistItems = [...dstChecklist.items];
+                newDstChecklistItems.splice(dstIdx, 0, moved);
 
                 // Update both checklists
-                newChecklists[src.checklistIdx] = {
+                newChecklists[srcChecklistIdx] = {
                     ...srcChecklist,
                     items: newSrcChecklistItems,
                 };
-                newChecklists[dst.checklistIdx] = {
+                newChecklists[dstChecklistIdx] = {
                     ...dstChecklist,
                     items: newDstChecklistItems,
                 };
@@ -419,7 +318,7 @@ const ChecklistList = ({
 
             // Persist the new data in the server
             if (playbookRun) {
-                clientMoveChecklistItem(playbookRun.id, src.checklistIdx, srcIdx, dst.checklistIdx, dstIdx);
+                clientMoveChecklistItem(playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
             }
         }
 
@@ -587,6 +486,7 @@ const ChecklistList = ({
                                                     onDeleteCondition={onDeleteCondition}
                                                     onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
                                                     onUpdateCondition={onUpdateCondition}
+                                                    newlyCreatedConditionIds={newlyCreatedConditionIds}
                                                 />
                                             </CollapsibleChecklist>
                                         );
