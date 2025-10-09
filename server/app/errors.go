@@ -31,3 +31,6 @@ var ErrPropertyFieldInUse = errors.New("property field is in use")
 
 // ErrPropertyOptionsInUse occurs when trying to remove property options that are referenced by conditions.
 var ErrPropertyOptionsInUse = errors.New("property options are in use")
+
+// ErrPropertyFieldTypeChangeNotAllowed occurs when trying to change the type of a property field that is referenced by conditions.
+var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type change not allowed")

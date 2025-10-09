@@ -155,6 +155,13 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 		return nil, errors.Wrap(err, "failed to get existing property field")
 	}
 
+	// Check if the type is changing and validate it's allowed
+	if existingField.Type != propertyField.Type {
+		if err := s.validatePropertyFieldTypeChange(existingField, propertyField, playbookID); err != nil {
+			return nil, err
+		}
+	}
+
 	// Check if any options are being removed and validate they are not in use
 	if propertyField.SupportsOptions() {
 		existingPropertyField, err := NewPropertyFieldFromMattermostPropertyField(existingField)
@@ -230,6 +237,19 @@ func (s *propertyService) getOptionNames(options model.PropertyOptions[*model.Pl
 		}
 	}
 	return strings.Join(names, ", ")
+}
+
+func (s *propertyService) validatePropertyFieldTypeChange(existingField *model.PropertyField, updatedField PropertyField, playbookID string) error {
+	count, err := s.conditionStore.CountConditionsUsingPropertyField(playbookID, updatedField.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if property field is in use")
+	}
+
+	if count > 0 {
+		return errors.Wrapf(ErrPropertyFieldTypeChangeNotAllowed, "cannot change type of property field '%s' from '%s' to '%s': it is referenced by %d condition(s). Please remove or update the conditions before changing the field type", updatedField.Name, existingField.Type, updatedField.Type, count)
+	}
+
+	return nil
 }
 
 func (s *propertyService) DeletePropertyField(playbookID string, propertyID string) error {

@@ -139,6 +139,9 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 		if errors.Is(err, app.ErrPropertyOptionsInUse) {
 			return "", newGraphQLError(err)
 		}
+		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
+			return "", newGraphQLError(err)
+		}
 		return "", errors.Wrap(err, "failed to update property field")
 	}
 
