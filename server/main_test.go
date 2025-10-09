@@ -278,15 +278,17 @@ func Setup(t *testing.T) *TestEnvironment {
 
 	ap := sapp.New(sapp.ServerConnector(server.Channels()))
 
+	ctx := request.EmptyContext(testLogger)
 	env := &TestEnvironment{
 		T:       t,
-		Context: request.EmptyContext(testLogger),
+		Context: ctx,
 		Srv:     server,
 		A:       ap,
 		Permissions: &serverPermissionsWrapper{
 			TestHelper: api4.TestHelper{
-				Server: server,
-				App:    ap,
+				Server:  server,
+				App:     ap,
+				Context: ctx,
 			},
 		},
 		logger: testLogger,
