@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {renderHook} from '@testing-library/react-hooks';
 import * as redux from 'react-redux';
 
@@ -6,15 +9,15 @@ import * as license from 'src/license';
 import {
     useAllowAddMessageToTimelineInCurrentTeam,
     useAllowChannelExport,
-    useAllowPlaybookStatsView,
-    useAllowPlaybookAndRunMetrics,
-    useAllowRetrospectiveAccess,
-    useAllowPrivatePlaybooks,
-    useAllowSetTaskDueDate,
-    useAllowMakePlaybookPrivate,
-    useAllowRequestUpdate,
-    useAllowPlaybookAttributes,
     useAllowConditionalPlaybooks,
+    useAllowMakePlaybookPrivate,
+    useAllowPlaybookAndRunMetrics,
+    useAllowPlaybookAttributes,
+    useAllowPlaybookStatsView,
+    useAllowPrivatePlaybooks,
+    useAllowRequestUpdate,
+    useAllowRetrospectiveAccess,
+    useAllowSetTaskDueDate,
 } from './license';
 
 describe('License Hooks', () => {
