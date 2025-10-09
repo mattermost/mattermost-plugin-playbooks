@@ -57,12 +57,12 @@ const InlineConditionEditor = ({
     return (
         <EditorContainer onClick={(e) => e.stopPropagation()}>
             <EditorHeader>
-                <FormattedMessage defaultMessage="Add Conditional" />
+                <FormattedMessage defaultMessage='Add Conditional'/>
             </EditorHeader>
             <EditorBody>
                 <FormRow>
                     <FormLabel>
-                        <FormattedMessage defaultMessage="Field:" />
+                        <FormattedMessage defaultMessage='Field:'/>
                     </FormLabel>
                     <Select
                         value={selectedFieldId}
@@ -79,7 +79,7 @@ const InlineConditionEditor = ({
                             }
                         }}
                     >
-                        <option value="">
+                        <option value=''>
                             {formatMessage({defaultMessage: 'Select a field...'})}
                         </option>
                         {availableFields.map((property) => (
@@ -97,16 +97,16 @@ const InlineConditionEditor = ({
                     <>
                         <FormRow>
                             <FormLabel>
-                                <FormattedMessage defaultMessage="Operator:" />
+                                <FormattedMessage defaultMessage='Operator:'/>
                             </FormLabel>
                             <Select
                                 value={selectedOperator}
                                 onChange={(e) => setSelectedOperator(e.target.value as 'is' | 'isNot')}
                             >
-                                <option value="is">
+                                <option value='is'>
                                     {formatMessage({defaultMessage: 'is'})}
                                 </option>
-                                <option value="isNot">
+                                <option value='isNot'>
                                     {formatMessage({defaultMessage: 'is not'})}
                                 </option>
                             </Select>
@@ -114,7 +114,7 @@ const InlineConditionEditor = ({
 
                         <FormRow>
                             <FormLabel>
-                                <FormattedMessage defaultMessage="Value:" />
+                                <FormattedMessage defaultMessage='Value:'/>
                             </FormLabel>
                             {isSelectField ? (
                                 <Select
@@ -123,7 +123,7 @@ const InlineConditionEditor = ({
                                         setConditionValue([e.target.value]);
                                     }}
                                 >
-                                    <option value="">
+                                    <option value=''>
                                         {formatMessage({defaultMessage: 'Select value...'})}
                                     </option>
                                     {selectedProperty?.attrs.options?.map((option) => (
@@ -148,13 +148,13 @@ const InlineConditionEditor = ({
             </EditorBody>
             <EditorFooter>
                 <CancelButton onClick={onCancel}>
-                    <FormattedMessage defaultMessage="Cancel" />
+                    <FormattedMessage defaultMessage='Cancel'/>
                 </CancelButton>
                 <SaveButton
                     onClick={handleSave}
                     disabled={!selectedFieldId || !hasValidValue()}
                 >
-                    <FormattedMessage defaultMessage="Save" />
+                    <FormattedMessage defaultMessage='Save'/>
                 </SaveButton>
             </EditorFooter>
         </EditorContainer>
