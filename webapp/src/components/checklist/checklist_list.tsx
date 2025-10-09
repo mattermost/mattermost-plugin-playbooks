@@ -22,7 +22,12 @@ import {FloatingPortal} from '@floating-ui/react';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {playbookRunUpdated} from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
+import {
+    clientAddChecklist,
+    clientMoveChecklist,
+    clientMoveChecklistItem,
+    updatePlaybookCondition,
+} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
@@ -31,6 +36,7 @@ import {useProxyState} from 'src/hooks';
 import {usePlaybookConditions} from 'src/hooks/conditions';
 import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {getDistinctAssignees} from 'src/utils';
+import {ConditionExprV1} from 'src/types/conditions';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 
@@ -70,7 +76,7 @@ const ChecklistList = ({
     const [isDragging, setIsDragging] = useState(false);
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
-    const {conditions, refetch: refetchConditions} = usePlaybookConditions(inPlaybook?.id || '');
+    const {conditions, createCondition, refetch: refetchConditions} = usePlaybookConditions(inPlaybook?.id || '');
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
@@ -186,6 +192,55 @@ const ChecklistList = ({
         // For now, we just remove the reference from items
     };
 
+    const onCreateCondition = async (checklistIndex: number, itemIndex: number, expr: ConditionExprV1) => {
+        try {
+            // Create the condition on the server
+            const result = await createCondition({
+                version: 1,
+                condition_expr: expr,
+                playbook_id: playbook?.id || '',
+            });
+
+            // Refetch conditions to get the latest data
+            refetchConditions();
+
+            // Update the item with the new condition_id
+            const newChecklists = [...checklists];
+            const newItems = [...newChecklists[checklistIndex].items];
+            newItems[itemIndex] = {
+                ...newItems[itemIndex],
+                condition_id: result.id,
+            };
+            newChecklists[checklistIndex] = {
+                ...newChecklists[checklistIndex],
+                items: newItems,
+            };
+            setChecklistsForPlaybook(newChecklists);
+        } catch (error) {
+            console.error('Failed to create condition:', error); // eslint-disable-line no-console
+        }
+    };
+
+    const onUpdateCondition = async (conditionId: string, expr: ConditionExprV1) => {
+        try {
+            const existingCondition = conditions.find((c) => c.id === conditionId);
+            if (!existingCondition) {
+                return;
+            }
+
+            // Update the condition on the server
+            await updatePlaybookCondition(playbook?.id || '', conditionId, {
+                ...existingCondition,
+                condition_expr: expr,
+            });
+
+            // Refetch conditions to get the latest data
+            refetchConditions();
+        } catch (error) {
+            console.error('Failed to update condition:', error); // eslint-disable-line no-console
+        }
+    };
+
     const onDragStart = () => {
         setIsDragging(true);
     };
@@ -210,38 +265,153 @@ const ChecklistList = ({
 
         // Move a checklist item, either inside of the same checklist, or between checklists
         if (result.type === 'checklist-item') {
-            const srcChecklistIdx = parseInt(result.source.droppableId, 10);
-            const dstChecklistIdx = parseInt(result.destination.droppableId, 10);
+            // Parse droppableIds to detect conditional groups
+            // Format: "condition-{conditionId}-checklist-{checklistIdx}" or just "{checklistIdx}"
+            const parseDroppableId = (droppableId: string): {checklistIdx: number; conditionId?: string} => {
+                const conditionMatch = droppableId.match(/^condition-(.+)-checklist-(\d+)$/);
+                if (conditionMatch) {
+                    return {
+                        conditionId: conditionMatch[1],
+                        checklistIdx: parseInt(conditionMatch[2], 10),
+                    };
+                }
+                return {checklistIdx: parseInt(droppableId, 10)};
+            };
 
-            if (srcChecklistIdx === dstChecklistIdx) {
-                // Remove the dragged item from the checklist
-                const newChecklistItems = [...checklists[srcChecklistIdx].items];
-                const [removed] = newChecklistItems.splice(srcIdx, 1);
+            const src = parseDroppableId(result.source.droppableId);
+            const dst = parseDroppableId(result.destination.droppableId);
 
-                // Add the dragged item to the checklist
-                newChecklistItems.splice(dstIdx, 0, removed);
-                newChecklists[srcChecklistIdx] = {
-                    ...newChecklists[srcChecklistIdx],
+            // Helper to get the actual flat array index from a conditional group index
+            const getFlatIndex = (checklistIdx: number, conditionId: string | undefined, groupIndex: number): number => {
+                if (!conditionId) {
+                    // Not in a conditional group - find the nth item without a condition_id
+                    const items = checklists[checklistIdx].items;
+                    let count = 0;
+                    for (let i = 0; i < items.length; i++) {
+                        if (!items[i].condition_id) {
+                            if (count === groupIndex) {
+                                return i;
+                            }
+                            count++;
+                        }
+                    }
+                    return -1;
+                }
+
+                // In a conditional group - find the nth item with this condition_id
+                const items = checklists[checklistIdx].items;
+                let count = 0;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].condition_id === conditionId) {
+                        if (count === groupIndex) {
+                            return i;
+                        }
+                        count++;
+                    }
+                }
+                return -1;
+            };
+
+            // Helper to calculate where to insert in the flat array
+            const calculateInsertionIndex = (checklistIdx: number, conditionId: string | undefined, groupIndex: number, items: ChecklistItem[]): number => {
+                if (!conditionId) {
+                    // Inserting into main area (no condition)
+                    // Find the position of the nth non-conditional item
+                    let count = 0;
+                    for (let i = 0; i < items.length; i++) {
+                        if (!items[i].condition_id) {
+                            if (count === groupIndex) {
+                                return i;
+                            }
+                            count++;
+                        }
+                    }
+
+                    // If we're inserting at the end, return the length
+                    return items.length;
+                }
+
+                // Inserting into a conditional group
+                // Find the position of the nth item with this condition_id
+                let count = 0;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].condition_id === conditionId) {
+                        if (count === groupIndex) {
+                            return i;
+                        }
+                        count++;
+                    }
+                }
+
+                // If we're inserting at the end of the group, find the position after the last item
+                // in this condition group
+                for (let i = items.length - 1; i >= 0; i--) {
+                    if (items[i].condition_id === conditionId) {
+                        return i + 1;
+                    }
+                }
+
+                // Group doesn't exist yet - this shouldn't happen
+                return items.length;
+            };
+
+            if (src.checklistIdx === dst.checklistIdx) {
+                // Moving within the same checklist
+                const newChecklistItems = [...checklists[src.checklistIdx].items];
+
+                // Get actual indices in the flat array
+                const actualSrcIdx = getFlatIndex(src.checklistIdx, src.conditionId, srcIdx);
+                if (actualSrcIdx === -1) {
+                    return;
+                }
+
+                // Remove the item
+                const [removed] = newChecklistItems.splice(actualSrcIdx, 1);
+
+                // Update condition_id if moving between groups
+                const updatedItem = dst.conditionId === src.conditionId ? removed : {...removed, condition_id: dst.conditionId || ''};
+
+                // Calculate where to insert (after removal, so indices may have shifted)
+                const actualDstIdx = calculateInsertionIndex(dst.checklistIdx, dst.conditionId, dstIdx, newChecklistItems);
+
+                // Insert the item
+                newChecklistItems.splice(actualDstIdx, 0, updatedItem);
+
+                newChecklists[src.checklistIdx] = {
+                    ...newChecklists[src.checklistIdx],
                     items: newChecklistItems,
                 };
             } else {
-                const srcChecklist = checklists[srcChecklistIdx];
-                const dstChecklist = checklists[dstChecklistIdx];
+                // Moving between different checklists
+                const srcChecklist = checklists[src.checklistIdx];
+                const dstChecklist = checklists[dst.checklistIdx];
 
-                // Remove the dragged item from the source checklist
+                // Get actual source index
+                const actualSrcIdx = getFlatIndex(src.checklistIdx, src.conditionId, srcIdx);
+                if (actualSrcIdx === -1) {
+                    return;
+                }
+
+                // Remove from source
                 const newSrcChecklistItems = [...srcChecklist.items];
-                const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
+                const [moved] = newSrcChecklistItems.splice(actualSrcIdx, 1);
 
-                // Add the dragged item to the destination checklist
+                // Update condition_id if moving between groups
+                const updatedItem = dst.conditionId === src.conditionId ? moved : {...moved, condition_id: dst.conditionId || ''};
+
+                // Calculate destination index
                 const newDstChecklistItems = [...dstChecklist.items];
-                newDstChecklistItems.splice(dstIdx, 0, moved);
+                const actualDstIdx = calculateInsertionIndex(dst.checklistIdx, dst.conditionId, dstIdx, newDstChecklistItems);
 
-                // Modify the new checklists array with the new source and destination checklists
-                newChecklists[srcChecklistIdx] = {
+                // Insert into destination
+                newDstChecklistItems.splice(actualDstIdx, 0, updatedItem);
+
+                // Update both checklists
+                newChecklists[src.checklistIdx] = {
                     ...srcChecklist,
                     items: newSrcChecklistItems,
                 };
-                newChecklists[dstChecklistIdx] = {
+                newChecklists[dst.checklistIdx] = {
                     ...dstChecklist,
                     items: newDstChecklistItems,
                 };
@@ -249,7 +419,7 @@ const ChecklistList = ({
 
             // Persist the new data in the server
             if (playbookRun) {
-                clientMoveChecklistItem(playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
+                clientMoveChecklistItem(playbookRun.id, src.checklistIdx, srcIdx, dst.checklistIdx, dstIdx);
             }
         }
 
@@ -399,10 +569,24 @@ const ChecklistList = ({
                                                     onReadOnlyInteract={onReadOnlyInteract}
                                                     conditions={conditions}
                                                     propertyFields={playbook?.propertyFields.map((pf) => ({
-                                                        ...pf,
+                                                        id: pf.id,
+                                                        name: pf.name,
+                                                        type: pf.type,
+                                                        group_id: pf.group_id,
+                                                        create_at: pf.create_at,
+                                                        update_at: pf.update_at,
+                                                        delete_at: pf.delete_at,
                                                         target_type: 'playbook' as const,
+                                                        attrs: {
+                                                            visibility: pf.attrs.visibility as any,
+                                                            sort_order: pf.attrs.sort_order,
+                                                            options: pf.attrs.options as any,
+                                                            parent_id: pf.attrs.parent_id || undefined,
+                                                        },
                                                     })) || []}
                                                     onDeleteCondition={onDeleteCondition}
+                                                    onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
+                                                    onUpdateCondition={onUpdateCondition}
                                                 />
                                             </CollapsibleChecklist>
                                         );
