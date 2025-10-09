@@ -386,6 +386,9 @@ func (s *conditionService) applyConditionResults(
 
 			if currentConditionAction != item.ConditionAction {
 				result.ChecklistChanges[checklist.Title].hasChanges = true
+				now := model.GetMillis()
+				item.UpdateAt = now
+				checklist.UpdateAt = now
 			}
 		}
 	}
