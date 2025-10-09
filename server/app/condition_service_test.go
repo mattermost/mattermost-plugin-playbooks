@@ -429,6 +429,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -436,13 +439,15 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:              model.NewId(),
 							Title:           "Test Item",
 							ConditionID:     conditionID,
 							ConditionAction: app.ConditionActionHidden, // Initially hidden
+							UpdateAt:        initialItemUpdateAt,
 						},
 					},
 				},
@@ -460,6 +465,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Added)
 		require.True(t, result.AnythingChanged())
 		require.True(t, result.AnythingAdded())
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt)
+		require.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("condition not met - visible item becomes hidden (no recent modifications)", func(t *testing.T) {
@@ -483,6 +491,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -490,7 +501,8 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:               model.NewId(),
@@ -499,6 +511,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 							ConditionAction:  app.ConditionActionNone, // Initially visible
 							AssigneeModified: 0,                       // Not modified
 							StateModified:    0,                       // Not modified
+							UpdateAt:         initialItemUpdateAt,
 						},
 					},
 				},
@@ -516,6 +529,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Hidden)
 		require.True(t, result.AnythingChanged())
 		require.False(t, result.AnythingAdded())
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt)
+		require.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("condition met - item already visible (no change)", func(t *testing.T) {
@@ -539,6 +555,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -546,13 +565,15 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:              model.NewId(),
 							Title:           "Test Item",
 							ConditionID:     conditionID,
 							ConditionAction: app.ConditionActionNone, // Already visible
+							UpdateAt:        initialItemUpdateAt,
 						},
 					},
 				},
@@ -570,6 +591,8 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
 		require.False(t, result.AnythingChanged())
+		require.Equal(t, initialItemUpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
+		require.Equal(t, initialChecklistUpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("condition not met - item with recent assignee modification shown_because_modified", func(t *testing.T) {
@@ -593,6 +616,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -600,7 +626,8 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:               model.NewId(),
@@ -609,6 +636,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 							ConditionAction:  app.ConditionActionNone,
 							AssigneeModified: model.GetMillis(), // Recently modified
 							StateModified:    0,
+							UpdateAt:         initialItemUpdateAt,
 						},
 					},
 				},
@@ -626,6 +654,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
 		require.True(t, result.AnythingChanged())
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt)
+		require.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("condition not met - item with recent state modification shown_because_modified", func(t *testing.T) {
@@ -649,6 +680,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -656,7 +690,8 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:               model.NewId(),
@@ -665,6 +700,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 							ConditionAction:  app.ConditionActionNone,
 							AssigneeModified: 0,
 							StateModified:    model.GetMillis(), // Recently modified
+							UpdateAt:         initialItemUpdateAt,
 						},
 					},
 				},
@@ -682,6 +718,9 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
 		require.True(t, result.AnythingChanged())
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt)
+		require.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("no conditions for field", func(t *testing.T) {
@@ -762,6 +801,11 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt1 := model.GetMillis() - 5000
+		initialChecklistUpdateAt1 := model.GetMillis() - 5000
+		initialItemUpdateAt2 := model.GetMillis() - 5000
+		initialChecklistUpdateAt2 := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -769,18 +813,21 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Checklist 1",
+					Title:    "Checklist 1",
+					UpdateAt: initialChecklistUpdateAt1,
 					Items: []app.ChecklistItem{
 						{
 							ID:              model.NewId(),
 							Title:           "Item 1",
 							ConditionID:     condition1.ID,
 							ConditionAction: app.ConditionActionHidden,
+							UpdateAt:        initialItemUpdateAt1,
 						},
 					},
 				},
 				{
-					Title: "Checklist 2",
+					Title:    "Checklist 2",
+					UpdateAt: initialChecklistUpdateAt2,
 					Items: []app.ChecklistItem{
 						{
 							ID:               model.NewId(),
@@ -789,6 +836,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 							ConditionAction:  app.ConditionActionNone,
 							AssigneeModified: 0,
 							StateModified:    0,
+							UpdateAt:         initialItemUpdateAt2,
 						},
 					},
 				},
@@ -806,10 +854,14 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 		// First item: condition met, should become visible
 		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
 		require.Equal(t, 1, result.ChecklistChanges["Checklist 1"].Added)
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt1)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt1)
 
 		// Second item: condition not met, should become hidden
 		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[1].Items[0].ConditionAction)
 		require.Equal(t, 1, result.ChecklistChanges["Checklist 2"].Hidden)
+		require.Greater(t, playbookRun.Checklists[1].Items[0].UpdateAt, initialItemUpdateAt2)
+		require.Greater(t, playbookRun.Checklists[1].UpdateAt, initialChecklistUpdateAt2)
 
 		require.True(t, result.AnythingChanged())
 		require.True(t, result.AnythingAdded())
@@ -861,6 +913,9 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -868,13 +923,15 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:              model.NewId(),
 							Title:           "Test Item",
 							ConditionID:     conditionID,
 							ConditionAction: app.ConditionActionHidden,
+							UpdateAt:        initialItemUpdateAt,
 						},
 					},
 				},
@@ -892,6 +949,9 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Added)
 		require.True(t, result.AnythingChanged())
 		require.True(t, result.AnythingAdded())
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt)
+		require.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("condition not met - visible item becomes hidden", func(t *testing.T) {
@@ -914,6 +974,9 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -921,7 +984,8 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:               model.NewId(),
@@ -930,6 +994,7 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 							ConditionAction:  app.ConditionActionNone,
 							AssigneeModified: 0,
 							StateModified:    0,
+							UpdateAt:         initialItemUpdateAt,
 						},
 					},
 				},
@@ -947,6 +1012,9 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 		require.Equal(t, 1, result.ChecklistChanges["Test Checklist"].Hidden)
 		require.True(t, result.AnythingChanged())
 		require.False(t, result.AnythingAdded())
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt)
+		require.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("condition not met - item with recent modification shown_because_modified", func(t *testing.T) {
@@ -969,6 +1037,9 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt := model.GetMillis() - 5000
+		initialChecklistUpdateAt := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -976,7 +1047,8 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Test Checklist",
+					Title:    "Test Checklist",
+					UpdateAt: initialChecklistUpdateAt,
 					Items: []app.ChecklistItem{
 						{
 							ID:               model.NewId(),
@@ -985,6 +1057,7 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 							ConditionAction:  app.ConditionActionNone,
 							AssigneeModified: model.GetMillis(),
 							StateModified:    0,
+							UpdateAt:         initialItemUpdateAt,
 						},
 					},
 				},
@@ -1002,6 +1075,9 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Added)
 		require.Equal(t, 0, result.ChecklistChanges["Test Checklist"].Hidden)
 		require.True(t, result.AnythingChanged())
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt)
+		require.Equal(t, playbookRun.Checklists[0].Items[0].UpdateAt, playbookRun.Checklists[0].UpdateAt)
 	})
 
 	t.Run("no conditions for run", func(t *testing.T) {
@@ -1093,6 +1169,11 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			},
 		}
 
+		initialItemUpdateAt1 := model.GetMillis() - 5000
+		initialChecklistUpdateAt1 := model.GetMillis() - 5000
+		initialItemUpdateAt2 := model.GetMillis() - 5000
+		initialChecklistUpdateAt2 := model.GetMillis() - 5000
+
 		playbookRun := &app.PlaybookRun{
 			ID:             runID,
 			PlaybookID:     playbookID,
@@ -1100,18 +1181,21 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 			PropertyValues: propertyValues,
 			Checklists: []app.Checklist{
 				{
-					Title: "Checklist 1",
+					Title:    "Checklist 1",
+					UpdateAt: initialChecklistUpdateAt1,
 					Items: []app.ChecklistItem{
 						{
 							ID:              model.NewId(),
 							Title:           "Item 1",
 							ConditionID:     condition1.ID,
 							ConditionAction: app.ConditionActionHidden,
+							UpdateAt:        initialItemUpdateAt1,
 						},
 					},
 				},
 				{
-					Title: "Checklist 2",
+					Title:    "Checklist 2",
+					UpdateAt: initialChecklistUpdateAt2,
 					Items: []app.ChecklistItem{
 						{
 							ID:               model.NewId(),
@@ -1120,6 +1204,7 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 							ConditionAction:  app.ConditionActionNone,
 							AssigneeModified: 0,
 							StateModified:    0,
+							UpdateAt:         initialItemUpdateAt2,
 						},
 					},
 				},
@@ -1136,9 +1221,13 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 
 		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
 		require.Equal(t, 1, result.ChecklistChanges["Checklist 1"].Added)
+		require.Greater(t, playbookRun.Checklists[0].Items[0].UpdateAt, initialItemUpdateAt1)
+		require.Greater(t, playbookRun.Checklists[0].UpdateAt, initialChecklistUpdateAt1)
 
 		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[1].Items[0].ConditionAction)
 		require.Equal(t, 1, result.ChecklistChanges["Checklist 2"].Hidden)
+		require.Greater(t, playbookRun.Checklists[1].Items[0].UpdateAt, initialItemUpdateAt2)
+		require.Greater(t, playbookRun.Checklists[1].UpdateAt, initialChecklistUpdateAt2)
 
 		require.True(t, result.AnythingChanged())
 		require.True(t, result.AnythingAdded())
