@@ -32,7 +32,7 @@ func TestTrialLicences(t *testing.T) {
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.ServerClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", dialogRequestBytes, "")
+		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
@@ -48,7 +48,7 @@ func TestTrialLicences(t *testing.T) {
 			},
 		}
 		dialogRequestBytes, _ := json.Marshal(dialogRequest)
-		resp, err := e.ServerAdminClient.DoAPIRequestBytes(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", dialogRequestBytes, "")
+		resp, err := e.ServerAdminClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/bot/notify-admins/button-start-trial", string(dialogRequestBytes), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})

@@ -124,6 +124,21 @@ func (mr *MockPropertyServiceMockRecorder) GetPropertyFieldsCount(arg0 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPropertyFieldsCount", reflect.TypeOf((*MockPropertyService)(nil).GetPropertyFieldsCount), arg0)
 }
 
+// GetPropertyFieldsSince mocks base method.
+func (m *MockPropertyService) GetPropertyFieldsSince(arg0 string, arg1 int64) ([]app.PropertyField, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPropertyFieldsSince", arg0, arg1)
+	ret0, _ := ret[0].([]app.PropertyField)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPropertyFieldsSince indicates an expected call of GetPropertyFieldsSince.
+func (mr *MockPropertyServiceMockRecorder) GetPropertyFieldsSince(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPropertyFieldsSince", reflect.TypeOf((*MockPropertyService)(nil).GetPropertyFieldsSince), arg0, arg1)
+}
+
 // GetRunPropertyFields mocks base method.
 func (m *MockPropertyService) GetRunPropertyFields(arg0 string) ([]app.PropertyField, error) {
 	m.ctrl.T.Helper()
@@ -137,6 +152,21 @@ func (m *MockPropertyService) GetRunPropertyFields(arg0 string) ([]app.PropertyF
 func (mr *MockPropertyServiceMockRecorder) GetRunPropertyFields(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunPropertyFields", reflect.TypeOf((*MockPropertyService)(nil).GetRunPropertyFields), arg0)
+}
+
+// GetRunPropertyFieldsSince mocks base method.
+func (m *MockPropertyService) GetRunPropertyFieldsSince(arg0 string, arg1 int64) ([]app.PropertyField, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRunPropertyFieldsSince", arg0, arg1)
+	ret0, _ := ret[0].([]app.PropertyField)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRunPropertyFieldsSince indicates an expected call of GetRunPropertyFieldsSince.
+func (mr *MockPropertyServiceMockRecorder) GetRunPropertyFieldsSince(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunPropertyFieldsSince", reflect.TypeOf((*MockPropertyService)(nil).GetRunPropertyFieldsSince), arg0, arg1)
 }
 
 // GetRunPropertyValueByFieldID mocks base method.
@@ -167,6 +197,21 @@ func (m *MockPropertyService) GetRunPropertyValues(arg0 string) ([]app.PropertyV
 func (mr *MockPropertyServiceMockRecorder) GetRunPropertyValues(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunPropertyValues", reflect.TypeOf((*MockPropertyService)(nil).GetRunPropertyValues), arg0)
+}
+
+// GetRunPropertyValuesSince mocks base method.
+func (m *MockPropertyService) GetRunPropertyValuesSince(arg0 string, arg1 int64) ([]app.PropertyValue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRunPropertyValuesSince", arg0, arg1)
+	ret0, _ := ret[0].([]app.PropertyValue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRunPropertyValuesSince indicates an expected call of GetRunPropertyValuesSince.
+func (mr *MockPropertyServiceMockRecorder) GetRunPropertyValuesSince(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunPropertyValuesSince", reflect.TypeOf((*MockPropertyService)(nil).GetRunPropertyValuesSince), arg0, arg1)
 }
 
 // GetRunsPropertyFields mocks base method.
