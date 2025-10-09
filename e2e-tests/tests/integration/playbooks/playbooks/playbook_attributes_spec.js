@@ -19,7 +19,6 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             testTeam = team;
             testUser = user;
         });
-        cy.apiEnsureFeatureFlag('EnableExperimentalFeatures', true);
     });
 
     beforeEach(() => {
@@ -150,16 +149,6 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify attribute persists
             verifyAttribute(0, 'Documentation Link');
-        });
-
-        it('shows experimental feature banner', () => {
-            // # Navigate to attributes section and add an attribute
-            navigateToAttributes();
-            addAttribute('Test Field', 'text');
-
-            // * Verify experimental banner is visible
-            cy.findByText(/experimental feature/i).should('be.visible');
-            cy.get('.icon-flask-outline').should('be.visible');
         });
     });
 
