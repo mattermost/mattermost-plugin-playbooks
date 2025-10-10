@@ -628,7 +628,16 @@ const selectStyles: StylesConfig<SelectOption, false> = {
         ...provided,
         fontSize: '13px',
         padding: '8px 12px',
-        backgroundColor: state.isSelected ? 'rgba(var(--button-bg-rgb), 0.08)' : state.isFocused ? 'rgba(var(--center-channel-color-rgb), 0.08)' : 'transparent',
+        backgroundColor: (() => {
+            switch (true) {
+            case state.isSelected:
+                return 'rgba(var(--button-bg-rgb), 0.08)';
+            case state.isFocused:
+                return 'rgba(var(--center-channel-color-rgb), 0.08)';
+            default:
+                return 'transparent';
+            }
+        })(),
         color: 'var(--center-channel-color)',
         cursor: 'pointer',
         '&:active': {
@@ -651,7 +660,7 @@ const selectStyles: StylesConfig<SelectOption, false> = {
 
 const logicalOperatorSelectStyles: StylesConfig<SelectOption, false> = {
     ...selectStyles,
-    control: (provided, state) => ({
+    control: (provided) => ({
         ...provided,
         minHeight: '24px',
         height: '24px',

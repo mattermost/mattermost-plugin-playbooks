@@ -128,7 +128,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                         onClick={() => props.onAddConditional?.()}
                     >
                         <DropdownIcon className='icon-source-branch icon-16'/>
-                        {formatMessage({defaultMessage: 'Add conditional'})}
+                        {formatMessage({defaultMessage: 'Add condition'})}
                     </StyledDropdownMenuItem>
                 }
                 {props.playbookRunId === undefined && props.hasCondition && props.onRemoveFromCondition &&
@@ -136,7 +136,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                         onClick={() => props.onRemoveFromCondition?.()}
                     >
                         <DropdownIcon className='icon-exit-to-app icon-16'/>
-                        {formatMessage({defaultMessage: 'Remove from conditional'})}
+                        {formatMessage({defaultMessage: 'Remove from condition'})}
                     </StyledDropdownMenuItem>
                 }
                 {props.playbookRunId === undefined && props.availableConditions && props.availableConditions.length > 0 && props.onAssignToCondition && (

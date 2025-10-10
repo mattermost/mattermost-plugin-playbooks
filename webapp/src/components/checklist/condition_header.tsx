@@ -119,7 +119,21 @@ const ConditionHeader = ({
         newConditions[index] = {...newConditions[index], ...updates};
 
         // Validate all conditions
-        const allValid = newConditions.every((cond) => cond.fieldId && cond.value);
+        // For select/multiselect fields, value must be a non-empty array
+        // For text fields, value can be an empty string (will be validated on save)
+        const allValid = newConditions.every((cond) => {
+            if (!cond.fieldId) {
+                return false;
+            }
+            const field = propertyFields.find((f) => f.id === cond.fieldId);
+            if (field?.type === 'text') {
+                // Text fields can have empty values temporarily
+                return cond.value !== undefined && cond.value !== null;
+            }
+
+            // Select/multiselect must have a non-empty array
+            return Array.isArray(cond.value) && cond.value.length > 0;
+        });
         if (!allValid) {
             return;
         }
