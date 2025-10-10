@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {Modal} from 'react-bootstrap';
+
 import {FormattedMessage} from 'react-intl';
+
+import {Modal} from 'src/externals/react-bootstrap';
 
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
@@ -235,6 +237,8 @@ export default class ConfirmModal extends React.Component<Props, State> {
                 <Modal.Header
                     className='GenericModal__header'
                     closeButton={false}
+                    onPointerEnterCapture={undefined}
+                    onPointerLeaveCapture={undefined}
                 >
                     <ModalHeading id={'confirmModalLabel'}>
                         {this.props.title}

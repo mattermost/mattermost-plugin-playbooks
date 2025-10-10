@@ -7,11 +7,7 @@ import React from 'react';
 import Tooltip from 'src/components/widgets/tooltip';
 import {CompassIcon} from 'src/types/compass';
 
-declare module 'react-bootstrap/esm/OverlayTrigger' {
-    interface OverlayTriggerProps {
-        shouldUpdatePosition?: boolean;
-    }
-}
+// OverlayTrigger props are now handled by the external react-bootstrap
 
 interface HeaderButtonProps {
     tooltipId: string;

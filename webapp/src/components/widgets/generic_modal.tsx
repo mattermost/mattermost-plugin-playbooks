@@ -4,8 +4,10 @@
 import styled from 'styled-components';
 import classNames from 'classnames';
 import React, {ComponentType} from 'react';
-import {Modal} from 'react-bootstrap';
+
 import {FormattedMessage} from 'react-intl';
+
+import {Modal} from 'src/externals/react-bootstrap';
 
 import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
@@ -139,6 +141,8 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 <Header
                     className='GenericModal__header'
                     closeButton={true}
+                    onPointerEnterCapture={undefined}
+                    onPointerLeaveCapture={undefined}
                 >
                     {Boolean(this.props.modalHeaderText) && (
                         <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
