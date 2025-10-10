@@ -4,8 +4,10 @@
 import styled from 'styled-components';
 import classNames from 'classnames';
 import React, {ComponentType} from 'react';
-import {Modal} from 'src/externals/react-bootstrap';
+
 import {FormattedMessage} from 'react-intl';
+
+import {Modal} from 'src/externals/react-bootstrap';
 
 import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 

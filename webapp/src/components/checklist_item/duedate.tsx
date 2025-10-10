@@ -11,9 +11,10 @@ import {
     Duration,
     DurationLikeObject,
 } from 'luxon';
-import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import {Placement} from '@floating-ui/react';
+
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from 'src/components/datetime_selector';
 import {

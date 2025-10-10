@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
+
 import {useIntl} from 'react-intl';
+
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import {OVERLAY_DELAY} from 'src/constants';

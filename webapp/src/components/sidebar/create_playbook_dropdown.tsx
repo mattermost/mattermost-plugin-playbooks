@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
-import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
+
 import {useIntl} from 'react-intl';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
@@ -13,6 +13,8 @@ import {
     PlayBoxMultipleOutlineIcon,
     PlusIcon,
 } from '@mattermost/compass-icons/components';
+
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';

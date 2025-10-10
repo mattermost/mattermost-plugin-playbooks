@@ -3,8 +3,10 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
+
 import {useIntl} from 'react-intl';
+
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import {useRunFollowers, useRunMetadata} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';

@@ -2,11 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
+
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {CheckboxMultipleMarkedOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {closeBackstageRHS, openBackstageRHS} from 'src/actions';
