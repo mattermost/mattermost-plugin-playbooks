@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
@@ -163,68 +163,76 @@ const GenericChecklist = (props: Props) => {
     const keys = generateKeys(rawKeys);
 
     const renderChecklistItem = (checklistItem: ChecklistItem, index: number) => {
-        const condition = checklistItem.condition_id ? props.conditions?.find((c) => c.id === checklistItem.condition_id) : undefined;
-
         const hasCondition = Boolean(checklistItem.condition_id);
+        const conditionId = checklistItem.condition_id;
+        const showConditionHeader = shouldShowConditionHeader(checklistItem, index) && conditionId;
 
         return (
-            <React.Fragment key={keys[index]}>
-                {shouldShowConditionHeader(checklistItem, index) && condition && (
-                    <ConditionalHeaderWrapper>
-                        <ConditionHeader
-                            condition={condition}
-                            propertyFields={props.propertyFields || []}
-                            checklistIndex={props.checklistIndex}
-                            startEditing={props.newlyCreatedConditionIds?.has(condition.id)}
-                            onUpdate={(expr) => {
-                                if (props.onUpdateCondition) {
-                                    props.onUpdateCondition(condition.id, expr);
-                                }
-                            }}
-                            onDelete={() => {
-                                if (props.onDeleteCondition) {
-                                    props.onDeleteCondition(condition.id);
-                                }
-                            }}
-                        />
-                    </ConditionalHeaderWrapper>
-                )}
-                <ConditionalTaskWrapper $hasCondition={hasCondition}>
-                    <DraggableChecklistItem
-                        playbookRun={props.playbookRun}
-                        playbookId={props.playbookId}
-                        readOnly={props.readOnly}
-                        dragDisabled={addingItem || editingItemIndex !== null}
-                        checklistIndex={props.checklistIndex}
-                        item={checklistItem}
-                        itemIndex={index}
-                        newItem={false}
-                        cancelAddingItem={() => {
-                            setAddingItem(false);
-                        }}
-                        onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
-                        onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
-                        onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
-                        itemButtonsFormat={props.itemButtonsFormat}
-                        onReadOnlyInteract={props.onReadOnlyInteract}
-                        onAddConditional={canAddConditional ? () => onOpenConditionEditor(index) : undefined}
-                        onRemoveFromCondition={() => onRemoveFromCondition(index)}
-                        onAssignToCondition={(conditionId) => onAssignToCondition(index, conditionId)}
-                        availableConditions={(props.conditions || []).filter((cond) => {
-                            const currentItem = props.checklist.items[index];
+            <DraggableChecklistItem
+                key={keys[index]}
+                playbookRun={props.playbookRun}
+                playbookId={props.playbookId}
+                readOnly={props.readOnly}
+                dragDisabled={addingItem || editingItemIndex !== null}
+                checklistIndex={props.checklistIndex}
+                item={checklistItem}
+                itemIndex={index}
+                newItem={false}
+                cancelAddingItem={() => {
+                    setAddingItem(false);
+                }}
+                onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
+                onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
+                onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
+                itemButtonsFormat={props.itemButtonsFormat}
+                onReadOnlyInteract={props.onReadOnlyInteract}
+                onAddConditional={canAddConditional ? () => onOpenConditionEditor(index) : undefined}
+                onRemoveFromCondition={() => onRemoveFromCondition(index)}
+                onAssignToCondition={(targetConditionId) => onAssignToCondition(index, targetConditionId)}
+                availableConditions={(() => {
+                    const currentItem = props.checklist.items[index];
+                    const seenIds = new Set<string>();
 
-                            // Only show conditions that:
-                            // 1. Have at least one item
-                            // 2. Are not the condition this item is already in
-                            return cond.id !== currentItem.condition_id &&
+                    // Only show conditions that:
+                    // 1. Have at least one item
+                    // 2. Are not the condition this item is already in
+                    // 3. Haven't been added yet (deduplicate by ID)
+                    return (props.conditions || []).filter((cond) => {
+                        if (seenIds.has(cond.id)) {
+                            return false;
+                        }
+                        const shouldInclude = cond.id !== currentItem.condition_id &&
                             props.checklist.items.some((item) => item.condition_id === cond.id);
-                        })}
-                        onEditingChange={(isEditing) => {
-                            setEditingItemIndex(isEditing ? index : null);
+                        if (shouldInclude) {
+                            seenIds.add(cond.id);
+                        }
+                        return shouldInclude;
+                    });
+                })()}
+                propertyFields={props.propertyFields}
+                onEditingChange={(isEditing) => {
+                    setEditingItemIndex(isEditing ? index : null);
+                }}
+                hasCondition={hasCondition}
+                conditionHeader={showConditionHeader ? (
+                    <ConditionHeader
+                        conditionId={conditionId}
+                        propertyFields={props.propertyFields || []}
+                        checklistIndex={props.checklistIndex}
+                        startEditing={props.newlyCreatedConditionIds?.has(conditionId)}
+                        onUpdate={(expr) => {
+                            if (props.onUpdateCondition) {
+                                props.onUpdateCondition(conditionId, expr);
+                            }
+                        }}
+                        onDelete={() => {
+                            if (props.onDeleteCondition) {
+                                props.onDeleteCondition(conditionId);
+                            }
                         }}
                     />
-                </ConditionalTaskWrapper>
-            </React.Fragment>
+                ) : undefined}
+            />
         );
     };
 
@@ -342,16 +350,5 @@ export const generateKeys = (arr: string[]): string[] => {
     }
     return keys;
 };
-
-const ConditionalHeaderWrapper = styled.div`
-`;
-
-const ConditionalTaskWrapper = styled.div<{$hasCondition: boolean}>`
-    ${({$hasCondition}) => $hasCondition && css`
-        margin-left: 15px;
-        padding-left: 5px;
-        border-left: 2px solid rgba(var(--center-channel-color-rgb), 0.16);
-    `}
-`;
 
 export default GenericChecklist;

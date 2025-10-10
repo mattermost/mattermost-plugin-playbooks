@@ -9,6 +9,7 @@ import {ChecklistItem, ButtonsFormat as ItemButtonsFormat} from 'src/components/
 import {ChecklistItemState, ChecklistItem as ChecklistItemType} from 'src/types/playbook';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Condition} from 'src/types/conditions';
+import {PropertyField} from 'src/types/properties';
 
 interface Props {
     playbookRun?: PlaybookRun;
@@ -30,7 +31,10 @@ interface Props {
     onRemoveFromCondition?: () => void;
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
+    propertyFields?: PropertyField[];
     onEditingChange?: (isEditing: boolean) => void;
+    hasCondition?: boolean;
+    conditionHeader?: React.ReactNode;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -69,7 +73,10 @@ const DraggableChecklistItem = (props: Props) => {
                     onRemoveFromCondition={props.onRemoveFromCondition}
                     onAssignToCondition={props.onAssignToCondition}
                     availableConditions={props.availableConditions}
+                    propertyFields={props.propertyFields}
                     onEditingChange={props.onEditingChange}
+                    hasCondition={props.hasCondition}
+                    conditionHeader={props.conditionHeader}
                 />
             )}
         </Draggable>

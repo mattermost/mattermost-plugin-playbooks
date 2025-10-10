@@ -20,6 +20,8 @@ import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {ChecklistItemState} from 'src/types/playbook';
 import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from 'src/components/datetime_input';
+import {PropertyField} from 'src/types/properties';
+import {formatConditionExpr} from 'src/utils/condition_format';
 
 import {clientDuplicateChecklistItem, clientRestoreChecklistItem, clientSkipChecklistItem} from 'src/client';
 import {Condition} from 'src/types/conditions';
@@ -52,10 +54,12 @@ export interface Props {
     onRemoveFromCondition?: () => void;
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
+    propertyFields?: PropertyField[];
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
     const {formatMessage} = useIntl();
+
     if (props.isEditing) {
         return null;
     }
@@ -141,17 +145,31 @@ const ChecklistItemHoverMenu = (props: Props) => {
                             as='div'
                             style={{padding: '8px 16px', opacity: 0.6, fontSize: '12px', fontWeight: 600}}
                         >
-                            {formatMessage({defaultMessage: 'Assign to condition:'})}
+                            {props.hasCondition ? formatMessage({defaultMessage: 'Move to condition:'}) : formatMessage({defaultMessage: 'Assign to condition:'})}
                         </StyledDropdownMenuItem>
-                        {props.availableConditions.map((condition) => (
-                            <StyledDropdownMenuItem
-                                key={condition.id}
-                                onClick={() => props.onAssignToCondition?.(condition.id)}
-                            >
-                                <DropdownIcon className='icon-source-branch icon-16'/>
-                                {`ID: ${condition.id.substring(0, 8)}...`}
-                            </StyledDropdownMenuItem>
-                        ))}
+                        {props.availableConditions.map((condition) => {
+                            // Format the condition with propertyFields if available, otherwise show ID
+                            const displayText = props.propertyFields && props.propertyFields.length > 0 ? formatConditionExpr(
+                                condition.condition_expr,
+                                props.propertyFields,
+                                formatMessage({defaultMessage: 'is'}),
+                                formatMessage({defaultMessage: 'is not'}),
+                                formatMessage({defaultMessage: 'AND'}),
+                                formatMessage({defaultMessage: 'OR'})
+                            ) : `ID: ${condition.id.substring(0, 8)}...`;
+
+                            return (
+                                <StyledDropdownMenuItem
+                                    key={condition.id}
+                                    onClick={() => props.onAssignToCondition?.(condition.id)}
+                                >
+                                    <DropdownIcon className='icon-source-branch icon-16'/>
+                                    <ConditionTextWrapper>
+                                        {displayText}
+                                    </ConditionTextWrapper>
+                                </StyledDropdownMenuItem>
+                            );
+                        })}
                     </>
                 )}
                 {props.playbookRunId !== undefined &&
@@ -214,6 +232,12 @@ const ToggleDescriptionButton = styled(ChecklistHoverMenuButton) <{$showDescript
 const DotMenuButton = styled(StyledDotMenuButton)`
     width: 24px;
     height: 24px;
+`;
+
+const ConditionTextWrapper = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
 export default ChecklistItemHoverMenu;

@@ -1,17 +1,22 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
 import ReactSelect, {StylesConfig} from 'react-select';
+import {GlobalState} from '@mattermost/types/store';
 
-import {Condition, ConditionExprV1} from 'src/types/conditions';
+import {ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
 import Tooltip from 'src/components/widgets/tooltip';
+import {getCondition} from 'src/selectors';
+import {useConfirmModal, useProxyState} from 'src/hooks';
+import {extractConditions, formatCondition} from 'src/utils/condition_format';
 
 interface ConditionHeaderProps {
-    condition: Condition;
+    conditionId: string;
     propertyFields: PropertyField[];
     onUpdate?: (expr: ConditionExprV1) => void;
     onDelete?: () => void;
@@ -25,7 +30,7 @@ type SelectOption = {
 };
 
 const ConditionHeader = ({
-    condition,
+    conditionId,
     propertyFields,
     onUpdate,
     onDelete,
@@ -33,39 +38,33 @@ const ConditionHeader = ({
 }: ConditionHeaderProps) => {
     const {formatMessage} = useIntl();
 
-    // Helper to extract conditions from expr (handles both simple and compound conditions)
-    const extractConditions = (expr: ConditionExprV1): Array<{operator: 'is' | 'isNot'; fieldId: string; value: string | string[]}> => {
-        const conditions: Array<{operator: 'is' | 'isNot'; fieldId: string; value: string | string[]}> = [];
+    // Get condition from Redux store
+    const condition = useSelector((state: GlobalState) => getCondition(state, conditionId));
 
-        // Check if it's a compound condition (and/or)
-        const nestedExprs = expr.and || expr.or || [];
-        if (nestedExprs.length > 0) {
-            nestedExprs.forEach((nested) => {
-                if (nested.is) {
-                    conditions.push({operator: 'is', fieldId: nested.is.field_id, value: nested.is.value});
-                } else if (nested.isNot) {
-                    conditions.push({operator: 'isNot', fieldId: nested.isNot.field_id, value: nested.isNot.value});
-                }
-            });
-        } else if (expr.is) {
-            // Simple condition
-            conditions.push({operator: 'is', fieldId: expr.is.field_id, value: expr.is.value});
-        } else if (expr.isNot) {
-            // Simple condition
-            conditions.push({operator: 'isNot', fieldId: expr.isNot.field_id, value: expr.isNot.value});
-        }
-
-        return conditions;
-    };
-
-    const expr = condition.condition_expr;
-    const initialConditions = extractConditions(expr);
-    const initialLogicalOp: 'and' | 'or' = expr.and ? 'and' : 'or';
-
-    // State for managing multiple conditions and editing mode
+    // State for managing editing mode
     const [isEditing, setIsEditing] = useState(startEditing);
-    const [conditions, setConditions] = useState(initialConditions);
-    const [logicalOperator, setLogicalOperator] = useState<'and' | 'or'>(initialLogicalOp);
+
+    // Hook for confirmation modal
+    const openConfirmModal = useConfirmModal();
+
+    // Use useProxyState to sync the entire condition expression with Redux
+    const [conditionExpr, setConditionExpr] = useProxyState(
+        condition?.condition_expr,
+        useCallback((newExpr: ConditionExprV1) => {
+            if (onUpdate) {
+                onUpdate(newExpr);
+            }
+        }, [onUpdate])
+    );
+
+    // If condition not found, don't render
+    if (!condition || !conditionExpr) {
+        return null;
+    }
+
+    // Derive UI state from condition expression
+    const conditions = extractConditions(conditionExpr);
+    const logicalOperator: 'and' | 'or' = conditionExpr.and ? 'and' : 'or';
 
     // Get available property fields (text, select, multiselect)
     const availableFields = propertyFields.filter(
@@ -89,10 +88,10 @@ const ConditionHeader = ({
     ];
 
     // Build the condition expression from current state
-    const buildConditionExpr = (): ConditionExprV1 => {
-        if (conditions.length === 1) {
+    const buildConditionExpr = (updatedConditions: typeof conditions, updatedLogicalOp: 'and' | 'or'): ConditionExprV1 => {
+        if (updatedConditions.length === 1) {
             // Single condition - use simple format
-            const cond = conditions[0];
+            const cond = updatedConditions[0];
             return {
                 [cond.operator]: {
                     field_id: cond.fieldId,
@@ -102,7 +101,7 @@ const ConditionHeader = ({
         }
 
         // Multiple conditions - use logical operator
-        const nestedExprs: ConditionExprV1[] = conditions.map((cond) => ({
+        const nestedExprs: ConditionExprV1[] = updatedConditions.map((cond) => ({
             [cond.operator]: {
                 field_id: cond.fieldId,
                 value: cond.value,
@@ -110,32 +109,23 @@ const ConditionHeader = ({
         }));
 
         return {
-            [logicalOperator]: nestedExprs,
+            [updatedLogicalOp]: nestedExprs,
         };
-    };
-
-    // Handle updates
-    const handleUpdate = () => {
-        if (!onUpdate) {
-            return;
-        }
-
-        // Validate all conditions
-        const allValid = conditions.every((cond) => cond.fieldId && cond.value);
-        if (!allValid) {
-            return;
-        }
-
-        const newExpr = buildConditionExpr();
-        onUpdate(newExpr);
     };
 
     // Update a specific condition
     const updateCondition = (index: number, updates: Partial<typeof conditions[0]>) => {
         const newConditions = [...conditions];
         newConditions[index] = {...newConditions[index], ...updates};
-        setConditions(newConditions);
-        setTimeout(handleUpdate, 0);
+
+        // Validate all conditions
+        const allValid = newConditions.every((cond) => cond.fieldId && cond.value);
+        if (!allValid) {
+            return;
+        }
+
+        const newExpr = buildConditionExpr(newConditions, logicalOperator);
+        setConditionExpr(newExpr);
     };
 
     // Add a new condition at a specific index (max 2 conditions)
@@ -163,8 +153,9 @@ const ConditionHeader = ({
 
         const newConditions = [...conditions];
         newConditions.splice(afterIndex + 1, 0, newCondition);
-        setConditions(newConditions);
-        setTimeout(handleUpdate, 0);
+
+        const newExpr = buildConditionExpr(newConditions, logicalOperator);
+        setConditionExpr(newExpr);
     };
 
     // Remove a condition
@@ -175,8 +166,9 @@ const ConditionHeader = ({
         }
 
         const newConditions = conditions.filter((_, i) => i !== index);
-        setConditions(newConditions);
-        setTimeout(handleUpdate, 0);
+
+        const newExpr = buildConditionExpr(newConditions, logicalOperator);
+        setConditionExpr(newExpr);
     };
 
     // Change logical operator
@@ -184,26 +176,44 @@ const ConditionHeader = ({
         if (!option) {
             return;
         }
-        setLogicalOperator(option.value as 'and' | 'or');
-        setTimeout(handleUpdate, 0);
+
+        const newLogicalOp = option.value as 'and' | 'or';
+        const newExpr = buildConditionExpr(conditions, newLogicalOp);
+        setConditionExpr(newExpr);
     };
 
-    // Format a single condition for read-only display
-    const formatCondition = (cond: typeof conditions[0]) => {
-        const field = propertyFields.find((f) => f.id === cond.fieldId);
-        const fieldName = field?.name || 'Unknown field';
-        const operator = cond.operator === 'is' ? formatMessage({defaultMessage: 'is'}) : formatMessage({defaultMessage: 'is not'});
-
-        let valueName = '';
-        if (field && (field.type === 'select' || field.type === 'multiselect')) {
-            const valueId = Array.isArray(cond.value) ? cond.value[0] : cond.value;
-            const option = field.attrs.options?.find((opt) => opt.id === valueId);
-            valueName = option?.name || valueId;
-        } else {
-            valueName = Array.isArray(cond.value) ? cond.value[0] || '' : cond.value;
+    // Render delete button (used in both edit and read-only modes)
+    const renderDeleteButton = () => {
+        if (!onDelete) {
+            return null;
         }
 
-        return {fieldName, operator, valueName};
+        return (
+            <Tooltip
+                id={`remove-condition-${condition.id}`}
+                content={formatMessage({defaultMessage: 'Remove condition'})}
+            >
+                <span>
+                    <DestructiveActionButton
+                        onClick={() => {
+                            openConfirmModal({
+                                title: formatMessage({defaultMessage: 'Remove condition?'}),
+                                message: formatMessage({defaultMessage: 'The condition will be removed from all tasks in this group. Tasks will not be deleted.'}),
+                                confirmButtonText: formatMessage({defaultMessage: 'Remove'}),
+                                isDestructive: true,
+                                onConfirm: () => {
+                                    if (onDelete) {
+                                        onDelete();
+                                    }
+                                },
+                            });
+                        }}
+                    >
+                        <i className='icon-trash-can-outline'/>
+                    </DestructiveActionButton>
+                </span>
+            </Tooltip>
+        );
     };
 
     const renderConditionRow = (cond: typeof conditions[0], index: number) => {
@@ -276,7 +286,6 @@ const ConditionHeader = ({
                     <StyledInput
                         value={cond.value as string}
                         onChange={(e) => updateCondition(index, {value: e.target.value})}
-                        onBlur={handleUpdate}
                         placeholder={formatMessage({defaultMessage: 'Enter value...'})}
                     />
                 )}
@@ -348,18 +357,7 @@ const ConditionHeader = ({
                             </ActionButton>
                         </span>
                     </Tooltip>
-                    {onDelete && (
-                        <Tooltip
-                            id={`delete-condition-${condition.id}`}
-                            content={formatMessage({defaultMessage: 'Delete condition'})}
-                        >
-                            <span>
-                                <ActionButton onClick={onDelete}>
-                                    <i className='icon-trash-can-outline'/>
-                                </ActionButton>
-                            </span>
-                        </Tooltip>
-                    )}
+                    {renderDeleteButton()}
                 </Actions>
             </HeaderContainer>
         );
@@ -371,7 +369,12 @@ const ConditionHeader = ({
             <PlainText>{formatMessage({defaultMessage: 'If'})}</PlainText>
             <ConditionsText>
                 {conditions.map((cond, index) => {
-                    const {fieldName, operator, valueName} = formatCondition(cond);
+                    const {fieldName, operator, valueName} = formatCondition(
+                        cond,
+                        propertyFields,
+                        formatMessage({defaultMessage: 'is'}),
+                        formatMessage({defaultMessage: 'is not'})
+                    );
                     return (
                         <React.Fragment key={index}>
                             {index > 0 && (
@@ -386,9 +389,6 @@ const ConditionHeader = ({
                     );
                 })}
             </ConditionsText>
-            <ConditionIdIndicator>
-                {condition.id}
-            </ConditionIdIndicator>
             <Actions>
                 {onUpdate && (
                     <Tooltip
@@ -402,18 +402,7 @@ const ConditionHeader = ({
                         </span>
                     </Tooltip>
                 )}
-                {onDelete && (
-                    <Tooltip
-                        id={`delete-condition-${condition.id}`}
-                        content={formatMessage({defaultMessage: 'Delete condition'})}
-                    >
-                        <span>
-                            <ActionButton onClick={onDelete}>
-                                <i className='icon-trash-can-outline'/>
-                            </ActionButton>
-                        </span>
-                    </Tooltip>
-                )}
+                {renderDeleteButton()}
             </Actions>
         </ReadOnlyContainer>
     );
@@ -478,7 +467,6 @@ const ReadOnlyContainer = styled.div`
     gap: 8px;
     padding: 6px 12px;
     margin: 0 0 4px 0;
-    border-radius: 4px;
     font-size: 12px;
     transition: background 0.15s ease;
 
@@ -495,7 +483,6 @@ const HeaderContainer = styled.div`
     padding: 6px 12px;
     margin: 0 0 4px 0;
     background: rgba(var(--center-channel-color-rgb), 0.04);
-    border-radius: 4px;
     font-size: 12px;
 
     &:hover {
@@ -538,16 +525,8 @@ const Chip = styled.span`
     font-size: 12px;
     font-weight: 600;
     color: rgba(var(--center-channel-color-rgb), 0.72);
-    background: transparent;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
-`;
-
-const ConditionIdIndicator = styled.span`
-    font-size: 10px;
-    color: rgba(var(--center-channel-color-rgb), 0.32);
-    margin-left: 4px;
-    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
 `;
 
 const ConditionsWrapper = styled.div`
@@ -668,7 +647,16 @@ const selectStyles: StylesConfig<SelectOption, false> = {
         ...provided,
         fontSize: '13px',
         padding: '8px 12px',
-        backgroundColor: state.isSelected ? 'rgba(var(--button-bg-rgb), 0.08)' : state.isFocused ? 'rgba(var(--center-channel-color-rgb), 0.08)' : 'transparent',
+        backgroundColor: (() => {
+            switch (true) {
+            case state.isSelected:
+                return 'rgba(var(--button-bg-rgb), 0.08)';
+            case state.isFocused:
+                return 'rgba(var(--center-channel-color-rgb), 0.08)';
+            default:
+                return 'transparent';
+            }
+        })(),
         color: 'var(--center-channel-color)',
         cursor: 'pointer',
         '&:active': {
@@ -735,15 +723,22 @@ const ActionButton = styled.button`
     background: none;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
 
     &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 0.72);
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
     }
 
     i {
         font-size: 14px;
+    }
+`;
+
+const DestructiveActionButton = styled(ActionButton)`
+    &:hover {
+        background: rgba(var(--error-text-color-rgb), 0.08);
+        color: var(--error-text);
     }
 `;
 

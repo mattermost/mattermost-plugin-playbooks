@@ -21,6 +21,7 @@ import {
 import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType} from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
+import {PropertyField} from 'src/types/properties';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 
@@ -82,7 +83,10 @@ interface ChecklistItemProps {
     onRemoveFromCondition?: () => void;
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
+    propertyFields?: PropertyField[];
     onEditingChange?: (isEditing: boolean) => void;
+    hasCondition?: boolean;
+    conditionHeader?: React.ReactNode;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -298,15 +302,19 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const content = (
-        <ItemContainer
+        <DraggableWrapper
             ref={props.draggableProvided?.innerRef}
             {...props.draggableProvided?.draggableProps}
-            data-testid='checkbox-item-container'
-            $editing={isEditing}
-            $hoverMenuItemOpen={isHoverMenuItemOpen}
-            $disabled={props.readOnly || isSkipped()}
         >
-            <CheckboxContainer>
+            {props.conditionHeader}
+            <ItemContainer
+                data-testid='checkbox-item-container'
+                $editing={isEditing}
+                $hoverMenuItemOpen={isHoverMenuItemOpen}
+                $disabled={props.readOnly || isSkipped()}
+                $hasCondition={props.hasCondition ?? false}
+            >
+                <CheckboxContainer>
                 {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
@@ -332,6 +340,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onRemoveFromCondition={props.onRemoveFromCondition}
                         onAssignToCondition={props.onAssignToCondition}
                         availableConditions={props.availableConditions}
+                        propertyFields={props.propertyFields}
                     />
                 }
                 <DragButton
@@ -419,7 +428,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     }}
                 />
             }
-        </ItemContainer>
+            </ItemContainer>
+        </DraggableWrapper>
     );
 
     if (props.dragging) {
@@ -533,9 +543,19 @@ const Row = styled.div`
     gap: 5px 8px;
 `;
 
-const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean}>`
+const DraggableWrapper = styled.div`
+    /* Wrapper for draggable item including condition header */
+`;
+
+const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0;
+
+    ${({$hasCondition}) => $hasCondition && css`
+        margin-left: 15px;
+        padding-left: 5px;
+        border-left: 2px solid rgba(var(--center-channel-color-rgb), 0.16);
+    `}
 
     ${({$hoverMenuItemOpen}) => !$hoverMenuItemOpen && css`
         ${HoverMenu} {

@@ -20,12 +20,18 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {playbookRunUpdated} from 'src/actions';
+import {
+    conditionCreated,
+    conditionDeleted,
+    conditionUpdated,
+    playbookRunUpdated,
+} from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {
     clientAddChecklist,
     clientMoveChecklist,
     clientMoveChecklistItem,
+    deletePlaybookCondition,
     updatePlaybookCondition,
 } from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
@@ -77,7 +83,7 @@ const ChecklistList = ({
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
-    const {conditions, createCondition, refetch: refetchConditions} = usePlaybookConditions(inPlaybook?.id || '');
+    const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
@@ -178,19 +184,26 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
-    const onDeleteCondition = (conditionId: string) => {
-        // Remove condition from all items that reference it
-        const newChecklists = checklists.map((checklist) => ({
-            ...checklist,
-            items: checklist.items.map((item) => ({
-                ...item,
-                condition_id: item.condition_id === conditionId ? '' : item.condition_id,
-            })),
-        }));
-        setChecklistsForPlaybook(newChecklists);
+    const onDeleteCondition = async (conditionId: string) => {
+        try {
+            // Remove condition from all items that reference it
+            const newChecklists = checklists.map((checklist) => ({
+                ...checklist,
+                items: checklist.items.map((item) => ({
+                    ...item,
+                    condition_id: item.condition_id === conditionId ? '' : item.condition_id,
+                })),
+            }));
+            setChecklistsForPlaybook(newChecklists);
 
-        // Note: Server-side condition deletion would happen via API call here
-        // For now, we just remove the reference from items
+            // Delete the condition on the server
+            await deletePlaybookCondition(playbook?.id || '', conditionId);
+
+            // Dispatch Redux action to remove from store immediately
+            dispatch(conditionDeleted(conditionId, playbook?.id || ''));
+        } catch (error) {
+            console.error('Failed to delete condition:', error); // eslint-disable-line no-console
+        }
     };
 
     const onCreateCondition = async (checklistIndex: number, itemIndex: number, expr: ConditionExprV1) => {
@@ -205,8 +218,8 @@ const ChecklistList = ({
             // Mark this condition as newly created so it starts in edit mode
             setNewlyCreatedConditionIds((prev) => new Set(prev).add(result.id));
 
-            // Refetch conditions to get the latest data
-            refetchConditions();
+            // Dispatch Redux action to add to store immediately
+            dispatch(conditionCreated(result));
 
             // Update the item with the new condition_id
             const newChecklists = [...checklists];
@@ -242,13 +255,13 @@ const ChecklistList = ({
             }
 
             // Update the condition on the server
-            await updatePlaybookCondition(playbook?.id || '', conditionId, {
+            const updatedCondition = await updatePlaybookCondition(playbook?.id || '', conditionId, {
                 ...existingCondition,
                 condition_expr: expr,
             });
 
-            // Refetch conditions to get the latest data
-            refetchConditions();
+            // Dispatch Redux action to update the store immediately
+            dispatch(conditionUpdated(updatedCondition));
         } catch (error) {
             console.error('Failed to update condition:', error); // eslint-disable-line no-console
         }
