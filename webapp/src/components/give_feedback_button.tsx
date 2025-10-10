@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {useSelector} from 'react-redux';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 import {useIntl} from 'react-intl';
 import {Placement} from '@floating-ui/react';
 import {GlobalState} from '@mattermost/types/store';

@@ -11,7 +11,7 @@ import {
     Duration,
     DurationLikeObject,
 } from 'luxon';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import {Placement} from '@floating-ui/react';
 

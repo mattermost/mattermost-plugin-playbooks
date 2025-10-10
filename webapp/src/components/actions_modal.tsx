@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {Modal} from 'react-bootstrap';
+import {Modal} from 'src/externals/react-bootstrap';
 
 import styled from 'styled-components';
 

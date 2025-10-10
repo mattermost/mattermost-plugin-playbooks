@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {Modal} from 'react-bootstrap';
+import {Modal} from 'src/externals/react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';

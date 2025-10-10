@@ -8,7 +8,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 import {debounce} from 'debounce';
 
 import {OVERLAY_DELAY} from 'src/constants';

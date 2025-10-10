@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
-import {Modal} from 'react-bootstrap';
+import {Modal} from 'src/externals/react-bootstrap';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {searchProfiles} from 'mattermost-redux/actions/users';
