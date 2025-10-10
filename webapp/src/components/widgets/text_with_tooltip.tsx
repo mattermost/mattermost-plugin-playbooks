@@ -40,16 +40,16 @@ const TextWithTooltip = (props: Props) => {
         return () => {
             window.removeEventListener('resize', resizeListener);
         };
-    }, []);
+    }, [resizeListener]);
 
     useEffect(() => {
         resizeListener();
     });
 
-    const setRef = useCallback((node: HTMLElement | null) => {
+    const setRef = useCallback((node: HTMLAnchorElement | null) => {
         ref.current = node;
         resizeListener();
-    }, []);
+    }, [resizeListener]);
 
     const text = (
         <span
