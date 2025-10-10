@@ -22,6 +22,7 @@ import {DateTimeOption} from 'src/components/datetime_selector';
 import {Mode} from 'src/components/datetime_input';
 
 import {clientDuplicateChecklistItem, clientRestoreChecklistItem, clientSkipChecklistItem} from 'src/client';
+import {Condition} from 'src/types/conditions';
 
 import AssignTo from './assign_to';
 import {DueDateHoverMenuButton} from './duedate';
@@ -46,6 +47,11 @@ export interface Props {
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     onItemOpenChange?: (isOpen: boolean) => void;
+    onAddConditional?: () => void;
+    hasCondition?: boolean;
+    onRemoveFromCondition?: () => void;
+    onAssignToCondition?: (conditionId: string) => void;
+    availableConditions?: Condition[];
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -113,6 +119,41 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     <DropdownIcon className='icon-content-copy icon-16'/>
                     {formatMessage({defaultMessage: 'Duplicate task'})}
                 </StyledDropdownMenuItem>
+                {props.playbookRunId === undefined && !props.hasCondition && props.onAddConditional &&
+                    <StyledDropdownMenuItem
+                        onClick={() => props.onAddConditional?.()}
+                    >
+                        <DropdownIcon className='icon-source-branch icon-16'/>
+                        {formatMessage({defaultMessage: 'Add conditional'})}
+                    </StyledDropdownMenuItem>
+                }
+                {props.playbookRunId === undefined && props.hasCondition && props.onRemoveFromCondition &&
+                    <StyledDropdownMenuItem
+                        onClick={() => props.onRemoveFromCondition?.()}
+                    >
+                        <DropdownIcon className='icon-exit-to-app icon-16'/>
+                        {formatMessage({defaultMessage: 'Remove from conditional'})}
+                    </StyledDropdownMenuItem>
+                }
+                {props.playbookRunId === undefined && props.availableConditions && props.availableConditions.length > 0 && props.onAssignToCondition && (
+                    <>
+                        <StyledDropdownMenuItem
+                            as='div'
+                            style={{padding: '8px 16px', opacity: 0.6, fontSize: '12px', fontWeight: 600}}
+                        >
+                            {formatMessage({defaultMessage: 'Assign to condition:'})}
+                        </StyledDropdownMenuItem>
+                        {props.availableConditions.map((condition) => (
+                            <StyledDropdownMenuItem
+                                key={condition.id}
+                                onClick={() => props.onAssignToCondition?.(condition.id)}
+                            >
+                                <DropdownIcon className='icon-source-branch icon-16'/>
+                                {`ID: ${condition.id.substring(0, 8)}...`}
+                            </StyledDropdownMenuItem>
+                        ))}
+                    </>
+                )}
                 {props.playbookRunId !== undefined &&
                     <StyledDropdownMenuItem
                         onClick={() => {

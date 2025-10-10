@@ -20,6 +20,7 @@ import {
 } from 'src/client';
 import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType} from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
+import {Condition} from 'src/types/conditions';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 
@@ -65,6 +66,7 @@ interface ChecklistItemProps {
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     readOnly: boolean;
+    dragDisabled?: boolean;
     collapsibleDescription: boolean;
     descriptionCollapsedByDefault?: boolean;
     newItem: boolean;
@@ -75,7 +77,12 @@ interface ChecklistItemProps {
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
     participantUserIds: string[];
-    onReadOnlyInteract?: () => void
+    onReadOnlyInteract?: () => void;
+    onAddConditional?: () => void;
+    onRemoveFromCondition?: () => void;
+    onAssignToCondition?: (conditionId: string) => void;
+    availableConditions?: Condition[];
+    onEditingChange?: (isEditing: boolean) => void;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -92,6 +99,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
+
+    // Notify parent when editing state changes
+    useUpdateEffect(() => {
+        props.onEditingChange?.(isEditing);
+    }, [isEditing]);
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
@@ -315,13 +327,18 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
                         onItemOpenChange={setIsHoverMenuItemOpen}
+                        onAddConditional={props.onAddConditional}
+                        hasCondition={Boolean(props.checklistItem.condition_id)}
+                        onRemoveFromCondition={props.onRemoveFromCondition}
+                        onAssignToCondition={props.onAssignToCondition}
+                        availableConditions={props.availableConditions}
                     />
                 }
                 <DragButton
                     title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                     className={'icon icon-drag-vertical'}
                     {...props.draggableProvided?.dragHandleProps}
-                    $isVisible={!props.readOnly}
+                    $isVisible={!props.readOnly && !props.dragDisabled}
                     $isDragging={props.dragging}
                 />
                 <CheckBoxButton
