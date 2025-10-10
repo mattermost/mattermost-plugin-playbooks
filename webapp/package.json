@@ -188,6 +188,9 @@
     "setupFiles": [
       "jest-canvas-mock"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/setupTests.ts"
+    ],
     "testEnvironmentOptions": {
       "url": "http://localhost:8065"
     }
