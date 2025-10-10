@@ -514,7 +514,7 @@ const ConditionsText = styled.div`
 const PlainText = styled.span`
     font-size: 12px;
     font-weight: 600;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const Chip = styled.span`
@@ -524,7 +524,7 @@ const Chip = styled.span`
     min-height: 24px;
     font-size: 12px;
     font-weight: 600;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
+    color: var(--center-channel-color);
     background: rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
 `;
