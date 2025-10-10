@@ -3,11 +3,12 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {Modal} from 'src/externals/react-bootstrap';
 
 import styled from 'styled-components';
 
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {Modal} from 'src/externals/react-bootstrap';
 
 import GenericModal, {DefaultFooterContainer, ModalSubheading} from 'src/components/widgets/generic_modal';
 

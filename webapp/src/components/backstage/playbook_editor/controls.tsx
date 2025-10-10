@@ -22,14 +22,14 @@ import {
     StarOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
-import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
-
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
+
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {

@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+
 import {Modal} from 'src/externals/react-bootstrap';
 
 import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';

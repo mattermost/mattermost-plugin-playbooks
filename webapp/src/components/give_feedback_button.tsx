@@ -3,10 +3,12 @@
 
 import React from 'react';
 import {useSelector} from 'react-redux';
-import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
+
 import {useIntl} from 'react-intl';
 import {Placement} from '@floating-ui/react';
 import {GlobalState} from '@mattermost/types/store';
+
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import {OVERLAY_DELAY} from 'src/constants';
 import {InvertedTertiaryButton} from 'src/components/assets/buttons';

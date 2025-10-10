@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {CSSProperties, ComponentProps, ReactNode} from 'react';
+
 import {Tooltip as InnerTooltip, OverlayTrigger} from 'src/externals/react-bootstrap';
 
 import {OVERLAY_DELAY} from 'src/constants';
