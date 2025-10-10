@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';

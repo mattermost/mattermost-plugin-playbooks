@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled, {css} from 'styled-components';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {OverlayTrigger, Tooltip} from 'src/externals/react-bootstrap';
 
 import Profile from 'src/components/profile/profile';
 
