@@ -480,7 +480,7 @@ const ReadOnlyContainer = styled.div`
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    margin: 0 0 4px 0;
+    margin: 0 0 4px;
     font-size: 12px;
     transition: background 0.15s ease;
 
@@ -495,7 +495,7 @@ const HeaderContainer = styled.div`
     align-items: flex-start;
     gap: 8px;
     padding: 6px 12px;
-    margin: 0 0 4px 0;
+    margin: 0 0 4px;
     background: rgba(var(--center-channel-color-rgb), 0.04);
     font-size: 12px;
 

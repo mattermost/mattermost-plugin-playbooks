@@ -71,7 +71,7 @@ type Props = {
     /*
      * Function called when the cancel button is pressed or the modal is hidden. Passes `true` if the checkbox is checked
      */
-    onCancel: (checked: boolean) => void;
+    onCancel?: (checked: boolean) => void;
 
     /**
      * Function called when modal is dismissed
@@ -114,7 +114,7 @@ const UncontrolledConfirmModal = (props: Props) => {
             }}
             onCancel={(checked) => {
                 setShow(false);
-                props.onCancel(checked);
+                props.onCancel?.(checked);
             }}
         />
     );
@@ -182,7 +182,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
     };
 
     handleCancel = () => {
-        this.props.onCancel(this.state.checked);
+        this.props.onCancel?.(this.state.checked);
     };
 
     render() {
@@ -338,7 +338,7 @@ export const useConfirmModal = () => {
             cancelButtonText: options.cancelButtonText,
             confirmButtonClass: options.confirmButtonClass,
             onConfirm: options.onConfirm,
-            onCancel: options.onCancel || (() => {}),
+            onCancel: options.onCancel,
             showCheckbox: options.showCheckbox,
             checkboxText: options.checkboxText,
             isDestructive: options.isDestructive,

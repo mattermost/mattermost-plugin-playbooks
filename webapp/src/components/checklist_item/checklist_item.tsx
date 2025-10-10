@@ -315,7 +315,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 $hasCondition={props.hasCondition ?? false}
             >
                 <CheckboxContainer>
-                {!props.readOnly && !props.dragging &&
+                    {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
                         participantUserIds={props.participantUserIds}
@@ -342,44 +342,44 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         availableConditions={props.availableConditions}
                         propertyFields={props.propertyFields}
                     />
-                }
-                <DragButton
-                    title={formatMessage({defaultMessage: 'Drag me to reorder'})}
-                    className={'icon icon-drag-vertical'}
-                    {...props.draggableProvided?.dragHandleProps}
-                    $isVisible={!props.readOnly && !props.dragDisabled}
-                    $isDragging={props.dragging}
-                />
-                <CheckBoxButton
-                    readOnly={props.readOnly}
-                    disabled={isSkipped() || props.playbookRunId === undefined}
-                    item={props.checklistItem}
-                    onChange={(item: ChecklistItemState) => props.onChange?.(item)}
-                    onReadOnlyInteract={props.onReadOnlyInteract}
-                />
-                <ConditionIndicator checklistItem={props.checklistItem}/>
-                <ChecklistItemTitleWrapper
-                    onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
-                >
-                    <ChecklistItemTitle
-                        editingItem={isEditing}
-                        onEdit={setTitleValue}
-                        value={titleValue}
-                        skipped={isSkipped()}
-                        clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                    }
+                    <DragButton
+                        title={formatMessage({defaultMessage: 'Drag me to reorder'})}
+                        className={'icon icon-drag-vertical'}
+                        {...props.draggableProvided?.dragHandleProps}
+                        $isVisible={!props.readOnly && !props.dragDisabled}
+                        $isDragging={props.dragging}
                     />
-                </ChecklistItemTitleWrapper>
-            </CheckboxContainer>
-            {(descValue || isEditing) &&
+                    <CheckBoxButton
+                        readOnly={props.readOnly}
+                        disabled={isSkipped() || props.playbookRunId === undefined}
+                        item={props.checklistItem}
+                        onChange={(item: ChecklistItemState) => props.onChange?.(item)}
+                        onReadOnlyInteract={props.onReadOnlyInteract}
+                    />
+                    <ConditionIndicator checklistItem={props.checklistItem}/>
+                    <ChecklistItemTitleWrapper
+                        onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
+                    >
+                        <ChecklistItemTitle
+                            editingItem={isEditing}
+                            onEdit={setTitleValue}
+                            value={titleValue}
+                            skipped={isSkipped()}
+                            clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                        />
+                    </ChecklistItemTitleWrapper>
+                </CheckboxContainer>
+                {(descValue || isEditing) &&
                 <ChecklistItemDescription
                     editingItem={isEditing}
                     showDescription={showDescription}
                     onEdit={setDescValue}
                     value={descValue}
                 />
-            }
-            {renderRow()}
-            {isEditing &&
+                }
+                {renderRow()}
+                {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
                         setIsEditing(false);
@@ -427,7 +427,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         }
                     }}
                 />
-            }
+                }
             </ItemContainer>
         </DraggableWrapper>
     );

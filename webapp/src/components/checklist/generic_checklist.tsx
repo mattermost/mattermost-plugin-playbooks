@@ -125,7 +125,7 @@ const GenericChecklist = (props: Props) => {
 
         // Check if this was the last item with this condition_id
         if (conditionId) {
-            const remainingItemsWithCondition = newChecklistItems.filter((item) => item.condition_id === conditionId);
+            const remainingItemsWithCondition = newChecklistItems.filter((checklistItem) => checklistItem.condition_id === conditionId);
             if (remainingItemsWithCondition.length === 0 && props.onDeleteCondition) {
                 // Delete the condition group since it's now empty
                 props.onDeleteCondition(conditionId);
