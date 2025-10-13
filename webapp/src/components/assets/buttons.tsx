@@ -83,6 +83,45 @@ export const PrimaryButton = styled(Button)`
     }
 `;
 
+export const PrimaryButtonDestructive = styled(Button)`
+    &&, &&:focus {
+        background: var(--error-text);
+        color: var(--button-color);
+        white-space: nowrap;
+    }
+
+    &:active:not([disabled]) {
+        background: rgba(var(--error-text-color-rgb), 0.8);
+    }
+
+    &::before {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+        content: '';
+        opacity: 0;
+        transition: all 0.15s ease-out;
+    }
+
+    &&:hover:not([disabled]) {
+        background: var(--error-text);
+        color: var(--button-color);
+
+        &::before {
+            opacity: 1;
+        }
+    }
+
+    &:disabled {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+    }
+`;
+
 export const SubtlePrimaryButton = styled(Button)`
     background: rgba(var(--button-bg-rgb), 0.08);
     color: var(--button-bg);

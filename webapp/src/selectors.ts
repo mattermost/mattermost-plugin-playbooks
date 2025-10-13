@@ -337,6 +337,11 @@ export const selectHasOverdueTasks = createSelector(
 // Condition selectors
 export const getConditions = (state: GlobalState) => pluginState(state).conditions || {};
 
+export const getCondition = (state: GlobalState, conditionId: string) => {
+    const conditions = getConditions(state);
+    return conditions[conditionId];
+};
+
 export const getConditionsPerPlaybook = (state: GlobalState) => pluginState(state).conditionsPerPlaybook || {};
 
 export const getConditionsByPlaybookId = createSelector(

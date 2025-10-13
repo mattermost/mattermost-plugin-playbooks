@@ -1,11 +1,13 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
+import {useDispatch} from 'react-redux';
 
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, PrimaryButtonDestructive, TertiaryButton} from 'src/components/assets/buttons';
+import {modals} from 'src/webapp_globals';
 
 import {
     Buttons,
@@ -69,7 +71,7 @@ type Props = {
     /*
      * Function called when the cancel button is pressed or the modal is hidden. Passes `true` if the checkbox is checked
      */
-    onCancel: (checked: boolean) => void;
+    onCancel?: (checked: boolean) => void;
 
     /**
      * Function called when modal is dismissed
@@ -80,6 +82,11 @@ type Props = {
      * Set to hide the cancel button
      */
     hideCancel?: boolean;
+
+    /*
+     * Set to true for destructive actions (uses danger button styling)
+     */
+    isDestructive?: boolean;
 
     stopPropagationOnClick?: boolean;
 };
@@ -107,7 +114,7 @@ const UncontrolledConfirmModal = (props: Props) => {
             }}
             onCancel={(checked) => {
                 setShow(false);
-                props.onCancel(checked);
+                props.onCancel?.(checked);
             }}
         />
     );
@@ -175,7 +182,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
     };
 
     handleCancel = () => {
-        this.props.onCancel(this.state.checked);
+        this.props.onCancel?.(this.state.checked);
     };
 
     render() {
@@ -248,20 +255,37 @@ export default class ConfirmModal extends React.Component<Props, State> {
                     <DefaultFooterContainer>
                         <Buttons>
                             {cancelButton}
-                            <PrimaryButton
-                                autoFocus={true}
-                                type='button'
-                                className={this.props.confirmButtonClass}
-                                onClick={(e) => {
-                                    if (this.props.stopPropagationOnClick) {
-                                        e.stopPropagation();
-                                    }
-                                    this.handleConfirm();
-                                }}
-                                id='confirmModalButton'
-                            >
-                                {this.props.confirmButtonText}
-                            </PrimaryButton>
+                            {this.props.isDestructive ? (
+                                <PrimaryButtonDestructive
+                                    autoFocus={true}
+                                    type='button'
+                                    className={this.props.confirmButtonClass}
+                                    onClick={(e) => {
+                                        if (this.props.stopPropagationOnClick) {
+                                            e.stopPropagation();
+                                        }
+                                        this.handleConfirm();
+                                    }}
+                                    id='confirmModalButton'
+                                >
+                                    {this.props.confirmButtonText}
+                                </PrimaryButtonDestructive>
+                            ) : (
+                                <PrimaryButton
+                                    autoFocus={true}
+                                    type='button'
+                                    className={this.props.confirmButtonClass}
+                                    onClick={(e) => {
+                                        if (this.props.stopPropagationOnClick) {
+                                            e.stopPropagation();
+                                        }
+                                        this.handleConfirm();
+                                    }}
+                                    id='confirmModalButton'
+                                >
+                                    {this.props.confirmButtonText}
+                                </PrimaryButton>
+                            )}
                         </Buttons>
                     </DefaultFooterContainer>
                 </Modal.Footer>
@@ -269,3 +293,55 @@ export default class ConfirmModal extends React.Component<Props, State> {
         );
     }
 }
+
+interface ConfirmModalOptions {
+    title: React.ReactNode;
+    message: React.ReactNode;
+    confirmButtonText?: React.ReactNode;
+    cancelButtonText?: React.ReactNode;
+    confirmButtonClass?: string;
+    onConfirm: (checked: boolean) => void;
+    onCancel?: (checked: boolean) => void;
+    showCheckbox?: boolean;
+    checkboxText?: React.ReactNode;
+    isDestructive?: boolean;
+}
+
+/**
+ * Hook to open a confirmation modal using dispatch
+ *
+ * @returns A function that opens the confirmation modal
+ *
+ * @example
+ * const openConfirmModal = useConfirmModal();
+ *
+ * const handleDelete = () => {
+ *   openConfirmModal({
+ *     title: 'Delete item?',
+ *     message: 'Are you sure you want to delete this item?',
+ *     confirmButtonText: 'Delete',
+ *     onConfirm: () => {
+ *       // Handle delete
+ *     },
+ *   });
+ * };
+ */
+export const useConfirmModal = () => {
+    const dispatch = useDispatch();
+
+    return useCallback((options: ConfirmModalOptions) => {
+        dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
+            show: true,
+            title: options.title,
+            message: options.message,
+            confirmButtonText: options.confirmButtonText,
+            cancelButtonText: options.cancelButtonText,
+            confirmButtonClass: options.confirmButtonClass,
+            onConfirm: options.onConfirm,
+            onCancel: options.onCancel,
+            showCheckbox: options.showCheckbox,
+            checkboxText: options.checkboxText,
+            isDestructive: options.isDestructive,
+        })));
+    }, [dispatch]);
+};
