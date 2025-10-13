@@ -12,7 +12,8 @@ import {ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
 import Tooltip from 'src/components/widgets/tooltip';
 import {getCondition} from 'src/selectors';
-import {useConfirmModal, useProxyState} from 'src/hooks';
+import {useProxyState} from 'src/hooks';
+import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
 import {extractConditions, formatCondition} from 'src/utils/condition_format';
 
 interface ConditionHeaderProps {

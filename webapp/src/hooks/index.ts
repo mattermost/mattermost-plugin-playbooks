@@ -8,6 +8,3 @@ export * from './permissions';
 export * from './license';
 export * from './run';
 export * from './conditions';
-
-// Re-export from confirmation_modal for convenience
-export {useConfirmModal} from 'src/components/widgets/confirmation_modal';
