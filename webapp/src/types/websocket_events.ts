@@ -16,6 +16,11 @@ export const WEBSOCKET_PLAYBOOK_RESTORED = `custom_${manifest.id}_playbook_resto
 export const WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL = `custom_${manifest.id}_playbook_run_updated_incremental`;
 export const WEBSOCKET_SETTINGS_CHANGED = `custom_${manifest.id}_settings_changed`;
 
+// Condition WebSocket events
+export const WEBSOCKET_CONDITION_CREATED = `custom_${manifest.id}_condition_created`;
+export const WEBSOCKET_CONDITION_UPDATED = `custom_${manifest.id}_condition_updated`;
+export const WEBSOCKET_CONDITION_DELETED = `custom_${manifest.id}_condition_deleted`;
+
 // Interfaces for incremental updates
 export interface PlaybookRunUpdate {
     id: string;

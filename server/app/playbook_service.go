@@ -374,7 +374,7 @@ func (s *playbookService) UpdatePropertyField(playbookID string, propertyField P
 
 // DeletePropertyField deletes a property field for a playbook and bumps the playbook's updated_at
 func (s *playbookService) DeletePropertyField(playbookID, propertyID string) error {
-	if err := s.propertyService.DeletePropertyField(propertyID); err != nil {
+	if err := s.propertyService.DeletePropertyField(playbookID, propertyID); err != nil {
 		return err
 	}
 

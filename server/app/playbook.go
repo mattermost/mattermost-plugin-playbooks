@@ -312,6 +312,15 @@ type ChecklistItem struct {
 
 	// UpdateAt is when this checklist item was last modified
 	UpdateAt int64 `json:"update_at" export:"-"`
+
+	// ConditionID is the ID of the condition that created this checklist item, if any
+	ConditionID string `json:"condition_id" export:"-"`
+
+	// ConditionAction is a string that represents the action created as a result of a condition. For now, '' or 'hidden'
+	ConditionAction ConditionAction `json:"condition_action" export:"-"`
+
+	// ConditionReason is a string representation of the condition.
+	ConditionReason string `json:"condition_reason" export:"-"`
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {

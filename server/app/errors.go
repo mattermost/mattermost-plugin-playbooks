@@ -20,5 +20,17 @@ var ErrPlaybookRunActive = errors.New("already active")
 // ErrMalformedPlaybookRun occurs when a playbook run is not valid.
 var ErrMalformedPlaybookRun = errors.New("malformed")
 
+// ErrMalformedCondition occurs when a condition is not valid.
+var ErrMalformedCondition = errors.New("malformed condition")
+
 // ErrDuplicateEntry occurs when failing to insert because the entry already existed.
 var ErrDuplicateEntry = errors.New("duplicate entry")
+
+// ErrPropertyFieldInUse occurs when trying to delete a property field that is referenced by conditions.
+var ErrPropertyFieldInUse = errors.New("property field is in use")
+
+// ErrPropertyOptionsInUse occurs when trying to remove property options that are referenced by conditions.
+var ErrPropertyOptionsInUse = errors.New("property options are in use")
+
+// ErrPropertyFieldTypeChangeNotAllowed occurs when trying to change the type of a property field that is referenced by conditions.
+var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type change not allowed")

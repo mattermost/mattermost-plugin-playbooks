@@ -376,3 +376,75 @@ func (s *PlaybookRunService) GetOwners(ctx context.Context) ([]OwnerInfo, error)
 
 	return owners, nil
 }
+
+// GetPropertyFields gets all property fields for a run. It is a wrapper around GetPropertyFieldsSince with updatedSince set to 0.
+func (s *PlaybookRunService) GetPropertyFields(ctx context.Context, playbookRunID string) ([]PropertyField, error) {
+	return s.GetPropertyFieldsSince(ctx, playbookRunID, 0)
+}
+
+// GetPropertyFieldsSince gets all property fields for a run since a given timestamp.
+// updatedSince: optional timestamp in milliseconds - only return fields updated after this time (0 = all)
+func (s *PlaybookRunService) GetPropertyFieldsSince(ctx context.Context, playbookRunID string, updatedSince int64) ([]PropertyField, error) {
+	propertyFieldsURL := fmt.Sprintf("runs/%s/property_fields", playbookRunID)
+	if updatedSince > 0 {
+		propertyFieldsURL = fmt.Sprintf("%s?updated_since=%d", propertyFieldsURL, updatedSince)
+	}
+	req, err := s.client.newAPIRequest(http.MethodGet, propertyFieldsURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var fields []PropertyField
+	resp, err := s.client.do(ctx, req, &fields)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return fields, nil
+}
+
+// GetPropertyValues gets all property values for a run. It is a wrapper around GetPropertyValuesSince with updatedSince set to 0.
+func (s *PlaybookRunService) GetPropertyValues(ctx context.Context, playbookRunID string) ([]PropertyValue, error) {
+	return s.GetPropertyValuesSince(ctx, playbookRunID, 0)
+}
+
+// GetPropertyValuesSince gets all property values for a run since a given timestamp.
+// updatedSince: optional timestamp in milliseconds - only return values updated after this time (0 = all)
+func (s *PlaybookRunService) GetPropertyValuesSince(ctx context.Context, playbookRunID string, updatedSince int64) ([]PropertyValue, error) {
+	propertyValuesURL := fmt.Sprintf("runs/%s/property_values", playbookRunID)
+	if updatedSince > 0 {
+		propertyValuesURL = fmt.Sprintf("%s?updated_since=%d", propertyValuesURL, updatedSince)
+	}
+	req, err := s.client.newAPIRequest(http.MethodGet, propertyValuesURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var values []PropertyValue
+	resp, err := s.client.do(ctx, req, &values)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return values, nil
+}
+
+// SetPropertyValue sets a property value for a run.
+func (s *PlaybookRunService) SetPropertyValue(ctx context.Context, playbookRunID, fieldID string, value PropertyValueRequest) (*PropertyValue, error) {
+	propertyValueURL := fmt.Sprintf("runs/%s/property_fields/%s/value", playbookRunID, fieldID)
+	req, err := s.client.newAPIRequest(http.MethodPut, propertyValueURL, value)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyValue := new(PropertyValue)
+	resp, err := s.client.do(ctx, req, propertyValue)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return propertyValue, nil
+}

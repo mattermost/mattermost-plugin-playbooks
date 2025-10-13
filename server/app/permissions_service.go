@@ -29,6 +29,7 @@ type LicenseChecker interface {
 	StatsAllowed() bool
 	ChecklistItemDueDateAllowed() bool
 	PlaybookAttributesAllowed() bool
+	ConditionalPlaybooksAllowed() bool
 }
 
 type PermissionsService struct {
@@ -164,6 +165,33 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 	}
 
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to playbook `%s`", userID, playbook.ID)
+}
+
+// PlaybookManageConditions returns an error if the user cannot manage conditions for the playbook
+func (p *PermissionsService) PlaybookManageConditions(userID string, playbook Playbook) error {
+	if !p.licenseChecker.ConditionalPlaybooksAllowed() {
+		return errors.Wrapf(ErrLicensedFeature, "conditional playbooks feature is not covered by current server license")
+	}
+
+	return p.PlaybookManageProperties(userID, playbook)
+}
+
+// PlaybookViewConditions returns an error if the user cannot view conditions for the playbook
+func (p *PermissionsService) PlaybookViewConditions(userID string, playbookID string) error {
+	if !p.licenseChecker.ConditionalPlaybooksAllowed() {
+		return errors.Wrapf(ErrLicensedFeature, "conditional playbooks feature is not covered by current server license")
+	}
+
+	return p.PlaybookView(userID, playbookID)
+}
+
+// RunViewConditions returns an error if the user cannot view conditions for the run
+func (p *PermissionsService) RunViewConditions(userID string, runID string) error {
+	if !p.licenseChecker.ConditionalPlaybooksAllowed() {
+		return errors.Wrapf(ErrLicensedFeature, "conditional playbooks feature is not covered by current server license")
+	}
+
+	return p.RunView(userID, runID)
 }
 
 // PlaybookodifyWithFixes checks both ManageProperties and ManageMembers permissions

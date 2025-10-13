@@ -70,7 +70,7 @@ const PropertyDotMenu = ({
                         <MenuItemLeft>
                             <FormatListBulletedIcon size={18}/>
                             <FormattedMessage
-                                defaultMessage='Edit property type'
+                                defaultMessage='Edit attribute type'
                             />
                         </MenuItemLeft>
                     </MenuItemContent>
@@ -80,7 +80,7 @@ const PropertyDotMenu = ({
                         <MenuItemLeft>
                             <ContentCopyIcon size={18}/>
                             <FormattedMessage
-                                defaultMessage='Duplicate property'
+                                defaultMessage='Duplicate attribute'
                             />
                         </MenuItemLeft>
                     </MenuItemContent>
@@ -93,7 +93,7 @@ const PropertyDotMenu = ({
                                 color='#D24B4E'
                             />
                             <FormattedMessage
-                                defaultMessage='Delete property'
+                                defaultMessage='Delete attribute'
                             />
                         </MenuItemLeft>
                     </MenuItemContent>

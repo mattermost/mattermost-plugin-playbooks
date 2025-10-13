@@ -45,7 +45,7 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
         const trimmedValue = newValue.trim();
 
         if (trimmedValue === '') {
-            setErrorMessage('Property name cannot be empty');
+            setErrorMessage('Attribute name cannot be empty');
         } else if (trimmedValue === field.name) {
             setErrorMessage(null);
         } else {
@@ -113,7 +113,7 @@ const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updat
             <StyledInput
                 ref={inputRef}
                 type='text'
-                aria-label={formatMessage({defaultMessage: 'Property name'})}
+                aria-label={formatMessage({defaultMessage: 'Attribute name'})}
                 value={localValue ?? field.name}
                 placeholder={originalValue || field.name}
                 onChange={handleChange}

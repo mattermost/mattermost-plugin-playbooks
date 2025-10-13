@@ -20,7 +20,6 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             testTeam = team;
             testUser = user;
         });
-        cy.apiEnsureFeatureFlag('EnableExperimentalFeatures', true);
     });
 
     beforeEach(() => {
@@ -502,14 +501,14 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
             // # Set attribute name
             cy.findAllByTestId('property-field-row').last().within(() => {
-                cy.findByLabelText('Property name').clear().type('Environment');
+                cy.findByLabelText('Attribute name').clear().type('Environment');
             });
             cy.get('body').click(0, 0);
             cy.wait(500);
 
             // # Change type to select
             cy.findAllByTestId('property-field-row').last().within(() => {
-                cy.findByRole('button', {name: 'Change property type'}).trigger('click');
+                cy.findByRole('button', {name: 'Change attribute type'}).trigger('click');
             });
             cy.findByText(/^select$/i).click();
             cy.wait(500);

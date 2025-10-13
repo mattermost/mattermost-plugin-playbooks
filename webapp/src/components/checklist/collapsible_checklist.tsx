@@ -262,6 +262,11 @@ const tasksCompleted = (items: ChecklistItem[]) => {
     let total = 0;
 
     for (const item of items) {
+        // Exclude hidden items from all counts
+        if (item.condition_action === 'hidden') {
+            continue;
+        }
+
         if (item.state !== ChecklistItemState.Skip) {
             total++;
         }

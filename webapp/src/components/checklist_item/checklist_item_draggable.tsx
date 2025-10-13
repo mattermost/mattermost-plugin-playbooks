@@ -8,6 +8,8 @@ import {setChecklistItemState} from 'src/client';
 import {ChecklistItem, ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {ChecklistItemState, ChecklistItem as ChecklistItemType} from 'src/types/playbook';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {Condition} from 'src/types/conditions';
+import {PropertyField} from 'src/types/properties';
 
 interface Props {
     playbookRun?: PlaybookRun;
@@ -17,13 +19,22 @@ interface Props {
     itemIndex: number;
     newItem: boolean;
     readOnly?: boolean;
+    dragDisabled?: boolean;
     cancelAddingItem: () => void;
     onUpdateChecklistItem?: (newItem: ChecklistItemType) => void;
     onAddChecklistItem?: (newItem: ChecklistItemType) => void;
     onDuplicateChecklistItem?: () => void;
     onDeleteChecklistItem?: () => void;
     itemButtonsFormat?: ItemButtonsFormat;
-    onReadOnlyInteract?: () => void
+    onReadOnlyInteract?: () => void;
+    onAddConditional?: () => void;
+    onRemoveFromCondition?: () => void;
+    onAssignToCondition?: (conditionId: string) => void;
+    availableConditions?: Condition[];
+    propertyFields?: PropertyField[];
+    onEditingChange?: (isEditing: boolean) => void;
+    hasCondition?: boolean;
+    conditionHeader?: React.ReactNode;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -32,6 +43,7 @@ const DraggableChecklistItem = (props: Props) => {
         <Draggable
             draggableId={draggableId}
             index={props.itemIndex}
+            isDragDisabled={props.dragDisabled}
         >
             {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                 <ChecklistItem
@@ -47,6 +59,7 @@ const DraggableChecklistItem = (props: Props) => {
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}
                     readOnly={props.readOnly ?? false}
+                    dragDisabled={props.dragDisabled}
                     collapsibleDescription={true}
                     newItem={props.newItem}
                     cancelAddingItem={props.cancelAddingItem}
@@ -56,6 +69,14 @@ const DraggableChecklistItem = (props: Props) => {
                     onDeleteChecklistItem={props.onDeleteChecklistItem}
                     buttonsFormat={props.itemButtonsFormat}
                     onReadOnlyInteract={props.onReadOnlyInteract}
+                    onAddConditional={props.onAddConditional}
+                    onRemoveFromCondition={props.onRemoveFromCondition}
+                    onAssignToCondition={props.onAssignToCondition}
+                    availableConditions={props.availableConditions}
+                    propertyFields={props.propertyFields}
+                    onEditingChange={props.onEditingChange}
+                    hasCondition={props.hasCondition}
+                    conditionHeader={props.conditionHeader}
                 />
             )}
         </Draggable>

@@ -29,6 +29,7 @@ import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
 import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
+import JulienDevConditionEditor from 'src/components/backstage/playbook_properties/julien_dev_condition_editor';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
 import CopyLink from 'src/components/widgets/copy_link';
@@ -258,6 +259,13 @@ const PlaybookEditor = () => {
                 >
                     {formatMessage({defaultMessage: 'Reports'})}
                 </NavItem>
+                {allowPlaybookAttributes && (
+                    <NavItem
+                        to={generatePath(path, {playbookId, tab: 'juliendev'})}
+                    >
+                        {formatMessage({defaultMessage: 'Conditions (dev)'})}
+                    </NavItem>
+                )}
             </NavBar>
             <Switch>
                 <Route
@@ -298,6 +306,16 @@ const PlaybookEditor = () => {
                         stats={stats}
                     />
                 </Route>
+                {allowPlaybookAttributes && (
+                    <Route
+                        path={generatePath(path, {playbookId, tab: 'juliendev'})}
+                        exact={true}
+                    >
+                        <JulienDevConditionEditor
+                            playbook={playbook}
+                        />
+                    </Route>
+                )}
             </Switch>
         </Editor>
     );

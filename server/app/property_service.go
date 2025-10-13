@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -22,13 +23,15 @@ const (
 )
 
 type propertyService struct {
-	api     *pluginapi.Client
-	groupID string
+	api            *pluginapi.Client
+	groupID        string
+	conditionStore ConditionStore
 }
 
-func NewPropertyService(api *pluginapi.Client) (PropertyService, error) {
+func NewPropertyService(api *pluginapi.Client, conditionStore ConditionStore) (PropertyService, error) {
 	service := &propertyService{
-		api: api,
+		api:            api,
+		conditionStore: conditionStore,
 	}
 
 	// Get or create the property group
@@ -98,7 +101,11 @@ func (s *propertyService) GetPropertyField(propertyID string) (*PropertyField, e
 }
 
 func (s *propertyService) GetPropertyFields(playbookID string) ([]PropertyField, error) {
-	mmPropertyFields, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, playbookID)
+	return s.GetPropertyFieldsSince(playbookID, 0)
+}
+
+func (s *propertyService) GetPropertyFieldsSince(playbookID string, updatedSince int64) ([]PropertyField, error) {
+	mmPropertyFields, err := s.getAllPropertyFieldsSince(PropertyTargetTypePlaybook, playbookID, updatedSince)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get property fields")
 	}
@@ -129,7 +136,11 @@ func (s *propertyService) GetPropertyFieldsCount(playbookID string) (int, error)
 }
 
 func (s *propertyService) GetRunPropertyFields(runID string) ([]PropertyField, error) {
-	fieldsMap, err := s.getRunsPropertyFields([]string{runID}, PropertySearchPerPage)
+	return s.GetRunPropertyFieldsSince(runID, 0)
+}
+
+func (s *propertyService) GetRunPropertyFieldsSince(runID string, updatedSince int64) ([]PropertyField, error) {
+	fieldsMap, err := s.getRunsPropertyFields([]string{runID}, PropertySearchPerPage, updatedSince)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get run property fields")
 	}
@@ -150,6 +161,34 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 	existingField, err := s.api.Property.GetPropertyField(s.groupID, propertyField.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing property field")
+	}
+
+	// Check if the type is changing and validate it's allowed
+	if existingField.Type != propertyField.Type {
+		if err := s.validatePropertyFieldTypeChange(existingField, propertyField, playbookID); err != nil {
+			return nil, err
+		}
+	}
+
+	// Check if any options are being removed and validate they are not in use
+	if propertyField.SupportsOptions() {
+		existingPropertyField, err := NewPropertyFieldFromMattermostPropertyField(existingField)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert existing property field")
+		}
+
+		removedOptionIDs := s.findRemovedOptions(existingPropertyField.Attrs.Options, propertyField.Attrs.Options)
+		if len(removedOptionIDs) > 0 {
+			optionsInUse, err := s.conditionStore.CountConditionsUsingPropertyOptions(playbookID, removedOptionIDs)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to check if property options are in use")
+			}
+
+			if len(optionsInUse) > 0 {
+				optionNames := s.getOptionNames(existingPropertyField.Attrs.Options, optionsInUse)
+				return nil, errors.Wrapf(ErrPropertyOptionsInUse, "cannot remove property options: %s. Please remove or update the conditions before removing these options", optionNames)
+			}
+		}
 	}
 
 	// Convert the input to Mattermost property field
@@ -176,8 +215,66 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 	return resultField, nil
 }
 
-func (s *propertyService) DeletePropertyField(propertyID string) error {
-	err := s.api.Property.DeletePropertyField(s.groupID, propertyID)
+func (s *propertyService) findRemovedOptions(oldOptions, newOptions model.PropertyOptions[*model.PluginPropertyOption]) []string {
+	newOptionIDs := make(map[string]bool)
+	for _, option := range newOptions {
+		newOptionIDs[option.GetID()] = true
+	}
+
+	var removedIDs []string
+	for _, option := range oldOptions {
+		if !newOptionIDs[option.GetID()] {
+			removedIDs = append(removedIDs, option.GetID())
+		}
+	}
+
+	return removedIDs
+}
+
+func (s *propertyService) getOptionNames(options model.PropertyOptions[*model.PluginPropertyOption], optionsInUse map[string]int) string {
+	var names []string
+	for _, option := range options {
+		if count, exists := optionsInUse[option.GetID()]; exists {
+			var countStr string
+			if count == 1 {
+				countStr = "1 condition"
+			} else {
+				countStr = fmt.Sprintf("%d conditions", count)
+			}
+			names = append(names, fmt.Sprintf("'%s' (used by %s)", option.GetName(), countStr))
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
+func (s *propertyService) validatePropertyFieldTypeChange(existingField *model.PropertyField, updatedField PropertyField, playbookID string) error {
+	count, err := s.conditionStore.CountConditionsUsingPropertyField(playbookID, updatedField.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if property field is in use")
+	}
+
+	if count > 0 {
+		return errors.Wrapf(ErrPropertyFieldTypeChangeNotAllowed, "cannot change type of property field '%s' from '%s' to '%s': it is referenced by %d condition(s). Please remove or update the conditions before changing the field type", updatedField.Name, existingField.Type, updatedField.Type, count)
+	}
+
+	return nil
+}
+
+func (s *propertyService) DeletePropertyField(playbookID string, propertyID string) error {
+	count, err := s.conditionStore.CountConditionsUsingPropertyField(playbookID, propertyID)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if property field is in use")
+	}
+
+	if count > 0 {
+		field, err := s.GetPropertyField(propertyID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get property field")
+		}
+		return errors.Wrapf(ErrPropertyFieldInUse, "cannot delete property field '%s': it is referenced by %d condition(s). Please remove or update the conditions before deleting this field", field.Name, count)
+	}
+
+	err = s.api.Property.DeletePropertyField(s.groupID, propertyID)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete property field")
 	}
@@ -186,11 +283,16 @@ func (s *propertyService) DeletePropertyField(propertyID string) error {
 }
 
 func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*model.PropertyField, error) {
+	return s.getAllPropertyFieldsSince(targetType, targetID, 0)
+}
+
+func (s *propertyService) getAllPropertyFieldsSince(targetType, targetID string, updatedSince int64) ([]*model.PropertyField, error) {
 	opts := model.PropertyFieldSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: targetType,
-		TargetIDs:  []string{targetID},
-		PerPage:    PropertySearchPerPage,
+		GroupID:       s.groupID,
+		TargetType:    targetType,
+		TargetIDs:     []string{targetID},
+		SinceUpdateAt: updatedSince,
+		PerPage:       PropertySearchPerPage,
 	}
 
 	var allFields []*model.PropertyField
@@ -220,21 +322,52 @@ func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*
 	return allFields, nil
 }
 
-func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) error {
+func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) (*PropertyCopyResult, error) {
 	playbookProperties, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, playbookID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get playbook properties")
+		return nil, errors.Wrap(err, "failed to get playbook properties")
 	}
+
+	fieldMappings := make(map[string]string)
+	optionMappings := make(map[string]string)
+	var copiedFields []PropertyField
 
 	for _, playbookProperty := range playbookProperties {
 		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to duplicate property field %s for run", playbookProperty.Name)
+			return nil, errors.Wrapf(err, "failed to duplicate property field %s for run", playbookProperty.Name)
 		}
 
-		_, err = s.api.Property.CreatePropertyField(runProperty)
+		createdFieldMM, err := s.api.Property.CreatePropertyField(runProperty)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create run property field for %s", playbookProperty.Name)
+			return nil, errors.Wrapf(err, "failed to create run property field for %s", playbookProperty.Name)
+		}
+
+		// Convert the created field back to our PropertyField type to access typed options
+		createdField, err := NewPropertyFieldFromMattermostPropertyField(createdFieldMM)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert created property field %s", playbookProperty.Name)
+		}
+
+		// Track field ID mapping: old playbook field ID -> new run field ID
+		fieldMappings[playbookProperty.ID] = createdField.ID
+
+		// Add to copied fields array
+		copiedFields = append(copiedFields, *createdField)
+
+		// Track option ID mappings if field supports options
+		if createdField.SupportsOptions() {
+			playbookField, err := NewPropertyFieldFromMattermostPropertyField(playbookProperty)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to convert playbook property field %s", playbookProperty.Name)
+			}
+
+			// Map old option IDs to new option IDs
+			for i, playbookOption := range playbookField.Attrs.Options {
+				if i < len(createdField.Attrs.Options) {
+					optionMappings[playbookOption.GetID()] = createdField.Attrs.Options[i].GetID()
+				}
+			}
 		}
 	}
 
@@ -244,7 +377,11 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 		"fields_copied": len(playbookProperties),
 	}).Info("copied playbook properties to run")
 
-	return nil
+	return &PropertyCopyResult{
+		FieldMappings:  fieldMappings,
+		OptionMappings: optionMappings,
+		CopiedFields:   copiedFields,
+	}, nil
 }
 
 func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.PropertyField, runID string) (*model.PropertyField, error) {
@@ -272,7 +409,11 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 }
 
 func (s *propertyService) GetRunPropertyValues(runID string) ([]PropertyValue, error) {
-	valuesMap, err := s.getRunsPropertyValues([]string{runID}, PropertySearchPerPage)
+	return s.GetRunPropertyValuesSince(runID, 0)
+}
+
+func (s *propertyService) GetRunPropertyValuesSince(runID string, updatedSince int64) ([]PropertyValue, error) {
+	valuesMap, err := s.getRunsPropertyValues([]string{runID}, PropertySearchPerPage, updatedSince)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get run property values")
 	}
@@ -429,25 +570,26 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 
 // GetRunsPropertyFields retrieves all property fields for multiple runs efficiently
 func (s *propertyService) GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error) {
-	return s.getRunsPropertyFields(runIDs, PropertyBulkSearchPerPage)
+	return s.getRunsPropertyFields(runIDs, PropertyBulkSearchPerPage, 0)
 }
 
 // GetRunsPropertyValues retrieves all property values for multiple runs efficiently
 func (s *propertyService) GetRunsPropertyValues(runIDs []string) (map[string][]PropertyValue, error) {
-	return s.getRunsPropertyValues(runIDs, PropertyBulkSearchPerPage)
+	return s.getRunsPropertyValues(runIDs, PropertyBulkSearchPerPage, 0)
 }
 
 // getRunsPropertyFields handles property field retrieval in a paginated way
-func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int) (map[string][]PropertyField, error) {
+func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int, updatedSince int64) (map[string][]PropertyField, error) {
 	if len(runIDs) == 0 {
 		return make(map[string][]PropertyField), nil
 	}
 
 	opts := model.PropertyFieldSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: PropertyTargetTypeRun,
-		TargetIDs:  runIDs,
-		PerPage:    pageSize,
+		GroupID:       s.groupID,
+		TargetType:    PropertyTargetTypeRun,
+		TargetIDs:     runIDs,
+		SinceUpdateAt: updatedSince,
+		PerPage:       pageSize,
 	}
 
 	result := make(map[string][]PropertyField)
@@ -482,16 +624,17 @@ func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int) (
 }
 
 // getRunsPropertyValues handles property value retrieval in a paginated way
-func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int) (map[string][]PropertyValue, error) {
+func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int, updatedSince int64) (map[string][]PropertyValue, error) {
 	if len(runIDs) == 0 {
 		return make(map[string][]PropertyValue), nil
 	}
 
 	opts := model.PropertyValueSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: PropertyTargetTypeRun,
-		TargetIDs:  runIDs,
-		PerPage:    pageSize,
+		GroupID:       s.groupID,
+		TargetType:    PropertyTargetTypeRun,
+		TargetIDs:     runIDs,
+		SinceUpdateAt: updatedSince,
+		PerPage:       pageSize,
 	}
 
 	result := make(map[string][]PropertyValue)

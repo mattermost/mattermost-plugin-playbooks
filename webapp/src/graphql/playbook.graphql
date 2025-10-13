@@ -51,6 +51,9 @@ query Playbook($id: String!) {
 				command
 				command_last_run: commandLastRun
 				due_date: dueDate
+				condition_id: conditionID
+				condition_action: conditionAction
+				condition_reason: conditionReason
 				task_actions: taskActions {
 					trigger: trigger {
 						type

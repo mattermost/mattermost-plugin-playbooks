@@ -37,6 +37,8 @@ import {PropertyField} from 'src/types/properties';
 import GenericModal from 'src/components/widgets/generic_modal';
 
 import {useProxyState} from 'src/hooks';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 import {MAX_PROPERTIES_LIMIT} from 'src/constants';
 
@@ -65,6 +67,7 @@ const usePlaybookPropertyFields = (playbook: Maybe<FullPlaybook>): PropertyField
 
 const PlaybookProperties = ({playbookID}: Props) => {
     const {formatMessage} = useIntl();
+    const {add: addToast} = useToaster();
 
     const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
     const [deletingProperty, setDeletingProperty] = useState<PropertyField | null>(null);
@@ -110,12 +113,33 @@ const PlaybookProperties = ({playbookID}: Props) => {
             },
         };
 
-        await updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
-    }, [updatePropertyField, playbookID]);
+        const result = await updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
+        if (result.errors && result.errors.length > 0) {
+            // if there's an error, restore the property as it was
+            const originalProperty = inProperties.find((p) => p.id === updatedProperty.id);
+            if (originalProperty) {
+                updatePropertyOptimistically(originalProperty);
+            }
+            addToast({
+                content: result.errors[0].message,
+                toastStyle: ToastStyle.Failure,
+                duration: 8000,
+            });
+        }
+    }, [updatePropertyField, playbookID, addToast, inProperties, updatePropertyOptimistically]);
 
     const deleteProperty = useCallback(async (propertyId: string) => {
-        await deletePropertyField(playbookID, propertyId);
-    }, [deletePropertyField, playbookID]);
+        const result = await deletePropertyField(playbookID, propertyId);
+        if (result.errors && result.errors.length > 0) {
+            addToast({
+                content: result.errors[0].message,
+                toastStyle: ToastStyle.Failure,
+                duration: 8000,
+            });
+            return false;
+        }
+        return true;
+    }, [deletePropertyField, playbookID, addToast]);
 
     const addProperty = useCallback(async () => {
         if (properties.length >= MAX_PROPERTIES_LIMIT) {
@@ -213,7 +237,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     const target = (
                         <TypeIconButton
                             onClick={() => setEditingTypeId(info.row.original.id)}
-                            aria-label={formatMessage({defaultMessage: 'Change property type'})}
+                            aria-label={formatMessage({defaultMessage: 'Change attribute type'})}
                         >
                             <TypeIcon/>
                         </TypeIconButton>
@@ -354,10 +378,6 @@ const PlaybookProperties = ({playbookID}: Props) => {
     return (
         <OuterContainer>
             <InnerContainer>
-                <ExperimentalBanner>
-                    <i className='icon-flask-outline'/>
-                    <FormattedMessage defaultMessage='Experimental Feature'/>
-                </ExperimentalBanner>
                 <TableContainer>
                     <DragDropContext onDragEnd={handleDragEnd}>
                         <Droppable droppableId='properties-table'>
@@ -444,9 +464,11 @@ const PlaybookProperties = ({playbookID}: Props) => {
                         modalHeaderText={<FormattedMessage defaultMessage='Delete Attribute'/>}
                         show={Boolean(deletingProperty)}
                         onHide={() => setDeletingProperty(null)}
-                        handleConfirm={() => {
-                            deleteProperty(deletingProperty.id);
-                            setDeletingProperty(null);
+                        handleConfirm={async () => {
+                            const success = await deleteProperty(deletingProperty.id);
+                            if (success) {
+                                setDeletingProperty(null);
+                            }
                         }}
                         handleCancel={() => setDeletingProperty(null)}
                         confirmButtonText={<FormattedMessage defaultMessage='Delete'/>}
@@ -486,24 +508,6 @@ const InnerContainer = styled.div`
 
     > div + div {
         margin-top: 16px;
-    }
-`;
-
-const ExperimentalBanner = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    background: rgba(var(--sidebar-text-active-border-rgb), 0.08);
-    border: 1px solid rgba(var(--sidebar-text-active-border-rgb), 0.24);
-    border-radius: 4px;
-    color: var(--sidebar-text-active-border);
-    font-size: 14px;
-    font-weight: 600;
-
-    i {
-        font-size: 16px;
     }
 `;
 

@@ -12,11 +12,19 @@ import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/compo
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
+import {clientExecuteCommand, getPlaybookConditions} from 'src/client';
+import {Condition} from 'src/types/conditions';
 import {canIPostUpdateForRun, selectToggleRHS} from 'src/selectors';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
     CLOSE_BACKSTAGE_RHS,
+    CONDITION_CREATED,
+    CONDITION_DELETED,
+    CONDITION_UPDATED,
     CloseBackstageRHS,
+    ConditionCreated,
+    ConditionDeleted,
+    ConditionUpdated,
     HIDE_CHANNEL_ACTIONS_MODAL,
     HIDE_PLAYBOOK_ACTIONS_MODAL,
     HIDE_POST_MENU_MODAL,
@@ -40,12 +48,14 @@ import {
     PlaybookRunUpdated,
     PublishTemplates,
     RECEIVED_GLOBAL_SETTINGS,
+    RECEIVED_PLAYBOOK_CONDITIONS,
     RECEIVED_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS,
     RECEIVED_TOGGLE_RHS_ACTION,
     REMOVED_FROM_CHANNEL,
     ReceivedGlobalSettings,
+    ReceivedPlaybookConditions,
     ReceivedPlaybookRuns,
     ReceivedTeamPlaybookRunConnections,
     ReceivedTeamPlaybookRuns,
@@ -79,7 +89,6 @@ import {
     WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
     WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
-import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter, TaskAction as TaskActionType} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
@@ -384,4 +393,37 @@ export const publishTemplates = (templates: PresetTemplate[]): PublishTemplates 
 export const websocketPlaybookRunIncrementalUpdateReceived = (data: import('src/types/websocket_events').PlaybookRunUpdate): WebsocketPlaybookRunIncrementalUpdateReceived => ({
     type: WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
     data,
+});
+
+// Condition action creators
+export const fetchPlaybookConditions = (playbookId: string) => async (dispatch: Dispatch<AnyAction>) => {
+    try {
+        const result = await getPlaybookConditions(playbookId);
+        if (result) {
+            dispatch({
+                type: RECEIVED_PLAYBOOK_CONDITIONS,
+                playbookId,
+                conditions: result.items,
+            } as ReceivedPlaybookConditions);
+        }
+    } catch (error) {
+        console.error('Failed to fetch playbook conditions:', error); //eslint-disable-line no-console
+    }
+};
+
+// Condition websocket action creators
+export const conditionCreated = (condition: Condition): ConditionCreated => ({
+    type: CONDITION_CREATED,
+    condition,
+});
+
+export const conditionUpdated = (condition: Condition): ConditionUpdated => ({
+    type: CONDITION_UPDATED,
+    condition,
+});
+
+export const conditionDeleted = (conditionId: string, playbookId: string): ConditionDeleted => ({
+    type: CONDITION_DELETED,
+    conditionId,
+    playbookId,
 });
