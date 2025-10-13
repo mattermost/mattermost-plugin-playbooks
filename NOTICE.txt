@@ -46,14 +46,14 @@ SOFTWARE.
 
 ---
 
-## @floating-ui/react-dom-interactions
+## @floating-ui/react
 
-This product contains '@floating-ui/react-dom-interactions' by atomiks.
+This product contains '@floating-ui/react' by atomiks.
 
-Floating UI Interactions for React DOM
+Floating UI for React
 
 * HOMEPAGE:
-  * https://floating-ui.com/docs/react-dom-interactions
+  * https://floating-ui.com/docs/react
 
 * LICENSE: MIT
 
