@@ -189,7 +189,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
     });
 
     describe('text property conditions', () => {
-        it.only('evaluates is and is_not conditions for text fields', () => {
+        it('evaluates is and is_not conditions for text fields', () => {
             let textField;
             let isCondition;
             let isNotCondition;
