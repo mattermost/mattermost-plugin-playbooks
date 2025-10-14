@@ -138,7 +138,7 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
             });
         });
 
-        it('can add second condition with AND operator', () => {
+        it('can add second condition with OR operator', () => {
             const highOptionId = priorityField.attrs.options.find((o) => o.name === 'High').id;
 
             cy.apiCreatePlaybookCondition(testPlaybook.id, {
