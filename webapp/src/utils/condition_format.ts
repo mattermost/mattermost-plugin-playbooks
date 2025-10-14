@@ -38,18 +38,28 @@ export const formatCondition = (
 ) => {
     const field = propertyFields.find((f) => f.id === cond.fieldId);
     const fieldName = field?.name || 'Unknown field';
-    const operator = cond.operator === 'is' ? operatorIs : operatorIsNot;
 
-    let valueName = '';
-    if (field && (field.type === 'select' || field.type === 'multiselect')) {
-        const valueId = Array.isArray(cond.value) ? cond.value[0] : cond.value;
-        const option = field.attrs.options?.find((opt) => opt.id === valueId);
-        valueName = option?.name || valueId;
+    // Use different operator labels for multiselect fields
+    let operator: string;
+    if (field?.type === 'multiselect') {
+        operator = cond.operator === 'is' ? 'contains' : 'does not contain';
     } else {
-        valueName = Array.isArray(cond.value) ? cond.value[0] || '' : cond.value;
+        operator = cond.operator === 'is' ? operatorIs : operatorIsNot;
     }
 
-    return {fieldName, operator, valueName};
+    let valueNames: string[] = [];
+    if (field && (field.type === 'select' || field.type === 'multiselect')) {
+        // For select/multiselect, return all selected values as separate items
+        const valueArray = Array.isArray(cond.value) ? cond.value : [cond.value];
+        valueNames = valueArray.map((valueId) => {
+            const option = field.attrs.options?.find((opt) => opt.id === valueId);
+            return option?.name || valueId;
+        });
+    } else {
+        valueNames = [Array.isArray(cond.value) ? cond.value[0] || '' : cond.value];
+    }
+
+    return {fieldName, operator, valueNames};
 };
 
 // Format condition expression for compact text display
@@ -65,8 +75,8 @@ export const formatConditionExpr = (
     const logicalOperator = expr.and ? logicalAnd : logicalOr;
 
     const formattedConditions = conditions.map((cond) => {
-        const {fieldName, operator, valueName} = formatCondition(cond, propertyFields, operatorIs, operatorIsNot);
-        return `${fieldName} ${operator} ${valueName}`;
+        const {fieldName, operator, valueNames} = formatCondition(cond, propertyFields, operatorIs, operatorIsNot);
+        return `${fieldName} ${operator} ${valueNames.join(', ')}`;
     });
 
     if (formattedConditions.length === 1) {
