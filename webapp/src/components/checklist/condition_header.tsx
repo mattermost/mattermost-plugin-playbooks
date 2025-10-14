@@ -414,7 +414,10 @@ const ConditionHeader = ({
                         content={formatMessage({defaultMessage: 'Edit condition'})}
                     >
                         <span>
-                            <ActionButton data-testid='condition-header-edit-button' onClick={() => setIsEditing(true)}>
+                            <ActionButton
+                                data-testid='condition-header-edit-button'
+                                onClick={() => setIsEditing(true)}
+                            >
                                 <i className='icon-pencil-outline'/>
                             </ActionButton>
                         </span>
