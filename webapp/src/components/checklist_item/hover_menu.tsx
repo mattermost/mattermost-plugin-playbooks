@@ -125,6 +125,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 </StyledDropdownMenuItem>
                 {props.playbookRunId === undefined && !props.hasCondition && props.onAddConditional &&
                     <StyledDropdownMenuItem
+                        data-testid='task-menu-add-condition'
                         onClick={() => props.onAddConditional?.()}
                     >
                         <DropdownIcon className='icon-source-branch icon-16'/>
@@ -133,6 +134,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 }
                 {props.playbookRunId === undefined && props.hasCondition && props.onRemoveFromCondition &&
                     <StyledDropdownMenuItem
+                        data-testid='task-menu-remove-condition'
                         onClick={() => props.onRemoveFromCondition?.()}
                     >
                         <DropdownIcon className='icon-exit-to-app icon-16'/>
@@ -143,6 +145,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     <>
                         <StyledDropdownMenuItem
                             as='div'
+                            data-testid='task-menu-assign-condition-header'
                             style={{padding: '8px 16px', opacity: 0.6, fontSize: '12px', fontWeight: 600}}
                         >
                             {props.hasCondition ? formatMessage({defaultMessage: 'Move to condition:'}) : formatMessage({defaultMessage: 'Assign to condition:'})}
@@ -161,6 +164,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                             return (
                                 <StyledDropdownMenuItem
                                     key={condition.id}
+                                    data-testid={`task-menu-assign-condition-${condition.id}`}
                                     onClick={() => props.onAssignToCondition?.(condition.id)}
                                 >
                                     <DropdownIcon className='icon-source-branch icon-16'/>

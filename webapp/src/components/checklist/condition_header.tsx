@@ -210,6 +210,7 @@ const ConditionHeader = ({
             >
                 <span>
                     <DestructiveActionButton
+                        data-testid='condition-header-delete-button'
                         onClick={() => {
                             openConfirmModal({
                                 title: formatMessage({defaultMessage: 'Remove condition?'}),
@@ -328,6 +329,7 @@ const ConditionHeader = ({
                     >
                         <span>
                             <AddConditionButton
+                                data-testid='condition-add-button'
                                 onClick={() => addCondition(index)}
                             >
                                 <i className='icon-plus'/>
@@ -342,6 +344,7 @@ const ConditionHeader = ({
                     >
                         <span>
                             <RemoveConditionButton
+                                data-testid='condition-remove-button'
                                 onClick={() => removeCondition(index)}
                             >
                                 <i className='icon-close'/>
@@ -356,7 +359,7 @@ const ConditionHeader = ({
     // Render edit mode with full controls
     if (isEditing) {
         return (
-            <HeaderContainer>
+            <HeaderContainer data-testid='condition-header'>
                 <IfLabel>{formatMessage({defaultMessage: 'If'})}</IfLabel>
                 <ConditionsWrapper>
                     {conditions.map((cond, index) => renderConditionRow(cond, index))}
@@ -380,7 +383,7 @@ const ConditionHeader = ({
 
     // Render read-only view with compact formatting
     return (
-        <ReadOnlyContainer>
+        <ReadOnlyContainer data-testid='condition-header'>
             <PlainText>{formatMessage({defaultMessage: 'If'})}</PlainText>
             <ConditionsText>
                 {conditions.map((cond, index) => {
@@ -411,7 +414,7 @@ const ConditionHeader = ({
                         content={formatMessage({defaultMessage: 'Edit condition'})}
                     >
                         <span>
-                            <ActionButton onClick={() => setIsEditing(true)}>
+                            <ActionButton data-testid='condition-header-edit-button' onClick={() => setIsEditing(true)}>
                                 <i className='icon-pencil-outline'/>
                             </ActionButton>
                         </span>

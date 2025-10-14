@@ -508,3 +508,92 @@ Cypress.Commands.add('apiAddPropertyField', (playbookId, propertyField) => {
         cy.wrap(response.body);
     });
 });
+
+/**
+ * Get property fields for a playbook via REST API
+ * @param {String} playbookId - The playbook ID
+ * @returns {Array} Array of property field objects
+ */
+Cypress.Commands.add('apiGetPropertyFields', (playbookId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}/property_fields`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Create a condition for a playbook via REST API
+ * @param {String} playbookId - The playbook ID
+ * @param {Object} conditionExpr - The condition expression object
+ * @returns {Object} The created condition with ID
+ */
+Cypress.Commands.add('apiCreatePlaybookCondition', (playbookId, conditionExpr) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}/conditions`,
+        method: 'POST',
+        body: {
+            version: 1,
+            condition_expr: conditionExpr,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Update a condition for a playbook via REST API
+ * @param {String} playbookId - The playbook ID
+ * @param {String} conditionId - The condition ID
+ * @param {Object} conditionExpr - The updated condition expression object
+ * @returns {Object} The updated condition
+ */
+Cypress.Commands.add('apiUpdatePlaybookCondition', (playbookId, conditionId, conditionExpr) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}/conditions/${conditionId}`,
+        method: 'PUT',
+        body: {
+            version: 1,
+            condition_expr: conditionExpr,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Delete a condition from a playbook via REST API
+ * @param {String} playbookId - The playbook ID
+ * @param {String} conditionId - The condition ID
+ */
+Cypress.Commands.add('apiDeletePlaybookCondition', (playbookId, conditionId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}/conditions/${conditionId}`,
+        method: 'DELETE',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Attach a condition to a checklist item
+ * @param {String} playbookId - The playbook ID
+ * @param {Number} checklistIndex - The checklist index (0-based)
+ * @param {Number} itemIndex - The item index within the checklist (0-based)
+ * @param {String} conditionId - The condition ID to attach
+ */
+Cypress.Commands.add('apiAttachConditionToTask', (playbookId, checklistIndex, itemIndex, conditionId) => {
+    return cy.apiGetPlaybook(playbookId).then((playbook) => {
+        playbook.checklists[checklistIndex].items[itemIndex].condition_id = conditionId;
+        return cy.apiUpdatePlaybook(playbook);
+    });
+});
