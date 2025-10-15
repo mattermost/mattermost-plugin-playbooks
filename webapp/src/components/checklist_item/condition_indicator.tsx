@@ -34,7 +34,7 @@ const ConditionIndicator = ({checklistItem}: ConditionIndicatorProps) => {
             id={tooltipId}
             content={tooltipContent}
         >
-            <IconWrapper>
+            <IconWrapper data-testid={useErrorColor ? 'condition-indicator-error' : 'condition-indicator'}>
                 <SourceBranchIcon
                     size={14}
                     color={iconColor}
