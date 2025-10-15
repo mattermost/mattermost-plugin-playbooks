@@ -78,10 +78,20 @@ const ConditionHeader = ({
         label: field.name,
     }));
 
-    const operatorOptions: SelectOption[] = [
-        {value: 'is', label: formatMessage({defaultMessage: 'is'})},
-        {value: 'isNot', label: formatMessage({defaultMessage: 'is not'})},
-    ];
+    // Helper to get operator options based on field type
+    const getOperatorOptions = (fieldId: string): SelectOption[] => {
+        const field = propertyFields.find((f) => f.id === fieldId);
+        if (field?.type === 'multiselect') {
+            return [
+                {value: 'is', label: formatMessage({defaultMessage: 'contains'})},
+                {value: 'isNot', label: formatMessage({defaultMessage: 'does not contain'})},
+            ];
+        }
+        return [
+            {value: 'is', label: formatMessage({defaultMessage: 'is'})},
+            {value: 'isNot', label: formatMessage({defaultMessage: 'is not'})},
+        ];
+    };
 
     const logicalOperatorOptions: SelectOption[] = [
         {value: 'and', label: formatMessage({defaultMessage: 'AND'})},
@@ -233,16 +243,20 @@ const ConditionHeader = ({
 
     const renderConditionRow = (cond: typeof conditions[0], index: number) => {
         const selectedProperty = propertyFields.find((prop) => prop.id === cond.fieldId);
-        const isSelectField = selectedProperty?.type === 'select' || selectedProperty?.type === 'multiselect';
+        const isSelectField = selectedProperty?.type === 'select';
+        const isMultiSelectField = selectedProperty?.type === 'multiselect';
 
-        const valueOptions: SelectOption[] = isSelectField ? (selectedProperty?.attrs.options?.map((option) => ({
+        const valueOptions: SelectOption[] = (isSelectField || isMultiSelectField) ? (selectedProperty?.attrs.options?.map((option) => ({
             value: option.id,
             label: option.name,
         })) || []) : [];
 
         const selectedFieldOption = fieldOptions.find((opt) => opt.value === cond.fieldId);
+        const operatorOptions = getOperatorOptions(cond.fieldId);
         const selectedOperatorOption = operatorOptions.find((opt) => opt.value === cond.operator);
-        const selectedValueOption = isSelectField && Array.isArray(cond.value) ? valueOptions.find((opt) => opt.value === cond.value[0]) : undefined;
+
+        // For select fields, get single value; for multiselect, get multiple values
+        const selectedValueOptions = (isSelectField || isMultiSelectField) && Array.isArray(cond.value) ? valueOptions.filter((opt) => cond.value.includes(opt.value)) : undefined;
 
         return (
             <ConditionRow key={index}>
@@ -281,21 +295,28 @@ const ConditionHeader = ({
                     menuPortalTarget={document.body}
                     menuPosition='fixed'
                 />
-                {isSelectField ? (
+                {(isSelectField || isMultiSelectField) ? (
                     <StyledReactSelect
-                        value={selectedValueOption}
+                        isMulti={isMultiSelectField}
+                        value={isMultiSelectField ? selectedValueOptions : selectedValueOptions?.[0]}
                         options={valueOptions}
-                        onChange={(option: SelectOption | null) => {
-                            if (option) {
-                                updateCondition(index, {value: [option.value]});
+                        onChange={(optionOrOptions: SelectOption | readonly SelectOption[] | null) => {
+                            if (isMultiSelectField && Array.isArray(optionOrOptions)) {
+                                const values = optionOrOptions.map((opt) => opt.value);
+                                updateCondition(index, {value: values});
+                            } else if (!isMultiSelectField && optionOrOptions && !Array.isArray(optionOrOptions)) {
+                                const singleOption = optionOrOptions as SelectOption;
+                                updateCondition(index, {value: [singleOption.value]});
                             }
                         }}
-                        placeholder={formatMessage({defaultMessage: 'Choose a value'})}
+                        placeholder={isMultiSelectField ? formatMessage({defaultMessage: 'Choose values'}) : formatMessage({defaultMessage: 'Choose a value'})}
                         isSearchable={false}
+                        isClearable={false}
                         styles={selectStyles}
                         classNamePrefix='condition-select'
                         menuPortalTarget={document.body}
                         menuPosition='fixed'
+                        closeMenuOnSelect={!isMultiSelectField}
                     />
                 ) : (
                     <StyledInput
@@ -384,7 +405,7 @@ const ConditionHeader = ({
             <PlainText>{formatMessage({defaultMessage: 'If'})}</PlainText>
             <ConditionsText>
                 {conditions.map((cond, index) => {
-                    const {fieldName, operator, valueName} = formatCondition(
+                    const {fieldName, operator, valueNames} = formatCondition(
                         cond,
                         propertyFields,
                         formatMessage({defaultMessage: 'is'}),
@@ -399,7 +420,9 @@ const ConditionHeader = ({
                             )}
                             <Chip>{fieldName}</Chip>
                             <PlainText>{operator}</PlainText>
-                            <Chip>{valueName}</Chip>
+                            {valueNames.map((valueName, valueIndex) => (
+                                <Chip key={valueIndex}>{valueName}</Chip>
+                            ))}
                         </React.Fragment>
                     );
                 })}
@@ -427,8 +450,8 @@ const AddConditionButton = styled.button`
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: none;
     border-radius: 4px;
@@ -453,8 +476,8 @@ const RemoveConditionButton = styled.button`
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: none;
     border-radius: 4px;
