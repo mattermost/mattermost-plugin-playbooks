@@ -39,6 +39,8 @@ interface Props {
     onCreateCondition?: (expr: ConditionExprV1, itemIndex: number) => void;
     onUpdateCondition?: (conditionId: string, expr: ConditionExprV1) => void;
     newlyCreatedConditionIds?: Set<string>;
+    allChecklists?: Checklist[];
+    onMoveItemToCondition?: (itemIndex: number, conditionId: string) => void;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -134,11 +136,45 @@ const GenericChecklist = (props: Props) => {
     };
 
     const onAssignToCondition = (index: number, conditionId: string) => {
-        const newChecklistItems = [...props.checklist.items];
-        newChecklistItems[index] = {...newChecklistItems[index], condition_id: conditionId};
-        const newChecklist = {...props.checklist};
-        newChecklist.items = newChecklistItems;
-        props.onUpdateChecklist(newChecklist);
+        // If we have a parent callback for cross-checklist moves, use it
+        if (props.onMoveItemToCondition) {
+            props.onMoveItemToCondition(index, conditionId);
+            return;
+        }
+
+        // Otherwise, handle same-checklist assignment (legacy behavior)
+        const item = {...props.checklist.items[index], condition_id: conditionId};
+
+        // Find the last item in the target condition group in the current checklist
+        let lastConditionItemIndex = -1;
+        for (let i = props.checklist.items.length - 1; i >= 0; i--) {
+            if (props.checklist.items[i].condition_id === conditionId) {
+                lastConditionItemIndex = i;
+                break;
+            }
+        }
+
+        // If the condition already has items, move this task to be right after the last one
+        if (lastConditionItemIndex >= 0 && lastConditionItemIndex !== index) {
+            const newChecklistItems = [...props.checklist.items];
+            newChecklistItems.splice(index, 1);
+
+            // Adjust the target position if we removed an item before it
+            const targetIndex = index < lastConditionItemIndex ? lastConditionItemIndex : lastConditionItemIndex + 1;
+
+            newChecklistItems.splice(targetIndex, 0, item);
+
+            const newChecklist = {...props.checklist};
+            newChecklist.items = newChecklistItems;
+            props.onUpdateChecklist(newChecklist);
+        } else {
+            // Just update the condition_id in place
+            const newChecklistItems = [...props.checklist.items];
+            newChecklistItems[index] = item;
+            const newChecklist = {...props.checklist};
+            newChecklist.items = newChecklistItems;
+            props.onUpdateChecklist(newChecklist);
+        }
     };
 
     // Helper to determine if we should show the condition header for this item
@@ -193,16 +229,25 @@ const GenericChecklist = (props: Props) => {
                     const currentItem = props.checklist.items[index];
                     const seenIds = new Set<string>();
 
-                    // Only show conditions that:
-                    // 1. Have at least one item
+                    // Helper to check if a condition has any items across all checklists
+                    const conditionHasItems = (targetConditionId: string): boolean => {
+                        if (!props.allChecklists) {
+                            return false;
+                        }
+                        return props.allChecklists.some((checklist) =>
+                            checklist.items.some((item) => item.condition_id === targetConditionId)
+                        );
+                    };
+
+                    // Show all conditions that:
+                    // 1. Have at least one item (in any checklist)
                     // 2. Are not the condition this item is already in
                     // 3. Haven't been added yet (deduplicate by ID)
                     return (props.conditions || []).filter((cond) => {
                         if (seenIds.has(cond.id)) {
                             return false;
                         }
-                        const shouldInclude = cond.id !== currentItem.condition_id &&
-                            props.checklist.items.some((item) => item.condition_id === cond.id);
+                        const shouldInclude = cond.id !== currentItem.condition_id && conditionHasItems(cond.id);
                         if (shouldInclude) {
                             seenIds.add(cond.id);
                         }
