@@ -24,7 +24,6 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "3.6.1",
-    "mattermost-redux": "10.9.0",
     "parse-duration": "2.1.4",
     "qs": "6.10.5",
     "react": "^17.0.2",
@@ -37,7 +36,6 @@
     "react-redux": "7.2.6",
     "react-router-dom": "5.3.4",
     "react-router-hash-link": "2.4.3",
-    "react-select": "4.3.1",
     "react-use": "17.3.2",
     "redux": "4.1.2",
     "styled-components": "5.3.7",
@@ -53,7 +51,6 @@
     "@graphql-codegen/client-preset": "1.2.5",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.4",
     "@stylistic/eslint-plugin": "3.1.0",
-    "@testing-library/react-hooks": "8.0.0",
     "@types/debounce": "1.2.1",
     "@types/history": "4.7.8",
     "@types/jest": "27.4.0",
@@ -66,12 +63,10 @@
     "@types/react-custom-scrollbars": "4.0.10",
     "@types/react-dom": "^17.0.2",
     "@types/react-infinite-scroller": "1.2.3",
-    "@types/react-redux": "7.1.21",
     "@types/react-router-dom": "5.3.3",
     "@types/react-router-hash-link": "2.4.5",
     "@types/react-select": "3.1.2",
     "@types/react-test-renderer": "17.0.1",
-    "@types/redux-mock-store": "1.0.3",
     "@types/shallow-equals": "1.0.0",
     "@types/styled-components": "5.1.26",
     "@typescript-eslint/eslint-plugin": "8.32.0",
@@ -105,10 +100,8 @@
     "patch-package": "8.0.1",
     "postcss-styled-syntax": "0.7.1",
     "process": "0.11.10",
-    "react-beautiful-dnd": "13.1.0",
     "react-bootstrap": "1.6.1",
     "react-refresh": "0.11.0",
-    "react-test-renderer": "17.0.2",
     "redux-mock-store": "1.5.4",
     "redux-thunk": "2.4.1",
     "sass": "1.46.0",
@@ -123,9 +116,28 @@
     "webpack-dev-server": "4.15.1"
   },
   "overrides": {
+    "@testing-library/react-hooks": {
+      "@types/react": "$@types/react",
+      "react": "$react",
+      "react-dom": "$react-dom",
+      "react-test-renderer": "$react-test-renderer"
+    },
+    "@types/redux-mock-store": {
+      "redux": "$redux"
+    },
+    "mattermost-redux": {
+      "redux": "$redux"
+    },
     "react-custom-scrollbars": {
-      "react": "17.0.2",
-      "react-dom": "17.0.2"
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "react-input-autosize": {
+      "react": "$react"
+    },
+    "react-select": {
+      "react": "$react",
+      "react-dom": "$react-dom"
     }
   },
   "scripts": {
