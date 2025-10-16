@@ -119,8 +119,38 @@ const GenericChecklist = (props: Props) => {
         const item = props.checklist.items[index];
         const conditionId = item.condition_id;
 
+        // Find the last item in the condition group (before removal)
+        let lastConditionItemIndex = -1;
+        for (let i = props.checklist.items.length - 1; i >= 0; i--) {
+            if (props.checklist.items[i].condition_id === conditionId) {
+                lastConditionItemIndex = i;
+                break;
+            }
+        }
+
         const newChecklistItems = [...props.checklist.items];
-        newChecklistItems[index] = {...newChecklistItems[index], condition_id: ''};
+        const updatedItem = {...newChecklistItems[index], condition_id: ''};
+
+        // Check if there are other items in the condition group
+        const otherItemsInGroup = newChecklistItems.filter((checklistItem, idx) =>
+            idx !== index && checklistItem.condition_id === conditionId
+        );
+
+        if (otherItemsInGroup.length > 0) {
+            // Remove the item from its current position
+            newChecklistItems.splice(index, 1);
+
+            // Calculate the position right after the last item in the group
+            // Adjust if we removed an item before the last item
+            const targetIndex = index < lastConditionItemIndex ? lastConditionItemIndex : lastConditionItemIndex + 1;
+
+            // Insert the item (with condition_id cleared) right after the group
+            newChecklistItems.splice(targetIndex, 0, updatedItem);
+        } else {
+            // This was the only item in the group, just clear its condition_id in place
+            newChecklistItems[index] = updatedItem;
+        }
+
         const newChecklist = {...props.checklist};
         newChecklist.items = newChecklistItems;
         props.onUpdateChecklist(newChecklist);
