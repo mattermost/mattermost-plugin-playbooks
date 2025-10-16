@@ -91,6 +91,7 @@ interface ChecklistItemProps {
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
+    const isPlaybookEditor = !props.playbookRunId;
 
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
@@ -313,6 +314,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 $hoverMenuItemOpen={isHoverMenuItemOpen}
                 $disabled={props.readOnly || isSkipped()}
                 $hasCondition={props.hasCondition ?? false}
+                $isPlaybookEditor={isPlaybookEditor}
             >
                 <CheckboxContainer>
                     {!props.readOnly && !props.dragging &&
@@ -547,11 +549,11 @@ const DraggableWrapper = styled.div`
     /* Wrapper for draggable item including condition header */
 `;
 
-const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean}>`
+const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean, $isPlaybookEditor: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0;
 
-    ${({$hasCondition}) => $hasCondition && css`
+    ${({$hasCondition, $isPlaybookEditor}) => $hasCondition && $isPlaybookEditor && css`
         margin-left: 15px;
         padding-left: 5px;
         border-left: 2px solid rgba(var(--center-channel-color-rgb), 0.16);
