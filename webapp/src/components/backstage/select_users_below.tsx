@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
+import {ActionResult} from 'mattermost-redux/types/actions';
 import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
@@ -15,6 +15,8 @@ import {useSelector} from 'react-redux';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
+
+import {UserProfile} from '@mattermost/types/users';
 
 import Profile from 'src/components/profile/profile';
 
@@ -66,8 +68,8 @@ export interface SelectUsersBelowProps {
     onRemoveUser: (userid: string) => void;
     onMakeAdmin: (userid: string) => void;
     onMakeMember: (userid: string) => void;
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles: () => ActionFuncAsync;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles: () => Promise<ActionResult<UserProfile[]>>;
 }
 
 function roleDisplayText(roles: string[]) {

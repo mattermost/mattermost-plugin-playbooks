@@ -6,7 +6,7 @@ import {useSelector} from 'react-redux';
 import ReactSelect, {ControlProps, GroupType, OptionsType} from 'react-select';
 
 import styled from 'styled-components';
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
+import {ActionResult} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
 import {GlobalState} from '@mattermost/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -22,8 +22,8 @@ interface Props {
     userIds: string[];
     onAddUser: (userid: string) => void;
     onRemoveUser: (userid: string, username: string) => void;
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles: () => ActionFuncAsync;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles: () => Promise<ActionResult<UserProfile[]>>;
     isDisabled: boolean;
 }
 

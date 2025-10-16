@@ -3,9 +3,11 @@
 
 import React from 'react';
 
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
+import {ActionResult} from 'mattermost-redux/types/actions';
 
 import {FormattedMessage} from 'react-intl';
+
+import {UserProfile} from '@mattermost/types/users';
 
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import AssignOwnerSelector from 'src/components/backstage/playbook_edit/automation/assign_owner_selector';
@@ -15,8 +17,8 @@ interface Props {
     enabled: boolean;
     disabled?: boolean;
     onToggle: () => void;
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles: () => ActionFuncAsync;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles: () => Promise<ActionResult<UserProfile[]>>;
     ownerID: string;
     onAssignOwner: (userId: string | undefined) => void;
 }

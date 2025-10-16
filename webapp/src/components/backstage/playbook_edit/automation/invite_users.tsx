@@ -3,9 +3,11 @@
 
 import React, {useState} from 'react';
 
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
+import {ActionResult} from 'mattermost-redux/types/actions';
 
 import {FormattedMessage, useIntl} from 'react-intl';
+
+import {UserProfile} from '@mattermost/types/users';
 
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -16,8 +18,8 @@ interface Props {
     enabled: boolean;
     disabled?: boolean;
     onToggle: () => void;
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles: () => ActionFuncAsync;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles: () => Promise<ActionResult<UserProfile[]>>;
     userIds: string[];
     preAssignedUserIds: string[];
     onAddUser: (userId: string) => void;
