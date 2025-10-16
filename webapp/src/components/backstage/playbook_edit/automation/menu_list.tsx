@@ -28,7 +28,7 @@ const ThumbVertical = styled.div`
 `;
 
 const MenuList = <T extends OptionTypeBase>(props: MenuListComponentProps<T, false>) => {
-    const renderThumbVertical = useCallback((thumbProps) => {
+    const renderThumbVertical = useCallback((thumbProps: Record<string, unknown>) => {
         const thumbPropsWithoutStyle = {...thumbProps};
         Reflect.deleteProperty(thumbPropsWithoutStyle, 'style');
         return <ThumbVertical {...thumbPropsWithoutStyle}/>;

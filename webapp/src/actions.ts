@@ -232,7 +232,7 @@ export function setToggleRHSAction(toggleRHSPluginAction: () => void): ReceivedT
 
 export function toggleRHS() {
     return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        selectToggleRHS(getState())();
+        selectToggleRHS(getState())?.();
     };
 }
 

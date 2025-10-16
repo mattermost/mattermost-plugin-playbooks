@@ -39,7 +39,7 @@ const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins
 // It's useful to be compliant with some sort of selector-based parameters
 export const noopSelector = () => undefined;
 
-export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;
+export const selectToggleRHS = (state: GlobalState): (() => void) | null => pluginState(state).toggleRHSFunction;
 
 export const isPlaybookRunRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
 

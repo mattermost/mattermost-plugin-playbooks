@@ -1,8 +1,8 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
-import {useSelector, useStore} from 'react-redux';
+import React, {useEffect, useMemo, useState} from 'react';
+import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 
@@ -88,9 +88,8 @@ export default function ProfileSelector(props: Props) {
 
     // props.userGroups?.subsetUserIds are not guaranteed to be in the page returned by props.getAllUsers
     // but they're expected to be at redux
-    const getProfiles = makeGetProfilesByIdsAndUsernames();
-    const store = useStore();
-    const usersInSubset = getProfiles(store.getState(), {allUserIds: props.userGroups?.subsetUserIds || [], allUsernames: []});
+    const getProfiles = useMemo(() => makeGetProfilesByIdsAndUsernames(), []);
+    const usersInSubset = useSelector((state: GlobalState) => getProfiles(state, {allUserIds: props.userGroups?.subsetUserIds || [], allUsernames: []}));
 
     useUpdateEffect(() => {
         props.onOpenChange?.(isOpen);
