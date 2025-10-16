@@ -5,7 +5,7 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "更新状況"
+        "translation": "投稿"
     },
     {
         "id": "app.user.run.update_status.reminder_for_next_update",
