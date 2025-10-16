@@ -7,9 +7,12 @@ import React from 'react';
 import Tooltip from 'src/components/widgets/tooltip';
 import {CompassIcon} from 'src/types/compass';
 
-declare module 'react-bootstrap/esm/OverlayTrigger' {
-    interface OverlayTriggerProps {
-        shouldUpdatePosition?: boolean;
+declare module 'react-bootstrap' {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace OverlayTrigger {
+        interface OverlayTriggerProps {
+            shouldUpdatePosition?: boolean;
+        }
     }
 }
 

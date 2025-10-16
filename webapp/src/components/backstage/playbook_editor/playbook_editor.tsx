@@ -89,7 +89,8 @@ const PlaybookEditor = () => {
 
     const archivedTooltip = archived && (
         <Tooltip
-            delay={{show: 0, hide: 1000}}
+            delayShow={0}
+            delayHide={1000}
             id={`archive-${playbook.id}`}
             content={formatMessage({defaultMessage: 'This playbook is archived.'})}
         >
@@ -99,7 +100,8 @@ const PlaybookEditor = () => {
 
     const privateTooltip = !playbook.public && (
         <Tooltip
-            delay={{show: 0, hide: 1000}}
+            delayShow={0}
+            delayHide={1000}
             id={`private-${playbook.id}`}
             content={formatMessage({defaultMessage: 'This playbook is private.'})}
         >
