@@ -14,7 +14,6 @@ import {GlobalState} from '@mattermost/types/store';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {handleFormattedTextClick} from 'src/browser_routing';
-import {appendTo} from 'src/utils/rendering';
 
 interface TitleProps {
     value: string;
@@ -22,7 +21,6 @@ interface TitleProps {
     editingItem: boolean;
     skipped: boolean;
     clickable: boolean;
-    conditionalIndicator: React.ReactNode;
 }
 
 const ChecklistItemTitle = (props: TitleProps) => {
@@ -67,12 +65,7 @@ const ChecklistItemTitle = (props: TitleProps) => {
         );
     }
 
-    let titleText = messageHtmlToComponent(formatText(props.value, {...markdownOptions, singleline: false}), true, {});
-
-    if (props.conditionalIndicator) {
-        titleText = appendTo(titleText, props.conditionalIndicator, 0);
-    }
-
+    const titleText = messageHtmlToComponent(formatText(props.value, {...markdownOptions, singleline: false}), true, {});
     return (
         <RenderedTitle
             data-testid='rendered-checklist-item-title'
