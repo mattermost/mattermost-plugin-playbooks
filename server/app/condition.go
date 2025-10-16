@@ -619,7 +619,7 @@ func (cc *ComparisonCondition) formatTextValue() string {
 		if stringValue == "" {
 			return "empty"
 		}
-		return `"` + stringValue + `"`
+		return fmt.Sprintf(`"%s"`, stringValue)
 	}
 	return string(cc.Value)
 }
