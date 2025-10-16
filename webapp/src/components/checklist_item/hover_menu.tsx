@@ -130,6 +130,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     >
                         <DropdownIcon className='icon-source-branch icon-16'/>
                         {formatMessage({defaultMessage: 'Add condition'})}
+                        <BetaBadge>{formatMessage({defaultMessage: 'BETA'})}</BetaBadge>
                     </StyledDropdownMenuItem>
                 }
                 {props.playbookRunId === undefined && props.hasCondition && props.onRemoveFromCondition &&
@@ -242,6 +243,24 @@ const ConditionTextWrapper = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+`;
+
+const BetaBadge = styled.span`
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 0 6px;
+    height: 16px;
+    border-radius: 4px;
+    background-color: #5D89EA;
+    color: var(--button-color, #FFF);
+    font-family: "Open Sans";
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 16px;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
 `;
 
 export default ChecklistItemHoverMenu;
