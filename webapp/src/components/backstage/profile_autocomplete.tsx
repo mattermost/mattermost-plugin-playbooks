@@ -7,7 +7,7 @@ import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
 
 import styled from 'styled-components';
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
+import {ActionResult} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
 import {
     ControlProps,
@@ -76,8 +76,8 @@ interface Props {
     userIds: string[];
     onAddUser?: (userid: string) => void; // for single select
     setValues?: (values: UserProfile[]) => void; // for multi select
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles?: () => ActionFuncAsync;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles?: () => Promise<ActionResult<UserProfile[]>>;
     isDisabled?: boolean;
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
@@ -132,7 +132,7 @@ const ProfileAutocomplete = (props: Props) => {
 
         //@ts-ignore
         profiles.then(({data}) => {
-            callback(data);
+            callback(data || []);
         }).catch(() => {
             // eslint-disable-next-line no-console
             console.error('Error searching user profiles in custom attribute settings dropdown.');

@@ -22,7 +22,7 @@ interface Props {
 }
 
 const TextWithTooltip = (props: Props) => {
-    const ref = useRef<HTMLAnchorElement|null>(null);
+    const ref = useRef<HTMLSpanElement|null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
     const resizeListener = useMemo(() => debounce(() => {
@@ -46,7 +46,7 @@ const TextWithTooltip = (props: Props) => {
         resizeListener();
     });
 
-    const setRef = useCallback((node) => {
+    const setRef = useCallback((node: HTMLSpanElement | null) => {
         ref.current = node;
         resizeListener();
     }, []);

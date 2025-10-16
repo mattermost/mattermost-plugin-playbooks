@@ -231,7 +231,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
             <StyledModal
                 dialogClassName={'a11y__modal GenericModal'}
                 show={this.props.show}
-                onHide={this.props.onCancel}
+                onHide={this.handleCancel}
                 onExited={this.props.onExited}
                 id='confirmModal'
                 role='dialog'

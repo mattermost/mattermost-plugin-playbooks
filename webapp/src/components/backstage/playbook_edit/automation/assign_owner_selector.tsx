@@ -7,7 +7,7 @@ import {useSelector} from 'react-redux';
 import ReactSelect, {ControlProps} from 'react-select';
 
 import styled from 'styled-components';
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
+import {ActionResult} from 'mattermost-redux/types/actions';
 import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -21,8 +21,8 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 interface Props {
     ownerID: string;
     onAddUser: (userid: string) => void;
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles: () => ActionFuncAsync;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles: () => Promise<ActionResult<UserProfile[]>>;
     isDisabled: boolean;
 }
 

@@ -210,7 +210,7 @@ const UpdateRunStatusModal = ({
         }
         const followersChannelCount = run?.followers?.length ?? 0;
 
-        const OverviewLink = (...chunks: string[]): ReactNode => (
+        const OverviewLink = (...chunks: ReactNode[]): ReactNode => (
             <Link
                 data-testid='run-overview-link'
                 to={pluginUrl(`/runs/${playbookRunId}?from=status_modal`)}

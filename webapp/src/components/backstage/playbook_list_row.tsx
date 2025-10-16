@@ -161,7 +161,8 @@ const PlaybookListRow = (props: Props) => {
     if (props.playbook.delete_at > 0) {
         infos.push((
             <Tooltip
-                delay={{show: 0, hide: 1000}}
+                delayShow={0}
+                delayHide={1000}
                 id={`archive-${props.playbook.id}`}
                 content={formatMessage({defaultMessage: 'This playbook is archived.'})}
             >

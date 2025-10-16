@@ -31,7 +31,7 @@ type Props = {
     enforceFocus?: boolean;
     footer?: React.ReactNode;
     components?: Partial<{
-        Header: typeof Modal.Header;
+        Header: ComponentType;
         FooterContainer: ComponentType<{children: React.ReactNode}>;
     }>;
     adjustTop?: number;

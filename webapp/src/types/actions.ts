@@ -58,163 +58,163 @@ export const WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED = manifest.id + 
 // so we respect their naming convention (all caps)
 export const PUBLISH_TEMPLATES = (manifest.id + '_PUBLISH_TEMPLATES').toUpperCase();
 
-export interface ReceivedToggleRHSAction {
+export type ReceivedToggleRHSAction = {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
     toggleRHSPluginAction: () => void;
 }
 
-export interface SetRHSOpen {
+export type SetRHSOpen = {
     type: typeof SET_RHS_OPEN;
     open: boolean;
 }
 
-export interface SetTriggerId {
+export type SetTriggerId = {
     type: typeof Integrations.RECEIVED_DIALOG_TRIGGER_ID;
     data: string;
 }
 
-export interface SetClientId {
+export type SetClientId = {
     type: typeof SET_CLIENT_ID;
     clientId: string;
 }
 
-export interface PlaybookRunCreated {
+export type PlaybookRunCreated = {
     type: typeof PLAYBOOK_RUN_CREATED;
     playbookRun: PlaybookRun;
 }
 
-export interface PlaybookRunUpdated {
+export type PlaybookRunUpdated = {
     type: typeof PLAYBOOK_RUN_UPDATED;
     playbookRun: PlaybookRun;
 }
 
-export interface PlaybookCreated {
+export type PlaybookCreated = {
     type: typeof PLAYBOOK_CREATED;
     teamID: string;
 }
 
-export interface PlaybookArchived {
+export type PlaybookArchived = {
     type: typeof PLAYBOOK_ARCHIVED;
     teamID: string;
 }
 
-export interface PlaybookRestored {
+export type PlaybookRestored = {
     type: typeof PLAYBOOK_RESTORED;
     teamID: string;
 }
 
-export interface ReceivedPlaybookRuns {
+export type ReceivedPlaybookRuns = {
     type: typeof RECEIVED_PLAYBOOK_RUNS;
     playbookRuns: PlaybookRun[];
 }
 
-export interface ReceivedTeamPlaybookRuns {
+export type ReceivedTeamPlaybookRuns = {
     type: typeof RECEIVED_TEAM_PLAYBOOK_RUNS;
     playbookRuns: PlaybookRun[];
 }
 
-export interface ReceivedTeamPlaybookRunConnections {
+export type ReceivedTeamPlaybookRunConnections = {
     type: typeof RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS;
     playbookRuns: PlaybookRunConnection[];
 }
 
-export interface ReceivedPlaybookConditions {
+export type ReceivedPlaybookConditions = {
     type: typeof RECEIVED_PLAYBOOK_CONDITIONS;
     playbookId: string;
     conditions: Condition[];
 }
 
-export interface ConditionCreated {
+export type ConditionCreated = {
     type: typeof CONDITION_CREATED;
     condition: Condition;
 }
 
-export interface ConditionUpdated {
+export type ConditionUpdated = {
     type: typeof CONDITION_UPDATED;
     condition: Condition;
 }
 
-export interface ConditionDeleted {
+export type ConditionDeleted = {
     type: typeof CONDITION_DELETED;
     conditionId: string;
     playbookId: string;
 }
 
-export interface RemovedFromChannel {
+export type RemovedFromChannel = {
     type: typeof REMOVED_FROM_CHANNEL;
     channelId: string;
 }
 
-export interface ReceivedGlobalSettings {
+export type ReceivedGlobalSettings = {
     type: typeof RECEIVED_GLOBAL_SETTINGS;
     settings: GlobalSettings;
 }
 
-export interface ShowPostMenuModal {
+export type ShowPostMenuModal = {
     type: typeof SHOW_POST_MENU_MODAL;
 }
 
-export interface HidePostMenuModal {
+export type HidePostMenuModal = {
     type: typeof HIDE_POST_MENU_MODAL;
 }
 
-export interface ShowChannelActionsModal {
+export type ShowChannelActionsModal = {
     type: typeof SHOW_CHANNEL_ACTIONS_MODAL;
 }
 
-export interface HideChannelActionsModal {
+export type HideChannelActionsModal = {
     type: typeof HIDE_CHANNEL_ACTIONS_MODAL;
 }
 
-export interface ShowRunActionsModal {
+export type ShowRunActionsModal = {
     type: typeof SHOW_RUN_ACTIONS_MODAL;
 }
 
-export interface HideRunActionsModal {
+export type HideRunActionsModal = {
     type: typeof HIDE_RUN_ACTIONS_MODAL;
 }
 
-export interface ShowPlaybookActionsModal {
+export type ShowPlaybookActionsModal = {
     type: typeof SHOW_PLAYBOOK_ACTIONS_MODAL;
 }
 
-export interface HidePlaybookActionsModal {
+export type HidePlaybookActionsModal = {
     type: typeof HIDE_PLAYBOOK_ACTIONS_MODAL;
 }
 
-export interface SetHasViewedChannel {
+export type SetHasViewedChannel = {
     type: typeof SET_HAS_VIEWED_CHANNEL;
     channelId: string;
     hasViewed: boolean;
 }
 
-export interface SetRHSAboutCollapsedState {
+export type SetRHSAboutCollapsedState = {
     type: typeof SET_RHS_ABOUT_COLLAPSED_STATE;
     channelId: string;
     collapsed: boolean;
 }
 
-export interface SetChecklistCollapsedState {
+export type SetChecklistCollapsedState = {
     type: typeof SET_CHECKLIST_COLLAPSED_STATE;
     key: string;
     checklistIndex: number;
     collapsed: boolean;
 }
 
-export interface SetEveryChecklistCollapsedState {
+export type SetEveryChecklistCollapsedState = {
     type: typeof SET_EVERY_CHECKLIST_COLLAPSED_STATE;
     key: string;
     state: Record<number, boolean>;
 }
 
-export interface SetAllChecklistsCollapsedState {
+export type SetAllChecklistsCollapsedState = {
     type: typeof SET_ALL_CHECKLISTS_COLLAPSED_STATE;
     key: string;
     numOfChecklists: number;
     collapsed: boolean;
 }
 
-export interface SetChecklistItemsFilter {
+export type SetChecklistItemsFilter = {
     type: typeof SET_CHECKLIST_ITEMS_FILTER;
     key: string;
     nextState: ChecklistItemsFilter;
@@ -224,22 +224,22 @@ export interface SetChecklistItemsFilter {
 // Note That this is not the same as channel RHS management
 // TODO: make a refactor with some naming change now we have multiple RHS
 //       inside playbooks (channels RHS, Run details page RHS, backstage RHS)
-export interface OpenBackstageRHS {
+export type OpenBackstageRHS = {
     type: typeof OPEN_BACKSTAGE_RHS;
     section: BackstageRHSSection;
     viewMode: BackstageRHSViewMode;
 }
 
-export interface CloseBackstageRHS {
+export type CloseBackstageRHS = {
     type: typeof CLOSE_BACKSTAGE_RHS;
 }
 
-export interface WebsocketPlaybookRunIncrementalUpdateReceived {
+export type WebsocketPlaybookRunIncrementalUpdateReceived = {
     type: typeof WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED;
     data: import('./websocket_events').PlaybookRunUpdate;
 }
 
-export interface PublishTemplates {
+export type PublishTemplates = {
     type: typeof PUBLISH_TEMPLATES;
     templates: PresetTemplate[];
 }
