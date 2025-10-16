@@ -7,9 +7,9 @@
   "dependencies": {
     "@apollo/client": "3.7.3",
     "@floating-ui/react": "0.26.28",
-    "@mattermost/client": "10.9.0",
+    "@mattermost/client": "11.1.0-2",
     "@mattermost/compass-icons": "0.1.32",
-    "@mattermost/types": "10.9.0",
+    "@mattermost/types": "11.1.0-2",
     "@mdi/js": "^6.5.95",
     "@mdi/react": "1.5.0",
     "@tanstack/react-table": "8.10.7",
@@ -26,7 +26,7 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "3.6.1",
-    "mattermost-redux": "10.12.0",
+    "mattermost-redux": "11.1.0-2",
     "parse-duration": "2.1.4",
     "qs": "6.10.5",
     "react": "18.2.0",
@@ -129,9 +129,6 @@
       "react-test-renderer": "$react-test-renderer"
     },
     "@types/redux-mock-store": {
-      "redux": "$redux"
-    },
-    "mattermost-redux": {
       "redux": "$redux"
     },
     "react-custom-scrollbars": {
