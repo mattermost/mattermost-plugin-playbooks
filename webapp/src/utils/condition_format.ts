@@ -48,15 +48,27 @@ export const formatCondition = (
     }
 
     let valueNames: string[] = [];
-    if (field && (field.type === 'select' || field.type === 'multiselect')) {
-        // For select/multiselect, return all selected values as separate items
-        const valueArray = Array.isArray(cond.value) ? cond.value : [cond.value];
-        valueNames = valueArray.map((valueId) => {
-            const option = field.attrs.options?.find((opt) => opt.id === valueId);
-            return option?.name || valueId;
-        });
-    } else {
-        valueNames = [Array.isArray(cond.value) ? cond.value[0] || '' : cond.value];
+    switch (field?.type) {
+    case 'select':
+    case 'multiselect':
+        {
+            const valueArray = Array.isArray(cond.value) ? cond.value : [cond.value];
+            valueNames = valueArray.map((valueId) => {
+                const option = field.attrs.options?.find((opt) => opt.id === valueId);
+                return option?.name || valueId;
+            });
+        }
+        break;
+    case 'text':
+        {
+            const textValue = Array.isArray(cond.value) ? cond.value[0] || '' : cond.value;
+            if (textValue === '') {
+                valueNames = ['empty'];
+            } else {
+                valueNames = [`"${textValue}"`];
+            }
+        }
+        break;
     }
 
     return {fieldName, operator, valueNames};
