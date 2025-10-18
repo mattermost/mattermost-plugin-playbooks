@@ -210,7 +210,7 @@ const UpdateRunStatusModal = ({
         }
         const followersChannelCount = run?.followers?.length ?? 0;
 
-        const OverviewLink = (...chunks: string[]): ReactNode => (
+        const OverviewLink = (chunks: React.ReactNode): ReactNode => (
             <Link
                 data-testid='run-overview-link'
                 to={pluginUrl(`/runs/${playbookRunId}?from=status_modal`)}
@@ -229,7 +229,7 @@ const UpdateRunStatusModal = ({
             defaultMessage: 'This update for the run <i>{runName}</i> will be broadcasted to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
         }, {
             OverviewLink,
-            ChannelsTooltip: (...chunks) => (
+            ChannelsTooltip: (chunks: React.ReactNode) => (
                 <Tooltip
                     id={`${ID}_broadcast_channels_tooltip`}
                     content={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
@@ -237,7 +237,7 @@ const UpdateRunStatusModal = ({
                     <TooltipContent tabIndex={0}>{chunks}</TooltipContent>
                 </Tooltip>
             ),
-            FollowersTooltip: (...chunks) => (
+            FollowersTooltip: (chunks: React.ReactNode) => (
                 <Tooltip
                     id={`${ID}_broadcast_followers_tooltip`}
                     content={generateTooltipText(followerNames, followersChannelCount)}
