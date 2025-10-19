@@ -4,6 +4,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -21,10 +22,13 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
+
+	"github.com/mattermost/mattermost-plugin-ai/llm"
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook run` - Run a playbook. \n" +
+	"* `/playbook generate [prompt]` - Generate a playbook using AI. \n" +
 	"* `/playbook finish` - Finish the playbook run in this channel. \n" +
 	"* `/playbook update` - Provide a status update. \n" +
 	"* `/playbook check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
@@ -68,6 +72,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 
 	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
 	command.AddCommand(run)
+
+	generate := model.NewAutocompleteData("generate", "[prompt]", "Generate a playbook using AI")
+	generate.AddTextArgument("Describe the playbook you want to create", "[prompt]", "")
+	command.AddCommand(generate)
 
 	finish := model.NewAutocompleteData("finish", "",
 		"Finishes a playbook run associated with the current channel")
@@ -331,6 +339,133 @@ func (r *Runner) actionRunPlaybook(args []string) {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
+}
+
+func (r *Runner) actionGenerate(args []string) {
+	if len(args) == 0 {
+		r.postCommandResponse("Usage: `/playbook generate <prompt>`\n\nPlease provide a description of the playbook you want to create.")
+		return
+	}
+
+	// Combine all arguments into a single prompt
+	userPrompt := strings.Join(args, " ")
+
+	// Construct the LLM prompt
+	systemPrompt := `You are an AI assistant that generates Mattermost Playbooks based on user descriptions.
+A playbook is a structured workflow with checklists and tasks.
+
+Generate a playbook in JSON format with the following structure:
+{
+  "title": "A short, descriptive title for the playbook",
+  "description": "A detailed description of what this playbook is for and when to use it",
+  "checklists": [
+    {
+      "title": "Phase or Stage Name",
+      "items": [
+        {
+          "title": "Task description"
+        }
+      ]
+    }
+  ]
+}
+
+Requirements:
+- The title should be concise (under 100 characters)
+- Include 2-5 checklists representing different phases or stages
+- Each checklist should have 3-8 items
+- Make the tasks actionable and specific
+- Return ONLY the JSON object, no additional text or markdown formatting`
+
+	// Create the LLM request
+	request := plugin.CompletionRequest{
+		Posts: []llm.Post{
+			{
+				Role:    llm.PostRoleSystem,
+				Message: systemPrompt,
+			},
+			{
+				Role:    llm.PostRoleUser,
+				Message: userPrompt,
+			},
+		},
+	}
+
+	// Call the LLM service
+	response, err := r.pluginAPI.LLM.AgentNoStream("matty", request)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Failed to generate playbook: %v\n\nPlease try again or create a playbook manually.", err))
+		logrus.Errorf("LLM service request failed: %v", err)
+		return
+	}
+
+	// Parse the JSON response
+	type GeneratedPlaybook struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Checklists  []struct {
+			Title string `json:"title"`
+			Items []struct {
+				Title string `json:"title"`
+			} `json:"items"`
+		} `json:"checklists"`
+	}
+
+	var generated GeneratedPlaybook
+	if err := json.Unmarshal([]byte(response), &generated); err != nil {
+		//r.postCommandResponse(fmt.Sprintf("Failed to parse LLM response: %v\n\nThe AI generated invalid data. Please try again.", err))
+		logrus.Errorf("Failed to unmarshal LLM response: %v\nResponse: %s", err, response)
+		return
+	}
+
+	// Validate the generated data
+	if generated.Title == "" {
+		r.postCommandResponse("The AI failed to generate a valid playbook title. Please try again.")
+		return
+	}
+
+	// Convert generated checklists to app.Checklist format
+	checklists := make([]app.Checklist, 0, len(generated.Checklists))
+	for _, cl := range generated.Checklists {
+		items := make([]app.ChecklistItem, 0, len(cl.Items))
+		for _, item := range cl.Items {
+			items = append(items, app.ChecklistItem{
+				Title: item.Title,
+			})
+		}
+		checklists = append(checklists, app.Checklist{
+			Title: cl.Title,
+			Items: items,
+		})
+	}
+
+	// Create the playbook
+	playbook := app.Playbook{
+		Title:                       generated.Title,
+		Description:                 generated.Description,
+		TeamID:                      r.args.TeamId,
+		Checklists:                  checklists,
+		ReminderTimerDefaultSeconds: 86400, // Default: 24 hours
+		Members: []app.PlaybookMember{
+			{
+				UserID: r.args.UserId,
+				Roles:  []string{app.PlaybookRoleMember, app.PlaybookRoleAdmin},
+			},
+		},
+	}
+
+	// Save the playbook
+	playbookID, err := r.playbookService.Create(playbook, r.args.UserId)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Failed to save playbook: %v", err))
+		logrus.Errorf("Failed to create playbook: %v", err)
+		return
+	}
+
+	// Post success message with link
+	playbookURL := fmt.Sprintf("/playbooks/playbooks/%s", playbookID)
+	successMessage := fmt.Sprintf("✅ **Playbook Created Successfully!**\n\n**Title:** %s\n\n[View and edit your playbook](%s)", generated.Title, playbookURL)
+	r.postCommandResponse(successMessage)
 }
 
 func (r *Runner) actionCheck(args []string) {
@@ -2141,6 +2276,8 @@ func (r *Runner) Execute() error {
 		r.actionRun(parameters)
 	case "run-playbook":
 		r.actionRunPlaybook(parameters)
+	case "generate":
+		r.actionGenerate(parameters)
 	case "finish":
 		r.actionFinish(parameters)
 	case "finish-by-id":
