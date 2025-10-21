@@ -18,12 +18,11 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 
+	aiclient "github.com/mattermost/mattermost-plugin-ai/public/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
-
-	"github.com/mattermost/mattermost-plugin-ai/llm"
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
@@ -201,6 +200,7 @@ type Runner struct {
 	context            *plugin.Context
 	args               *model.CommandArgs
 	pluginAPI          *pluginapi.Client
+	API                plugin.API
 	poster             bot.Poster
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
@@ -221,6 +221,7 @@ func NewCommandRunner(ctx *plugin.Context,
 	configService config.Service,
 	userInfoStore app.UserInfoStore,
 	permissions *app.PermissionsService,
+	API plugin.API,
 ) *Runner {
 	return &Runner{
 		context:            ctx,
@@ -233,6 +234,7 @@ func NewCommandRunner(ctx *plugin.Context,
 		configService:      configService,
 		userInfoStore:      userInfoStore,
 		permissions:        permissions,
+		API:                API,
 	}
 }
 
@@ -241,6 +243,11 @@ func (r *Runner) isValid() error {
 		return errors.New("invalid arguments to command.Runner")
 	}
 	return nil
+}
+
+// GetPluginID implements the PluginContext interface for the AI client
+func (r *Runner) GetPluginID() string {
+	return "playbooks"
 }
 
 func (r *Runner) postCommandResponse(text string) {
@@ -377,22 +384,26 @@ Requirements:
 - Make the tasks actionable and specific
 - Return ONLY the JSON object, no additional text or markdown formatting`
 
-	// Create the LLM request
-	request := plugin.CompletionRequest{
-		Posts: []llm.Post{
+	// Create the LLM client
+
+	client := aiclient.NewClientFromAPI(r.API)
+
+	// Create the LLM request using the client's types
+	request := aiclient.CompletionRequest{
+		Posts: []aiclient.Post{
 			{
-				Role:    llm.PostRoleSystem,
+				Role:    "system",
 				Message: systemPrompt,
 			},
 			{
-				Role:    llm.PostRoleUser,
+				Role:    "user",
 				Message: userPrompt,
 			},
 		},
 	}
 
-	// Call the LLM service
-	response, err := r.pluginAPI.LLM.AgentNoStream("matty", request)
+	// Call the LLM service using the client
+	response, err := client.AgentCompletion("matty", request)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Failed to generate playbook: %v\n\nPlease try again or create a playbook manually.", err))
 		logrus.Errorf("LLM service request failed: %v", err)
