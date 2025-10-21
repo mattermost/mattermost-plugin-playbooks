@@ -9,10 +9,12 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
     BookOutlineIcon,
     CheckAllIcon,
+    CheckCircleOutlineIcon,
     CheckIcon,
     LinkVariantIcon,
     PencilOutlineIcon,
     PlayOutlineIcon,
+    PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
@@ -22,7 +24,6 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
-import appIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';
@@ -33,7 +34,7 @@ import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/ass
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import GiveFeedbackButton from 'src/components/give_feedback_button';
+import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_icon';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -87,6 +88,26 @@ interface Props {
 
 const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
 
+const PoweredByPlaybooksFooter = () => (
+    <PoweredByFooter>
+        <PoweredByText>
+            <FormattedMessage
+                defaultMessage='POWERED BY{productName}'
+                values={{
+                    productName: (
+                        <ProductName>
+                            <PlaybooksProductIcon/>
+                            {/* product name; don't translate */}
+                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                            {'PLAYBOOKS'}
+                        </ProductName>
+                    ),
+                }}
+            />
+        </PoweredByText>
+    </PoweredByFooter>
+);
+
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
@@ -115,11 +136,11 @@ const RHSRunList = (props: Props) => {
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <ClipboardImage src={appIcon}/>
+                    <TitleIcon/>
                     <RHSTitleText>
                         {/* product name; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                        {'Playbooks'}
+                        {'Checklists'}
                     </RHSTitleText>
                     <VerticalLine/>
                     <ChannelNameText>
@@ -128,6 +149,7 @@ const RHSRunList = (props: Props) => {
                 </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
+                {!showNoRuns &&
                 <Header>
                     <DotMenu
                         dotMenuButton={TitleButton}
@@ -161,8 +183,8 @@ const RHSRunList = (props: Props) => {
                         data-testid='rhs-runlist-start-run'
                         onClick={handleStartRun}
                     >
-                        <PlayOutlineIcon size={14}/>
-                        {formatMessage({defaultMessage: 'Start run'})}
+                        <PlusIcon size={14}/>
+                        {formatMessage({defaultMessage: ' Create a checklist'})}
                     </StartRunButton>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
@@ -193,6 +215,7 @@ const RHSRunList = (props: Props) => {
                         />
                     </DotMenu>
                 </Header>
+                }
                 {showNoRuns &&
                     <>
                         <NoRunsWrapper>
@@ -204,9 +227,7 @@ const RHSRunList = (props: Props) => {
                                 onStartRunClicked={handleStartRun}
                             />
                         </NoRunsWrapper>
-                        <FeedbackWrapper>
-                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
-                        </FeedbackWrapper>
+                        <PoweredByPlaybooksFooter/>
                     </>
                 }
                 {!showNoRuns &&
@@ -235,9 +256,7 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
-                        <FeedbackWrapper>
-                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
-                        </FeedbackWrapper>
+                        <PoweredByPlaybooksFooter/>
                     </Scrollbars>
                 }
             </Container>
@@ -245,11 +264,32 @@ const RHSRunList = (props: Props) => {
     );
 };
 
-const FeedbackWrapper = styled.div`
+const PoweredByFooter = styled.div`
     padding: 0 16px;
     margin-top: 10px;
     margin-bottom: 30px;
     text-align: center;
+`;
+
+const PoweredByText = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    line-height: 16px;
+`;
+
+const ProductName = styled.span`
+    display: inline-flex;
+    align-items: center;
+
+    i {
+        font-size: 16px;
+    }
 `;
 
 const Container = styled.div`
@@ -319,10 +359,12 @@ const ChannelNameText = styled.div`
     text-overflow: ellipsis;
 `;
 
-const ClipboardImage = styled.img`
+const TitleIcon = styled(CheckCircleOutlineIcon)`
     width: 24px;
     height: 24px;
     border-radius: 50%;
+    background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
 `;
 
 const StartRunButton = styled(SecondaryButton)`
@@ -365,20 +407,6 @@ const StyledDropdownMenuSort = styled(DropdownMenuItem)`
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-`;
-
-const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
-    && {
-        width: 100%;
-        color: var(--center-channel-color-64);
-        font-size: 12px;
-    }
-
-    &&:hover:not([disabled]) {
-        background-color: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
-    }
-
 `;
 
 interface SortMenuItemProps {
@@ -709,7 +737,7 @@ interface NoRunsProps {
 const NoRuns = (props: NoRunsProps) => {
     const {formatMessage} = useIntl();
 
-    let text = formatMessage({defaultMessage: 'There are no runs in progress linked to this channel'});
+    let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
     if (!props.active) {
         text = formatMessage({defaultMessage: 'There are no finished runs linked to this channel'});
     }
@@ -721,8 +749,8 @@ const NoRuns = (props: NoRunsProps) => {
                 {text}
             </NoRunsText>
             <PrimaryButton onClick={props.onStartRunClicked}>
-                <PlayOutlineIcon size={18}/>
-                <FormattedMessage defaultMessage={'Start a run'}/>
+                <PlusIcon size={18}/>
+                <FormattedMessage defaultMessage={'Create a checklist'}/>
             </PrimaryButton>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
