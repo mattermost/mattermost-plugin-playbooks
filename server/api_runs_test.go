@@ -201,6 +201,7 @@ func TestRunCreation(t *testing.T) {
 					require.NoError(t, err)
 					assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
 					assert.Empty(t, run.PlaybookID, "Run should not have a playbook ID")
+					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
 				},
 			},
 			"valid playbook ID creates RunTypePlaybook": {
@@ -227,6 +228,7 @@ func TestRunCreation(t *testing.T) {
 					require.NoError(t, err)
 					assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
 					assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID, "Run should have the correct playbook ID")
+					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
 				},
 			},
 		} {
