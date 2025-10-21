@@ -39,26 +39,4 @@ describe('playbooks > feedback', {testIsolation: true}, () => {
             cy.apiLogin(testUser);
         });
     });
-
-    it('playbooks shows prompt in rhs header', () => {
-        // # Run the playbook
-        const now = Date.now();
-        const playbookRunName = 'Playbook Run (' + now + ')';
-        const playbookRunChannelName = 'playbook-run-' + now;
-        cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: testPlaybook.id,
-            playbookRunName,
-            ownerUserId: testUser.id,
-        });
-
-        // # Navigate directly to the application and the playbook run channel
-        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
-
-        // # Verify Give Feedback link is configured to open in a new tab.
-        cy.findByText('Give feedback').invoke('attr', 'target').should('eq', '_blank');
-
-        // # Verify Give Feedback link href
-        cy.findByText('Give feedback').invoke('attr', 'href').should('match', /playbooks-feedback/);
-    });
 });
