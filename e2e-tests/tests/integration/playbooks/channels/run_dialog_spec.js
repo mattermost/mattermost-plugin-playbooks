@@ -68,7 +68,7 @@ describe('channels > run dialog', {testIsolation: true}, () => {
 
         // * Verify required fields
         cy.findByTestId('playbookID').contains('Playbook');
-        cy.findByTestId('playbookID').contains('This field is required.');
+        cy.findByTestId('playbookID').contains('(optional)');
         cy.findByTestId('playbookRunName').contains('This field is required.');
     });
 
