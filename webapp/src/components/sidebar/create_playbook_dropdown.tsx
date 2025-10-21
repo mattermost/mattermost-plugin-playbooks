@@ -8,13 +8,14 @@ import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
+    CreationOutlineIcon,
     GlobeIcon,
     ImportIcon,
     PlayBoxMultipleOutlineIcon,
     PlusIcon,
 } from '@mattermost/compass-icons/components';
 
-import {displayPlaybookCreateModal} from 'src/actions';
+import {displayPlaybookCreateModal, displayPlaybookCreateWithAIModal} from 'src/actions';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';
 import {navigateToPluginUrl} from 'src/browser_routing';
 
@@ -68,6 +69,16 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
             />
         );
 
+        const createPlaybookWithAI = (
+            <MenuItem
+                id='createPlaybookWithAI'
+                show={true}
+                onClick={() => dispatch(displayPlaybookCreateWithAIModal({}))}
+                icon={<IconWrapper><CreationOutlineIcon size={18}/></IconWrapper>}
+                text={formatMessage({defaultMessage: 'Create playbook with AI'})}
+            />
+        );
+
         const importPlaybook = (
             <>
                 <MenuItem
@@ -103,6 +114,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 <MenuGroup noDivider={true}>
                     {browsePlaybooks}
                     {canCreatePlaybooks && createPlaybook}
+                    {canCreatePlaybooks && createPlaybookWithAI}
                     {importPlaybook}
                 </MenuGroup>
                 <MenuGroup>

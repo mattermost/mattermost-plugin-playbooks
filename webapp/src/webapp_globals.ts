@@ -20,7 +20,15 @@ export const {
 export const {
     Timestamp,
     Textbox,
+    AdvancedTextEditor,
+    CreatePost,
+    PostMessagePreview,
+    ThreadViewer,
 
     // @ts-ignore
 } = global.Components ?? {};
+
+export function isAdvancedTextEditorAvailable(): boolean {
+    return Boolean(AdvancedTextEditor || CreatePost);
+}
 

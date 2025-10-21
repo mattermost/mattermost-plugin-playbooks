@@ -96,6 +96,7 @@ import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/com
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
 
 import {PlaybookCreateModalProps, makePlaybookCreateModal} from 'src/components/create_playbook_modal';
+import {PlaybookCreateWithAIModalProps, makePlaybookCreateWithAIModal} from 'src/components/modals/create_playbook_with_ai_modal';
 import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
 import {PresetTemplate} from 'src/components/templates/template_data';
 import {makeTaskActionsModalDefinition} from 'src/components/checklist_item/task_actions_modal';
@@ -189,6 +190,12 @@ export function displayEditPlaybookAccessModal(
 export function displayPlaybookCreateModal(props: PlaybookCreateModalProps) {
     return async (dispatch: Dispatch<AnyAction>) => {
         dispatch(modals.openModal(makePlaybookCreateModal(props)));
+    };
+}
+
+export function displayPlaybookCreateWithAIModal(props: PlaybookCreateWithAIModalProps) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makePlaybookCreateWithAIModal(props)));
     };
 }
 
