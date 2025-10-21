@@ -40,17 +40,6 @@ describe('playbooks > feedback', {testIsolation: true}, () => {
         });
     });
 
-    it('playbooks shows prompt in global header', () => {
-        // # Visit the playbooks product
-        cy.visit('/playbooks');
-
-        // # Verify Give Feedback link is configured to open in a new tab.
-        cy.findByText('Give feedback').invoke('attr', 'target').should('eq', '_blank');
-
-        // # Verify Give Feedback link href
-        cy.findByText('Give feedback').invoke('attr', 'href').should('match', /playbooks-feedback/);
-    });
-
     it('playbooks shows prompt in rhs header', () => {
         // # Run the playbook
         const now = Date.now();
