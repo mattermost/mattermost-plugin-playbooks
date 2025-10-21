@@ -7,6 +7,7 @@ import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {ChannelNamesMap} from 'src/types/backstage';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
@@ -20,9 +21,10 @@ interface Props {
 
 const PostText = (props: Props) => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const siteURL = useSelector<GlobalState, string>((state) => getConfig(state).SiteURL || '');
 
     // @ts-ignore
-    const {formatText, messageHtmlToComponent} = window.PostUtils;
+    const {formatText, messageHtmlToComponent, handleFormattedTextClick} = window.PostUtils;
 
     const markdownOptions = {
         singleline: false,
@@ -30,15 +32,19 @@ const PostText = (props: Props) => {
         atMentions: true,
         team: props.team,
         channelNamesMap,
+        siteURL,
     };
 
     const messageHtmlToComponentOptions = {
         hasPluginTooltips: true,
     };
 
+    const formattedText = formatText(props.text, markdownOptions);
     return (
         <UpdateBody className={props.className}>
-            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, messageHtmlToComponentOptions)}
+            <div onClick={handleFormattedTextClick}>
+                {messageHtmlToComponent(formattedText, true, messageHtmlToComponentOptions)}
+            </div>
             {props.children}
         </UpdateBody>
     );
