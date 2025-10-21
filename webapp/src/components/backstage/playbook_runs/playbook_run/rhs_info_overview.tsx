@@ -137,13 +137,15 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
     return (
         <Section>
             <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
-            <Item
-                id='runinfo-playbook'
-                icon={BookOutlineIcon}
-                name={formatMessage({defaultMessage: 'Playbook'})}
-            >
-                {playbook ? <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink> : <ItemDisabledContent><LockOutlineIcon size={18}/>{formatMessage({defaultMessage: 'Private'})}</ItemDisabledContent>}
-            </Item>
+            {run.playbook_id && playbook && (
+                <Item
+                    id='runinfo-playbook'
+                    icon={BookOutlineIcon}
+                    name={formatMessage({defaultMessage: 'Playbook'})}
+                >
+                    <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>
+                </Item>
+            )}
             <Item
                 id='runinfo-owner'
                 icon={AccountOutlineIcon}
