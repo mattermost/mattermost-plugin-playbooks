@@ -238,13 +238,6 @@ const RHSRunList = (props: Props) => {
     );
 };
 
-const FeedbackWrapper = styled.div`
-    padding: 0 16px;
-    margin-top: 10px;
-    margin-bottom: 30px;
-    text-align: center;
-`;
-
 const Container = styled.div`
     display: flex;
     height: 100%;
@@ -359,7 +352,6 @@ const StyledDropdownMenuSort = styled(DropdownMenuItem)`
     align-items: center;
     justify-content: space-between;
 `;
-
 
 interface SortMenuItemProps {
     label: string

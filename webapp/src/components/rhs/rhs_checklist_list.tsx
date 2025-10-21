@@ -64,7 +64,6 @@ const StyledPrimaryButton = styled(PrimaryButton)`
     margin: 12px 0;
 `;
 
-
 const allComplete = (checklists: Checklist[]) => {
     return notFinishedTasks(checklists) === 0;
 };

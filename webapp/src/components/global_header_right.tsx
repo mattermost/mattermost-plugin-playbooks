@@ -38,7 +38,6 @@ const UnreadBadge = styled.div<{$toggled: boolean}>`
     `}
 `;
 
-
 const GlobalHeaderRight = () => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
