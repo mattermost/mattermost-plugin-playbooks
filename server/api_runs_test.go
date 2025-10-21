@@ -2345,3 +2345,69 @@ func TestRunGetMetadata(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+// TestGuestCannotAccessPrivateChannelTasks tests that guests cannot access
+// tasks from runs linked to private channels they don't have membership in.
+// MM-65795
+func TestGuestCannotAccessPrivateChannelTasks(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.CreateGuest()
+
+	// Create a private channel that the guest is NOT a member of
+	privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+		TeamId:      e.BasicTeam.Id,
+		Name:        "private-test-channel",
+		DisplayName: "Private Test Channel",
+		Type:        model.ChannelTypePrivate,
+	})
+	require.NoError(t, err)
+
+	// Create a public playbook (guests should not see runs from it if they're not in the channel)
+	publicPlaybook, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Public Playbook for Guest Test",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{
+				Title: "Test Checklist",
+				Items: []client.ChecklistItem{
+					{
+						Title: "Sensitive Task",
+					},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// Create a run in the private channel that the guest is not a member of
+	run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run in Private Channel",
+		OwnerUserID: e.AdminUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  publicPlaybook,
+		ChannelID:   privateChannel.Id,
+	})
+	require.NoError(t, err)
+
+	t.Run("guest cannot access run data through GetPlaybookRuns", func(t *testing.T) {
+		// Guest should not see the run as they are not a member of the channel
+		runs, err := e.PlaybooksClientGuest.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Verify the run from the private channel is not in the results
+		for _, r := range runs.Items {
+			assert.NotEqual(t, run.ID, r.ID, "Guest should not see run from private channel they are not a member of")
+		}
+	})
+
+	t.Run("guest cannot access run in private channel even if they know the channel ID", func(t *testing.T) {
+		// Try to get the run by channel ID - should fail with 404 (not 403) to avoid leaking channel existence
+		_, err := e.PlaybooksClientGuest.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
+		require.Error(t, err, "Guest should not be able to access run in private channel")
+		// Note: Returns 404 instead of 403 to avoid information disclosure about private channel existence
+	})
+}

@@ -1109,6 +1109,19 @@ func (h *PlaybookRunHandler) getChecklistAutocompleteItem(c *Context, w http.Res
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	// Require channel_id to prevent unauthorized access to runs from other channels
+	if channelID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel_id is required", nil)
+		return
+	}
+
+	// Verify user has access to the channel
+	// Return 404 instead of 403 to avoid leaking information about private channel existence
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found", nil)
+		return
+	}
+
 	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
@@ -1135,6 +1148,19 @@ func (h *PlaybookRunHandler) getChecklistAutocomplete(c *Context, w http.Respons
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	// Require channel_id to prevent unauthorized access to runs from other channels
+	if channelID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel_id is required", nil)
+		return
+	}
+
+	// Verify user has access to the channel
+	// Return 404 instead of 403 to avoid leaking information about private channel existence
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found", nil)
+		return
+	}
+
 	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
@@ -1160,6 +1186,19 @@ func (h *PlaybookRunHandler) getChannelRunsAutocomplete(c *Context, w http.Respo
 	query := r.URL.Query()
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Require channel_id to prevent unauthorized access to runs from other channels
+	if channelID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel_id is required", nil)
+		return
+	}
+
+	// Verify user has access to the channel
+	// Return 404 instead of 403 to avoid leaking information about private channel existence
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found", nil)
+		return
+	}
 
 	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
