@@ -32,6 +32,7 @@ func TestStandaloneRunCreation(t *testing.T) {
 		assert.NotEmpty(t, standaloneRun.Name, "Name should be present")
 		assert.NotEmpty(t, standaloneRun.TeamID, "TeamID should be present")
 		assert.NotEmpty(t, standaloneRun.OwnerUserID, "OwnerUserID should be present")
+		assert.NotEmpty(t, standaloneRun.ChannelID, "ChannelId should be present")
 	})
 
 	t.Run("standalone run should create default checklist", func(t *testing.T) {
