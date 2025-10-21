@@ -40,7 +40,6 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
-import GiveFeedbackButton from 'src/components/give_feedback_button';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -65,16 +64,6 @@ const StyledPrimaryButton = styled(PrimaryButton)`
     margin: 12px 0;
 `;
 
-const RHSGiveFeedbackButton = styled(GiveFeedbackButton)`
-    && {
-        color: var(--center-channel-color-64);
-    }
-
-    &&:hover:not([disabled]) {
-        background-color: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
-    }
-`;
 
 const allComplete = (checklists: Checklist[]) => {
     return notFinishedTasks(checklists) === 0;
@@ -290,7 +279,6 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
-            <RHSGiveFeedbackButton/>
             {showRunDetailsChecklistsStep && (
                 <TutorialTourTip
                     title={<FormattedMessage defaultMessage='Track progress and ownership'/>}

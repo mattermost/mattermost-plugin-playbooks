@@ -8,7 +8,6 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {CheckboxMultipleMarkedOutlineIcon} from '@mattermost/compass-icons/components';
 
-import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {closeBackstageRHS, openBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {OVERLAY_DELAY} from 'src/constants';
@@ -39,11 +38,6 @@ const UnreadBadge = styled.div<{$toggled: boolean}>`
     `}
 `;
 
-const GlobalHeaderGiveFeedbackButton = styled(GiveFeedbackButton)`
-    height: 24px;
-    padding: 0 5px;
-    font-size: 11px;
-`;
 
 const GlobalHeaderRight = () => {
     const dispatch = useDispatch();
@@ -70,7 +64,6 @@ const GlobalHeaderRight = () => {
 
     return (
         <>
-            <GlobalHeaderGiveFeedbackButton/>
             <OverlayTrigger
                 trigger={['hover', 'focus']}
                 delay={OVERLAY_DELAY}

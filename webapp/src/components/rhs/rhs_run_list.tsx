@@ -33,7 +33,6 @@ import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/ass
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import GiveFeedbackButton from 'src/components/give_feedback_button';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -204,9 +203,6 @@ const RHSRunList = (props: Props) => {
                                 onStartRunClicked={handleStartRun}
                             />
                         </NoRunsWrapper>
-                        <FeedbackWrapper>
-                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
-                        </FeedbackWrapper>
                     </>
                 }
                 {!showNoRuns &&
@@ -235,9 +231,6 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
-                        <FeedbackWrapper>
-                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
-                        </FeedbackWrapper>
                     </Scrollbars>
                 }
             </Container>
@@ -367,19 +360,6 @@ const StyledDropdownMenuSort = styled(DropdownMenuItem)`
     justify-content: space-between;
 `;
 
-const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
-    && {
-        width: 100%;
-        color: var(--center-channel-color-64);
-        font-size: 12px;
-    }
-
-    &&:hover:not([disabled]) {
-        background-color: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
-    }
-
-`;
 
 interface SortMenuItemProps {
     label: string
