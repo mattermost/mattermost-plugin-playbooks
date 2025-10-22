@@ -24,7 +24,7 @@ import (
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
-	"* `/playbook run` - Start a new run\n" +
+	"* `/playbook run` - Run a playbook\n" +
 	"* `/playbook finish` - Finish the playbook run in this channel. \n" +
 	"* `/playbook update` - Provide a status update. \n" +
 	"* `/playbook check [checklist #] [item #]` - check/uncheck the checklist item. \n" +

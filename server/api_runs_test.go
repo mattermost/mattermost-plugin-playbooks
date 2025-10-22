@@ -177,6 +177,9 @@ func TestRunCreation(t *testing.T) {
 					assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 				},
 			},
+			// this use case is currently not allowed by the dialog as
+			// playbook ID is mandatory, but it is supported by the
+			// handler
 			"empty playbook ID creates RunTypeChannelChecklist": {
 				dialogRequest: model.SubmitDialogRequest{
 					TeamId: e.BasicTeam.Id,

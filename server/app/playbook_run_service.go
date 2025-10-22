@@ -3301,7 +3301,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 				Type:        "select",
 				Options:     options,
 				Default:     defaultPlaybookID,
-				Optional:    true,
+				Optional:    false,
 			},
 			{
 				DisplayName: T("app.user.new_run.run_name"),
