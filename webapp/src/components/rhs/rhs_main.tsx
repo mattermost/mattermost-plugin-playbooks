@@ -223,11 +223,6 @@ const RightHandSidebar = () => {
         return <RHSHome/>;
     }
 
-    // No playbooks
-    if (!isLoading && playbooks?.length === 0 && fetchedRuns.runsInProgress.length === 0 && fetchedRuns.runsFinished.length === 0) {
-        return <RHSHome/>;
-    }
-
     // Wait for full load to avoid flashing
     if (isLoading) {
         return null;
