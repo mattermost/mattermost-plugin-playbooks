@@ -786,21 +786,19 @@ const ContextMenu = (props: ContextMenuProps) => {
                 </IconWrapper>
                 <FormattedMessage defaultMessage='Go to run overview'/>
             </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                disabled={!props.canSeePlaybook}
-                onClick={() => navigateToPluginUrl(playbookURL)}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to see this playbook'})}
-            >
-                <RowContainer>
-                    <ColContainer>
-                        <IconWrapper>
-                            <BookOutlineIcon size={22}/>
-                        </IconWrapper>
-                        <FormattedMessage defaultMessage='Go to playbook'/>
-                    </ColContainer>
-                    <MenuItemSubTitle>{props.playbookTitle}</MenuItemSubTitle>
-                </RowContainer>
-            </StyledDropdownMenuItem>
+            {props.playbookID && props.canSeePlaybook && (
+                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+                    <RowContainer>
+                        <ColContainer>
+                            <IconWrapper>
+                                <BookOutlineIcon size={22}/>
+                            </IconWrapper>
+                            <FormattedMessage defaultMessage='Go to playbook'/>
+                        </ColContainer>
+                        <MenuItemSubTitle>{props.playbookTitle}</MenuItemSubTitle>
+                    </RowContainer>
+                </StyledDropdownMenuItem>
+            )}
         </DotMenu>
     );
 };
