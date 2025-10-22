@@ -56,7 +56,7 @@ const RHSRunDetailsTitle = (props: Props) => {
                     role={'button'}
                     to={pluginUrl(`/runs/${props.runID}?from=channel_rhs_title`)}
                 >
-                    {formatMessage({defaultMessage: 'Details'})}
+                    {formatMessage({defaultMessage: 'Playbook run details'})}
                     <RHSTitleStyledButtonIcon>
                         <ExternalLink/>
                     </RHSTitleStyledButtonIcon>

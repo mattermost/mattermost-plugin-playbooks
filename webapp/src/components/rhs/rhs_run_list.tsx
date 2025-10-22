@@ -161,7 +161,7 @@ const RHSRunList = (props: Props) => {
                         onClick={handleStartRun}
                     >
                         <PlayOutlineIcon size={14}/>
-                        {formatMessage({defaultMessage: 'Start'})}
+                        {formatMessage({defaultMessage: 'Start run'})}
                     </StartRunButton>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
