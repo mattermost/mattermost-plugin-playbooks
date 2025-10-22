@@ -54,8 +54,6 @@ export enum ButtonsFormat {
     Short = 'short',
 }
 
-const defaultButtonsFormat = ButtonsFormat.Short;
-
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
     checklistNum: number;
@@ -101,7 +99,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
-    const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
 
     // Notify parent when editing state changes

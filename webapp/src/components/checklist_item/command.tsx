@@ -59,7 +59,6 @@ const Command = (props: CommandProps) => {
             }}
         >
             <CommandIcon
-                title={formatMessage({defaultMessage: 'Command...'})}
                 className={'icon-slash-forward icon-12'}
             />
             {!props.isEditing && (
@@ -258,7 +257,7 @@ const StyledSpinner = styled(LoadingSpinner)`
     margin: 0 2px;
 `;
 
-const CommandIcon = styled.i<{$empty: boolean}>`
+const CommandIcon = styled.i`
     display: flex;
     width: 20px;
     height: 20px;
