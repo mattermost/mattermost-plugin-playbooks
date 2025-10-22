@@ -14,6 +14,7 @@ import {pluginUrl} from 'src/browser_routing';
 import {OVERLAY_DELAY} from 'src/constants';
 
 import {
+    RHSTitle,
     RHSTitleButton,
     RHSTitleContainer,
     RHSTitleLink,
@@ -23,6 +24,8 @@ import {
 interface Props {
     onBackClick: () => void;
     runID: string;
+    runName: string;
+    isPlaybookRun: boolean;
 }
 
 const RHSRunDetailsTitle = (props: Props) => {
@@ -51,23 +54,34 @@ const RHSRunDetailsTitle = (props: Props) => {
                 delay={OVERLAY_DELAY}
                 overlay={tooltip}
             >
-                <RHSTitleLink
-                    data-testid='rhs-title'
-                    role={'button'}
-                    to={pluginUrl(`/runs/${props.runID}?from=channel_rhs_title`)}
-                >
-                    {formatMessage({defaultMessage: 'Playbook run details'})}
-                    <RHSTitleStyledButtonIcon>
-                        <ExternalLink/>
-                    </RHSTitleStyledButtonIcon>
-                </RHSTitleLink>
+                <>
+                    {!props.isPlaybookRun &&
+                        <RHSTitle data-testid='rhs-title'>
+                            {props.runName}
+                        </RHSTitle>
+                    }
+                    {props.isPlaybookRun &&
+                        <RHSTitleLink
+                            data-testid='rhs-title'
+                            role={'button'}
+                            to={pluginUrl(`/runs/${props.runID}?from=channel_rhs_title`)}
+                        >
+                            {formatMessage({defaultMessage: 'Playbook run details'})}
+                            <RHSTitleStyledButtonIcon>
+                                <ExternalLink/>
+                            </RHSTitleStyledButtonIcon>
+                        </RHSTitleLink>
+                    }
+                </>
             </OverlayTrigger>
+            {props.isPlaybookRun &&
             <FollowingWrapper>
                 <FollowButton
                     runID={props.runID}
                     followState={metadata ? followState : undefined}
                 />
             </FollowingWrapper>
+            }
         </RHSTitleContainer>
     );
 };

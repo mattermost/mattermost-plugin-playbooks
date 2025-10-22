@@ -23,6 +23,21 @@ export const RHSTitleText = styled.div`
     text-overflow: ellipsis;
 `;
 
+export const RHSTitle = styled.div`
+    display: flex;
+    overflow: hidden;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+    border-radius: 4px;
+    text-overflow: ellipsis;
+
+    &&& {
+        color: var(--center-channel-color);
+    }
+`;
+
 export const RHSTitleLink = styled(Link)`
     display: flex;
     overflow: hidden;
