@@ -11,10 +11,15 @@ import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {useHistory} from 'react-router-dom';
 
-import {Checklist} from 'src/types/playbook';
-import GenericModal from 'src/components/widgets/generic_modal';
+import {Checklist, DraftPlaybookWithChecklist, setPlaybookDefaults} from 'src/types/playbook';
+import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
+import {sendAIPlaybookMessage, AIPost, savePlaybook} from 'src/client';
+import {navigateToUrl} from 'src/browser_routing';
+import {BaseInput} from 'src/components/assets/inputs';
 
 const ID = 'playbooks_create_with_ai';
 
@@ -33,31 +38,7 @@ interface Message {
     timestamp: number;
 }
 
-// Dummy conversation to showcase the UI
-const DUMMY_MESSAGES: Message[] = [
-    {
-        role: 'user',
-        content: 'Create a playbook for incident response',
-        timestamp: Date.now() - 120000, // 2 minutes ago
-    },
-    {
-        role: 'assistant',
-        content: 'I\'ll help you create an incident response playbook. Here are the key tasks I\'ve generated:\n\n```json\n{\n  "checklists": [\n    {\n      "title": "Incident Detection",\n      "items": [\n        {"title": "Identify and confirm the incident"},\n        {"title": "Assess severity and priority"}\n      ]\n    }\n  ]\n}\n```',
-        timestamp: Date.now() - 110000,
-    },
-    {
-        role: 'user',
-        content: 'Can you add a task for notifying stakeholders?',
-        timestamp: Date.now() - 60000, // 1 minute ago
-    },
-    {
-        role: 'assistant',
-        content: 'Great idea! I\'ve added a "Notify stakeholders" task to the Communication checklist. The tasks are now updated on the right panel.',
-        timestamp: Date.now() - 50000,
-    },
-];
-
-// Sample checklist data matching the conversation
+// Sample checklist data (will be replaced by AI-generated checklists in the future)
 const SAMPLE_CHECKLISTS: Checklist[] = [
     {
         title: 'Incident Detection',
@@ -198,11 +179,17 @@ const SAMPLE_CHECKLISTS: Checklist[] = [
 
 const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalProps) => {
     const {formatMessage} = useIntl();
+    const history = useHistory();
     const currentUserId = useSelector(getCurrentUserId);
-    const [messages, setMessages] = useState<Message[]>(DUMMY_MESSAGES);
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState('');
-    const [checklists, setChecklists] = useState<Checklist[]>(SAMPLE_CHECKLISTS);
+    const [playbookName, setPlaybookName] = useState('');
+    const [checklists, setChecklists] = useState<Checklist[]>([]);
     const [checklistsCollapseState, setChecklistsCollapseState] = useState<Record<number, boolean>>({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [mockChannelId] = useState('mock_ai_channel_' + Date.now());
 
@@ -228,23 +215,83 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
     };
 
     const renderMessageContent = (content: string) => {
+        // Remove the playbook schema JSON from the display
+        // The schema will be shown in the right panel instead
+        let displayContent = content;
+        const markerIndex = content.indexOf('<!-- PLAYBOOK_SCHEMA -->');
+        if (markerIndex !== -1) {
+            // Find the end of the JSON codeblock
+            const afterMarker = content.substring(markerIndex);
+            const jsonBlockStart = afterMarker.indexOf('```json');
+            if (jsonBlockStart !== -1) {
+                const jsonEnd = afterMarker.indexOf('```', jsonBlockStart + 7);
+                if (jsonEnd !== -1) {
+                    // Remove everything from the marker to the end of the codeblock
+                    const schemaEnd = markerIndex + jsonEnd + 3;
+                    displayContent = content.substring(0, markerIndex) + content.substring(schemaEnd);
+                }
+            }
+        }
+
         // Use Mattermost's built-in markdown rendering
         if (formatText && messageHtmlToComponent) {
-            const formattedText = formatText(content, {
+            const formattedText = formatText(displayContent.trim(), {
                 singleline: false,
                 mentionHighlight: false,
             });
             return messageHtmlToComponent(formattedText);
         }
         // Fallback to plain text if Mattermost utils aren't available
-        return content;
+        return displayContent.trim();
     };
 
-    const handleSendMessage = (messageContent?: string) => {
+    const parsePlaybookSchema = (message: string): Checklist[] | null => {
+        // Look for the special marker that indicates a playbook schema
+        const markerIndex = message.indexOf('<!-- PLAYBOOK_SCHEMA -->');
+        if (markerIndex === -1) {
+            return null;
+        }
+
+        // Find the JSON code block after the marker
+        const afterMarker = message.substring(markerIndex);
+        const jsonBlockStart = afterMarker.indexOf('```json');
+        if (jsonBlockStart === -1) {
+            return null;
+        }
+
+        const jsonStart = afterMarker.indexOf('\n', jsonBlockStart) + 1;
+        const jsonEnd = afterMarker.indexOf('```', jsonStart);
+        if (jsonEnd === -1) {
+            return null;
+        }
+
+        const jsonString = afterMarker.substring(jsonStart, jsonEnd).trim();
+
+        try {
+            const parsed = JSON.parse(jsonString);
+
+            // Validate structure
+            if (!parsed.checklists || !Array.isArray(parsed.checklists)) {
+                console.error('Invalid playbook schema: missing or invalid checklists array');
+                return null;
+            }
+
+            // Return the checklists directly - they should have all required fields
+            return parsed.checklists as Checklist[];
+        } catch (err) {
+            console.error('Failed to parse playbook schema JSON:', err);
+            return null;
+        }
+    };
+
+    const handleSendMessage = async (messageContent?: string) => {
         const content = messageContent || inputValue;
-        if (!content.trim()) {
+        if (!content.trim() || isLoading) {
             return;
         }
+
+        // Clear any previous errors
+        setError(null);
 
         // Add user message
         const userMessage: Message = {
@@ -254,76 +301,49 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
         };
         setMessages((prev) => [...prev, userMessage]);
         setInputValue('');
+        setIsLoading(true);
 
-        // Simulate AI response with mock checklist JSON
-        setTimeout(() => {
+        try {
+            // Build conversation history for AI request
+            const conversationHistory: AIPost[] = [...messages, userMessage].map((msg) => ({
+                role: msg.role,
+                message: msg.content,
+            }));
+
+            // Send request to AI service
+            const aiResponse = await sendAIPlaybookMessage(conversationHistory);
+
+            // Add AI response to messages
             const aiMessage: Message = {
                 role: 'assistant',
-                content: 'I\'ll help you create a playbook for that. Here are the tasks I\'ve generated:',
+                content: aiResponse,
                 timestamp: Date.now(),
             };
             setMessages((prev) => [...prev, aiMessage]);
 
-            // Mock checklist response - parse this from AI in the future
-            const mockChecklists: Checklist[] = [
-                {
-                    title: 'Preparation',
-                    items: [
-                        {
-                            title: 'Define project scope and objectives',
-                            description: '',
-                            state: 'open',
-                            state_modified: 0,
-                            assignee_id: '',
-                            assignee_modified: 0,
-                            command: '',
-                            command_last_run: 0,
-                            due_date: 0,
-                            task_actions: [],
-                            condition_id: '',
-                            condition_action: '',
-                            condition_reason: '',
-                        },
-                        {
-                            title: 'Identify stakeholders',
-                            description: '',
-                            state: 'open',
-                            state_modified: 0,
-                            assignee_id: '',
-                            assignee_modified: 0,
-                            command: '',
-                            command_last_run: 0,
-                            due_date: 0,
-                            task_actions: [],
-                            condition_id: '',
-                            condition_action: '',
-                            condition_reason: '',
-                        },
-                    ],
-                },
-                {
-                    title: 'Execution',
-                    items: [
-                        {
-                            title: 'Kick off team meeting',
-                            description: '',
-                            state: 'open',
-                            state_modified: 0,
-                            assignee_id: '',
-                            assignee_modified: 0,
-                            command: '',
-                            command_last_run: 0,
-                            due_date: 0,
-                            task_actions: [],
-                            condition_id: '',
-                            condition_action: '',
-                            condition_reason: '',
-                        },
-                    ],
-                },
-            ];
-            setChecklists(mockChecklists);
-        }, 1000);
+            // Try to parse playbook schema from the response
+            const parsedChecklists = parsePlaybookSchema(aiResponse);
+            if (parsedChecklists) {
+                // Update the checklists with the parsed schema
+                setChecklists(parsedChecklists);
+            }
+            // If no schema found, that's fine - it's just a conversational message
+
+        } catch (err) {
+            // Handle error
+            const errorMessage = err instanceof Error ? err.message : 'Failed to get response from AI';
+            setError(errorMessage);
+
+            // Add error message to chat
+            const errorChatMessage: Message = {
+                role: 'assistant',
+                content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+                timestamp: Date.now(),
+            };
+            setMessages((prev) => [...prev, errorChatMessage]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -341,20 +361,97 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
         setChecklistsCollapseState(state);
     };
 
+    const handleCreatePlaybook = async () => {
+        if (checklists.length === 0) {
+            return;
+        }
+
+        setIsCreating(true);
+        setError(null);
+
+        try {
+            // Create a draft playbook with the AI-generated checklists
+            const draftPlaybook: DraftPlaybookWithChecklist = {
+                title: playbookName,
+                description: 'Playbook created with AI assistance',
+                team_id: currentTeamId,
+                public: true,
+                create_public_playbook_run: false,
+                delete_at: 0,
+                num_stages: checklists.length,
+                num_steps: checklists.reduce((sum, cl) => sum + cl.items.length, 0),
+                num_runs: 0,
+                num_actions: 0,
+                last_run_at: 0,
+                checklists,
+                members: [],
+                default_playbook_member_role: 'member',
+                reminder_message_template: '',
+                reminder_timer_default_seconds: 7 * 24 * 60 * 60,
+                status_update_enabled: true,
+                invited_user_ids: [],
+                invited_group_ids: [],
+                invite_users_enabled: false,
+                default_owner_id: '',
+                default_owner_enabled: false,
+                broadcast_channel_ids: [],
+                broadcast_enabled: false,
+                webhook_on_creation_urls: [],
+                webhook_on_creation_enabled: false,
+                webhook_on_status_update_urls: [],
+                webhook_on_status_update_enabled: false,
+                message_on_join: '',
+                message_on_join_enabled: false,
+                retrospective_reminder_interval_seconds: 0,
+                retrospective_template: '',
+                retrospective_enabled: false,
+                signal_any_keywords_enabled: false,
+                signal_any_keywords: [],
+                categorize_channel_enabled: false,
+                category_name: '',
+                run_summary_template_enabled: false,
+                run_summary_template: '',
+                channel_name_template: '',
+                channel_id: '',
+                channel_mode: 'create_new_channel',
+                create_channel_member_on_new_participant: true,
+                remove_channel_member_on_removed_participant: true,
+                metrics: [],
+                is_favorite: false,
+                active_runs: 0,
+                propertyFields: [],
+            };
+
+            // Set defaults for any missing fields
+            const playbookWithDefaults = setPlaybookDefaults(draftPlaybook);
+
+            // Save the playbook
+            const result = await savePlaybook(playbookWithDefaults);
+
+            // Close the modal and navigate to the newly created playbook
+            if (result.id) {
+                modalProps.onHide?.();
+                navigateToUrl(`/playbooks/playbooks/${result.id}`);
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to create playbook';
+            setError(errorMessage);
+            setIsCreating(false);
+        }
+    };
+
     return (
         <StyledGenericModal
             id={ID}
             modalHeaderText={formatMessage({defaultMessage: 'Create playbook with AI'})}
             {...modalProps}
-            confirmButtonText={formatMessage({defaultMessage: 'Create playbook'})}
+            confirmButtonText={isCreating ? formatMessage({defaultMessage: 'Creating...'}) : formatMessage({defaultMessage: 'Create playbook'})}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-            isConfirmDisabled={checklists.length === 0}
-            handleConfirm={() => {
-                // TODO: Handle playbook creation with the generated checklists
-            }}
+            isConfirmDisabled={checklists.length === 0 || !playbookName.trim() || isCreating}
+            handleConfirm={handleCreatePlaybook}
             showCancel={true}
             autoCloseOnCancelButton={true}
-            autoCloseOnConfirmButton={true}
+            autoCloseOnConfirmButton={false}
         >
             <SplitView>
                 <LeftPanel>
@@ -391,6 +488,22 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
                                 </PostBody>
                             </PostContainer>
                         ))}
+                        {isLoading && (
+                            <PostContainer>
+                                <PostHeader>
+                                    <Avatar $isBot={true}>
+                                        <i className='icon icon-robot-outline'/>
+                                    </Avatar>
+                                    <PostMeta>
+                                        <Username>AI Assistant</Username>
+                                        <PostTime>Just now</PostTime>
+                                    </PostMeta>
+                                </PostHeader>
+                                <PostBody>
+                                    <LoadingIndicator>Thinking...</LoadingIndicator>
+                                </PostBody>
+                            </PostContainer>
+                        )}
                         <div ref={messagesEndRef}/>
                     </MessagesContainer>
                     <InputContainer>
@@ -403,9 +516,13 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
                         />
                         <SendButton
                             onClick={() => handleSendMessage()}
-                            disabled={!inputValue.trim()}
+                            disabled={!inputValue.trim() || isLoading}
                         >
-                            <i className='icon icon-send'/>
+                            {isLoading ? (
+                                <i className='icon icon-loading icon-spin'/>
+                            ) : (
+                                <i className='icon icon-send'/>
+                            )}
                         </SendButton>
                     </InputContainer>
                 </LeftPanel>
@@ -413,6 +530,15 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
                     <TaskListHeader>
                         {formatMessage({defaultMessage: 'Generated Tasks'})}
                     </TaskListHeader>
+                    <NameInputSection>
+                        <InlineLabel>{formatMessage({defaultMessage: 'Playbook name'})}</InlineLabel>
+                        <BaseInput
+                            type='text'
+                            value={playbookName}
+                            onChange={(e) => setPlaybookName(e.target.value)}
+                            placeholder={formatMessage({defaultMessage: 'Enter playbook name'})}
+                        />
+                    </NameInputSection>
                     <TaskListContainer>
                         {checklists.length === 0 ? (
                             <EmptyTaskState>
@@ -519,6 +645,16 @@ const TaskListHeader = styled.div`
     flex-shrink: 0; /* Prevent header from shrinking */
 `;
 
+const NameInputSection = styled.div`
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    flex-shrink: 0;
+
+    ${InlineLabel} {
+        margin-bottom: 8px;
+    }
+`;
+
 const MessagesContainer = styled.div`
     flex: 1;
     overflow-y: auto;
@@ -614,6 +750,8 @@ const PostBody = styled.div`
     font-size: 14px;
     line-height: 20px;
     word-wrap: break-word;
+    max-width: 100%;
+    overflow: hidden;
 
     /* Mattermost's markdown rendering classes */
     pre {
@@ -622,6 +760,7 @@ const PostBody = styled.div`
         border-radius: 4px;
         padding: 12px;
         overflow-x: auto;
+        max-width: 100%;
         font-family: 'Monaco', 'Menlo', 'Consolas', 'Courier New', monospace;
         font-size: 12px;
         line-height: 18px;
@@ -633,11 +772,13 @@ const PostBody = styled.div`
         border-radius: 3px;
         font-family: 'Monaco', 'Menlo', 'Consolas', 'Courier New', monospace;
         font-size: 12px;
+        word-break: break-word;
     }
 
     pre code {
         background: none;
         padding: 0;
+        word-break: normal;
     }
 `;
 
@@ -802,3 +943,10 @@ const TaskDescription = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     line-height: 16px;
 `;
+
+const LoadingIndicator = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-style: italic;
+`;
+
+export default PlaybookCreateWithAIModal;

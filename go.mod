@@ -4,6 +4,8 @@ go 1.24.6
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
 
+replace github.com/mattermost/mattermost-plugin-ai => ../mattermost-plugin-ai
+
 replace github.com/HdrHistogram/hdrhistogram-go => github.com/codahale/hdrhistogram v1.1.2
 
 replace github.com/golang/mock => github.com/golang/mock v1.4.4
@@ -12,7 +14,7 @@ replace github.com/golang/mock => github.com/golang/mock v1.4.4
 replace github.com/ledongthuc/pdf => github.com/ledongthuc/pdf v0.0.0-20240201131950-da5b75280b06
 
 require (
-	github.com/Masterminds/squirrel v1.5.2
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/MicahParks/jwkset v0.5.18
 	github.com/MicahParks/keyfunc/v3 v3.3.3
 	github.com/blang/semver v3.5.1+incompatible
@@ -25,6 +27,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
+	github.com/mattermost/mattermost-plugin-ai v0.0.0
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost/server/public v0.1.20
 	github.com/mattermost/mattermost/server/v8 v8.0.0-20251009081434-4186f0389ada
@@ -172,7 +175,7 @@ require (
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.6.0 // indirect

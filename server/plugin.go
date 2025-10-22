@@ -21,6 +21,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/server/ai"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -54,6 +55,7 @@ type Plugin struct {
 	categoryService      app.CategoryService
 	conditionService     app.ConditionService
 	propertyService      app.PropertyService
+	aiService            *ai.Service
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
@@ -176,6 +178,10 @@ func (p *Plugin) OnActivate() error {
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
+	// Initialize AI service with configurable service name (default: "openai")
+	// TODO: Make this configurable via plugin settings
+	p.aiService = ai.NewService(p.API, "openai")
+
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
 		playbookRunStore,
@@ -252,6 +258,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
 	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
 	api.NewConditionHandler(p.handler.APIRouter, p.conditionService, p.playbookService, p.playbookRunService, p.propertyService, p.permissions, pluginAPIClient)
+	api.NewAIHandler(p.handler.APIRouter, p.aiService, pluginAPIClient, p.config, p.permissions)
 	api.NewTabAppHandler(
 		p.handler,
 		p.playbookRunService,

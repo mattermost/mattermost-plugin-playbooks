@@ -826,3 +826,27 @@ export async function deletePlaybookCondition(playbookId: string, conditionId: s
         method: 'DELETE',
     });
 }
+
+// AI Playbook Creation
+
+export interface AIPost {
+    role: string;
+    message: string;
+}
+
+export interface AICompletionRequest {
+    posts: AIPost[];
+}
+
+export interface AICompletionResponse {
+    message: string;
+}
+
+export async function sendAIPlaybookMessage(posts: AIPost[]): Promise<string> {
+    const body = JSON.stringify({posts});
+    const result = await doPost<AICompletionResponse>(`${apiUrl}/ai/playbook/completion`, body);
+    if (!result) {
+        throw new Error('Failed to get AI completion');
+    }
+    return result.message;
+}
