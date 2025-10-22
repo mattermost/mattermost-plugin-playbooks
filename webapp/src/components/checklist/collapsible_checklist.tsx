@@ -303,7 +303,7 @@ export const ChecklistInputComponent = (props: ChecklistInputProps) => {
                     e.target.value = '';
                     e.target.value = val;
                 }}
-                placeholder={formatMessage({defaultMessage: 'Add checklist name'})}
+                placeholder={formatMessage({defaultMessage: 'Section name'})}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                         props.onSave();
