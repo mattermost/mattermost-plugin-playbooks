@@ -386,7 +386,7 @@ const ChecklistList = ({
             <IconWrapper>
                 <i className='icon icon-plus'/>
             </IconWrapper>
-            {formatMessage({defaultMessage: 'Add a checklist'})}
+            {formatMessage({defaultMessage: 'Add a section'})}
         </AddChecklistLink>
     );
 

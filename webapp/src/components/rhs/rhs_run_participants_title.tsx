@@ -21,7 +21,7 @@ const RHSRunParticipantsTitle = (props: Props) => {
 
     const tooltip = (
         <Tooltip id={'view-run-overview'}>
-            {formatMessage({defaultMessage: 'Manage run participants list'})}
+            {formatMessage({defaultMessage: 'Manage participants list'})}
         </Tooltip>
     );
 
@@ -40,7 +40,7 @@ const RHSRunParticipantsTitle = (props: Props) => {
                 overlay={tooltip}
             >
                 <RHSTitleText>
-                    {formatMessage({defaultMessage: 'Run participants'})}
+                    {formatMessage({defaultMessage: 'Participants'})}
                 </RHSTitleText>
             </OverlayTrigger>
             <HeaderVerticalDivider/>
