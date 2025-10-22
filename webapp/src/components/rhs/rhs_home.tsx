@@ -134,7 +134,7 @@ const RHSHome = () => {
                         <FormattedMessage defaultMessage='Create playbook'/>
                     </WelcomeButtonCreate>
                     <WelcomeCreateAlt>
-                        <FormattedMessage defaultMessage='…or start with a template'/>
+                        <FormattedMessage defaultMessage='…or start with an example'/>
                         <ArrowDownIcon size={16}/>
                     </WelcomeCreateAlt>
                 </div>
@@ -169,7 +169,7 @@ const RHSHome = () => {
                         {<Header>{headerContent}</Header>}
                         {canCreatePlaybooks && (
                             <>
-                                <ListHeading><FormattedMessage defaultMessage='Playbook Templates'/></ListHeading>
+                                <ListHeading><FormattedMessage defaultMessage='Playbook Examples'/></ListHeading>
                                 <ListSection>
                                     {PresetTemplates.map(({title, template}) => (
                                         <RHSHomeTemplate

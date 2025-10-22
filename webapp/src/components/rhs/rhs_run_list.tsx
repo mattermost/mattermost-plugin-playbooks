@@ -17,12 +17,15 @@ import {
     PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
+
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
+import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
 
 import {useUpdateRun} from 'src/graphql/hooks';
 import {createPlaybookRun} from 'src/client';
@@ -43,7 +46,6 @@ import {ToastStyle} from 'src/components/backstage/toast';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import {UserList} from './rhs_participants';
-import {RHSTitleText} from './rhs_title_common';
 
 interface PlaybookToDisplay {
     title: string
@@ -123,7 +125,7 @@ const RHSRunList = (props: Props) => {
         debouncedSetLoadingMore(false);
     };
     const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
-    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
+    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
 
     const handleStartRun = () => {
@@ -166,12 +168,12 @@ const RHSRunList = (props: Props) => {
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <TitleIcon/>
-                    <RHSTitleText>
-                        {/* product name; don't translate */}
+                    <TitleIcon src={CheckLogoIcon}/>
+                    <>
+                        {/* static title; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                         {'Checklists'}
-                    </RHSTitleText>
+                    </>
                     <VerticalLine/>
                     <ChannelNameText>
                         {currentChannelName}
@@ -194,7 +196,7 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                         >
-                            {formatMessage({defaultMessage: 'Runs in progress'})}
+                            {formatMessage({defaultMessage: 'In progress'})}
                             <FilterMenuNumericValue>
                                 {props.numInProgress}
                             </FilterMenuNumericValue>
@@ -202,7 +204,7 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                         >
-                            {formatMessage({defaultMessage: 'Finished runs'})}
+                            {formatMessage({defaultMessage: 'Finished'})}
                             <FilterMenuNumericValue>
                                 {props.numFinished}
                             </FilterMenuNumericValue>
@@ -243,7 +245,7 @@ const RHSRunList = (props: Props) => {
                         placement='bottom-start'
                         icon={<SortAscendingIcon size={18}/>}
                     >
-                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort runs by'})}</SortMenuTitle>
+                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
                         <SortMenuItem
                             label={formatMessage({defaultMessage: 'Recently created'})}
                             sortItem={'create_at'}
@@ -411,7 +413,7 @@ const ChannelNameText = styled.div`
     text-overflow: ellipsis;
 `;
 
-const TitleIcon = styled(CheckCircleOutlineIcon)`
+const TitleIcon = styled.img`
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -818,8 +820,11 @@ const NoRuns = (props: NoRunsProps) => {
     const {formatMessage} = useIntl();
 
     let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
-    if (!props.active) {
-        text = formatMessage({defaultMessage: 'There are no finished runs linked to this channel'});
+
+    if (props.active && props.numFinished > 0) {
+        text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
+    } else if (!props.active) {
+        text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
     }
 
     return (
@@ -828,22 +833,22 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton onClick={props.onCreateChecklistClicked}>
+            <PrimaryButton onClick={props.onStartRunClicked}>
                 <PlusIcon size={18}/>
-                <FormattedMessage defaultMessage={'Create a checklist'}/>
+                <FormattedMessage defaultMessage={'New checklist'}/>
             </PrimaryButton>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                 >
-                    {formatMessage({defaultMessage: 'View finished runs'})}
+                    {formatMessage({defaultMessage: 'View finished'})}
                 </ViewOtherRunsButton>
             }
             {!props.active && props.numInProgress > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                 >
-                    {formatMessage({defaultMessage: 'View in progress runs'})}
+                    {formatMessage({defaultMessage: 'View in progress'})}
                 </ViewOtherRunsButton>
             }
         </NoActiveRunsContainer>
@@ -898,29 +903,29 @@ const ContextMenu = (props: ContextMenuProps) => {
             <StyledDropdownMenuItem
                 onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.Playbook, props.onUpdateChannel))}
                 disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
+                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this'})}
             >
                 <IconWrapper>
                     <LinkVariantIcon size={22}/>
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Link run to a different channel'/>
+                <FormattedMessage defaultMessage='Link to a different channel'/>
             </StyledDropdownMenuItem>
             <StyledDropdownMenuItem
                 onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.onUpdateName))}
                 disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
+                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this'})}
             >
                 <IconWrapper>
                     <PencilOutlineIcon size={22}/>
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Rename run'/>
+                <FormattedMessage defaultMessage='Rename'/>
             </StyledDropdownMenuItem>
             <Separator/>
             <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                 <IconWrapper>
                     <PlayOutlineIcon size={22}/>
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Go to run overview'/>
+                <FormattedMessage defaultMessage='Go to overview'/>
             </StyledDropdownMenuItem>
             <StyledDropdownMenuItem
                 disabled={!props.canSeePlaybook}

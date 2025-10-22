@@ -63,7 +63,7 @@ const RHSAboutButtons = (props: Props) => {
                         <IconWrapper>
                             <PencilOutlineIcon size={20}/>
                         </IconWrapper>
-                        <FormattedMessage defaultMessage='Edit run summary'/>
+                        <FormattedMessage defaultMessage='Edit summary'/>
                     </StyledDropdownMenuItem>
                     <Separator/>
                 </>
@@ -72,7 +72,7 @@ const RHSAboutButtons = (props: Props) => {
                     <IconWrapper>
                         <PlayOutlineIcon size={22}/>
                     </IconWrapper>
-                    <FormattedMessage defaultMessage='Go to run overview'/>
+                    <FormattedMessage defaultMessage='Go to overview'/>
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
                     <IconWrapper>

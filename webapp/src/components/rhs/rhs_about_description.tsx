@@ -25,7 +25,7 @@ interface DescriptionProps {
 
 const RHSAboutDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
-    const placeholder = formatMessage({defaultMessage: 'Add a run summary…'});
+    const placeholder = formatMessage({defaultMessage: 'Add a summary…'});
     const [editedValue, setEditedValue] = useState(props.value);
     const currentTeam = useSelector<GlobalState, Team | undefined>(getCurrentTeam);
 

@@ -33,7 +33,7 @@ const RHSRunDetailsTitle = (props: Props) => {
 
     const tooltip = (
         <Tooltip id={'view-run-overview'}>
-            {formatMessage({defaultMessage: 'View run overview'})}
+            {formatMessage({defaultMessage: 'View overview'})}
         </Tooltip>
     );
 
@@ -56,7 +56,7 @@ const RHSRunDetailsTitle = (props: Props) => {
                     role={'button'}
                     to={pluginUrl(`/runs/${props.runID}?from=channel_rhs_title`)}
                 >
-                    {formatMessage({defaultMessage: 'Run details'})}
+                    {formatMessage({defaultMessage: 'Playbook run details'})}
                     <RHSTitleStyledButtonIcon>
                         <ExternalLink/>
                     </RHSTitleStyledButtonIcon>

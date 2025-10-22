@@ -211,7 +211,7 @@ export default function ProfileSelector(props: Props) {
                 className={props.placeholderButtonClass}
             >
                 {props.placeholder}
-                {dropdownArrow}
+                {selected !== null && dropdownArrow}
             </button>
         );
     } else {
@@ -225,7 +225,7 @@ export default function ProfileSelector(props: Props) {
                 }}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {dropdownArrow}
+                {selected !== null && dropdownArrow}
             </FilterButton>
         );
     }

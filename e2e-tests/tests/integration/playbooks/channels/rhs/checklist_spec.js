@@ -310,7 +310,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
                     cy.findByTitle('More').click();
                 });
             });
-            cy.findByTestId('dropdownmenu').findByText('Rename checklist').click();
+            cy.findByTestId('dropdownmenu').findByText('Rename section').click();
 
             // # Type the new title and click the confirm button
             cy.findByTestId('checklist-title-input').type(newTitle, {force: true});
