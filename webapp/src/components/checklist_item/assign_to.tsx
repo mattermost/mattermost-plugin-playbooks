@@ -6,8 +6,11 @@ import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {Placement} from '@floating-ui/react';
+
+import {OVERLAY_DELAY} from 'src/constants';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
@@ -21,6 +24,7 @@ interface AssignedToProps {
     placement?: Placement;
     onSelectedChange?: (user?: UserProfile) => void;
     onOpenChange?: (isOpen: boolean) => void;
+    isEditing?: boolean;
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -71,7 +75,7 @@ const AssignTo = (props: AssignedToProps) => {
         <DropdownArrow className={'icon-chevron-down icon--small ml-1'}/>
     );
 
-    return (
+    let assignToButton = (
         <AssignToContainer>
             <StyledProfileSelector
                 testId={'assignee-profile-selector'}
@@ -84,15 +88,16 @@ const AssignTo = (props: AssignedToProps) => {
                 placeholder={
                     <PlaceholderDiv>
                         <AssignToIcon
-                            title={formatMessage({defaultMessage: 'Assignee...'})}
                             className={'icon-account-plus-outline icon-12'}
                         />
-                        <AssignToTextContainer
-                            isPlaceholder={!props.assignee_id}
-                            enableEdit={props.editable}
-                        >
-                            {formatMessage({defaultMessage: 'Assignee...'})}
-                        </AssignToTextContainer>
+                        {!props.isEditing && (
+                            <AssignToTextContainer
+                                isPlaceholder={!props.assignee_id}
+                                enableEdit={props.editable}
+                            >
+                                {formatMessage({defaultMessage: 'Assignee...'})}
+                            </AssignToTextContainer>
+                        )}
                     </PlaceholderDiv>
                 }
                 placeholderButtonClass={'NoAssignee-button'}
@@ -114,6 +119,24 @@ const AssignTo = (props: AssignedToProps) => {
             />
         </AssignToContainer>
     );
+
+    if (props.isEditing && !props.assignee_id) {
+        assignToButton = (
+            <OverlayTrigger
+                placement='top'
+                delay={OVERLAY_DELAY}
+                overlay={(
+                    <Tooltip id='assignee-tooltip'>
+                        {formatMessage({defaultMessage: 'Assignee'})}
+                    </Tooltip>
+                )}
+            >
+                {assignToButton}
+            </OverlayTrigger>
+        );
+    }
+
+    return assignToButton;
 };
 
 export default AssignTo;
@@ -171,7 +194,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
 
         .image {
             margin: 2px;
-            background: rgba(var(--center-channel-color-rgb),0.08);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
         }
     }
 
@@ -179,6 +202,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         background-color: transparent;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
         color: rgba(var(--center-channel-color-rgb), 0.64);
+        padding: 2px;
 
         ${({enableEdit}) => enableEdit && css`
             &:hover {
@@ -204,6 +228,7 @@ const AssignToTextContainer = styled.div<{isPlaceholder: boolean, enableEdit: bo
     font-weight: 400;
     font-size: 12px;
     line-height: 15px;
+    margin-left: 5px;
 `;
 
 const AssignToIcon = styled.i`
@@ -211,7 +236,6 @@ const AssignToIcon = styled.i`
     width: 20px;
     height: 20px;
     align-items: center;
-    margin-right: 5px;
     color: rgba(var(--center-channel-color-rgb),0.56);
     text-align: center;
 `;

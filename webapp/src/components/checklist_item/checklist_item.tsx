@@ -54,8 +54,6 @@ export enum ButtonsFormat {
     Short = 'short',
 }
 
-const defaultButtonsFormat = ButtonsFormat.Short;
-
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
     checklistNum: number;
@@ -101,7 +99,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
-    const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
 
     // Notify parent when editing state changes
@@ -207,7 +204,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderAssignTo = (): null | React.ReactNode => {
-        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !isEditing)) {
+        if (!isEditing && !assigneeID) {
+            // when not editing, hide when not set
             return null;
         }
 
@@ -218,12 +216,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={isEditing || (!props.readOnly && !isSkipped())}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
+                isEditing={isEditing}
             />
         );
     };
 
     const renderCommand = (): null | React.ReactNode => {
-        if (buttonsFormat !== ButtonsFormat.Long && (!command && !isEditing)) {
+        if (!isEditing && !command) {
+            // when not editing, hide when not set
             return null;
         }
         return (
@@ -243,7 +243,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const renderDueDate = (): null | React.ReactNode => {
         const isTaskFinishedOrSkipped = props.checklistItem.state === ChecklistItemState.Closed || isSkipped();
 
-        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate && !isEditing)) {
+        if (!isEditing && !dueDate) {
+            // when not editing, hide when not set
             return null;
         }
 
@@ -255,18 +256,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
                 placement={'bottom-start'}
+                isEditing={isEditing}
             />
         );
     };
 
     const renderTaskActions = (): null | React.ReactNode => {
-        const haveTaskActions = taskActions?.length > 0;
-        const enabledAction = haveAtleastOneEnabledAction(taskActions);
-        if (
-            buttonsFormat !== ButtonsFormat.Long &&
-            !isEditing &&
-            !(haveTaskActions && enabledAction)
-        ) {
+        const hasEnabledActions = haveAtleastOneEnabledAction(taskActions);
+        if (!isEditing && !hasEnabledActions) {
+            // when not editing, hide when not set
             return null;
         }
 
@@ -275,6 +273,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={isEditing || (!props.readOnly && !isSkipped())}
                 taskActions={taskActions}
                 onTaskActionsChange={onTaskActionsChange}
+                isEditing={isEditing}
             />
         );
     };
@@ -282,13 +281,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const renderRow = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
         if (
-            buttonsFormat !== ButtonsFormat.Long &&
+            !isEditing &&
             !assigneeID &&
             !command &&
             !dueDate &&
-            !haveTaskActions &&
-            !isEditing
+            !haveTaskActions
         ) {
+            // when not editing, hide row when nothing is set
             return null;
         }
         return (
