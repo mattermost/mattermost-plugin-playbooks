@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {ElementRef, useRef} from 'react';
-import {FormattedMessage} from 'react-intl';
 import {useSelector} from 'react-redux';
 
 import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_icon';
@@ -26,7 +25,12 @@ export const ChannelHeaderButton = () => {
 };
 
 export const ChannelHeaderText = () => {
-    return <FormattedMessage defaultMessage='Playbooks'/>;
+    return (
+        <span>
+            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+            {'Checklists'}
+        </span>
+    );
 };
 
 export const ChannelHeaderTooltip = ChannelHeaderText;

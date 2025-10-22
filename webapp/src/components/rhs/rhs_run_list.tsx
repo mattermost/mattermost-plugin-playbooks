@@ -13,8 +13,10 @@ import {
     LinkVariantIcon,
     PencilOutlineIcon,
     PlayOutlineIcon,
+    PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
+
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
@@ -22,7 +24,8 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
-import appIcon from 'src/components/assets/app-bar-icon.png';
+import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
+
 import {useUpdateRun} from 'src/graphql/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';
@@ -33,6 +36,7 @@ import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/ass
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_icon';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -40,7 +44,6 @@ import {ToastStyle} from 'src/components/backstage/toast';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import {UserList} from './rhs_participants';
-import {RHSTitleText} from './rhs_title_common';
 
 interface PlaybookToDisplay {
     title: string
@@ -86,6 +89,26 @@ interface Props {
 
 const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
 
+const PoweredByPlaybooksFooter = () => (
+    <PoweredByFooter>
+        <PoweredByText>
+            <FormattedMessage
+                defaultMessage='POWERED BY{productName}'
+                values={{
+                    productName: (
+                        <ProductName>
+                            <PlaybooksProductIcon/>
+                            {/* product name; don't translate */}
+                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                            {'PLAYBOOKS'}
+                        </ProductName>
+                    ),
+                }}
+            />
+        </PoweredByText>
+    </PoweredByFooter>
+);
+
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
@@ -114,12 +137,12 @@ const RHSRunList = (props: Props) => {
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <ClipboardImage src={appIcon}/>
-                    <RHSTitleText>
-                        {/* product name; don't translate */}
+                    <TitleIcon src={CheckLogoIcon}/>
+                    <>
+                        {/* static title; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                        {'Playbooks'}
-                    </RHSTitleText>
+                        {'Checklists'}
+                    </>
                     <VerticalLine/>
                     <ChannelNameText>
                         {currentChannelName}
@@ -127,6 +150,7 @@ const RHSRunList = (props: Props) => {
                 </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
+                {!showNoRuns &&
                 <Header>
                     <DotMenu
                         dotMenuButton={TitleButton}
@@ -160,8 +184,8 @@ const RHSRunList = (props: Props) => {
                         data-testid='rhs-runlist-start-run'
                         onClick={handleStartRun}
                     >
-                        <PlayOutlineIcon size={14}/>
-                        {formatMessage({defaultMessage: 'Start run'})}
+                        <PlusIcon size={14}/>
+                        {formatMessage({defaultMessage: 'New checklist'})}
                     </StartRunButton>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
@@ -192,6 +216,7 @@ const RHSRunList = (props: Props) => {
                         />
                     </DotMenu>
                 </Header>
+                }
                 {showNoRuns &&
                     <>
                         <NoRunsWrapper>
@@ -203,6 +228,7 @@ const RHSRunList = (props: Props) => {
                                 onStartRunClicked={handleStartRun}
                             />
                         </NoRunsWrapper>
+                        <PoweredByPlaybooksFooter/>
                     </>
                 }
                 {!showNoRuns &&
@@ -231,12 +257,41 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
+                        <PoweredByPlaybooksFooter/>
                     </Scrollbars>
                 }
             </Container>
         </>
     );
 };
+
+const PoweredByFooter = styled.div`
+    padding: 0 16px;
+    margin-top: 10px;
+    margin-bottom: 30px;
+    text-align: center;
+`;
+
+const PoweredByText = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    line-height: 16px;
+`;
+
+const ProductName = styled.span`
+    display: inline-flex;
+    align-items: center;
+
+    i {
+        font-size: 16px;
+    }
+`;
 
 const Container = styled.div`
     display: flex;
@@ -305,7 +360,7 @@ const ChannelNameText = styled.div`
     text-overflow: ellipsis;
 `;
 
-const ClipboardImage = styled.img`
+const TitleIcon = styled.img`
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -681,8 +736,11 @@ interface NoRunsProps {
 const NoRuns = (props: NoRunsProps) => {
     const {formatMessage} = useIntl();
 
-    let text = formatMessage({defaultMessage: 'There are no checklists in progress linked to this channel'});
-    if (!props.active) {
+    let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
+
+    if (props.active && props.numFinished > 0) {
+        text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
+    } else if (!props.active) {
         text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
     }
 
@@ -693,8 +751,8 @@ const NoRuns = (props: NoRunsProps) => {
                 {text}
             </NoRunsText>
             <PrimaryButton onClick={props.onStartRunClicked}>
-                <PlayOutlineIcon size={18}/>
-                <FormattedMessage defaultMessage={'Start'}/>
+                <PlusIcon size={18}/>
+                <FormattedMessage defaultMessage={'New checklist'}/>
             </PrimaryButton>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton

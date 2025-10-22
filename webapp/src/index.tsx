@@ -13,7 +13,7 @@ import {FormattedMessage} from 'react-intl';
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import appIcon from 'src/components/assets/app-bar-icon.png';
+import appIcon from 'src/components/assets/app-bar-icon-check.svg';
 import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
