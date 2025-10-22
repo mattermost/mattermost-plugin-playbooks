@@ -23,7 +23,6 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
-import SearchInput from 'src/components/backstage/search_input';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 
@@ -244,10 +243,8 @@ const RunPlaybookModal = ({
         >
             <Body>
                 <PlaybooksSelector
-                    onCreatePlaybook={onCreatePlaybook}
                     teamID={teamId}
                     channelID={triggerChannelId || ''}
-                    onZeroCaseNoPlaybooks={() => {/* no-op */}}
                     searchTerm={searchTerm}
                     onSelectPlaybook={(id) => {
                         setSelectedPlaybookId(id);
@@ -505,8 +502,6 @@ const HeaderButtonWrapper = styled.div`
 const CreatePlaybookButton = styled.button`
     font-family: 'Open Sans';
 `;
-
-const SearchWrapper = styled.div`/* stylelint-disable no-empty-source */`;
 
 const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
     color: ${(props) => (props.invalid ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};

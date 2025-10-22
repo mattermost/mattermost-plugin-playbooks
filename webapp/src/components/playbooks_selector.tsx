@@ -3,9 +3,9 @@
 
 import React, {useMemo} from 'react';
 import styled, {css} from 'styled-components';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 import {ApolloProvider, useQuery} from '@apollo/client';
-import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
+import {BookLockOutlineIcon, BookOutlineIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 
@@ -14,11 +14,11 @@ import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {PresetTemplate, PresetTemplates} from 'src/components/templates/template_data';
-import SearchSvg from 'src/components/assets/illustrations/search_svg';
-import ClipboardChecklistSvg from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {PlaybookPermissionsParams, useHasPlaybookPermission} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {savePlaybook} from 'src/client';
+import {setPlaybookDefaults} from 'src/types/playbook';
 
 interface Props {
     teamID: string;
@@ -26,10 +26,9 @@ interface Props {
     searchTerm: string;
 
     /**
-     * Callback that will trigger if the conditions for zero case no results are met.
+     * Callback that will be triggered when a playbook is selected to run.
+     * For templates, a new playbook will be created first, then this callback is triggered with the new playbook ID.
      */
-    onZeroCaseNoPlaybooks: (zerocase: boolean) => void;
-    onCreatePlaybook: () => void;
     onSelectPlaybook: (playbookId: string) => void;
 }
 
@@ -109,32 +108,6 @@ const PlaybooksSelector = (props: Props) => {
             },
         ];
     }, [data?.yourPlaybooks, formatMessage, templatesList]);
-    const hasResults = Boolean(data?.allPlaybooks && data?.allPlaybooks.length > 0);
-
-    // Invoke callback to notify parent if the zero case triggered
-    if (!loading) {
-        props.onZeroCaseNoPlaybooks(props.searchTerm === '' && !hasResults);
-    }
-
-    if (!hasResults && !loading) {
-        return props.searchTerm === '' ? (
-            <ErrorContainer>
-                <ClipboardSvg/>
-                <ErrorTitle>{formatMessage({defaultMessage: 'Get started with Playbooks'})}</ErrorTitle>
-                <ErrorSubTitle>{formatMessage({defaultMessage: 'Playbooks are configurable checklists that define a repeatable process for teams to achieve specific and predictable outcomes'})}</ErrorSubTitle>
-                <PrimaryButton onClick={props.onCreatePlaybook}>
-                    <Plus size={16}/>
-                    <FormattedMessage defaultMessage='Create new playbook'/>
-                </PrimaryButton>
-            </ErrorContainer>
-        ) : (
-            <ErrorContainer>
-                <SearchSvg/>
-                <ErrorTitle>{formatMessage({defaultMessage: 'No results for "{searchTerm}"'}, {searchTerm: props.searchTerm})}</ErrorTitle>
-                <ErrorSubTitle>{formatMessage({defaultMessage: 'Please check spelling or try another search'})}</ErrorSubTitle>
-            </ErrorContainer>
-        );
-    }
 
     if (loading) {
         return <LoadingContainer><LoadingSpinner/></LoadingContainer>;
@@ -162,6 +135,7 @@ const PlaybooksSelector = (props: Props) => {
                                         <TemplateRow
                                             key={`template-${template.title}`}
                                             template={template}
+                                            teamID={props.teamID}
                                             onSelectPlaybook={props.onSelectPlaybook}
                                         />
                                     ))
@@ -219,12 +193,18 @@ const PlaybookRow = (props: PlaybookRowProps) => {
             </ItemCenter>
             <ButtonWrappper className='modal-list-cta'>
                 {hasPermission ? (
-                    <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
+                    <PrimaryButton>
+                        <PlayOutlineIcon size={18}/>
+                        {formatMessage({defaultMessage: 'Run'})}
+                    </PrimaryButton>
                 ) : (
                     <SecondaryButton
                         disabled={true}
                         title={'You do not have permissions'}
-                    >{formatMessage({defaultMessage: 'Select'})}</SecondaryButton>
+                    >
+                        <PlayOutlineIcon size={18}/>
+                        {formatMessage({defaultMessage: 'Run'})}
+                    </SecondaryButton>
                 )}
             </ButtonWrappper>
         </PlaybookItem>
@@ -232,13 +212,26 @@ const PlaybookRow = (props: PlaybookRowProps) => {
 };
 
 interface TemplateRowProps {
-    onSelectPlaybook: (playbookId: string) => void;
     template: PresetTemplate;
+    teamID: string;
+    onSelectPlaybook: (playbookId: string) => void;
 }
 
 const TemplateRow = (props: TemplateRowProps) => {
     const {formatMessage} = useIntl();
     const template = props.template;
+
+    const handleCreateFromTemplateAndRun = async () => {
+        // Create the playbook from template (without navigation)
+        const pb = setPlaybookDefaults(template.template);
+        pb.team_id = props.teamID;
+        const data = await savePlaybook(pb);
+
+        if (data?.id) {
+            // Trigger the run flow with the newly created playbook
+            props.onSelectPlaybook(data.id);
+        }
+    };
 
     const iconProps = {
         size: 18,
@@ -247,7 +240,7 @@ const TemplateRow = (props: TemplateRowProps) => {
     return (
         <PlaybookItem
             $hasPermission={true}
-            onClick={() => props.onSelectPlaybook(template.template.id || '')}
+            onClick={handleCreateFromTemplateAndRun}
         >
             <ItemIcon>
                 <BookOutlineIcon {...iconProps}/>
@@ -262,7 +255,10 @@ const TemplateRow = (props: TemplateRowProps) => {
                 </ItemSubTitle>
             </ItemCenter>
             <ButtonWrappper className='modal-list-cta'>
-                <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
+                <PrimaryButton>
+                    <PlayOutlineIcon size={18}/>
+                    {formatMessage({defaultMessage: 'Run'})}
+                </PrimaryButton>
             </ButtonWrappper>
         </PlaybookItem>
     );
@@ -359,35 +355,12 @@ const ButtonWrappper = styled.div`
     display: none;
     margin-right: 10px;
     margin-left: auto;
-`;
 
-const ErrorContainer = styled(Container)`
-    max-width: 450px;
-    align-items: center;
-    align-self: center;
-    justify-content: center;
-    gap: 15px;
-`;
-
-const ErrorTitle = styled.div`
-    color: var(--center-channel-color);
-    font-size: 18px;
-    font-weight: 600;
-    text-align: center;
-`;
-
-const ErrorSubTitle = styled(ErrorTitle)`
-    font-size: 14px;
-    font-weight: 400;
-`;
-
-const Plus = styled(PlusIcon)`
-    margin-right: 5px;
-`;
-
-const ClipboardSvg = styled(ClipboardChecklistSvg)`
-    width:150px;
-    height:150px;
+    button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
 `;
 
 const LoadingContainer = styled(Container)`
