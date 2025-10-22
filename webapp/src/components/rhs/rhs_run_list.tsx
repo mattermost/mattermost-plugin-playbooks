@@ -25,12 +25,13 @@ import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {useUpdateRun} from 'src/graphql/hooks';
+import {createPlaybookRun} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
-import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
@@ -113,6 +114,7 @@ const RHSRunList = (props: Props) => {
     const dispatch = useDispatch();
     const currentTeamId = useSelector(getCurrentTeamId);
     const currentChannelId = useSelector(getCurrentChannelId);
+    const currentUserId = useSelector(getCurrentUserId);
     const [loadingMore, setLoadingMore] = useState(false);
     const debouncedSetLoadingMore = useMemo(() => debounce(setLoadingMore, 100), [setLoadingMore]);
     const getMore = async () => {
@@ -130,6 +132,34 @@ const RHSRunList = (props: Props) => {
             triggerChannelId: currentChannelId,
             teamId: currentTeamId,
         }));
+    };
+
+    const handleCreateBlankChecklist = async () => {
+        try {
+            const newRun = await createPlaybookRun(
+                '', // No playbook ID for blank checklist
+                currentUserId,
+                currentTeamId,
+                formatMessage({defaultMessage: 'Untitled checklist'}),
+                '',
+                currentChannelId,
+                undefined
+            );
+
+            // Call the onRunCreated callback with the new run
+            props.onRunCreated(newRun.id, newRun.channel_id, {
+                playbookId: '',
+                channelMode: 'link_existing_channel',
+                hasPlaybookChanged: false,
+                hasNameChanged: false,
+                hasSummaryChanged: false,
+                hasChannelModeChanged: false,
+                hasChannelIdChanged: false,
+            });
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to create blank checklist:', error);
+        }
     };
 
     return (
@@ -179,13 +209,35 @@ const RHSRunList = (props: Props) => {
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    <StartRunButton
-                        data-testid='rhs-runlist-start-run'
-                        onClick={handleStartRun}
+                    <DotMenu
+                        dotMenuButton={StartRunDropdownButton}
+                        placement='bottom-start'
+                        icon={
+                            <>
+                                <PlusIcon size={18}/>
+                                {formatMessage({defaultMessage: 'New Checklist'})}
+                            </>
+                        }
                     >
-                        <PlusIcon size={14}/>
-                        {formatMessage({defaultMessage: ' Create a checklist'})}
-                    </StartRunButton>
+                        <CreateChecklistMenuItem
+                            onClick={handleCreateBlankChecklist}
+                            data-testid='create-blank-checklist'
+                        >
+                            <MenuItemIcon>
+                                <CheckAllIcon size={18}/>
+                            </MenuItemIcon>
+                            <FormattedMessage defaultMessage='Blank'/>
+                        </CreateChecklistMenuItem>
+                        <CreateChecklistMenuItem
+                            onClick={handleStartRun}
+                            data-testid='create-from-playbook'
+                        >
+                            <MenuItemIcon>
+                                <PlayOutlineIcon size={18}/>
+                            </MenuItemIcon>
+                            <FormattedMessage defaultMessage='From playbook'/>
+                        </CreateChecklistMenuItem>
+                    </DotMenu>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
@@ -367,17 +419,45 @@ const TitleIcon = styled(CheckCircleOutlineIcon)`
     color: var(--button-bg);
 `;
 
-const StartRunButton = styled(SecondaryButton)`
+const StartRunDropdownButton = styled(TitleButton)`
+    && {
+        display: flex;
+        height: 100%;
+        flex-direction: row;
+        align-items: center;
+        padding: 8px 16px;
+        border: 0;
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+        font-size: 12px;
+        font-weight: 600;
+        gap: 4px;
+        border-radius: 4px;
+
+        &:hover {
+            background: rgba(var(--button-bg-rgb), 0.12);
+        }
+
+        &:active {
+            background: rgba(var(--button-bg-rgb), 0.16);
+        }
+    }
+`;
+
+const CreateChecklistMenuItem = styled(DropdownMenuItem)`
     display: flex;
-    height: 100%;
-    flex-direction: row;
-    padding: 8px 16px;
-    border: 0;
-    background: rgba(var(--button-bg-rgb), 0.08);
-    color: var(--button-bg);
-    font-size: 12px;
-    font-weight: 600;
-    gap: 6px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    min-height: 40px;
+`;
+
+const MenuItemIcon = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    flex-shrink: 0;
 `;
 
 const SortDotMenuButton = styled(DotMenuButton)`
