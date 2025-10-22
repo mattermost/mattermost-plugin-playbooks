@@ -195,7 +195,16 @@ export function displayPlaybookCreateModal(props: PlaybookCreateModalProps) {
 
 export function displayPlaybookCreateWithAIModal(props: PlaybookCreateWithAIModalProps) {
     return async (dispatch: Dispatch<AnyAction>) => {
-        dispatch(modals.openModal(makePlaybookCreateWithAIModal(props)));
+        // First open the regular playbook creation modal
+        dispatch(modals.openModal(makePlaybookCreateModal({
+            onPlaybookCreated: (playbookId: string) => {
+                // When the playbook is created, close the regular modal and open the AI modal
+                dispatch(modals.openModal(makePlaybookCreateWithAIModal({
+                    ...props,
+                    initialPlaybookId: playbookId,
+                })));
+            },
+        })));
     };
 }
 

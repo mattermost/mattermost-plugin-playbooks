@@ -9,9 +9,16 @@ import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {useHasTeamPermission, usePlaybooksRouting} from 'src/hooks';
-import {Playbook} from 'src/types/playbook';
+import {Playbook, DraftPlaybookWithChecklist, emptyPlaybook} from 'src/types/playbook';
+import {PlaybookRole} from 'src/types/permissions';
+import {savePlaybook} from 'src/client';
+import {getPlaybooksGraphQLClient} from 'src/graphql_client';
+import {PlaybookLhsDocument} from 'src/graphql/generated/graphql';
+import {PresetTemplates} from 'src/components/templates/template_data';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {BaseInput} from './assets/inputs';
 import PublicPrivateSelector from './backstage/public_private_selector';
@@ -32,6 +39,7 @@ export type PlaybookCreateModalProps = {
     startingTemplate?: string
     startingDescription?: string
     startingPublic?: boolean
+    onPlaybookCreated?: (playbookId: string) => void
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 const SizedGenericModal = styled(GenericModal)`
@@ -47,10 +55,11 @@ const Body = styled.div`
 	}
 `;
 
-const PlaybookCreateModal = ({startingName, startingTemplate, startingDescription, startingPublic, ...modalProps}: PlaybookCreateModalProps) => {
+const PlaybookCreateModal = ({startingName, startingTemplate, startingDescription, startingPublic, onPlaybookCreated, ...modalProps}: PlaybookCreateModalProps) => {
     const {formatMessage} = useIntl();
     const [name, setName] = useState(startingName);
     const teamId = useSelector(getCurrentTeamId);
+    const currentUserId = useSelector(getCurrentUserId);
     const [template, setTemplate] = useState(startingTemplate);
     const [description, setDescription] = useState(startingDescription);
     const [makePublic, setMakePublic] = useState(startingPublic ?? true);
@@ -63,6 +72,45 @@ const PlaybookCreateModal = ({startingName, startingTemplate, startingDescriptio
 
     const requirementsMet = (teamId !== '');
 
+    const handleCreate = async () => {
+        if (onPlaybookCreated) {
+            // When there's a callback, we need to create the playbook directly and return its ID
+            const initialPlaybook: DraftPlaybookWithChecklist = {
+                ...(PresetTemplates.find((t) => t.title === template)?.template || emptyPlaybook()),
+                reminder_timer_default_seconds: 86400,
+                members: [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}],
+                team_id: teamId || '',
+            };
+
+            if (name) {
+                initialPlaybook.title = name;
+            }
+            if (description) {
+                initialPlaybook.description = description;
+            }
+            if (!initialPlaybook.title) {
+                initialPlaybook.title = 'Untitled Playbook';
+            }
+
+            initialPlaybook.public = Boolean(makePublicWithPermission);
+
+            const data = await savePlaybook(initialPlaybook);
+            getPlaybooksGraphQLClient().refetchQueries({
+                include: [PlaybookLhsDocument],
+            });
+
+            if (data?.id) {
+                // Close this modal first
+                modalProps.onHide?.();
+                // Then call the callback to open the next modal
+                onPlaybookCreated(data.id);
+            }
+        } else {
+            // Normal flow - use the routing function
+            await create({teamId, template, name, description, public: makePublicWithPermission});
+        }
+    };
+
     return (
         <SizedGenericModal
             id={ID}
@@ -71,10 +119,10 @@ const PlaybookCreateModal = ({startingName, startingTemplate, startingDescriptio
             confirmButtonText={formatMessage({defaultMessage: 'Create playbook'})}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             isConfirmDisabled={!requirementsMet}
-            handleConfirm={() => create({teamId, template, name, description, public: makePublicWithPermission})}
+            handleConfirm={handleCreate}
             showCancel={true}
             autoCloseOnCancelButton={true}
-            autoCloseOnConfirmButton={true}
+            autoCloseOnConfirmButton={!onPlaybookCreated}
         >
             <Body>
                 <PublicPrivateSelector

@@ -15,11 +15,10 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useHistory} from 'react-router-dom';
 
 import {Checklist, DraftPlaybookWithChecklist, setPlaybookDefaults} from 'src/types/playbook';
-import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
+import GenericModal from 'src/components/widgets/generic_modal';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
-import {sendAIPlaybookMessage, AIPost, savePlaybook} from 'src/client';
+import {sendAIPlaybookMessage, AIPost, savePlaybook, clientFetchPlaybook} from 'src/client';
 import {navigateToUrl} from 'src/browser_routing';
-import {BaseInput} from 'src/components/assets/inputs';
 
 const ID = 'playbooks_create_with_ai';
 
@@ -30,6 +29,7 @@ export const makePlaybookCreateWithAIModal = (props: PlaybookCreateWithAIModalPr
 });
 
 export type PlaybookCreateWithAIModalProps = {
+    initialPlaybookId?: string;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 interface Message {
@@ -177,7 +177,7 @@ const SAMPLE_CHECKLISTS: Checklist[] = [
     },
 ];
 
-const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalProps) => {
+const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookCreateWithAIModalProps) => {
     const {formatMessage} = useIntl();
     const history = useHistory();
     const currentUserId = useSelector(getCurrentUserId);
@@ -192,6 +192,37 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
     const [error, setError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [mockChannelId] = useState('mock_ai_channel_' + Date.now());
+    const [existingPlaybook, setExistingPlaybook] = useState<DraftPlaybookWithChecklist | null>(null);
+
+    // Load existing playbook if an ID is provided
+    useEffect(() => {
+        if (initialPlaybookId) {
+            clientFetchPlaybook(initialPlaybookId).then((playbook) => {
+                if (playbook) {
+                    setExistingPlaybook(playbook);
+                    setPlaybookName(playbook.title);
+                    setChecklists(playbook.checklists);
+
+                    // Add a system message to inform the AI about the existing playbook
+                    const playbookContext = {
+                        title: playbook.title,
+                        description: playbook.description,
+                        checklists: playbook.checklists,
+                    };
+
+                    const contextMessage: Message = {
+                        role: 'assistant',
+                        content: `I can see you've created a playbook${playbook.title ? ` called "${playbook.title}"` : ''}${playbook.checklists.length > 0 ? ` with ${playbook.checklists.length} existing checklist(s)` : ''}. I'm ready to help you enhance it! You can ask me to:\n\n- Add new tasks or checklists\n- Modify existing tasks\n- Reorganize the structure\n- Suggest improvements\n\nWhat would you like to do?`,
+                        timestamp: Date.now(),
+                    };
+                    setMessages([contextMessage]);
+                }
+            }).catch((err) => {
+                console.error('Failed to load playbook:', err);
+                setError('Failed to load playbook');
+            });
+        }
+    }, [initialPlaybookId]);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -305,10 +336,33 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
 
         try {
             // Build conversation history for AI request
-            const conversationHistory: AIPost[] = [...messages, userMessage].map((msg) => ({
+            let conversationHistory: AIPost[] = [...messages, userMessage].map((msg) => ({
                 role: msg.role,
                 message: msg.content,
             }));
+
+            // If this is the first user message and we have an existing playbook,
+            // prepend a system message with the playbook context
+            if (existingPlaybook && messages.length <= 1) {
+                const playbookContextJson = JSON.stringify({
+                    title: existingPlaybook.title,
+                    description: existingPlaybook.description,
+                    checklists: existingPlaybook.checklists,
+                }, null, 2);
+
+                const systemContext: AIPost = {
+                    role: 'user',
+                    message: `Here is the current playbook structure that needs to be enhanced:\n\n\`\`\`json\n${playbookContextJson}\n\`\`\`\n\nNow, the user's request: ${content}`,
+                };
+
+                // Replace the first user message with the enhanced version
+                conversationHistory = conversationHistory.map((msg, idx) => {
+                    if (idx === conversationHistory.length - 1) {
+                        return systemContext;
+                    }
+                    return msg;
+                });
+            }
 
             // Send request to AI service
             const aiResponse = await sendAIPlaybookMessage(conversationHistory);
@@ -370,57 +424,70 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
         setError(null);
 
         try {
-            // Create a draft playbook with the AI-generated checklists
-            const draftPlaybook: DraftPlaybookWithChecklist = {
-                title: playbookName,
-                description: 'Playbook created with AI assistance',
-                team_id: currentTeamId,
-                public: true,
-                create_public_playbook_run: false,
-                delete_at: 0,
-                num_stages: checklists.length,
-                num_steps: checklists.reduce((sum, cl) => sum + cl.items.length, 0),
-                num_runs: 0,
-                num_actions: 0,
-                last_run_at: 0,
-                checklists,
-                members: [],
-                default_playbook_member_role: 'member',
-                reminder_message_template: '',
-                reminder_timer_default_seconds: 7 * 24 * 60 * 60,
-                status_update_enabled: true,
-                invited_user_ids: [],
-                invited_group_ids: [],
-                invite_users_enabled: false,
-                default_owner_id: '',
-                default_owner_enabled: false,
-                broadcast_channel_ids: [],
-                broadcast_enabled: false,
-                webhook_on_creation_urls: [],
-                webhook_on_creation_enabled: false,
-                webhook_on_status_update_urls: [],
-                webhook_on_status_update_enabled: false,
-                message_on_join: '',
-                message_on_join_enabled: false,
-                retrospective_reminder_interval_seconds: 0,
-                retrospective_template: '',
-                retrospective_enabled: false,
-                signal_any_keywords_enabled: false,
-                signal_any_keywords: [],
-                categorize_channel_enabled: false,
-                category_name: '',
-                run_summary_template_enabled: false,
-                run_summary_template: '',
-                channel_name_template: '',
-                channel_id: '',
-                channel_mode: 'create_new_channel',
-                create_channel_member_on_new_participant: true,
-                remove_channel_member_on_removed_participant: true,
-                metrics: [],
-                is_favorite: false,
-                active_runs: 0,
-                propertyFields: [],
-            };
+            let draftPlaybook: DraftPlaybookWithChecklist;
+
+            if (existingPlaybook) {
+                // Update the existing playbook with AI-generated checklists
+                draftPlaybook = {
+                    ...existingPlaybook,
+                    title: playbookName,
+                    checklists,
+                    num_stages: checklists.length,
+                    num_steps: checklists.reduce((sum, cl) => sum + cl.items.length, 0),
+                };
+            } else {
+                // Create a draft playbook with the AI-generated checklists
+                draftPlaybook = {
+                    title: playbookName,
+                    description: 'Playbook created with AI assistance',
+                    team_id: currentTeamId,
+                    public: true,
+                    create_public_playbook_run: false,
+                    delete_at: 0,
+                    num_stages: checklists.length,
+                    num_steps: checklists.reduce((sum, cl) => sum + cl.items.length, 0),
+                    num_runs: 0,
+                    num_actions: 0,
+                    last_run_at: 0,
+                    checklists,
+                    members: [],
+                    default_playbook_member_role: 'member',
+                    reminder_message_template: '',
+                    reminder_timer_default_seconds: 7 * 24 * 60 * 60,
+                    status_update_enabled: true,
+                    invited_user_ids: [],
+                    invited_group_ids: [],
+                    invite_users_enabled: false,
+                    default_owner_id: '',
+                    default_owner_enabled: false,
+                    broadcast_channel_ids: [],
+                    broadcast_enabled: false,
+                    webhook_on_creation_urls: [],
+                    webhook_on_creation_enabled: false,
+                    webhook_on_status_update_urls: [],
+                    webhook_on_status_update_enabled: false,
+                    message_on_join: '',
+                    message_on_join_enabled: false,
+                    retrospective_reminder_interval_seconds: 0,
+                    retrospective_template: '',
+                    retrospective_enabled: false,
+                    signal_any_keywords_enabled: false,
+                    signal_any_keywords: [],
+                    categorize_channel_enabled: false,
+                    category_name: '',
+                    run_summary_template_enabled: false,
+                    run_summary_template: '',
+                    channel_name_template: '',
+                    channel_id: '',
+                    channel_mode: 'create_new_channel',
+                    create_channel_member_on_new_participant: true,
+                    remove_channel_member_on_removed_participant: true,
+                    metrics: [],
+                    is_favorite: false,
+                    active_runs: 0,
+                    propertyFields: [],
+                };
+            }
 
             // Set defaults for any missing fields
             const playbookWithDefaults = setPlaybookDefaults(draftPlaybook);
@@ -429,9 +496,10 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
             const result = await savePlaybook(playbookWithDefaults);
 
             // Close the modal and navigate to the newly created playbook
-            if (result.id) {
+            const playbookId = result.id || existingPlaybook?.id;
+            if (playbookId) {
                 modalProps.onHide?.();
-                navigateToUrl(`/playbooks/playbooks/${result.id}`);
+                navigateToUrl(`/playbooks/playbooks/${playbookId}`);
             }
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to create playbook';
@@ -440,14 +508,22 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
         }
     };
 
+    const modalHeaderText = existingPlaybook
+        ? formatMessage({defaultMessage: 'Enhance playbook with AI'})
+        : formatMessage({defaultMessage: 'Create playbook with AI'});
+
+    const confirmButtonText = isCreating
+        ? formatMessage({defaultMessage: 'Saving...'})
+        : formatMessage({defaultMessage: 'Save playbook'});
+
     return (
         <StyledGenericModal
             id={ID}
-            modalHeaderText={formatMessage({defaultMessage: 'Create playbook with AI'})}
+            modalHeaderText={modalHeaderText}
             {...modalProps}
-            confirmButtonText={isCreating ? formatMessage({defaultMessage: 'Creating...'}) : formatMessage({defaultMessage: 'Create playbook'})}
+            confirmButtonText={confirmButtonText}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-            isConfirmDisabled={checklists.length === 0 || !playbookName.trim() || isCreating}
+            isConfirmDisabled={checklists.length === 0 || isCreating}
             handleConfirm={handleCreatePlaybook}
             showCancel={true}
             autoCloseOnCancelButton={true}
@@ -528,17 +604,8 @@ const PlaybookCreateWithAIModal = ({...modalProps}: PlaybookCreateWithAIModalPro
                 </LeftPanel>
                 <RightPanel>
                     <TaskListHeader>
-                        {formatMessage({defaultMessage: 'Generated Tasks'})}
+                        {playbookName || formatMessage({defaultMessage: 'Playbook Tasks'})}
                     </TaskListHeader>
-                    <NameInputSection>
-                        <InlineLabel>{formatMessage({defaultMessage: 'Playbook name'})}</InlineLabel>
-                        <BaseInput
-                            type='text'
-                            value={playbookName}
-                            onChange={(e) => setPlaybookName(e.target.value)}
-                            placeholder={formatMessage({defaultMessage: 'Enter playbook name'})}
-                        />
-                    </NameInputSection>
                     <TaskListContainer>
                         {checklists.length === 0 ? (
                             <EmptyTaskState>
@@ -643,16 +710,6 @@ const TaskListHeader = styled.div`
     font-size: 14px;
     color: var(--center-channel-color);
     flex-shrink: 0; /* Prevent header from shrinking */
-`;
-
-const NameInputSection = styled.div`
-    padding: 16px 20px;
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    flex-shrink: 0;
-
-    ${InlineLabel} {
-        margin-bottom: 8px;
-    }
 `;
 
 const MessagesContainer = styled.div`
