@@ -48,7 +48,7 @@ const AssignTo = (props: AssignedToProps) => {
                 userGroups={{
                     subsetUserIds: props.participantUserIds,
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
-                    subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                    subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
                 }}
                 getAllUsers={async () => {
                     return profilesInTeam;
@@ -79,7 +79,7 @@ const AssignTo = (props: AssignedToProps) => {
                 userGroups={{
                     subsetUserIds: props.participantUserIds,
                     defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
-                    subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                    subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
                 }}
                 placeholder={
                     <PlaceholderDiv>
