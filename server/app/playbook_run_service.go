@@ -1737,7 +1737,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunsForChannelByUser(channelID strin
 			PerPage:   1000,
 			Sort:      SortByCreateAt,
 			Direction: DirectionDesc,
-			Types:     []string{RunTypePlaybook},
+			Types:     []string{RunTypePlaybook, RunTypeChannelChecklist},
 		},
 	)
 
