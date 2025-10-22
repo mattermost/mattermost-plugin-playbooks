@@ -9,7 +9,6 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
     BookOutlineIcon,
     CheckAllIcon,
-    CheckCircleOutlineIcon,
     CheckIcon,
     LinkVariantIcon,
     PencilOutlineIcon,
@@ -833,7 +832,7 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton onClick={props.onStartRunClicked}>
+            <PrimaryButton onClick={props.onCreateChecklistClicked}>
                 <PlusIcon size={18}/>
                 <FormattedMessage defaultMessage={'New checklist'}/>
             </PrimaryButton>

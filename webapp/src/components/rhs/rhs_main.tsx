@@ -177,7 +177,7 @@ const RightHandSidebar = () => {
     const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
-    const {playbooks, isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
+    const {isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
 
     // If there is only one active run in this channel select it.
     useEffect(() => {
@@ -190,7 +190,7 @@ const RightHandSidebar = () => {
         if (skipNextDetailNav) {
             setSkipNextDetailNav(false);
         }
-    }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
+    }, [currentChannelId, currentRunId, fetchedRuns.runsInProgress, skipNextDetailNav]);
 
     // Reset the list options on channel change
     useEffect(() => {
