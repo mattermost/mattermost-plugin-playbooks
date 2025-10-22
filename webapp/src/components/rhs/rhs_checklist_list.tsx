@@ -14,6 +14,7 @@ import {DateTime} from 'luxon';
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {
     finishRun,
     setAllChecklistsCollapsedState,
@@ -218,42 +219,44 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
             onMouseLeave={() => setShowMenu(false)}
             parentContainer={parentContainer}
         >
-            <MainTitleBG numChecklists={checklists.length}>
-                <MainTitle parentContainer={parentContainer}>
-                    {title}
-                    {
-                        overdueTasksNum > 0 &&
-                        <OverdueTasksToggle
-                            data-testid='overdue-tasks-filter'
-                            toggled={checklistItemsFilter.overdueOnly}
-                            onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
-                        >
-                            {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
-                        </OverdueTasksToggle>
-                    }
-                    {
-                        showMenu &&
-                        <HoverRow>
-                            <ExpandHoverButton
-                                title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
-                                className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                                onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
-                            />
-                            <MultiCheckbox
-                                options={filterOptions}
-                                onselect={selectOption}
-                                placement='bottom-end'
-                                dotMenuButton={StyledDotMenuButton}
-                                icon={
-                                    <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
-                                        <i className='icon icon-filter-variant'/>
-                                    </IconWrapper>
-                                }
-                            />
-                        </HoverRow>
-                    }
-                </MainTitle>
-            </MainTitleBG>
+            {playbookRun?.type !== PlaybookRunType.ChannelChecklist && (
+                <MainTitleBG numChecklists={checklists.length}>
+                    <MainTitle parentContainer={parentContainer}>
+                        {title}
+                        {
+                            overdueTasksNum > 0 &&
+                            <OverdueTasksToggle
+                                data-testid='overdue-tasks-filter'
+                                toggled={checklistItemsFilter.overdueOnly}
+                                onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
+                            >
+                                {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
+                            </OverdueTasksToggle>
+                        }
+                        {
+                            showMenu &&
+                            <HoverRow>
+                                <ExpandHoverButton
+                                    title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
+                                    className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                                    onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
+                                />
+                                <MultiCheckbox
+                                    options={filterOptions}
+                                    onselect={selectOption}
+                                    placement='bottom-end'
+                                    dotMenuButton={StyledDotMenuButton}
+                                    icon={
+                                        <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
+                                            <i className='icon icon-filter-variant'/>
+                                        </IconWrapper>
+                                    }
+                                />
+                            </HoverRow>
+                        }
+                    </MainTitle>
+                </MainTitleBG>
+            )}
             <ChecklistList
                 playbookRun={playbookRun}
                 isReadOnly={readOnly}

@@ -163,6 +163,10 @@ const RHSRunList = (props: Props) => {
         }
     };
 
+    const handleGoToPlaybooks = () => {
+        navigateToPluginUrl('/playbooks/playbooks');
+    };
+
     return (
         <>
             <RHSTitleRemoteRender>
@@ -210,35 +214,40 @@ const RHSRunList = (props: Props) => {
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    <DotMenu
-                        dotMenuButton={StartRunDropdownButton}
-                        placement='bottom-start'
-                        icon={
-                            <>
-                                <PlusIcon size={18}/>
-                                {formatMessage({defaultMessage: 'New Checklist'})}
-                            </>
-                        }
-                    >
-                        <CreateChecklistMenuItem
+                    <SegmentedButtonContainer>
+                        <PrimaryActionButton
                             onClick={handleCreateBlankChecklist}
                             data-testid='create-blank-checklist'
                         >
-                            <MenuItemIcon>
-                                <CheckAllIcon size={18}/>
-                            </MenuItemIcon>
-                            <FormattedMessage defaultMessage='Blank'/>
-                        </CreateChecklistMenuItem>
-                        <CreateChecklistMenuItem
-                            onClick={handleStartRun}
-                            data-testid='create-from-playbook'
+                            <PlusIcon size={18}/>
+                            {formatMessage({defaultMessage: 'New checklist'})}
+                        </PrimaryActionButton>
+                        <DotMenu
+                            dotMenuButton={DropdownTriggerButton}
+                            placement='bottom-start'
+                            icon={<i className={'icon icon-chevron-down'}/>}
                         >
-                            <MenuItemIcon>
-                                <PlayOutlineIcon size={18}/>
-                            </MenuItemIcon>
-                            <FormattedMessage defaultMessage='From playbook'/>
-                        </CreateChecklistMenuItem>
-                    </DotMenu>
+                            <CreateChecklistMenuItem
+                                onClick={handleStartRun}
+                                data-testid='create-from-playbook'
+                            >
+                                <MenuItemIcon>
+                                    <PlayOutlineIcon size={18}/>
+                                </MenuItemIcon>
+                                <FormattedMessage defaultMessage='Run a playbook'/>
+                            </CreateChecklistMenuItem>
+                            <Separator/>
+                            <CreateChecklistMenuItem
+                                onClick={handleGoToPlaybooks}
+                                data-testid='go-to-playbooks'
+                            >
+                                <MenuItemIcon>
+                                    <PlaybooksProductIcon/>
+                                </MenuItemIcon>
+                                <FormattedMessage defaultMessage='Go to Playbooks'/>
+                            </CreateChecklistMenuItem>
+                        </DotMenu>
+                    </SegmentedButtonContainer>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
@@ -420,20 +429,52 @@ const TitleIcon = styled.img`
     color: var(--button-bg);
 `;
 
-const StartRunDropdownButton = styled(TitleButton)`
+const SegmentedButtonContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 32px;
+    border-radius: 4px;
+`;
+
+const PrimaryActionButton = styled.button`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px;
+    border: 0;
+    background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
+    font-size: 12px;
+    font-weight: 600;
+    gap: 4px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-right: 1px solid rgba(var(--button-bg-rgb), 0.16);
+    cursor: pointer;
+    height: 100%;
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.12);
+    }
+
+    &:active {
+        background: rgba(var(--button-bg-rgb), 0.16);
+    }
+`;
+
+const DropdownTriggerButton = styled(TitleButton)`
     && {
         display: flex;
-        height: 100%;
-        flex-direction: row;
         align-items: center;
-        padding: 8px 16px;
-        border: 0;
+        justify-content: center;
+        padding: 6px 2px;
+        width: 24px;
+        height: 100%;
+        border-radius: 0 4px 4px 0;
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
         font-size: 12px;
-        font-weight: 600;
-        gap: 4px;
-        border-radius: 4px;
 
         &:hover {
             background: rgba(var(--button-bg-rgb), 0.12);
@@ -441,6 +482,10 @@ const StartRunDropdownButton = styled(TitleButton)`
 
         &:active {
             background: rgba(var(--button-bg-rgb), 0.16);
+        }
+
+        i {
+            font-size: 18px;
         }
     }
 `;
@@ -459,6 +504,11 @@ const MenuItemIcon = styled.div`
     justify-content: center;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     flex-shrink: 0;
+    width: 24px;
+
+    i {
+        font-size: 18px;
+    }
 `;
 
 const SortDotMenuButton = styled(DotMenuButton)`
