@@ -276,7 +276,7 @@ const RHSRunList = (props: Props) => {
                                 numInProgress={props.numInProgress}
                                 numFinished={props.numFinished}
                                 setOptions={props.setOptions}
-                                onStartRunClicked={handleStartRun}
+                                onCreateChecklistClicked={handleCreateBlankChecklist}
                             />
                         </NoRunsWrapper>
                         <PoweredByPlaybooksFooter/>
@@ -810,7 +810,7 @@ interface NoRunsProps {
     active: boolean
     numInProgress: number;
     numFinished: number;
-    onStartRunClicked: () => void;
+    onCreateChecklistClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
 }
 
@@ -828,7 +828,7 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton onClick={props.onStartRunClicked}>
+            <PrimaryButton onClick={props.onCreateChecklistClicked}>
                 <PlusIcon size={18}/>
                 <FormattedMessage defaultMessage={'Create a checklist'}/>
             </PrimaryButton>
