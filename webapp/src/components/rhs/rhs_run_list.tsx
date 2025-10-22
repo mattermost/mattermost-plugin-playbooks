@@ -99,7 +99,7 @@ const RHSRunList = (props: Props) => {
         debouncedSetLoadingMore(false);
     };
     const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
-    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
+    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
 
     const handleStartRun = () => {
@@ -141,7 +141,7 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                         >
-                            {formatMessage({defaultMessage: 'Runs in progress'})}
+                            {formatMessage({defaultMessage: 'In progress'})}
                             <FilterMenuNumericValue>
                                 {props.numInProgress}
                             </FilterMenuNumericValue>
@@ -149,7 +149,7 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                         >
-                            {formatMessage({defaultMessage: 'Finished runs'})}
+                            {formatMessage({defaultMessage: 'Finished'})}
                             <FilterMenuNumericValue>
                                 {props.numFinished}
                             </FilterMenuNumericValue>
@@ -168,7 +168,7 @@ const RHSRunList = (props: Props) => {
                         placement='bottom-start'
                         icon={<SortAscendingIcon size={18}/>}
                     >
-                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort runs by'})}</SortMenuTitle>
+                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
                         <SortMenuItem
                             label={formatMessage({defaultMessage: 'Recently created'})}
                             sortItem={'create_at'}
@@ -681,9 +681,9 @@ interface NoRunsProps {
 const NoRuns = (props: NoRunsProps) => {
     const {formatMessage} = useIntl();
 
-    let text = formatMessage({defaultMessage: 'There are no runs in progress linked to this channel'});
+    let text = formatMessage({defaultMessage: 'There are no checklists in progress linked to this channel'});
     if (!props.active) {
-        text = formatMessage({defaultMessage: 'There are no finished runs linked to this channel'});
+        text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
     }
 
     return (
@@ -694,20 +694,20 @@ const NoRuns = (props: NoRunsProps) => {
             </NoRunsText>
             <PrimaryButton onClick={props.onStartRunClicked}>
                 <PlayOutlineIcon size={18}/>
-                <FormattedMessage defaultMessage={'Start a run'}/>
+                <FormattedMessage defaultMessage={'Start'}/>
             </PrimaryButton>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                 >
-                    {formatMessage({defaultMessage: 'View finished runs'})}
+                    {formatMessage({defaultMessage: 'View finished'})}
                 </ViewOtherRunsButton>
             }
             {!props.active && props.numInProgress > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                 >
-                    {formatMessage({defaultMessage: 'View in progress runs'})}
+                    {formatMessage({defaultMessage: 'View in progress'})}
                 </ViewOtherRunsButton>
             }
         </NoActiveRunsContainer>
@@ -762,29 +762,29 @@ const ContextMenu = (props: ContextMenuProps) => {
             <StyledDropdownMenuItem
                 onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.Playbook, props.onUpdateChannel))}
                 disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
+                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this'})}
             >
                 <IconWrapper>
                     <LinkVariantIcon size={22}/>
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Link run to a different channel'/>
+                <FormattedMessage defaultMessage='Link to a different channel'/>
             </StyledDropdownMenuItem>
             <StyledDropdownMenuItem
                 onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.onUpdateName))}
                 disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
+                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this'})}
             >
                 <IconWrapper>
                     <PencilOutlineIcon size={22}/>
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Rename run'/>
+                <FormattedMessage defaultMessage='Rename'/>
             </StyledDropdownMenuItem>
             <Separator/>
             <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                 <IconWrapper>
                     <PlayOutlineIcon size={22}/>
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Go to run overview'/>
+                <FormattedMessage defaultMessage='Go to overview'/>
             </StyledDropdownMenuItem>
             <StyledDropdownMenuItem
                 disabled={!props.canSeePlaybook}
