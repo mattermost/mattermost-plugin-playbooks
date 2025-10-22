@@ -737,7 +737,10 @@ const NoRuns = (props: NoRunsProps) => {
     const {formatMessage} = useIntl();
 
     let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
-    if (!props.active) {
+
+    if (props.active && props.numFinished > 0) {
+        text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
+    } else if (!props.active) {
         text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
     }
 
