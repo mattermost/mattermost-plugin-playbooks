@@ -161,7 +161,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
             <StyledSection>
                 <StyledSectionTitle>
                     <PlayIcon size={24}/>
-                    <FormattedMessage defaultMessage='When a run starts'/>
+                    <FormattedMessage defaultMessage='When a checklist starts'/>
                 </StyledSectionTitle>
                 <Setting id={'channel-action'}>
                     <CreateAChannel
@@ -218,7 +218,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
             <StyledSection>
                 <StyledSectionTitle>
                     <AccountPlusOutlineIcon size={22}/>
-                    <FormattedMessage defaultMessage='When a participant joins the run'/>
+                    <FormattedMessage defaultMessage='When a participant joins the checklist'/>
                 </StyledSectionTitle>
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
@@ -231,7 +231,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                 });
                             }}
                         >
-                            <FormattedMessage defaultMessage='Add them to the run channel'/>
+                            <FormattedMessage defaultMessage='Add them to the checklist channel'/>
                         </Toggle>
                     </AutomationTitle>
                 </Setting>
@@ -240,7 +240,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
             <StyledSection>
                 <StyledSectionTitle>
                     <AccountMinusOutlineIcon size={22}/>
-                    <FormattedMessage defaultMessage='When a participant leaves the run'/>
+                    <FormattedMessage defaultMessage='When a participant leaves the checklist'/>
                 </StyledSectionTitle>
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
@@ -253,7 +253,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                                 });
                             }}
                         >
-                            <FormattedMessage defaultMessage='Remove them from the run channel'/>
+                            <FormattedMessage defaultMessage='Remove them from the checklist channel'/>
                         </Toggle>
                     </AutomationTitle>
                 </Setting>

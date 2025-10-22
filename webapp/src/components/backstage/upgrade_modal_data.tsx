@@ -164,12 +164,12 @@ export const getUpgradeModalCopy = (
             helpText = <FormattedMessage defaultMessage="Every team's structure is different. You can manage which users in the team can create playbooks."/>;
             break;
         case AdminNotificationType.EXPORT_CHANNEL:
-            titleText = <FormattedMessage defaultMessage='Save your playbook run history'/>;
-            helpText = <FormattedMessage defaultMessage='Export the playbook run channel and save it for later analysis.'/>;
+            titleText = <FormattedMessage defaultMessage='Save your playbook checklist history'/>;
+            helpText = <FormattedMessage defaultMessage='Export the playbook checklist channel and save it for later analysis.'/>;
             break;
         case AdminNotificationType.PLAYBOOK_METRICS:
             titleText = <FormattedMessage defaultMessage='Track key metrics and measure value'/>;
-            helpText = <FormattedMessage defaultMessage='Use metrics to understand patterns and progress across runs, and track performance.'/>;
+            helpText = <FormattedMessage defaultMessage='Use metrics to understand patterns and progress across checklists, and track performance.'/>;
             break;
         case AdminNotificationType.CHECKLIST_ITEM_DUE_DATE:
             titleText = <FormattedMessage defaultMessage='Work more effectively'/>;
@@ -177,7 +177,7 @@ export const getUpgradeModalCopy = (
             break;
         case AdminNotificationType.REQUEST_UPDATE:
             titleText = <FormattedMessage defaultMessage='Try request update with a free trial'/>;
-            helpText = <FormattedMessage defaultMessage='Request updates for playbook runs in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.'/>;
+            helpText = <FormattedMessage defaultMessage='Request updates for playbook checklists in a single click and get notified directly when an update is posted. Start a free, 30-day trial to try it out.'/>;
             break;
         }
 

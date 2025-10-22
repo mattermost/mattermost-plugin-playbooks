@@ -366,7 +366,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 <InnerContainer>
                     <EmptyState
                         title={<FormattedMessage defaultMessage='No attributes yet'/>}
-                        description={<FormattedMessage defaultMessage='Add custom attributes to capture additional information about your playbook runs.'/>}
+                        description={<FormattedMessage defaultMessage='Add custom attributes to capture additional information about your playbook checklists.'/>}
                         buttonText={<FormattedMessage defaultMessage='Add your first attribute'/>}
                         onButtonClick={addProperty}
                     />

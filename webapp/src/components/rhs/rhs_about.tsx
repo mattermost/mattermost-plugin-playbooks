@@ -135,7 +135,7 @@ const RHSAbout = (props: Props) => {
                                     userGroups={{
                                         subsetUserIds: props.playbookRun.participant_ids,
                                         defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
-                                        subsetLabel: formatMessage({defaultMessage: 'RUN PARTICIPANTS'}),
+                                        subsetLabel: formatMessage({defaultMessage: 'CHECKLIST PARTICIPANTS'}),
                                     }}
                                 />
                             </OwnerSection>

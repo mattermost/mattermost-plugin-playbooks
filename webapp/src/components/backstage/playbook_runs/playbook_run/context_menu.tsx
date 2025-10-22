@@ -125,7 +125,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
             .then(() => {
                 refreshLHS();
                 addToast({
-                    content: formatMessage({defaultMessage: "You've left the run."}),
+                    content: formatMessage({defaultMessage: "You've left the checklist."}),
                     toastStyle: ToastStyle.Success,
                 });
 
@@ -134,7 +134,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
                     navigateToUrl(pluginUrl(''));
                 }
             }).catch(() => addToast({
-                content: formatMessage({defaultMessage: "It wasn't possible to leave the run."}),
+                content: formatMessage({defaultMessage: "It wasn't possible to leave the checklist."}),
                 toastStyle: ToastStyle.Failure,
             }));
     };
@@ -142,7 +142,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
         <ConfirmModal
             show={showLeaveRunConfirm}
             title={formatMessage({defaultMessage: 'Confirm leave{isFollowing, select, true { and unfollow} other {}}'}, {isFollowing})}
-            message={formatMessage({defaultMessage: 'When you leave{isFollowing, select, true { and unfollow a run} other { a run}}, it\'s removed from the left-hand sidebar. You can find it again by viewing all runs.'}, {isFollowing})}
+            message={formatMessage({defaultMessage: 'When you leave{isFollowing, select, true { and unfollow a checklist} other { a checklist}}, it\'s removed from the left-hand sidebar. You can find it again by viewing all checklists.'}, {isFollowing})}
             confirmButtonText={isFollowing ? formatMessage({defaultMessage: 'Leave and unfollow'}) : formatMessage({defaultMessage: 'Leave'})}
             onConfirm={() => {
                 onLeaveRun();
@@ -158,7 +158,7 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
         showLeaveRunConfirm: () => {
             if (currentUserId === ownerUserId) {
                 addToast({
-                    content: formatMessage({defaultMessage: 'Assign a new owner before you leave the run.'}),
+                    content: formatMessage({defaultMessage: 'Assign a new owner before you leave the checklist.'}),
                     toastStyle: ToastStyle.Failure,
                 });
                 return;

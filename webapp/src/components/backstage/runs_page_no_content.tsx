@@ -100,7 +100,7 @@ const NoContentPage = () => {
     return (
         <NoContentContainer>
             <NoContentTextContainer>
-                <NoContentTitle><FormattedMessage defaultMessage='What are playbook runs?'/></NoContentTitle>
+                <NoContentTitle><FormattedMessage defaultMessage='What are playbook checklists?'/></NoContentTitle>
                 <NoContentDescription><FormattedMessage defaultMessage='Running a playbook orchestrates workflows for your team and tools.'/></NoContentDescription>
                 {(canCreatePlaybooks || playbookExist) &&
                 <PrimaryButton

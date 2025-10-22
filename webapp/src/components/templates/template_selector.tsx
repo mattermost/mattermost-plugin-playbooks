@@ -40,7 +40,7 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
         <StyledSelect
             filterOption={null}
             isMulti={false}
-            placeholder={formatMessage({defaultMessage: 'Select a template'})}
+            placeholder={formatMessage({defaultMessage: 'Select an example'})}
             onChange={handleTemplateSet}
             options={presetTemplateOptions}
             value={presetTemplateOptions.find((val) => val.value === props?.template)}

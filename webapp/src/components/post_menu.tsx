@@ -48,7 +48,7 @@ export const AttachToPlaybookRunPostMenuText = () => {
     return (
         <>
             <PlaybookRunPostMenuIcon/>
-            <FormattedMessage defaultMessage='Add to run timeline'/>
+            <FormattedMessage defaultMessage='Add to checklist timeline'/>
             {!allowMessage && <PositionedKeyVariantCircleIcon/>}
         </>
     );

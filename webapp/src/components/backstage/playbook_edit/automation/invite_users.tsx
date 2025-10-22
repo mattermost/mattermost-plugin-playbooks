@@ -93,7 +93,7 @@ export const InviteUsers = (props: Props) => {
                 show={Boolean(userToRemove?.userId && userToRemove?.username)}
                 title={formatMessage({defaultMessage: 'Confirm remove pre-assigned member'})}
                 message={formatMessage(
-                    {defaultMessage: 'The user <i>{name}</i> is pre-assigned to one or more tasks. Not automatically inviting this user will clear their pre-assignments.{br}{br}Are you sure you want to stop inviting this user as a member of the run?'},
+                    {defaultMessage: 'The user <i>{name}</i> is pre-assigned to one or more tasks. Not automatically inviting this user will clear their pre-assignments.{br}{br}Are you sure you want to stop inviting this user as a member of the checklist?'},
                     {br: <br/>, i: (x: React.ReactNode) => <i>{x}</i>, name: userToRemove?.username}
                 )}
                 confirmButtonText={formatMessage({defaultMessage: 'Remove user'})}

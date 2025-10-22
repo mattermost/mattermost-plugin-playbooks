@@ -67,7 +67,7 @@ const Metrics = ({
     const metricsAvailable = useAllowPlaybookAndRunMetrics();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-    const deleteBaseMessage = formatMessage({defaultMessage: 'If you delete this metric, the values for it will not be collected for any future runs.'});
+    const deleteBaseMessage = formatMessage({defaultMessage: 'If you delete this metric, the values for it will not be collected for any future checklists.'});
     const deleteExistingMessage = deleteBaseMessage + ' ' + formatMessage({defaultMessage: 'You will still be able to access historical data for this metric.'});
     const deleteMessage = deletingIdx >= 0 && deletingIdx < playbook.metrics.length && playbook.metrics[deletingIdx].id !== '' ? deleteExistingMessage : deleteBaseMessage;
 

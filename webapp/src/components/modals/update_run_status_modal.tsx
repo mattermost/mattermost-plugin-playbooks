@@ -189,9 +189,9 @@ const UpdateRunStatusModal = ({
 
             dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
                 show: true,
-                title: formatMessage({defaultMessage: 'Confirm finish run'}),
+                title: formatMessage({defaultMessage: 'Confirm finish checklist'}),
                 message: confirmationMessage,
-                confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
+                confirmButtonText: formatMessage({defaultMessage: 'Finish checklist'}),
                 onConfirm,
                 onCancel: () => {
                     dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, finishRun));
@@ -226,7 +226,7 @@ const UpdateRunStatusModal = ({
         }
 
         return formatMessage({
-            defaultMessage: 'This update for the run <i>{runName}</i> will be broadcasted to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
+            defaultMessage: 'This update for the checklist <i>{runName}</i> will be broadcasted to {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {one direct message} other {{followersChannelCount, number} direct messages}}</FollowersTooltip>} other {}}.',
         }, {
             OverviewLink,
             ChannelsTooltip: (...chunks) => (
@@ -283,7 +283,7 @@ const UpdateRunStatusModal = ({
     const footer = (
         <StyledCheckboxInput
             testId={'mark-run-as-finished'}
-            text={formatMessage({defaultMessage: 'Also mark the run as finished'})}
+            text={formatMessage({defaultMessage: 'Also mark the checklist as finished'})}
             checked={finishRun}
             onChange={(checked) => setFinishRun(checked)}
         />

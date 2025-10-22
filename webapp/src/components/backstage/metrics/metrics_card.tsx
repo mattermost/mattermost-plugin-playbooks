@@ -47,7 +47,7 @@ const MetricsCard = ({playbookMetrics, playbookStats, index}: Props) => {
     };
 
     const titleEllipsis = ellipsize(playbookMetrics[index].title, 32);
-    const chartTitle = titleEllipsis + ' ' + formatMessage({defaultMessage: 'per run over the last 10 runs'});
+    const chartTitle = titleEllipsis + ' ' + formatMessage({defaultMessage: 'per checklist over the last 10 checklists'});
 
     return (
         <Container>
@@ -59,7 +59,7 @@ const MetricsCard = ({playbookMetrics, playbookStats, index}: Props) => {
                         <Value>{stats.average === null ? '-' : transformFn(stats.average)}</Value>
                     </Cell>
                     <Cell>
-                        <Title>{formatMessage({defaultMessage: '10-run average value'})}</Title>
+                        <Title>{formatMessage({defaultMessage: '10-checklist average value'})}</Title>
                         <Row>
                             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                             <Value>{stats.rolling_average === null ? '-' : transformFn(stats.rolling_average)}</Value>

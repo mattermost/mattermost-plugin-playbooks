@@ -65,12 +65,12 @@ const MetricsRunList = ({
             />
             {playbookRuns.length === 0 && !isFiltering &&
                 <div className='text-center pt-8'>
-                    <FormattedMessage defaultMessage='There are no finished runs for this playbook.'/>
+                    <FormattedMessage defaultMessage='There are no finished checklists for this playbook.'/>
                 </div>
             }
             {playbookRuns.length === 0 && isFiltering &&
                 <div className='text-center pt-8'>
-                    <FormattedMessage defaultMessage='There are no finished runs matching those filters.'/>
+                    <FormattedMessage defaultMessage='There are no finished checklists matching those filters.'/>
                 </div>
             }
             <InfiniteScroll

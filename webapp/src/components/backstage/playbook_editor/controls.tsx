@@ -228,7 +228,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
                 <div>
                     <CheckboxInputStyled
                         testId={'auto-follow-runs'}
-                        text={formatMessage({defaultMessage: 'Auto-follow runs'})}
+                        text={formatMessage({defaultMessage: 'Auto-follow checklists'})}
                         checked={isFollowing}
                         disabled={archived}
                         onChange={setFollowing}
@@ -273,7 +273,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
         >
             <PlayOutlineIcon size={20}/>
             {isTutorialPlaybook ? (
-                <FormattedMessage defaultMessage='Start a test run'/>
+                <FormattedMessage defaultMessage='Start a test checklist'/>
             ) : (
                 <FormattedMessage defaultMessage='Run'/>
             )}

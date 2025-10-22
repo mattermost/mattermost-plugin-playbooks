@@ -185,12 +185,12 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.ParticipantsChanged: {
             const details = parsedDetails as ParticipantsChangedDetails;
             if (details.action === 'joined') {
-                return formatMessage({defaultMessage: '{requester} added {users} to the run'}, {
+                return formatMessage({defaultMessage: '{requester} added {users} to the checklist'}, {
                     users: formatList(details.users.map((u: string) => `@${u}`), {type: 'conjunction'}),
                     requester: details.requester,
                 });
             }
-            return formatMessage({defaultMessage: '{requester} removed {users} from the run'}, {
+            return formatMessage({defaultMessage: '{requester} removed {users} from the checklist'}, {
                 users: formatList(details.users.map((u: string) => `@${u}`), {type: 'conjunction'}),
                 requester: details.requester,
             });
@@ -202,11 +202,11 @@ const TimelineEventItem = (props: Props) => {
     const getSummaryTitle = (event: TimelineEvent, parsedDetails: unknown) => {
         switch (event.event_type) {
         case TimelineEventType.RunCreated:
-            return formatMessage({defaultMessage: 'Run started by {name}'}, {name: event.subject_display_name});
+            return formatMessage({defaultMessage: 'Checklist started by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.RunFinished:
-            return formatMessage({defaultMessage: 'Run finished by {name}'}, {name: event.subject_display_name});
+            return formatMessage({defaultMessage: 'Checklist finished by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.RunRestored:
-            return formatMessage({defaultMessage: 'Run restored by {name}'}, {name: event.subject_display_name});
+            return formatMessage({defaultMessage: 'Checklist restored by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdated:
             if (event.summary === '') {
                 return formatMessage({defaultMessage: '{name} posted a status update'}, {name: event.subject_display_name});
@@ -251,31 +251,31 @@ const TimelineEventItem = (props: Props) => {
 
             // new format
             if (details.action === 'joined') {
-                return formatMessage({defaultMessage: '@{user} joined the run'}, {user: details.users[0]});
+                return formatMessage({defaultMessage: '@{user} joined the checklist'}, {user: details.users[0]});
             }
-            return formatMessage({defaultMessage: '@{user} left the run'}, {user: details.users[0]});
+            return formatMessage({defaultMessage: '@{user} left the checklist'}, {user: details.users[0]});
         }
         case TimelineEventType.ParticipantsChanged: {
             const details = parsedDetails as ParticipantsChangedDetails;
             if (details.users.length > 1) {
                 if (details.action === 'joined') {
-                    return formatMessage({defaultMessage: '{name} added {num} participants to the run'}, {name: details.requester, num: details.users.length});
+                    return formatMessage({defaultMessage: '{name} added {num} participants to the checklist'}, {name: details.requester, num: details.users.length});
                 }
-                return formatMessage({defaultMessage: '{name} removed {num} participants from the run'}, {name: details.requester, num: details.users.length});
+                return formatMessage({defaultMessage: '{name} removed {num} participants from the checklist'}, {name: details.requester, num: details.users.length});
             }
             if (details.action === 'joined') {
-                return formatMessage({defaultMessage: '{name} added @{user} to the run'}, {name: details.requester, user: details.users[0]});
+                return formatMessage({defaultMessage: '{name} added @{user} to the checklist'}, {name: details.requester, user: details.users[0]});
             }
-            return formatMessage({defaultMessage: '{name} removed @{user} from the run'}, {name: details.requester, user: details.users[0]});
+            return formatMessage({defaultMessage: '{name} removed @{user} from the checklist'}, {name: details.requester, user: details.users[0]});
         }
         case TimelineEventType.PublishedRetrospective:
             return formatMessage({defaultMessage: 'Retrospective published by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.CanceledRetrospective:
             return formatMessage({defaultMessage: 'Retrospective canceled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdatesEnabled:
-            return formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: event.subject_display_name});
+            return formatMessage({defaultMessage: 'Checklist status updates enabled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdatesDisabled:
-            return formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: event.subject_display_name});
+            return formatMessage({defaultMessage: 'Checklist status updates disabled by {name}'}, {name: event.subject_display_name});
         default:
             return '';
         }
@@ -316,9 +316,9 @@ const TimelineEventItem = (props: Props) => {
     const eventTime = DateTime.fromMillis(props.event.event_at);
 
     const diff = DateTime.fromMillis(props.event.event_at).diff(props.runCreateAt);
-    let timeSinceStart: ReactNode = formatMessage({defaultMessage: '{duration} after run started'}, {duration: formatDuration(diff)});
+    let timeSinceStart: ReactNode = formatMessage({defaultMessage: '{duration} after checklist started'}, {duration: formatDuration(diff)});
     if (diff.toMillis() < 0) {
-        timeSinceStart = formatMessage({defaultMessage: '{duration} before run started'}, {duration: formatDuration(diff.negate())});
+        timeSinceStart = formatMessage({defaultMessage: '{duration} before checklist started'}, {duration: formatDuration(diff.negate())});
     }
     const timeSincePrevEvent: ReactNode = props.prevEventAt && (
         <TimeBetween>

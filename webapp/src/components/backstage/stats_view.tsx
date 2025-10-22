@@ -60,7 +60,7 @@ const StatsView = (props: Props) => {
 
         if (!fetchParamsTimeEqual(props.fetchParams, nextFetchParamsTime)) {
             const text = formatMessage({
-                defaultMessage: 'Runs started between {start} and {end}',
+                defaultMessage: 'Checklists started between {start} and {end}',
             }, {
                 start: <Timestamp value={started}/>,
                 end: <Timestamp value={ended}/>,
@@ -89,7 +89,7 @@ const StatsView = (props: Props) => {
 
         if (!fetchParamsTimeEqual(props.fetchParams, nextFetchParamsTime)) {
             const text = formatMessage({
-                defaultMessage: 'Runs active on {date}',
+                defaultMessage: 'Checklists active on {date}',
             },
             {
                 date: (
@@ -128,7 +128,7 @@ const StatsView = (props: Props) => {
             <BottomRow>
                 <StatCard>
                     <ClipboardsPlayBig/>
-                    <StatText>{formatMessage({defaultMessage: 'Runs currently in progress'})}</StatText>
+                    <StatText>{formatMessage({defaultMessage: 'Checklists currently in progress'})}</StatText>
                     <StatNum>{props.stats.runs_in_progress}</StatNum>
                 </StatCard>
                 <StatCard>
@@ -138,7 +138,7 @@ const StatsView = (props: Props) => {
                 </StatCard>
                 <StatCard>
                     <ClipboardsCheckmarkBig/>
-                    <StatText>{formatMessage({defaultMessage: 'Runs finished in the last 30 days'})}</StatText>
+                    <StatText>{formatMessage({defaultMessage: 'Checklists finished in the last 30 days'})}</StatText>
                     <StatNumRow>
                         <StatNum>{props.stats.runs_finished_prev_30_days}</StatNum>
                         {percentageChange(props.stats.runs_finished_percentage_change)}
@@ -146,11 +146,11 @@ const StatsView = (props: Props) => {
                 </StatCard>
                 <GraphBox>
                     <LineGraph
-                        title={formatMessage({defaultMessage: 'TOTAL RUNS started per week over the last 12 weeks'})}
+                        title={formatMessage({defaultMessage: 'TOTAL CHECKLISTS started per week over the last 12 weeks'})}
                         labels={props.stats.runs_started_per_week_times.map(([start]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.runs_started_per_week}
                         tooltipTitleCallback={(date) => formatMessage({defaultMessage: 'Week of {date}'}, {date})}
-                        tooltipLabelCallback={(numTotalRuns) => formatMessage({defaultMessage: '{numTotalRuns, plural, =0 {no runs started} =1 {# run started} other {# runs started}}'}, {numTotalRuns})}
+                        tooltipLabelCallback={(numTotalRuns) => formatMessage({defaultMessage: '{numTotalRuns, plural, =0 {no checklists started} =1 {# checklist started} other {# checklists started}}'}, {numTotalRuns})}
                         onClick={filterStarted}
                     />
                 </GraphBox>
@@ -158,11 +158,11 @@ const StatsView = (props: Props) => {
             <BottomRow>
                 <GraphBox>
                     <BarGraph
-                        title={formatMessage({defaultMessage: 'ACTIVE RUNS per day over the last 14 days'})}
+                        title={formatMessage({defaultMessage: 'ACTIVE CHECKLISTS per day over the last 14 days'})}
                         labels={props.stats.active_runs_per_day_times.map(([start]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.active_runs_per_day}
                         tooltipTitleCallback={(date) => formatMessage({defaultMessage: 'Day: {date}'}, {date})}
-                        tooltipLabelCallback={(numActiveRuns) => formatMessage({defaultMessage: '{numActiveRuns, plural, =0 {no active runs} =1 {# active run} other {# active runs}}'}, {numActiveRuns})}
+                        tooltipLabelCallback={(numActiveRuns) => formatMessage({defaultMessage: '{numActiveRuns, plural, =0 {no active checklists} =1 {# active checklist} other {# active checklists}}'}, {numActiveRuns})}
                         onClick={filterActive}
                     />
                 </GraphBox>

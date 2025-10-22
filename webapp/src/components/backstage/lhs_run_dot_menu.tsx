@@ -62,7 +62,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
             })
             .catch(() => {
                 addToast({
-                    content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
+                    content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the checklist'}, {isFollowing}),
                     toastStyle: ToastStyle.Failure,
                 });
             });

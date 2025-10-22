@@ -40,7 +40,7 @@ const RhsRunDetailsTourDialog = ({onDismiss, onConfirm, ...modalProps}: Props) =
                 <ChecklistIllustration/>
             </Graphic>
             <Title>
-                {formatMessage({defaultMessage: 'We’ve auto-created your run'})}
+                {formatMessage({defaultMessage: 'We’ve auto-created your checklist'})}
             </Title>
             <Desc>
                 {formatMessage({defaultMessage: 'This lets you experience a sample playbook first before investing time to create your own. '})}

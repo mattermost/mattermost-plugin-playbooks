@@ -15,7 +15,7 @@ export const useToggleRunStatusUpdate = (playbookRun: PlaybookRun) => {
 
     return (status: boolean) => {
         const confirmTitle = status ? formatMessage({defaultMessage: 'Confirm enable status updates'}) : formatMessage({defaultMessage: 'Confirm disable status updates'});
-        const confirmationMessage = status ? formatMessage({defaultMessage: 'Are you sure you want to enable status updates for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status updates for this run?'});
+        const confirmationMessage = status ? formatMessage({defaultMessage: 'Are you sure you want to enable status updates for this checklist?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status updates for this checklist?'});
 
         const onConfirm = async () => {
             await toggleRunStatusUpdates(playbookRun.id, status);

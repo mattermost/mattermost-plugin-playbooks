@@ -49,7 +49,7 @@ const UpdateRunModal = ({
             id={ID}
             modalHeaderText={
                 <Header>
-                    {isPlaybookRun ? formatMessage({defaultMessage: 'Rename run'}) : formatMessage({defaultMessage: 'Rename checklist'})}
+                    {isPlaybookRun ? formatMessage({defaultMessage: 'Rename checklist'}) : formatMessage({defaultMessage: 'Rename checklist'})}
                     <ModalSubheading>
                         {run?.name}
                     </ModalSubheading>
@@ -58,7 +58,7 @@ const UpdateRunModal = ({
             {...modalProps}
         >
             <Body>
-                <InlineLabel>{isPlaybookRun ? formatMessage({defaultMessage: 'Run name'}) : formatMessage({defaultMessage: 'Checklist name'})}</InlineLabel>
+                <InlineLabel>{isPlaybookRun ? formatMessage({defaultMessage: 'Checklist name'}) : formatMessage({defaultMessage: 'Checklist name'})}</InlineLabel>
                 <BaseInput
                     data-testid={'run-name-input'}
                     autoFocus={true}

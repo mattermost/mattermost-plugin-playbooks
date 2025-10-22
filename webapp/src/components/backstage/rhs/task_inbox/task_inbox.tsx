@@ -145,7 +145,7 @@ const TaskInbox = () => {
                         onClick={() => toggleFilter(Filter.FilterRunOwner)}
                         checked={filters.includes(Filter.FilterRunOwner)}
                     >
-                        {formatMessage({defaultMessage: 'Show all tasks from runs I own'})}
+                        {formatMessage({defaultMessage: 'Show all tasks from checklists I own'})}
                     </StyledDropdownMenuItem>
                     <StyledDropdownMenuItem
                         onClick={() => toggleFilter(Filter.FilterChecked)}

@@ -39,7 +39,7 @@ const Summary = ({
         </TimestampContainer>
     );
 
-    const placeholder = role === Role.Participant ? formatMessage({defaultMessage: 'Add a run summary'}) : formatMessage({defaultMessage: 'There\'s no summary'});
+    const placeholder = role === Role.Participant ? formatMessage({defaultMessage: 'Add a checklist summary'}) : formatMessage({defaultMessage: 'There\'s no summary'});
     const disabled = (Role.Viewer === role || playbookRun.end_at > 0);
 
     return (

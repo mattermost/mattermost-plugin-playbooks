@@ -17,7 +17,7 @@ export const useOnRestoreRun = (playbookRun: PlaybookRun) => {
     const refreshLHS = useLHSRefresh();
 
     return () => {
-        const confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to restart the run?'});
+        const confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to restart the checklist?'});
 
         const onConfirm = async () => {
             await restoreRun(playbookRun.id);
@@ -26,9 +26,9 @@ export const useOnRestoreRun = (playbookRun: PlaybookRun) => {
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
             show: true,
-            title: formatMessage({defaultMessage: 'Confirm restart run'}),
+            title: formatMessage({defaultMessage: 'Confirm restart checklist'}),
             message: confirmationMessage,
-            confirmButtonText: formatMessage({defaultMessage: 'Restart run'}),
+            confirmButtonText: formatMessage({defaultMessage: 'Restart checklist'}),
             onConfirm,
             onCancel: () => null,
         })));

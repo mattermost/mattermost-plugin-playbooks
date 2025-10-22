@@ -135,10 +135,10 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
 
                 <MetricInput
                     id={metric.id}
-                    title={formatMessage({defaultMessage: 'Target per run'})}
+                    title={formatMessage({defaultMessage: 'Target per checklist'})}
                     value={curTargetString}
-                    placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
-                    helpText={formatMessage({defaultMessage: 'We’ll show you how close or far from the target each run’s value is and also plot it on a chart.'})}
+                    placeholder={formatMessage({defaultMessage: 'Target value for each checklist'})}
+                    helpText={formatMessage({defaultMessage: 'We’ll show you how close or far from the target each checklist’s value is and also plot it on a chart.'})}
                     errorText={targetError}
                     inputIcon={inputIcon}
                     onChange={(e) => {
@@ -157,7 +157,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                         setMetric((prevState) => ({...prevState, description}));
                     }}
                 />
-                <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.'})}</HelpText>
+                <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each checklist where values for these metrics will be input.'})}</HelpText>
                 <VerticalSpacer $size={16}/>
                 <PrimaryButton onClick={verifyAndSave}>{formatMessage({defaultMessage: 'Save'})}</PrimaryButton>
             </EditContainer>

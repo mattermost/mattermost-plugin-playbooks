@@ -73,7 +73,7 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <MarkdownEdit
                     disabled={archived}
-                    placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
+                    placeholder={formatMessage({defaultMessage: 'Add a checklist summary template…'})}
                     value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
                     onSave={(runSummaryTemplate) => {
                         updatePlaybook({

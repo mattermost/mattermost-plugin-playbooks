@@ -74,7 +74,7 @@ export const RenameRunItem = (props: {onClick: () => void, playbookRun: Playbook
                 onClick={props.onClick}
             >
                 <PencilOutlineIcon size={18}/>
-                <FormattedMessage defaultMessage='Rename run'/>
+                <FormattedMessage defaultMessage='Rename checklist'/>
             </StyledDropdownMenuItem>
         );
     }
@@ -102,7 +102,7 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
                 <StyledDropdownMenuItemRed onClick={props.showLeaveRunConfirm}>
                     <CloseIcon size={18}/>
                     <FormattedMessage
-                        defaultMessage='Leave {isFollowing, select, true { and unfollow } other {}}run'
+                        defaultMessage='Leave {isFollowing, select, true { and unfollow } other {}}checklist'
                         values={{isFollowing}}
                     />
                 </StyledDropdownMenuItemRed>
@@ -121,7 +121,7 @@ export const RunActionsMenuItem = (props: {showRunActionsModal(): ShowRunActions
             onClick={() => dispatch(props.showRunActionsModal())}
         >
             <LightningBoltOutlineIcon size={18}/>
-            <FormattedMessage defaultMessage='Run actions'/>
+            <FormattedMessage defaultMessage='Checklist actions'/>
         </StyledDropdownMenuItem>
     );
 };
@@ -152,7 +152,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role})
                     onClick={onFinishRun}
                 >
                     <FlagOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Finish run'/>
+                    <FormattedMessage defaultMessage='Finish checklist'/>
                 </StyledDropdownMenuItem>
             </>
         );
@@ -194,7 +194,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
                     className='restartRun'
                 >
                     <FlagOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Restart run'/>
+                    <FormattedMessage defaultMessage='Restart checklist'/>
                 </StyledDropdownMenuItem>
             </>
         );

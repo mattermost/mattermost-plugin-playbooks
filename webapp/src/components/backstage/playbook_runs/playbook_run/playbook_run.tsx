@@ -40,7 +40,7 @@ import RHSInfo from './rhs_info';
 import {Participants} from './rhs_participants';
 import RHSTimeline from './rhs_timeline';
 
-const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Run info'}/>;
+const RHSRunInfoTitle = <FormattedMessage defaultMessage={'Checklist info'}/>;
 const RHSParticipantsTitle = <FormattedMessage defaultMessage={'Participants'}/>;
 const useRHS = (playbookRun?: PlaybookRun|null) => {
     const [isOpen, setIsOpen] = useState(true);
@@ -149,7 +149,7 @@ const PlaybookRunDetails = () => {
         return null;
     }
 
-    const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Run info'}), playbookRun.name);
+    const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Checklist info'}), playbookRun.name);
     const onViewTimeline = () => RHS.open(RHSContent.RunTimeline, formatMessage({defaultMessage: 'Timeline'}), playbookRun.name, undefined, false);
 
     let rhsComponent = null;

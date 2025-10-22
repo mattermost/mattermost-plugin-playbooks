@@ -41,10 +41,10 @@ export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: Checklis
         i: (x: React.ReactNode) => <i>{x}</i>,
         runName: run?.name || '',
     };
-    let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run <i>{runName}</i> for all participants?'}, values);
+    let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the checklist <i>{runName}</i> for all participants?'}, values);
     if (outstanding > 0) {
         confirmationMessage = formatMessage(
-            {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run <i>{runName}</i> for all participants?'},
+            {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the checklist <i>{runName}</i> for all participants?'},
             {...values, outstanding}
         );
     }
@@ -65,9 +65,9 @@ export const useOnFinishRun = (playbookRun: PlaybookRun) => {
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
             show: true,
-            title: formatMessage({defaultMessage: 'Confirm finish run'}),
+            title: formatMessage({defaultMessage: 'Confirm finish checklist'}),
             message: confirmationMessage,
-            confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
+            confirmButtonText: formatMessage({defaultMessage: 'Finish checklist'}),
             onConfirm,
             // eslint-disable-next-line no-empty-function
             onCancel: () => {},
@@ -97,7 +97,7 @@ const FinishRun = ({playbookRun}: Props) => {
                 <Text>{formatMessage({defaultMessage: 'Time to wrap up?'})}</Text>
                 <RightWrapper>
                     <FinishRunButton onClick={onFinishRun}>
-                        {formatMessage({defaultMessage: 'Finish run'})}
+                        {formatMessage({defaultMessage: 'Finish checklist'})}
                     </FinishRunButton>
                 </RightWrapper>
             </Content>

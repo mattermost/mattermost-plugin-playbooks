@@ -162,7 +162,7 @@ const RunPlaybookModal = ({
         return (
             <StyledGenericModal
                 cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Start checklist'})}
                 showCancel={true}
                 isConfirmDisabled={isSubmitting || !isFormValid}
                 handleConfirm={onSubmit}
@@ -182,7 +182,7 @@ const RunPlaybookModal = ({
                             />
                         </IconWrapper>
                         <HeaderTitle>
-                            <FormattedMessage defaultMessage='Start a run'/>
+                            <FormattedMessage defaultMessage='Start a checklist'/>
                             <ModalSideheading>{playbook?.title}</ModalSideheading>
                         </HeaderTitle>
                     </ColContainer>
@@ -195,7 +195,7 @@ const RunPlaybookModal = ({
                         onSetRunName={setRunName}
                     />
 
-                    <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
+                    <InlineLabel>{formatMessage({defaultMessage: 'Checklist summary'})}</InlineLabel>
                     <BaseTextArea
                         data-testid={'run-summary-input'}
                         rows={5}
@@ -283,7 +283,7 @@ const RunNameSection = ({runName, onSetRunName}: runNameProps) => {
         if (error && value.length <= RUN_NAME_MAX_LENGTH) {
             setError('');
         } else if (!error && value.length > RUN_NAME_MAX_LENGTH) {
-            setError(formatMessage({defaultMessage: 'The run name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
+            setError(formatMessage({defaultMessage: 'The checklist name should not exceed {maxLength} characters'}, {maxLength: RUN_NAME_MAX_LENGTH}));
         }
 
         onSetRunName(value);
@@ -292,7 +292,7 @@ const RunNameSection = ({runName, onSetRunName}: runNameProps) => {
     return (<>
         <RunNameLabel invalid={Boolean(error)}>
             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-            {formatMessage({defaultMessage: 'Run name'})}{error ? ' *' : ''}
+            {formatMessage({defaultMessage: 'Checklist name'})}{error ? ' *' : ''}
         </RunNameLabel>
         <BaseInput
             $invalid={Boolean(error)}
@@ -355,7 +355,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     checked={createNewChannel}
                     onChange={() => onSetChannelMode('create_new_channel')}
                 />
-                <FormattedMessage defaultMessage='Create a run channel'/>
+                <FormattedMessage defaultMessage='Create a checklist channel'/>
             </ChannelBlock>
 
             {createNewChannel && (

@@ -221,7 +221,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
 
 export function emptyChecklist(): Checklist {
     return {
-        title: 'Default checklist',
+        title: 'Default Section',
         items: [emptyChecklistItem()],
     };
 }

@@ -52,7 +52,7 @@ const useRequestJoinChannel = (playbookRunId: string) => {
             });
         } else {
             addToast({
-                content: formatMessage({defaultMessage: 'Your request was sent to the run channel.'}),
+                content: formatMessage({defaultMessage: 'Your request was sent to the checklist channel.'}),
                 toastStyle: ToastStyle.Success,
             });
         }
@@ -61,7 +61,7 @@ const useRequestJoinChannel = (playbookRunId: string) => {
         <ConfirmModal
             show={showRequestJoinConfirm}
             title={formatMessage({defaultMessage: 'Request to join channel'})}
-            message={formatMessage({defaultMessage: 'A join request will be sent to the run channel.'})}
+            message={formatMessage({defaultMessage: 'A join request will be sent to the checklist channel.'})}
             confirmButtonText={formatMessage({defaultMessage: 'Send request '})}
             onConfirm={() => {
                 requestJoin();

@@ -196,7 +196,7 @@ const PlaybookRow = (props: PlaybookRowProps) => {
                 <ItemSubTitle>
                     <span>{playbook.last_run_at === 0 ? formatMessage({defaultMessage: 'Never used'}) : formatMessage({defaultMessage: 'Last used {time}'}, {time: DateTime.fromMillis(playbook.last_run_at).toRelative()})}</span>
                     <Dot/>
-                    <span>{formatMessage({defaultMessage: '{count, plural, =1{1 run in progress} =0 {No runs in progress} other {# runs in progress}}'}, {count: playbook.active_runs})}</span>
+                    <span>{formatMessage({defaultMessage: '{count, plural, =1{1 checklist in progress} =0 {No checklists in progress} other {# checklists in progress}}'}, {count: playbook.active_runs})}</span>
                 </ItemSubTitle>
             </ItemCenter>
             <ButtonWrappper className='modal-list-cta'>

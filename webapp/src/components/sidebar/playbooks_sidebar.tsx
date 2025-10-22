@@ -178,7 +178,7 @@ const ViewAllRuns = () => {
         <ItemContainer>
             <ViewAllNavLink
                 id={'sidebarItem_view_all_runs'}
-                aria-label={formatMessage({defaultMessage: 'View all runs'})}
+                aria-label={formatMessage({defaultMessage: 'View all checklists'})}
                 data-testid={'playbookRunsLHSButton'}
                 to={'/playbooks/runs'}
                 exact={true}

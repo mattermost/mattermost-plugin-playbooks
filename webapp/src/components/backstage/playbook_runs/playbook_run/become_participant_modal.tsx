@@ -56,12 +56,12 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
                         size={18}
                         color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                     />
-                    {formatMessage({defaultMessage: 'You’ll also be added to the channel linked to this run.'})}
+                    {formatMessage({defaultMessage: 'You’ll also be added to the channel linked to this checklist.'})}
                 </ExtraInfoContainer>
             );
         }
 
-        const text = noAccessToJoinTheChannel ? formatMessage({defaultMessage: 'Request access to the channel linked to this run'}) : formatMessage({defaultMessage: 'Also add me to the channel linked to this run'});
+        const text = noAccessToJoinTheChannel ? formatMessage({defaultMessage: 'Request access to the channel linked to this checklist'}) : formatMessage({defaultMessage: 'Also add me to the channel linked to this checklist'});
         return (
             <StyledCheckboxInput
                 testId={'also-add-to-channel'}
@@ -84,7 +84,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
         addToRun([currentUserId], forceJoinChannel)
             .then(() => {
                 addToast({
-                    content: formatMessage({defaultMessage: 'You\'ve joined this run.'}),
+                    content: formatMessage({defaultMessage: 'You\'ve joined this checklist.'}),
                     toastStyle: ToastStyle.Success,
                 });
 
@@ -94,7 +94,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
                 }
             })
             .catch(() => addToast({
-                content: formatMessage({defaultMessage: 'It wasn\'t possible to join the run'}),
+                content: formatMessage({defaultMessage: 'It wasn\'t possible to join the checklist'}),
                 toastStyle: ToastStyle.Failure,
             }));
 
@@ -125,7 +125,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
             }}
         >
             <Body>
-                {formatMessage({defaultMessage: 'As a participant, you’ll be able to update the run summary, check off tasks, post status updates and edit the retrospective.'})}
+                {formatMessage({defaultMessage: 'As a participant, you’ll be able to update the checklist summary, check off tasks, post status updates and edit the retrospective.'})}
                 {renderExtraMsg()}
             </Body>
 

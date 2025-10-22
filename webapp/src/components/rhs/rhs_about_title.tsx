@@ -116,7 +116,7 @@ const RHSAboutTitle = (props: Props) => {
             />
             {invalidValue &&
             <ErrorMessage>
-                <FormattedMessage defaultMessage='Run name must have at least two characters'/>
+                <FormattedMessage defaultMessage='Checklist name must have at least two characters'/>
             </ErrorMessage>
             }
         </>

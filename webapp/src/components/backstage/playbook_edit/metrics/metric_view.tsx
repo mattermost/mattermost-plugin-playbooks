@@ -18,7 +18,7 @@ interface Props {
 
 const MetricView = ({metric, editClick, deleteClick, disabled}: Props) => {
     const {formatMessage} = useIntl();
-    const perRun = formatMessage({defaultMessage: 'per run'});
+    const perRun = formatMessage({defaultMessage: 'per checklist'});
 
     let icon = <DollarSign sizePx={18}/>;
     if (metric.type === MetricType.MetricInteger) {

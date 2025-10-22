@@ -30,10 +30,10 @@ const ErrorPage = () => {
 
     switch (params.type) {
     case ErrorPageTypes.PLAYBOOK_RUNS:
-        title = <FormattedMessage defaultMessage='Run not found'/>;
-        message = <FormattedMessage defaultMessage="The run you're requesting is private or does not exist."/>;
+        title = <FormattedMessage defaultMessage='Checklist not found'/>;
+        message = <FormattedMessage defaultMessage="The checklist you're requesting is private or does not exist."/>;
         returnTo = pluginUrl('/runs');
-        returnToMsg = 'Back to runs';
+        returnToMsg = 'Back to checklists';
         break;
     case ErrorPageTypes.PLAYBOOKS:
         title = <FormattedMessage defaultMessage='Playbook Not Found'/>;

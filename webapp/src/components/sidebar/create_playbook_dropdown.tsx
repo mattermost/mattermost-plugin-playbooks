@@ -41,7 +41,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
 
     const tooltip = (
         <Tooltip id={'create_playbook_dropdown_tooltip'}>
-            {formatMessage({defaultMessage: 'Browse or create Playbooks and Runs'})}
+            {formatMessage({defaultMessage: 'Browse or create Playbooks and Checklists'})}
         </Tooltip>
     );
 
@@ -94,7 +94,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 icon={
                     <IconWrapper><PlayBoxMultipleOutlineIcon size={18}/></IconWrapper>
                 }
-                text={formatMessage({defaultMessage: 'Browse Runs'})}
+                text={formatMessage({defaultMessage: 'Browse Checklists'})}
             />
         );
 

@@ -45,7 +45,7 @@ const MetricsRunListHeader = ({metricsInfo, fetchParams, setFetchParams}: Props)
             <div className='row'>
                 <div className='col-sm-4'>
                     <SortableColHeader
-                        name={formatMessage({defaultMessage: 'Run name'})}
+                        name={formatMessage({defaultMessage: 'Checklist name'})}
                         direction={fetchParams.direction || 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'name' : false}
                         onClick={() => colHeaderClicked(-1)}

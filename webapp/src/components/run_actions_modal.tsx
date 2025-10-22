@@ -91,8 +91,8 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
     return (
         <ActionsModal
             id={'run-actions-modal'}
-            title={formatMessage({defaultMessage: 'Run Actions'})}
-            subtitle={formatMessage({defaultMessage: 'Run actions allow you to automate activities for this channel'})}
+            title={formatMessage({defaultMessage: 'Checklist Actions'})}
+            subtitle={formatMessage({defaultMessage: 'Checklist actions allow you to automate activities for this channel'})}
             show={show}
             onHide={onHide}
             editable={!readOnly}
@@ -146,12 +146,12 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                 </Trigger>
 
                 <Trigger
-                    title={formatMessage({defaultMessage: 'When a participant joins the run'})}
+                    title={formatMessage({defaultMessage: 'When a participant joins the checklist'})}
                 >
                     <ActionsContainer>
                         <Action
                             enabled={createChannelMemberEnabled}
-                            title={formatMessage({defaultMessage: 'Add them to the run channel'})}
+                            title={formatMessage({defaultMessage: 'Add them to the checklist channel'})}
                             editable={!readOnly}
                             onToggle={() => setCreateChannelMemberEnabled(!createChannelMemberEnabled)}
                         />
@@ -159,12 +159,12 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                 </Trigger>
 
                 <Trigger
-                    title={formatMessage({defaultMessage: 'When a participant leaves the run'})}
+                    title={formatMessage({defaultMessage: 'When a participant leaves the checklist'})}
                 >
                     <ActionsContainer>
                         <Action
                             enabled={removeChannelMemberEnabled}
-                            title={formatMessage({defaultMessage: 'Remove them from the run channel'})}
+                            title={formatMessage({defaultMessage: 'Remove them from the checklist channel'})}
                             editable={!readOnly}
                             onToggle={() => setRemoveChannelMemberEnabled(!removeChannelMemberEnabled)}
                         />

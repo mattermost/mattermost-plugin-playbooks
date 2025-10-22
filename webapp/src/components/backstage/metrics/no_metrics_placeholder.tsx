@@ -19,7 +19,7 @@ const NoMetricsPlaceholder = () => {
             <InnerContainer>
                 <NoMetricsSvg/>
                 <Title>{formatMessage({defaultMessage: 'Track key metrics and measure value'})}</Title>
-                <Text>{formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across runs, and track performance.'})}</Text>
+                <Text>{formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across checklists, and track performance.'})}</Text>
                 <StyledButton
                     onClick={() => {
                         navigateToUrl(match.url.replace('/reports', '/outline#retrospective'));

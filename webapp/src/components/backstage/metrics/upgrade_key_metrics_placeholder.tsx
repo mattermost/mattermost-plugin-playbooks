@@ -15,7 +15,7 @@ const UpgradeKeyMetricsPlaceholder = () => {
         <UpgradeBanner
             background={<UpgradeKeyMetricsBackgroundSvg/>}
             titleText={formatMessage({defaultMessage: 'Track key metrics and measure value'})}
-            helpText={formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across runs, and track performance.'})}
+            helpText={formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across checklists, and track performance.'})}
             notificationType={AdminNotificationType.PLAYBOOK_METRICS}
             verticalAdjustment={412}
             svgVerticalAdjustment={90}

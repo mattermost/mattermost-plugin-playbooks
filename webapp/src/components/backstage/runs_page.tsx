@@ -92,8 +92,8 @@ const RunsPage = () => {
             <Header
                 data-testid='titlePlaybookRun'
                 level={2}
-                heading={formatMessage({defaultMessage: 'Runs'})}
-                subtitle={formatMessage({defaultMessage: 'All the runs that you can access will show here'})}
+                heading={formatMessage({defaultMessage: 'Checklists'})}
+                subtitle={formatMessage({defaultMessage: 'All the checklists that you can access will show here'})}
                 style={{
                     borderBottom: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
                 }}

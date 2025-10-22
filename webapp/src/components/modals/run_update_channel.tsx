@@ -54,7 +54,7 @@ const UpdateRunModal = ({
             id={ID}
             modalHeaderText={
                 <Header>
-                    {isPlaybookRun ? formatMessage({defaultMessage: 'Link run to a different channel'}) : formatMessage({defaultMessage: 'Link checklist to a different channel'})}
+                    {isPlaybookRun ? formatMessage({defaultMessage: 'Link checklist to a different channel'}) : formatMessage({defaultMessage: 'Link checklist to a different channel'})}
                     <ModalSubheading>
                         {run?.name}
                     </ModalSubheading>

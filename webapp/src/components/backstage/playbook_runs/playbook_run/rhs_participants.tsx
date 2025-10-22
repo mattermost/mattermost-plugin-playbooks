@@ -221,14 +221,14 @@ const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, ch
                 <DropdownMenuItem
                     onClick={() => changeRunOwner(id)}
                 >
-                    {formatMessage({defaultMessage: 'Make run owner'})}
+                    {formatMessage({defaultMessage: 'Make checklist owner'})}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => {
                         removeFromRun([id]);
                     }}
                 >
-                    {formatMessage({defaultMessage: 'Remove from run'})}
+                    {formatMessage({defaultMessage: 'Remove from checklist'})}
                 </DropdownMenuItem>
             </DotMenu>
         );

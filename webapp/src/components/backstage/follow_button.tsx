@@ -60,7 +60,7 @@ export const FollowUnfollowButton = ({runID, followState}: Props) => {
             })
             .catch(() => {
                 addToast({
-                    content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
+                    content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the checklist'}, {isFollowing}),
                     toastStyle: ToastStyle.Failure,
                 });
             });
@@ -81,7 +81,7 @@ export const FollowUnfollowButton = ({runID, followState}: Props) => {
         <Tooltip
             id={'follow-tooltip'}
             placement='bottom'
-            content={formatMessage({defaultMessage: 'Get run status update notifications'})}
+            content={formatMessage({defaultMessage: 'Get checklist status update notifications'})}
         >
             <FollowButton
                 className={'followButton'}

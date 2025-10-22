@@ -108,7 +108,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                             checked={playbook.channel_mode === 'create_new_channel'}
                             onChange={() => handleChannelModeChange('create_new_channel')}
                         />
-                        <FormattedMessage defaultMessage='Create a run channel'/>
+                        <FormattedMessage defaultMessage='Create a checklist channel'/>
                     </AutomationLabel>
                 </AutomationTitle>
                 <HorizontalSplit>

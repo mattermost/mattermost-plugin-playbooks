@@ -61,7 +61,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                         color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                     />
                     <FooterText>
-                        {formatMessage({defaultMessage: 'Participants will also be added to the channel linked to this run'})}
+                        {formatMessage({defaultMessage: 'Participants will also be added to the channel linked to this checklist'})}
                     </FooterText>
                 </FooterExtraInfoContainer>
             );
@@ -70,7 +70,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             return (
                 <StyledCheckboxInput
                     testId={'also-add-to-channel'}
-                    text={formatMessage({defaultMessage: 'Also add people to the channel linked to this run'})}
+                    text={formatMessage({defaultMessage: 'Also add people to the channel linked to this checklist'})}
                     checked={forceAddToChannel}
                     onChange={(checked) => setForceAddToChannel(checked)}
                 />

@@ -66,7 +66,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
 
             <TextEdit
                 disabled={playbookRun.current_status !== PlaybookRunStatus.InProgress}
-                placeholder={formatMessage({defaultMessage: 'Run name'})}
+                placeholder={formatMessage({defaultMessage: 'Checklist name'})}
                 value={playbookRun.name}
                 onSave={(name) => updateRun({name})}
                 editStyles={css`
@@ -97,8 +97,8 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                         <StyledBadge status={BadgeType[playbookRun.current_status]}/>
                         <HeaderButton
                             tooltipId={'run-actions-button-tooltip'}
-                            tooltipMessage={formatMessage({defaultMessage: 'Run Actions'})}
-                            aria-label={formatMessage({defaultMessage: 'Run Actions'})}
+                            tooltipMessage={formatMessage({defaultMessage: 'Checklist Actions'})}
+                            aria-label={formatMessage({defaultMessage: 'Checklist Actions'})}
                             Icon={LightningBoltOutlineIcon}
                             onClick={() => dispatch(showRunActionsModal())}
                             data-testid={'rhs-header-button-run-actions'}
@@ -106,7 +106,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                         <StyledCopyLink
                             id='copy-run-link-tooltip'
                             to={getSiteUrl() + '/playbooks/runs/' + playbookRun?.id}
-                            tooltipMessage={formatMessage({defaultMessage: 'Copy link to run'})}
+                            tooltipMessage={formatMessage({defaultMessage: 'Copy link to checklist'})}
                         />
                     </>
                 )}

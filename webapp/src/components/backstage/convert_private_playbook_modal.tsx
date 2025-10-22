@@ -24,7 +24,7 @@ const useConfirmPlaybookConvertPrivateModal = ({playbookId, refetch, updater}: P
         <ConfirmModal
             show={showMakePrivateConfirm}
             title={formatMessage({defaultMessage: 'Convert to Private playbook'})}
-            message={formatMessage({defaultMessage: 'When you convert to a private playbook, membership and run history is preserved. This change is permanent and cannot be undone. Are you sure you want to convert {playbookTitle} to a private playbook?'}, {playbookTitle: playbook?.title})}
+            message={formatMessage({defaultMessage: 'When you convert to a private playbook, membership and checklist history is preserved. This change is permanent and cannot be undone. Are you sure you want to convert {playbookTitle} to a private playbook?'}, {playbookTitle: playbook?.title})}
             confirmButtonText={formatMessage({defaultMessage: 'Confirm'})}
             onConfirm={() => {
                 if (playbookId && updater) {

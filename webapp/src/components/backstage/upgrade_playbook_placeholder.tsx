@@ -15,7 +15,7 @@ const UpgradePlaybookPlaceholder = () => {
         <UpgradeBanner
             background={<UpgradePlaybookBackgroundSvg/>}
             titleText={formatMessage({defaultMessage: 'All the statistics you need'})}
-            helpText={formatMessage({defaultMessage: 'Upgrade to view trends for total runs, active runs and participants involved in runs of this playbook.'})}
+            helpText={formatMessage({defaultMessage: 'Upgrade to view trends for total checklists, active checklists and participants involved in checklists of this playbook.'})}
             notificationType={AdminNotificationType.MESSAGE_TO_PLAYBOOK_DASHBOARD}
             verticalAdjustment={230}
             horizontalAdjustment={32}

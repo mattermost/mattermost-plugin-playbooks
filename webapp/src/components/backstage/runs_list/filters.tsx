@@ -140,11 +140,11 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                 testId={'search-filter'}
                 default={fetchParams.search_term}
                 onSearch={onSearch}
-                placeholder={formatMessage({defaultMessage: 'Search by run name'})}
+                placeholder={formatMessage({defaultMessage: 'Search by checklist name'})}
             />
             <CheckboxInput
                 testId={'my-runs-only'}
-                text={formatMessage({defaultMessage: 'My runs only'})}
+                text={formatMessage({defaultMessage: 'My checklists only'})}
                 checked={myRunsOnly}
                 onChange={setMyRunsOnly}
             />

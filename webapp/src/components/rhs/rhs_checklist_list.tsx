@@ -287,7 +287,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                         }
                     }}
                 >
-                    {formatMessage({defaultMessage: 'Finish run'})}
+                    {formatMessage({defaultMessage: 'Finish checklist'})}
                 </FinishButton>
             }
             <RHSGiveFeedbackButton/>

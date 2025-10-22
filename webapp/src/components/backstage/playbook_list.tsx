@@ -289,7 +289,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
-                                name={formatMessage({defaultMessage: 'Active Runs'})}
+                                name={formatMessage({defaultMessage: 'Active Checklists'})}
                                 direction={params.direction}
                                 active={params.sort === 'active_runs'}
                                 onClick={() => sortBy('active_runs')}
@@ -297,7 +297,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
-                                name={formatMessage({defaultMessage: 'Runs'})}
+                                name={formatMessage({defaultMessage: 'Checklists'})}
                                 direction={params.direction}
                                 active={params.sort === 'runs'}
                                 onClick={() => sortBy('runs')}
@@ -348,7 +348,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                             {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
                                 <AltCreatePlaybookHeader>
                                     <AltHeading>
-                                        {formatMessage({defaultMessage: 'Choose a template'})}
+                                        {formatMessage({defaultMessage: 'Choose an example'})}
                                     </AltHeading>
                                     <ImportSub>
                                         {formatMessage({defaultMessage: 'or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>'}, {
@@ -362,7 +362,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                         })}
                                     </ImportSub>
                                     <AltSub>
-                                        {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                        {formatMessage({defaultMessage: 'There are examples for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
                                     </AltSub>
                                 </AltCreatePlaybookHeader>
                             ) : (
@@ -371,7 +371,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                         {formatMessage({defaultMessage: 'Do more with Playbooks'})}
                                     </Heading>
                                     <Sub>
-                                        {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                        {formatMessage({defaultMessage: 'There are examples for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
                                     </Sub>
                                 </CreatePlaybookHeader>
                             )}

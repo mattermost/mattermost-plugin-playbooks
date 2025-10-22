@@ -51,7 +51,7 @@ const getDueInfo = (playbookRun: PlaybookRun, now: DateTime) => {
     let text: React.ReactNode;
 
     if (isFinished) {
-        text = <FormattedMessage defaultMessage='Run finished'/>;
+        text = <FormattedMessage defaultMessage='Checklist finished'/>;
         type = dueType.Finished;
     } else if (isNextUpdateScheduled) {
         type = (isDue ? dueType.Overdue : dueType.Scheduled);
@@ -94,7 +94,7 @@ const useRequestUpdate = (playbookRunId: string) => {
             });
         } else {
             addToast({
-                content: formatMessage({defaultMessage: 'Your request was sent to the run channel. '}),
+                content: formatMessage({defaultMessage: 'Your request was sent to the checklist channel. '}),
                 toastStyle: ToastStyle.Success,
             });
         }
@@ -103,7 +103,7 @@ const useRequestUpdate = (playbookRunId: string) => {
         <ConfirmModal
             show={showRequestUpdateConfirm}
             title={formatMessage({defaultMessage: 'Request an update '})}
-            message={formatMessage({defaultMessage: 'A status update request will be sent to the run channel. '})}
+            message={formatMessage({defaultMessage: 'A status update request will be sent to the checklist channel. '})}
             confirmButtonText={formatMessage({defaultMessage: 'Send request '})}
             onConfirm={() => {
                 requestStatusUpdate();

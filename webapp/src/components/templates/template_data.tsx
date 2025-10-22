@@ -737,7 +737,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                 {
                     title: 'Learn',
                     items: [
-                        newChecklistItem('Try editing the run name or description in the top section of this page.'),
+                        newChecklistItem('Try editing the checklist name or description in the top section of this page.'),
                         newChecklistItem('Try checking off the first two tasks!'),
                         newChecklistItem('Assign a task to yourself or another member.'),
                         newChecklistItem('Post your first status update.'),
@@ -749,7 +749,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                     items: [
                         newChecklistItem('Invite other team members that you would like to collaborate with.'),
                         newChecklistItem('Skip a task.'),
-                        newChecklistItem('Finish the run.'),
+                        newChecklistItem('Finish the checklist.'),
                     ],
                 },
             ],

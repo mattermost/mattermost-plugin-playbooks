@@ -100,7 +100,7 @@ const RHSRunDetails = (props: Props) => {
             showParticipateConfirm();
         };
         toastID = addToast({
-            content: formatMessage({defaultMessage: 'Become a participant to interact with this run'}),
+            content: formatMessage({defaultMessage: 'Become a participant to interact with this checklist'}),
             toastStyle: ToastStyle.Informational,
             buttonName: formatMessage({defaultMessage: 'Participate'}),
             buttonCallback: showConfirm,
@@ -181,7 +181,7 @@ const RHSRunDetails = (props: Props) => {
                 {ParticipateConfirmModal}
                 {showRunDetailsSidePanelStep && (
                     <TutorialTourTip
-                        title={<FormattedMessage defaultMessage='View run details in a side panel'/>}
+                        title={<FormattedMessage defaultMessage='View checklist details in a side panel'/>}
                         screen={<FormattedMessage defaultMessage='See who is involved and what needs to be done without leaving the conversation.'/>}
                         tutorialCategory={TutorialTourCategories.RUN_DETAILS}
                         step={RunDetailsTutorialSteps.SidePanel}
