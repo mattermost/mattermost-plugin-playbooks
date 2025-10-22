@@ -9,7 +9,6 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
     BookOutlineIcon,
     CheckAllIcon,
-    CheckCircleOutlineIcon,
     CheckIcon,
     LinkVariantIcon,
     PencilOutlineIcon,
@@ -17,12 +16,15 @@ import {
     PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
+
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
+import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
 
 import {useUpdateRun} from 'src/graphql/hooks';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
@@ -42,7 +44,6 @@ import {ToastStyle} from 'src/components/backstage/toast';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 import {UserList} from './rhs_participants';
-import {RHSTitleText} from './rhs_title_common';
 
 interface PlaybookToDisplay {
     title: string
@@ -136,12 +137,12 @@ const RHSRunList = (props: Props) => {
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <TitleIcon/>
-                    <RHSTitleText>
-                        {/* product name; don't translate */}
+                    <TitleIcon src={CheckLogoIcon}/>
+                    <>
+                        {/* static title; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
                         {'Checklists'}
-                    </RHSTitleText>
+                    </>
                     <VerticalLine/>
                     <ChannelNameText>
                         {currentChannelName}
@@ -184,7 +185,7 @@ const RHSRunList = (props: Props) => {
                         onClick={handleStartRun}
                     >
                         <PlusIcon size={14}/>
-                        {formatMessage({defaultMessage: ' Create a checklist'})}
+                        {formatMessage({defaultMessage: 'New checklist'})}
                     </StartRunButton>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
@@ -359,12 +360,10 @@ const ChannelNameText = styled.div`
     text-overflow: ellipsis;
 `;
 
-const TitleIcon = styled(CheckCircleOutlineIcon)`
+const TitleIcon = styled.img`
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(var(--button-bg-rgb), 0.08);
-    color: var(--button-bg);
 `;
 
 const StartRunButton = styled(SecondaryButton)`
