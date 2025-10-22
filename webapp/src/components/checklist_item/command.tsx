@@ -5,11 +5,12 @@ import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {clientRunChecklistItemSlashCommand} from 'src/client';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import CommandInput from 'src/components/command_input';
-import {CallsSlashCommandPrefix} from 'src/constants';
+import {CallsSlashCommandPrefix, OVERLAY_DELAY} from 'src/constants';
 import {runCallsSlashCommand} from 'src/utils';
 
 import Dropdown from 'src/components/dropdown';
@@ -61,10 +62,12 @@ const Command = (props: CommandProps) => {
                 title={formatMessage({defaultMessage: 'Command...'})}
                 className={'icon-slash-forward icon-12'}
             />
-            <CommandTextContainer>
-                {formatMessage({defaultMessage: 'Command...'})}
-            </CommandTextContainer>
-            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
+            {!props.isEditing && (
+                <CommandTextContainer>
+                    {formatMessage({defaultMessage: 'Command...'})}
+                </CommandTextContainer>
+            )}
+            {props.isEditing && Boolean(props.command) && <DropdownArrow className={'icon-chevron-down'}/>}
         </PlaceholderDiv>
     );
 
@@ -86,7 +89,7 @@ const Command = (props: CommandProps) => {
         </Run>
     );
 
-    const commandButton = (
+    const commandText = (
         <CommandText
             onClick={() => {
                 if (!props.disabled) {
@@ -100,37 +103,55 @@ const Command = (props: CommandProps) => {
                 text={props.command}
                 parentRef={commandRef}
             />
-            {props.isEditing && <DropdownArrow className={'icon-chevron-down'}/>}
+            {props.isEditing && Boolean(props.command) && <DropdownArrow className={'icon-chevron-down'}/>}
         </CommandText>
     );
 
     const notEditingCommand = (
         <>
             {!props.disabled && props.playbookRunId !== undefined && runButton}
-            {commandButton}
+            {commandText}
             {!props.disabled && running && <StyledSpinner/>}
         </>
     );
 
     const editingCommand = (
         <>
-            {props.command === '' ? placeholder : commandButton}
+            {props.command === '' ? placeholder : commandText}
         </>
     );
+
+    let commandButton = (
+        <CommandButton
+            $editing={props.isEditing}
+            $isDisabled={props.disabled}
+            $isPlaceholder={props.command === ''}
+        >
+            {(props.isEditing || props.command === '') ? editingCommand : notEditingCommand}
+        </CommandButton>
+    );
+
+    const tooltipText = formatMessage({defaultMessage: 'Command'});
+
+    if (props.isEditing && props.command === '') {
+        commandButton = (
+            <div>
+                <OverlayTrigger
+                    placement='top'
+                    delay={OVERLAY_DELAY}
+                    overlay={<Tooltip id='command-tooltip'>{tooltipText}</Tooltip>}
+                >
+                    {commandButton}
+                </OverlayTrigger>
+            </div>
+        );
+    }
 
     return (
         <Dropdown
             isOpen={commandOpen}
             onOpenChange={setCommandOpen}
-            target={(
-                <CommandButton
-                    $editing={props.isEditing}
-                    $isDisabled={props.disabled}
-                    $isPlaceholder={props.command === ''}
-                >
-                    {(props.isEditing || props.command === '') ? editingCommand : notEditingCommand}
-                </CommandButton>
-            )}
+            target={commandButton}
         >
             <FormContainer>
                 <CommandInputContainer>
@@ -167,7 +188,7 @@ const PlaceholderDiv = styled.div<{$isDisabled: boolean}>`
 const CommandButton = styled.div<{$editing: boolean, $isDisabled: boolean, $isPlaceholder: boolean}>`
     display: flex;
     border-radius: 54px;
-    padding: 0 4px;
+    padding: ${({$isPlaceholder}) => ($isPlaceholder ? '1px' : '1px 4px 1px 6px')};
     height: 24px;
     max-width: 100%;
     background: ${({$isPlaceholder}) => ($isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
@@ -237,18 +258,19 @@ const StyledSpinner = styled(LoadingSpinner)`
     margin: 0 2px;
 `;
 
-const CommandIcon = styled.i`
+const CommandIcon = styled.i<{$empty: boolean}>`
     display: flex;
     width: 20px;
     height: 20px;
+    font-size: 14px;
     align-items: center;
-    margin-right: 5px;
     color: rgba(var(--center-channel-color-rgb),0.56);
     text-align: center;
 `;
 
 const CommandTextContainer = styled.div`
     margin-right: 4px;
+    margin-left: 5px;
     font-size: 12px;
     font-weight: 400;
     line-height: 15px;

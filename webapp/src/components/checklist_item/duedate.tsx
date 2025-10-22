@@ -40,6 +40,7 @@ interface Props {
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
     placement: Placement;
     onOpenChange?: (isOpen: boolean) => void;
+    isEditing?: boolean;
 }
 
 const controlComponentDueDate = (isDateTime: boolean) => (ownProps: ControlProps<DateTimeOption, boolean>) => (
@@ -103,7 +104,6 @@ export const DueDateHoverMenuButton = ({
     const hoverMenuButton = (
         <ChecklistHoverMenuButton
             $disabled={!dueDateEditAvailable}
-            title={dueDateEditAvailable ? formatMessage({defaultMessage: 'Add due date'}) : ''}
             className={'icon-calendar-outline icon-12 btn-icon'}
             onClick={licenseControl}
         />
@@ -167,6 +167,8 @@ export const DueDateButton = ({
         }
     }
 
+    const isPlaceholder = !date;
+
     const handleButtonClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
         if (!props.editable) {
             e.stopPropagation();
@@ -197,36 +199,74 @@ export const DueDateButton = ({
     const overdue = !ignoreOverdue && mode === Mode.DateTimeValue && isOverdue(date);
     const label = mode === Mode.DateTimeValue ? buttonLabelForDateTime(date) : buttonLabelForDuration(date);
 
-    const dueDateButton = (
+    const dateInfo = date ? DateTime.fromMillis(date).toLocaleString({month: 'short', day: '2-digit'}) : '';
+    const dueDateToolTip = formatMessage({defaultMessage: 'Due on {date}'}, {date: dateInfo});
+    const addTimeFrameToolTip = formatMessage({defaultMessage: 'Add time frame'});
+    const dueDatePlaceholderToolTip = formatMessage({defaultMessage: 'Due date'});
+
+    let dueDateButton = (
         <DueDateContainer
             $overdue={overdue}
             $dueSoon={dueSoon}
             $editable={props.editable}
-            $isPlaceholder={!date}
+            $isPlaceholder={isPlaceholder}
+            onClick={handleButtonClick}
         >
-            <DateTimeSelector
-                placeholder={
-                    <PlaceholderDiv
-                        onClick={handleButtonClick}
-                        data-testid='due-date-info-button'
-                        $editable={props.editable}
-                    >
-                        <CalendarIcon
-                            className={'icon-calendar-outline icon-12 btn-icon'}
-                            $overdueOrDueSoon={overdue || dueSoon}
-                        />
-                        <DueDateTextContainer $overdue={overdue}>
-                            {label}
-                        </DueDateTextContainer>
-                        {props.editable && (
-                            <SelectorRightIcon
-                                className='icon-chevron-down icon-12'
-                                $overdueOrDueSoon={overdue || dueSoon}
-                            />)
-                        }
-                    </PlaceholderDiv>
-                }
+            <PlaceholderDiv
+                data-testid='due-date-info-button'
+                $editable={props.editable}
+            >
+                <CalendarIcon
+                    className={'icon-calendar-outline icon-12 btn-icon'}
+                    $overdueOrDueSoon={overdue || dueSoon}
+                />
+                {label && (
+                    <DueDateTextContainer $overdue={overdue}>
+                        {label}
+                    </DueDateTextContainer>
+                )}
+                {props.editable && label && (
+                    <SelectorRightIcon
+                        className='icon-chevron-down icon-12'
+                        $overdueOrDueSoon={overdue || dueSoon}
+                    />
+                )}
+            </PlaceholderDiv>
+        </DueDateContainer>
+    );
 
+    // Show tooltip with date info if date exists and not editable
+    if (date && mode === Mode.DateTimeValue && !props.editable) {
+        dueDateButton = (
+            <OverlayTrigger
+                placement='bottom'
+                delay={OVERLAY_DELAY}
+                shouldUpdatePosition={true}
+                overlay={<Tooltip id='due-date-tooltip'>{dueDateToolTip}</Tooltip>}
+            >
+                {dueDateButton}
+            </OverlayTrigger>
+        );
+    }
+
+    // Show tooltip when editing and no date set
+    if (!date) {
+        const tooltipText = mode === Mode.DurationValue ? addTimeFrameToolTip : dueDatePlaceholderToolTip;
+        dueDateButton = (
+            <OverlayTrigger
+                placement='top'
+                delay={OVERLAY_DELAY}
+                overlay={<Tooltip id='due-date-placeholder-tooltip'>{tooltipText}</Tooltip>}
+            >
+                {dueDateButton}
+            </OverlayTrigger>
+        );
+    }
+
+    return (
+        <>
+            <DateTimeSelector
+                placeholder={dueDateButton}
                 date={date}
                 mode={mode}
                 onlyPlaceholder={true}
@@ -241,23 +281,7 @@ export const DueDateButton = ({
                 placement={props.placement}
             />
             {upgradeModal}
-        </DueDateContainer>
-    );
-
-    const dateInfo = date ? DateTime.fromMillis(date).toLocaleString({month: 'short', day: '2-digit'}) : '';
-    const toolTip = formatMessage({defaultMessage: 'Due on {date}'}, {date: dateInfo});
-
-    return (
-        (date && mode === Mode.DateTimeValue && !props.editable) ? (
-            <OverlayTrigger
-                placement='bottom'
-                delay={OVERLAY_DELAY}
-                shouldUpdatePosition={true}
-                overlay={<Tooltip id='due-date-tooltip'>{toolTip}</Tooltip>}
-            >
-                {dueDateButton}
-            </OverlayTrigger>
-        ) : dueDateButton
+        </>
     );
 };
 
@@ -270,7 +294,7 @@ const buttonLabelForDuration = (date?: number) => {
 
 const buttonLabelForDateTime = (date?: number) => {
     if (!date) {
-        return <FormattedMessage defaultMessage='Due date...'/>;
+        return false;
     }
 
     const timespec = (date < DateTime.now().toMillis()) ? PastTimeSpec : FutureTimeSpec;
@@ -403,6 +427,7 @@ const DueDateTextContainer = styled.div<{$overdue: boolean}>`
     font-size: 12px;
     font-weight: ${(props) => (props.$overdue ? '600' : '400')};
     line-height: 15px;
+    margin-left: 5px;
 `;
 
 const CalendarIcon = styled.div<{$overdueOrDueSoon: boolean}>`
@@ -411,7 +436,6 @@ const CalendarIcon = styled.div<{$overdueOrDueSoon: boolean}>`
     display: flex;
     align-items: center;
     text-align: center;
-    margin-right: 5px;
     color: inherit;
     pointer-events: none;
 
@@ -427,7 +451,7 @@ const SelectorRightIcon = styled.i<{$overdueOrDueSoon: boolean}>`
         margin-left: 4px;
     }
 
-    ${({$overdueOrDueSoon}) => !$overdueOrDueSoon && `
+    ${({$overdueOrDueSoon}) => !$overdueOrDueSoon && css`
         color: var(--center-channel-color-32);
     `}
 `;
@@ -436,7 +460,7 @@ const DueDateContainer = styled.div<{$overdue: boolean, $dueSoon: boolean, $edit
     display: flex;
     flex-wrap: wrap;
     border-radius: 13px;
-    padding: 2px 8px;
+    padding: ${({$isPlaceholder}) => ($isPlaceholder ? '1px' : '1px 8px')};
     max-width: 100%;
     background: ${({$isPlaceholder}) => ($isPlaceholder ? 'transparent' : 'rgba(var(--center-channel-color-rgb), 0.08)')};
     border: ${({$isPlaceholder}) => ($isPlaceholder ? '1px solid rgba(var(--center-channel-color-rgb), 0.08)' : 'none')}; ;
@@ -451,6 +475,7 @@ const DueDateContainer = styled.div<{$overdue: boolean, $dueSoon: boolean, $edit
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
             color: var(--center-channel-color);
+            cursor: pointer
         }
     `}
 `;
