@@ -4,7 +4,9 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -54,11 +56,92 @@ func (h *AIHandler) playbookCompletion(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
-	// Decode the request
+	const maxUploadSize = 10 << 20 // 10 MB per file
+	const maxFiles = 5
+
+	// Check if this is a multipart form (with files) or JSON
+	contentType := r.Header.Get("Content-Type")
 	var request ai.CompletionRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid request body", err)
-		return
+
+	if len(contentType) > 19 && contentType[:19] == "multipart/form-data" {
+		// Parse multipart form with files
+		if err := r.ParseMultipartForm(maxUploadSize * maxFiles); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Failed to parse multipart form", err)
+			return
+		}
+
+		// Get the posts JSON from form data
+		postsJSON := r.FormValue("posts")
+		if postsJSON == "" {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Missing posts data", nil)
+			return
+		}
+
+		if err := json.Unmarshal([]byte(postsJSON), &request.Posts); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid posts JSON", err)
+			return
+		}
+
+		// Process uploaded files
+		if r.MultipartForm != nil && r.MultipartForm.File != nil {
+			files := r.MultipartForm.File["files"]
+			if len(files) > maxFiles {
+				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Too many files (max 5)", nil)
+				return
+			}
+
+			// Convert files to base64 and attach to the last post
+			if len(request.Posts) > 0 && len(files) > 0 {
+				lastPostIdx := len(request.Posts) - 1
+				request.Posts[lastPostIdx].Files = make([]ai.File, 0, len(files))
+
+				for i, fileHeader := range files {
+					if fileHeader.Size > maxUploadSize {
+						h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "File too large (max 10MB)", nil)
+						return
+					}
+
+					file, err := fileHeader.Open()
+					if err != nil {
+						h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "Failed to open uploaded file", err)
+						return
+					}
+					defer file.Close()
+
+					// Read file contents
+					fileData, err := io.ReadAll(file)
+					if err != nil {
+						h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "Failed to read file", err)
+						return
+					}
+
+					// Encode to base64
+					base64Data := base64.StdEncoding.EncodeToString(fileData)
+
+					// Detect mime type from header
+					mimeType := fileHeader.Header.Get("Content-Type")
+					if mimeType == "" {
+						mimeType = "application/octet-stream"
+					}
+
+					// Add to post
+					request.Posts[lastPostIdx].Files = append(request.Posts[lastPostIdx].Files, ai.File{
+						ID:       fileHeader.Filename, // Use filename as ID for now
+						Name:     fileHeader.Filename,
+						MimeType: mimeType,
+						Data:     base64Data,
+					})
+
+					c.logger.WithField("file", fileHeader.Filename).WithField("index", i).Debug("Processed uploaded file")
+				}
+			}
+		}
+	} else {
+		// Standard JSON request (no files)
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid request body", err)
+			return
+		}
 	}
 
 	// Validate request

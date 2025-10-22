@@ -842,7 +842,40 @@ export interface AICompletionResponse {
     message: string;
 }
 
-export async function sendAIPlaybookMessage(posts: AIPost[]): Promise<string> {
+export async function sendAIPlaybookMessage(posts: AIPost[], files?: File[]): Promise<string> {
+    // If files are provided, use multipart form data
+    if (files && files.length > 0) {
+        const formData = new FormData();
+        formData.append('posts', JSON.stringify(posts));
+
+        // Append each file
+        files.forEach((file) => {
+            formData.append('files', file);
+        });
+
+        // Use custom fetch for multipart form data
+        const response = await fetch(`${apiUrl}/ai/playbook/completion`, {
+            ...Client4.getOptions({
+                method: 'POST',
+                body: formData,
+            }),
+            // Don't set Content-Type header - browser will set it with boundary
+            headers: {
+                ...Client4.getOptions({}).headers,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Failed to get AI completion');
+        }
+
+        const result = await response.json() as AICompletionResponse;
+        return result.message;
+    }
+
+    // Standard JSON request (no files)
     const body = JSON.stringify({posts});
     const result = await doPost<AICompletionResponse>(`${apiUrl}/ai/playbook/completion`, body);
     if (!result) {

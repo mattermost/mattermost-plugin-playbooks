@@ -75,15 +75,15 @@ Remember: Be conversational and helpful. When you output a playbook schema, keep
 
 // Service handles LLM interactions via the AI plugin
 type Service struct {
-	client      *aiclient.Client
-	serviceName string
+	client    *aiclient.Client
+	agentName string
 }
 
-// NewService creates a new AI service
-func NewService(pluginAPI plugin.API, serviceName string) *Service {
+// NewService creates a new AI service using an agent
+func NewService(pluginAPI plugin.API, agentName string) *Service {
 	return &Service{
-		client:      aiclient.NewClient(pluginAPI),
-		serviceName: serviceName,
+		client:    aiclient.NewClient(pluginAPI),
+		agentName: agentName,
 	}
 }
 
@@ -91,6 +91,15 @@ func NewService(pluginAPI plugin.API, serviceName string) *Service {
 type Post struct {
 	Role    string `json:"role"`
 	Message string `json:"message"`
+	Files   []File `json:"files,omitempty"`
+}
+
+// File represents a file attachment
+type File struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	MimeType string `json:"mime_type"`
+	Data     string `json:"data"` // base64 encoded
 }
 
 // CompletionRequest is the request structure for AI completion
@@ -103,7 +112,7 @@ type CompletionResponse struct {
 	Message string `json:"message"`
 }
 
-// GetCompletion sends a conversation to the LLM service and returns the response
+// GetCompletion sends a conversation to the LLM agent and returns the response
 func (s *Service) GetCompletion(posts []Post) (string, error) {
 	if len(posts) == 0 {
 		return "", errors.New("posts cannot be empty")
@@ -121,10 +130,26 @@ func (s *Service) GetCompletion(posts []Post) (string, error) {
 
 	// Convert user posts to AI client format and append
 	for _, post := range posts {
-		allPosts = append(allPosts, aiclient.Post{
+		clientPost := aiclient.Post{
 			Role:    post.Role,
 			Message: post.Message,
-		})
+		}
+
+		// Include files if present
+		if len(post.Files) > 0 {
+			clientFiles := make([]aiclient.File, len(post.Files))
+			for i, f := range post.Files {
+				clientFiles[i] = aiclient.File{
+					ID:       f.ID,
+					Name:     f.Name,
+					MimeType: f.MimeType,
+					Data:     f.Data,
+				}
+			}
+			clientPost.Files = clientFiles
+		}
+
+		allPosts = append(allPosts, clientPost)
 	}
 
 	// Create the completion request with system prompt + conversation
@@ -132,10 +157,10 @@ func (s *Service) GetCompletion(posts []Post) (string, error) {
 		Posts: allPosts,
 	}
 
-	// Call the AI service
-	response, err := s.client.ServiceCompletion(s.serviceName, request)
+	// Call the AI agent
+	response, err := s.client.AgentCompletion(s.agentName, request)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get completion from AI service")
+		return "", errors.Wrap(err, "failed to get completion from AI agent")
 	}
 
 	return response, nil

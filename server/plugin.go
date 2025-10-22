@@ -178,9 +178,10 @@ func (p *Plugin) OnActivate() error {
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
-	// Initialize AI service with configurable service name (default: "openai")
+	// Initialize AI service with agent (bot) name
+	// Using "default" which will use the default bot configured in the AI plugin
 	// TODO: Make this configurable via plugin settings
-	p.aiService = ai.NewService(p.API, "openai")
+	p.aiService = ai.NewService(p.API, "matty")
 
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,

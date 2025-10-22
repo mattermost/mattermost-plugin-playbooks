@@ -10,9 +10,10 @@ import React, {
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, getCurrentUser, getUser} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useHistory} from 'react-router-dom';
+import {Client4} from 'mattermost-redux/client';
 
 import {Checklist, DraftPlaybookWithChecklist, setPlaybookDefaults} from 'src/types/playbook';
 import GenericModal from 'src/components/widgets/generic_modal';
@@ -181,6 +182,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
     const {formatMessage} = useIntl();
     const history = useHistory();
     const currentUserId = useSelector(getCurrentUserId);
+    const currentUser = useSelector(getCurrentUser);
     const currentTeamId = useSelector(getCurrentTeamId);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState('');
@@ -193,6 +195,9 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [mockChannelId] = useState('mock_ai_channel_' + Date.now());
     const [existingPlaybook, setExistingPlaybook] = useState<DraftPlaybookWithChecklist | null>(null);
+    const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [playbookDescription, setPlaybookDescription] = useState('');
 
     // Load existing playbook if an ID is provided
     useEffect(() => {
@@ -201,6 +206,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                 if (playbook) {
                     setExistingPlaybook(playbook);
                     setPlaybookName(playbook.title);
+                    setPlaybookDescription(playbook.description || '');
                     setChecklists(playbook.checklists);
 
                     // Add a system message to inform the AI about the existing playbook
@@ -276,7 +282,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
         return displayContent.trim();
     };
 
-    const parsePlaybookSchema = (message: string): Checklist[] | null => {
+    const parsePlaybookSchema = (message: string): {checklists: Checklist[]; title?: string; description?: string} | null => {
         // Look for the special marker that indicates a playbook schema
         const markerIndex = message.indexOf('<!-- PLAYBOOK_SCHEMA -->');
         if (markerIndex === -1) {
@@ -307,17 +313,68 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                 return null;
             }
 
-            // Return the checklists directly - they should have all required fields
-            return parsed.checklists as Checklist[];
+            // Return the checklists along with optional title and description
+            return {
+                checklists: parsed.checklists as Checklist[],
+                title: parsed.title,
+                description: parsed.description,
+            };
         } catch (err) {
             console.error('Failed to parse playbook schema JSON:', err);
             return null;
         }
     };
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            const validFiles = newFiles.filter((file) => {
+                // Validate file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    setError(`File "${file.name}" is too large (max 10MB)`);
+                    return false;
+                }
+                return true;
+            });
+
+            // Check total file count
+            if (attachedFiles.length + validFiles.length > 5) {
+                setError('Maximum 5 files allowed');
+                // Reset input value so the same file can be selected again
+                e.target.value = '';
+                return;
+            }
+
+            // Check if files include images and warn
+            const hasImages = validFiles.some((file) => file.type.startsWith('image/'));
+            if (hasImages) {
+                // Show a warning but allow upload - the backend will handle the error
+                console.log('Note: Image uploads require a vision-enabled AI model');
+            }
+
+            setAttachedFiles((prev) => [...prev, ...validFiles]);
+
+            // Reset input value so the same file can be selected again
+            e.target.value = '';
+        }
+    };
+
+    const handleRemoveFile = (index: number) => {
+        setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const formatFileSize = (bytes: number): string => {
+        if (bytes < 1024) {
+            return bytes + ' B';
+        } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(1) + ' KB';
+        }
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
     const handleSendMessage = async (messageContent?: string) => {
         const content = messageContent || inputValue;
-        if (!content.trim() || isLoading) {
+        if ((!content.trim() && attachedFiles.length === 0) || isLoading) {
             return;
         }
 
@@ -327,11 +384,15 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
         // Add user message
         const userMessage: Message = {
             role: 'user',
-            content,
+            content: content || (attachedFiles.length > 0 ? '[Attached files]' : ''),
             timestamp: Date.now(),
         };
         setMessages((prev) => [...prev, userMessage]);
         setInputValue('');
+
+        // Store files for request, then clear
+        const filesToSend = [...attachedFiles];
+        setAttachedFiles([]);
         setIsLoading(true);
 
         try {
@@ -362,10 +423,30 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                     }
                     return msg;
                 });
+            } else if (messages.length > 1 && (checklists.length > 0 || playbookName || playbookDescription)) {
+                // For subsequent messages, include the current state so the AI can modify it
+                const currentStateJson = JSON.stringify({
+                    title: playbookName || 'Untitled Playbook',
+                    description: playbookDescription || '',
+                    checklists,
+                }, null, 2);
+
+                const stateContext: AIPost = {
+                    role: 'user',
+                    message: `Here is the current playbook state:\n\n\`\`\`json\n${currentStateJson}\n\`\`\`\n\nNow, the user's request: ${content}`,
+                };
+
+                // Replace the last user message with the enhanced version
+                conversationHistory = conversationHistory.map((msg, idx) => {
+                    if (idx === conversationHistory.length - 1) {
+                        return stateContext;
+                    }
+                    return msg;
+                });
             }
 
-            // Send request to AI service
-            const aiResponse = await sendAIPlaybookMessage(conversationHistory);
+            // Send request to AI service with files
+            const aiResponse = await sendAIPlaybookMessage(conversationHistory, filesToSend);
 
             // Add AI response to messages
             const aiMessage: Message = {
@@ -376,22 +457,38 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
             setMessages((prev) => [...prev, aiMessage]);
 
             // Try to parse playbook schema from the response
-            const parsedChecklists = parsePlaybookSchema(aiResponse);
-            if (parsedChecklists) {
+            const parsedSchema = parsePlaybookSchema(aiResponse);
+            if (parsedSchema) {
                 // Update the checklists with the parsed schema
-                setChecklists(parsedChecklists);
+                setChecklists(parsedSchema.checklists);
+
+                // Update title if provided
+                if (parsedSchema.title) {
+                    setPlaybookName(parsedSchema.title);
+                }
+
+                // Update description if provided
+                if (parsedSchema.description) {
+                    setPlaybookDescription(parsedSchema.description);
+                }
             }
             // If no schema found, that's fine - it's just a conversational message
 
         } catch (err) {
             // Handle error
-            const errorMessage = err instanceof Error ? err.message : 'Failed to get response from AI';
+            let errorMessage = err instanceof Error ? err.message : 'Failed to get response from AI';
+
+            // Check if it's a vision-related error
+            if (errorMessage.includes('image_url') || errorMessage.includes('vision')) {
+                errorMessage = 'This AI bot does not support image uploads. Please configure the bot to use a vision-enabled model or upload text files only.';
+            }
+
             setError(errorMessage);
 
             // Add error message to chat
             const errorChatMessage: Message = {
                 role: 'assistant',
-                content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+                content: `Sorry, I encountered an error: ${errorMessage}`,
                 timestamp: Date.now(),
             };
             setMessages((prev) => [...prev, errorChatMessage]);
@@ -431,6 +528,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                 draftPlaybook = {
                     ...existingPlaybook,
                     title: playbookName,
+                    description: playbookDescription,
                     checklists,
                     num_stages: checklists.length,
                     num_steps: checklists.reduce((sum, cl) => sum + cl.items.length, 0),
@@ -439,7 +537,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                 // Create a draft playbook with the AI-generated checklists
                 draftPlaybook = {
                     title: playbookName,
-                    description: 'Playbook created with AI assistance',
+                    description: playbookDescription || 'Playbook created with AI assistance',
                     team_id: currentTeamId,
                     public: true,
                     create_public_playbook_run: false,
@@ -545,14 +643,41 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                                 <PostHeader>
                                     <Avatar $isBot={message.role === 'assistant'}>
                                         {message.role === 'assistant' ? (
-                                            <i className='icon icon-robot-outline'/>
+                                            <BotAvatarImage
+                                                src={`${Client4.getBaseRoute()}/users/matty/image?_=${Date.now()}`}
+                                                alt='AI Assistant'
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    const nextSibling = e.currentTarget.nextElementSibling;
+                                                    if (nextSibling) {
+                                                        (nextSibling as HTMLElement).style.display = 'flex';
+                                                    }
+                                                }}
+                                            />
                                         ) : (
-                                            <i className='icon icon-account-outline'/>
+                                            <UserAvatarImage
+                                                src={`${Client4.getBaseRoute()}/users/${currentUserId}/image?_=${Date.now()}`}
+                                                alt={currentUser?.username || 'You'}
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    const nextSibling = e.currentTarget.nextElementSibling;
+                                                    if (nextSibling) {
+                                                        (nextSibling as HTMLElement).style.display = 'flex';
+                                                    }
+                                                }}
+                                            />
                                         )}
+                                        <AvatarFallback style={{display: 'none'}}>
+                                            {message.role === 'assistant' ? (
+                                                <i className='icon icon-robot-outline'/>
+                                            ) : (
+                                                <i className='icon icon-account-outline'/>
+                                            )}
+                                        </AvatarFallback>
                                     </Avatar>
                                     <PostMeta>
                                         <Username>
-                                            {message.role === 'assistant' ? 'AI Assistant' : 'You'}
+                                            {message.role === 'assistant' ? 'AI Assistant' : (currentUser?.username || 'You')}
                                         </Username>
                                         <PostTime>
                                             {formatTime(message.timestamp)}
@@ -568,7 +693,20 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                             <PostContainer>
                                 <PostHeader>
                                     <Avatar $isBot={true}>
-                                        <i className='icon icon-robot-outline'/>
+                                        <BotAvatarImage
+                                            src={`${Client4.getBaseRoute()}/users/matty/image?_=${Date.now()}`}
+                                            alt='AI Assistant'
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                const nextSibling = e.currentTarget.nextElementSibling;
+                                                if (nextSibling) {
+                                                    (nextSibling as HTMLElement).style.display = 'flex';
+                                                }
+                                            }}
+                                        />
+                                        <AvatarFallback style={{display: 'none'}}>
+                                            <i className='icon icon-robot-outline'/>
+                                        </AvatarFallback>
                                     </Avatar>
                                     <PostMeta>
                                         <Username>AI Assistant</Username>
@@ -583,29 +721,76 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                         <div ref={messagesEndRef}/>
                     </MessagesContainer>
                     <InputContainer>
-                        <TextInput
-                            placeholder={formatMessage({defaultMessage: 'Describe the playbook you want to create...'})}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            rows={3}
+                        <input
+                            ref={fileInputRef}
+                            type='file'
+                            multiple={true}
+                            accept='image/*,.pdf,.txt,.doc,.docx'
+                            style={{display: 'none'}}
+                            onChange={handleFileSelect}
                         />
-                        <SendButton
-                            onClick={() => handleSendMessage()}
-                            disabled={!inputValue.trim() || isLoading}
-                        >
-                            {isLoading ? (
-                                <i className='icon icon-loading icon-spin'/>
-                            ) : (
-                                <i className='icon icon-send'/>
-                            )}
-                        </SendButton>
+                        {attachedFiles.length > 0 && (
+                            <FilePreviewContainer>
+                                {attachedFiles.map((file, index) => (
+                                    <FileChip key={index}>
+                                        <i className='icon icon-file-document-outline'/>
+                                        <FileInfo>
+                                            <FileName>{file.name}</FileName>
+                                            <FileSize>{formatFileSize(file.size)}</FileSize>
+                                        </FileInfo>
+                                        <RemoveFileButton
+                                            onClick={() => handleRemoveFile(index)}
+                                            aria-label='Remove file'
+                                        >
+                                            <i className='icon icon-close'/>
+                                        </RemoveFileButton>
+                                    </FileChip>
+                                ))}
+                            </FilePreviewContainer>
+                        )}
+                        <InputRow>
+                            <TextInputWrapper>
+                                <TextInput
+                                    placeholder={formatMessage({defaultMessage: 'Describe the playbook you want to create...'})}
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                />
+                                <AttachButton
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isLoading || attachedFiles.length >= 5}
+                                    aria-label='Attach file'
+                                >
+                                    <i className='icon icon-paperclip'/>
+                                </AttachButton>
+                                <SendButton
+                                    onClick={() => handleSendMessage()}
+                                    disabled={(!inputValue.trim() && attachedFiles.length === 0) || isLoading}
+                                >
+                                    {isLoading ? (
+                                        <i className='icon icon-loading icon-spin'/>
+                                    ) : (
+                                        <i className='icon icon-send'/>
+                                    )}
+                                </SendButton>
+                            </TextInputWrapper>
+                        </InputRow>
                     </InputContainer>
                 </LeftPanel>
                 <RightPanel>
                     <TaskListHeader>
                         {playbookName || formatMessage({defaultMessage: 'Playbook Tasks'})}
                     </TaskListHeader>
+                    {playbookDescription && (
+                        <DescriptionContainer>
+                            <DescriptionLabel>
+                                {formatMessage({defaultMessage: 'Summary'})}
+                            </DescriptionLabel>
+                            <DescriptionText>
+                                {playbookDescription}
+                            </DescriptionText>
+                        </DescriptionContainer>
+                    )}
                     <TaskListContainer>
                         {checklists.length === 0 ? (
                             <EmptyTaskState>
@@ -695,7 +880,7 @@ const RightPanel = styled.div`
 `;
 
 const ChatHeader = styled.div`
-    padding: 16px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     font-weight: 600;
     font-size: 14px;
@@ -704,7 +889,7 @@ const ChatHeader = styled.div`
 `;
 
 const TaskListHeader = styled.div`
-    padding: 16px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     font-weight: 600;
     font-size: 14px;
@@ -712,13 +897,36 @@ const TaskListHeader = styled.div`
     flex-shrink: 0; /* Prevent header from shrinking */
 `;
 
+const DescriptionContainer = styled.div`
+    padding: 16px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    flex-shrink: 0;
+`;
+
+const DescriptionLabel = styled.div`
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--center-channel-color);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+`;
+
+const DescriptionText = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    line-height: 20px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+`;
+
 const MessagesContainer = styled.div`
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     min-height: 0; /* Important: allows scrolling to work properly */
 `;
 
@@ -754,7 +962,7 @@ const EmptyTaskState = styled.div`
 const PostContainer = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 12px 0;
+    padding: 8px 0;
 
     &:last-child {
         border-bottom: none;
@@ -777,11 +985,38 @@ const Avatar = styled.div<{$isBot: boolean}>`
     justify-content: center;
     margin-right: 8px;
     flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
 
     i {
         font-size: 18px;
         color: ${({$isBot}) => ($isBot ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
     }
+`;
+
+const BotAvatarImage = styled.img`
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+`;
+
+const UserAvatarImage = styled.img`
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+`;
+
+const AvatarFallback = styled.div`
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
 `;
 
 const PostMeta = styled.div`
@@ -802,7 +1037,7 @@ const PostTime = styled.div`
 `;
 
 const PostBody = styled.div`
-    margin-left: 40px;
+    margin-left: 32px;
     color: var(--center-channel-color);
     font-size: 14px;
     line-height: 20px;
@@ -841,7 +1076,7 @@ const PostBody = styled.div`
 
 const InputContainer = styled.div`
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
     padding: 16px;
     gap: 8px;
     border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
@@ -849,51 +1084,65 @@ const InputContainer = styled.div`
     flex-shrink: 0; /* Prevent input from being pushed out of view */
 `;
 
-const TextInput = styled.textarea`
+const TextInputWrapper = styled.div`
     flex: 1;
-    padding: 12px;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 4px;
     background: var(--center-channel-bg);
-    color: var(--center-channel-color);
-    font-size: 14px;
-    line-height: 20px;
-    resize: vertical;
-    min-height: 60px;
-    max-height: 150px;
-    font-family: inherit;
+    padding: 8px 8px 8px 12px;
 
-    &:focus {
-        outline: none;
+    &:focus-within {
         border-color: var(--button-bg);
         box-shadow: 0 0 0 2px rgba(var(--button-bg-rgb), 0.12);
     }
+`;
+
+const TextInput = styled.textarea`
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--center-channel-color);
+    font-size: 14px;
+    line-height: 20px;
+    resize: none;
+    min-height: 20px;
+    max-height: 100px;
+    font-family: inherit;
+    padding: 0;
+
+    &:focus {
+        outline: none;
+    }
 
     &::placeholder {
-        color: rgba(var(--center-channel-color-rgb), 0.64);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;
 
 const SendButton = styled.button`
-    padding: 10px 16px;
+    padding: 0;
     border: none;
     border-radius: 4px;
-    background: var(--button-bg);
+    background: ${props => props.disabled ? 'rgba(var(--button-bg-rgb), 0.32)' : 'var(--button-bg)'};
     color: var(--button-color);
     cursor: pointer;
-    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    min-width: 40px;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    margin-left: 8px;
 
     &:hover:not(:disabled) {
-        background: var(--button-bg-hover);
+        background: rgba(var(--button-bg-rgb), 0.92);
     }
 
     &:disabled {
-        opacity: 0.5;
         cursor: not-allowed;
     }
 
@@ -1004,6 +1253,106 @@ const TaskDescription = styled.div`
 const LoadingIndicator = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     font-style: italic;
+`;
+
+// File upload components
+const InputRow = styled.div`
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+`;
+
+const AttachButton = styled.button`
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+        color: var(--center-channel-color);
+    }
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    i {
+        font-size: 20px;
+    }
+`;
+
+const FilePreviewContainer = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 0;
+`;
+
+const FileChip = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    max-width: 250px;
+
+    i.icon-file-document-outline {
+        font-size: 16px;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        flex-shrink: 0;
+    }
+`;
+
+const FileInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+`;
+
+const FileName = styled.div`
+    font-size: 12px;
+    color: var(--center-channel-color);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const FileSize = styled.div`
+    font-size: 11px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+`;
+
+const RemoveFileButton = styled.button`
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    flex-shrink: 0;
+
+    &:hover {
+        color: var(--error-text);
+    }
+
+    i {
+        font-size: 16px;
+    }
 `;
 
 export default PlaybookCreateWithAIModal;

@@ -11,6 +11,7 @@ import {
     ArchiveOutlineIcon,
     CloseIcon,
     ContentCopyIcon,
+    CreationOutlineIcon,
     ExportVariantIcon,
     LinkVariantIcon,
     LockOutlineIcon,
@@ -52,7 +53,7 @@ import {
 import {OVERLAY_DELAY} from 'src/constants';
 import {ButtonIcon, PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
-import {displayEditPlaybookAccessModal, openPlaybookRunModal} from 'src/actions';
+import {displayEditPlaybookAccessModal, displayPlaybookCreateWithAIModal, openPlaybookRunModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem as DropdownMenuItemBase, DropdownMenuItemStyled, iconSplitStyling} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from 'src/components/backstage/archive_playbook_modal';
@@ -414,6 +415,14 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                             <FormattedMessage defaultMessage='Manage access'/>
                         </DropdownMenuItem>
                         <div className='MenuGroup menu-divider'/>
+                        <DropdownMenuItem
+                            onClick={() => dispatch(displayPlaybookCreateWithAIModal({initialPlaybookId: playbook.id}))}
+                            disabled={archived}
+                            disabledAltText={formatMessage({defaultMessage: 'This archived playbook cannot be edited with AI.'})}
+                        >
+                            <CreationOutlineIcon size={18}/>
+                            <FormattedMessage defaultMessage='Edit with AI'/>
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={editTitle}
                             disabled={archived}
