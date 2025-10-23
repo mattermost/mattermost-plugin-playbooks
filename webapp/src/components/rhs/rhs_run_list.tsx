@@ -27,12 +27,13 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
 
 import {useUpdateRun} from 'src/graphql/hooks';
+import {createPlaybookRun} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
-import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
@@ -114,6 +115,7 @@ const RHSRunList = (props: Props) => {
     const dispatch = useDispatch();
     const currentTeamId = useSelector(getCurrentTeamId);
     const currentChannelId = useSelector(getCurrentChannelId);
+    const currentUserId = useSelector(getCurrentUserId);
     const [loadingMore, setLoadingMore] = useState(false);
     const debouncedSetLoadingMore = useMemo(() => debounce(setLoadingMore, 100), [setLoadingMore]);
     const getMore = async () => {
@@ -131,6 +133,38 @@ const RHSRunList = (props: Props) => {
             triggerChannelId: currentChannelId,
             teamId: currentTeamId,
         }));
+    };
+
+    const handleCreateBlankChecklist = async () => {
+        try {
+            const newRun = await createPlaybookRun(
+                '', // No playbook ID for blank checklist
+                currentUserId,
+                currentTeamId,
+                formatMessage({defaultMessage: 'Untitled checklist'}),
+                '',
+                currentChannelId,
+                undefined
+            );
+
+            // Call the onRunCreated callback with the new run
+            props.onRunCreated(newRun.id, newRun.channel_id, {
+                playbookId: '',
+                channelMode: 'link_existing_channel',
+                hasPlaybookChanged: false,
+                hasNameChanged: false,
+                hasSummaryChanged: false,
+                hasChannelModeChanged: false,
+                hasChannelIdChanged: false,
+            });
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to create blank checklist:', error);
+        }
+    };
+
+    const handleGoToPlaybooks = () => {
+        navigateToPluginUrl('/playbooks');
     };
 
     return (
@@ -180,13 +214,40 @@ const RHSRunList = (props: Props) => {
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    <StartRunButton
-                        data-testid='rhs-runlist-start-run'
-                        onClick={handleStartRun}
-                    >
-                        <PlusIcon size={14}/>
-                        {formatMessage({defaultMessage: 'New checklist'})}
-                    </StartRunButton>
+                    <SegmentedButtonContainer>
+                        <PrimaryActionButton
+                            onClick={handleCreateBlankChecklist}
+                            data-testid='create-blank-checklist'
+                        >
+                            <PlusIcon size={18}/>
+                            {formatMessage({defaultMessage: 'New checklist'})}
+                        </PrimaryActionButton>
+                        <DotMenu
+                            dotMenuButton={DropdownTriggerButton}
+                            placement='bottom-start'
+                            icon={<i className={'icon icon-chevron-down'}/>}
+                        >
+                            <CreateChecklistMenuItem
+                                onClick={handleStartRun}
+                                data-testid='create-from-playbook'
+                            >
+                                <MenuItemIcon>
+                                    <PlayOutlineIcon size={18}/>
+                                </MenuItemIcon>
+                                <FormattedMessage defaultMessage='Run a playbook'/>
+                            </CreateChecklistMenuItem>
+                            <Separator/>
+                            <CreateChecklistMenuItem
+                                onClick={handleGoToPlaybooks}
+                                data-testid='go-to-playbooks'
+                            >
+                                <MenuItemIcon>
+                                    <PlaybooksProductIcon/>
+                                </MenuItemIcon>
+                                <FormattedMessage defaultMessage='Go to Playbooks'/>
+                            </CreateChecklistMenuItem>
+                        </DotMenu>
+                    </SegmentedButtonContainer>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
@@ -225,7 +286,7 @@ const RHSRunList = (props: Props) => {
                                 numInProgress={props.numInProgress}
                                 numFinished={props.numFinished}
                                 setOptions={props.setOptions}
-                                onStartRunClicked={handleStartRun}
+                                onCreateChecklistClicked={handleCreateBlankChecklist}
                             />
                         </NoRunsWrapper>
                         <PoweredByPlaybooksFooter/>
@@ -364,19 +425,90 @@ const TitleIcon = styled.img`
     width: 24px;
     height: 24px;
     border-radius: 50%;
+    background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
 `;
 
-const StartRunButton = styled(SecondaryButton)`
+const SegmentedButtonContainer = styled.div`
     display: flex;
-    height: 100%;
     flex-direction: row;
-    padding: 8px 16px;
+    align-items: center;
+    height: 32px;
+    border-radius: 4px;
+`;
+
+const PrimaryActionButton = styled.button`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px;
     border: 0;
     background: rgba(var(--button-bg-rgb), 0.08);
     color: var(--button-bg);
     font-size: 12px;
     font-weight: 600;
-    gap: 6px;
+    gap: 4px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-right: 1px solid rgba(var(--button-bg-rgb), 0.16);
+    cursor: pointer;
+    height: 100%;
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.12);
+    }
+
+    &:active {
+        background: rgba(var(--button-bg-rgb), 0.16);
+    }
+`;
+
+const DropdownTriggerButton = styled(TitleButton)`
+    && {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 2px;
+        width: 24px;
+        height: 100%;
+        border-radius: 0 4px 4px 0;
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+        font-size: 12px;
+
+        &:hover {
+            background: rgba(var(--button-bg-rgb), 0.12);
+        }
+
+        &:active {
+            background: rgba(var(--button-bg-rgb), 0.16);
+        }
+
+        i {
+            font-size: 18px;
+        }
+    }
+`;
+
+const CreateChecklistMenuItem = styled(DropdownMenuItem)`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    min-height: 40px;
+`;
+
+const MenuItemIcon = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    flex-shrink: 0;
+    width: 24px;
+
+    i {
+        font-size: 18px;
+    }
 `;
 
 const SortDotMenuButton = styled(DotMenuButton)`
@@ -729,7 +861,7 @@ interface NoRunsProps {
     active: boolean
     numInProgress: number;
     numFinished: number;
-    onStartRunClicked: () => void;
+    onCreateChecklistClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
 }
 
@@ -750,7 +882,7 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton onClick={props.onStartRunClicked}>
+            <PrimaryButton onClick={props.onCreateChecklistClicked}>
                 <PlusIcon size={18}/>
                 <FormattedMessage defaultMessage={'New checklist'}/>
             </PrimaryButton>

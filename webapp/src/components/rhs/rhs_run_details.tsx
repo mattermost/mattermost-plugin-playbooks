@@ -16,6 +16,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {throttle} from 'lodash';
 
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
+
 import {
     RHSContainer,
     RHSContent,
@@ -23,7 +25,6 @@ import {
     renderThumbVertical,
     renderView,
 } from 'src/components/rhs/rhs_shared';
-import RHSAbout from 'src/components/rhs/rhs_about';
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious, useRun} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
@@ -45,6 +46,7 @@ import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import RHSRunDetailsTitle from './rhs_run_details_title';
 import RHSRunParticipants from './rhs_run_participants';
 import RHSRunParticipantsTitle from './rhs_run_participants_title';
+import RHSAbout from './rhs_about';
 
 const toastDuration = 4500;
 
@@ -71,7 +73,7 @@ const RHSRunDetails = (props: Props) => {
         if ((prevStatus !== playbookRun?.current_status) && (playbookRun?.current_status === PlaybookRunStatus.Finished)) {
             scrollbarsRef?.current?.scrollToTop();
         }
-    }, [playbookRun?.current_status]);
+    }, [playbookRun?.current_status, prevStatus]);
 
     useEffect(() => {
         let isRunDetailTour = false;
@@ -88,7 +90,7 @@ const RHSRunDetails = (props: Props) => {
                 onDismiss: () => setRunDetailsStep(SKIPPED),
             }));
         }
-    }, [runDetailsStep]);
+    }, [dispatch, runDetailsStep, setRunDetailsStep]);
 
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined);
     const addToast = useToaster().add;
@@ -107,7 +109,8 @@ const RHSRunDetails = (props: Props) => {
             iconName: 'account-plus-outline',
             duration: toastDuration,
         });
-    }, toastDuration, {leading: true, trailing: false}), []);
+    }, toastDuration, {leading: true, trailing: false}),
+    [addToast, formatMessage, removeToast, showParticipateConfirm]);
 
     const rhsContainerPunchout = useMeasurePunchouts(
         ['rhsContainer'],
@@ -150,6 +153,8 @@ const RHSRunDetails = (props: Props) => {
                 <RHSRunDetailsTitle
                     runID={props.runID}
                     onBackClick={props.onBackClick}
+                    runName={playbookRun.name}
+                    isPlaybookRun={playbookRun?.type === PlaybookRunType.Playbook}
                 />
             </RHSTitleRemoteRender>
             <RHSContainer>
@@ -164,12 +169,14 @@ const RHSRunDetails = (props: Props) => {
                         renderView={renderView}
                         style={{position: 'absolute'}}
                     >
-                        <RHSAbout
-                            playbookRun={playbookRun}
-                            readOnly={readOnly}
-                            onReadOnlyInteract={onReadOnlyInteract}
-                            setShowParticipants={setShowParticipants}
-                        />
+                        {playbookRun.type !== PlaybookRunType.ChannelChecklist && (
+                            <RHSAbout
+                                playbookRun={playbookRun}
+                                readOnly={readOnly}
+                                onReadOnlyInteract={onReadOnlyInteract}
+                                setShowParticipants={setShowParticipants}
+                            />
+                        )}
                         <RHSChecklistList
                             playbookRun={playbookRun}
                             parentContainer={ChecklistParent.RHS}

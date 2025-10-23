@@ -175,13 +175,14 @@ const RightHandSidebar = () => {
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
+    const [userNavigatedAway, setUserNavigatedAway] = useState(false);
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
-    const {playbooks, isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
+    const {isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
 
     // If there is only one active run in this channel select it.
     useEffect(() => {
-        if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1) {
+        if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1 && !userNavigatedAway) {
             const singleRunID = fetchedRuns.runsInProgress[0].id;
             if (singleRunID !== currentRunId && !skipNextDetailNav) {
                 setCurrentRunId(singleRunID);
@@ -190,11 +191,13 @@ const RightHandSidebar = () => {
         if (skipNextDetailNav) {
             setSkipNextDetailNav(false);
         }
-    }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
+    }, [currentChannelId, currentRunId, fetchedRuns.runsInProgress, skipNextDetailNav, userNavigatedAway]);
 
-    // Reset the list options on channel change
+    // Reset the list options and navigation state on channel change
     useEffect(() => {
         setListOptions(defaultListOptions);
+        setUserNavigatedAway(false);
+        setCurrentRunId(undefined);
     }, [currentChannelId]);
 
     if (!fetchedRuns.runsInProgress || !fetchedRuns.runsFinished) {
@@ -204,6 +207,7 @@ const RightHandSidebar = () => {
     const clearCurrentRunId = () => {
         fetchedRuns.refetch();
         setCurrentRunId(undefined);
+        setUserNavigatedAway(true);
     };
 
     const handleOnCreateRun = (runId: string, channelId: string) => {
@@ -220,11 +224,6 @@ const RightHandSidebar = () => {
 
     // Not a channel
     if (!currentChannelId) {
-        return <RHSHome/>;
-    }
-
-    // No playbooks
-    if (!isLoading && playbooks?.length === 0 && fetchedRuns.runsInProgress.length === 0 && fetchedRuns.runsFinished.length === 0) {
         return <RHSHome/>;
     }
 

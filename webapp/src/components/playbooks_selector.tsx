@@ -1,11 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useMemo} from 'react';
 import styled, {css} from 'styled-components';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {useIntl} from 'react-intl';
 import {ApolloProvider, useQuery} from '@apollo/client';
-import {BookLockOutlineIcon, BookOutlineIcon, PlusIcon} from '@mattermost/compass-icons/components';
+import {BookLockOutlineIcon, BookOutlineIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 
@@ -13,11 +13,12 @@ import {FragmentType, getFragmentData, graphql} from 'src/graphql/generated';
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
-import SearchSvg from 'src/components/assets/illustrations/search_svg';
-import ClipboardChecklistSvg from 'src/components/assets/illustrations/clipboard_checklist_svg';
+import {PresetTemplate, PresetTemplates} from 'src/components/templates/template_data';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {PlaybookPermissionsParams, useHasPlaybookPermission} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {savePlaybook} from 'src/client';
+import {setPlaybookDefaults} from 'src/types/playbook';
 
 interface Props {
     teamID: string;
@@ -25,10 +26,9 @@ interface Props {
     searchTerm: string;
 
     /**
-     * Callback that will trigger if the conditions for zero case no results are met.
+     * Callback that will be triggered when a playbook is selected to run.
+     * For templates, a new playbook will be created first, then this callback is triggered with the new playbook ID.
      */
-    onZeroCaseNoPlaybooks: (zerocase: boolean) => void;
-    onCreatePlaybook: () => void;
     onSelectPlaybook: (playbookId: string) => void;
 }
 
@@ -36,6 +36,7 @@ const PlaybookModalFieldsFragment = graphql(/* GraphQL */`
     fragment PlaybookModalFields on Playbook {
         id
         title
+        description
         is_favorite: isFavorite
         public
         team_id: teamID
@@ -83,61 +84,30 @@ const PlaybooksSelector = (props: Props) => {
         fetchPolicy: 'cache-and-network',
     });
 
+    // Prepare template list once on mount
+    const templatesList = useMemo(() => PresetTemplates, []);
+
     // Groups are mutually exclusive
-    // -> 1) if channelid -> -unique- playbooks whose runs are in linked to this channel
-    // -> 2) playbooks I'm member of and are not contained in 1
-    // -> 3) playbooks I have access to and are not contained in 1 and 2
-    const getGroups = () => {
-        const groupUsed = props.channelID ? data?.allPlaybooks.filter((playbook) => data.channelPlaybooks.edges?.find((target) => target.node?.playbookID === playbook.id)) : [];
-        const groupYours = data?.yourPlaybooks.filter((playbook) => !groupUsed?.find((target) => target.id === playbook.id));
-        const groupOther = data?.allPlaybooks.filter((playbook) =>
-            !data.yourPlaybooks.find((target) => target.id === playbook.id) &&
-            !groupUsed?.find((target) => target.id === playbook.id)
-        );
+    // -> 1) YOUR PLAYBOOKS - playbooks the user is a member of
+    // -> 2) PRE-BUILT PLAYBOOKS - preset templates
+    const groups = useMemo(() => {
+        const groupYours = data?.yourPlaybooks || [];
 
         return [
             {
-                title: formatMessage({defaultMessage: 'Used in this channel'}),
-                list: groupUsed,
-            },
-            {
-                title: formatMessage({defaultMessage: 'Your playbooks'}),
+                title: formatMessage({defaultMessage: 'YOUR PLAYBOOKS'}),
                 list: groupYours,
+                hideIfEmpty: true,
+                isTemplates: false,
             },
             {
-                title: formatMessage({defaultMessage: 'Other playbooks'}),
-                list: groupOther,
+                title: formatMessage({defaultMessage: 'PRE-BUILT PLAYBOOKS'}),
+                list: templatesList,
+                hideIfEmpty: false,
+                isTemplates: true,
             },
         ];
-    };
-
-    const groups = getGroups();
-    const hasResults = Boolean(data?.allPlaybooks && data?.allPlaybooks.length > 0);
-
-    // Invoke callback to notify parent if the zero case triggered
-    if (!loading) {
-        props.onZeroCaseNoPlaybooks(props.searchTerm === '' && !hasResults);
-    }
-
-    if (!hasResults && !loading) {
-        return props.searchTerm === '' ? (
-            <ErrorContainer>
-                <ClipboardSvg/>
-                <ErrorTitle>{formatMessage({defaultMessage: 'Get started with Playbooks'})}</ErrorTitle>
-                <ErrorSubTitle>{formatMessage({defaultMessage: 'Playbooks are configurable checklists that define a repeatable process for teams to achieve specific and predictable outcomes'})}</ErrorSubTitle>
-                <PrimaryButton onClick={props.onCreatePlaybook}>
-                    <Plus size={16}/>
-                    <FormattedMessage defaultMessage='Create new playbook'/>
-                </PrimaryButton>
-            </ErrorContainer>
-        ) : (
-            <ErrorContainer>
-                <SearchSvg/>
-                <ErrorTitle>{formatMessage({defaultMessage: 'No results for "{searchTerm}"'}, {searchTerm: props.searchTerm})}</ErrorTitle>
-                <ErrorSubTitle>{formatMessage({defaultMessage: 'Please check spelling or try another search'})}</ErrorSubTitle>
-            </ErrorContainer>
-        );
-    }
+    }, [data?.yourPlaybooks, formatMessage, templatesList]);
 
     if (loading) {
         return <LoadingContainer><LoadingSpinner/></LoadingContainer>;
@@ -150,20 +120,41 @@ const PlaybooksSelector = (props: Props) => {
                 autoHideTimeout={500}
                 autoHideDuration={500}
             >
-                {groups.map((group) => (
-                    <>
-                        {group.list && group.list.length > 0 && <GroupTitle>{group.title}</GroupTitle>}
-                        <Group>
-                            {group.list?.map((playbook) => (
-                                <PlaybookRow
-                                    key={`item-${playbook.id}`}
-                                    playbook={playbook}
-                                    onSelectPlaybook={props.onSelectPlaybook}
-                                />
-                            ))}
-                        </Group>
-                    </>
-                ))}
+                {groups.map((group) => {
+                    // Hide section if hideIfEmpty is true and list is empty
+                    if (group.hideIfEmpty && (!group.list || group.list.length === 0)) {
+                        return null;
+                    }
+
+                    return (
+                        <React.Fragment key={group.title}>
+                            {group.list && group.list.length > 0 && <GroupTitle>{group.title}</GroupTitle>}
+                            <Group>
+                                {group.isTemplates ? (
+                                    (group.list as PresetTemplate[])?.map((template) => (
+                                        <TemplateRow
+                                            key={`template-${template.title}`}
+                                            template={template}
+                                            teamID={props.teamID}
+                                            onSelectPlaybook={props.onSelectPlaybook}
+                                        />
+                                    ))
+                                ) : (
+                                    (group.list as Array<FragmentType<typeof PlaybookModalFieldsFragment>>)?.map((playbook) => {
+                                        const playbookData = getFragmentData(PlaybookModalFieldsFragment, playbook);
+                                        return (
+                                            <PlaybookRow
+                                                key={`item-${playbookData.id}`}
+                                                playbook={playbook}
+                                                onSelectPlaybook={props.onSelectPlaybook}
+                                            />
+                                        );
+                                    })
+                                )}
+                            </Group>
+                        </React.Fragment>
+                    );
+                })}
             </Scrollbars>
         </Container>
     );
@@ -193,6 +184,7 @@ const PlaybookRow = (props: PlaybookRowProps) => {
             </ItemIcon>
             <ItemCenter>
                 <ItemTitle>{playbook.title}</ItemTitle>
+                {playbook.description && <ItemDescription>{playbook.description}</ItemDescription>}
                 <ItemSubTitle>
                     <span>{playbook.last_run_at === 0 ? formatMessage({defaultMessage: 'Never used'}) : formatMessage({defaultMessage: 'Last used {time}'}, {time: DateTime.fromMillis(playbook.last_run_at).toRelative()})}</span>
                     <Dot/>
@@ -201,13 +193,72 @@ const PlaybookRow = (props: PlaybookRowProps) => {
             </ItemCenter>
             <ButtonWrappper className='modal-list-cta'>
                 {hasPermission ? (
-                    <PrimaryButton>{formatMessage({defaultMessage: 'Select'})}</PrimaryButton>
+                    <PrimaryButton>
+                        <PlayOutlineIcon size={18}/>
+                        {formatMessage({defaultMessage: 'Run'})}
+                    </PrimaryButton>
                 ) : (
                     <SecondaryButton
                         disabled={true}
                         title={'You do not have permissions'}
-                    >{formatMessage({defaultMessage: 'Select'})}</SecondaryButton>
+                    >
+                        <PlayOutlineIcon size={18}/>
+                        {formatMessage({defaultMessage: 'Run'})}
+                    </SecondaryButton>
                 )}
+            </ButtonWrappper>
+        </PlaybookItem>
+    );
+};
+
+interface TemplateRowProps {
+    template: PresetTemplate;
+    teamID: string;
+    onSelectPlaybook: (playbookId: string) => void;
+}
+
+const TemplateRow = (props: TemplateRowProps) => {
+    const {formatMessage} = useIntl();
+    const template = props.template;
+
+    const handleCreateFromTemplateAndRun = async () => {
+        // Create the playbook from template (without navigation)
+        const pb = setPlaybookDefaults(template.template);
+        pb.team_id = props.teamID;
+        const data = await savePlaybook(pb);
+
+        if (data?.id) {
+            // Trigger the run flow with the newly created playbook
+            props.onSelectPlaybook(data.id);
+        }
+    };
+
+    const iconProps = {
+        size: 18,
+        color: 'rgba(var(--center-channel-color-rgb), 0.56)',
+    };
+    return (
+        <PlaybookItem
+            $hasPermission={true}
+            onClick={handleCreateFromTemplateAndRun}
+        >
+            <ItemIcon>
+                <BookOutlineIcon {...iconProps}/>
+            </ItemIcon>
+            <ItemCenter>
+                <ItemTitle>{template.title}</ItemTitle>
+                {template.description && <ItemDescription>{template.description}</ItemDescription>}
+                <ItemSubTitle>
+                    <span>{formatMessage({defaultMessage: 'Never used'})}</span>
+                    <Dot/>
+                    <span>{formatMessage({defaultMessage: 'No runs in progress'})}</span>
+                </ItemSubTitle>
+            </ItemCenter>
+            <ButtonWrappper className='modal-list-cta'>
+                <PrimaryButton>
+                    <PlayOutlineIcon size={18}/>
+                    {formatMessage({defaultMessage: 'Run'})}
+                </PrimaryButton>
             </ButtonWrappper>
         </PlaybookItem>
     );
@@ -284,6 +335,13 @@ const ItemTitle = styled.div`
     font-weight: 400;
     line-height: 20px;
 `;
+const ItemDescription = styled.div`
+    margin-bottom: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size:  12px;
+    font-weight: 400;
+    line-height: 16px;
+`;
 const ItemSubTitle = styled.div`
     display: flex;
     align-items: center;
@@ -297,35 +355,12 @@ const ButtonWrappper = styled.div`
     display: none;
     margin-right: 10px;
     margin-left: auto;
-`;
 
-const ErrorContainer = styled(Container)`
-    max-width: 450px;
-    align-items: center;
-    align-self: center;
-    justify-content: center;
-    gap: 15px;
-`;
-
-const ErrorTitle = styled.div`
-    color: var(--center-channel-color);
-    font-size: 18px;
-    font-weight: 600;
-    text-align: center;
-`;
-
-const ErrorSubTitle = styled(ErrorTitle)`
-    font-size: 14px;
-    font-weight: 400;
-`;
-
-const Plus = styled(PlusIcon)`
-    margin-right: 5px;
-`;
-
-const ClipboardSvg = styled(ClipboardChecklistSvg)`
-    width:150px;
-    height:150px;
+    button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
 `;
 
 const LoadingContainer = styled(Container)`
