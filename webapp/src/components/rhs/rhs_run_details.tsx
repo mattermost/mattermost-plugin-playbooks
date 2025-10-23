@@ -46,6 +46,7 @@ import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import RHSRunDetailsTitle from './rhs_run_details_title';
 import RHSRunParticipants from './rhs_run_participants';
 import RHSRunParticipantsTitle from './rhs_run_participants_title';
+import RHSAbout from './rhs_about';
 
 const toastDuration = 4500;
 
@@ -168,6 +169,14 @@ const RHSRunDetails = (props: Props) => {
                         renderView={renderView}
                         style={{position: 'absolute'}}
                     >
+                        {playbookRun.type !== PlaybookRunType.ChannelChecklist && (
+                            <RHSAbout
+                                playbookRun={playbookRun}
+                                readOnly={readOnly}
+                                onReadOnlyInteract={onReadOnlyInteract}
+                                setShowParticipants={setShowParticipants}
+                            />
+                        )}
                         <RHSChecklistList
                             playbookRun={playbookRun}
                             parentContainer={ChecklistParent.RHS}

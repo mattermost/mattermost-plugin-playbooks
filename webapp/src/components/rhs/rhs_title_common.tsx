@@ -68,9 +68,25 @@ export const RHSTitleLink = styled(Link)`
 export const RHSTitleButton = styled.button`
     display: flex;
     align-items: center;
-    padding: 0 11px 0 0;
+    justify-content: center;
+    margin-right: 4px;
+    margin-left: -8px;
+    width: 32px;
+    height: 32px;
     border: none;
     background: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--center-channel-color);
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    &:active {
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+    }
 `;
 
 export const RHSTitleStyledButtonIcon = styled.i`
