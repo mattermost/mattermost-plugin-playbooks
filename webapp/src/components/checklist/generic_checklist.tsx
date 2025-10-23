@@ -48,6 +48,7 @@ const GenericChecklist = (props: Props) => {
     const myUser = useSelector(getCurrentUser);
     const [addingItem, setAddingItem] = useState(props.autoAddTask ?? false);
     const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+    const [newItemKey, setNewItemKey] = useState(0);
 
     // Auto-add task on mount if requested
     useEffect(() => {
@@ -274,7 +275,7 @@ const GenericChecklist = (props: Props) => {
 
                         {addingItem &&
                             <DraggableChecklistItem
-                                key={'new_checklist_item'}
+                                key={`new_checklist_item_${newItemKey}`}
                                 playbookRun={props.playbookRun}
                                 playbookId={props.playbookId}
                                 readOnly={props.readOnly}
@@ -293,6 +294,12 @@ const GenericChecklist = (props: Props) => {
                                     // New item is always in editing mode, so we don't need to track it separately
                                     // addingItem state already handles disabling drag & drop
                                 }}
+                                onSaveAndAddNew={() => {
+                                    // Increment key to force a new component instance with fresh state
+                                    setNewItemKey((prev) => prev + 1);
+                                    // Keep adding mode active after saving to create a new item
+                                    setAddingItem(true);
+                                }}
                             />
                         }
                         {droppableProvided.placeholder}
@@ -300,6 +307,7 @@ const GenericChecklist = (props: Props) => {
                             <AddTaskLink
                                 disabled={props.readOnly}
                                 onClick={() => {
+                                    setNewItemKey((prev) => prev + 1);
                                     setAddingItem(true);
                                 }}
                                 data-testid={`add-new-task-${props.checklistIndex}`}

@@ -21,6 +21,8 @@ interface TitleProps {
     editingItem: boolean;
     skipped: boolean;
     clickable: boolean;
+    onDeleteEmpty?: () => void;
+    onSaveAndAddNew?: () => void;
 }
 
 const ChecklistItemTitle = (props: TitleProps) => {
@@ -44,6 +46,17 @@ const ChecklistItemTitle = (props: TitleProps) => {
         e.target.style.height = (e.target.scrollHeight) + 'px';
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Escape' && props.value === '' && props.onDeleteEmpty) {
+            e.preventDefault();
+            props.onDeleteEmpty();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && props.value !== '' && props.onSaveAndAddNew) {
+            e.preventDefault();
+            props.onSaveAndAddNew();
+        }
+    };
+
     if (props.editingItem) {
         return (
             <TitleTextArea
@@ -61,6 +74,7 @@ const ChecklistItemTitle = (props: TitleProps) => {
                     computeHeight(e);
                 }}
                 onInput={computeHeight}
+                onKeyDown={handleKeyDown}
             />
         );
     }

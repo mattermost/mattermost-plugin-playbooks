@@ -85,6 +85,7 @@ interface ChecklistItemProps {
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
+    onSaveAndAddNew?: () => void;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -278,6 +279,51 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         );
     };
 
+    const handleSave = () => {
+        setIsEditing(false);
+        if (props.newItem) {
+            props.cancelAddingItem?.();
+            const newItem = {
+                title: titleValue,
+                command,
+                description: descValue,
+                state: ChecklistItemState.Open,
+                command_last_run: 0,
+                due_date: dueDate,
+                assignee_id: assigneeID,
+                task_actions: taskActions,
+                state_modified: 0,
+                assignee_modified: 0,
+                condition_id: '',
+                condition_action: '',
+                condition_reason: '',
+            };
+            if (props.playbookRunId) {
+                clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
+            } else {
+                props.onAddChecklistItem?.(newItem);
+            }
+        } else if (props.playbookRunId) {
+            clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
+                title: titleValue,
+                command,
+                description: descValue,
+            });
+        } else {
+            const newItem = {...props.checklistItem};
+            newItem.title = titleValue;
+            newItem.command = command;
+            newItem.description = descValue;
+            newItem.task_actions = taskActions;
+            props.onUpdateChecklistItem?.(newItem);
+        }
+    };
+
+    const handleSaveAndAddNew = () => {
+        handleSave();
+        props.onSaveAndAddNew?.();
+    };
+
     const renderRow = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
         if (
@@ -366,6 +412,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                             value={titleValue}
                             skipped={isSkipped()}
                             clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                            onDeleteEmpty={props.newItem ? props.cancelAddingItem : props.onDeleteChecklistItem}
+                            onSaveAndAddNew={props.onSaveAndAddNew ? handleSaveAndAddNew : undefined}
                         />
                     </ChecklistItemTitleWrapper>
                 </CheckboxContainer>
@@ -375,6 +423,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     showDescription={showDescription}
                     onEdit={setDescValue}
                     value={descValue}
+                    onSave={handleSave}
                 />
                 }
                 {renderRow()}
@@ -386,45 +435,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setDescValue(props.checklistItem.description);
                         props.cancelAddingItem?.();
                     }}
-                    onSave={() => {
-                        setIsEditing(false);
-                        if (props.newItem) {
-                            props.cancelAddingItem?.();
-                            const newItem = {
-                                title: titleValue,
-                                command,
-                                description: descValue,
-                                state: ChecklistItemState.Open,
-                                command_last_run: 0,
-                                due_date: dueDate,
-                                assignee_id: assigneeID,
-                                task_actions: taskActions,
-                                state_modified: 0,
-                                assignee_modified: 0,
-                                condition_id: '',
-                                condition_action: '',
-                                condition_reason: '',
-                            };
-                            if (props.playbookRunId) {
-                                clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
-                            } else {
-                                props.onAddChecklistItem?.(newItem);
-                            }
-                        } else if (props.playbookRunId) {
-                            clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                                title: titleValue,
-                                command,
-                                description: descValue,
-                            });
-                        } else {
-                            const newItem = {...props.checklistItem};
-                            newItem.title = titleValue;
-                            newItem.command = command;
-                            newItem.description = descValue;
-                            newItem.task_actions = taskActions;
-                            props.onUpdateChecklistItem?.(newItem);
-                        }
-                    }}
+                    onSave={handleSave}
                 />
                 }
             </ItemContainer>
