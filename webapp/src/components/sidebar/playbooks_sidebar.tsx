@@ -38,6 +38,7 @@ export const playbookLHSQueryDocument = graphql(/* GraphQL */`
                     ownerUserID
                     participantIDs
                     followers
+                    type
                 }
             }
         }
@@ -58,7 +59,7 @@ const useLHSData = (teamID: string) => {
         variables: {
             userID: 'me',
             teamID,
-            types: [PlaybookRunType.Playbook],
+            types: [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist],
         },
         fetchPolicy: 'cache-and-network',
     });
@@ -116,7 +117,7 @@ const useLHSData = (teamID: string) => {
     };
 
     const runItems = runs.map((run) => {
-        const icon = 'icon-play-outline';
+        const icon = run.type === PlaybookRunType.Playbook ? 'icon-play-outline' : 'icon-check-all';
         const link = pluginUrl(`/runs/${run.id}?from=playbooks_lhs`);
 
         return {
