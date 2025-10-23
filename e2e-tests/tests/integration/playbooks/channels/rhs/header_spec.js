@@ -369,4 +369,48 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             cy.findByText('Become a participant to interact with this run', {timeout: 500}).should('not.exist');
         });
     });
+
+    describe('rename checklist', () => {
+        it('cannot rename finished checklist from RHS header', () => {
+            // # Visit the standalone run channel (channel checklist)
+            cy.visit(`/${testTeam.name}/channels/${standaloneRunChannelName}`);
+
+            // # Wait for the page to load
+            cy.wait(TIMEOUTS.HALF_SEC);
+
+            // # Finish the checklist
+            cy.apiFinishRun(standaloneRun.id);
+
+            // # Reload to get the updated state
+            cy.reload();
+            cy.wait(TIMEOUTS.ONE_SEC);
+
+            // # Click on the checklist dropdown in the RHS header
+            cy.get('[data-testid="checklistDropdown"]').click();
+
+            // * Verify "Rename" option does not exist for finished checklists
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.findByText('Rename').should('not.exist');
+                cy.findByText('Save as playbook').should('exist');
+                cy.findByText('Resume').should('exist');
+            });
+        });
+
+        it('can rename active checklist from RHS header', () => {
+            // # Visit the standalone run channel (channel checklist)
+            cy.visit(`/${testTeam.name}/channels/${standaloneRunChannelName}`);
+
+            // # Wait for the page to load
+            cy.wait(TIMEOUTS.HALF_SEC);
+
+            // # Click on the checklist dropdown in the RHS header
+            cy.get('[data-testid="checklistDropdown"]').click();
+
+            // * Verify "Rename" option exists for active checklists
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.findByText('Rename').should('exist');
+                cy.findByText('Finish').should('exist');
+            });
+        });
+    });
 });

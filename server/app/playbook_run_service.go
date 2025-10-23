@@ -2515,6 +2515,13 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 		return err
 	}
 
+	// Prevent renaming checklists in finished runs
+	if playbookRunToModify.CurrentStatus == StatusFinished {
+		err := errors.Wrap(ErrPlaybookRunNotActive, "cannot rename checklist in a finished run")
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
 	// Add current context to audit
 	currentChecklist := playbookRunToModify.Checklists[checklistNumber]
 	model.AddEventParameterToAuditRec(auditRec, "currentTitle", currentChecklist.Title)
