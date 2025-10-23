@@ -99,13 +99,11 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
     useEffect(() => {
         fetchAIBots().then((botsData) => {
             setAIBotsData(botsData);
-            // Find the default bot and set both username and ID
-            if (botsData.defaultBotName) {
-                const defaultBot = botsData.bots.find(bot => bot.username === botsData.defaultBotName);
-                if (defaultBot) {
-                    setSelectedBotUsername(defaultBot.username);
-                    setSelectedBotId(defaultBot.id);
-                }
+            // Select the first bot if available
+            if (botsData.bots.length > 0) {
+                const firstBot = botsData.bots[0];
+                setSelectedBotUsername(firstBot.username);
+                setSelectedBotId(firstBot.id);
             }
         }).catch((err) => {
             console.error('Failed to fetch AI bots:', err);

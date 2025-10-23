@@ -181,7 +181,7 @@ func (p *Plugin) OnActivate() error {
 	// Initialize AI service with agent (bot) name
 	// Using "default" which will use the default bot configured in the AI plugin
 	// TODO: Make this configurable via plugin settings
-	p.aiService = ai.NewService(p.API, "matty")
+	p.aiService = ai.NewService(p.API, "")
 
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,

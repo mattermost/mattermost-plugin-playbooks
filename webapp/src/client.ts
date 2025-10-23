@@ -843,7 +843,6 @@ export interface AIBot {
 
 export interface AIBotsResponse {
     bots: AIBot[];
-    defaultBotName: string;
     searchEnabled: boolean;
     allowUnsafeLinks: boolean;
 }

@@ -182,7 +182,6 @@ type AIBot struct {
 // AIBotsResponse represents the response from GetAIBots
 type AIBotsResponse struct {
 	Bots             []AIBot `json:"bots"`
-	DefaultBotName   string  `json:"defaultBotName"`
 	SearchEnabled    bool    `json:"searchEnabled"`
 	AllowUnsafeLinks bool    `json:"allowUnsafeLinks"`
 }
@@ -211,10 +210,8 @@ func (s *Service) GetAIBots() (*AIBotsResponse, error) {
 		}
 	}
 
-	// Return the current agent name as the default
 	return &AIBotsResponse{
 		Bots:             bots,
-		DefaultBotName:   s.agentName,
 		SearchEnabled:    botsResp.SearchEnabled,
 		AllowUnsafeLinks: botsResp.AllowUnsafeLinks,
 	}, nil
