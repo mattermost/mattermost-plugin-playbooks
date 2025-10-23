@@ -18,7 +18,7 @@ import {Client4} from 'mattermost-redux/client';
 import {Checklist, DraftPlaybookWithChecklist, setPlaybookDefaults} from 'src/types/playbook';
 import GenericModal from 'src/components/widgets/generic_modal';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
-import {sendAIPlaybookMessage, AIPost, savePlaybook, clientFetchPlaybook} from 'src/client';
+import {sendAIPlaybookMessage, AIPost, savePlaybook, clientFetchPlaybook, fetchAIBots, AIBotsResponse} from 'src/client';
 import {navigateToUrl} from 'src/browser_routing';
 
 const ID = 'playbooks_create_with_ai';
@@ -37,146 +37,8 @@ interface Message {
     role: 'user' | 'assistant';
     content: string;
     timestamp: number;
+    files?: File[];
 }
-
-// Sample checklist data (will be replaced by AI-generated checklists in the future)
-const SAMPLE_CHECKLISTS: Checklist[] = [
-    {
-        title: 'Incident Detection',
-        items: [
-            {
-                title: 'Identify and confirm the incident',
-                description: 'Verify that an incident has occurred and assess initial impact',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-            {
-                title: 'Assess severity and priority',
-                description: 'Determine incident severity level and prioritize response',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-            {
-                title: 'Create incident channel',
-                description: 'Set up dedicated communication channel for incident response',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-        ],
-    },
-    {
-        title: 'Communication',
-        items: [
-            {
-                title: 'Notify stakeholders',
-                description: 'Alert relevant stakeholders about the incident',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-            {
-                title: 'Update status page',
-                description: 'Post incident status to public status page',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-        ],
-    },
-    {
-        title: 'Resolution',
-        items: [
-            {
-                title: 'Implement fix or workaround',
-                description: 'Apply solution to resolve the incident',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-            {
-                title: 'Verify resolution',
-                description: 'Confirm that the incident has been fully resolved',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-            {
-                title: 'Schedule post-mortem',
-                description: 'Set up post-incident review meeting',
-                state: 'open',
-                state_modified: 0,
-                assignee_id: '',
-                assignee_modified: 0,
-                command: '',
-                command_last_run: 0,
-                due_date: 0,
-                task_actions: [],
-                condition_id: '',
-                condition_action: '',
-                condition_reason: '',
-            },
-        ],
-    },
-];
 
 const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookCreateWithAIModalProps) => {
     const {formatMessage} = useIntl();
@@ -198,6 +60,9 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
     const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [playbookDescription, setPlaybookDescription] = useState('');
+    const [aiBotsData, setAIBotsData] = useState<AIBotsResponse | null>(null);
+    const [selectedBotUsername, setSelectedBotUsername] = useState<string>('');
+    const [selectedBotId, setSelectedBotId] = useState<string>('');
 
     // Load existing playbook if an ID is provided
     useEffect(() => {
@@ -229,6 +94,24 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
             });
         }
     }, [initialPlaybookId]);
+
+    // Fetch AI bots on modal mount
+    useEffect(() => {
+        fetchAIBots().then((botsData) => {
+            setAIBotsData(botsData);
+            // Find the default bot and set both username and ID
+            if (botsData.defaultBotName) {
+                const defaultBot = botsData.bots.find(bot => bot.username === botsData.defaultBotName);
+                if (defaultBot) {
+                    setSelectedBotUsername(defaultBot.username);
+                    setSelectedBotId(defaultBot.id);
+                }
+            }
+        }).catch((err) => {
+            console.error('Failed to fetch AI bots:', err);
+            // Note: No fallback ID set - avatar will fail gracefully with fallback icon
+        });
+    }, []);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -345,13 +228,6 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                 return;
             }
 
-            // Check if files include images and warn
-            const hasImages = validFiles.some((file) => file.type.startsWith('image/'));
-            if (hasImages) {
-                // Show a warning but allow upload - the backend will handle the error
-                console.log('Note: Image uploads require a vision-enabled AI model');
-            }
-
             setAttachedFiles((prev) => [...prev, ...validFiles]);
 
             // Reset input value so the same file can be selected again
@@ -381,17 +257,18 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
         // Clear any previous errors
         setError(null);
 
-        // Add user message
+        // Store files for request, then clear
+        const filesToSend = [...attachedFiles];
+
+        // Add user message with files
         const userMessage: Message = {
             role: 'user',
-            content: content || (attachedFiles.length > 0 ? '[Attached files]' : ''),
+            content: content || (filesToSend.length > 0 ? '[Attached files]' : ''),
             timestamp: Date.now(),
+            files: filesToSend.length > 0 ? filesToSend : undefined,
         };
         setMessages((prev) => [...prev, userMessage]);
         setInputValue('');
-
-        // Store files for request, then clear
-        const filesToSend = [...attachedFiles];
         setAttachedFiles([]);
         setIsLoading(true);
 
@@ -433,7 +310,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
 
                 const stateContext: AIPost = {
                     role: 'user',
-                    message: `Here is the current playbook state:\n\n\`\`\`json\n${currentStateJson}\n\`\`\`\n\nNow, the user's request: ${content}`,
+                    message: `IMPORTANT: Here is the current playbook state that you previously generated. When the user asks you to modify it, you MUST output a new complete playbook schema using the <!-- PLAYBOOK_SCHEMA --> marker and JSON format, incorporating the requested changes:\n\n\`\`\`json\n${currentStateJson}\n\`\`\`\n\nUser's request: ${content}\n\nRemember: Output the updated playbook using <!-- PLAYBOOK_SCHEMA --> followed by a JSON code block.`,
                 };
 
                 // Replace the last user message with the enhanced version
@@ -606,9 +483,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
         }
     };
 
-    const modalHeaderText = existingPlaybook
-        ? formatMessage({defaultMessage: 'Enhance playbook with AI'})
-        : formatMessage({defaultMessage: 'Create playbook with AI'});
+    const modalHeaderText = playbookName;
 
     const confirmButtonText = isCreating
         ? formatMessage({defaultMessage: 'Saving...'})
@@ -643,17 +518,21 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                                 <PostHeader>
                                     <Avatar $isBot={message.role === 'assistant'}>
                                         {message.role === 'assistant' ? (
-                                            <BotAvatarImage
-                                                src={`${Client4.getBaseRoute()}/users/matty/image?_=${Date.now()}`}
-                                                alt='AI Assistant'
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                    const nextSibling = e.currentTarget.nextElementSibling;
-                                                    if (nextSibling) {
-                                                        (nextSibling as HTMLElement).style.display = 'flex';
-                                                    }
-                                                }}
-                                            />
+                                            <>
+                                                {selectedBotId && (
+                                                    <BotAvatarImage
+                                                        src={`${Client4.getBaseRoute()}/users/${selectedBotId}/image?_=${Date.now()}`}
+                                                        alt='AI Assistant'
+                                                        onError={(e) => {
+                                                            e.currentTarget.style.display = 'none';
+                                                            const nextSibling = e.currentTarget.nextElementSibling;
+                                                            if (nextSibling) {
+                                                                (nextSibling as HTMLElement).style.display = 'flex';
+                                                            }
+                                                        }}
+                                                    />
+                                                )}
+                                            </>
                                         ) : (
                                             <UserAvatarImage
                                                 src={`${Client4.getBaseRoute()}/users/${currentUserId}/image?_=${Date.now()}`}
@@ -667,7 +546,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                                                 }}
                                             />
                                         )}
-                                        <AvatarFallback style={{display: 'none'}}>
+                                        <AvatarFallback style={{display: selectedBotId || message.role !== 'assistant' ? 'none' : 'flex'}}>
                                             {message.role === 'assistant' ? (
                                                 <i className='icon icon-robot-outline'/>
                                             ) : (
@@ -677,7 +556,7 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                                     </Avatar>
                                     <PostMeta>
                                         <Username>
-                                            {message.role === 'assistant' ? 'AI Assistant' : (currentUser?.username || 'You')}
+                                            {message.role === 'assistant' ? selectedBotUsername : (currentUser?.username || 'You')}
                                         </Username>
                                         <PostTime>
                                             {formatTime(message.timestamp)}
@@ -686,6 +565,26 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                                 </PostHeader>
                                 <PostBody>
                                     {renderMessageContent(message.content)}
+                                    {message.files && message.files.length > 0 && (
+                                        <MessageFilesContainer>
+                                            {message.files.map((file, fileIndex) => (
+                                                <MessageFileChip key={fileIndex}>
+                                                    {file.type.startsWith('image/') ? (
+                                                        <FileImagePreview
+                                                            src={URL.createObjectURL(file)}
+                                                            alt={file.name}
+                                                        />
+                                                    ) : (
+                                                        <i className='icon icon-file-document-outline'/>
+                                                    )}
+                                                    <MessageFileInfo>
+                                                        <MessageFileName>{file.name}</MessageFileName>
+                                                        <MessageFileSize>{formatFileSize(file.size)}</MessageFileSize>
+                                                    </MessageFileInfo>
+                                                </MessageFileChip>
+                                            ))}
+                                        </MessageFilesContainer>
+                                    )}
                                 </PostBody>
                             </PostContainer>
                         ))}
@@ -693,24 +592,25 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                             <PostContainer>
                                 <PostHeader>
                                     <Avatar $isBot={true}>
-                                        <BotAvatarImage
-                                            src={`${Client4.getBaseRoute()}/users/matty/image?_=${Date.now()}`}
-                                            alt='AI Assistant'
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                                const nextSibling = e.currentTarget.nextElementSibling;
-                                                if (nextSibling) {
-                                                    (nextSibling as HTMLElement).style.display = 'flex';
-                                                }
-                                            }}
-                                        />
-                                        <AvatarFallback style={{display: 'none'}}>
+                                        {selectedBotId && (
+                                            <BotAvatarImage
+                                                src={`${Client4.getBaseRoute()}/users/${selectedBotId}/image?_=${Date.now()}`}
+                                                alt='AI Assistant'
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    const nextSibling = e.currentTarget.nextElementSibling;
+                                                    if (nextSibling) {
+                                                        (nextSibling as HTMLElement).style.display = 'flex';
+                                                    }
+                                                }}
+                                            />
+                                        )}
+                                        <AvatarFallback style={{display: selectedBotId ? 'none' : 'flex'}}>
                                             <i className='icon icon-robot-outline'/>
                                         </AvatarFallback>
                                     </Avatar>
                                     <PostMeta>
-                                        <Username>AI Assistant</Username>
-                                        <PostTime>Just now</PostTime>
+                                        <Username>{selectedBotUsername}</Username>
                                     </PostMeta>
                                 </PostHeader>
                                 <PostBody>
@@ -779,12 +679,12 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                 </LeftPanel>
                 <RightPanel>
                     <TaskListHeader>
-                        {playbookName || formatMessage({defaultMessage: 'Playbook Tasks'})}
+                        {formatMessage({defaultMessage: 'Playbook Tasks'})}
                     </TaskListHeader>
                     {playbookDescription && (
                         <DescriptionContainer>
                             <DescriptionLabel>
-                                {formatMessage({defaultMessage: 'Summary'})}
+                                {formatMessage({defaultMessage: 'Description'})}
                             </DescriptionLabel>
                             <DescriptionText>
                                 {playbookDescription}
@@ -792,9 +692,17 @@ const PlaybookCreateWithAIModal = ({initialPlaybookId, ...modalProps}: PlaybookC
                         </DescriptionContainer>
                     )}
                     <TaskListContainer>
-                        {checklists.length === 0 ? (
+                        {checklists.length === 0 || (checklists.length === 1 && checklists[0].items.length === 1 && checklists[0].items[0].title === '') ? (
                             <EmptyTaskState>
-                                {formatMessage({defaultMessage: 'Tasks will appear here based on your conversation with AI'})}
+                                <EmptyStateIcon>
+                                    <i className='icon icon-format-list-checks'/>
+                                </EmptyStateIcon>
+                                <EmptyStateTitle>
+                                    {formatMessage({defaultMessage: 'No tasks yet'})}
+                                </EmptyStateTitle>
+                                <EmptyStateDescription>
+                                    {formatMessage({defaultMessage: 'Start a conversation with AI to generate your playbook tasks. Try describing the type of workflow you want to automate.'})}
+                                </EmptyStateDescription>
                             </EmptyTaskState>
                         ) : (
                             <>
@@ -898,7 +806,7 @@ const TaskListHeader = styled.div`
 `;
 
 const DescriptionContainer = styled.div`
-    padding: 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     flex-shrink: 0;
 `;
@@ -908,7 +816,6 @@ const DescriptionLabel = styled.div`
     font-size: 12px;
     color: var(--center-channel-color);
     margin-bottom: 8px;
-    text-transform: uppercase;
     letter-spacing: 0.02em;
 `;
 
@@ -926,7 +833,6 @@ const MessagesContainer = styled.div`
     padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
     min-height: 0; /* Important: allows scrolling to work properly */
 `;
 
@@ -950,13 +856,36 @@ const EmptyState = styled.div`
 
 const EmptyTaskState = styled.div`
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    font-size: 14px;
+    padding: 40px 20px;
     text-align: center;
-    padding: 20px;
+`;
+
+const EmptyStateIcon = styled.div`
+    font-size: 48px;
+    color: rgba(var(--center-channel-color-rgb), 0.32);
+    margin-bottom: 16px;
+
+    i {
+        font-size: 48px;
+    }
+`;
+
+const EmptyStateTitle = styled.div`
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--center-channel-color);
+    margin-bottom: 8px;
+`;
+
+const EmptyStateDescription = styled.div`
+    font-size: 14px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    line-height: 20px;
+    max-width: 400px;
 `;
 
 const PostContainer = styled.div`
@@ -1353,6 +1282,60 @@ const RemoveFileButton = styled.button`
     i {
         font-size: 16px;
     }
+`;
+
+// Message file display components
+const MessageFilesContainer = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+`;
+
+const MessageFileChip = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    max-width: 300px;
+
+    i.icon-file-document-outline {
+        font-size: 24px;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        flex-shrink: 0;
+    }
+`;
+
+const FileImagePreview = styled.img`
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+`;
+
+const MessageFileInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+`;
+
+const MessageFileName = styled.div`
+    font-size: 12px;
+    color: var(--center-channel-color);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const MessageFileSize = styled.div`
+    font-size: 11px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 export default PlaybookCreateWithAIModal;

@@ -165,3 +165,57 @@ func (s *Service) GetCompletion(posts []Post) (string, error) {
 
 	return response, nil
 }
+
+// AIBot represents information about an AI bot
+type AIBot struct {
+	ID                 string   `json:"id"`
+	DisplayName        string   `json:"displayName"`
+	Username           string   `json:"username"`
+	LastIconUpdate     int64    `json:"lastIconUpdate"`
+	DMChannelID        string   `json:"dmChannelID"`
+	ChannelAccessLevel string   `json:"channelAccessLevel"`
+	ChannelIDs         []string `json:"channelIDs"`
+	UserAccessLevel    string   `json:"userAccessLevel"`
+	UserIDs            []string `json:"userIDs"`
+}
+
+// AIBotsResponse represents the response from GetAIBots
+type AIBotsResponse struct {
+	Bots             []AIBot `json:"bots"`
+	DefaultBotName   string  `json:"defaultBotName"`
+	SearchEnabled    bool    `json:"searchEnabled"`
+	AllowUnsafeLinks bool    `json:"allowUnsafeLinks"`
+}
+
+// GetAIBots fetches the available AI bots from the AI plugin
+func (s *Service) GetAIBots() (*AIBotsResponse, error) {
+	// Call the AI plugin to get bots
+	botsResp, err := s.client.GetAIBots()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get AI bots")
+	}
+
+	// Convert to our response format
+	bots := make([]AIBot, len(botsResp.Bots))
+	for i, bot := range botsResp.Bots {
+		bots[i] = AIBot{
+			ID:                 bot.ID,
+			DisplayName:        bot.DisplayName,
+			Username:           bot.Username,
+			LastIconUpdate:     bot.LastIconUpdate,
+			DMChannelID:        bot.DMChannelID,
+			ChannelAccessLevel: string(bot.ChannelAccessLevel),
+			ChannelIDs:         bot.ChannelIDs,
+			UserAccessLevel:    string(bot.UserAccessLevel),
+			UserIDs:            bot.UserIDs,
+		}
+	}
+
+	// Return the current agent name as the default
+	return &AIBotsResponse{
+		Bots:             bots,
+		DefaultBotName:   s.agentName,
+		SearchEnabled:    botsResp.SearchEnabled,
+		AllowUnsafeLinks: botsResp.AllowUnsafeLinks,
+	}, nil
+}

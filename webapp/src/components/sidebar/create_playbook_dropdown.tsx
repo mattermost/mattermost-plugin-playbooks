@@ -75,7 +75,7 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
                 show={true}
                 onClick={() => dispatch(displayPlaybookCreateWithAIModal({}))}
                 icon={<IconWrapper><CreationOutlineIcon size={18}/></IconWrapper>}
-                text={formatMessage({defaultMessage: 'Create playbook with AI'})}
+                text={formatMessage({defaultMessage: 'Create Playbook With AI'})}
             />
         );
 

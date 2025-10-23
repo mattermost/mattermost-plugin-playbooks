@@ -44,6 +44,7 @@ func NewAIHandler(
 
 	aiRouter := router.PathPrefix("/ai").Subrouter()
 	aiRouter.HandleFunc("/playbook/completion", withContext(handler.playbookCompletion)).Methods(http.MethodPost)
+	aiRouter.HandleFunc("/bots", withContext(handler.getAIBots)).Methods(http.MethodGet)
 
 	return handler
 }
@@ -166,4 +167,22 @@ func (h *AIHandler) playbookCompletion(c *Context, w http.ResponseWriter, r *htt
 	}
 
 	ReturnJSON(w, &completionResponse, http.StatusOK)
+}
+
+// getAIBots retrieves available AI bots from the AI plugin
+func (h *AIHandler) getAIBots(c *Context, w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-Id")
+	if userID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
+
+	// Get bots from the AI plugin
+	bots, err := h.aiService.GetAIBots()
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "Failed to fetch AI bots", err)
+		return
+	}
+
+	ReturnJSON(w, bots, http.StatusOK)
 }

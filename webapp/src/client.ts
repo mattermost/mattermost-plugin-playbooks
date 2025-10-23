@@ -829,6 +829,25 @@ export async function deletePlaybookCondition(playbookId: string, conditionId: s
 
 // AI Playbook Creation
 
+export interface AIBot {
+    id: string;
+    displayName: string;
+    username: string;
+    lastIconUpdate: number;
+    dmChannelID: string;
+    channelAccessLevel: string;
+    channelIDs: string[];
+    userAccessLevel: string;
+    userIDs: string[];
+}
+
+export interface AIBotsResponse {
+    bots: AIBot[];
+    defaultBotName: string;
+    searchEnabled: boolean;
+    allowUnsafeLinks: boolean;
+}
+
 export interface AIPost {
     role: string;
     message: string;
@@ -882,4 +901,12 @@ export async function sendAIPlaybookMessage(posts: AIPost[], files?: File[]): Pr
         throw new Error('Failed to get AI completion');
     }
     return result.message;
+}
+
+export async function fetchAIBots(): Promise<AIBotsResponse> {
+    const result = await doGet<AIBotsResponse>(`${apiUrl}/ai/bots`);
+    if (!result) {
+        throw new Error('Failed to fetch AI bots');
+    }
+    return result;
 }
