@@ -17,6 +17,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
     let testViewerUser;
     let testPlaybook;
     let testChannel;
+    // eslint-disable-next-line no-unused-vars
     let standaloneRun;
     let privatePlaybook;
     let privateRun;
