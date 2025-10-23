@@ -164,7 +164,7 @@ const RHSRunList = (props: Props) => {
     };
 
     const handleGoToPlaybooks = () => {
-        navigateToPluginUrl('/playbooks/playbooks');
+        navigateToPluginUrl('/playbooks');
     };
 
     return (

@@ -71,13 +71,14 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);
             },
-            create: async (params: PlaybookCreateQueryParameters) => {
+            create: async (params: PlaybookCreateQueryParameters, inPlaybookDraft?: Partial<DraftPlaybookWithChecklist>) => {
                 const createNewPlaybook = async () => {
                     const initialPlaybook: DraftPlaybookWithChecklist = {
                         ...(PresetTemplates.find((t) => t.title === params.template)?.template || emptyPlaybook()),
                         reminder_timer_default_seconds: 86400,
                         members: [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}],
                         team_id: params.teamId || '',
+                        ...inPlaybookDraft,
                     };
 
                     if (params.name) {
