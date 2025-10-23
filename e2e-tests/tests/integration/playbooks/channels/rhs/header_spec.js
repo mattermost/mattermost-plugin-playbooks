@@ -17,10 +17,13 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
     let testUser;
     let testPlaybook;
     let testViewerUser;
+    // eslint-disable-next-line no-unused-vars
     let standaloneRun;
+    // eslint-disable-next-line no-unused-vars
     let standaloneRunChannelName;
     let privatePlaybook;
     let privateRun;
+    // eslint-disable-next-line no-unused-vars
     let privateRunChannelName;
 
     before(() => {
@@ -222,6 +225,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # Create a standalone run without a playbook (channel checklist)
             const now = Date.now();
             const standaloneRunName = 'Standalone Run (' + now + ')';
+            // eslint-disable-next-line no-shadow
             const standaloneRunChannelName = 'standalone-run-' + now;
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
@@ -262,6 +266,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                     title: 'Private Playbook',
                     memberIDs: [testUser.id], // Only testUser is a member
                     makePublic: false,
+                // eslint-disable-next-line no-shadow
                 }).then((privatePlaybook) => {
                     // # Create a run from the private playbook
                     const now = Date.now();
@@ -272,6 +277,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                         playbookId: privatePlaybook.id,
                         playbookRunName,
                         ownerUserId: testUser.id,
+                    // eslint-disable-next-line no-shadow
                     }).then((privateRun) => {
                         // # Add viewerUser as participant to the run
                         cy.apiAddUsersToRun(privateRun.id, [viewerUser.id]);
