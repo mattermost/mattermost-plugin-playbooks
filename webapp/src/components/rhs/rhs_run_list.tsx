@@ -148,6 +148,7 @@ const RHSRunList = (props: Props) => {
             );
 
             // Call the onRunCreated callback with the new run
+            // Pass a flag to indicate we should auto-add a task
             props.onRunCreated(newRun.id, newRun.channel_id, {
                 playbookId: '',
                 channelMode: 'link_existing_channel',
@@ -156,6 +157,7 @@ const RHSRunList = (props: Props) => {
                 hasSummaryChanged: false,
                 hasChannelModeChanged: false,
                 hasChannelIdChanged: false,
+                autoAddTask: true,
             });
         } catch (error) {
             // eslint-disable-next-line no-console

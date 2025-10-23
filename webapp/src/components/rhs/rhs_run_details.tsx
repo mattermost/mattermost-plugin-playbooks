@@ -53,6 +53,8 @@ const toastDuration = 4500;
 interface Props {
     runID: string
     onBackClick: () => void;
+    autoAddTask?: boolean;
+    onTaskAdded?: () => void;
 }
 
 const RHSRunDetails = (props: Props) => {
@@ -182,6 +184,8 @@ const RHSRunDetails = (props: Props) => {
                             parentContainer={ChecklistParent.RHS}
                             readOnly={readOnly}
                             onReadOnlyInteract={onReadOnlyInteract}
+                            autoAddTask={props.autoAddTask}
+                            onTaskAdded={props.onTaskAdded}
                         />
                     </Scrollbars>
                 </RHSContent>

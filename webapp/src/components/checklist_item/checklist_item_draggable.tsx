@@ -35,6 +35,7 @@ interface Props {
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
+    onSaveAndAddNew?: () => void;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -77,6 +78,7 @@ const DraggableChecklistItem = (props: Props) => {
                     onEditingChange={props.onEditingChange}
                     hasCondition={props.hasCondition}
                     conditionHeader={props.conditionHeader}
+                    onSaveAndAddNew={props.onSaveAndAddNew}
                 />
             )}
         </Draggable>

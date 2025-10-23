@@ -62,6 +62,8 @@ interface Props {
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
     itemButtonsFormat?: ItemButtonsFormat;
     onReadOnlyInteract?: () => void;
+    autoAddTask?: boolean;
+    onTaskAdded?: () => void;
 }
 
 const ChecklistList = ({
@@ -74,6 +76,8 @@ const ChecklistList = ({
     showItem,
     itemButtonsFormat,
     onReadOnlyInteract,
+    autoAddTask,
+    onTaskAdded,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -500,6 +504,8 @@ const ChecklistList = ({
                                                     onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
                                                     onUpdateCondition={onUpdateCondition}
                                                     newlyCreatedConditionIds={newlyCreatedConditionIds}
+                                                    autoAddTask={autoAddTask && checklistIndex === 0}
+                                                    onTaskAdded={onTaskAdded}
                                                 />
                                             </CollapsibleChecklist>
                                         );
