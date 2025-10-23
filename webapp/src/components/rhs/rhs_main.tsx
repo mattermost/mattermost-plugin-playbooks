@@ -176,6 +176,7 @@ const RightHandSidebar = () => {
     const [currentRunId, setCurrentRunId] = useState<string|undefined>();
     const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
     const [userNavigatedAway, setUserNavigatedAway] = useState(false);
+    const [autoAddTaskRunId, setAutoAddTaskRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
     const {isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
@@ -210,10 +211,13 @@ const RightHandSidebar = () => {
         setUserNavigatedAway(true);
     };
 
-    const handleOnCreateRun = (runId: string, channelId: string) => {
+    const handleOnCreateRun = (runId: string, channelId: string, statsData: {autoAddTask?: boolean}) => {
         if (channelId === currentChannelId) {
             fetchedRuns.refetch();
             setCurrentRunId(runId);
+            if (statsData.autoAddTask) {
+                setAutoAddTaskRunId(runId);
+            }
             return;
         }
 
@@ -234,10 +238,13 @@ const RightHandSidebar = () => {
 
     // If we have a run selected and it's in the current channel show that
     if (currentRunId && [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRunId)) {
+        const shouldAutoAddTask = currentRunId === autoAddTaskRunId;
         return (
             <RHSRunDetails
                 runID={currentRunId}
                 onBackClick={clearCurrentRunId}
+                autoAddTask={shouldAutoAddTask}
+                onTaskAdded={() => setAutoAddTaskRunId(undefined)}
             />
         );
     }

@@ -48,6 +48,8 @@ interface Props {
     id?: string;
     readOnly: boolean;
     onReadOnlyInteract?: () => void
+    autoAddTask?: boolean;
+    onTaskAdded?: () => void;
 }
 
 export enum ChecklistParent {
@@ -81,7 +83,7 @@ const notFinishedTasks = (checklists: Checklist[]) => {
     return count;
 };
 
-const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
@@ -266,6 +268,8 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 showItem={showItem}
                 itemButtonsFormat={itemButtonsFormat()}
                 onReadOnlyInteract={onReadOnlyInteract}
+                autoAddTask={autoAddTask}
+                onTaskAdded={onTaskAdded}
             />
             {
                 active && parentContainer === ChecklistParent.RHS && playbookRun &&

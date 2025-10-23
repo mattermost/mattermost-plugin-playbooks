@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -39,13 +39,23 @@ interface Props {
     onCreateCondition?: (expr: ConditionExprV1, itemIndex: number) => void;
     onUpdateCondition?: (conditionId: string, expr: ConditionExprV1) => void;
     newlyCreatedConditionIds?: Set<string>;
+    autoAddTask?: boolean;
+    onTaskAdded?: () => void;
 }
 
 const GenericChecklist = (props: Props) => {
     const {formatMessage} = useIntl();
     const myUser = useSelector(getCurrentUser);
-    const [addingItem, setAddingItem] = useState(false);
+    const [addingItem, setAddingItem] = useState(props.autoAddTask ?? false);
     const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+
+    // Auto-add task on mount if requested
+    useEffect(() => {
+        if (props.autoAddTask && !addingItem) {
+            setAddingItem(true);
+            props.onTaskAdded?.();
+        }
+    }, [props.autoAddTask]); // Only run when autoAddTask changes
 
     const onUpdateChecklistItem = (index: number, newItem: ChecklistItem) => {
         const newChecklistItems = [...props.checklist.items];
