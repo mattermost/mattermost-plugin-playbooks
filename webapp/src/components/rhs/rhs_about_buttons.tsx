@@ -74,15 +74,17 @@ const RHSAboutButtons = (props: Props) => {
                     </IconWrapper>
                     <FormattedMessage defaultMessage='Go to overview'/>
                 </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
-                    <IconWrapper>
-                        <NotebookOutlineIcon size={20}/>
-                    </IconWrapper>
-                    <PlaybookInfo>
-                        <FormattedMessage defaultMessage='Go to playbook'/>
-                        {(playbookName !== '') && <PlaybookName>{playbookName}</PlaybookName>}
-                    </PlaybookInfo>
-                </StyledDropdownMenuItem>
+                {props.playbookRun.playbook_id && playbookName && (
+                    <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+                        <IconWrapper>
+                            <NotebookOutlineIcon size={20}/>
+                        </IconWrapper>
+                        <PlaybookInfo>
+                            <FormattedMessage defaultMessage='Go to playbook'/>
+                            <PlaybookName>{playbookName}</PlaybookName>
+                        </PlaybookInfo>
+                    </StyledDropdownMenuItem>
+                )}
             </DotMenu>
         </>
     );

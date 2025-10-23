@@ -14,8 +14,12 @@ import {HALF_SEC} from '../../../../fixtures/timeouts';
 describe('channels > rhs > runlist', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
+    let testViewerUser;
     let testPlaybook;
     let testChannel;
+    let standaloneRun;
+    let privatePlaybook;
+    let privateRun;
     const numActiveRuns = 10;
     const numFinishedRuns = 4;
 
@@ -63,6 +67,47 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
                             cy.apiFinishRun(run.id);
                         });
                     }
+
+                    // # Create a standalone run without a playbook (channel checklist) in the same channel
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: '', // Empty playbook ID for standalone run
+                        playbookRunName: 'standalone checklist',
+                        ownerUserId: testUser.id,
+                        channelId: testChannel.id,
+                    }).then((run) => {
+                        standaloneRun = run;
+                    });
+
+                    // # Create a second user (viewer) and add to team
+                    cy.apiCreateUser().then(({user: viewerUser}) => {
+                        testViewerUser = viewerUser;
+                        cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
+
+                        // # Create a private playbook with only testUser as member
+                        cy.apiCreatePlaybook({
+                            teamId: testTeam.id,
+                            title: 'Private Playbook',
+                            memberIDs: [testUser.id], // Only testUser is a member
+                            makePublic: false,
+                        }).then((privPlaybook) => {
+                            privatePlaybook = privPlaybook;
+
+                            // # Create a run from the private playbook in the same channel
+                            cy.apiRunPlaybook({
+                                teamId: testTeam.id,
+                                playbookId: privatePlaybook.id,
+                                playbookRunName: 'private run',
+                                ownerUserId: testUser.id,
+                                channelId: testChannel.id,
+                            }).then((run) => {
+                                privateRun = run;
+
+                                // # Add viewerUser as participant to the run
+                                cy.apiAddUsersToRun(privateRun.id, [testViewerUser.id]);
+                            });
+                        });
+                    });
                 });
             });
         });
@@ -151,6 +196,43 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
 
             // * Assert we are in the PBE page
             cy.url().should('include', `/playbooks/${testPlaybook.id}`);
+        });
+
+        it('hides "Go to playbook" for standalone runs', () => {
+            // # Visit the channel with the standalone run
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Wait for the RHS to load
+            cy.findByText('Runs in progress').should('be.visible');
+
+            // # Find the standalone run card by its name and click its dotmenu
+            cy.get('[data-testid="rhs-runs-list"]').contains('standalone checklist').parents('div[data-testid="run-list-card"]').findByRole('button').click();
+
+            // * Verify "Go to playbook" does not exist
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.findByText('Go to playbook').should('not.exist');
+                cy.findByText('Rename checklist').should('exist');
+                cy.findByText('Link checklist to a different channel').should('exist');
+            });
+        });
+
+        it('hides "Go to playbook" for private playbooks without access', () => {
+            // # Login as viewer and visit the channel
+            cy.apiLogin(testViewerUser);
+            cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+            // # Wait for the RHS to load
+            cy.findByText('Runs in progress').should('be.visible');
+
+            // # Find the private run card by its name and click its dotmenu
+            cy.get('[data-testid="rhs-runs-list"]').contains('private run').parents('div[data-testid="run-list-card"]').findByRole('button').click();
+
+            // * Verify "Go to playbook" does not exist for user without access
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.findByText('Go to playbook').should('not.exist');
+                cy.findByText('Go to run overview').should('exist');
+                cy.findByText('Rename run').should('exist');
+            });
         });
 
         it('can change run name', () => {
