@@ -297,6 +297,7 @@ const GenericChecklist = (props: Props) => {
                                 onSaveAndAddNew={() => {
                                     // Increment key to force a new component instance with fresh state
                                     setNewItemKey((prev) => prev + 1);
+
                                     // Keep adding mode active after saving to create a new item
                                     setAddingItem(true);
                                 }}
