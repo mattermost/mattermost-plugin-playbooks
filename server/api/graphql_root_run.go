@@ -181,6 +181,11 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		return "", err
 	}
 
+	// Prevent renaming finished runs
+	if args.Updates.Name != nil && playbookRun.CurrentStatus == app.StatusFinished {
+		return "", errors.Wrap(app.ErrPlaybookRunNotActive, "cannot rename a finished run")
+	}
+
 	now := model.GetMillis()
 
 	// scalar updates

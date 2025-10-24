@@ -898,6 +898,28 @@ func TestChecklistManagement(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("checklist renaming - failure: run is finished", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+		oldTitle := "Old Title"
+		newTitle := "New Title"
+
+		// Create a new checklist with a known title
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: oldTitle,
+			Items: []client.ChecklistItem{},
+		})
+		require.NoError(t, err)
+
+		// Finish the run
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Try to rename the checklist in the finished run
+		err = e.PlaybooksClient.PlaybookRuns.RenameChecklist(context.Background(), run.ID, 0, newTitle)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "already ended")
+	})
+
 	t.Run("checklist removal - success: result in no checklists", func(t *testing.T) {
 		run := createNewRunWithNoChecklists(t)
 		require.Len(t, run.Checklists, 0)

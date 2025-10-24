@@ -43,6 +43,7 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 import {UserList} from './rhs_participants';
 
@@ -61,6 +62,7 @@ interface RunToDisplay {
     numTasks: number
     lastUpdatedAt: number
     type: string
+    currentStatus: string
 }
 
 export enum FilterType {
@@ -584,7 +586,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {add: addToastMessage} = useToaster();
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
-    const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
+    const canEditRun = (currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId)) && props.currentStatus === PlaybookRunStatus.InProgress;
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
     const [movedChannel, setMovedChannel] = useState({channelId: '', channelName: ''});
     const updateRun = useUpdateRun(props.id);

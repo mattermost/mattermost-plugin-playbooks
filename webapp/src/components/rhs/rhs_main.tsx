@@ -54,6 +54,7 @@ const RHSRunsQuery = graphql(/* GraphQL */`
                     numTasks
                     lastUpdatedAt
                     type
+                    currentStatus
                     propertyFields {
                         id
                         name

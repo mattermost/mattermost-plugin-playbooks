@@ -253,6 +253,57 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').contains('My cool new run name');
         });
 
+        it('cannot rename finished run', () => {
+            // # Switch to finished runs filter
+            cy.findByTestId('rhs-runs-filter-menu').click();
+            cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
+            cy.wait(500);
+
+            // * Verify we have finished runs
+            cy.get('[data-testid="rhs-runs-list"] > div').should('have.length.at.least', 1);
+
+            // # Click on the first finished run's dotmenu
+            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
+
+            // * Verify "Rename run" option does not exist for finished runs
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.findByText('Rename run').should('not.exist');
+            });
+        });
+
+        it('cannot rename finished checklist', () => {
+            // # Create a standalone checklist (channel checklist)
+            cy.apiCreateChannelChecklist({
+                teamId: testTeam.id,
+                channelId: testChannel.id,
+                ownerUserId: testUser.id,
+                name: 'Finished standalone checklist',
+            }).then((checklist) => {
+                // # Finish the checklist
+                cy.apiFinishRun(checklist.id);
+
+                // # Visit the channel to see the checklist in RHS
+                cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
+
+                // # Wait for the RHS to load
+                cy.findByText('Runs in progress').should('be.visible');
+
+                // # Switch to finished runs filter
+                cy.findByTestId('rhs-runs-filter-menu').click();
+                cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
+                cy.wait(500);
+
+                // # Find the finished checklist by its name and click its dotmenu
+                cy.get('[data-testid="rhs-runs-list"]').contains('Finished standalone checklist').parents('div[data-testid="run-list-card"]').findByRole('button').click();
+
+                // * Verify "Rename checklist" does not exist for finished checklists
+                cy.findByTestId('dropdownmenu').within(() => {
+                    cy.findByText('Rename checklist').should('not.exist');
+                    cy.findByText('Link checklist to a different channel').should('not.exist');
+                });
+            });
+        });
+
         // https://mattermost.atlassian.net/browse/MM-63692
         // eslint-disable-next-line no-only-tests/no-only-tests
         it.skip('can change linked channel', () => {
