@@ -121,6 +121,7 @@ export interface FetchPlaybookRunsParams {
     sort?: string;
     direction?: string;
     statuses?: string[];
+    types?: string[];
     owner_user_id?: string;
     participant_id?: string;
     participant_or_follower_id?: string;

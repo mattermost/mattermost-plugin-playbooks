@@ -48,7 +48,7 @@ const defaultPlaybookFetchParams = {
     statuses: statusOptions
         .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
         .map((opt) => opt.value),
-    types: [PlaybookRunType.Playbook],
+    types: [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist],
 };
 
 const RunListContainer = styled.div`

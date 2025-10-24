@@ -12,6 +12,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {UserProfile} from '@mattermost/types/users';
 
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backstage/runs_list/playbook_selector';
 import {Option as TeamOption} from 'src/components/team/team_selector';
@@ -100,6 +101,13 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
         });
     };
 
+    const setIncludeChecklists = (checked?: boolean) => {
+        const types = checked ? [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist] : [PlaybookRunType.Playbook];
+        setFetchParams((oldParams) => {
+            return {...oldParams, types, page: 0};
+        });
+    };
+
     const setSearchTerm = (term: string) => {
         setFetchParams((oldParams) => {
             return {...oldParams, search_term: term, page: 0};
@@ -156,6 +164,12 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                     onChange={setFinishedRuns}
                 />
             }
+            <CheckboxInput
+                testId={'include-checklists'}
+                text={formatMessage({defaultMessage: 'Include checklists'})}
+                checked={(fetchParams.types?.length ?? 1) > 1}
+                onChange={setIncludeChecklists}
+            />
             <ProfileSelector
                 testId={'owner-filter'}
                 selectedUserId={fetchParams.owner_user_id}
