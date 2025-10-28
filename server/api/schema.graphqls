@@ -1,3 +1,5 @@
+scalar JSON
+
 type Query {
 	playbook(id: String!): Playbook
 	playbooks(
@@ -22,6 +24,8 @@ type Query {
 		types: [PlaybookRunType!] = [],
 		omitEnded: Boolean = false,
 	): RunConnection!
+
+	playbookProperty(playbookID: String!, propertyID: String!): PropertyField
 }
 
 type Mutation {
@@ -35,12 +39,18 @@ type Mutation {
 	addPlaybookMember(playbookID: String!, userID: String!): String!
 	removePlaybookMember(playbookID: String!, userID: String!): String!
 
+	addPlaybookPropertyField(playbookID: String!, propertyField: PropertyFieldInput!): String!
+	updatePlaybookPropertyField(playbookID: String!, propertyFieldID: String!, propertyField: PropertyFieldInput!): String!
+	deletePlaybookPropertyField(playbookID: String!, propertyFieldID: String!): String!
+
 	setRunFavorite(id: String!, fav: Boolean!): String!
 	updateRun(id: String!, updates: RunUpdates!): String!
 	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String!
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
 	changeRunOwner(runID: String!, ownerID: String!): String!
 	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String!
+
+	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String!
 }
 
 type PageInfo {
@@ -103,6 +113,7 @@ input ChecklistItemUpdates {
 	commandLastRun: Float!
 	dueDate: Float!
 	taskActions: [TaskActionUpdates!]
+	conditionID: String!
 }
 
 input TaskActionUpdates {
@@ -166,6 +177,7 @@ type Playbook {
 	defaultRunAdminRole: String!
 	defaultRunMemberRole: String!
 	metrics: [PlaybookMetricConfig!]!
+	propertyFields: [PropertyField!]!
 	isFavorite: Boolean!
 	createChannelMemberOnNewParticipant: Boolean!
 	removeChannelMemberOnRemovedParticipant: Boolean!
@@ -195,6 +207,9 @@ type ChecklistItem {
 	commandLastRun: Float!
 	dueDate: Float!
 	taskActions: [TaskAction!]!
+	conditionID: String!
+	conditionAction: String!
+	conditionReason: String!
 }
 
 type TaskAction {
@@ -280,6 +295,8 @@ type Run {
 	numTasks: Int!
 	numTasksClosed: Int!
 
+	propertyFields: [PropertyField!]!
+
 	type: PlaybookRunType!
 }
 
@@ -322,4 +339,67 @@ input RunUpdates {
 	broadcastChannelIDs: [String!]
 	webhookOnStatusUpdateURLs: [String!]
 	channelID: String
+}
+
+enum PropertyFieldType {
+	text
+	select
+	multiselect
+	date
+	user
+	multiuser
+}
+
+input PropertyOptionInput {
+	id: String
+	name: String!
+	color: String
+}
+
+input PropertyFieldAttrsInput {
+	visibility: String
+	sortOrder: Float
+	options: [PropertyOptionInput!]
+	parentID: String
+	valueType: String
+}
+
+input PropertyFieldInput {
+	name: String!
+	type: PropertyFieldType!
+	attrs: PropertyFieldAttrsInput
+}
+
+type PropertyOption {
+	id: String!
+	name: String!
+	color: String
+}
+
+type PropertyFieldAttrs {
+	visibility: String!
+	sortOrder: Float!
+	options: [PropertyOption!]
+	parentID: String
+	valueType: String
+}
+
+type PropertyField {
+	id: String!
+	name: String!
+	type: PropertyFieldType!
+	groupID: String!
+	attrs: PropertyFieldAttrs!
+	createAt: Float!
+	updateAt: Float!
+	deleteAt: Float!
+}
+
+type PropertyValue {
+	id: String!
+	fieldID: String!
+	value: JSON
+	createAt: Float!
+	updateAt: Float!
+	deleteAt: Float!
 }

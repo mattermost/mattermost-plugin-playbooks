@@ -8,7 +8,7 @@ import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 import {UserProfile} from '@mattermost/types/users';
 
-import {FloatingPortal} from '@floating-ui/react-dom-interactions';
+import {FloatingPortal} from '@floating-ui/react';
 
 import {
     clientAddChecklistItem,
@@ -20,6 +20,8 @@ import {
 } from 'src/client';
 import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType} from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
+import {Condition} from 'src/types/conditions';
+import {PropertyField} from 'src/types/properties';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 
@@ -32,6 +34,7 @@ import AssignTo from './assign_to';
 import Command from './command';
 import {CancelSaveButtons, CheckBoxButton} from './inputs';
 import {DueDateButton} from './duedate';
+import ConditionIndicator from './condition_indicator';
 
 import TaskActions from './task_actions';
 import {haveAtleastOneEnabledAction} from './task_actions_modal';
@@ -64,6 +67,7 @@ interface ChecklistItemProps {
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     readOnly: boolean;
+    dragDisabled?: boolean;
     collapsibleDescription: boolean;
     descriptionCollapsedByDefault?: boolean;
     newItem: boolean;
@@ -74,11 +78,20 @@ interface ChecklistItemProps {
     onDeleteChecklistItem?: () => void;
     buttonsFormat?: ButtonsFormat;
     participantUserIds: string[];
-    onReadOnlyInteract?: () => void
+    onReadOnlyInteract?: () => void;
+    onAddConditional?: () => void;
+    onRemoveFromCondition?: () => void;
+    onAssignToCondition?: (conditionId: string) => void;
+    availableConditions?: Condition[];
+    propertyFields?: PropertyField[];
+    onEditingChange?: (isEditing: boolean) => void;
+    hasCondition?: boolean;
+    conditionHeader?: React.ReactNode;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
+
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
@@ -90,6 +103,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
+
+    // Notify parent when editing state changes
+    useUpdateEffect(() => {
+        props.onEditingChange?.(isEditing);
+    }, [isEditing]);
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
@@ -284,16 +302,20 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const content = (
-        <ItemContainer
+        <DraggableWrapper
             ref={props.draggableProvided?.innerRef}
             {...props.draggableProvided?.draggableProps}
-            data-testid='checkbox-item-container'
-            $editing={isEditing}
-            $hoverMenuItemOpen={isHoverMenuItemOpen}
-            $disabled={props.readOnly || isSkipped()}
         >
-            <CheckboxContainer>
-                {!props.readOnly && !props.dragging &&
+            {props.conditionHeader}
+            <ItemContainer
+                data-testid='checkbox-item-container'
+                $editing={isEditing}
+                $hoverMenuItemOpen={isHoverMenuItemOpen}
+                $disabled={props.readOnly || isSkipped()}
+                $hasCondition={props.hasCondition ?? false}
+            >
+                <CheckboxContainer>
+                    {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
                         participantUserIds={props.participantUserIds}
@@ -313,44 +335,51 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}
                         onDeleteChecklistItem={props.onDeleteChecklistItem}
                         onItemOpenChange={setIsHoverMenuItemOpen}
+                        onAddConditional={props.onAddConditional}
+                        hasCondition={Boolean(props.checklistItem.condition_id)}
+                        onRemoveFromCondition={props.onRemoveFromCondition}
+                        onAssignToCondition={props.onAssignToCondition}
+                        availableConditions={props.availableConditions}
+                        propertyFields={props.propertyFields}
                     />
-                }
-                <DragButton
-                    title={formatMessage({defaultMessage: 'Drag me to reorder'})}
-                    className={'icon icon-drag-vertical'}
-                    {...props.draggableProvided?.dragHandleProps}
-                    $isVisible={!props.readOnly}
-                    $isDragging={props.dragging}
-                />
-                <CheckBoxButton
-                    readOnly={props.readOnly}
-                    disabled={isSkipped() || props.playbookRunId === undefined}
-                    item={props.checklistItem}
-                    onChange={(item: ChecklistItemState) => props.onChange?.(item)}
-                    onReadOnlyInteract={props.onReadOnlyInteract}
-                />
-                <ChecklistItemTitleWrapper
-                    onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
-                >
-                    <ChecklistItemTitle
-                        editingItem={isEditing}
-                        onEdit={setTitleValue}
-                        value={titleValue}
-                        skipped={isSkipped()}
-                        clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                    }
+                    <DragButton
+                        title={formatMessage({defaultMessage: 'Drag me to reorder'})}
+                        className={'icon icon-drag-vertical'}
+                        {...props.draggableProvided?.dragHandleProps}
+                        $isVisible={!props.readOnly && !props.dragDisabled}
+                        $isDragging={props.dragging}
                     />
-                </ChecklistItemTitleWrapper>
-            </CheckboxContainer>
-            {(descValue || isEditing) &&
+                    <CheckBoxButton
+                        readOnly={props.readOnly}
+                        disabled={isSkipped() || props.playbookRunId === undefined}
+                        item={props.checklistItem}
+                        onChange={(item: ChecklistItemState) => props.onChange?.(item)}
+                        onReadOnlyInteract={props.onReadOnlyInteract}
+                    />
+                    <ConditionIndicator checklistItem={props.checklistItem}/>
+                    <ChecklistItemTitleWrapper
+                        onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
+                    >
+                        <ChecklistItemTitle
+                            editingItem={isEditing}
+                            onEdit={setTitleValue}
+                            value={titleValue}
+                            skipped={isSkipped()}
+                            clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                        />
+                    </ChecklistItemTitleWrapper>
+                </CheckboxContainer>
+                {(descValue || isEditing) &&
                 <ChecklistItemDescription
                     editingItem={isEditing}
                     showDescription={showDescription}
                     onEdit={setDescValue}
                     value={descValue}
                 />
-            }
-            {renderRow()}
-            {isEditing &&
+                }
+                {renderRow()}
+                {isEditing &&
                 <CancelSaveButtons
                     onCancel={() => {
                         setIsEditing(false);
@@ -373,6 +402,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                                 task_actions: taskActions,
                                 state_modified: 0,
                                 assignee_modified: 0,
+                                condition_id: '',
+                                condition_action: '',
+                                condition_reason: '',
                             };
                             if (props.playbookRunId) {
                                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
@@ -395,8 +427,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         }
                     }}
                 />
-            }
-        </ItemContainer>
+                }
+            </ItemContainer>
+        </DraggableWrapper>
     );
 
     if (props.dragging) {
@@ -480,7 +513,7 @@ export const CheckboxContainer = styled.div`
 
 const ChecklistItemTitleWrapper = styled.div`
     display: flex;
-    width: 100%;
+    flex: 1;
     flex-direction: column;
 `;
 
@@ -510,9 +543,19 @@ const Row = styled.div`
     gap: 5px 8px;
 `;
 
-const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean}>`
+const DraggableWrapper = styled.div`
+    /* Wrapper for draggable item including condition header */
+`;
+
+const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0;
+
+    ${({$hasCondition}) => $hasCondition && css`
+        margin-left: 15px;
+        padding-left: 5px;
+        border-left: 2px solid rgba(var(--center-channel-color-rgb), 0.16);
+    `}
 
     ${({$hoverMenuItemOpen}) => !$hoverMenuItemOpen && css`
         ${HoverMenu} {

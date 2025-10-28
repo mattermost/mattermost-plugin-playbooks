@@ -2034,3 +2034,25 @@ func TestGetTopPlaybooks(t *testing.T) {
 		require.Equal(t, topPlaybooks.Items[2].PlaybookID, playbooks[3].ID)
 	})
 }
+
+func TestBumpPlaybookUpdatedAt(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	team1id := model.NewId()
+	playbook := NewPBBuilder().
+		WithTitle("Test Playbook").
+		WithTeamID(team1id).
+		WithUpdateAt(1).
+		ToPlaybook()
+
+	id, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+
+	err = playbookStore.BumpPlaybookUpdatedAt(id)
+	require.NoError(t, err)
+
+	updatedPlaybook, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.Greater(t, updatedPlaybook.UpdateAt, int64(1))
+}

@@ -10,9 +10,14 @@ import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entit
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
+import {Condition} from 'src/types/conditions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
+    actionSetGlobalSettings,
+    conditionCreated,
+    conditionDeleted,
+    conditionUpdated,
     playbookArchived,
     playbookCreated,
     playbookRestored,
@@ -22,8 +27,18 @@ import {
     removedFromPlaybookRunChannel,
     websocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/actions';
-import {fetchPlaybookRun, fetchPlaybookRunByChannel, fetchPlaybookRuns} from 'src/client';
-import {clientId, getRun, myPlaybookRunsMap} from 'src/selectors';
+import {
+    fetchGlobalSettings,
+    fetchPlaybookRun,
+    fetchPlaybookRunByChannel,
+    fetchPlaybookRuns,
+} from 'src/client';
+import {
+    clientId,
+    getRun,
+    globalSettings,
+    myPlaybookRunsMap,
+} from 'src/selectors';
 import {PlaybookRunUpdate} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
@@ -241,4 +256,56 @@ function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
         .catch(() => {
             // Error fetching playbook run
         });
+}
+
+export function handleWebsocketSettingsChanged(getState: GetStateFunc, dispatch: Dispatch) {
+    return async (msg: WebSocketMessage<{ payload: string }>): Promise<void> => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const settingsUpdate = JSON.parse(msg.data.payload);
+        const currentSettings = globalSettings(getState());
+        if (currentSettings) {
+            const updatedSettings = {...currentSettings, ...settingsUpdate};
+            dispatch(actionSetGlobalSettings(updatedSettings));
+        } else {
+            const freshSettings = await fetchGlobalSettings();
+            dispatch(actionSetGlobalSettings(freshSettings));
+        }
+    };
+}
+
+// Condition websocket handlers
+export function handleWebsocketConditionCreated(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const condition = JSON.parse(msg.data.payload) as Condition;
+        dispatch(conditionCreated(condition));
+    };
+}
+
+export function handleWebsocketConditionUpdated(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const condition = JSON.parse(msg.data.payload) as Condition;
+        dispatch(conditionUpdated(condition));
+    };
+}
+
+export function handleWebsocketConditionDeleted(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const condition = JSON.parse(msg.data.payload) as Condition;
+        dispatch(conditionDeleted(condition.id, condition.playbook_id));
+    };
 }

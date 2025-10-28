@@ -66,9 +66,12 @@ export interface PlaybookWithChecklist extends Playbook {
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
     webhook_on_creation_enabled: boolean;
+
+    // Property fields from GraphQL
+    propertyFields: PropertyField[];
 }
 
-import {MetricType} from 'src/graphql/generated/graphql';
+import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
 
 export {MetricType};
 
@@ -125,6 +128,9 @@ export interface ChecklistItem {
     due_date: number;
     task_actions: TaskAction[];
     update_at?: number; // Timestamp for idempotency checks
+    condition_id: string;
+    condition_action: string;
+    condition_reason: string;
 }
 
 export interface TaskAction {
@@ -209,6 +215,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        propertyFields: [],
     };
 }
 
@@ -231,6 +238,9 @@ export function emptyChecklistItem(): ChecklistItem {
         state_modified: 0,
         assignee_modified: 0,
         assignee_id: '',
+        condition_id: '',
+        condition_action: '',
+        condition_reason: '',
     };
 }
 
@@ -245,6 +255,9 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state_modified: 0,
     assignee_modified: 0,
     assignee_id: '',
+    condition_id: '',
+    condition_action: '',
+    condition_reason: '',
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

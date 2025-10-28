@@ -1,9 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PropertyField, PropertyValue} from 'src/types/properties';
+
 import {TimelineEvent} from 'src/types/rhs';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 export interface PlaybookRun {
     id: string;
@@ -54,7 +56,18 @@ export interface PlaybookRun {
     /** The sort order of the checklists */
     items_order: string[];
 
-    type: PlaybookRunType
+    type: PlaybookRunType;
+
+    /** Property fields associated with this run (only included when requested) */
+    property_fields?: PropertyField[];
+
+    /** Property values for this run (only included when requested) */
+    property_values?: PropertyValue[];
+}
+
+export interface PlaybookRunConnection extends Partial<PlaybookRun> {
+    team_id: string;
+    channel_id: string;
 }
 
 export interface StatusPost {
@@ -151,4 +164,12 @@ export interface PlaybookRunChecklistItem extends ChecklistItem {
     playbook_run_create_at: number;
     checklist_title: string;
     checklist_num: number;
+}
+
+export function isRun(run: undefined | null | PlaybookRun | PlaybookRunConnection): run is PlaybookRun {
+    if (run) {
+        const {id} = run;
+        return id != null && id.length > 0;
+    }
+    return false;
 }

@@ -1684,4 +1684,62 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.64.0"),
+		toVersion:   semver.MustParse("0.65.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_Condition (
+					ID TEXT PRIMARY KEY,
+					ConditionExpr JSONB NOT NULL,
+					PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
+					RunID TEXT DEFAULT '',
+					Version BIGINT NOT NULL DEFAULT 1,
+					PropertyFieldIDs JSONB NOT NULL,
+					PropertyOptionsIDs JSONB NOT NULL,
+					CreateAt BIGINT NOT NULL,
+					UpdateAt BIGINT NOT NULL DEFAULT 0,
+					DeleteAt BIGINT NOT NULL DEFAULT 0
+				)
+			`); err != nil {
+				return errors.Wrapf(err, "failed creating table IR_Condition")
+			}
+
+			if _, err := e.Exec(createPGIndex("IR_Condition_PlaybookID_DeleteAt", "IR_Condition", "PlaybookID, DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_PlaybookID_DeleteAt")
+			}
+			if _, err := e.Exec(createPGIndex("IR_Condition_PlaybookID_RunID_DeleteAt", "IR_Condition", "PlaybookID, RunID, DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_PlaybookID_RunID_DeleteAt")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.65.0"),
+		toVersion:   semver.MustParse("0.66.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(createPGGINIndex("IR_Condition_PropertyFieldIDs_GIN", "IR_Condition", "PropertyFieldIDs")); err != nil {
+				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyFieldIDs_GIN")
+			}
+
+			if _, err := e.Exec(createPGGINIndex("IR_Condition_PropertyOptionsIDs_GIN", "IR_Condition", "PropertyOptionsIDs")); err != nil {
+				return errors.Wrapf(err, "failed creating GIN index IR_Condition_PropertyOptionsIDs_GIN")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.66.0"),
+		toVersion:   semver.MustParse("0.67.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Add index for GetConditionsByRunAndFieldID query pattern
+			if _, err := e.Exec(createPGIndex("IR_Condition_RunID_DeleteAt", "IR_Condition", "RunID, DeleteAt")); err != nil {
+				return errors.Wrapf(err, "failed creating index IR_Condition_RunID_DeleteAt")
+			}
+
+			return nil
+		},
+	},
 }

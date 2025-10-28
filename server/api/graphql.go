@@ -20,11 +20,46 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// graphQLErrorable is an interface for errors that should be returned to the GraphQL client with their actual message.
+type graphQLErrorable interface {
+	error
+	IsGraphQLErrorable() bool
+}
+
+// graphQLError wraps an error and marks it as safe to return to GraphQL clients.
+type graphQLError struct {
+	err error
+}
+
+func (e *graphQLError) Error() string {
+	return e.err.Error()
+}
+
+func (e *graphQLError) IsGraphQLErrorable() bool {
+	return true
+}
+
+func (e *graphQLError) Unwrap() error {
+	return e.err
+}
+
+// newGraphQLError wraps an error to make it returnable to GraphQL clients.
+func newGraphQLError(err error) error {
+	return &graphQLError{err: err}
+}
+
+// isGraphQLErrorable checks if an error or any error in its chain implements GraphQLErrorable.
+func isGraphQLErrorable(err error) bool {
+	var graphqlErr graphQLErrorable
+	return errors.As(err, &graphqlErr) && graphqlErr.IsGraphQLErrorable()
+}
+
 type GraphQLHandler struct {
 	*ErrorHandler
 	playbookService    app.PlaybookService
 	playbookRunService app.PlaybookRunService
 	categoryService    app.CategoryService
+	propertyService    app.PropertyService
 	pluginAPI          *pluginapi.Client
 	config             config.Service
 	permissions        *app.PermissionsService
@@ -43,6 +78,7 @@ func NewGraphQLHandler(
 	playbookService app.PlaybookService,
 	playbookRunService app.PlaybookRunService,
 	categoryService app.CategoryService,
+	propertyService app.PropertyService,
 	api *pluginapi.Client,
 	configService config.Service,
 	permissions *app.PermissionsService,
@@ -55,6 +91,7 @@ func NewGraphQLHandler(
 		playbookService:    playbookService,
 		playbookRunService: playbookRunService,
 		categoryService:    categoryService,
+		propertyService:    propertyService,
 		pluginAPI:          api,
 		config:             configService,
 		permissions:        permissions,
@@ -98,6 +135,7 @@ type GraphQLContext struct {
 	playbookStore        app.PlaybookStore
 	runStore             app.PlaybookRunStore
 	categoryService      app.CategoryService
+	propertyService      app.PropertyService
 	pluginAPI            *pluginapi.Client
 	logger               logrus.FieldLogger
 	config               config.Service
@@ -144,6 +182,7 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		playbookService:      h.playbookService,
 		playbookRunService:   h.playbookRunService,
 		categoryService:      h.categoryService,
+		propertyService:      h.propertyService,
 		pluginAPI:            h.pluginAPI,
 		logger:               c.logger,
 		config:               h.config,
@@ -187,7 +226,17 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 			}
 		}
 
-		response.Errors[0].Message = "Error while executing your request"
+		// Check if the underlying error (Err field) is graphQLErrorable, not the QueryError wrapper
+		var isErrorable bool
+		if response.Errors[0].Err != nil {
+			isErrorable = isGraphQLErrorable(response.Errors[0].Err)
+		} else {
+			isErrorable = isGraphQLErrorable(response.Errors[0])
+		}
+
+		if !isErrorable {
+			response.Errors[0].Message = "Error while executing your request"
+		}
 		response.Errors[0].Locations = []graphql_errors.Location{{Line: 0, Column: 0}}
 		// remove all other errors
 		response.Errors = response.Errors[:1]

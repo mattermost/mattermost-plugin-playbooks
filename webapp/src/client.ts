@@ -39,6 +39,7 @@ import manifest from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
+import {Condition} from './types/conditions';
 
 let siteURL = '';
 let basePath = '';
@@ -765,4 +766,63 @@ export async function getTeamTopPlaybooks(timeRange: string, page: number, perPa
         return null;
     }
     return data as InsightsResponse;
+}
+
+// Condition API functions
+
+export interface GetConditionsResult {
+    total_count: number;
+    page_count: number;
+    has_more: boolean;
+    items: Condition[];
+}
+
+export async function getPlaybookConditions(playbookId: string, page = 0, perPage = 0): Promise<GetConditionsResult | null> {
+    const queryParams = qs.stringify({
+        page,
+        per_page: perPage,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/conditions${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as GetConditionsResult;
+}
+
+export async function getRunConditions(runId: string, page = 0, perPage = 0): Promise<GetConditionsResult | null> {
+    const queryParams = qs.stringify({
+        page,
+        per_page: perPage,
+    }, {addQueryPrefix: true});
+
+    const data = await doGet(`${apiUrl}/runs/${runId}/conditions${queryParams}`);
+    if (!data) {
+        return null;
+    }
+    return data as GetConditionsResult;
+}
+
+export async function createPlaybookCondition(playbookId: string, condition: Omit<Condition, 'id' | 'create_at' | 'update_at' | 'delete_at'>): Promise<Condition> {
+    const body = JSON.stringify(condition);
+    const result = await doPost<Condition>(`${apiUrl}/playbooks/${playbookId}/conditions`, body);
+    if (!result) {
+        throw new Error('Failed to create playbook condition');
+    }
+    return result;
+}
+
+export async function updatePlaybookCondition(playbookId: string, conditionId: string, condition: Condition): Promise<Condition> {
+    const body = JSON.stringify(condition);
+    const result = await doPut<Condition>(`${apiUrl}/playbooks/${playbookId}/conditions/${conditionId}`, body);
+    if (!result) {
+        throw new Error('Failed to update playbook condition');
+    }
+    return result;
+}
+
+export async function deletePlaybookCondition(playbookId: string, conditionId: string): Promise<void> {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/conditions/${conditionId}`, {
+        method: 'DELETE',
+    });
 }

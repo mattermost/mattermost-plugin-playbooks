@@ -208,6 +208,18 @@ func (mr *MockPosterMockRecorder) PostMessageWithAttachments(arg0, arg1, arg2 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessageWithAttachments", reflect.TypeOf((*MockPoster)(nil).PostMessageWithAttachments), varargs...)
 }
 
+// PublishWebsocketEventGlobal mocks base method.
+func (m *MockPoster) PublishWebsocketEventGlobal(arg0 string, arg1 interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventGlobal", arg0, arg1)
+}
+
+// PublishWebsocketEventGlobal indicates an expected call of PublishWebsocketEventGlobal.
+func (mr *MockPosterMockRecorder) PublishWebsocketEventGlobal(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventGlobal", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventGlobal), arg0, arg1)
+}
+
 // PublishWebsocketEventToChannel mocks base method.
 func (m *MockPoster) PublishWebsocketEventToChannel(arg0 string, arg1 interface{}, arg2 string) {
 	m.ctrl.T.Helper()

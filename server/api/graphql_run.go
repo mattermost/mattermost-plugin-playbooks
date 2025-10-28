@@ -21,7 +21,12 @@ type RunResolver struct {
 func (r *RunResolver) NumTasks() int32 {
 	total := 0
 	for _, checklist := range r.PlaybookRun.Checklists {
-		total += len(checklist.Items)
+		for _, item := range checklist.Items {
+			if item.ConditionAction == app.ConditionActionHidden {
+				continue
+			}
+			total++
+		}
 	}
 	return int32(total)
 }
@@ -32,6 +37,9 @@ func (r *RunResolver) NumTasksClosed() int32 {
 	closed := 0
 	for _, checklist := range r.PlaybookRun.Checklists {
 		for _, item := range checklist.Items {
+			if item.ConditionAction == app.ConditionActionHidden {
+				continue
+			}
 			if item.State == app.ChecklistItemStateClosed || item.State == app.ChecklistItemStateSkipped {
 				closed++
 			}
@@ -224,6 +232,25 @@ func (r *RunResolver) LastUpdatedAt(ctx context.Context) float64 {
 		return float64(r.PlaybookRun.CreateAt)
 	}
 	return float64(r.PlaybookRun.TimelineEvents[len(r.PlaybookRun.TimelineEvents)-1].EventAt)
+}
+
+func (r *RunResolver) PropertyFields(ctx context.Context) ([]*PropertyFieldResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFields, err := c.propertyService.GetRunPropertyFields(r.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFieldResolvers := make([]*PropertyFieldResolver, 0, len(propertyFields))
+	for _, propertyField := range propertyFields {
+		propertyFieldResolvers = append(propertyFieldResolvers, &PropertyFieldResolver{propertyField: propertyField})
+	}
+
+	return propertyFieldResolvers, nil
 }
 
 type RunConnectionResolver struct {

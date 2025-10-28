@@ -17,19 +17,32 @@ import {
 
 import classNames from 'classnames';
 
-import {FloatingPortal} from '@floating-ui/react-dom-interactions';
+import {FloatingPortal} from '@floating-ui/react';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-import {playbookRunUpdated} from 'src/actions';
+import {
+    conditionCreated,
+    conditionDeleted,
+    conditionUpdated,
+    playbookRunUpdated,
+} from 'src/actions';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {clientAddChecklist, clientMoveChecklist, clientMoveChecklistItem} from 'src/client';
+import {
+    clientAddChecklist,
+    clientMoveChecklist,
+    clientMoveChecklistItem,
+    deletePlaybookCondition,
+    updatePlaybookCondition,
+} from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
+import {usePlaybookConditions} from 'src/hooks/conditions';
 import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {getDistinctAssignees} from 'src/utils';
+import {ConditionExprV1} from 'src/types/conditions';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 
@@ -67,8 +80,10 @@ const ChecklistList = ({
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+    const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
+    const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
@@ -83,6 +98,7 @@ const ChecklistList = ({
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
                 taskActions: ci.task_actions,
+                conditionID: ci.condition_id,
             })),
         }));
         const updates: PlaybookUpdates = {
@@ -168,6 +184,89 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
+    const onDeleteCondition = async (conditionId: string) => {
+        try {
+            // Remove condition from all items that reference it
+            const newChecklists = checklists.map((checklist) => ({
+                ...checklist,
+                items: checklist.items.map((item) => ({
+                    ...item,
+                    condition_id: item.condition_id === conditionId ? '' : item.condition_id,
+                })),
+            }));
+            setChecklistsForPlaybook(newChecklists);
+
+            // Delete the condition on the server
+            await deletePlaybookCondition(playbook?.id || '', conditionId);
+
+            // Dispatch Redux action to remove from store immediately
+            dispatch(conditionDeleted(conditionId, playbook?.id || ''));
+        } catch (error) {
+            console.error('Failed to delete condition:', error); // eslint-disable-line no-console
+        }
+    };
+
+    const onCreateCondition = async (checklistIndex: number, itemIndex: number, expr: ConditionExprV1) => {
+        try {
+            // Create the condition on the server
+            const result = await createCondition({
+                version: 1,
+                condition_expr: expr,
+                playbook_id: playbook?.id || '',
+            });
+
+            // Mark this condition as newly created so it starts in edit mode
+            setNewlyCreatedConditionIds((prev) => new Set(prev).add(result.id));
+
+            // Dispatch Redux action to add to store immediately
+            dispatch(conditionCreated(result));
+
+            // Update the item with the new condition_id
+            const newChecklists = [...checklists];
+            const newItems = [...newChecklists[checklistIndex].items];
+            newItems[itemIndex] = {
+                ...newItems[itemIndex],
+                condition_id: result.id,
+            };
+            newChecklists[checklistIndex] = {
+                ...newChecklists[checklistIndex],
+                items: newItems,
+            };
+            setChecklistsForPlaybook(newChecklists);
+
+            // Remove from newly created set after a short delay to allow initial edit
+            setTimeout(() => {
+                setNewlyCreatedConditionIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(result.id);
+                    return next;
+                });
+            }, 100);
+        } catch (error) {
+            console.error('Failed to create condition:', error); // eslint-disable-line no-console
+        }
+    };
+
+    const onUpdateCondition = async (conditionId: string, expr: ConditionExprV1) => {
+        try {
+            const existingCondition = conditions.find((c) => c.id === conditionId);
+            if (!existingCondition) {
+                return;
+            }
+
+            // Update the condition on the server
+            const updatedCondition = await updatePlaybookCondition(playbook?.id || '', conditionId, {
+                ...existingCondition,
+                condition_expr: expr,
+            });
+
+            // Dispatch Redux action to update the store immediately
+            dispatch(conditionUpdated(updatedCondition));
+        } catch (error) {
+            console.error('Failed to update condition:', error); // eslint-disable-line no-console
+        }
+    };
+
     const onDragStart = () => {
         setIsDragging(true);
     };
@@ -192,33 +291,34 @@ const ChecklistList = ({
 
         // Move a checklist item, either inside of the same checklist, or between checklists
         if (result.type === 'checklist-item') {
+            // Simple flat list - droppableId is just the checklist index
             const srcChecklistIdx = parseInt(result.source.droppableId, 10);
             const dstChecklistIdx = parseInt(result.destination.droppableId, 10);
 
             if (srcChecklistIdx === dstChecklistIdx) {
-                // Remove the dragged item from the checklist
+                // Moving within the same checklist - simple reorder
                 const newChecklistItems = [...checklists[srcChecklistIdx].items];
-                const [removed] = newChecklistItems.splice(srcIdx, 1);
+                const [moved] = newChecklistItems.splice(srcIdx, 1);
+                newChecklistItems.splice(dstIdx, 0, moved);
 
-                // Add the dragged item to the checklist
-                newChecklistItems.splice(dstIdx, 0, removed);
                 newChecklists[srcChecklistIdx] = {
                     ...newChecklists[srcChecklistIdx],
                     items: newChecklistItems,
                 };
             } else {
+                // Moving between different checklists
                 const srcChecklist = checklists[srcChecklistIdx];
                 const dstChecklist = checklists[dstChecklistIdx];
 
-                // Remove the dragged item from the source checklist
+                // Remove from source
                 const newSrcChecklistItems = [...srcChecklist.items];
                 const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
 
-                // Add the dragged item to the destination checklist
+                // Insert into destination
                 const newDstChecklistItems = [...dstChecklist.items];
                 newDstChecklistItems.splice(dstIdx, 0, moved);
 
-                // Modify the new checklists array with the new source and destination checklists
+                // Update both checklists
                 newChecklists[srcChecklistIdx] = {
                     ...srcChecklist,
                     items: newSrcChecklistItems,
@@ -379,6 +479,27 @@ const ChecklistList = ({
                                                     showItem={showItem}
                                                     itemButtonsFormat={itemButtonsFormat}
                                                     onReadOnlyInteract={onReadOnlyInteract}
+                                                    conditions={conditions}
+                                                    propertyFields={playbook?.propertyFields.map((pf) => ({
+                                                        id: pf.id,
+                                                        name: pf.name,
+                                                        type: pf.type,
+                                                        group_id: pf.group_id,
+                                                        create_at: pf.create_at,
+                                                        update_at: pf.update_at,
+                                                        delete_at: pf.delete_at,
+                                                        target_type: 'playbook' as const,
+                                                        attrs: {
+                                                            visibility: pf.attrs.visibility as any,
+                                                            sort_order: pf.attrs.sort_order,
+                                                            options: pf.attrs.options as any,
+                                                            parent_id: pf.attrs.parent_id || undefined,
+                                                        },
+                                                    })) || []}
+                                                    onDeleteCondition={onDeleteCondition}
+                                                    onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
+                                                    onUpdateCondition={onUpdateCondition}
+                                                    newlyCreatedConditionIds={newlyCreatedConditionIds}
                                                 />
                                             </CollapsibleChecklist>
                                         );

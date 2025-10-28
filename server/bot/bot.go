@@ -62,6 +62,9 @@ type Poster interface {
 	// PublishWebsocketEventToUser sends a websocket event with payload to userID.
 	PublishWebsocketEventToUser(event string, payload interface{}, userID string)
 
+	// PublishWebsocketEventGlobal sends a websocket event with payload to all connected users.
+	PublishWebsocketEventGlobal(event string, payload interface{})
+
 	// NotifyAdmins sends a DM with the message to each admins
 	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error
 

@@ -481,3 +481,30 @@ const doGraphqlQuery = (query, operationName, variables) => {
         method: 'POST',
     });
 };
+
+/**
+ * Add a property field to a playbook via GraphQL API
+ * @param {String} playbookId - The playbook ID
+ * @param {Object} propertyField - The property field to add
+ * @param {String} propertyField.name - Name of the property field (e.g., "Priority")
+ * @param {String} propertyField.type - Type of property (text, select, multiselect)
+ * @param {Object} propertyField.attrs - Attributes object
+ * @param {String} propertyField.attrs.visibility - Visibility setting (default: "public")
+ * @param {Number} propertyField.attrs.sortOrder - Sort order (default: 0)
+ * @param {Array} propertyField.attrs.options - Array of options for select/multiselect types
+ */
+Cypress.Commands.add('apiAddPropertyField', (playbookId, propertyField) => {
+    const query = `
+        mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+            addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+        }
+    `;
+    const vars = {
+        playbookID: playbookId,
+        propertyField,
+    };
+    return doGraphqlQuery(query, 'AddPlaybookPropertyField', vars).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});

@@ -8,6 +8,7 @@ import {
     FloatingFocusManager,
     FloatingPortal,
     Placement,
+    UseFloatingOptions,
     autoUpdate,
     flip,
     offset,
@@ -17,7 +18,7 @@ import {
     useFloating,
     useInteractions,
     useRole,
-} from '@floating-ui/react-dom-interactions';
+} from '@floating-ui/react';
 
 const FloatingContainer = styled.div<{$styles?: ReturnType<typeof css>}>`
 	z-index: 50;
@@ -60,10 +61,10 @@ type DropdownProps = {
     containerStyles?: ReturnType<typeof css>;
 } & ({
     isOpen: boolean;
-    onOpenChange: undefined | ((open: boolean) => void);
+    onOpenChange: undefined | UseFloatingOptions<HTMLElement>['onOpenChange'];
 } | {
     isOpen?: never;
-    onOpenChange?: (open: boolean) => void;
+    onOpenChange?: UseFloatingOptions<HTMLElement>['onOpenChange'];
 });
 
 const Dropdown = (props: DropdownProps) => {
@@ -71,12 +72,12 @@ const Dropdown = (props: DropdownProps) => {
 
     const open = props.isOpen ?? isOpen;
 
-    const setOpen = (updatedOpen: boolean) => {
-        props.onOpenChange?.(updatedOpen);
+    const setOpen: UseFloatingOptions<HTMLElement>['onOpenChange'] = (updatedOpen, event, reason) => {
         setIsOpen(updatedOpen);
+        props.onOpenChange?.(updatedOpen, event, reason);
     };
 
-    const {strategy, x, y, reference, floating, context} = useFloating<HTMLElement>({
+    const {strategy, x, y, refs: {setReference, setFloating}, context} = useFloating<HTMLElement>({
         open,
         onOpenChange: setOpen,
         placement: props.placement ?? 'bottom-start',
@@ -95,7 +96,7 @@ const Dropdown = (props: DropdownProps) => {
     let content = (
         <FloatingContainer
             {...getFloatingProps({
-                ref: floating,
+                ref: setFloating,
                 style: {
                     position: strategy,
                     top: y ?? 0,
@@ -121,7 +122,7 @@ const Dropdown = (props: DropdownProps) => {
 
     return (
         <>
-            {cloneElement(props.target, getReferenceProps({ref: reference, ...props.target.props}))}
+            {cloneElement(props.target, getReferenceProps({ref: setReference, ...props.target.props}))}
             <MaybePortal>
                 {open && content}
             </MaybePortal>

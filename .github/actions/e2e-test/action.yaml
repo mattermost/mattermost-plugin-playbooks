@@ -41,7 +41,7 @@ runs:
       shell: bash
 
     - name: ci/restore-postresql
-      uses: docker://postgres:10.17
+      uses: docker://postgres:14
       env:
         TEST_DATABASE_URL: postgres://mmuser:mostest@postgres:5432/mattermost_test
       with:

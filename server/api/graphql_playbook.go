@@ -72,6 +72,25 @@ func (r *PlaybookResolver) Metrics() []*MetricConfigResolver {
 	return metricConfigResolvers
 }
 
+func (r *PlaybookResolver) PropertyFields(ctx context.Context) ([]*PropertyFieldResolver, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFields, err := c.propertyService.GetPropertyFields(r.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyFieldResolvers := make([]*PropertyFieldResolver, 0, len(propertyFields))
+	for _, propertyField := range propertyFields {
+		propertyFieldResolvers = append(propertyFieldResolvers, &PropertyFieldResolver{propertyField: propertyField})
+	}
+
+	return propertyFieldResolvers, nil
+}
+
 type MetricConfigResolver struct {
 	app.PlaybookMetricConfig
 }
@@ -108,6 +127,10 @@ func (r *ChecklistResolver) Items() []*ChecklistItemResolver {
 
 type ChecklistItemResolver struct {
 	app.ChecklistItem
+}
+
+func (r *ChecklistItemResolver) ConditionAction() string {
+	return string(r.ChecklistItem.ConditionAction)
 }
 
 func (r *ChecklistItemResolver) StateModified() float64 {
@@ -216,6 +239,7 @@ type UpdateChecklistItem struct {
 	LastSkipped      float64           `json:"delete_at"`
 	DueDate          float64           `json:"due_date"`
 	TaskActions      *[]app.TaskAction `json:"task_actions"`
+	ConditionID      string            `json:"condition_id"`
 }
 
 func (ci *UpdateChecklistItem) GetAssigneeID() string {

@@ -3,12 +3,13 @@
 
 import Integrations from 'mattermost-redux/action_types/integrations';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import manifest from 'src/manifest';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {PresetTemplate} from 'src/components/templates/template_data';
+import {Condition} from 'src/types/conditions';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = manifest.id + '_toggle_rhs';
 export const SET_RHS_OPEN = manifest.id + '_set_rhs_open';
@@ -20,6 +21,7 @@ export const PLAYBOOK_ARCHIVED = manifest.id + '_playbook_archived';
 export const PLAYBOOK_RESTORED = manifest.id + '_playbook_restored';
 export const RECEIVED_PLAYBOOK_RUNS = manifest.id + '_received_playbook_runs';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = manifest.id + '_received_team_playbook_run_channels';
+export const RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS = manifest.id + '_received_team_playbook_run_connections';
 export const REMOVED_FROM_CHANNEL = manifest.id + '_removed_from_playbook_run_channel';
 export const RECEIVED_GLOBAL_SETTINGS = manifest.id + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = manifest.id + '_show_post_menu_modal';
@@ -36,6 +38,12 @@ export const SET_EVERY_CHECKLIST_COLLAPSED_STATE = manifest.id + '_set_every_che
 export const SET_CHECKLIST_COLLAPSED_STATE = manifest.id + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = manifest.id + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = manifest.id + '_set_checklist_items_filter';
+export const RECEIVED_PLAYBOOK_CONDITIONS = manifest.id + '_received_playbook_conditions';
+
+// Condition websocket action types
+export const CONDITION_CREATED = manifest.id + '_condition_created';
+export const CONDITION_UPDATED = manifest.id + '_condition_updated';
+export const CONDITION_DELETED = manifest.id + '_condition_deleted';
 
 // Backstage RHS related action types
 // Note That this is not the same as channel RHS management
@@ -103,6 +111,33 @@ export interface ReceivedPlaybookRuns {
 export interface ReceivedTeamPlaybookRuns {
     type: typeof RECEIVED_TEAM_PLAYBOOK_RUNS;
     playbookRuns: PlaybookRun[];
+}
+
+export interface ReceivedTeamPlaybookRunConnections {
+    type: typeof RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS;
+    playbookRuns: PlaybookRunConnection[];
+}
+
+export interface ReceivedPlaybookConditions {
+    type: typeof RECEIVED_PLAYBOOK_CONDITIONS;
+    playbookId: string;
+    conditions: Condition[];
+}
+
+export interface ConditionCreated {
+    type: typeof CONDITION_CREATED;
+    condition: Condition;
+}
+
+export interface ConditionUpdated {
+    type: typeof CONDITION_UPDATED;
+    condition: Condition;
+}
+
+export interface ConditionDeleted {
+    type: typeof CONDITION_DELETED;
+    conditionId: string;
+    playbookId: string;
 }
 
 export interface RemovedFromChannel {

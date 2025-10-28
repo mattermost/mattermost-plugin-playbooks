@@ -57,3 +57,13 @@ export function useAllowMakePlaybookPrivate() {
 export function useAllowRequestUpdate() {
     return useSelector(isProfessionalLicensedOrDevelopment);
 }
+
+// useAllowPlaybookAttributes returns whether playbook attributes are enabled
+export function useAllowPlaybookAttributes() {
+    return useSelector(isEnterpriseLicensedOrDevelopment);
+}
+
+// useAllowConditionalPlaybooks returns whether conditional playbooks are enabled
+export function useAllowConditionalPlaybooks() {
+    return useSelector(isEnterpriseLicensedOrDevelopment);
+}

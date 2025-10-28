@@ -52,6 +52,8 @@ type Plugin struct {
 	permissions          *app.PermissionsService
 	channelActionService app.ChannelActionService
 	categoryService      app.CategoryService
+	conditionService     app.ConditionService
+	propertyService      app.PropertyService
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
@@ -139,6 +141,7 @@ func (p *Plugin) OnActivate() error {
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+	p.config.SetWebsocketPublisher(p.bot)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, scheduler)
@@ -152,14 +155,24 @@ func (p *Plugin) OnActivate() error {
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
+	conditionStore := sqlstore.NewConditionStore(apiClient, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.metricsService)
+	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
+	propertyService, err := app.NewPropertyService(pluginAPIClient, conditionStore)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create property service")
+	}
+	p.propertyService = propertyService
+
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.API, p.metricsService, propertyService)
+
+	auditorService := app.NewAuditorService(p.API)
+	p.conditionService = app.NewConditionService(conditionStore, propertyService, p.bot, auditorService)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
-	p.categoryService = app.NewCategoryService(categoryStore, pluginAPIClient)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -174,6 +187,8 @@ func (p *Plugin) OnActivate() error {
 		p.channelActionService,
 		p.licenseChecker,
 		p.metricsService,
+		p.propertyService,
+		p.conditionService,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -202,6 +217,7 @@ func (p *Plugin) OnActivate() error {
 		p.playbookService,
 		p.playbookRunService,
 		p.categoryService,
+		p.propertyService,
 		pluginAPIClient,
 		p.config,
 		p.permissions,
@@ -212,14 +228,17 @@ func (p *Plugin) OnActivate() error {
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
 		p.playbookService,
+		p.propertyService,
 		pluginAPIClient,
 		p.config,
 		p.permissions,
+		p.licenseChecker,
 	)
 	api.NewPlaybookRunHandler(
 		p.handler.APIRouter,
 		p.playbookRunService,
 		p.playbookService,
+		p.propertyService,
 		p.permissions,
 		p.licenseChecker,
 		pluginAPIClient,
@@ -232,6 +251,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
 	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
 	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
+	api.NewConditionHandler(p.handler.APIRouter, p.conditionService, p.playbookService, p.playbookRunService, p.propertyService, p.permissions, pluginAPIClient)
 	api.NewTabAppHandler(
 		p.handler,
 		p.playbookRunService,
@@ -283,7 +303,7 @@ func (p *Plugin) OnConfigurationChange() error {
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
-		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.permissions)
+		p.playbookRunService, p.playbookService, p.propertyService, p.config, p.userInfoStore, p.permissions)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
