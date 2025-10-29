@@ -39,8 +39,6 @@ interface Props {
     onCreateCondition?: (expr: ConditionExprV1, itemIndex: number) => void;
     onUpdateCondition?: (conditionId: string, expr: ConditionExprV1) => void;
     newlyCreatedConditionIds?: Set<string>;
-    autoAddTask?: boolean;
-    onTaskAdded?: () => void;
     allChecklists?: Checklist[];
     onMoveItemToCondition?: (itemIndex: number, conditionId: string) => void;
 }

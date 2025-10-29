@@ -22,7 +22,6 @@ interface TitleProps {
     skipped: boolean;
     clickable: boolean;
     onDeleteEmpty?: () => void;
-    onSaveAndAddNew?: () => void;
 }
 
 const ChecklistItemTitle = (props: TitleProps) => {

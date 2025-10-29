@@ -363,15 +363,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     <ChecklistItemTitleWrapper
                         onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
                     >
-                    <ChecklistItemTitle
-                        editingItem={isEditing}
-                        onEdit={setTitleValue}
-                        value={titleValue}
-                        skipped={isSkipped()}
-                        clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
-                        onDeleteEmpty={props.newItem ? props.cancelAddingItem : props.onDeleteChecklistItem}
-                        onSaveAndAddNew={props.onSaveAndAddNew ? handleSaveAndAddNew : undefined}
-                    />
+                        <ChecklistItemTitle
+                            editingItem={isEditing}
+                            onEdit={setTitleValue}
+                            value={titleValue}
+                            skipped={isSkipped()}
+                            clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                            onDeleteEmpty={props.newItem ? props.cancelAddingItem : props.onDeleteChecklistItem}
+                        />
                     </ChecklistItemTitleWrapper>
                 </CheckboxContainer>
                 {(descValue || isEditing) &&

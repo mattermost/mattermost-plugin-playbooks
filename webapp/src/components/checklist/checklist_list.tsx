@@ -623,15 +623,13 @@ const ChecklistList = ({
                                                             parent_id: pf.attrs.parent_id || undefined,
                                                         },
                                                     })) || []}
-                                                onDeleteCondition={onDeleteCondition}
-                                                onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
-                                                onUpdateCondition={onUpdateCondition}
-                                                newlyCreatedConditionIds={newlyCreatedConditionIds}
-                                                autoAddTask={autoAddTask && checklistIndex === 0}
-                                                onTaskAdded={onTaskAdded}
-                                                allChecklists={checklists}
-                                                onMoveItemToCondition={(itemIndex, conditionId) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
-                                            />
+                                                    onDeleteCondition={onDeleteCondition}
+                                                    onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
+                                                    onUpdateCondition={onUpdateCondition}
+                                                    newlyCreatedConditionIds={newlyCreatedConditionIds}
+                                                    allChecklists={checklists}
+                                                    onMoveItemToCondition={(itemIndex, conditionId) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
+                                                />
                                             </CollapsibleChecklist>
                                         );
 
