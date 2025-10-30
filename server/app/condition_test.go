@@ -999,7 +999,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Severity is Critical", result)
+		require.Equal(t, `"Severity" is Critical`, result)
 	})
 
 	t.Run("simple isNot condition", func(t *testing.T) {
@@ -1010,7 +1010,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, `Acknowledged is not "false"`, result)
+		require.Equal(t, `"Acknowledged" is not "false"`, result)
 	})
 
 	t.Run("single value array condition", func(t *testing.T) {
@@ -1021,7 +1021,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Status is Open", result)
+		require.Equal(t, `"Status" is Open`, result)
 	})
 
 	t.Run("multi value array condition", func(t *testing.T) {
@@ -1032,7 +1032,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Categories is not [Category A,Category B]", result)
+		require.Equal(t, `"Categories" is not [Category A,Category B]`, result)
 	})
 
 	t.Run("and condition", func(t *testing.T) {
@@ -1053,7 +1053,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, `Severity is Critical AND Acknowledged is not "true"`, result)
+		require.Equal(t, `"Severity" is Critical AND "Acknowledged" is not "true"`, result)
 	})
 
 	t.Run("or condition", func(t *testing.T) {
@@ -1074,7 +1074,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Severity is Low OR Priority is High", result)
+		require.Equal(t, `"Severity" is Low OR "Priority" is High`, result)
 	})
 
 	t.Run("nested conditions", func(t *testing.T) {
@@ -1105,7 +1105,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, `Severity is Critical AND (Status is Open OR Acknowledged is not "true")`, result)
+		require.Equal(t, `"Severity" is Critical AND ("Status" is Open OR "Acknowledged" is not "true")`, result)
 	})
 
 	t.Run("text field with empty string", func(t *testing.T) {
@@ -1116,7 +1116,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Acknowledged is empty", result)
+		require.Equal(t, `"Acknowledged" is empty`, result)
 	})
 
 	t.Run("text field with empty string isNot", func(t *testing.T) {
@@ -1127,7 +1127,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Acknowledged is not empty", result)
+		require.Equal(t, `"Acknowledged" is not empty`, result)
 	})
 
 	t.Run("text field with whitespace-only string", func(t *testing.T) {
@@ -1138,7 +1138,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, `Acknowledged is "   "`, result)
+		require.Equal(t, `"Acknowledged" is "   "`, result)
 	})
 
 	t.Run("text field with regular string", func(t *testing.T) {
@@ -1149,7 +1149,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, `Acknowledged is "hello world"`, result)
+		require.Equal(t, `"Acknowledged" is "hello world"`, result)
 	})
 
 	t.Run("text field with null JSON value", func(t *testing.T) {
@@ -1160,7 +1160,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Acknowledged is empty", result)
+		require.Equal(t, `"Acknowledged" is empty`, result)
 	})
 
 }

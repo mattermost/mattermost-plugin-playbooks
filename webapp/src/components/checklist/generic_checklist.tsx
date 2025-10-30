@@ -284,6 +284,7 @@ const GenericChecklist = (props: Props) => {
                         return shouldInclude;
                     });
                 })()}
+                conditions={props.conditions}
                 propertyFields={props.propertyFields}
                 onEditingChange={(isEditing) => {
                     setEditingItemIndex(isEditing ? index : null);

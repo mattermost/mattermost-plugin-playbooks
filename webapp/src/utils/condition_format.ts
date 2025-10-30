@@ -88,7 +88,7 @@ export const formatConditionExpr = (
 
     const formattedConditions = conditions.map((cond) => {
         const {fieldName, operator, valueNames} = formatCondition(cond, propertyFields, operatorIs, operatorIsNot);
-        return `${fieldName} ${operator} ${valueNames.join(', ')}`;
+        return `"${fieldName}" ${operator} ${valueNames.join(', ')}`;
     });
 
     if (formattedConditions.length === 1) {
