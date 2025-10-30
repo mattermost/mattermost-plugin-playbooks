@@ -164,7 +164,22 @@ const PlaybookProperties = ({playbookID}: Props) => {
             },
         };
 
-        await addPropertyField(playbookID, newPropertyField);
+        const result = await addPropertyField(playbookID, newPropertyField);
+
+        // Auto-focus and select the newly created attribute's name field
+        // The mutation returns the new property ID as a string
+        if (result.data?.addPlaybookPropertyField) {
+            const newPropertyId = result.data.addPlaybookPropertyField;
+
+            // Wait for the property to be added to the list and rendered
+            setTimeout(() => {
+                const input = nameInputRefs.current[newPropertyId];
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 200);
+        }
     }, [addPropertyField, playbookID, properties]);
 
     const handleDragEnd = useCallback(async (result: any) => {

@@ -3,7 +3,6 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
 import {SourceBranchIcon} from '@mattermost/compass-icons/components';
 
 import Tooltip from 'src/components/widgets/tooltip';
@@ -11,11 +10,10 @@ import {ChecklistItem} from 'src/types/playbook';
 
 interface ConditionIndicatorProps {
     checklistItem: ChecklistItem;
+    tooltipMessage: string;
 }
 
-const ConditionIndicator = ({checklistItem}: ConditionIndicatorProps) => {
-    const {formatMessage} = useIntl();
-
+const ConditionIndicator = ({checklistItem, tooltipMessage}: ConditionIndicatorProps) => {
     if (!checklistItem.condition_id) {
         return null;
     }
@@ -24,15 +22,10 @@ const ConditionIndicator = ({checklistItem}: ConditionIndicatorProps) => {
     const tooltipId = `condition-indicator-${checklistItem.id || 'new'}`;
     const iconColor = useErrorColor ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.56)';
 
-    const tooltipContent = formatMessage(
-        {defaultMessage: 'conditionally rendered: {reason}'},
-        {reason: checklistItem.condition_reason},
-    );
-
     return (
         <Tooltip
             id={tooltipId}
-            content={tooltipContent}
+            content={tooltipMessage}
         >
             <IconWrapper data-testid={useErrorColor ? 'condition-indicator-error' : 'condition-indicator'}>
                 <SourceBranchIcon
