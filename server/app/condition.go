@@ -592,7 +592,7 @@ func (cc *ComparisonCondition) toString(fieldMap map[string]PropertyField, isNot
 	}
 
 	valueStr := cc.formatValue(field, exists)
-	return fmt.Sprintf("%s %s %s", fieldName, operator, valueStr)
+	return fmt.Sprintf(`"%s" %s %s`, fieldName, operator, valueStr)
 }
 
 func (cc *ComparisonCondition) formatValue(field PropertyField, fieldExists bool) string {

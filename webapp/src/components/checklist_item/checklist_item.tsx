@@ -22,6 +22,7 @@ import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as Ta
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
+import {formatConditionExpr} from 'src/utils/condition_format';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 
@@ -83,6 +84,7 @@ interface ChecklistItemProps {
     onRemoveFromCondition?: () => void;
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
+    conditions?: Condition[];
     propertyFields?: PropertyField[];
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
@@ -94,6 +96,35 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const isPlaybookEditor = !props.playbookRunId;
 
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
+
+    const getConditionTooltip = (item: ChecklistItemType): string => {
+        if (item.condition_action === 'shown_because_modified') {
+            return formatMessage({
+                defaultMessage: 'Condition no longer met, but task shown because it was modified',
+            });
+        }
+
+        // Get the reason - either from the item or format the condition expression
+        let reason = item.condition_reason;
+        if (!reason && item.condition_id && props.conditions && props.propertyFields) {
+            const condition = props.conditions.find((c) => c.id === item.condition_id);
+            if (condition) {
+                reason = formatConditionExpr(condition.condition_expr, props.propertyFields);
+            }
+        }
+
+        if (isPlaybookEditor) {
+            return formatMessage(
+                {defaultMessage: 'Shown when {reason}'},
+                {reason},
+            );
+        }
+
+        return formatMessage(
+            {defaultMessage: 'Shown because {reason}'},
+            {reason},
+        );
+    };
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
@@ -359,7 +390,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                         onReadOnlyInteract={props.onReadOnlyInteract}
                     />
-                    <ConditionIndicator checklistItem={props.checklistItem}/>
+                    <ConditionIndicator
+                        checklistItem={props.checklistItem}
+                        tooltipMessage={getConditionTooltip(props.checklistItem)}
+                    />
                     <ChecklistItemTitleWrapper
                         onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
                     >
