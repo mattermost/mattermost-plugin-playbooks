@@ -614,8 +614,7 @@ func (cc *ComparisonCondition) formatValue(field PropertyField, fieldExists bool
 
 func (cc *ComparisonCondition) formatTextValue() string {
 	var stringValue string
-	err := json.Unmarshal(cc.Value, &stringValue)
-	if err == nil {
+	if err := json.Unmarshal(cc.Value, &stringValue); err == nil {
 		if stringValue == "" {
 			return "empty"
 		}
