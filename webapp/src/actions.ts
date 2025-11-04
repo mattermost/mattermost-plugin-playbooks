@@ -67,7 +67,6 @@ import {
     REMOVED_FROM_CHANNEL,
     ReceivedGlobalSettings,
     ReceivedPlaybookConditions,
-    ReceivedPlaybookPropertyFields,
     ReceivedPlaybookRuns,
     ReceivedTeamPlaybookRunConnections,
     ReceivedTeamPlaybookRuns,
