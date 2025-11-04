@@ -12,7 +12,14 @@ import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/compo
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
-import {clientExecuteCommand, createPlaybookPropertyField, deletePlaybookPropertyField, fetchPlaybookPropertyFields, getPlaybookConditions, updatePlaybookPropertyField} from 'src/client';
+import {
+    clientExecuteCommand,
+    createPlaybookPropertyField,
+    deletePlaybookPropertyField,
+    fetchPlaybookPropertyFields,
+    getPlaybookConditions,
+    updatePlaybookPropertyField,
+} from 'src/client';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldInput} from 'src/types/properties';
 import {canIPostUpdateForRun, getPropertyFields, selectToggleRHS} from 'src/selectors';
@@ -20,8 +27,6 @@ import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs
 import {
     ADDED_PLAYBOOK_PROPERTY_FIELD,
     CLOSE_BACKSTAGE_RHS,
-    DELETED_PLAYBOOK_PROPERTY_FIELD,
-    UPDATED_PLAYBOOK_PROPERTY_FIELD,
     CONDITION_CREATED,
     CONDITION_DELETED,
     CONDITION_UPDATED,
@@ -29,6 +34,7 @@ import {
     ConditionCreated,
     ConditionDeleted,
     ConditionUpdated,
+    DELETED_PLAYBOOK_PROPERTY_FIELD,
     HIDE_CHANNEL_ACTIONS_MODAL,
     HIDE_PLAYBOOK_ACTIONS_MODAL,
     HIDE_POST_MENU_MODAL,
@@ -92,6 +98,7 @@ import {
     ShowPlaybookActionsModal,
     ShowPostMenuModal,
     ShowRunActionsModal,
+    UPDATED_PLAYBOOK_PROPERTY_FIELD,
     WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
     WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
@@ -477,15 +484,15 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
     }
 
     // Create optimistic update from input, filtering out options without IDs
-    const optimisticOptions = propertyField.attrs?.options
-        ? propertyField.attrs.options
+    const optimisticOptions = propertyField.attrs?.options ?
+        propertyField.attrs.options
             .filter((opt) => opt.id !== undefined)
             .map((opt) => ({
                 id: opt.id!,
                 name: opt.name,
                 color: opt.color,
-            }))
-        : originalField.attrs.options;
+            })) :
+        originalField.attrs.options;
 
     const optimistic: PropertyField = {
         ...originalField,

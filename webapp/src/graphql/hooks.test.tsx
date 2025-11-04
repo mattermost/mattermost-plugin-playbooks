@@ -6,19 +6,9 @@ import {renderHook} from '@testing-library/react-hooks';
 import {MockedProvider} from '@apollo/client/testing';
 import {GraphQLError} from 'graphql';
 
-import {
-    AddPlaybookPropertyFieldDocument,
-    DeletePlaybookPropertyFieldDocument,
-    PlaybookDocument,
-    PlaybookPropertyDocument,
-    PropertyFieldType,
-    UpdatePlaybookPropertyFieldDocument,
-} from 'src/graphql/generated/graphql';
+import {PlaybookDocument, PlaybookPropertyDocument, PropertyFieldType} from 'src/graphql/generated/graphql';
 
-import {
-    usePlaybook,
-    usePlaybookProperty,
-} from './hooks';
+import {usePlaybook, usePlaybookProperty} from './hooks';
 
 describe('GraphQL Hooks Integration Tests', () => {
     const mockPlaybookID = 'playbook-123';
@@ -217,6 +207,7 @@ describe('GraphQL Hooks Integration Tests', () => {
             await waitForNextUpdate();
 
             expect(result.current[1].loading).toBe(false);
+
             // Property fields are now fetched via REST API, not GraphQL
             // This test will eventually be removed when we deprecate GraphQL usage in the webapp
             expect(result.current[1].error).toBeUndefined();

@@ -7,14 +7,8 @@ import {QueryResult, useMutation, useQuery} from '@apollo/client';
 
 import {
     AddPlaybookMemberDocument,
-    AddPlaybookPropertyFieldDocument,
-    AddPlaybookPropertyFieldMutation,
-    AddPlaybookPropertyFieldMutationVariables,
     AddRunParticipantsDocument,
     ChangeRunOwnerDocument,
-    DeletePlaybookPropertyFieldDocument,
-    DeletePlaybookPropertyFieldMutation,
-    DeletePlaybookPropertyFieldMutationVariables,
     PlaybookDocument,
     PlaybookLhsDocument,
     PlaybookPropertyDocument,
@@ -22,7 +16,6 @@ import {
     PlaybookPropertyQueryVariables,
     PlaybookQuery,
     PlaybookUpdates,
-    PropertyFieldInput,
     RemovePlaybookMemberDocument,
     RemoveRunParticipantsDocument,
     RhsRunsDocument,
@@ -34,9 +27,6 @@ import {
     TaskActionUpdates,
     UpdatePlaybookDocument,
     UpdatePlaybookFavoriteDocument,
-    UpdatePlaybookPropertyFieldDocument,
-    UpdatePlaybookPropertyFieldMutation,
-    UpdatePlaybookPropertyFieldMutationVariables,
     UpdateRunDocument,
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';

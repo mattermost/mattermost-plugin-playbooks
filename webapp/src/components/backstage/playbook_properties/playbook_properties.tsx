@@ -24,9 +24,7 @@ import {
     MenuVariantIcon,
 } from '@mattermost/compass-icons/components';
 
-import {
-    usePlaybook,
-} from 'src/graphql/hooks';
+import {usePlaybook} from 'src/graphql/hooks';
 import {PropertyField, PropertyFieldInput, PropertyFieldType} from 'src/types/properties';
 
 import GenericModal from 'src/components/widgets/generic_modal';
@@ -120,25 +118,21 @@ const PlaybookProperties = ({playbookID}: Props) => {
             },
         };
 
-        try {
-            await dispatch(addPlaybookPropertyFieldAction(playbookID, newPropertyField));
+        await dispatch(addPlaybookPropertyFieldAction(playbookID, newPropertyField));
 
-            // Wait for the property to be added to the list and rendered
-            // Redux state will update automatically
-            setTimeout(() => {
-                // Find the newly added property by name
-                const newProperty = properties.find((p) => p.name === newPropertyField.name);
-                if (newProperty) {
-                    const input = nameInputRefs.current[newProperty.id];
-                    if (input) {
-                        input.focus();
-                        input.select();
-                    }
+        // Wait for the property to be added to the list and rendered
+        // Redux state will update automatically
+        setTimeout(() => {
+            // Find the newly added property by name
+            const newProperty = properties.find((p) => p.name === newPropertyField.name);
+            if (newProperty) {
+                const input = nameInputRefs.current[newProperty.id];
+                if (input) {
+                    input.focus();
+                    input.select();
                 }
-            }, 200);
-        } catch (error) {
-            // Error is already logged in the action
-        }
+            }
+        }, 200);
     }, [dispatch, playbookID, properties]);
 
     const handleDragEnd = useCallback(async (result: any) => {
@@ -297,11 +291,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                 },
                             };
 
-                            try {
-                                await dispatch(addPlaybookPropertyFieldAction(playbookID, duplicatedPropertyField));
-                            } catch (error) {
-                                // Error is already logged in the action
-                            }
+                            await dispatch(addPlaybookPropertyFieldAction(playbookID, duplicatedPropertyField));
                         }}
                     />
                 ),
