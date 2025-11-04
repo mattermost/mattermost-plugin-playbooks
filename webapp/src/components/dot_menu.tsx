@@ -176,7 +176,7 @@ export const iconSplitStyling = css`
     gap: 8px;
 `;
 
-export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string }) => {
+export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string, 'data-testid'?: string }) => {
     const tooltipId = useUniqueId();
 
     if (props.disabled) {
@@ -187,6 +187,7 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
             >
                 <DisabledDropdownMenuItemStyled
                     className={props.className}
+                    data-testid={props['data-testid']}
                 >
                     {props.children}
                 </DisabledDropdownMenuItemStyled>
@@ -200,6 +201,7 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
             onClick={props.onClick}
             className={props.className}
             role={'button'}
+            data-testid={props['data-testid']}
 
             // Prevent trigger icon (parent) from propagating title prop to options
             // Menu items use to be full text (not just icons) so don't need title

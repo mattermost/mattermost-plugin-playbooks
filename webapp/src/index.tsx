@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {render, unmountComponentAtNode} from 'react-dom';
+import {Root, createRoot} from 'react-dom/client';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {GlobalState} from '@mattermost/types/store';
@@ -145,13 +145,14 @@ export default class Plugin {
     activityFunc?: () => void;
 
     stylesContainer?: Element;
+    stylesRoot?: Root;
 
     doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
             try {
-                // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports
+                // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports, no-warning-comments
                 return require(`../i18n/${locale}.json`); // TODO make async, this increases bundle size exponentially
             } catch {
                 return {};
@@ -308,7 +309,8 @@ export default class Plugin {
     public initialize(registry: any, store: Store<GlobalState>): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
-        render(<><GlobalSelectStyle/></>, this.stylesContainer);
+        this.stylesRoot = createRoot(this.stylesContainer);
+        this.stylesRoot.render(<><GlobalSelectStyle/></>);
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
@@ -358,8 +360,9 @@ export default class Plugin {
             document.removeEventListener('click', this.activityFunc);
             delete this.activityFunc;
         }
-        if (this.stylesContainer) {
-            unmountComponentAtNode(this.stylesContainer);
+        if (this.stylesRoot) {
+            this.stylesRoot.unmount();
+            delete this.stylesRoot;
         }
     }
 }
