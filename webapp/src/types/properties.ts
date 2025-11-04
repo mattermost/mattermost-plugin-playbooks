@@ -25,7 +25,6 @@ export type PropertyValue = PropertyValueBase<string | string[]> & {
     field_id: string;
 }
 
-// Enum for property field types
 export enum PropertyFieldType {
     Date = 'date',
     Multiselect = 'multiselect',
@@ -35,7 +34,6 @@ export enum PropertyFieldType {
     User = 'user'
 }
 
-// Input types for REST API (create/update operations)
 export type PropertyOptionInput = {
     id?: string;
     name: string;

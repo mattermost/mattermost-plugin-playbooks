@@ -36,7 +36,6 @@ const convertToPlaybookWithChecklist = (playbook: FullPlaybook, propertyFields: 
         num_actions: 0, // This would need to be calculated
         last_run_at: 0, // This would need to be fetched separately
         active_runs: 0, // This would need to be fetched separately
-        // Use propertyFields from REST API
         propertyFields: propertyFields || [],
     } as PlaybookWithChecklist;
 };

@@ -442,33 +442,22 @@ export const conditionDeleted = (conditionId: string, playbookId: string): Condi
 });
 
 export const fetchPlaybookPropertyFieldsAction = (playbookId: string) => async (dispatch: Dispatch<AnyAction>) => {
-    try {
-        const result = await fetchPlaybookPropertyFields(playbookId);
-        dispatch({
-            type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
-            playbookId,
-            propertyFields: result,
-        } as ReceivedPlaybookPropertyFields);
-    } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to fetch playbook property fields:', error);
-    }
+    const result = await fetchPlaybookPropertyFields(playbookId);
+    dispatch({
+        type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
+        playbookId,
+        propertyFields: result,
+    });
 };
 
 export const addPlaybookPropertyFieldAction = (playbookId: string, propertyField: PropertyFieldInput) => async (dispatch: Dispatch<AnyAction>) => {
-    try {
-        const result = await createPlaybookPropertyField(playbookId, propertyField);
-        if (result) {
-            dispatch({
-                type: ADDED_PLAYBOOK_PROPERTY_FIELD,
-                playbookId,
-                propertyField: result,
-            });
-        }
-    } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to create playbook property field:', error);
-        throw error;
+    const result = await createPlaybookPropertyField(playbookId, propertyField);
+    if (result) {
+        dispatch({
+            type: ADDED_PLAYBOOK_PROPERTY_FIELD,
+            playbookId,
+            propertyField: result,
+        });
     }
 };
 
@@ -478,9 +467,7 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
     const originalField = allPropertyFields[fieldId];
 
     if (!originalField) {
-        // eslint-disable-next-line no-console
-        console.error('Cannot update property field: field not found in state');
-        throw new Error('Property field not found');
+        return;
     }
 
     // Create optimistic update from input, filtering out options without IDs
@@ -530,23 +517,15 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
             playbookId,
             propertyField: originalField,
         });
-        // eslint-disable-next-line no-console
-        console.error('Failed to update playbook property field:', error);
         throw error;
     }
 };
 
 export const deletePlaybookPropertyFieldAction = (playbookId: string, fieldId: string) => async (dispatch: Dispatch<AnyAction>) => {
-    try {
-        await deletePlaybookPropertyField(playbookId, fieldId);
-        dispatch({
-            type: DELETED_PLAYBOOK_PROPERTY_FIELD,
-            playbookId,
-            fieldId,
-        });
-    } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to delete playbook property field:', error);
-        throw error;
-    }
+    await deletePlaybookPropertyField(playbookId, fieldId);
+    dispatch({
+        type: DELETED_PLAYBOOK_PROPERTY_FIELD,
+        playbookId,
+        fieldId,
+    });
 };
