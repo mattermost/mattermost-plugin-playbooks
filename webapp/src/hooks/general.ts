@@ -221,6 +221,9 @@ export function useProfilesInTeam() {
 /**
  * Use thing from API and/or Store
  *
+ * @deprecated Use `makeUseEntity` instead to create hooks with Redux integration and proper memoization.
+ * See `usePlaybookAttributes` for an example of the recommended pattern.
+ *
  * @param id The ID of the thing to fetch
  * @param fetchFunc required thing fetcher function
  * @param select thing from store if available (noopSelector if no store)

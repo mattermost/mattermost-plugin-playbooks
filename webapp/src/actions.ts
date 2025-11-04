@@ -12,12 +12,16 @@ import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/compo
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
 import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
-import {clientExecuteCommand, getPlaybookConditions} from 'src/client';
+import {clientExecuteCommand, createPlaybookPropertyField, deletePlaybookPropertyField, fetchPlaybookPropertyFields, getPlaybookConditions, updatePlaybookPropertyField} from 'src/client';
 import {Condition} from 'src/types/conditions';
-import {canIPostUpdateForRun, selectToggleRHS} from 'src/selectors';
+import {PropertyField, PropertyFieldInput} from 'src/types/properties';
+import {canIPostUpdateForRun, getPropertyFields, selectToggleRHS} from 'src/selectors';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {
+    ADDED_PLAYBOOK_PROPERTY_FIELD,
     CLOSE_BACKSTAGE_RHS,
+    DELETED_PLAYBOOK_PROPERTY_FIELD,
+    UPDATED_PLAYBOOK_PROPERTY_FIELD,
     CONDITION_CREATED,
     CONDITION_DELETED,
     CONDITION_UPDATED,
@@ -49,6 +53,7 @@ import {
     PublishTemplates,
     RECEIVED_GLOBAL_SETTINGS,
     RECEIVED_PLAYBOOK_CONDITIONS,
+    RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
     RECEIVED_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS,
@@ -56,6 +61,7 @@ import {
     REMOVED_FROM_CHANNEL,
     ReceivedGlobalSettings,
     ReceivedPlaybookConditions,
+    ReceivedPlaybookPropertyFields,
     ReceivedPlaybookRuns,
     ReceivedTeamPlaybookRunConnections,
     ReceivedTeamPlaybookRuns,
@@ -427,3 +433,113 @@ export const conditionDeleted = (conditionId: string, playbookId: string): Condi
     conditionId,
     playbookId,
 });
+
+export const fetchPlaybookPropertyFieldsAction = (playbookId: string) => async (dispatch: Dispatch<AnyAction>) => {
+    try {
+        const result = await fetchPlaybookPropertyFields(playbookId);
+        dispatch({
+            type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
+            playbookId,
+            propertyFields: result,
+        } as ReceivedPlaybookPropertyFields);
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch playbook property fields:', error);
+    }
+};
+
+export const addPlaybookPropertyFieldAction = (playbookId: string, propertyField: PropertyFieldInput) => async (dispatch: Dispatch<AnyAction>) => {
+    try {
+        const result = await createPlaybookPropertyField(playbookId, propertyField);
+        if (result) {
+            dispatch({
+                type: ADDED_PLAYBOOK_PROPERTY_FIELD,
+                playbookId,
+                propertyField: result,
+            });
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to create playbook property field:', error);
+        throw error;
+    }
+};
+
+export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: string, propertyField: PropertyFieldInput) => async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+    const state = getState();
+    const allPropertyFields = getPropertyFields(state);
+    const originalField = allPropertyFields[fieldId];
+
+    if (!originalField) {
+        // eslint-disable-next-line no-console
+        console.error('Cannot update property field: field not found in state');
+        throw new Error('Property field not found');
+    }
+
+    // Create optimistic update from input, filtering out options without IDs
+    const optimisticOptions = propertyField.attrs?.options
+        ? propertyField.attrs.options
+            .filter((opt) => opt.id !== undefined)
+            .map((opt) => ({
+                id: opt.id!,
+                name: opt.name,
+                color: opt.color,
+            }))
+        : originalField.attrs.options;
+
+    const optimistic: PropertyField = {
+        ...originalField,
+        name: propertyField.name,
+        type: propertyField.type,
+        attrs: {
+            ...originalField.attrs,
+            ...propertyField.attrs,
+            options: optimisticOptions,
+        },
+    };
+
+    // Dispatch optimistic update immediately
+    dispatch({
+        type: UPDATED_PLAYBOOK_PROPERTY_FIELD,
+        playbookId,
+        propertyField: optimistic,
+    });
+
+    try {
+        // Make API call
+        const result = await updatePlaybookPropertyField(playbookId, fieldId, propertyField);
+        if (result) {
+            // Update with server response
+            dispatch({
+                type: UPDATED_PLAYBOOK_PROPERTY_FIELD,
+                playbookId,
+                propertyField: result,
+            });
+        }
+    } catch (error) {
+        // Rollback to original field on error
+        dispatch({
+            type: UPDATED_PLAYBOOK_PROPERTY_FIELD,
+            playbookId,
+            propertyField: originalField,
+        });
+        // eslint-disable-next-line no-console
+        console.error('Failed to update playbook property field:', error);
+        throw error;
+    }
+};
+
+export const deletePlaybookPropertyFieldAction = (playbookId: string, fieldId: string) => async (dispatch: Dispatch<AnyAction>) => {
+    try {
+        await deletePlaybookPropertyField(playbookId, fieldId);
+        dispatch({
+            type: DELETED_PLAYBOOK_PROPERTY_FIELD,
+            playbookId,
+            fieldId,
+        });
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to delete playbook property field:', error);
+        throw error;
+    }
+};

@@ -356,3 +356,23 @@ export const getConditionsByPlaybookId = createSelector(
         return conditionIds.map((id: string) => conditions[id]).filter(Boolean);
     }
 );
+
+export const getPropertyFields = (state: GlobalState) => pluginState(state).propertyFields || {};
+
+export const getPropertyFieldsPerPlaybook = (state: GlobalState) => pluginState(state).propertyFieldsPerPlaybook || {};
+
+export const getPropertyFieldsByPlaybookId = createSelector(
+    'getPropertyFieldsByPlaybookId',
+    [
+        getPropertyFields,
+        getPropertyFieldsPerPlaybook,
+        (state: GlobalState, playbookId: string) => playbookId,
+    ],
+    (propertyFields, propertyFieldsPerPlaybook, playbookId) => {
+        const fieldIds = propertyFieldsPerPlaybook[playbookId];
+        if (!fieldIds) {
+            return undefined;
+        }
+        return fieldIds.map((id: string) => propertyFields[id]).filter(Boolean);
+    }
+);

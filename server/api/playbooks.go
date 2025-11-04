@@ -37,10 +37,24 @@ type PlaybookHandler struct {
 const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
+type PropertyOptionRestInput struct {
+	ID    *string `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color"`
+}
+
+type PropertyFieldAttrsRestInput struct {
+	Visibility *string                     `json:"visibility"`
+	SortOrder  *float64                    `json:"sort_order"`
+	Options    *[]PropertyOptionRestInput  `json:"options"`
+	ParentID   *string                     `json:"parent_id"`
+	ValueType  *string                     `json:"value_type"`
+}
+
 type PropertyFieldRequest struct {
-	Name  string                   `json:"name"`
-	Type  string                   `json:"type"`
-	Attrs *PropertyFieldAttrsInput `json:"attrs,omitempty"`
+	Name  string                        `json:"name"`
+	Type  string                        `json:"type"`
+	Attrs *PropertyFieldAttrsRestInput  `json:"attrs,omitempty"`
 }
 
 // NewPlaybookHandler returns a new playbook api handler
@@ -962,6 +976,14 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
 	if err != nil {
+		if errors.Is(err, app.ErrPropertyOptionsInUse) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
+		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, logger, err)
 		return
 	}
@@ -1010,6 +1032,10 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	}
 
 	if err := h.playbookService.DeletePropertyField(playbookID, fieldID); err != nil {
+		if errors.Is(err, app.ErrPropertyFieldInUse) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, logger, err)
 		return
 	}
@@ -1018,11 +1044,56 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 }
 
 func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyField {
-	field := PropertyFieldInput{
-		Name:  request.Name,
-		Type:  model.PropertyFieldType(request.Type),
-		Attrs: request.Attrs,
+	propertyField := &app.PropertyField{
+		PropertyField: model.PropertyField{
+			Name: request.Name,
+			Type: model.PropertyFieldType(request.Type),
+		},
 	}
 
-	return convertPropertyFieldInputToPropertyField(field)
+	if request.Attrs != nil {
+		attrs := app.Attrs{}
+
+		if request.Attrs.Visibility != nil {
+			attrs.Visibility = *request.Attrs.Visibility
+		} else {
+			attrs.Visibility = app.PropertyFieldVisibilityDefault
+		}
+
+		if request.Attrs.SortOrder != nil {
+			attrs.SortOrder = *request.Attrs.SortOrder
+		}
+
+		if request.Attrs.Options != nil {
+			options := make(model.PropertyOptions[*model.PluginPropertyOption], 0, len(*request.Attrs.Options))
+			for _, opt := range *request.Attrs.Options {
+				var id string
+				if opt.ID != nil {
+					id = *opt.ID
+				}
+				option := model.NewPluginPropertyOption(id, opt.Name)
+				if opt.Color != nil {
+					option.SetValue("color", *opt.Color)
+				}
+				options = append(options, option)
+			}
+			attrs.Options = options
+		}
+
+		if request.Attrs.ParentID != nil {
+			attrs.ParentID = *request.Attrs.ParentID
+		}
+
+		if request.Attrs.ValueType != nil {
+			attrs.ValueType = *request.Attrs.ValueType
+		}
+
+		propertyField.Attrs = attrs
+	} else {
+		propertyField.Attrs = app.Attrs{
+			Visibility: app.PropertyFieldVisibilityDefault,
+		}
+	}
+
+	return propertyField
 }
