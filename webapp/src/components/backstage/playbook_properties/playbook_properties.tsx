@@ -283,6 +283,8 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                 attrs: {
                                     visibility: field.attrs.visibility,
                                     sort_order: properties.length + 1,
+
+                                    // Omit IDs to ensure new options are created
                                     options: field.attrs.options?.map((opt) => ({
                                         name: opt.name,
                                         color: opt.color,
