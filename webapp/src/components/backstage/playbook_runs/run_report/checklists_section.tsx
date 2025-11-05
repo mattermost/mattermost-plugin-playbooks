@@ -20,6 +20,28 @@ const ChecklistsSection = ({data}: ChecklistsSectionProps) => {
         return null;
     }
 
+    // Helper to get user display name from ID
+    const getUserDisplayName = (userId: string): string => {
+        if (!userId) {
+            return 'Unassigned';
+        }
+
+        // Check owner
+        if (data.owner && data.owner.id === userId) {
+            const name = `${data.owner.first_name} ${data.owner.last_name}`.trim();
+            return name || data.owner.username;
+        }
+
+        // Check participants
+        const participant = data.participants.find((p) => p.id === userId);
+        if (participant) {
+            const name = `${participant.first_name} ${participant.last_name}`.trim();
+            return name || participant.username;
+        }
+
+        return userId;
+    };
+
     return (
         <View
             style={styles.section}
@@ -30,48 +52,84 @@ const ChecklistsSection = ({data}: ChecklistsSectionProps) => {
             {checklists.map((checklist, checklistIndex) => {
                 const completedItems = checklist.items.filter((item) => item.state === 'closed').length;
                 const totalItems = checklist.items.length;
+                const completionPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
                 return (
                     <View
                         key={checklist.id || checklistIndex}
                         style={{marginBottom: 20}}
                     >
-                        <Text style={styles.subsectionTitle}>
-                            {checklist.title} ({completedItems}/{totalItems} completed)
-                        </Text>
+                        <View style={{...styles.row, marginBottom: 10}}>
+                            <Text style={styles.subsectionTitle}>
+                                {checklist.title}
+                            </Text>
+                            <Text style={{...styles.text, fontSize: 10, color: '#8b8d97'}}>
+                                {completedItems}/{totalItems} ({completionPercent}%)
+                            </Text>
+                        </View>
 
                         {checklist.items.map((item, itemIndex) => {
                             const isCompleted = item.state === 'closed';
-                            const checkmark = isCompleted ? '\u2713' : '\u2610';
-
-                            let dueDate = '';
-                            if (item.due_date > 0) {
-                                dueDate = ` - Due: ${DateTime.fromMillis(item.due_date).toFormat('MMM dd, yyyy')}`;
-                            }
-
-                            let assignee = '';
-                            if (item.assignee_id) {
-                                assignee = ` - Assigned to: ${item.assignee_id}`;
-                            }
+                            const statusIcon = isCompleted ? '☑' : '☐';
+                            const statusLabel = isCompleted ? 'DONE' : 'TODO';
 
                             return (
                                 <View
                                     key={item.id || itemIndex}
-                                    style={styles.checklistItem}
+                                    style={{
+                                        marginBottom: 12,
+                                        paddingLeft: 15,
+                                        borderLeft: `3px solid ${isCompleted ? '#3db887' : '#dfe1e6'}`,
+                                        paddingBottom: 8,
+                                    }}
                                 >
-                                    <Text style={styles.checklistStatus}>{checkmark}</Text>
-                                    <View style={{flex: 1}}>
-                                        <Text style={styles.text}>
-                                            {item.title}
-                                            {assignee}
-                                            {dueDate}
+                                    {/* Task Header with Status */}
+                                    <View style={{...styles.row, marginBottom: 4}}>
+                                        <Text style={{
+                                            fontSize: 11,
+                                            fontWeight: 'bold',
+                                            color: isCompleted ? '#3db887' : '#3f4350',
+                                        }}>
+                                            {statusIcon} {item.title}
                                         </Text>
-                                        {item.description && (
-                                            <Text style={{...styles.text, fontSize: 9, color: '#666666', marginTop: 2}}>
-                                                {item.description}
-                                            </Text>
-                                        )}
+                                        <Text style={{
+                                            fontSize: 8,
+                                            color: isCompleted ? '#3db887' : '#ff8800',
+                                            backgroundColor: isCompleted ? '#e6f7f1' : '#fff4e6',
+                                            padding: '2 6',
+                                            borderRadius: 3,
+                                        }}>
+                                            {statusLabel}
+                                        </Text>
                                     </View>
+
+                                    {/* Task Description */}
+                                    {item.description && (
+                                        <Text style={{
+                                            fontSize: 9,
+                                            color: '#5d5d5d',
+                                            marginBottom: 6,
+                                            fontStyle: 'italic',
+                                        }}>
+                                            {item.description}
+                                        </Text>
+                                    )}
+
+                                    {/* Task Metadata */}
+                                    {(item.assignee_id || item.due_date > 0) && (
+                                        <View style={{flexDirection: 'row', gap: 15}}>
+                                            {item.assignee_id && (
+                                                <Text style={{fontSize: 9, color: '#8b8d97'}}>
+                                                    👤 Assigned: {getUserDisplayName(item.assignee_id)}
+                                                </Text>
+                                            )}
+                                            {item.due_date > 0 && (
+                                                <Text style={{fontSize: 9, color: '#8b8d97'}}>
+                                                    📅 Due: {DateTime.fromMillis(item.due_date).toFormat('MMM dd, yyyy')}
+                                                </Text>
+                                            )}
+                                        </View>
+                                    )}
                                 </View>
                             );
                         })}

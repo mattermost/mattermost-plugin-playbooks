@@ -13,6 +13,7 @@ export interface StatusPostComplete {
     delete_at: number;
     user_id: string;
     channel_id: string;
+    root_id: string;
     message: string;
     type: string;
     props: Record<string, unknown>;

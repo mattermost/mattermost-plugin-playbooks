@@ -60,8 +60,72 @@ const ChatLogSection = ({data}: ChatLogSectionProps) => {
         });
     };
 
-    // Sort posts chronologically (oldest first)
-    const sortedPosts = [...chat_posts].sort((a, b) => a.create_at - b.create_at);
+    // Group posts by threads
+    const rootPosts: typeof chat_posts = [];
+    const repliesByRootId: Record<string, typeof chat_posts> = {};
+
+    chat_posts.forEach((post) => {
+        if (!post.root_id || post.root_id === '') {
+            // This is a root post
+            rootPosts.push(post);
+        } else {
+            // This is a reply
+            if (!repliesByRootId[post.root_id]) {
+                repliesByRootId[post.root_id] = [];
+            }
+            repliesByRootId[post.root_id].push(post);
+        }
+    });
+
+    // Sort root posts chronologically (oldest first)
+    const sortedRootPosts = rootPosts.sort((a, b) => a.create_at - b.create_at);
+
+    // Sort replies within each thread
+    Object.keys(repliesByRootId).forEach((rootId) => {
+        repliesByRootId[rootId].sort((a, b) => a.create_at - b.create_at);
+    });
+
+    const renderPost = (post: typeof chat_posts[0], isReply: boolean = false, isLastInThread: boolean = false) => {
+        const userInfo = getUserInfo(post.user_id);
+        const displayName = formatDisplayName(userInfo);
+        const timestamp = formatTimestamp(post.create_at);
+
+        return (
+            <View
+                key={post.id}
+                style={{
+                    marginBottom: isReply ? 8 : 12,
+                    paddingBottom: isReply ? 8 : 12,
+                    marginLeft: isReply ? 20 : 0,
+                    borderBottom: !isReply && !isLastInThread ? '1px solid #e0e0e0' : 'none',
+                    borderLeft: isReply ? '2px solid #1c58d9' : 'none',
+                    paddingLeft: isReply ? 10 : 0,
+                }}
+            >
+                {/* Post Header */}
+                <View style={{...styles.row, marginBottom: 4}}>
+                    <Text style={{...styles.label, fontSize: isReply ? 10 : 11, fontWeight: 'bold'}}>
+                        {isReply && '↳ '}{displayName}
+                    </Text>
+                    <Text style={{...styles.text, fontSize: 9, color: '#8b8d97'}}>
+                        {timestamp}
+                    </Text>
+                </View>
+
+                {/* Post Message */}
+                <Text style={{...styles.text, fontSize: isReply ? 9 : 10}}>
+                    {post.message || '(No message content)'}
+                </Text>
+
+                {/* Post Type Indicator */}
+                {post.type && post.type !== '' && (
+                    <Text style={{...styles.text, fontSize: 8, color: '#8b8d97', marginTop: 2}}>
+                        [{post.type}]
+                    </Text>
+                )}
+            </View>
+        );
+    };
 
     return (
         <View
@@ -70,50 +134,38 @@ const ChatLogSection = ({data}: ChatLogSectionProps) => {
         >
             <Text style={styles.sectionTitle}>Chat Log</Text>
             <Text style={{...styles.text, marginBottom: 15, color: '#8b8d97'}}>
-                Complete conversation history from the run channel
+                Complete conversation history from the run channel (grouped by threads)
             </Text>
 
-            {sortedPosts.map((post, index) => {
-                const userInfo = getUserInfo(post.user_id);
-                const displayName = formatDisplayName(userInfo);
-                const timestamp = formatTimestamp(post.create_at);
+            {sortedRootPosts.map((rootPost, index) => {
+                const replies = repliesByRootId[rootPost.id] || [];
+                const isLastThread = index === sortedRootPosts.length - 1;
+                const hasReplies = replies.length > 0;
 
                 return (
                     <View
-                        key={post.id || index}
-                        style={{
-                            marginBottom: 12,
-                            paddingBottom: 12,
-                            borderBottom: index < sortedPosts.length - 1 ? '1px solid #e0e0e0' : 'none',
-                        }}
+                        key={rootPost.id}
+                        style={{marginBottom: hasReplies ? 15 : 0}}
                     >
-                        {/* Post Header */}
-                        <View style={{...styles.row, marginBottom: 4}}>
-                            <Text style={{...styles.label, fontSize: 11, fontWeight: 'bold'}}>
-                                {displayName}
-                            </Text>
-                            <Text style={{...styles.text, fontSize: 9, color: '#8b8d97'}}>
-                                {timestamp}
-                            </Text>
-                        </View>
+                        {/* Root Post */}
+                        {renderPost(rootPost, false, isLastThread && !hasReplies)}
 
-                        {/* Post Message */}
-                        <Text style={{...styles.text, fontSize: 10}}>
-                            {post.message || '(No message content)'}
-                        </Text>
+                        {/* Thread Replies */}
+                        {replies.map((reply, replyIndex) => {
+                            const isLastReply = replyIndex === replies.length - 1;
+                            return renderPost(reply, true, isLastThread && isLastReply);
+                        })}
 
-                        {/* Post Type Indicator */}
-                        {post.type && post.type !== '' && (
-                            <Text style={{...styles.text, fontSize: 8, color: '#8b8d97', marginTop: 2}}>
-                                [{post.type}]
-                            </Text>
+                        {/* Thread separator */}
+                        {hasReplies && !isLastThread && (
+                            <View style={{borderBottom: '1px solid #e0e0e0', marginTop: 10, marginBottom: 10}} />
                         )}
                     </View>
                 );
             })}
 
             <Text style={{...styles.text, marginTop: 15, fontSize: 9, color: '#8b8d97', fontStyle: 'italic'}}>
-                Total posts: {sortedPosts.length}
+                Total posts: {chat_posts.length} ({rootPosts.length} threads, {chat_posts.length - rootPosts.length} replies)
             </Text>
         </View>
     );
