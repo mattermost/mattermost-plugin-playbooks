@@ -37,24 +37,24 @@ type PlaybookHandler struct {
 const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
-type PropertyOptionRestInput struct {
+type PropertyOptionInput struct {
 	ID    *string `json:"id"`
 	Name  string  `json:"name"`
 	Color *string `json:"color"`
 }
 
-type PropertyFieldAttrsRestInput struct {
-	Visibility *string                    `json:"visibility"`
-	SortOrder  *float64                   `json:"sort_order"`
-	Options    *[]PropertyOptionRestInput `json:"options"`
-	ParentID   *string                    `json:"parent_id"`
-	ValueType  *string                    `json:"value_type"`
+type PropertyFieldAttrsInput struct {
+	Visibility *string                `json:"visibility"`
+	SortOrder  *float64               `json:"sort_order"`
+	Options    *[]PropertyOptionInput `json:"options"`
+	ParentID   *string                `json:"parent_id"`
+	ValueType  *string                `json:"value_type"`
 }
 
 type PropertyFieldRequest struct {
-	Name  string                       `json:"name"`
-	Type  string                       `json:"type"`
-	Attrs *PropertyFieldAttrsRestInput `json:"attrs,omitempty"`
+	Name  string                   `json:"name"`
+	Type  string                   `json:"type"`
+	Attrs *PropertyFieldAttrsInput `json:"attrs,omitempty"`
 }
 
 // NewPlaybookHandler returns a new playbook api handler

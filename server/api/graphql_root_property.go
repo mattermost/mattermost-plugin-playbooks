@@ -51,7 +51,7 @@ func (r *PropertyRootResolver) PlaybookProperty(ctx context.Context, args struct
 
 func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, args struct {
 	PlaybookID    string
-	PropertyField PropertyFieldInput
+	PropertyField PropertyFieldGraphQLInput
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -78,7 +78,7 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 	}
 
 	// Convert GraphQL input to PropertyField
-	propertyField := convertPropertyFieldInputToPropertyField(args.PropertyField)
+	propertyField := convertPropertyFieldGraphQLInputToPropertyField(args.PropertyField)
 
 	// Create the property field using the playbook service
 	createdField, err := c.playbookService.CreatePropertyField(args.PlaybookID, *propertyField)
@@ -92,7 +92,7 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, args struct {
 	PlaybookID      string
 	PropertyFieldID string
-	PropertyField   PropertyFieldInput
+	PropertyField   PropertyFieldGraphQLInput
 }) (string, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -130,7 +130,7 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 	}
 
 	// Convert GraphQL input to PropertyField
-	propertyField := convertPropertyFieldInputToPropertyField(args.PropertyField)
+	propertyField := convertPropertyFieldGraphQLInputToPropertyField(args.PropertyField)
 	propertyField.ID = args.PropertyFieldID
 
 	// Update the property field using the playbook service
@@ -253,8 +253,8 @@ func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args str
 	return propertyValue.ID, nil
 }
 
-// convertPropertyFieldInputToPropertyField converts a GraphQL PropertyFieldInput to an app.PropertyField
-func convertPropertyFieldInputToPropertyField(input PropertyFieldInput) *app.PropertyField {
+// convertPropertyFieldGraphQLInputToPropertyField converts a GraphQL PropertyFieldGraphQLInput to an app.PropertyField
+func convertPropertyFieldGraphQLInputToPropertyField(input PropertyFieldGraphQLInput) *app.PropertyField {
 	propertyField := &app.PropertyField{
 		PropertyField: model.PropertyField{
 			Name: input.Name,
