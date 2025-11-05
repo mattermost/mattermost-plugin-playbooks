@@ -44,11 +44,11 @@ type PropertyOptionInput struct {
 }
 
 type PropertyFieldAttrsInput struct {
-	Visibility *string               `json:"visibility"`
-	SortOrder  *float64              `json:"sort_order"`
+	Visibility string                `json:"visibility"`
+	SortOrder  float64               `json:"sort_order"`
 	Options    []PropertyOptionInput `json:"options"`
-	ParentID   *string               `json:"parent_id"`
-	ValueType  *string               `json:"value_type"`
+	ParentID   string                `json:"parent_id"`
+	ValueType  string                `json:"value_type"`
 }
 
 type PropertyFieldRequest struct {
@@ -1052,16 +1052,15 @@ func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyFi
 	}
 
 	if request.Attrs != nil {
-		attrs := app.Attrs{}
-
-		if request.Attrs.Visibility != nil {
-			attrs.Visibility = *request.Attrs.Visibility
-		} else {
-			attrs.Visibility = app.PropertyFieldVisibilityDefault
+		attrs := app.Attrs{
+			Visibility: request.Attrs.Visibility,
+			SortOrder:  request.Attrs.SortOrder,
+			ParentID:   request.Attrs.ParentID,
+			ValueType:  request.Attrs.ValueType,
 		}
 
-		if request.Attrs.SortOrder != nil {
-			attrs.SortOrder = *request.Attrs.SortOrder
+		if request.Attrs.Visibility == "" {
+			attrs.Visibility = app.PropertyFieldVisibilityDefault
 		}
 
 		if request.Attrs.Options != nil {
@@ -1078,14 +1077,6 @@ func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyFi
 				options = append(options, option)
 			}
 			attrs.Options = options
-		}
-
-		if request.Attrs.ParentID != nil {
-			attrs.ParentID = *request.Attrs.ParentID
-		}
-
-		if request.Attrs.ValueType != nil {
-			attrs.ValueType = *request.Attrs.ValueType
 		}
 
 		propertyField.Attrs = attrs

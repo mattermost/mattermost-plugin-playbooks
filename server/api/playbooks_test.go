@@ -42,10 +42,10 @@ func TestConvertRequestToPropertyField(t *testing.T) {
 				Name: "Custom Field",
 				Type: "user",
 				Attrs: &PropertyFieldAttrsInput{
-					Visibility: stringPtr("always"),
-					SortOrder:  float64Ptr(5.0),
-					ParentID:   stringPtr("parent-123"),
-					ValueType:  stringPtr("user_id"),
+					Visibility: "always",
+					SortOrder:  5.0,
+					ParentID:   "parent-123",
+					ValueType:  "user_id",
 				},
 			},
 			expected: &app.PropertyField{
@@ -67,8 +67,8 @@ func TestConvertRequestToPropertyField(t *testing.T) {
 				Name: "Priority",
 				Type: "select",
 				Attrs: &PropertyFieldAttrsInput{
-					Visibility: stringPtr("when_set"),
-					SortOrder:  float64Ptr(2.0),
+					Visibility: "when_set",
+					SortOrder:  2.0,
 					Options: []PropertyOptionInput{
 						{
 							ID:    stringPtr("opt-1"),
@@ -136,7 +136,7 @@ func TestConvertRequestToPropertyField(t *testing.T) {
 				Name: "Partial Field",
 				Type: "date",
 				Attrs: &PropertyFieldAttrsInput{
-					SortOrder: float64Ptr(10.0),
+					SortOrder: 10.0,
 				},
 			},
 			expected: &app.PropertyField{
