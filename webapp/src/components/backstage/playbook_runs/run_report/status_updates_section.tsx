@@ -7,6 +7,7 @@ import {DateTime} from 'luxon';
 
 import {PlaybookRunExportData} from './types';
 import {styles} from './styles';
+import {MarkdownText} from './markdown_renderer';
 
 interface StatusUpdatesSectionProps {
     data: PlaybookRunExportData;
@@ -38,7 +39,10 @@ const StatusUpdatesSection = ({data}: StatusUpdatesSectionProps) => {
                         style={{...styles.eventItem, marginBottom: 15}}
                     >
                         <Text style={styles.timestamp}>{updateDate}</Text>
-                        <Text style={styles.text}>{update.message}</Text>
+                        <MarkdownText
+                            content={update.message || ''}
+                            baseStyle={styles.text}
+                        />
                     </View>
                 );
             })}

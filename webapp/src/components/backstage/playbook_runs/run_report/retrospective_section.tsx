@@ -6,6 +6,7 @@ import {Text, View} from '@react-pdf/renderer';
 
 import {PlaybookRunExportData} from './types';
 import {styles} from './styles';
+import {MarkdownText} from './markdown_renderer';
 
 interface RetrospectiveSectionProps {
     data: PlaybookRunExportData;
@@ -30,7 +31,10 @@ const RetrospectiveSection = ({data}: RetrospectiveSectionProps) => {
             {retrospective && (
                 <View style={{marginBottom: 15}}>
                     <Text style={styles.subsectionTitle}>Summary</Text>
-                    <Text style={styles.text}>{retrospective}</Text>
+                    <MarkdownText
+                        content={retrospective}
+                        baseStyle={styles.text}
+                    />
                 </View>
             )}
 

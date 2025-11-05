@@ -6,6 +6,7 @@ import {Text, View} from '@react-pdf/renderer';
 
 import {PlaybookRunExportData} from './types';
 import {styles} from './styles';
+import {MarkdownText} from './markdown_renderer';
 
 interface ChatLogSectionProps {
     data: PlaybookRunExportData;
@@ -113,9 +114,12 @@ const ChatLogSection = ({data}: ChatLogSectionProps) => {
                 </View>
 
                 {/* Post Message */}
-                <Text style={{...styles.text, fontSize: isReply ? 9 : 10}}>
-                    {post.message || '(No message content)'}
-                </Text>
+                <View>
+                    <MarkdownText
+                        content={post.message || ''}
+                        baseStyle={{...styles.text, fontSize: isReply ? 9 : 10}}
+                    />
+                </View>
 
                 {/* Post Type Indicator */}
                 {post.type && post.type !== '' && (

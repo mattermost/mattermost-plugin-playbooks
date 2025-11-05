@@ -7,6 +7,7 @@ import {DateTime} from 'luxon';
 
 import {PlaybookRunExportData} from './types';
 import {styles} from './styles';
+import {MarkdownText} from './markdown_renderer';
 
 interface ChecklistsSectionProps {
     data: PlaybookRunExportData;
@@ -105,14 +106,16 @@ const ChecklistsSection = ({data}: ChecklistsSectionProps) => {
 
                                     {/* Task Description */}
                                     {item.description && (
-                                        <Text style={{
-                                            fontSize: 9,
-                                            color: '#5d5d5d',
-                                            marginBottom: 6,
-                                            fontStyle: 'italic',
-                                        }}>
-                                            {item.description}
-                                        </Text>
+                                        <View style={{marginBottom: 6}}>
+                                            <MarkdownText
+                                                content={item.description}
+                                                baseStyle={{
+                                                    fontSize: 9,
+                                                    color: '#5d5d5d',
+                                                    fontStyle: 'italic',
+                                                }}
+                                            />
+                                        </View>
                                     )}
 
                                     {/* Task Metadata */}
