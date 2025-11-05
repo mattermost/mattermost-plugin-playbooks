@@ -69,7 +69,7 @@ func TestConvertRequestToPropertyField(t *testing.T) {
 				Attrs: &PropertyFieldAttrsInput{
 					Visibility: stringPtr("when_set"),
 					SortOrder:  float64Ptr(2.0),
-					Options: &[]PropertyOptionInput{
+					Options: []PropertyOptionInput{
 						{
 							ID:    stringPtr("opt-1"),
 							Name:  "High",
@@ -107,7 +107,7 @@ func TestConvertRequestToPropertyField(t *testing.T) {
 				Name: "Status",
 				Type: "select",
 				Attrs: &PropertyFieldAttrsInput{
-					Options: &[]PropertyOptionInput{
+					Options: []PropertyOptionInput{
 						{
 							Name:  "New Option",
 							Color: stringPtr("#0000ff"),

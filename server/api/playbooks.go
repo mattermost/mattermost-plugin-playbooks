@@ -44,11 +44,11 @@ type PropertyOptionInput struct {
 }
 
 type PropertyFieldAttrsInput struct {
-	Visibility *string                `json:"visibility"`
-	SortOrder  *float64               `json:"sort_order"`
-	Options    *[]PropertyOptionInput `json:"options"`
-	ParentID   *string                `json:"parent_id"`
-	ValueType  *string                `json:"value_type"`
+	Visibility *string               `json:"visibility"`
+	SortOrder  *float64              `json:"sort_order"`
+	Options    []PropertyOptionInput `json:"options"`
+	ParentID   *string               `json:"parent_id"`
+	ValueType  *string               `json:"value_type"`
 }
 
 type PropertyFieldRequest struct {
@@ -1065,8 +1065,8 @@ func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyFi
 		}
 
 		if request.Attrs.Options != nil {
-			options := make(model.PropertyOptions[*model.PluginPropertyOption], 0, len(*request.Attrs.Options))
-			for _, opt := range *request.Attrs.Options {
+			options := make(model.PropertyOptions[*model.PluginPropertyOption], 0, len(request.Attrs.Options))
+			for _, opt := range request.Attrs.Options {
 				var id string
 				if opt.ID != nil {
 					id = *opt.ID
