@@ -182,6 +182,19 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
     );
 };
 
+export const ExportRunReportMenuItem = (props: {onClick: () => void}) => {
+    const {formatMessage} = useIntl();
+
+    return (
+        <StyledDropdownMenuItem
+            onClick={props.onClick}
+        >
+            <ArrowDownIcon size={18}/>
+            <FormattedMessage defaultMessage='Export run report'/>
+        </StyledDropdownMenuItem>
+    );
+};
+
 export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
     const onRestoreRun = useOnRestoreRun(props.playbookRun);
 

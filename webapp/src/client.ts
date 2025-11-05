@@ -86,6 +86,10 @@ export async function fetchPlaybookRunStatusUpdates(id: string) {
     return doGet<StatusPostComplete[]>(`${apiUrl}/runs/${id}/status-updates`);
 }
 
+export async function fetchPlaybookRunExportData(id: string) {
+    return doGet(`${apiUrl}/runs/${id}/export-data`);
+}
+
 export async function createPlaybookRun(
     playbook_id: string,
     owner_user_id: string,
