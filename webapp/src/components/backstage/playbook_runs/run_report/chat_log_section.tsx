@@ -134,7 +134,7 @@ const ChatLogSection = ({data}: ChatLogSectionProps) => {
         >
             <Text style={styles.sectionTitle}>Chat Log</Text>
             <Text style={{...styles.text, marginBottom: 15, color: '#8b8d97'}}>
-                Complete conversation history from the run channel (grouped by threads)
+                Conversation history during this run (grouped by threads)
             </Text>
 
             {sortedRootPosts.map((rootPost, index) => {

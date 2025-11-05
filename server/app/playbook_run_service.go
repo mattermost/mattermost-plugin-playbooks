@@ -5021,7 +5021,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunExportData(playbookRunID string, 
 		}
 	}
 
-	// Get chat posts from the run channel
+	// Get chat posts from the run channel (only posts within the run's timeframe)
 	if playbookRun.ChannelID != "" {
 		// Verify user has access to the channel
 		_, err := pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
@@ -5031,38 +5031,38 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunExportData(playbookRunID string, 
 			exportData.ChatPosts = make([]*model.Post, 0)
 		} else {
 			chatPosts := make([]*model.Post, 0)
-			page := 0
-			perPage := 200
-			hasMore := true
 
-			// Fetch all posts with pagination
-			for hasMore {
-				postList, err := pluginAPI.Post.GetPostsForChannel(playbookRun.ChannelID, page, perPage)
-				if err != nil {
-					s.pluginAPI.Log.Warn("exportData: cannot retrieve chat posts", "channel_id", playbookRun.ChannelID, "page", page, "error", err.Error())
-					break
-				}
-
-				// PostList.Order contains post IDs in reverse chronological order
-				if postList != nil && len(postList.Order) > 0 {
-					for _, postID := range postList.Order {
-						if post, exists := postList.Posts[postID]; exists {
-							chatPosts = append(chatPosts, post)
-						}
-					}
-
-					// Check if there are more pages
-					if len(postList.Order) < perPage {
-						hasMore = false
-					} else {
-						page++
-					}
-				} else {
-					hasMore = false
-				}
+			// Define time range for the run
+			startTime := playbookRun.CreateAt
+			endTime := playbookRun.EndAt
+			if endTime == 0 {
+				// Run is still ongoing, use current time
+				endTime = model.GetMillis()
 			}
 
-			exportData.ChatPosts = chatPosts
+			// Use GetPostsSince for more efficient fetching (gets posts after startTime)
+			postList, err := pluginAPI.Post.GetPostsSince(playbookRun.ChannelID, startTime)
+			if err != nil {
+				s.pluginAPI.Log.Warn("exportData: cannot retrieve chat posts", "channel_id", playbookRun.ChannelID, "error", err.Error())
+				exportData.ChatPosts = make([]*model.Post, 0)
+			} else if postList != nil {
+				// Filter posts to only include those within the run's timeframe
+				for _, post := range postList.Posts {
+					if post.CreateAt >= startTime && post.CreateAt <= endTime {
+						chatPosts = append(chatPosts, post)
+					}
+				}
+
+				s.pluginAPI.Log.Info("exportData: fetched chat posts",
+					"channel_id", playbookRun.ChannelID,
+					"total_posts", len(chatPosts),
+					"start_time", startTime,
+					"end_time", endTime)
+
+				exportData.ChatPosts = chatPosts
+			} else {
+				exportData.ChatPosts = make([]*model.Post, 0)
+			}
 		}
 	}
 
