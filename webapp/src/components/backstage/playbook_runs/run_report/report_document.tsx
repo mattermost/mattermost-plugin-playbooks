@@ -7,6 +7,7 @@ import {Document, Page, Text, View} from '@react-pdf/renderer';
 import {PlaybookRunExportData, ReportSections} from './types';
 import {styles} from './styles';
 import CoverPage from './cover_page';
+import TableOfContents from './table_of_contents';
 import ExecutiveSummary from './executive_summary';
 import TimelineSection from './timeline_section';
 import StatusUpdatesSection from './status_updates_section';
@@ -28,6 +29,9 @@ const ReportDocument = ({data, sections}: ReportDocumentProps) => {
         >
             {/* Cover Page */}
             {sections.coverPage && <CoverPage data={data} />}
+
+            {/* Table of Contents */}
+            <TableOfContents sections={sections} />
 
             {/* Main Content Pages */}
             <Page

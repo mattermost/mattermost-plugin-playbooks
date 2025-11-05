@@ -14,8 +14,9 @@ interface RetrospectiveSectionProps {
 const RetrospectiveSection = ({data}: RetrospectiveSectionProps) => {
     const {run} = data;
     const retrospective = run.retrospective;
+    const metricsData = run.metrics_data;
 
-    if (!retrospective || (!retrospective.text && (!retrospective.metrics || retrospective.metrics.length === 0))) {
+    if (!retrospective && (!metricsData || metricsData.length === 0)) {
         return null;
     }
 
@@ -26,23 +27,23 @@ const RetrospectiveSection = ({data}: RetrospectiveSectionProps) => {
         >
             <Text style={styles.sectionTitle}>Retrospective</Text>
 
-            {retrospective.text && (
+            {retrospective && (
                 <View style={{marginBottom: 15}}>
                     <Text style={styles.subsectionTitle}>Summary</Text>
-                    <Text style={styles.text}>{retrospective.text}</Text>
+                    <Text style={styles.text}>{retrospective}</Text>
                 </View>
             )}
 
-            {retrospective.metrics && retrospective.metrics.length > 0 && (
+            {metricsData && metricsData.length > 0 && (
                 <View>
                     <Text style={styles.subsectionTitle}>Metrics</Text>
-                    {retrospective.metrics.map((metric, index) => (
+                    {metricsData.map((metric, index) => (
                         <View
                             key={index}
                             style={{...styles.row, marginBottom: 6}}
                         >
                             <Text style={styles.label}>{metric.metric_config_id}:</Text>
-                            <Text style={styles.text}>{metric.value}</Text>
+                            <Text style={styles.text}>{metric.value !== null ? String(metric.value) : 'N/A'}</Text>
                         </View>
                     ))}
                 </View>
