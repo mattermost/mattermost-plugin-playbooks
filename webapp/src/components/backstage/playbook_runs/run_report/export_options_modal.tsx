@@ -23,7 +23,7 @@ const ExportOptionsModal = ({show, onHide, data}: ExportOptionsModalProps) => {
         statusUpdates: true,
         checklists: true,
         retrospective: true,
-        chatLog: false, // Not yet implemented
+        chatLog: true,
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -153,11 +153,9 @@ const ExportOptionsModal = ({show, onHide, data}: ExportOptionsModalProps) => {
                             type='checkbox'
                             checked={sections.chatLog}
                             onChange={() => toggleSection('chatLog')}
-                            disabled={true}
+                            disabled={isGenerating}
                         />
-                        <Label style={{color: '#999999'}}>
-                            Complete Chat Log (Coming Soon)
-                        </Label>
+                        <Label>Complete Chat Log</Label>
                     </SectionItem>
                 </SectionList>
 

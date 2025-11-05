@@ -13,6 +13,7 @@ import TimelineSection from './timeline_section';
 import StatusUpdatesSection from './status_updates_section';
 import ChecklistsSection from './checklists_section';
 import RetrospectiveSection from './retrospective_section';
+import ChatLogSection from './chat_log_section';
 
 interface ReportDocumentProps {
     data: PlaybookRunExportData;
@@ -52,6 +53,9 @@ const ReportDocument = ({data, sections}: ReportDocumentProps) => {
 
                 {/* Retrospective */}
                 {sections.retrospective && <RetrospectiveSection data={data} />}
+
+                {/* Chat Log */}
+                {sections.chatLog && <ChatLogSection data={data} />}
 
                 {/* Page Numbers */}
                 <Text

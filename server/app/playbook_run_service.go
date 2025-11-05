@@ -4954,7 +4954,7 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 }
 
 // GetPlaybookRunExportData returns comprehensive data for PDF export
-func (s *PlaybookRunServiceImpl) GetPlaybookRunExportData(playbookRunID string, pluginAPI *pluginapi.Client) (*PlaybookRunExportData, error) {
+func (s *PlaybookRunServiceImpl) GetPlaybookRunExportData(playbookRunID string, userID string, pluginAPI *pluginapi.Client) (*PlaybookRunExportData, error) {
 	// Get the playbook run
 	playbookRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -5018,6 +5018,51 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunExportData(playbookRunID string, 
 			s.pluginAPI.Log.Warn("exportData: cannot retrieve team", "team_id", playbookRun.TeamID, "error", err.Error())
 		} else {
 			exportData.Team = team
+		}
+	}
+
+	// Get chat posts from the run channel
+	if playbookRun.ChannelID != "" {
+		// Verify user has access to the channel
+		_, err := pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("exportData: user does not have access to channel", "channel_id", playbookRun.ChannelID, "user_id", userID, "error", err.Error())
+			// Don't fail the entire export, just skip chat posts
+			exportData.ChatPosts = make([]*model.Post, 0)
+		} else {
+			chatPosts := make([]*model.Post, 0)
+			page := 0
+			perPage := 200
+			hasMore := true
+
+			// Fetch all posts with pagination
+			for hasMore {
+				postList, err := pluginAPI.Post.GetPostsForChannel(playbookRun.ChannelID, page, perPage)
+				if err != nil {
+					s.pluginAPI.Log.Warn("exportData: cannot retrieve chat posts", "channel_id", playbookRun.ChannelID, "page", page, "error", err.Error())
+					break
+				}
+
+				// PostList.Order contains post IDs in reverse chronological order
+				if postList != nil && len(postList.Order) > 0 {
+					for _, postID := range postList.Order {
+						if post, exists := postList.Posts[postID]; exists {
+							chatPosts = append(chatPosts, post)
+						}
+					}
+
+					// Check if there are more pages
+					if len(postList.Order) < perPage {
+						hasMore = false
+					} else {
+						page++
+					}
+				} else {
+					hasMore = false
+				}
+			}
+
+			exportData.ChatPosts = chatPosts
 		}
 	}
 

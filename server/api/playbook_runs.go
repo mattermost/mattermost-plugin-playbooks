@@ -874,7 +874,7 @@ func (h *PlaybookRunHandler) getPlaybookRunExportData(c *Context, w http.Respons
 		return
 	}
 
-	exportData, err := h.playbookRunService.GetPlaybookRunExportData(playbookRunID, h.pluginAPI)
+	exportData, err := h.playbookRunService.GetPlaybookRunExportData(playbookRunID, userID, h.pluginAPI)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return

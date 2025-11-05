@@ -260,6 +260,9 @@ type PlaybookRunExportData struct {
 
 	// Team contains information about the run's team
 	Team *model.Team `json:"team"`
+
+	// ChatPosts contains all posts from the run channel for chat log export
+	ChatPosts []*model.Post `json:"chat_posts"`
 }
 
 // PlaybookRunUpdate represents an incremental update to a playbook run
@@ -1407,7 +1410,7 @@ type PlaybookRunService interface {
 	MessageHasBeenPosted(post *model.Post)
 
 	// GetPlaybookRunExportData returns comprehensive data for PDF export
-	GetPlaybookRunExportData(playbookRunID string, pluginAPI *pluginapi.Client) (*PlaybookRunExportData, error)
+	GetPlaybookRunExportData(playbookRunID string, userID string, pluginAPI *pluginapi.Client) (*PlaybookRunExportData, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

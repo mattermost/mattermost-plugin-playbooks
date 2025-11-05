@@ -27,6 +27,7 @@ export interface PlaybookRunExportData {
     owner: UserProfile | null;
     channel: Channel | null;
     team: Team | null;
+    chat_posts: StatusPostComplete[];
 }
 
 export interface ReportSections {
