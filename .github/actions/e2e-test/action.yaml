@@ -76,7 +76,7 @@ runs:
         MM_SERVICESETTINGS_ENABLEDEVELOPER: "true" ## Build only default since we are testing all arch on lint stage to speed up tests
         MM_SERVICESETTINGS_EXPERIMENTALSTRICTCSRFENFORCEMENT: "false"
         MM_SERVICESETTINGS_STRICTCSRFENFORCEMENT: "false"
-      run: make deploy CGO_ENABLED=0
+      run: make deploy
       shell: bash
 
     - name: ci/run-cypress-tests
