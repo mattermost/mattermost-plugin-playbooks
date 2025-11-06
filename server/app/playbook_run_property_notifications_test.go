@@ -106,25 +106,30 @@ func TestPlaybookRunServiceImpl_formatPropertyValueForDisplay(t *testing.T) {
 	t.Run("handles empty/null values", func(t *testing.T) {
 		field := &PropertyField{PropertyField: model.PropertyField{Type: "text"}}
 
-		result := service.formatPropertyValueForDisplay(field, nil)
-		require.Equal(t, "(empty)", result)
+		result, isEmpty := service.formatPropertyValueForDisplay(field, nil)
+		require.Equal(t, "", result)
+		require.True(t, isEmpty)
 
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(""))
-		require.Equal(t, "(empty)", result)
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(""))
+		require.Equal(t, "", result)
+		require.True(t, isEmpty)
 
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage("null"))
-		require.Equal(t, "(empty)", result)
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage("null"))
+		require.Equal(t, "", result)
+		require.True(t, isEmpty)
 
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`""`))
-		require.Equal(t, "(empty)", result)
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(`""`))
+		require.Equal(t, "", result)
+		require.True(t, isEmpty)
 	})
 
 	t.Run("text field formatting", func(t *testing.T) {
 		field := &PropertyField{PropertyField: model.PropertyField{Type: "text"}}
 
 		// Normal text
-		result := service.formatPropertyValueForDisplay(field, json.RawMessage(`"Hello World"`))
+		result, isEmpty := service.formatPropertyValueForDisplay(field, json.RawMessage(`"Hello World"`))
 		require.Equal(t, "Hello World", result)
+		require.False(t, isEmpty)
 
 		// Long text gets truncated
 		longText := string(make([]byte, 60)) // 60 character string
@@ -132,13 +137,15 @@ func TestPlaybookRunServiceImpl_formatPropertyValueForDisplay(t *testing.T) {
 			longText = longText[:i] + "a" + longText[i+1:]
 		}
 		longValue, _ := json.Marshal(longText)
-		result = service.formatPropertyValueForDisplay(field, longValue)
+		result, isEmpty = service.formatPropertyValueForDisplay(field, longValue)
 		require.Len(t, result, propertyValueMaxDisplayLength) // (propertyValueMaxDisplayLength-3) chars + "..."
 		require.True(t, len(result) > propertyValueMaxDisplayLength-3 && result[propertyValueMaxDisplayLength-3:] == "...")
+		require.False(t, isEmpty)
 
 		// Invalid JSON falls back to raw string
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`invalid json`))
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(`invalid json`))
 		require.Equal(t, "invalid json", result)
+		require.False(t, isEmpty)
 	})
 
 	t.Run("select field formatting", func(t *testing.T) {
@@ -153,16 +160,19 @@ func TestPlaybookRunServiceImpl_formatPropertyValueForDisplay(t *testing.T) {
 		}
 
 		// Valid option ID shows label
-		result := service.formatPropertyValueForDisplay(field, json.RawMessage(`"opt1"`))
+		result, isEmpty := service.formatPropertyValueForDisplay(field, json.RawMessage(`"opt1"`))
 		require.Equal(t, "High Priority", result)
+		require.False(t, isEmpty)
 
 		// Invalid option ID shows the ID itself
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`"unknown"`))
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(`"unknown"`))
 		require.Equal(t, "unknown", result)
+		require.False(t, isEmpty)
 
 		// Invalid JSON falls back to raw string
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`invalid`))
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(`invalid`))
 		require.Equal(t, "invalid", result)
+		require.False(t, isEmpty)
 	})
 
 	t.Run("multiselect field formatting", func(t *testing.T) {
@@ -178,26 +188,31 @@ func TestPlaybookRunServiceImpl_formatPropertyValueForDisplay(t *testing.T) {
 		}
 
 		// Multiple valid options
-		result := service.formatPropertyValueForDisplay(field, json.RawMessage(`["opt1", "opt3"]`))
+		result, isEmpty := service.formatPropertyValueForDisplay(field, json.RawMessage(`["opt1", "opt3"]`))
 		require.Equal(t, "Security, Bug Fix", result)
+		require.False(t, isEmpty)
 
 		// Empty array
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`[]`))
-		require.Equal(t, "(empty)", result)
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(`[]`))
+		require.Equal(t, "", result)
+		require.True(t, isEmpty)
 
 		// Mix of valid and invalid options
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`["opt1", "unknown", "opt2"]`))
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(`["opt1", "unknown", "opt2"]`))
 		require.Equal(t, "Security, unknown, Performance", result)
+		require.False(t, isEmpty)
 
 		// Invalid JSON falls back to raw string
-		result = service.formatPropertyValueForDisplay(field, json.RawMessage(`invalid`))
+		result, isEmpty = service.formatPropertyValueForDisplay(field, json.RawMessage(`invalid`))
 		require.Equal(t, "invalid", result)
+		require.False(t, isEmpty)
 	})
 
 	t.Run("unknown field type falls back to raw value", func(t *testing.T) {
 		field := &PropertyField{PropertyField: model.PropertyField{Type: "unknown"}}
 
-		result := service.formatPropertyValueForDisplay(field, json.RawMessage(`{"complex": "object"}`))
+		result, isEmpty := service.formatPropertyValueForDisplay(field, json.RawMessage(`{"complex": "object"}`))
 		require.Equal(t, `{"complex": "object"}`, result)
+		require.False(t, isEmpty)
 	})
 }
