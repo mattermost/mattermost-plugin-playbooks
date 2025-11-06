@@ -9,6 +9,10 @@ inputs:
   SPECS:
     description: The cypress specs to run
     required: true
+  artifactSuffix:
+    description: Suffix to append to artifact names for uniqueness
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -100,7 +104,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
       with:
-        name: cypress-test-results-${{ matrix.runId }}
+        name: cypress-test-results-${{ matrix.runId }}${{ inputs.artifactSuffix }}
         path: |
           e2e-tests/results/junit
           e2e-tests/tests/screenshots

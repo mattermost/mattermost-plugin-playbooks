@@ -499,6 +499,7 @@ jobs:
         with:
           CYPRESS_serverEdition: E20
           SPECS: ${{ matrix.specs }}
+          artifactSuffix: -fips
 
   report-test-results:
     if: always()
