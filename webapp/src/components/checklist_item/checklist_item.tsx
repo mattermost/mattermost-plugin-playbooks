@@ -281,10 +281,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const handleSave = () => {
         setIsEditing(false);
+        const finalTitle = titleValue.trim() || 'Untitled task';
         if (props.newItem) {
             props.cancelAddingItem?.();
             const newItem = {
-                title: titleValue,
+                title: finalTitle,
                 command,
                 description: descValue,
                 state: ChecklistItemState.Open,
@@ -305,13 +306,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             }
         } else if (props.playbookRunId) {
             clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                title: titleValue,
+                title: finalTitle,
                 command,
                 description: descValue,
             });
         } else {
             const newItem = {...props.checklistItem};
-            newItem.title = titleValue;
+            newItem.title = finalTitle;
             newItem.command = command;
             newItem.description = descValue;
             newItem.task_actions = taskActions;

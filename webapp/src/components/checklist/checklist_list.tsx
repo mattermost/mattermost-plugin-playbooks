@@ -406,12 +406,13 @@ const ChecklistList = ({
                         setNewChecklistName('');
                     }}
                     onSave={() => {
+                        const finalTitle = newChecklistName.trim() || 'Untitled section';
                         if (playbookRun) {
-                            const newChecklist: Omit<Checklist, 'id'> = {title: newChecklistName, items: [] as ChecklistItem[]};
+                            const newChecklist: Omit<Checklist, 'id'> = {title: finalTitle, items: [] as ChecklistItem[]};
                             clientAddChecklist(playbookRun.id, newChecklist);
                         } else {
                             const newChecklist: Checklist = {
-                                title: newChecklistName,
+                                title: finalTitle,
                                 items: [] as ChecklistItem[],
                             };
                             setChecklistsForPlaybook([...checklists, newChecklist]);

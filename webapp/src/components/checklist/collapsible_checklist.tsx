@@ -91,10 +91,11 @@ const CollapsibleChecklist = ({
                     setNewChecklistTitle(title);
                 }}
                 onSave={() => {
+                    const finalTitle = newChecklistTitle.trim() || 'Untitled section';
                     if (playbookRunID) {
-                        clientRenameChecklist(playbookRunID, index, newChecklistTitle);
+                        clientRenameChecklist(playbookRunID, index, finalTitle);
                     } else {
-                        onRenameChecklist(index, newChecklistTitle);
+                        onRenameChecklist(index, finalTitle);
                     }
                     setTimeout(() => setNewChecklistTitle(''), 300);
                     setIsRenaming(false);
