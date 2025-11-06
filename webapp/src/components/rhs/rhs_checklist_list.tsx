@@ -309,13 +309,12 @@ const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
     z-index: 1;
     display: flex;
     flex-direction: column;
+    min-height: 100%;
 
     ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && css`
+        /* in playbook editor*/
         padding: 0 12px 24px;
 
-        &:hover {
-            background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        }
     `};
 
     .pb-tutorial-tour-tip__pulsating-dot-ctr {

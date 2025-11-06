@@ -152,7 +152,7 @@ const CollapsibleChecklist = ({
                     onMouseEnter={() => setShowMenu(true)}
                     onMouseLeave={() => setShowMenu(false)}
                 >
-                    <Icon className={icon}/>
+                    {!isRenaming && <Icon className={icon}/>}
                     {titleComp}
                     {renderTitleHelpText()}
                     {renderHoverMenu()}
@@ -330,6 +330,7 @@ const ChecklistInput = styled.input`
     background: var(--center-channel-bg);
     font-size: 14px;
     font-weight: 600;
+    margin-left: 10px;
 
     ::placeholder {
         font-style: italic;

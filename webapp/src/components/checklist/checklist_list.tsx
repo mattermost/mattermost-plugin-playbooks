@@ -569,7 +569,11 @@ const Icon = styled.i`
     font-size: 18px;
 `;
 
-const ChecklistsContainer = styled.div`/* stylelint-disable no-empty-source */`;
+const ChecklistsContainer = styled.div`
+    :is(:first-child) {
+        margin-top: 12px;
+    }
+`;
 
 const IconWrapper = styled.div`
     padding: 3px 0 0 1px;
