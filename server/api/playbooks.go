@@ -88,6 +88,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	propertyFieldsRouter := playbookRouter.PathPrefix("/property_fields").Subrouter()
 	propertyFieldsRouter.HandleFunc("", withContext(handler.getPlaybookPropertyFields)).Methods(http.MethodGet)
 	propertyFieldsRouter.HandleFunc("", withContext(handler.createPlaybookPropertyField)).Methods(http.MethodPost)
+	propertyFieldsRouter.HandleFunc("/reorder", withContext(handler.reorderPlaybookPropertyFields)).Methods(http.MethodPost)
 	propertyFieldRouter := propertyFieldsRouter.PathPrefix("/{fieldID:[A-Za-z0-9]+}").Subrouter()
 	propertyFieldRouter.HandleFunc("", withContext(handler.updatePlaybookPropertyField)).Methods(http.MethodPut)
 	propertyFieldRouter.HandleFunc("", withContext(handler.deletePlaybookPropertyField)).Methods(http.MethodDelete)
@@ -1041,6 +1042,64 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type ReorderPropertyFieldsRequest struct {
+	FieldID        string `json:"field_id"`
+	TargetPosition int    `json:"target_position"`
+}
+
+func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID})
+
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	var request ReorderPropertyFieldsRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode request", err)
+		return
+	}
+
+	if request.FieldID == "" {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "field_id is required", errors.New("missing required field"))
+		return
+	}
+
+	if request.TargetPosition < 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "target_position must be non-negative", errors.New("invalid target position"))
+		return
+	}
+
+	reorderedFields, err := h.playbookService.ReorderPropertyFields(playbookID, request.FieldID, request.TargetPosition)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	ReturnJSON(w, reorderedFields, http.StatusOK)
 }
 
 func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyField {

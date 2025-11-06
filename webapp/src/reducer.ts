@@ -45,6 +45,7 @@ import {
     RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS,
     RECEIVED_TOGGLE_RHS_ACTION,
     REMOVED_FROM_CHANNEL,
+    REORDERED_PLAYBOOK_PROPERTY_FIELDS,
     ReceivedGlobalSettings,
     ReceivedPlaybookConditions,
     ReceivedPlaybookPropertyFields,
@@ -53,6 +54,7 @@ import {
     ReceivedTeamPlaybookRuns,
     ReceivedToggleRHSAction,
     RemovedFromChannel,
+    ReorderedPlaybookPropertyFields,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
     SET_CHECKLIST_COLLAPSED_STATE,
     SET_CHECKLIST_ITEMS_FILTER,
@@ -618,7 +620,7 @@ type TStatePropertyFieldsPerPlaybook = Record<Playbook['id'], PropertyField['id'
 
 const propertyFieldsPerPlaybook = (
     state: TStatePropertyFieldsPerPlaybook = {},
-    action: ReceivedPlaybookPropertyFields | AddedPlaybookPropertyField
+    action: ReceivedPlaybookPropertyFields | AddedPlaybookPropertyField | ReorderedPlaybookPropertyFields
 ): TStatePropertyFieldsPerPlaybook => {
     switch (action.type) {
     case RECEIVED_PLAYBOOK_PROPERTY_FIELDS: {
@@ -635,6 +637,13 @@ const propertyFieldsPerPlaybook = (
         return {
             ...state,
             [addedAction.playbookId]: [...currentIds, addedAction.propertyField.id],
+        };
+    }
+    case REORDERED_PLAYBOOK_PROPERTY_FIELDS: {
+        const reorderedAction = action as ReorderedPlaybookPropertyFields;
+        return {
+            ...state,
+            [reorderedAction.playbookId]: reorderedAction.reorderedFieldIds,
         };
     }
     default:

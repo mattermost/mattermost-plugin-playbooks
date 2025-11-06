@@ -18,6 +18,7 @@ import {
     deletePlaybookPropertyField,
     fetchPlaybookPropertyFields,
     getPlaybookConditions,
+    reorderPlaybookPropertyFields,
     updatePlaybookPropertyField,
 } from 'src/client';
 import {Condition} from 'src/types/conditions';
@@ -65,6 +66,7 @@ import {
     RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS,
     RECEIVED_TOGGLE_RHS_ACTION,
     REMOVED_FROM_CHANNEL,
+    REORDERED_PLAYBOOK_PROPERTY_FIELDS,
     ReceivedGlobalSettings,
     ReceivedPlaybookConditions,
     ReceivedPlaybookRuns,
@@ -527,4 +529,45 @@ export const deletePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
         playbookId,
         fieldId,
     });
+};
+
+export const reorderPlaybookPropertyFieldsAction = (playbookId: string, fieldId: string, targetPosition: number) => async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+    const state = getState();
+    const allPropertyFields = getPropertyFields(state);
+
+    const playbookFields = Object.values(allPropertyFields).filter((field) => field.target_id === playbookId);
+    const sortedFields = playbookFields.sort((a, b) => a.attrs.sort_order - b.attrs.sort_order);
+    const originalFieldIds = sortedFields.map((field) => field.id);
+
+    const sourceIndex = sortedFields.findIndex((f) => f.id === fieldId);
+
+    if (sourceIndex === -1) {
+        return;
+    }
+
+    const reorderedFields = [...sortedFields];
+    const [movedField] = reorderedFields.splice(sourceIndex, 1);
+    reorderedFields.splice(targetPosition, 0, movedField);
+
+    dispatch({
+        type: REORDERED_PLAYBOOK_PROPERTY_FIELDS,
+        playbookId,
+        reorderedFieldIds: reorderedFields.map((field) => field.id),
+    });
+
+    try {
+        const result = await reorderPlaybookPropertyFields(playbookId, fieldId, targetPosition);
+        dispatch({
+            type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
+            playbookId,
+            propertyFields: result,
+        });
+    } catch (error) {
+        dispatch({
+            type: REORDERED_PLAYBOOK_PROPERTY_FIELDS,
+            playbookId,
+            reorderedFieldIds: originalFieldIds,
+        });
+        throw error;
+    }
 };

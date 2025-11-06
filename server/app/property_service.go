@@ -282,6 +282,72 @@ func (s *propertyService) DeletePropertyField(playbookID string, propertyID stri
 	return nil
 }
 
+func (s *propertyService) ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error) {
+	fields, err := s.GetPropertyFields(playbookID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get property fields")
+	}
+
+	reorderedFields, changedIndices, err := reorderPropertyFieldsLogic(fields, fieldID, targetPosition)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(changedIndices) == 0 {
+		return reorderedFields, nil
+	}
+
+	fieldsToUpdate := make([]*model.PropertyField, len(changedIndices))
+	for i, idx := range changedIndices {
+		fieldsToUpdate[i] = reorderedFields[idx].ToMattermostPropertyField()
+	}
+
+	_, err = s.api.Property.UpdatePropertyFields(s.groupID, fieldsToUpdate)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update sort_order for fields")
+	}
+
+	return reorderedFields, nil
+}
+
+func reorderPropertyFieldsLogic(fields []PropertyField, fieldID string, targetPosition int) ([]PropertyField, []int, error) {
+	if targetPosition < 0 || targetPosition >= len(fields) {
+		return nil, nil, errors.New("target position out of bounds")
+	}
+
+	var sourceIndex = -1
+	for i, field := range fields {
+		if field.ID == fieldID {
+			sourceIndex = i
+			break
+		}
+	}
+
+	if sourceIndex == -1 {
+		return nil, nil, errors.New("field not found")
+	}
+
+	if sourceIndex == targetPosition {
+		return fields, []int{}, nil
+	}
+
+	movedField := fields[sourceIndex]
+	copy(fields[sourceIndex:], fields[sourceIndex+1:])
+	copy(fields[targetPosition+1:], fields[targetPosition:])
+	fields[targetPosition] = movedField
+
+	var changedIndices []int
+	for i := range fields {
+		newSortOrder := float64(i)
+		if fields[i].Attrs.SortOrder != newSortOrder {
+			fields[i].Attrs.SortOrder = newSortOrder
+			changedIndices = append(changedIndices, i)
+		}
+	}
+
+	return fields, changedIndices, nil
+}
+
 func (s *propertyService) getAllPropertyFields(targetType, targetID string) ([]*model.PropertyField, error) {
 	return s.getAllPropertyFieldsSince(targetType, targetID, 0)
 }

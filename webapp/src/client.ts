@@ -886,3 +886,15 @@ export async function deletePlaybookPropertyField(playbookId: string, fieldId: s
         method: 'DELETE',
     });
 }
+
+export async function reorderPlaybookPropertyFields(playbookId: string, fieldId: string, targetPosition: number): Promise<PropertyField[]> {
+    const url = `${apiUrl}/playbooks/${playbookId}/property_fields/reorder`;
+    const data = await doPost<PropertyField[]>(url, JSON.stringify({
+        field_id: fieldId,
+        target_position: targetPosition,
+    }));
+    if (!data) {
+        return [];
+    }
+    return data;
+}

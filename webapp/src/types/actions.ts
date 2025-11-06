@@ -44,6 +44,7 @@ export const RECEIVED_PLAYBOOK_PROPERTY_FIELDS = manifest.id + '_received_playbo
 export const ADDED_PLAYBOOK_PROPERTY_FIELD = manifest.id + '_added_playbook_property_field';
 export const UPDATED_PLAYBOOK_PROPERTY_FIELD = manifest.id + '_updated_playbook_property_field';
 export const DELETED_PLAYBOOK_PROPERTY_FIELD = manifest.id + '_deleted_playbook_property_field';
+export const REORDERED_PLAYBOOK_PROPERTY_FIELDS = manifest.id + '_reordered_playbook_property_fields';
 
 // Condition websocket action types
 export const CONDITION_CREATED = manifest.id + '_condition_created';
@@ -271,4 +272,10 @@ export interface DeletedPlaybookPropertyField {
     type: typeof DELETED_PLAYBOOK_PROPERTY_FIELD;
     playbookId: string;
     fieldId: string;
+}
+
+export interface ReorderedPlaybookPropertyFields {
+    type: typeof REORDERED_PLAYBOOK_PROPERTY_FIELDS;
+    playbookId: string;
+    reorderedFieldIds: string[];
 }

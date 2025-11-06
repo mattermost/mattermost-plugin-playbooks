@@ -30,7 +30,12 @@ import {PropertyField, PropertyFieldInput, PropertyFieldType} from 'src/types/pr
 import GenericModal from 'src/components/widgets/generic_modal';
 
 import {usePlaybookAttributes} from 'src/hooks';
-import {addPlaybookPropertyFieldAction, deletePlaybookPropertyFieldAction, updatePlaybookPropertyFieldAction} from 'src/actions';
+import {
+    addPlaybookPropertyFieldAction,
+    deletePlaybookPropertyFieldAction,
+    reorderPlaybookPropertyFieldsAction,
+    updatePlaybookPropertyFieldAction,
+} from 'src/actions';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
@@ -140,26 +145,22 @@ const PlaybookProperties = ({playbookID}: Props) => {
             return;
         }
 
-        const reorderedProperties = Array.from(properties);
-        const [removed] = reorderedProperties.splice(result.source.index, 1);
-        reorderedProperties.splice(result.destination.index, 0, removed);
+        const sourceField = properties[result.source.index];
 
-        // Update sort_order for all properties that changed
-        reorderedProperties.forEach(async (field, index) => {
-            const nextSortOrder = index;
+        if (!sourceField) {
+            return;
+        }
 
-            if (field.attrs.sort_order !== nextSortOrder) {
-                const updatedField = {
-                    ...field,
-                    attrs: {
-                        ...field.attrs,
-                        sort_order: nextSortOrder,
-                    },
-                };
-                await updateProperty(updatedField);
-            }
-        });
-    }, [properties, updateProperty]);
+        try {
+            await dispatch(reorderPlaybookPropertyFieldsAction(playbookID, sourceField.id, result.destination.index));
+        } catch (error) {
+            addToast({
+                content: error instanceof Error ? error.message : 'Failed to reorder property fields',
+                toastStyle: ToastStyle.Failure,
+                duration: 8000,
+            });
+        }
+    }, [properties, dispatch, playbookID, addToast]);
 
     const columnHelper = createColumnHelper<PropertyField>();
 
