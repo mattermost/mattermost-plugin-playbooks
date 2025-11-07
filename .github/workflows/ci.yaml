@@ -13,31 +13,39 @@ defaults:
 
 env:
   TERM: xterm
-  GO_VERSION: 1.24.0
 
 jobs:
+  go:
+    name: Compute Go Version
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.calculate.outputs.GO_VERSION }}
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: "0"
+      - name: Calculate version
+        id: calculate
+        run: echo GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+' go.mod | cut -d' ' -f2) >> "${GITHUB_OUTPUT}"
+
   lint:
     runs-on: ubuntu-22.04
+    needs:
+      - go
+    container:
+      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: "0"
 
-      - name: ci/setup-go
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-        with:
-          go-version: "${{ env.GO_VERSION }}"
-          cache: false
-
-      - name: ci/setup-node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: |
-            webapp/package-lock.json
-            e2e-tests/package-lock.json
+      - name: ci/configure-git-safe-directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: ci/cache-node-modules
         id: cache-node-modules
@@ -95,47 +103,115 @@ jobs:
   dist:
     runs-on: ubuntu-22.04
     needs:
+      - go
       - lint
+    container:
+      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: "0"
-
-      - name: ci/setup-go
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-        with:
-          go-version: "${{ env.GO_VERSION }}"
-          cache: false
+      - name: ci/configure-git-safe-directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
       - name: ci/get-short-sha
         id: short-sha
         run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
       - name: ci/build-for-upload
-        run: make dist-ci
+        run: make dist
       - name: ci/upload-build-artifact
-        if: github.event_name == 'pull_request' && success()
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         with:
           name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
           path: |
             dist/playbooks-*.tar.gz
           retention-days: 7 ## No need to keep build artifacts for more than 7 days
+      - name: ci/ensure-build-on-all-platforms ## Verify builds on all platforms *after* ci/build-for-upload to keep artifact small
+        run: make dist
+
+  dist-fips:
+    runs-on: ubuntu-22.04
+    needs:
+      - go
+      - lint
+    container:
+      image: mattermostdevelopment/mattermost-build-server-fips:${{ needs.go.outputs.version }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
+    env:
+      FIPS_ENABLED: true
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: "0"
+      - name: ci/configure-git-safe-directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+      - name: ci/get-short-sha
+        id: short-sha
+        run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      - name: ci/build-for-upload
+        run: make dist
+      - name: ci/upload-build-artifact
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        with:
+          name: playbooks-bundle-fips-${{ steps.short-sha.outputs.sha }}
+          path: |
+            dist/playbooks-*.tar.gz
+          retention-days: 7 ## No need to keep build artifacts for more than 7 days
+      - name: ci/ensure-build-on-all-platforms ## Verify builds on all platforms *after* ci/build-for-upload to keep artifact small
+        run: make dist
+
+  upload:
+    runs-on: ubuntu-22.04
+    needs:
+      - dist
+      - dist-fips
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: "0"
+      - name: ci/get-short-sha
+        id: short-sha
+        run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      - name: ci/download-build-artifact
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        with:
+          name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
+          path: dist
+      - name: ci/download-build-artifact-fips
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        with:
+          name: playbooks-bundle-fips-${{ steps.short-sha.outputs.sha }}
+          path: dist-fips
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # change as appropriate
+          aws-region: us-east-1
       - name: Upload dist to S3
         run: |
           aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
-      - name: ci/ensure-build-on-all-platforms ## Verify builds on all platgorms *after* ci/build-for-upload to keep artifact small
-        run: make dist
+      - name: Upload dist-fips to S3
+        run: |
+          aws s3 cp dist-fips/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-fips-${{ steps.short-sha.outputs.sha }}.tar.gz
 
-  test-Postgres13:
+  test:
     runs-on: ubuntu-22.04
     needs:
       - lint
+      - go
+    container:
+      image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
     services:
       postgres:
         image: postgres:14
@@ -155,6 +231,45 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: "0"
+
+      - name: ci/configure-git-safe-directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: ci/test-with-db
+        uses: ./.github/actions/test-with-db
+
+  test-fips:
+    runs-on: ubuntu-22.04
+    needs:
+      - lint
+      - go
+    container:
+      image: mattermostdevelopment/mattermost-build-server-fips:${{ needs.go.outputs.version }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: "0"
+
+      - name: ci/configure-git-safe-directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: ci/test-with-db
         uses: ./.github/actions/test-with-db
@@ -177,10 +292,13 @@ jobs:
 
   e2e-cypress-tests:
     runs-on: ubuntu-22.04
-    name: e2e-cypress-tests-run-${{ matrix.runId }}
     needs:
+      - go
       - lint
       - generate-specs
+      - dist
+      - dist-fips
+    name: e2e-cypress-tests-run-${{ matrix.runId }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.generate-specs.outputs.specs) }}
@@ -225,7 +343,7 @@ jobs:
         ports:
           - 9200:9200
       mattermost-server:
-        image: mattermostdevelopment/mattermost-enterprise-edition:master
+        image: mattermostdevelopment/mattermost-enterprise${{ matrix.fips && '-fips' || '' }}-edition:master
         env:
           DB_HOST: postgres
           DB_PORT_NUMBER: 5432
@@ -262,6 +380,16 @@ jobs:
         with:
           fetch-depth: "0"
 
+      - name: ci/get-short-sha
+        id: short-sha
+        run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: ci/download-build-artifact
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        with:
+          name: playbooks-bundle-${{ matrix.fips && 'fips-' || '' }}${{ steps.short-sha.outputs.sha }}
+          path: dist
+
       - name: ci/e2e-test
         uses: ./.github/actions/e2e-test
         with:
@@ -272,7 +400,8 @@ jobs:
     if: always()
     needs:
       - e2e-cypress-tests
-      - test-Postgres13
+      - test
+      - test-fips
     runs-on: ubuntu-22.04
     permissions:
       checks: write

@@ -73,10 +73,7 @@ runs:
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
         MM_ADMIN_USERNAME: sysadmin
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
-        MM_SERVICESETTINGS_ENABLEDEVELOPER: "true" ## Build only default since we are testing all arch on lint stage to speed up tests
-        MM_SERVICESETTINGS_EXPERIMENTALSTRICTCSRFENFORCEMENT: "false"
-        MM_SERVICESETTINGS_STRICTCSRFENFORCEMENT: "false"
-      run: make deploy CGO_ENABLED=0
+      run: make upload-to-server
       shell: bash
 
     - name: ci/run-cypress-tests
