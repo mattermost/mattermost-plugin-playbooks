@@ -26,18 +26,16 @@ type Specs struct {
 type SpecGroup struct {
 	RunID string `json:"runId"`
 	Specs string `json:"specs"`
-	FIPS  bool   `json:"fips"`
 }
 
 type Output struct {
 	Include []SpecGroup `json:"include"`
 }
 
-func newSpecGroup(runId string, specs string, fips bool) *SpecGroup {
+func newSpecGroup(runId string, specs string) *SpecGroup {
 	return &SpecGroup{
 		RunID: runId,
 		Specs: specs,
-		FIPS:  fips,
 	}
 }
 
@@ -82,12 +80,8 @@ func (s *Specs) generateSplits() {
 
 		fileGroup := strings.Join(s.rawFiles[i:end], ",")
 
-		// Generate both non-FIPS and FIPS variants
-		nonFipsGroup := newSpecGroup(fmt.Sprintf("%d", runNo), fileGroup, false)
-		s.groupedFiles = append(s.groupedFiles, *nonFipsGroup)
-
-		fipsGroup := newSpecGroup(fmt.Sprintf("%d-fips", runNo), fileGroup, true)
-		s.groupedFiles = append(s.groupedFiles, *fipsGroup)
+		specGroup := newSpecGroup(fmt.Sprintf("%d", runNo), fileGroup)
+		s.groupedFiles = append(s.groupedFiles, *specGroup)
 
 		// Break when we reach the end to avoid duplicate groups
 		if end == len(s.rawFiles) {
