@@ -129,7 +129,7 @@ jobs:
 
   dist-fips:
     # Skip FIPS testing for forks, which won't have docker login credentials.
-    if: env.IS_NOT_FORK == 'true'
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - go
@@ -252,7 +252,7 @@ jobs:
 
   test-fips:
     # Skip FIPS testing for forks, which won't have docker login credentials.
-    if: env.IS_NOT_FORK == 'true'
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -410,7 +410,7 @@ jobs:
           SPECS: ${{ matrix.specs }}
 
   e2e-cypress-tests-fips:
-    if: env.IS_NOT_FORK == 'true'
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - go
