@@ -39,10 +39,17 @@ const PostText = (props: Props) => {
         hasPluginTooltips: true,
     };
 
+    // Older versions of the web app may not export handleFormattedTextClick, so we need to check for it.
+    const onClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        if (handleFormattedTextClick) {
+            handleFormattedTextClick(e);
+        }
+    };
+
     const formattedText = formatText(props.text, markdownOptions);
     return (
         <UpdateBody className={props.className}>
-            <div onClick={handleFormattedTextClick}>
+            <div onClick={onClick}>
                 {messageHtmlToComponent(formattedText, true, messageHtmlToComponentOptions)}
             </div>
             {props.children}
