@@ -35,9 +35,6 @@ jobs:
       - go
     container:
       image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
-      credentials:
-        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -107,9 +104,6 @@ jobs:
       - lint
     container:
       image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
-      credentials:
-        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -133,6 +127,8 @@ jobs:
         run: make dist
 
   dist-fips:
+    # Skip FIPS testing for forks, which won't have docker login credentials.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - go
@@ -170,7 +166,6 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - dist
-      - dist-fips
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -184,6 +179,28 @@ jobs:
         with:
           name: playbooks-bundle-${{ steps.short-sha.outputs.sha }}
           path: dist
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Upload dist to S3
+        run: |
+          aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
+
+  upload-fips:
+    runs-on: ubuntu-22.04
+    needs:
+      - dist-fips
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: "0"
+      - name: ci/get-short-sha
+        id: short-sha
+        run: echo "sha=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
       - name: ci/download-build-artifact-fips
         uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
         with:
@@ -195,9 +212,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      - name: Upload dist to S3
-        run: |
-          aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
       - name: Upload dist-fips to S3
         run: |
           aws s3 cp dist-fips/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-fips-${{ steps.short-sha.outputs.sha }}.tar.gz
@@ -209,9 +223,6 @@ jobs:
       - go
     container:
       image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
-      credentials:
-        username: ${{ secrets.DOCKERHUB_DEV_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
     services:
       postgres:
         image: postgres:14
@@ -239,6 +250,8 @@ jobs:
         uses: ./.github/actions/test-with-db
 
   test-fips:
+    # Skip FIPS testing for forks, which won't have docker login credentials.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -289,6 +302,7 @@ jobs:
           parallelism: 3
           directory: e2e-tests
           search_path: tests/integration
+          fips-enabled: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
 
   e2e-cypress-tests:
     runs-on: ubuntu-22.04
@@ -297,7 +311,6 @@ jobs:
       - lint
       - generate-specs
       - dist
-      - dist-fips
     name: e2e-cypress-tests-run-${{ matrix.runId }}
     strategy:
       fail-fast: false

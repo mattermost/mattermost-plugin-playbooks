@@ -19,6 +19,7 @@ type Specs struct {
 	searchPath   string
 	directory    string
 	parallelism  int
+	fipsEnabled  bool
 	rawFiles     []string
 	groupedFiles []SpecGroup
 }
@@ -41,11 +42,12 @@ func newSpecGroup(runId string, specs string, fips bool) *SpecGroup {
 	}
 }
 
-func newSpecs(directory string, searchPath string, parallelism int) *Specs {
+func newSpecs(directory string, searchPath string, parallelism int, fipsEnabled bool) *Specs {
 	return &Specs{
 		directory:   directory,
 		searchPath:  searchPath,
 		parallelism: parallelism,
+		fipsEnabled: fipsEnabled,
 	}
 }
 
@@ -86,8 +88,10 @@ func (s *Specs) generateSplits() {
 		nonFipsGroup := newSpecGroup(fmt.Sprintf("%d", runNo), fileGroup, false)
 		s.groupedFiles = append(s.groupedFiles, *nonFipsGroup)
 
-		fipsGroup := newSpecGroup(fmt.Sprintf("%d-fips", runNo), fileGroup, true)
-		s.groupedFiles = append(s.groupedFiles, *fipsGroup)
+		if s.fipsEnabled {
+			fipsGroup := newSpecGroup(fmt.Sprintf("%d-fips", runNo), fileGroup, true)
+			s.groupedFiles = append(s.groupedFiles, *fipsGroup)
+		}
 
 		// Break when we reach the end to avoid duplicate groups
 		if end == len(s.rawFiles) {
@@ -114,8 +118,9 @@ func main() {
 	searchPath := os.Getenv("SEARCH_PATH")
 	directory := os.Getenv("DIRECTORY")
 	parallelism, _ := strconv.Atoi(os.Getenv("PARALLELISM"))
+	fipsEnabled := os.Getenv("FIPS_ENABLED") == "true"
 
-	specs := newSpecs(directory, searchPath, parallelism)
+	specs := newSpecs(directory, searchPath, parallelism, fipsEnabled)
 	specs.findFiles()
 	specs.generateSplits()
 	specs.dumpSplits()
