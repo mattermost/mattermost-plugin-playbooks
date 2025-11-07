@@ -190,14 +190,12 @@ jobs:
           name: playbooks-bundle-fips-${{ steps.short-sha.outputs.sha }}
           path: dist-fips
       - name: Configure AWS credentials
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       - name: Upload dist to S3
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           aws s3 cp dist/playbooks-*.tar.gz s3://${{ secrets.AWS_S3_BUCKET }}/mattermost-plugin-playbooks/mattermost-plugin-playbooks-${{ steps.short-sha.outputs.sha }}.tar.gz
       - name: Upload dist-fips to S3
