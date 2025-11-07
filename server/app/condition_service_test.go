@@ -245,15 +245,37 @@ func TestConditionService_Delete(t *testing.T) {
 			GetCondition(playbookID, conditionID).
 			Return(existingCondition, nil)
 
-		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam("condition_deleted", existingCondition, teamID)
-
 		mockStore.EXPECT().
 			DeleteCondition(playbookID, conditionID).
 			Return(nil)
 
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("condition_deleted", existingCondition, teamID)
+
 		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
 		require.NoError(t, err)
+	})
+
+	t.Run("failure to delete does not send websocket event", func(t *testing.T) {
+		auditRec := &model.AuditRecord{}
+		mockAuditor.EXPECT().
+			MakeAuditRecord("deleteCondition", model.AuditStatusFail).
+			Return(auditRec)
+		mockAuditor.EXPECT().
+			LogAuditRec(auditRec)
+
+		mockStore.EXPECT().
+			GetCondition(playbookID, conditionID).
+			Return(existingCondition, nil)
+
+		dbError := errors.New("database deletion failed")
+		mockStore.EXPECT().
+			DeleteCondition(playbookID, conditionID).
+			Return(dbError)
+
+		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
+		require.Error(t, err)
+		require.Equal(t, dbError, err)
 	})
 }
 
