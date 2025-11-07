@@ -7,7 +7,7 @@ import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {Post} from '@mattermost/types/posts';
-import {getChannel, getChannelsNameMapInCurrentTeam, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {Channel} from '@mattermost/types/channels';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentTeamId, getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -30,7 +30,6 @@ interface Props {
 export const UpdatePost = (props: Props) => {
     const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel | undefined>((state) => getChannel(state, props.post.channel_id));
-    const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const currentTeamId = useSelector<GlobalState, string>(getCurrentTeamId);
     const teamId = channel?.type === General.DM_CHANNEL || channel?.type === General.GM_CHANNEL ? currentTeamId : channel?.team_id;
     const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, teamId ?? ''));
@@ -70,7 +69,10 @@ export const UpdatePost = (props: Props) => {
     const overviewURL = `/playbooks/runs/${playbookRunId}`;
 
     let msg = '';
-    if (runChannelId && runChannelId !== currentChannelId) {
+
+    // Only show the run channel link if the post is a reply to a 'run created' post and the run channel id is set.
+    // Older posts may not have run channel id set.
+    if (runChannelId && props.post.root_id) {
         const runChannelURL = `${siteURL}/${team.name}/channels/${runChannelId}`;
         msg = formatMessage({defaultMessage: '@{authorUsername} posted an update for [{runName}]({overviewURL}) in [the run channel]({runChannelURL})'}, {
             runName,

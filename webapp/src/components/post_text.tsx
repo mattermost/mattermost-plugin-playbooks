@@ -11,6 +11,7 @@ import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {ChannelNamesMap} from 'src/types/backstage';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
+import {isDesktopApp} from 'src/utils';
 
 interface Props {
     text: string;
@@ -22,6 +23,7 @@ interface Props {
 const PostText = (props: Props) => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const siteURL = useSelector<GlobalState, string>((state) => getConfig(state).SiteURL || '');
+    const isDesktop = isDesktopApp();
 
     // @ts-ignore
     const {formatText, messageHtmlToComponent, handleFormattedTextClick} = window.PostUtils;
@@ -32,7 +34,7 @@ const PostText = (props: Props) => {
         atMentions: true,
         team: props.team,
         channelNamesMap,
-        siteURL,
+        siteURL: isDesktop ? undefined : siteURL, // Desktop app handles internal links itself so we don't want to set siteURL otherwise we'd interrupt that.
     };
 
     const messageHtmlToComponentOptions = {
@@ -48,10 +50,11 @@ const PostText = (props: Props) => {
 
     const formattedText = formatText(props.text, markdownOptions);
     return (
-        <UpdateBody className={props.className}>
-            <div onClick={onClick}>
-                {messageHtmlToComponent(formattedText, true, messageHtmlToComponentOptions)}
-            </div>
+        <UpdateBody
+            className={props.className}
+            onClick={onClick}
+        >
+            {messageHtmlToComponent(formattedText, true, messageHtmlToComponentOptions)}
             {props.children}
         </UpdateBody>
     );
