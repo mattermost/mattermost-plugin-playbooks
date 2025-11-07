@@ -12,6 +12,10 @@ inputs:
   parallelism:
     description: The parallelism for the tests
     required: true
+  fips-enabled:
+    description: Whether to generate FIPS test specs
+    required: false
+    default: 'false'
 outputs:
   specs:
     description: The specs generated for the strategy
@@ -25,6 +29,7 @@ runs:
         PARALLELISM: ${{ inputs.parallelism }}
         SEARCH_PATH: ${{ inputs.search_path }}
         DIRECTORY: ${{ inputs.directory }}
+        FIPS_ENABLED: ${{ inputs.fips-enabled }}
       run: |
         go run ${{ github.action_path }}/split-tests.go > output.json
         echo "specs=$(cat output.json)" >> $GITHUB_OUTPUT
