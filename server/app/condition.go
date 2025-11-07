@@ -295,10 +295,6 @@ func (cc *ComparisonCondition) validateValueForFieldType(field PropertyField) er
 // For select fields: condition value is an array, checks if the property value is any of the condition values.
 // For multiselect fields: condition value is an array, checks if any condition value is in the property array.
 func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue json.RawMessage) bool {
-	if propertyValue.Value == nil {
-		return false
-	}
-
 	switch propertyField.Type {
 	case model.PropertyFieldTypeText:
 		var conditionString string
@@ -307,7 +303,9 @@ func is(propertyField PropertyField, propertyValue PropertyValue, conditionValue
 		}
 
 		var propertyString string
-		if err := json.Unmarshal(propertyValue.Value, &propertyString); err != nil {
+		if propertyValue.Value == nil {
+			propertyString = ""
+		} else if err := json.Unmarshal(propertyValue.Value, &propertyString); err != nil {
 			return false
 		}
 
@@ -594,7 +592,7 @@ func (cc *ComparisonCondition) toString(fieldMap map[string]PropertyField, isNot
 	}
 
 	valueStr := cc.formatValue(field, exists)
-	return fmt.Sprintf("%s %s %s", fieldName, operator, valueStr)
+	return fmt.Sprintf(`"%s" %s %s`, fieldName, operator, valueStr)
 }
 
 func (cc *ComparisonCondition) formatValue(field PropertyField, fieldExists bool) string {
@@ -617,7 +615,10 @@ func (cc *ComparisonCondition) formatValue(field PropertyField, fieldExists bool
 func (cc *ComparisonCondition) formatTextValue() string {
 	var stringValue string
 	if err := json.Unmarshal(cc.Value, &stringValue); err == nil {
-		return stringValue
+		if stringValue == "" {
+			return "empty"
+		}
+		return fmt.Sprintf(`"%s"`, stringValue)
 	}
 	return string(cc.Value)
 }

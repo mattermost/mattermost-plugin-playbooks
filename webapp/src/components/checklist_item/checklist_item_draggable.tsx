@@ -31,6 +31,7 @@ interface Props {
     onRemoveFromCondition?: () => void;
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
+    conditions?: Condition[];
     propertyFields?: PropertyField[];
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
@@ -74,6 +75,7 @@ const DraggableChecklistItem = (props: Props) => {
                     onRemoveFromCondition={props.onRemoveFromCondition}
                     onAssignToCondition={props.onAssignToCondition}
                     availableConditions={props.availableConditions}
+                    conditions={props.conditions}
                     propertyFields={props.propertyFields}
                     onEditingChange={props.onEditingChange}
                     hasCondition={props.hasCondition}
