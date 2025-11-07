@@ -13,6 +13,7 @@ defaults:
 
 env:
   TERM: xterm
+  IS_NOT_FORK: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
 
 jobs:
   go:
@@ -128,7 +129,7 @@ jobs:
 
   dist-fips:
     # Skip FIPS testing for forks, which won't have docker login credentials.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: env.IS_NOT_FORK == 'true'
     runs-on: ubuntu-22.04
     needs:
       - go
@@ -251,7 +252,7 @@ jobs:
 
   test-fips:
     # Skip FIPS testing for forks, which won't have docker login credentials.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: env.IS_NOT_FORK == 'true'
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -302,7 +303,7 @@ jobs:
           parallelism: 3
           directory: e2e-tests
           search_path: tests/integration
-          fips-enabled: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+          fips-enabled: ${{ env.IS_NOT_FORK }}
 
   e2e-cypress-tests:
     runs-on: ubuntu-22.04
