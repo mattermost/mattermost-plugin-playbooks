@@ -86,6 +86,7 @@ interface ChecklistItemProps {
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
+    isChannelChecklist?: boolean;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -387,6 +388,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onAssignToCondition={props.onAssignToCondition}
                         availableConditions={props.availableConditions}
                         propertyFields={props.propertyFields}
+                        isChannelChecklist={props.isChannelChecklist}
                     />
                     }
                     <DragButton
@@ -398,7 +400,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     />
                     <CheckBoxButton
                         readOnly={props.readOnly}
-                        disabled={isSkipped() || props.playbookRunId === undefined}
+                        disabled={isSkipped() || props.playbookRunId === undefined || props.newItem}
                         item={props.checklistItem}
                         onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                         onReadOnlyInteract={props.onReadOnlyInteract}
