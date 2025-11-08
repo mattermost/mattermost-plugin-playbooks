@@ -41,6 +41,7 @@ interface Props {
     newlyCreatedConditionIds?: Set<string>;
     autoAddTask?: boolean;
     onTaskAdded?: () => void;
+    isChannelChecklist?: boolean;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -225,6 +226,7 @@ const GenericChecklist = (props: Props) => {
                     setEditingItemIndex(isEditing ? index : null);
                 }}
                 hasCondition={hasCondition}
+                isChannelChecklist={props.isChannelChecklist}
                 conditionHeader={showConditionHeader ? (
                     <ConditionHeader
                         conditionId={conditionId}

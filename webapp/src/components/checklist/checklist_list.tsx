@@ -20,6 +20,7 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRunType, PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {
     conditionCreated,
     conditionDeleted,
@@ -40,7 +41,6 @@ import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
 import {usePlaybookConditions} from 'src/hooks/conditions';
-import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {getDistinctAssignees} from 'src/utils';
 import {ConditionExprV1} from 'src/types/conditions';
 
@@ -397,7 +397,6 @@ const ChecklistList = ({
     if (addingChecklist) {
         addChecklist = (
             <NewChecklist>
-                <Icon className={'icon-chevron-down'}/>
                 <ChecklistInputComponent
                     title={newChecklistName}
                     setTitle={setNewChecklistName}
@@ -464,6 +463,7 @@ const ChecklistList = ({
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
                                                 onDeleteChecklist={onDeleteChecklist}
+                                                isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
                                                 titleHelpText={playbook ? (
                                                     <TitleHelpTextWrapper>
                                                         {formatMessage(
@@ -507,6 +507,7 @@ const ChecklistList = ({
                                                     newlyCreatedConditionIds={newlyCreatedConditionIds}
                                                     autoAddTask={autoAddTask && checklistIndex === 0}
                                                     onTaskAdded={onTaskAdded}
+                                                    isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
                                                 />
                                             </CollapsibleChecklist>
                                         );

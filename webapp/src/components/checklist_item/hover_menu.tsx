@@ -55,6 +55,7 @@ export interface Props {
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
     propertyFields?: PropertyField[];
+    isChannelChecklist?: boolean;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -196,7 +197,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                         {props.isSkipped ? formatMessage({defaultMessage: 'Restore task'}) : formatMessage({defaultMessage: 'Skip task'})}
                     </StyledDropdownMenuItem>
                 }
-                {props.playbookRunId === undefined &&
+                {(props.playbookRunId === undefined || props.isChannelChecklist) &&
                     <StyledDropdownMenuItemRed
                         onClick={() => props.onDeleteChecklistItem?.()}
                     >

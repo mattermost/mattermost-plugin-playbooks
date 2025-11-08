@@ -28,6 +28,7 @@ export interface Props {
     onDeleteChecklist: (index: number) => void;
     titleHelpText?: React.ReactNode;
     draggableProvided?: DraggableProvided;
+    isChannelChecklist?: boolean;
 }
 
 const CollapsibleChecklist = ({
@@ -44,6 +45,7 @@ const CollapsibleChecklist = ({
     onDeleteChecklist,
     titleHelpText,
     draggableProvided,
+    isChannelChecklist,
 }: Props) => {
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
@@ -138,6 +140,7 @@ const CollapsibleChecklist = ({
                 isChecklistSkipped={isChecklistSkipped}
                 onDuplicateChecklist={() => onDuplicateChecklist(index)}
                 onDeleteChecklist={() => onDeleteChecklist(index)}
+                isChannelChecklist={isChannelChecklist}
             />
         );
     };

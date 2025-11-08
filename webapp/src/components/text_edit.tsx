@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -31,6 +31,7 @@ const TextEdit = (props: TextEditProps) => {
     const id = useUniqueId('editabletext-markdown-textbox');
     const [isEditing, setIsEditing] = useState(false);
     const [value, setValue] = useState(props.value);
+    const hasAutoFocused = useRef(false);
 
     useUpdateEffect(() => {
         setValue(props.value);
@@ -38,11 +39,13 @@ const TextEdit = (props: TextEditProps) => {
 
     const save = () => {
         setIsEditing(false);
+        hasAutoFocused.current = false;
         props.onSave(value);
     };
 
     const cancel = () => {
         setIsEditing(false);
+        hasAutoFocused.current = false;
         setValue(props.value);
     };
 
@@ -58,6 +61,16 @@ const TextEdit = (props: TextEditProps) => {
                     }}
                     autoFocus={true}
                     disabled={props.disabled}
+                    onFocus={(e) => {
+                        // Select all text only on initial auto-focus
+                        if (!hasAutoFocused.current) {
+                            hasAutoFocused.current = true;
+                            const target = e.target;
+                            setTimeout(() => {
+                                target.select();
+                            }, 0);
+                        }
+                    }}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                             save();
