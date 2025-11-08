@@ -224,7 +224,7 @@ const RunPlaybookModal = ({
                 <RowContainer>
                     <ColContainer>
                         <HeaderTitle>
-                            <FormattedMessage defaultMessage='Create checklist from playbook'/>
+                            <FormattedMessage defaultMessage='Run playbook'/>
                         </HeaderTitle>
                         <HeaderButtonWrapper>
                             {canCreatePlaybooks &&
