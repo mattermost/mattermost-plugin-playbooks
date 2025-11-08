@@ -44,7 +44,7 @@ func TestStandaloneRunCreation(t *testing.T) {
 		if standaloneRun.PlaybookID == "" {
 			standaloneRun.Checklists = []Checklist{
 				{
-					Title: "Checklist",
+					Title: "Tasks",
 					Items: []ChecklistItem{},
 				},
 			}

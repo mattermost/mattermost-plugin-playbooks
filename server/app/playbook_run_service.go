@@ -452,7 +452,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if playbookRun.PlaybookID == "" {
 		playbookRun.Checklists = []Checklist{
 			{
-				Title: "Checklist",
+				Title: "Tasks",
 				Items: []ChecklistItem{},
 			},
 		}
