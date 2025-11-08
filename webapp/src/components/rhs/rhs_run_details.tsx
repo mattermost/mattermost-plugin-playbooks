@@ -28,6 +28,7 @@ import {
 import RHSChecklistList, {ChecklistParent} from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious, useRun} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
+import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {
     FINISHED,
@@ -64,7 +65,18 @@ const RHSRunDetails = (props: Props) => {
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbookRun] = useRun(props.runID);
-    const isParticipant = playbookRun?.participant_ids.includes(currentUserId);
+
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields | null = playbookRun ? {
+        type: playbookRun.type,
+        channel_id: playbookRun.channel_id,
+        team_id: playbookRun.team_id,
+        owner_user_id: playbookRun.owner_user_id,
+        participant_ids: playbookRun.participant_ids,
+        current_status: playbookRun.current_status,
+    } : null;
+
+    const canModify = useCanModifyRun(runForPermissions, currentUserId);
 
     const prevStatus = usePrevious(playbookRun?.current_status);
 
@@ -143,7 +155,7 @@ const RHSRunDetails = (props: Props) => {
         );
     }
 
-    const readOnly = !isParticipant || playbookRun.current_status === PlaybookRunStatus.Finished;
+    const readOnly = !canModify;
     let onReadOnlyInteract;
     if (playbookRun.current_status !== PlaybookRunStatus.Finished) {
         onReadOnlyInteract = displayReadOnlyToast;

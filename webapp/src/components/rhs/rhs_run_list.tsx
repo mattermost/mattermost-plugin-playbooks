@@ -42,8 +42,8 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import Tooltip from 'src/components/widgets/tooltip';
 
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 
 import {UserList} from './rhs_participants';
 
@@ -62,7 +62,9 @@ interface RunToDisplay {
     numTasks: number
     lastUpdatedAt: number
     type: PlaybookRunType
-    currentStatus: string
+    currentStatus: RunStatus
+    channelID: string
+    teamID: string
 }
 
 export enum FilterType {
@@ -586,7 +588,19 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {add: addToastMessage} = useToaster();
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
-    const canEditRun = (currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId)) && props.currentStatus === PlaybookRunStatus.InProgress;
+
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: props.type,
+        channel_id: props.channelID,
+        team_id: props.teamID,
+        owner_user_id: props.ownerUserID,
+        participant_ids: props.participantIDs,
+        current_status: props.currentStatus,
+    };
+
+    const canEditRun = useCanModifyRun(runForPermissions, currentUserId);
+
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
     const [movedChannel, setMovedChannel] = useState({channelId: '', channelName: ''});
     const updateRun = useUpdateRun(props.id);

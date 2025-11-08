@@ -4,6 +4,7 @@
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import styled, {css} from 'styled-components';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
@@ -11,7 +12,12 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
 import {GlobalState} from '@mattermost/types/store';
-import {FlagCheckeredIcon, FlagOutlineIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountPlusOutlineIcon,
+    CheckIcon,
+    FlagCheckeredIcon,
+    FlagOutlineIcon,
+} from '@mattermost/compass-icons/components';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -39,9 +45,11 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
-import {restoreRun} from 'src/client';
-import {Timestamp, modals} from 'src/webapp_globals';
-import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
+import {Timestamp} from 'src/webapp_globals';
+import {useParticipateInRun} from 'src/hooks';
+import {OVERLAY_DELAY} from 'src/constants';
+import {useOnRestoreRun} from 'src/components/backstage/playbook_runs/playbook_run/restore_run';
+import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -75,6 +83,22 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+
+    const isParticipant = playbookRun.participant_ids.includes(myUser.id);
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined);
+
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: playbookRun.type,
+        channel_id: playbookRun.channel_id,
+        team_id: playbookRun.team_id,
+        owner_user_id: playbookRun.owner_user_id,
+        participant_ids: playbookRun.participant_ids,
+        current_status: playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, myUser.id);
+    const canRestore = useCanRestoreRun(runForPermissions, myUser.id);
 
     const checklists = playbookRun.checklists || [];
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
@@ -181,25 +205,10 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
 
         return ItemButtonsFormat.Long;
     };
-    const active = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.InProgress);
-    const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
+    const active = playbookRun.current_status === PlaybookRunStatus.InProgress;
+    const finished = playbookRun.current_status === PlaybookRunStatus.Finished;
 
-    const handleResume = () => {
-        const confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to resume the checklist?'});
-
-        const onConfirm = async () => {
-            await restoreRun(playbookRun.id);
-        };
-
-        dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
-            show: true,
-            title: formatMessage({defaultMessage: 'Confirm resume checklist'}),
-            message: confirmationMessage,
-            confirmButtonText: formatMessage({defaultMessage: 'Resume checklist'}),
-            onConfirm,
-            onCancel: () => null,
-        })));
-    };
+    const handleResume = useOnRestoreRun(playbookRun, 'rhs');
 
     const checklistsPunchout = useMeasurePunchouts(
         ['pb-checklists-inner-container'],
@@ -218,7 +227,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
             onMouseLeave={() => setShowMenu(false)}
             parentContainer={parentContainer}
         >
-            {playbookRun?.type !== PlaybookRunType.ChannelChecklist && (
+            {playbookRun.type !== PlaybookRunType.ChannelChecklist && (
                 <MainTitleBG numChecklists={checklists.length}>
                     <MainTitle parentContainer={parentContainer}>
                         {title}
@@ -269,7 +278,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 onTaskAdded={onTaskAdded}
             />
             {
-                active && parentContainer === ChecklistParent.RHS && playbookRun &&
+                active && canModify && parentContainer === ChecklistParent.RHS && playbookRun &&
                 <FinishPrompt>
                     <FinishContent>
                         <FinishIconWrapper>
@@ -279,13 +288,10 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                         <FinishRightWrapper>
                             <FinishButton
                                 onClick={() => {
-                                    if (readOnly && onReadOnlyInteract) {
-                                        onReadOnlyInteract();
-                                    } else {
-                                        dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
-                                    }
+                                    dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
                                 }}
                             >
+                                <CheckIcon size={16}/>
                                 {formatMessage({defaultMessage: 'Finish'})}
                             </FinishButton>
                         </FinishRightWrapper>
@@ -293,7 +299,33 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 </FinishPrompt>
             }
             {
-                finished && parentContainer === ChecklistParent.RHS && playbookRun?.type === PlaybookRunType.ChannelChecklist &&
+                active && !isParticipant && parentContainer === ChecklistParent.RHS && playbookRun &&
+                <ParticipatePrompt>
+                    <ParticipateContent>
+                        <ParticipateText>{formatMessage({defaultMessage: 'Join to make changes or interact'})}</ParticipateText>
+                        <ParticipateRightWrapper>
+                            <OverlayTrigger
+                                placement='top'
+                                delay={OVERLAY_DELAY}
+                                overlay={
+                                    <Tooltip id='participate-tooltip'>
+                                        {formatMessage({defaultMessage: 'Join as a participant'})}
+                                    </Tooltip>
+                                }
+                            >
+                                <ParticipateButton
+                                    onClick={showParticipateConfirm}
+                                >
+                                    <AccountPlusOutlineIcon size={16}/>
+                                    {formatMessage({defaultMessage: 'Join'})}
+                                </ParticipateButton>
+                            </OverlayTrigger>
+                        </ParticipateRightWrapper>
+                    </ParticipateContent>
+                </ParticipatePrompt>
+            }
+            {
+                finished && parentContainer === ChecklistParent.RHS && playbookRun &&
                 <FinishedFooter>
                     <FinishedIndicator>
                         <IconWrapper>
@@ -319,11 +351,38 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                             </FinishedTime>
                         </FinishedNotice>
                         <FinishedRightWrapper>
-                            <ResumeButton
-                                onClick={handleResume}
-                            >
-                                {formatMessage({defaultMessage: 'Resume'})}
-                            </ResumeButton>
+                            {canRestore ? (
+                                <ResumeButton
+                                    onClick={handleResume}
+                                    disabled={false}
+                                >
+                                    {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
+                                    }
+                                </ResumeButton>
+                            ) : (
+                                <OverlayTrigger
+                                    placement='top'
+                                    delay={OVERLAY_DELAY}
+                                    overlay={
+                                        <Tooltip id='resume-disabled-tooltip'>
+                                            {playbookRun.type === PlaybookRunType.ChannelChecklist ?
+                                                formatMessage({defaultMessage: 'Join as a participant to resume'}) :
+                                                formatMessage({defaultMessage: 'Join as a participant to restart'})
+                                            }
+                                        </Tooltip>
+                                    }
+                                >
+                                    <ResumeButtonWrapper>
+                                        <ResumeButton
+                                            onClick={handleResume}
+                                            disabled={true}
+                                        >
+                                            {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
+                                            }
+                                        </ResumeButton>
+                                    </ResumeButtonWrapper>
+                                </OverlayTrigger>
+                            )}
                         </FinishedRightWrapper>
                     </FinishedIndicator>
                     <DoneButtonContainer>
@@ -354,6 +413,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                     punchOut={checklistsPunchout}
                 />
             )}
+            {ParticipateConfirmModal}
         </InnerContainer>
     );
 };
@@ -493,6 +553,10 @@ const ResumeButton = styled(TertiaryButton)`
     font-size: 12px;
 `;
 
+const ResumeButtonWrapper = styled.div`
+    display: inline-block;
+`;
+
 const DoneButtonContainer = styled.div`
     display: flex;
     margin: 12px 0 0;
@@ -540,8 +604,53 @@ const FinishRightWrapper = styled.div`
 `;
 
 const FinishButton = styled(TertiaryButton)`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 16px;
+    font-size: 12px;
+`;
+
+const ParticipatePrompt = styled.div`
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    padding-top: 24px;
+`;
+
+const ParticipateContent = styled.div`
+    display: flex;
+    height: 56px;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+`;
+
+const ParticipateText = styled.div`
+    display: flex;
+    margin: 0 12px 0 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    line-height: 20px;
+`;
+
+const ParticipateRightWrapper = styled.div`
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+`;
+
+const ParticipateButton = styled(PrimaryButton)`
+    display: flex;
+    align-items: center;
+    gap: 6px;
     height: 32px;
     font-size: 12px;
+    padding: 0 16px;
 `;
 
 export default RHSChecklistList;

@@ -55,6 +55,8 @@ const RHSRunsQuery = graphql(/* GraphQL */`
                     lastUpdatedAt
                     type
                     currentStatus
+                    channelID
+                    teamID
                     propertyFields {
                         id
                         name

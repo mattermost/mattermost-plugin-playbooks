@@ -16,20 +16,18 @@ export const useOnRestoreRun = (playbookRun: PlaybookRun, location: string = 'ba
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
-    const isChannelChecklist = playbookRun.type === PlaybookRunType.ChannelChecklist;
+    const isChannelChecklist = playbookRun?.type === PlaybookRunType.ChannelChecklist;
 
     return () => {
-        const title = isChannelChecklist ?
-            formatMessage({defaultMessage: 'Confirm resume'}) :
-            formatMessage({defaultMessage: 'Confirm restart'});
-        const message = isChannelChecklist ?
-            formatMessage({defaultMessage: 'Are you sure you want to resume {name}?'}, {name: playbookRun.name}) :
-            formatMessage({defaultMessage: 'Are you sure you want to restart {name}?'}, {name: playbookRun.name});
-        const confirmButtonText = isChannelChecklist ?
-            formatMessage({defaultMessage: 'Resume'}) :
-            formatMessage({defaultMessage: 'Restart'});
+        const title = isChannelChecklist ? formatMessage({defaultMessage: 'Confirm resume'}) : formatMessage({defaultMessage: 'Confirm restart'});
+        const message = isChannelChecklist ? formatMessage({defaultMessage: 'Are you sure you want to resume {name}?'}, {name: playbookRun.name}) : formatMessage({defaultMessage: 'Are you sure you want to restart {name}?'}, {name: playbookRun.name});
+        const confirmButtonText = isChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'});
 
         const onConfirm = async () => {
+            if (!playbookRun) {
+                return;
+            }
+
             await restoreRun(playbookRun.id);
 
             // Only refresh LHS when in Backstage, not in RHS
