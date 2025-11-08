@@ -11,7 +11,6 @@ import {
     CheckAllIcon,
     CheckIcon,
     LinkVariantIcon,
-    PencilOutlineIcon,
     PlayOutlineIcon,
     PlusIcon,
     SortAscendingIcon,
@@ -30,7 +29,7 @@ import {useUpdateRun} from 'src/graphql/hooks';
 import {createPlaybookRun} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
+import {openPlaybookRunModal, openUpdateRunChannelModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -41,6 +40,7 @@ import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
+import Tooltip from 'src/components/widgets/tooltip';
 
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
@@ -61,7 +61,7 @@ interface RunToDisplay {
     numTasksClosed: number
     numTasks: number
     lastUpdatedAt: number
-    type: string
+    type: PlaybookRunType
     currentStatus: string
 }
 
@@ -619,43 +619,26 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                     </IconWrapper>
                     <TitleRow>{props.name}</TitleRow>
                     <Spacer/>
-                    {isPlaybookRun &&
-                        <ContextMenu
-                            playbookID={props.playbookID}
-                            playbookTitle={props.playbook?.title || ''}
-                            playbookRunID={props.id}
-                            teamID={teamId}
-                            canSeePlaybook={Boolean(props.playbook?.title)}
-                            canEditRun={canEditRun}
-                            onUpdateName={(newName) => {
-                                updateRun({name: newName});
-                            }}
-                            onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                                setRemoved(true);
-                                setMovedChannel({
-                                    channelId: newChannelId,
-                                    channelName: newChannelName,
-                                });
-                            }}
-                        />
-                    }
-                    {!isPlaybookRun &&
-                        <ChannelChecklistContextMenu
-                            playbookRunID={props.id}
-                            teamID={teamId}
-                            canEditRun={canEditRun}
-                            onUpdateName={(newName) => {
-                                updateRun({name: newName});
-                            }}
-                            onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                                setRemoved(true);
-                                setMovedChannel({
-                                    channelId: newChannelId,
-                                    channelName: newChannelName,
-                                });
-                            }}
-                        />
-                    }
+                    <ContextMenu
+                        runType={props.type}
+                        playbookID={props.playbookID}
+                        playbookTitle={props.playbook?.title || ''}
+                        playbookRunID={props.id}
+                        teamID={teamId}
+                        canSeePlaybook={Boolean(props.playbook?.title)}
+                        canEditRun={canEditRun}
+                        onClick={props.onClick}
+                        onUpdateName={(newName) => {
+                            updateRun({name: newName});
+                        }}
+                        onUpdateChannel={(newChannelId: string, newChannelName: string) => {
+                            setRemoved(true);
+                            setMovedChannel({
+                                channelId: newChannelId,
+                                channelName: newChannelName,
+                            });
+                        }}
+                    />
                 </CardTitleContainer>
                 {isPlaybookRun &&
                     <PeopleRow>
@@ -687,12 +670,20 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         )}
                     </LastUpdatedText>
                     {props.playbook && isPlaybookRun &&
-                        <PlaybookChip>
-                            <StyledBookOutlineIcon
-                                size={11}
-                            />
-                            <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
-                        </PlaybookChip>
+                        <Tooltip
+                            id={`playbook-chip-${props.id}`}
+                            content={formatMessage(
+                                {defaultMessage: 'Checklist created from {playbook} playbook'},
+                                {playbook: props.playbook.title}
+                            )}
+                        >
+                            <PlaybookChip>
+                                <StyledBookOutlineIcon
+                                    size={11}
+                                />
+                                <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
+                            </PlaybookChip>
+                        </Tooltip>
                     }
                 </InfoRow>
             </CardContainer>
@@ -845,7 +836,7 @@ const StyledDotMenuButton = styled(DotMenuButton)`
 
 const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     display: flex;
-    align-content: center;
+    align-items: center;
 `;
 
 const Separator = styled.hr`
@@ -859,6 +850,9 @@ const Separator = styled.hr`
 const IconWrapper = styled.div<{$margin?: string}>`
     margin-right: ${({$margin}) => ($margin || '11px')};
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    svg {
+        vertical-align: middle;
+    }
 `;
 
 interface NoRunsProps {
@@ -932,20 +926,23 @@ const StyledClipboardChecklist = styled(ClipboardChecklist)`
 `;
 
 interface ContextMenuProps {
-    playbookID: string;
+    runType: PlaybookRunType;
+    playbookID?: string;
     teamID: string;
     playbookRunID: string;
-    playbookTitle: string;
-    canSeePlaybook: boolean;
+    playbookTitle?: string;
+    canSeePlaybook?: boolean;
     canEditRun: boolean;
+    onClick: () => void;
     onUpdateChannel: (channelId: string, channelName: string) => void;
     onUpdateName: (name: string) => void;
 }
 const ContextMenu = (props: ContextMenuProps) => {
     const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
     const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
-    const playbookURL = `/playbooks/${props.playbookID}`;
+    const playbookURL = props.playbookID ? `/playbooks/${props.playbookID}` : '';
+
+    const isPlaybookRun = props.runType === PlaybookRunType.Playbook;
 
     return (
         <DotMenu
@@ -953,34 +950,19 @@ const ContextMenu = (props: ContextMenuProps) => {
             placement='bottom-start'
             icon={<ThreeDotsIcon/>}
         >
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.Playbook, props.onUpdateChannel))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this'})}
-            >
+            <StyledDropdownMenuItem onClick={props.onClick}>
                 <IconWrapper>
-                    <LinkVariantIcon size={22}/>
+                    {isPlaybookRun ? <PlayOutlineIcon size={22}/> : <CheckAllIcon size={22}/>}
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Link to a different channel'/>
+                <FormattedMessage defaultMessage='Open'/>
             </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.onUpdateName))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this'})}
-            >
-                <IconWrapper>
-                    <PencilOutlineIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Rename'/>
-            </StyledDropdownMenuItem>
-            <Separator/>
             <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                 <IconWrapper>
-                    <PlayOutlineIcon size={22}/>
+                    {isPlaybookRun ? <PlayOutlineIcon size={22}/> : <CheckAllIcon size={22}/>}
                 </IconWrapper>
                 <FormattedMessage defaultMessage='Go to overview'/>
             </StyledDropdownMenuItem>
-            {props.playbookID && props.canSeePlaybook && (
+            {isPlaybookRun && props.playbookID && props.canSeePlaybook && (
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
                     <RowContainer>
                         <ColContainer>
@@ -993,47 +975,19 @@ const ContextMenu = (props: ContextMenuProps) => {
                     </RowContainer>
                 </StyledDropdownMenuItem>
             )}
-        </DotMenu>
-    );
-};
-
-interface ChannelChecklistContextMenuProps {
-    teamID: string;
-    playbookRunID: string;
-    canEditRun: boolean;
-    onUpdateChannel: (channelId: string, channelName: string) => void;
-    onUpdateName: (name: string) => void;
-}
-const ChannelChecklistContextMenu = (props: ChannelChecklistContextMenuProps) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-
-    return (
-        <DotMenu
-            dotMenuButton={StyledDotMenuButton}
-            placement='bottom-start'
-            icon={<ThreeDotsIcon/>}
-        >
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.ChannelChecklist, props.onUpdateChannel))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this checklist'})}
-            >
-                <IconWrapper>
-                    <LinkVariantIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Link checklist to a different channel'/>
-            </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.onUpdateName))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this checklist'})}
-            >
-                <IconWrapper>
-                    <PencilOutlineIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Rename checklist'/>
-            </StyledDropdownMenuItem>
+            {props.canEditRun && (
+                <>
+                    <Separator/>
+                    <StyledDropdownMenuItem
+                        onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, props.runType, props.onUpdateChannel))}
+                    >
+                        <IconWrapper>
+                            <LinkVariantIcon size={22}/>
+                        </IconWrapper>
+                        <FormattedMessage defaultMessage='Move to a different channel'/>
+                    </StyledDropdownMenuItem>
+                </>
+            )}
         </DotMenu>
     );
 };

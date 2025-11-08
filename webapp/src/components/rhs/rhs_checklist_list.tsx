@@ -6,12 +6,12 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
 import {GlobalState} from '@mattermost/types/store';
+import {FlagCheckeredIcon, FlagOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -34,13 +34,14 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import ChecklistList from 'src/components/checklist/checklist_list';
-
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
-
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {restoreRun} from 'src/client';
+import {Timestamp, modals} from 'src/webapp_globals';
+import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -50,6 +51,7 @@ interface Props {
     onReadOnlyInteract?: () => void
     autoAddTask?: boolean;
     onTaskAdded?: () => void;
+    onBackClick?: () => void;
 }
 
 export enum ChecklistParent {
@@ -57,37 +59,15 @@ export enum ChecklistParent {
     RunDetails = 'run_details',
 }
 
-const StyledTertiaryButton = styled(TertiaryButton)`
-    display: inline-block;
-    margin: 12px 0;
-`;
-
 const StyledPrimaryButton = styled(PrimaryButton)`
     display: inline-block;
     margin: 12px 0;
 `;
 
-const allComplete = (checklists: Checklist[]) => {
-    return notFinishedTasks(checklists) === 0;
-};
-
-const notFinishedTasks = (checklists: Checklist[]) => {
-    let count = 0;
-    for (const list of checklists) {
-        for (const item of list.items) {
-            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
-                count++;
-            }
-        }
-    }
-    return count;
-};
-
-const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const channelId = useSelector(getCurrentChannelId);
-    const stateKey = parentContainer + '_' + (parentContainer === ChecklistParent.RHS ? channelId : playbookRun.id);
+    const stateKey = parentContainer + '_' + playbookRun.id;
     const allCollapsed = useSelector(currentChecklistAllCollapsed(stateKey));
     const checklistsState = useSelector(currentChecklistCollapsedState(stateKey));
     const checklistItemsFilter = useSelector((state) => currentChecklistItemsFilter(state as GlobalState, stateKey));
@@ -201,8 +181,25 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
 
         return ItemButtonsFormat.Long;
     };
-    const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.InProgress);
+    const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
+
+    const handleResume = () => {
+        const confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to resume the checklist?'});
+
+        const onConfirm = async () => {
+            await restoreRun(playbookRun.id);
+        };
+
+        dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
+            show: true,
+            title: formatMessage({defaultMessage: 'Confirm resume checklist'}),
+            message: confirmationMessage,
+            confirmButtonText: formatMessage({defaultMessage: 'Resume checklist'}),
+            onConfirm,
+            onCancel: () => null,
+        })));
+    };
 
     const checklistsPunchout = useMeasurePunchouts(
         ['pb-checklists-inner-container'],
@@ -249,9 +246,9 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                                     placement='bottom-end'
                                     dotMenuButton={StyledDotMenuButton}
                                     icon={
-                                        <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
+                                        <FilterIconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
                                             <i className='icon icon-filter-variant'/>
-                                        </IconWrapper>
+                                        </FilterIconWrapper>
                                     }
                                 />
                             </HoverRow>
@@ -273,17 +270,74 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
             />
             {
                 active && parentContainer === ChecklistParent.RHS && playbookRun &&
-                <FinishButton
-                    onClick={() => {
-                        if (readOnly && onReadOnlyInteract) {
-                            onReadOnlyInteract();
-                        } else {
-                            dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
-                        }
-                    }}
-                >
-                    {formatMessage({defaultMessage: 'Finish'})}
-                </FinishButton>
+                <FinishPrompt>
+                    <FinishContent>
+                        <FinishIconWrapper>
+                            <FlagOutlineIcon size={24}/>
+                        </FinishIconWrapper>
+                        <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
+                        <FinishRightWrapper>
+                            <FinishButton
+                                onClick={() => {
+                                    if (readOnly && onReadOnlyInteract) {
+                                        onReadOnlyInteract();
+                                    } else {
+                                        dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
+                                    }
+                                }}
+                            >
+                                {formatMessage({defaultMessage: 'Finish'})}
+                            </FinishButton>
+                        </FinishRightWrapper>
+                    </FinishContent>
+                </FinishPrompt>
+            }
+            {
+                finished && parentContainer === ChecklistParent.RHS && playbookRun?.type === PlaybookRunType.ChannelChecklist &&
+                <FinishedFooter>
+                    <FinishedIndicator>
+                        <IconWrapper>
+                            <FlagCheckeredIcon size={34}/>
+                        </IconWrapper>
+                        <FinishedNotice>
+                            <FinishedPretext>
+                                {formatMessage({defaultMessage: 'Finished'})}
+                            </FinishedPretext>
+                            <FinishedTime>
+                                <Timestamp
+                                    value={DateTime.fromMillis(playbookRun.end_at).toJSDate()}
+                                    units={[
+                                        {within: ['second', -45], display: formatMessage({defaultMessage: 'just now'})},
+                                        ['minute', -59],
+                                        ['hour', -48],
+                                        ['day', -30],
+                                        ['month', -12],
+                                        'year',
+                                    ]}
+                                    useTime={false}
+                                />
+                            </FinishedTime>
+                        </FinishedNotice>
+                        <FinishedRightWrapper>
+                            <ResumeButton
+                                onClick={handleResume}
+                            >
+                                {formatMessage({defaultMessage: 'Resume'})}
+                            </ResumeButton>
+                        </FinishedRightWrapper>
+                    </FinishedIndicator>
+                    <DoneButtonContainer>
+                        <StyledPrimaryButton
+                            onClick={() => {
+                                if (onBackClick) {
+                                    onBackClick();
+                                }
+                            }}
+                        >
+                            {formatMessage({defaultMessage: 'Done'})}
+                        </StyledPrimaryButton>
+                    </DoneButtonContainer>
+                </FinishedFooter>
             }
             {showRunDetailsChecklistsStep && (
                 <TutorialTourTip
@@ -309,10 +363,10 @@ const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
     z-index: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    flex: 1;
 
     ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && css`
-        /* in playbook editor*/
+        /* in playbook editor */
         padding: 0 12px 24px;
 
     `};
@@ -352,7 +406,7 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     height: 28px;
 `;
 
-const IconWrapper = styled.div`
+const FilterIconWrapper = styled.div`
     padding: 3px 0 0 1px;
     margin: 0;
 `;
@@ -370,6 +424,124 @@ const OverdueTasksToggle = styled.div<{toggled: boolean}>`
     font-weight: 600;
     line-height: 16px;
     user-select: none;
+`;
+
+const FinishedFooter = styled.div`
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    padding-top: 24px;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        var(--center-channel-bg) 20%,
+        var(--center-channel-bg) 100%
+    );
+    padding-bottom: 12px;
+    z-index: 10;
+`;
+
+const FinishedIndicator = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+    background-color: var(--center-channel-bg);
+`;
+
+const IconWrapper = styled.span`
+    display: flex;
+    width: 48px;
+    align-items: center;
+    justify-content: center;
+`;
+
+const FinishedNotice = styled.div`
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin-left: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 12px;
+    line-height: 16px;
+`;
+
+const FinishedPretext = styled.div`
+    font-weight: 400;
+`;
+
+const FinishedTime = styled.div`
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+`;
+
+const FinishedRightWrapper = styled.div`
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+    align-items: center;
+`;
+
+const ResumeButton = styled(TertiaryButton)`
+    height: 32px;
+    padding: 0 20px;
+    font-size: 12px;
+`;
+
+const DoneButtonContainer = styled.div`
+    display: flex;
+    margin: 12px 0 0;
+
+    button {
+        width: 100%;
+    }
+`;
+
+const FinishPrompt = styled.div`
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    padding-top: 24px;
+`;
+
+const FinishContent = styled.div`
+    display: flex;
+    height: 56px;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+`;
+
+const FinishIconWrapper = styled.div`
+    display: flex;
+    margin-left: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.32);
+`;
+
+const FinishText = styled.div`
+    display: flex;
+    margin: 0 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 14px;
+    line-height: 20px;
+`;
+
+const FinishRightWrapper = styled.div`
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+`;
+
+const FinishButton = styled(TertiaryButton)`
+    height: 32px;
+    font-size: 12px;
 `;
 
 export default RHSChecklistList;
@@ -448,7 +620,7 @@ const makeFilterOptions = (filter: ChecklistItemsFilter, name: string): Checkbox
 // isLastCheckedValueInBottomCategory returns true only if this value is in the bottom category and
 // it is the last checked value. We don't want to allow the user to deselect all the options in
 // the bottom category.
-const isLastCheckedValueInBottomCategory = (value: string, nextState: boolean, filter: ChecklistItemsFilter) => {
+const isLastCheckedValueInBottomCategory = (value: string, _nextState: boolean, filter: ChecklistItemsFilter) => {
     const inBottomCategory = (val: string) => val === 'me' || val === 'unassigned' || val === 'others';
     if (!inBottomCategory(value)) {
         return false;

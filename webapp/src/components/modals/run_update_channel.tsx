@@ -5,12 +5,11 @@ import React, {ComponentProps, useEffect, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import GenericModal, {InlineLabel, ModalSubheading} from 'src/components/widgets/generic_modal';
+import GenericModal, {Description, InlineLabel} from 'src/components/widgets/generic_modal';
 import {useRun} from 'src/hooks';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
 const ID = 'playbook_run_update';
 
@@ -36,7 +35,6 @@ const UpdateRunModal = ({
     const [channelId, setChannelId] = useState('');
     const [channelName, setChannelName] = useState('');
     const [run] = useRun(playbookRunId);
-    const isPlaybookRun = run?.type === PlaybookRunType.Playbook;
 
     useEffect(() => {
         if (run) {
@@ -54,15 +52,15 @@ const UpdateRunModal = ({
             id={ID}
             modalHeaderText={
                 <Header>
-                    {isPlaybookRun ? formatMessage({defaultMessage: 'Link run to a different channel'}) : formatMessage({defaultMessage: 'Link checklist to a different channel'})}
-                    <ModalSubheading>
-                        {run?.name}
-                    </ModalSubheading>
+                    {formatMessage({defaultMessage: 'Move to a different channel'})}
                 </Header>
             }
             {...modalProps}
         >
             <Body>
+                <Description>
+                    {formatMessage({defaultMessage: 'Are you sure you want to move {name} to a different channel?'}, {name: run?.name})}
+                </Description>
                 <InlineLabel>{formatMessage({defaultMessage: 'Select channel'})}</InlineLabel>
                 <StyledChannelSelector
                     id={'link_existing_channel_selector'}

@@ -1,187 +1,106 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React from 'react';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
+import {useIntl} from 'react-intl';
 
-import {GlobalState} from '@mattermost/types/store';
-import General from 'mattermost-redux/constants/general';
-import Permissions from 'mattermost-redux/constants/permissions';
-import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {FormattedMessage} from 'react-intl';
-
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
-import {useClickOutsideRef} from 'src/hooks/general';
+import {ContextMenu, CONTEXT_MENU_LOCATION} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
+import {Role} from 'src/components/backstage/playbook_runs/shared';
+import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
+import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
 interface Props {
+    playbookRun: PlaybookRun;
     onEdit: (newTitle: string) => void;
-    value: string;
-    renderedTitle?: ReturnType<typeof styled.div>;
-    status: PlaybookRunStatus;
+    isFavoriteRun: boolean;
+    isFollowing: boolean;
+    hasPermanentViewerAccess: boolean;
+    toggleFavorite: () => void;
 }
 
-const TitleWrapper = styled.div`
-    display: flex;
-`;
-
-const StatusBadgeWrapper = styled(StatusBadge) `
-    top: -3px;
-    margin-right: 75px;
-`;
-
 const RHSAboutTitle = (props: Props) => {
-    const [editing, setEditing] = useState(false);
-    const [editedValue, setEditedValue] = useState(props.value);
-    const permissionToChangeTitle = useSelector(hasPermissionsToChangeChannelName);
+    const {formatMessage} = useIntl();
+    const currentUserId = useSelector(getCurrentUserId);
 
-    const invalidValue = editedValue.length < 2;
-
-    const inputRef = useRef(null);
-
-    useEffect(() => {
-        setEditedValue(props.value);
-    }, [props.value]);
-
-    const saveAndClose = () => {
-        if (!invalidValue && permissionToChangeTitle) {
-            props.onEdit(editedValue);
-            setEditing(false);
-        }
-    };
-
-    const discardAndClose = () => {
-        setEditedValue(props.value);
-        setEditing(false);
-    };
-
-    let onRenderedTitleClick = () => { /* do nothing */};
-    if (permissionToChangeTitle) {
-        onRenderedTitleClick = () => {
-            const selectedText = window.getSelection();
-            const hasSelectedText = selectedText !== null && selectedText.toString() !== '';
-            if (!hasSelectedText) {
-                setEditing(true);
-            }
-        };
-    }
-
-    useClickOutsideRef(inputRef, saveAndClose);
-
-    if (!editing) {
-        const RenderedTitle = props.renderedTitle ?? DefaultRenderedTitle;
-
-        return (
-            <TitleWrapper>
-                <RenderedTitle
-                    onClick={onRenderedTitleClick}
-                    data-testid='rendered-run-name'
-                >
-                    {editedValue}
-                </RenderedTitle>
-                {props.status === PlaybookRunStatus.Finished &&
-                    <StatusBadgeWrapper status={BadgeType.Finished}/>
-                }
-            </TitleWrapper>
-        );
-    }
+    // Determine role
+    const isParticipant = props.playbookRun.participant_ids.includes(currentUserId);
+    const role = isParticipant ? Role.Participant : Role.Viewer;
 
     return (
-        <>
-            <TitleInput
-                data-testid='textarea-run-name'
-                type={'text'}
-                ref={inputRef}
-                onChange={(e) => setEditedValue(e.target.value)}
-                value={editedValue}
-                maxLength={59}
-                autoFocus={true}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                        saveAndClose();
-                    } else if (e.key === 'Escape') {
-                        discardAndClose();
+        <TitleWrapper>
+            <TextEdit
+                disabled={props.playbookRun.current_status !== PlaybookRunStatus.InProgress}
+                placeholder={formatMessage({defaultMessage: 'Run name'})}
+                value={props.playbookRun.name}
+                onSave={(name: string) => props.onEdit(name)}
+                editStyles={css`
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    width: 100%;
+
+                    input {
+                        ${SemiBoldHeading};
+                        font-size: 18px;
+                        line-height: 24px;
+                        color: var(--center-channel-color);
+                        height: 30px;
+                        width: 100%;
+                        padding: 0 8px;
+                        border-radius: 5px;
+                        border: none;
+                        background: rgba(var(--center-channel-color-rgb), 0.04);
+                        margin-bottom: 0;
                     }
-                }}
-                onBlur={saveAndClose}
-                onFocus={(e) => {
-                    const val = e.target.value;
-                    e.target.value = '';
-                    e.target.value = val;
-                }}
-            />
-            {invalidValue &&
-            <ErrorMessage>
-                <FormattedMessage defaultMessage='Name must have at least two characters'/>
-            </ErrorMessage>
-            }
-        </>
+                    ${CancelSaveContainer} {
+                        padding: 0;
+                        margin-top: 8px;
+                        align-self: flex-end;
+                    }
+                    ${PrimaryButton}, ${TertiaryButton} {
+                        height: 28px;
+                    }
+                `}
+            >
+                {(edit: () => void) => (
+                    <>
+                        <ContextMenu
+                            playbookRun={props.playbookRun}
+                            role={role}
+                            onRenameClick={edit}
+                            isFavoriteRun={props.isFavoriteRun}
+                            isFollowing={props.isFollowing}
+                            toggleFavorite={props.toggleFavorite}
+                            hasPermanentViewerAccess={props.hasPermanentViewerAccess}
+                            location={CONTEXT_MENU_LOCATION.RHS}
+                        />
+                        {props.playbookRun.current_status === PlaybookRunStatus.Finished &&
+                            <StatusBadgeWrapper status={BadgeType.Finished}/>
+                        }
+                    </>
+                )}
+            </TextEdit>
+        </TitleWrapper>
     );
 };
 
-const hasPermissionsToChangeChannelName = (state: GlobalState) => {
-    const channel = getCurrentChannel(state);
-    if (!channel) {
-        return false;
-    }
-
-    const permission = channel.type === General.OPEN_CHANNEL ? Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES : Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES;
-
-    return haveIChannelPermission(state, channel.team_id, channel.id, permission);
-};
-
-const TitleInput = styled.input`
-    width: calc(100% - 75px);
-    height: 30px;
-    padding: 4px 8px;
-    border: none;
-    border-radius: 5px;
-    margin-top: -3px;
-    margin-bottom: 5px;
-    background: rgba(var(--center-channel-color-rgb), 0.04);
-    box-shadow: none;
-    color: var(--center-channel-color);
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 24px;
-
-    &:focus {
-        box-shadow: none;
-    }
+const TitleWrapper = styled.div`
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
 `;
 
-const ErrorMessage = styled.div`
-    margin-bottom: 12px;
+const StatusBadgeWrapper = styled(StatusBadge)`
+    top: -3px;
     margin-left: 8px;
-    color: var(--dnd-indicator);
-    font-size: 12px;
-    line-height: 16px;
-`;
-
-export const DefaultRenderedTitle = styled.div`
-    ${SemiBoldHeading};
-
-    padding: 0 8px;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    height: 30px;
-    line-height: 24px;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--center-channel-color);
-
-    &:hover {
-        cursor: text;
-    }
-
-    border-radius: 5px;
-    margin-bottom: 2px;
 `;
 
 export default RHSAboutTitle;

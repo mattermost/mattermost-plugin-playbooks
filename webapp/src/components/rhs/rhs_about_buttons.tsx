@@ -16,8 +16,6 @@ import {usePlaybookName} from 'src/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
-    collapsed: boolean;
-    toggleCollapsed: () => void;
     editSummary: () => void;
     readOnly?: boolean;
 }
@@ -31,19 +29,6 @@ const RHSAboutButtons = (props: Props) => {
 
     return (
         <>
-            <ExpandCollapseButton
-                title={props.collapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
-                className={(props.collapsed ? 'icon-chevron-down' : 'icon-chevron-up') + ' icon-16 btn-icon'}
-                tabIndex={0}
-                role={'button'}
-                onClick={props.toggleCollapsed}
-                onKeyDown={(e) => {
-                    // Handle Enter and Space as clicking on the button
-                    if (e.keyCode === 13 || e.keyCode === 32) {
-                        props.toggleCollapsed();
-                    }
-                }}
-            />
             <DotMenu
                 icon={<ThreeDotsIcon/>}
                 placement='bottom-end'
@@ -93,10 +78,6 @@ const RHSAboutButtons = (props: Props) => {
 const StyledDotMenuButton = styled(DotMenuButton)`
     width: 28px;
     height: 28px;
-`;
-
-const ExpandCollapseButton = styled(HoverMenuButton)`
-    margin-left: 2px;
 `;
 
 const ThreeDotsIcon = styled(HamburgerButton)`

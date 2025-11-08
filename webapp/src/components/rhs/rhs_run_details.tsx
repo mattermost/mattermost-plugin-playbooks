@@ -171,14 +171,12 @@ const RHSRunDetails = (props: Props) => {
                         renderView={renderView}
                         style={{position: 'absolute'}}
                     >
-                        {playbookRun.type !== PlaybookRunType.ChannelChecklist && (
-                            <RHSAbout
-                                playbookRun={playbookRun}
-                                readOnly={readOnly}
-                                onReadOnlyInteract={onReadOnlyInteract}
-                                setShowParticipants={setShowParticipants}
-                            />
-                        )}
+                        <RHSAbout
+                            playbookRun={playbookRun}
+                            readOnly={readOnly}
+                            onReadOnlyInteract={onReadOnlyInteract}
+                            setShowParticipants={setShowParticipants}
+                        />
                         <RHSChecklistList
                             playbookRun={playbookRun}
                             parentContainer={ChecklistParent.RHS}
@@ -186,6 +184,7 @@ const RHSRunDetails = (props: Props) => {
                             onReadOnlyInteract={onReadOnlyInteract}
                             autoAddTask={props.autoAddTask}
                             onTaskAdded={props.onTaskAdded}
+                            onBackClick={props.onBackClick}
                         />
                     </Scrollbars>
                 </RHSContent>
