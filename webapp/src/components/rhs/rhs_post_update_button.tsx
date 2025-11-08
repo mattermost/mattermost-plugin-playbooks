@@ -44,6 +44,8 @@ const PostUpdateButtonCommon = css<CollapsedProps>`
     justify-content: center;
     flex: 1;
     ${({collapsed}) => collapsed && css`
+        height: 32px;
+        padding: 0 16px;
         font-size: 12px;
     `};
 `;
