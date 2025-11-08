@@ -148,11 +148,11 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                 testId={'search-filter'}
                 default={fetchParams.search_term}
                 onSearch={onSearch}
-                placeholder={formatMessage({defaultMessage: 'Search by run name'})}
+                placeholder={formatMessage({defaultMessage: 'Search'})}
             />
             <CheckboxInput
                 testId={'my-runs-only'}
-                text={formatMessage({defaultMessage: 'My runs only'})}
+                text={formatMessage({defaultMessage: 'Mine only'})}
                 checked={myRunsOnly}
                 onChange={setMyRunsOnly}
             />
@@ -164,12 +164,14 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                     onChange={setFinishedRuns}
                 />
             }
-            <CheckboxInput
-                testId={'include-checklists'}
-                text={formatMessage({defaultMessage: 'Include checklists'})}
-                checked={(fetchParams.types?.length ?? 1) > 1}
-                onChange={setIncludeChecklists}
-            />
+            {!fixedPlaybook &&
+                <CheckboxInput
+                    testId={'include-checklists'}
+                    text={formatMessage({defaultMessage: 'Include checklists'})}
+                    checked={(fetchParams.types?.length ?? 1) > 1}
+                    onChange={setIncludeChecklists}
+                />
+            }
             <ProfileSelector
                 testId={'owner-filter'}
                 selectedUserId={fetchParams.owner_user_id}
