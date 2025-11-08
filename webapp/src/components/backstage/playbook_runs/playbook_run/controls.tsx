@@ -15,12 +15,11 @@ import {
 } from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
-import {ShowRunActionsModal} from 'src/types/actions';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {copyToClipboard} from 'src/utils';
 
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';
@@ -74,7 +73,7 @@ export const RenameRunItem = (props: {onClick: () => void, playbookRun: Playbook
                 onClick={props.onClick}
             >
                 <PencilOutlineIcon size={18}/>
-                <FormattedMessage defaultMessage='Rename run'/>
+                <FormattedMessage defaultMessage='Rename'/>
             </StyledDropdownMenuItem>
         );
     }
@@ -102,7 +101,7 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
                 <StyledDropdownMenuItemRed onClick={props.showLeaveRunConfirm}>
                     <CloseIcon size={18}/>
                     <FormattedMessage
-                        defaultMessage='Leave {isFollowing, select, true { and unfollow } other {}}run'
+                        defaultMessage='Leave{isFollowing, select, true { and unfollow} other {}}'
                         values={{isFollowing}}
                     />
                 </StyledDropdownMenuItemRed>
@@ -113,15 +112,13 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
     return null;
 };
 
-export const RunActionsMenuItem = (props: {showRunActionsModal(): ShowRunActionsModal}) => {
-    const dispatch = useDispatch();
-
+export const RunActionsMenuItem = (props: {onClick: () => void}) => {
     return (
         <StyledDropdownMenuItem
-            onClick={() => dispatch(props.showRunActionsModal())}
+            onClick={props.onClick}
         >
             <LightningBoltOutlineIcon size={18}/>
-            <FormattedMessage defaultMessage='Run actions'/>
+            <FormattedMessage defaultMessage='Actions'/>
         </StyledDropdownMenuItem>
     );
 };
@@ -141,8 +138,8 @@ export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportCli
     );
 };
 
-export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const onFinishRun = useOnFinishRun(props.playbookRun);
+export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
+    const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
 
     if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
         return (
@@ -152,7 +149,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role})
                     onClick={onFinishRun}
                 >
                     <FlagOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Finish run'/>
+                    <FormattedMessage defaultMessage='Finish'/>
                 </StyledDropdownMenuItem>
             </>
         );
@@ -182,8 +179,9 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
     );
 };
 
-export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const onRestoreRun = useOnRestoreRun(props.playbookRun);
+export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
+    const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
+    const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
 
     if (!playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
         return (
@@ -194,7 +192,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
                     className='restartRun'
                 >
                     <FlagOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Restart run'/>
+                    {isChannelChecklist ? <FormattedMessage defaultMessage='Resume'/> : <FormattedMessage defaultMessage='Restart'/>}
                 </StyledDropdownMenuItem>
             </>
         );
