@@ -6,6 +6,7 @@ package app
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -438,6 +439,36 @@ func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, r
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
+	// For channelChecklists, use channel-based permissions
+	if p.isChannelChecklist(run) {
+		// Cannot modify checklists in archived channels
+		if p.isChannelArchived(run.ChannelID) {
+			return errors.Wrap(ErrNoPermissions, "cannot modify checklist in archived channel")
+		}
+
+		// Allow modification if user can post in channel
+		if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionCreatePost) {
+			return nil
+		}
+
+		// Grace period for owner: allow access for 5 minutes after channel removal
+		if run.OwnerUserID == userID {
+			gracePeriodSeconds := int64(300) // 5 minutes
+			timeSinceUpdate := time.Now().Unix() - run.UpdateAt/1000
+			if timeSinceUpdate < gracePeriodSeconds {
+				logrus.WithFields(logrus.Fields{
+					"user_id":   userID,
+					"run_id":    run.ID,
+					"time_left": gracePeriodSeconds - timeSinceUpdate,
+				}).Warn("Owner modifying channelChecklist after channel removal (grace period)")
+				return nil
+			}
+		}
+
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to modify channelChecklist `%s`", userID, run.ID)
+	}
+
+	// For playbook-based runs, use existing logic
 	if run.OwnerUserID == userID {
 		return nil
 	}
@@ -465,6 +496,31 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
+	// For channelChecklists, use channel-based permissions
+	if p.isChannelChecklist(run) {
+		// Check if user has permission to read the channel
+		if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
+			return nil
+		}
+
+		// Grace period for owner: allow access for 5 minutes after channel removal
+		if run.OwnerUserID == userID {
+			gracePeriodSeconds := int64(300) // 5 minutes
+			timeSinceUpdate := time.Now().Unix() - run.UpdateAt/1000
+			if timeSinceUpdate < gracePeriodSeconds {
+				logrus.WithFields(logrus.Fields{
+					"user_id":   userID,
+					"run_id":    runID,
+					"time_left": gracePeriodSeconds - timeSinceUpdate,
+				}).Warn("Owner accessing channelChecklist after channel removal (grace period)")
+				return nil
+			}
+		}
+
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have channel access to view channelChecklist `%s`", userID, runID)
+	}
+
+	// For playbook-based runs, use existing logic
 	// Has permission if is the owner of the run
 	if run.OwnerUserID == userID {
 		return nil
@@ -570,4 +626,19 @@ func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo
 		IsAdmin: isAdmin,
 		IsGuest: isGuest,
 	}, nil
+}
+
+// isChannelChecklist returns true if the run is a channelChecklist (not created from a playbook)
+func (p *PermissionsService) isChannelChecklist(run *PlaybookRun) bool {
+	return run.Type == RunTypeChannelChecklist && run.PlaybookID == ""
+}
+
+// isChannelArchived returns true if the channel has been archived/deleted
+func (p *PermissionsService) isChannelArchived(channelID string) bool {
+	channel, err := p.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to get channel")
+		return false
+	}
+	return channel.DeleteAt > 0
 }
