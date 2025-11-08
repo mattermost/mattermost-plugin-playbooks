@@ -19,6 +19,7 @@ interface DescriptionProps {
     editingItem: boolean;
     showDescription: boolean;
     onSave?: () => void;
+    onSaveAndAddNew?: () => void;
 }
 
 const ChecklistItemDescription = (props: DescriptionProps) => {
@@ -27,9 +28,13 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
     const id = useUniqueId('editabletext-markdown-textbox');
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && props.onSave) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
-            props.onSave();
+            if (props.onSaveAndAddNew) {
+                props.onSaveAndAddNew();
+            } else if (props.onSave) {
+                props.onSave();
+            }
         }
     };
 

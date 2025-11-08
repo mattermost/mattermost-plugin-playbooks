@@ -9,8 +9,7 @@ import {useIntl} from 'react-intl';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
-import {ContextMenu, CONTEXT_MENU_LOCATION} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
+import {CONTEXT_MENU_LOCATION, ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
 import TextEdit from 'src/components/text_edit';
@@ -82,9 +81,6 @@ const RHSAboutTitle = (props: Props) => {
                             hasPermanentViewerAccess={props.hasPermanentViewerAccess}
                             location={CONTEXT_MENU_LOCATION.RHS}
                         />
-                        {props.playbookRun.current_status === PlaybookRunStatus.Finished &&
-                            <StatusBadgeWrapper status={BadgeType.Finished}/>
-                        }
                     </>
                 )}
             </TextEdit>
@@ -96,11 +92,6 @@ const TitleWrapper = styled.div`
     display: flex;
     align-items: center;
     margin-bottom: 6px;
-`;
-
-const StatusBadgeWrapper = styled(StatusBadge)`
-    top: -3px;
-    margin-left: 8px;
 `;
 
 export default RHSAboutTitle;

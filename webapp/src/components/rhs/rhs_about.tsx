@@ -180,7 +180,7 @@ const RHSAbout = (props: Props) => {
                     </ShowMoreButton>
                     <ShowMoreLine/>
                 </ShowMoreContainer>
-                {props.playbookRun.status_update_enabled && (
+                {props.playbookRun.status_update_enabled && props.playbookRun.current_status !== PlaybookRunStatus.Finished && (
                     <PostUpdateSection>
                         <RHSPostUpdate
                             readOnly={props.readOnly}
