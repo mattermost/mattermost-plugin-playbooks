@@ -37,6 +37,7 @@ import {
     RenameRunItem,
     RestoreRunMenuItem,
     RunActionsMenuItem,
+    SaveAsPlaybookMenuItem,
     ToggleRunStatusUpdateMenuItem,
 } from './controls';
 
@@ -126,6 +127,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 <ExportChannelLogsMenuItem
                     channelId={playbookRun.channel_id}
                     setShowModal={setShowExportModal}
+                />
+                <SaveAsPlaybookMenuItem
+                    playbookRun={playbookRun}
                 />
                 <FinishRunMenuItem
                     playbookRun={playbookRun}

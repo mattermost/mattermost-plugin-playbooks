@@ -3,6 +3,7 @@
 
 import {
     ArrowDownIcon,
+    BookOutlineIcon,
     BullhornOutlineIcon,
     CloseIcon,
     FlagOutlineIcon,
@@ -17,9 +18,11 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {GlobalState} from '@mattermost/types/store';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
-import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
+import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {copyToClipboard} from 'src/utils';
@@ -28,6 +31,7 @@ import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
+import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
@@ -296,5 +300,53 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                 </>
             }
         </>
+    );
+};
+
+export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
+    const {formatMessage} = useIntl();
+    const {create} = usePlaybooksRouting();
+    const channel = useSelector((state: GlobalState) => getChannel(state, props.playbookRun.channel_id));
+
+    const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
+
+    const handleSaveAsPlaybook = () => {
+        // Sanitize checklists by removing IDs and using newChecklistItem helper
+        const sanitizedChecklists = props.playbookRun.checklists.map((checklist) => ({
+            title: checklist.title,
+            items: checklist.items.map((item) =>
+                newChecklistItem(
+                    item.title,
+                    item.description,
+                    item.command,
+                    item.state as ChecklistItemState
+                )
+            ),
+        }));
+
+        // Match channel privacy: private channel -> private playbook, public channel -> public playbook
+        const isPrivateChannel = channel?.type === 'P';
+
+        // Navigate to create new playbook with the run's checklists as a template
+        create({
+            teamId: props.playbookRun.team_id,
+            description: formatMessage({defaultMessage: 'Created from "{runName}"'}, {runName: props.playbookRun.name}),
+        }, {
+            title: props.playbookRun.name,
+            description: props.playbookRun.summary || formatMessage({defaultMessage: 'Created from "{runName}"'}, {runName: props.playbookRun.name}),
+            public: !isPrivateChannel,
+            checklists: sanitizedChecklists,
+        });
+    };
+
+    if (!isChannelChecklist) {
+        return null;
+    }
+
+    return (
+        <StyledDropdownMenuItem onClick={handleSaveAsPlaybook}>
+            <BookOutlineIcon size={18}/>
+            <FormattedMessage defaultMessage='Save as playbook'/>
+        </StyledDropdownMenuItem>
     );
 };
