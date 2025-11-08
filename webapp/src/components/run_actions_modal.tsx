@@ -3,12 +3,9 @@
 
 import React, {useState} from 'react';
 import {useUpdateEffect} from 'react-use';
-import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {hideRunActionsModal} from 'src/actions';
-import {isRunActionsModalVisible} from 'src/selectors';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {useUpdateRun} from 'src/graphql/hooks';
 import Action from 'src/components/actions_modal_action';
@@ -20,12 +17,12 @@ import PatternedTextArea from 'src/components/patterned_text_area';
 interface Props {
     playbookRun: PlaybookRun;
     readOnly: boolean;
+    show: boolean;
+    onHide: () => void;
 }
 
-const RunActionsModal = ({playbookRun, readOnly}: Props) => {
+const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-    const show = useSelector(isRunActionsModalVisible);
     const teamId = playbookRun.team_id || '';
 
     const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
@@ -63,21 +60,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
         setWebhooks(playbookRun.webhook_on_status_update_urls);
     }, [playbookRun.webhook_on_status_update_urls]);
 
-    const onHide = () => {
-        dispatch(hideRunActionsModal());
-
-        setBroadcastToChannelsEnabled(playbookRun.status_update_broadcast_channels_enabled);
-        setChannelIds(playbookRun.broadcast_channel_ids);
-
-        setSendOutgoingWebhookEnabled(playbookRun.status_update_broadcast_webhooks_enabled);
-        setWebhooks(playbookRun.webhook_on_status_update_urls);
-
-        setCreateChannelMemberEnabled(playbookRun.create_channel_member_on_new_participant);
-        setRemoveChannelMemberEnabled(playbookRun.remove_channel_member_on_removed_participant);
-    };
-
     const onSave = () => {
-        dispatch(hideRunActionsModal());
         updateRun({
             statusUpdateBroadcastChannelsEnabled: broadcastToChannelsEnabled,
             broadcastChannelIDs: channelIds,
@@ -108,7 +91,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                             enabled={broadcastToChannelsEnabled}
                             title={formatMessage({defaultMessage: 'Broadcast update to selected channels'})}
                             editable={!readOnly}
-                            onToggle={() => setBroadcastToChannelsEnabled((prev) => !prev)}
+                            onToggle={() => setBroadcastToChannelsEnabled((prev: boolean) => !prev)}
                         >
                             <BroadcastChannelSelector
                                 id='run-actions-broadcast'
@@ -122,7 +105,7 @@ const RunActionsModal = ({playbookRun, readOnly}: Props) => {
                             enabled={sendOutgoingWebhookEnabled}
                             title={formatMessage({defaultMessage: 'Send outgoing webhook'})}
                             editable={!readOnly}
-                            onToggle={() => setSendOutgoingWebhookEnabled((prev) => !prev)}
+                            onToggle={() => setSendOutgoingWebhookEnabled((prev: boolean) => !prev)}
                         >
                             <PatternedTextArea
                                 enabled={!readOnly && sendOutgoingWebhookEnabled}
