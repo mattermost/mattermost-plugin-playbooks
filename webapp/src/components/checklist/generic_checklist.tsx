@@ -15,6 +15,7 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Condition, ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
+import {clientDeleteChecklistItem} from 'src/client';
 
 import ConditionHeader from './condition_header';
 
@@ -88,11 +89,15 @@ const GenericChecklist = (props: Props) => {
     };
 
     const onDeleteChecklistItem = (index: number) => {
-        const newChecklistItems = [...props.checklist.items];
-        newChecklistItems.splice(index, 1);
-        const newChecklist = {...props.checklist};
-        newChecklist.items = newChecklistItems;
-        props.onUpdateChecklist(newChecklist);
+        if (props.playbookRun && props.isChannelChecklist) {
+            clientDeleteChecklistItem(props.playbookRun.id, props.checklistIndex, index);
+        } else {
+            const newChecklistItems = [...props.checklist.items];
+            newChecklistItems.splice(index, 1);
+            const newChecklist = {...props.checklist};
+            newChecklist.items = newChecklistItems;
+            props.onUpdateChecklist(newChecklist);
+        }
     };
 
     const onOpenConditionEditor = (index: number) => {

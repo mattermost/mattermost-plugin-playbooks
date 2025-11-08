@@ -30,6 +30,7 @@ import {
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {
     clientAddChecklist,
+    clientDeleteChecklist,
     clientMoveChecklist,
     clientMoveChecklistItem,
     deletePlaybookCondition,
@@ -177,9 +178,13 @@ const ChecklistList = ({
     };
 
     const onDeleteChecklist = (index: number) => {
-        const newChecklists = [...checklists];
-        newChecklists.splice(index, 1);
-        setChecklistsForPlaybook(newChecklists);
+        if (playbookRun && playbookRun.type === PlaybookRunType.ChannelChecklist) {
+            clientDeleteChecklist(playbookRun.id, index);
+        } else {
+            const newChecklists = [...checklists];
+            newChecklists.splice(index, 1);
+            setChecklistsForPlaybook(newChecklists);
+        }
     };
 
     const onUpdateChecklist = (index: number, newChecklist: Checklist) => {
@@ -561,14 +566,6 @@ const NewChecklist = styled.div`
     align-items: center;
     border-radius: 4px 4px 0 0;
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
-`;
-
-const Icon = styled.i`
-    position: relative;
-    top: 2px;
-    margin: 0 0 0 6px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    font-size: 18px;
 `;
 
 const ChecklistsContainer = styled.div`
