@@ -352,9 +352,6 @@ const PoweredByText = styled.div`
 `;
 
 const ProductName = styled.span`
-    display: inline-flex;
-    align-items: center;
-
     i {
         font-size: 16px;
     }
