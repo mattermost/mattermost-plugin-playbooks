@@ -24,8 +24,6 @@ import {
     useRunMetadata,
 } from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
-import {HoverMenu} from 'src/components/rhs/rhs_shared';
-import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 import RHSAboutTitle from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import PropertiesList from 'src/components/rhs/properties_list';
@@ -97,9 +95,6 @@ const RHSAbout = (props: Props) => {
     };
 
     const [editingSummary, setEditingSummary] = useState(false);
-    const editSummary = () => {
-        setEditingSummary(true);
-    };
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun);
@@ -119,13 +114,6 @@ const RHSAbout = (props: Props) => {
                     hasPermanentViewerAccess={hasPermanentViewerAccess}
                     toggleFavorite={toggleFavorite}
                 />
-                <ButtonsRow data-testid='buttons-row'>
-                    <RHSAboutButtons
-                        playbookRun={props.playbookRun}
-                        editSummary={editSummary}
-                        readOnly={props.readOnly}
-                    />
-                </ButtonsRow>
                 {!collapsed &&
                     <>
                         <RHSAboutDescription
@@ -224,16 +212,6 @@ const StyledProfileSelector = styled(ProfileSelector)`
             width: 24px;
             height: 24px;
         }
-    }
-`;
-
-const ButtonsRow = styled(HoverMenu)`
-    top: 9px;
-    right: 12px;
-    display: none;
-
-    ${Container}:hover & {
-        display: block;
     }
 `;
 
