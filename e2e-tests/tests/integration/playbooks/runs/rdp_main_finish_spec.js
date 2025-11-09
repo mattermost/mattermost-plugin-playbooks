@@ -91,7 +91,8 @@ describe('runs > run details page > finish', {testIsolation: true}, () => {
 
             // * Check that finish run modal is open and has the right title
             cy.get('#confirmModal').should('be.visible');
-            cy.get('#confirmModal').find('h1').contains('Confirm finish run');
+            // Note: Title can be either "Confirm finish run" or "Confirm finish" depending on context
+            cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
 
             // # Click on confirm
             cy.get('#confirmModal').get('#confirmModalButton').click();
@@ -115,7 +116,8 @@ describe('runs > run details page > finish', {testIsolation: true}, () => {
 
             // * Check that finish run modal is open
             cy.get('#confirmModal').should('be.visible');
-            cy.get('#confirmModal').find('h1').contains('Confirm finish run');
+            // Note: Title can be either "Confirm finish run" or "Confirm finish" depending on context
+            cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
 
             // # Click on cancel
             cy.get('#confirmModal').get('#cancelModalButton').click();

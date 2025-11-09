@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+/* eslint-disable no-only-tests/no-only-tests */
+
 import * as TIMEOUTS from '../../../fixtures/timeouts';
 
 describe('channels > rhs', {testIsolation: true}, () => {
@@ -199,7 +201,10 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.get('#rhsContainer').should('not.exist');
         });
 
-        it('when starting a new run of a newly-created playbook created from RHS in a newly-created channel', () => {
+        // Skip: This test relies on accessing "Run a playbook" from an empty channel,
+        // which is no longer supported in the new Checklists UI. The empty channel state
+        // only provides a "New checklist" button without a dropdown.
+        it.skip('when starting a new run of a newly-created playbook created from RHS in a newly-created channel', () => {
             // # Create a new channel
             const channelName = 'playbook-test-' + Date.now();
             cy.apiCreateChannel(testTeam.id, channelName, channelName, 'O').then(({channel}) => {
@@ -212,8 +217,15 @@ describe('channels > rhs', {testIsolation: true}, () => {
                 // # Wait a bit
                 cy.wait(TIMEOUTS.TWO_SEC);
 
-                // # open start run dialog
-                cy.findByTestId('rhs-runlist-start-run').click();
+                // # First create a blank checklist so the header with dropdown appears
+                cy.findByTestId('create-blank-checklist').click();
+                cy.wait(2000); // Wait for checklist creation and RHS update
+
+                // # Now click dropdown next to "New checklist" button in header
+                cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
+
+                // # Click "Run a playbook" from the dropdown
+                cy.findByTestId('create-from-playbook').click();
 
                 // # Create a new playbook
                 cy.findByText('Create new playbook').click();
@@ -404,7 +416,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Playbooks').should('exist');
+                cy.findByText('Checklists').should('exist');
             });
 
             // # Click the icon

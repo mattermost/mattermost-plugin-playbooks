@@ -886,7 +886,10 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton onClick={props.onCreateChecklistClicked}>
+            <PrimaryButton 
+                onClick={props.onCreateChecklistClicked}
+                data-testid='create-blank-checklist'
+            >
                 <PlusIcon size={18}/>
                 <FormattedMessage defaultMessage={'New checklist'}/>
             </PrimaryButton>

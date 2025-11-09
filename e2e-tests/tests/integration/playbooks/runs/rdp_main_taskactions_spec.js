@@ -71,12 +71,17 @@ describe('runs > task actions', {testIsolation: true}, () => {
 
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
+                cy.wait(2000); // Wait for page to load
             });
         });
 
         it('disallows no keywords', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Attempt to enable the trigger
             cy.findByText('Mark the task as done').click();
@@ -85,7 +90,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.findByTestId('modal-confirm-button').click();
 
             // * Verify no actions are configured
-            cy.findByText('Task Actions').should('exist');
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('exist');
 
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: playbookRun}) => {
                 const trigger = JSON.parse(playbookRun.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -98,8 +103,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('allows a single keyword', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a keyword
             cy.get('.modal-body').within(() => {
@@ -137,8 +146,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('allows multiple keywords', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add multiple keywords
             cy.get('.modal-body').within(() => {
@@ -177,8 +190,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('allows multi-word phrases', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a phrase
             cy.get('.modal-body').within(() => {
@@ -216,8 +233,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('allows removing previously configured keywords', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add multiple keywords
             cy.get('.modal-body').within(() => {
@@ -278,8 +299,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('disables when all keywords removed', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add multiple keywords
             cy.get('.modal-body').within(() => {
@@ -305,8 +330,8 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
-            // * Verify configured actions
-            cy.findByText('Task Actions');
+            // * Verify task actions button still exists
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('exist');
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: playbookRun}) => {
                 const trigger = JSON.parse(playbookRun.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbookRun.checklists[0].items[0].task_actions[0].actions[0].payload);
@@ -329,8 +354,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('disallows a user without keywords', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a user
             cy.get('.modal-body').within(() => {
@@ -346,8 +375,8 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Save the dialog
             cy.findByTestId('modal-confirm-button').click();
 
-            // * Verify no actions are configured
-            cy.findByText('Task Actions');
+            // * Verify no actions are configured (icon still exists)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('exist');
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: playbookRun}) => {
                 const trigger = JSON.parse(playbookRun.checklists[0].items[0].task_actions[0].trigger.payload);
                 const actions = JSON.parse(playbookRun.checklists[0].items[0].task_actions[0].actions[0].payload);
@@ -359,8 +388,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('allows a single user', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a keyword
             cy.get('.modal-body').within(() => {
@@ -417,8 +450,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('allows configuring multiple users', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a keyword
             cy.get('.modal-body').within(() => {
@@ -484,8 +521,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('rejects unknown user', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a keyword
             cy.get('.modal-body').within(() => {
@@ -534,8 +575,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
         });
 
         it('allows removing previously configured users', () => {
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+            
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a keyword
             cy.get('.modal-body').within(() => {
@@ -612,12 +657,19 @@ describe('runs > task actions', {testIsolation: true}, () => {
         let testPlaybookRun1;
         let testPlaybookRun2;
 
+        const getChecklist = () => cy.findByTestId('run-checklist-section');
+        const getChecklistTasks = () => getChecklist().findAllByTestId('checkbox-item-container');
+
         const configureTaskAction = (run) => {
             // # Visit the playbook run
             cy.visit(`/playbooks/runs/${run.id}`);
 
-            // # Open the task actions modal
-            cy.findByText('Task Actions').click();
+            // # Enter editing mode on the task first
+            getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
+            cy.wait(1000); // Wait for edit mode UI to render
+
+            // # Open the task actions modal (lightning bolt icon, no text label)
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
             // # Add a keyword
             cy.get('.modal-body').within(() => {

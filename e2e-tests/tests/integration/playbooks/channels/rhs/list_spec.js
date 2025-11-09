@@ -265,9 +265,9 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             // # Click on the first finished run's dotmenu
             cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
 
-            // * Verify "Rename run" option does not exist for finished runs
+            // * Verify "Rename run" option is disabled for finished runs
             cy.findByTestId('dropdownmenu').within(() => {
-                cy.findByText('Rename run').should('not.exist');
+                cy.findByText('Rename').should('exist').parent().should('have.attr', 'aria-disabled', 'true');
             });
         });
 
@@ -296,10 +296,10 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
                 // # Find the finished checklist by its name and click its dotmenu
                 cy.get('[data-testid="rhs-runs-list"]').contains('Finished standalone checklist').parents('div[data-testid="run-list-card"]').findByRole('button').click();
 
-                // * Verify "Rename checklist" does not exist for finished checklists
+                // * Verify "Rename checklist" and "Link checklist" are disabled for finished checklists
                 cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Rename checklist').should('not.exist');
-                    cy.findByText('Link checklist to a different channel').should('not.exist');
+                    cy.findByText('Rename checklist').should('exist').parent().should('have.attr', 'aria-disabled', 'true');
+                    cy.findByText('Link checklist to a different channel').should('exist').parent().should('have.attr', 'aria-disabled', 'true');
                 });
             });
         });
