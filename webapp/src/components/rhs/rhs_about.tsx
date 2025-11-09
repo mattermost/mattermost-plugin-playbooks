@@ -242,7 +242,7 @@ const MemberSectionTitle = styled.div`
 `;
 
 const PostUpdateSection = styled.div`
-    margin-top: 18px;
+    margin-top: 12px;
 `;
 
 const ShowMoreContainer = styled.div`
