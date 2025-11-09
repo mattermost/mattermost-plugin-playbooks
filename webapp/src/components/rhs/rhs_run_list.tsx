@@ -190,7 +190,6 @@ const RHSRunList = (props: Props) => {
                 </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
-                {!showNoRuns &&
                 <Header>
                     <DotMenu
                         dotMenuButton={TitleButton}
@@ -283,7 +282,6 @@ const RHSRunList = (props: Props) => {
                         />
                     </DotMenu>
                 </Header>
-                }
                 {showNoRuns &&
                     <>
                         <NoRunsWrapper>
