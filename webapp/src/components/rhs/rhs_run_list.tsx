@@ -859,6 +859,7 @@ const Separator = styled.hr`
 const IconWrapper = styled.div<{$margin?: string}>`
     margin-right: ${({$margin}) => ($margin || '11px')};
     color: rgba(var(--center-channel-color-rgb), 0.56);
+
     svg {
         vertical-align: middle;
     }
