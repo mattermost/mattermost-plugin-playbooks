@@ -277,127 +277,18 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 autoAddTask={autoAddTask}
                 onTaskAdded={onTaskAdded}
             />
-            {
-                active && canModify && parentContainer === ChecklistParent.RHS && playbookRun &&
-                <FinishPrompt>
-                    <FinishContent>
-                        <FinishIconWrapper>
-                            <FlagOutlineIcon size={24}/>
-                        </FinishIconWrapper>
-                        <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
-                        <FinishRightWrapper>
-                            <FinishButton
-                                onClick={() => {
-                                    dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
-                                }}
-                            >
-                                <CheckIcon size={16}/>
-                                {formatMessage({defaultMessage: 'Finish'})}
-                            </FinishButton>
-                        </FinishRightWrapper>
-                    </FinishContent>
-                </FinishPrompt>
-            }
-            {
-                active && !isParticipant && parentContainer === ChecklistParent.RHS && playbookRun &&
-                <ParticipatePrompt>
-                    <ParticipateContent>
-                        <ParticipateText>{formatMessage({defaultMessage: 'Join to make changes or interact'})}</ParticipateText>
-                        <ParticipateRightWrapper>
-                            <OverlayTrigger
-                                placement='top'
-                                delay={OVERLAY_DELAY}
-                                overlay={
-                                    <Tooltip id='participate-tooltip'>
-                                        {formatMessage({defaultMessage: 'Join as a participant'})}
-                                    </Tooltip>
-                                }
-                            >
-                                <ParticipateButton
-                                    onClick={showParticipateConfirm}
-                                >
-                                    <AccountPlusOutlineIcon size={16}/>
-                                    {formatMessage({defaultMessage: 'Join'})}
-                                </ParticipateButton>
-                            </OverlayTrigger>
-                        </ParticipateRightWrapper>
-                    </ParticipateContent>
-                </ParticipatePrompt>
-            }
-            {
-                finished && parentContainer === ChecklistParent.RHS && playbookRun &&
-                <FinishedFooter>
-                    <FinishedIndicator>
-                        <IconWrapper>
-                            <FlagCheckeredIcon size={34}/>
-                        </IconWrapper>
-                        <FinishedNotice>
-                            <FinishedPretext>
-                                {formatMessage({defaultMessage: 'Finished'})}
-                            </FinishedPretext>
-                            <FinishedTime>
-                                <Timestamp
-                                    value={DateTime.fromMillis(playbookRun.end_at).toJSDate()}
-                                    units={[
-                                        {within: ['second', -45], display: formatMessage({defaultMessage: 'just now'})},
-                                        ['minute', -59],
-                                        ['hour', -48],
-                                        ['day', -30],
-                                        ['month', -12],
-                                        'year',
-                                    ]}
-                                    useTime={false}
-                                />
-                            </FinishedTime>
-                        </FinishedNotice>
-                        <FinishedRightWrapper>
-                            {canRestore ? (
-                                <ResumeButton
-                                    onClick={handleResume}
-                                    disabled={false}
-                                >
-                                    {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
-                                    }
-                                </ResumeButton>
-                            ) : (
-                                <OverlayTrigger
-                                    placement='top'
-                                    delay={OVERLAY_DELAY}
-                                    overlay={
-                                        <Tooltip id='resume-disabled-tooltip'>
-                                            {playbookRun.type === PlaybookRunType.ChannelChecklist ?
-                                                formatMessage({defaultMessage: 'Join as a participant to resume'}) :
-                                                formatMessage({defaultMessage: 'Join as a participant to restart'})
-                                            }
-                                        </Tooltip>
-                                    }
-                                >
-                                    <ResumeButtonWrapper>
-                                        <ResumeButton
-                                            onClick={handleResume}
-                                            disabled={true}
-                                        >
-                                            {playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Resume'}) : formatMessage({defaultMessage: 'Restart'})
-                                            }
-                                        </ResumeButton>
-                                    </ResumeButtonWrapper>
-                                </OverlayTrigger>
-                            )}
-                        </FinishedRightWrapper>
-                    </FinishedIndicator>
-                    <DoneButtonContainer>
-                        <StyledPrimaryButton
-                            onClick={() => {
-                                if (onBackClick) {
-                                    onBackClick();
-                                }
-                            }}
-                        >
-                            {formatMessage({defaultMessage: 'Done'})}
-                        </StyledPrimaryButton>
-                    </DoneButtonContainer>
-                </FinishedFooter>
-            }
+            <RHSFooter
+                playbookRun={playbookRun}
+                parentContainer={parentContainer}
+                active={active}
+                finished={finished}
+                canModify={canModify}
+                canRestore={canRestore}
+                isParticipant={isParticipant}
+                showParticipateConfirm={showParticipateConfirm}
+                handleResume={handleResume}
+                onBackClick={onBackClick}
+            />
             {showRunDetailsChecklistsStep && (
                 <TutorialTourTip
                     title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
@@ -416,6 +307,174 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
             {ParticipateConfirmModal}
         </InnerContainer>
     );
+};
+
+interface RHSFooterProps {
+    playbookRun: PlaybookRun | null;
+    parentContainer?: ChecklistParent;
+    active: boolean;
+    finished: boolean;
+    canModify: boolean;
+    canRestore: boolean;
+    isParticipant: boolean;
+    showParticipateConfirm: () => void;
+    handleResume: () => void;
+    onBackClick?: () => void;
+}
+
+const RHSFooter = ({
+    playbookRun,
+    parentContainer,
+    active,
+    finished,
+    canModify,
+    canRestore,
+    isParticipant,
+    showParticipateConfirm,
+    handleResume,
+    onBackClick,
+}: RHSFooterProps) => {
+    const {formatMessage} = useIntl();
+    const dispatch = useDispatch();
+
+    // Only show footers in RHS
+    if (parentContainer !== ChecklistParent.RHS || !playbookRun) {
+        return null;
+    }
+
+    // Priority 1: Show ParticipatePrompt if active and not a participant
+    if (active && !isParticipant) {
+        return (
+            <ParticipatePrompt>
+                <ParticipateContent>
+                    <ParticipateText>{formatMessage({defaultMessage: 'Join to make changes or interact'})}</ParticipateText>
+                    <ParticipateRightWrapper>
+                        <OverlayTrigger
+                            placement='top'
+                            delay={OVERLAY_DELAY}
+                            overlay={
+                                <Tooltip id='participate-tooltip'>
+                                    {formatMessage({defaultMessage: 'Join as a participant'})}
+                                </Tooltip>
+                            }
+                        >
+                            <ParticipateButton onClick={showParticipateConfirm}>
+                                <AccountPlusOutlineIcon size={16}/>
+                                {formatMessage({defaultMessage: 'Join'})}
+                            </ParticipateButton>
+                        </OverlayTrigger>
+                    </ParticipateRightWrapper>
+                </ParticipateContent>
+            </ParticipatePrompt>
+        );
+    }
+
+    // Priority 2: Show FinishPrompt if active and can modify
+    if (active && canModify) {
+        return (
+            <FinishPrompt>
+                <FinishContent>
+                    <FinishIconWrapper>
+                        <FlagOutlineIcon size={24}/>
+                    </FinishIconWrapper>
+                    <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
+                    <FinishRightWrapper>
+                        <FinishButton
+                            onClick={() => {
+                                dispatch(finishRun(playbookRun.team_id, playbookRun.id));
+                            }}
+                        >
+                            <CheckIcon size={16}/>
+                            {formatMessage({defaultMessage: 'Finish'})}
+                        </FinishButton>
+                    </FinishRightWrapper>
+                </FinishContent>
+            </FinishPrompt>
+        );
+    }
+
+    // Priority 3: Show FinishedFooter if finished
+    if (finished) {
+        return (
+            <FinishedFooter>
+                <FinishedIndicator>
+                    <IconWrapper>
+                        <FlagCheckeredIcon size={34}/>
+                    </IconWrapper>
+                    <FinishedNotice>
+                        <FinishedPretext>
+                            {formatMessage({defaultMessage: 'Finished'})}
+                        </FinishedPretext>
+                        <FinishedTime>
+                            <Timestamp
+                                value={DateTime.fromMillis(playbookRun.end_at).toJSDate()}
+                                units={[
+                                    {within: ['second', -45], display: formatMessage({defaultMessage: 'just now'})},
+                                    ['minute', -59],
+                                    ['hour', -48],
+                                    ['day', -30],
+                                    ['month', -12],
+                                    'year',
+                                ]}
+                                useTime={false}
+                            />
+                        </FinishedTime>
+                    </FinishedNotice>
+                    <FinishedRightWrapper>
+                        {canRestore ? (
+                            <ResumeButton
+                                onClick={handleResume}
+                                disabled={false}
+                            >
+                                {playbookRun.type === PlaybookRunType.ChannelChecklist ?
+                                    formatMessage({defaultMessage: 'Resume'}) :
+                                    formatMessage({defaultMessage: 'Restart'})
+                                }
+                            </ResumeButton>
+                        ) : (
+                            <OverlayTrigger
+                                placement='top'
+                                delay={OVERLAY_DELAY}
+                                overlay={
+                                    <Tooltip id='resume-disabled-tooltip'>
+                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ?
+                                            formatMessage({defaultMessage: 'Join as a participant to resume'}) :
+                                            formatMessage({defaultMessage: 'Join as a participant to restart'})
+                                        }
+                                    </Tooltip>
+                                }
+                            >
+                                <ResumeButtonWrapper>
+                                    <ResumeButton
+                                        onClick={handleResume}
+                                        disabled={true}
+                                    >
+                                        {playbookRun.type === PlaybookRunType.ChannelChecklist ?
+                                            formatMessage({defaultMessage: 'Resume'}) :
+                                            formatMessage({defaultMessage: 'Restart'})
+                                        }
+                                    </ResumeButton>
+                                </ResumeButtonWrapper>
+                            </OverlayTrigger>
+                        )}
+                    </FinishedRightWrapper>
+                </FinishedIndicator>
+                <DoneButtonContainer>
+                    <StyledPrimaryButton
+                        onClick={() => {
+                            if (onBackClick) {
+                                onBackClick();
+                            }
+                        }}
+                    >
+                        {formatMessage({defaultMessage: 'Done'})}
+                    </StyledPrimaryButton>
+                </DoneButtonContainer>
+            </FinishedFooter>
+        );
+    }
+
+    return null;
 };
 
 const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
