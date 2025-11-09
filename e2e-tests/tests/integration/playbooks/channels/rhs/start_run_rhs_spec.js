@@ -61,7 +61,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     channelNameTemplate: 'Channel template',
                     runSummaryTemplate: 'run summary template',
                     channelMode: 'create_new_channel',
-                }).then((playbook) => {
+                }).then(() => {
                     // # Visit the selected playbook
                     cy.visit(`/${testTeam.name}/channels/town-square`);
 
@@ -72,10 +72,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
 
                     // # Create a blank checklist
                     cy.findByTestId('create-blank-checklist').click();
-                    
+
                     // # Wait for checklist to be created and RHS to update to details view
                     cy.wait(2000);
-                    
+
                     // * Verify we're now in the RHS details view showing the new checklist
                     cy.get('#rhsContainer').should('exist').within(() => {
                         cy.findByText('Untitled checklist').should('be.visible');
@@ -103,10 +103,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     // # First create a blank checklist so the header with dropdown appears
                     cy.findByTestId('create-blank-checklist').click();
                     cy.wait(1000); // Wait for checklist to be created and RHS to update
-                    
+
                     // # Now the header with dropdown should be visible, click the dropdown
                     cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
-                    
+
                     // # Click "Run a playbook" from the dropdown
                     cy.findByTestId('create-from-playbook').click();
 
@@ -172,10 +172,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     // # First create a blank checklist so the header with dropdown appears
                     cy.findByTestId('create-blank-checklist').click();
                     cy.wait(1000); // Wait for checklist to be created and RHS to update
-                    
+
                     // # Now the header with dropdown should be visible, click the dropdown
                     cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
-                    
+
                     // # Click "Run a playbook" from the dropdown
                     cy.findByTestId('create-from-playbook').click();
 
@@ -221,10 +221,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     // # First create a blank checklist so the header with dropdown appears
                     cy.findByTestId('create-blank-checklist').click();
                     cy.wait(1000); // Wait for checklist to be created and RHS to update
-                    
+
                     // # Now the header with dropdown should be visible, click the dropdown
                     cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
-                    
+
                     // # Click "Run a playbook" from the dropdown
                     cy.findByTestId('create-from-playbook').click();
 
@@ -269,10 +269,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                     // # First create a blank checklist so the header with dropdown appears
                     cy.findByTestId('create-blank-checklist').click();
                     cy.wait(1000); // Wait for checklist to be created and RHS to update
-                    
+
                     // # Now the header with dropdown should be visible, click the dropdown
                     cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
-                    
+
                     // # Click "Run a playbook" from the dropdown
                     cy.findByTestId('create-from-playbook').click();
 

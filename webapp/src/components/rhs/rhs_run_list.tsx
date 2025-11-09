@@ -886,7 +886,7 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton 
+            <PrimaryButton
                 onClick={props.onCreateChecklistClicked}
                 data-testid='create-blank-checklist'
             >

@@ -106,7 +106,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -149,7 +149,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -193,7 +193,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -302,7 +302,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -357,7 +357,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -391,7 +391,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -453,7 +453,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -524,7 +524,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
@@ -578,7 +578,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
             cy.wait(1000); // Wait for edit mode UI to render
-            
+
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
 
