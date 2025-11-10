@@ -41,8 +41,21 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                // # Return first template (Blank)
-                cy.contains('Blank').click();
+                // # Create a blank checklist first to get the header with dropdown
+                cy.get('#rhsContainer').findByTestId('create-blank-checklist').click();
+                cy.wait(1000);
+
+                // # Click the dropdown to access "Run a playbook"
+                cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
+                cy.findByTestId('create-from-playbook').click();
+
+                // # Click on Playbook Templates tab
+                cy.get('#root-portal.modal-open').within(() => {
+                    cy.findByText('Playbook Templates').click();
+
+                    // # Return first template (Blank)
+                    cy.contains('Blank').click();
+                });
 
                 // * Assert playbooks creation modal is shown.
                 cy.get('#playbooks_create').should('exist');
@@ -63,8 +76,23 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
                 // # Open playbooks RHS.
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                // # Return first template (Blank)
-                cy.contains('Use').click();
+                // # Create a blank checklist first to get the header with dropdown
+                cy.get('#rhsContainer').findByTestId('create-blank-checklist').click();
+                cy.wait(1000);
+
+                // # Click the dropdown to access "Run a playbook"
+                cy.get('#rhsContainer').find('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
+                cy.findByTestId('create-from-playbook').click();
+
+                // # Click on Playbook Templates tab and then on the template title
+                cy.get('#root-portal.modal-open').within(() => {
+                    cy.findByText('Playbook Templates').click();
+
+                    // # Click on 'Blank' template title
+                    cy.findByTestId('template-details').first().within(() => {
+                        cy.contains('Blank').click();
+                    });
+                });
 
                 // * Assert playbooks creation modal is shown.
                 cy.get('#playbooks_create').should('exist');

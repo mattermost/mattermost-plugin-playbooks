@@ -59,19 +59,36 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
                 // # Click the icon
                 cy.getPlaybooksAppBarIcon().should('be.visible').click();
 
-                // * Verify the templates are shown
-                cy.findByText('Playbook Templates').
-                    parent().
-                    next().
-                    within(() => {
-                        cy.findAllByTestId('template-details').each(($templateElement, index) => {
-                            cy.wrap($templateElement).within(() => {
-                                cy.findByText(templates[index].name).should('exist');
-                                cy.findByText(templates[index].checklists).should('exist');
-                                cy.findByText(templates[index].actions).should('exist');
-                            });
+                // * Verify we see the new checklist UI for empty channels
+                cy.get('#rhsContainer').within(() => {
+                    cy.findByText('Get started with a checklist for this channel').should('be.visible');
+
+                    // # First create a blank checklist so the header with dropdown appears
+                    cy.findByTestId('create-blank-checklist').click();
+                });
+                cy.wait(2000); // Wait for checklist creation and RHS update
+
+                // # Click the dropdown next to "+ New checklist" button in header
+                cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
+
+                // # Click "Run a playbook" from the dropdown
+                cy.findByTestId('create-from-playbook').click();
+
+                // * Verify the templates are shown in the modal
+                cy.get('#root-portal.modal-open').within(() => {
+                    cy.findByText('Select a playbook').should('be.visible');
+
+                    // * Verify template tab and templates
+                    cy.findByText('Playbook Templates').click();
+
+                    cy.findAllByTestId('template-details').each(($templateElement, index) => {
+                        cy.wrap($templateElement).within(() => {
+                            cy.findByText(templates[index].name).should('exist');
+                            cy.findByText(templates[index].checklists).should('exist');
+                            cy.findByText(templates[index].actions).should('exist');
                         });
                     });
+                });
             });
         });
 

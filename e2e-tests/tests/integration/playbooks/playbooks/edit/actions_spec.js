@@ -414,7 +414,8 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                             // * Verify that user is not pre-assigned anymore
                             cy.findByText('Untitled task').trigger('mouseover');
                             cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByText('Assignee...').should('exist');
+                            cy.findByTestId('assignee-profile-selector').should('exist');
+                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
                         });
 
                         cy.get('#actions').within(() => {
@@ -471,7 +472,8 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                             // * Verify that user is not pre-assigned
                             cy.findByText('Untitled task').trigger('mouseover');
                             cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByText('Assignee...').should('exist');
+                            cy.findByTestId('assignee-profile-selector').should('exist');
+                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
                         });
 
                         cy.get('#actions').within(() => {
