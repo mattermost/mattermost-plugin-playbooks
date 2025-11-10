@@ -16,6 +16,7 @@ import {ToastProvider} from 'src/components/backstage/toast_banner';
 import {navigateToChannel} from 'src/browser_routing';
 import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {RunStatus} from 'src/graphql/generated/graphql';
 
 import {graphql} from 'src/graphql/generated/gql';
 
@@ -240,16 +241,20 @@ const RightHandSidebar = () => {
     }
 
     // If we have a run selected and it's in the current channel show that
-    if (currentRunId && [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRunId)) {
-        const shouldAutoAddTask = currentRunId === autoAddTaskRunId;
-        return (
-            <RHSRunDetails
-                runID={currentRunId}
-                onBackClick={clearCurrentRunId}
-                autoAddTask={shouldAutoAddTask}
-                onTaskAdded={() => setAutoAddTaskRunId(undefined)}
-            />
-        );
+    if (currentRunId) {
+        const currentRun = [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRunId);
+        if (currentRun) {
+            // Only auto-add task if this run matches autoAddTaskRunId AND the run is still in progress
+            const shouldAutoAddTask = currentRunId === autoAddTaskRunId && currentRun.currentStatus === RunStatus.InProgress;
+            return (
+                <RHSRunDetails
+                    runID={currentRunId}
+                    onBackClick={clearCurrentRunId}
+                    autoAddTask={shouldAutoAddTask}
+                    onTaskAdded={() => setAutoAddTaskRunId(undefined)}
+                />
+            );
+        }
     }
 
     const runsList = listOptions.filter === FilterType.InProgress ? fetchedRuns.runsInProgress : (fetchedRuns.runsFinished ?? []);
