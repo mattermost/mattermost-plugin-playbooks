@@ -9,7 +9,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
-import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
+import {useCanModifyRun} from 'src/hooks/run_permissions';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
@@ -70,17 +70,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     // Show modal if either Redux state or local state is true
     const showRunActionsModal = showRunActionsFromRedux || showRunActionsFromMenu;
 
-    // Create a minimal run object with only the fields needed for permission checking
-    const runForPermissions: RunPermissionFields = {
-        type: playbookRun.type,
-        channel_id: playbookRun.channel_id,
-        team_id: playbookRun.team_id,
-        owner_user_id: playbookRun.owner_user_id,
-        participant_ids: playbookRun.participant_ids,
-        current_status: playbookRun.current_status,
-    };
-
-    const canModify = useCanModifyRun(runForPermissions, currentUserId);
+    const canModify = useCanModifyRun(playbookRun, currentUserId);
 
     const isPlaybookRun = playbookRun.type === PlaybookRunType.Playbook;
     const icon = isPlaybookRun ? <PlayOutlineIcon size={18}/> : <CheckAllIcon size={18}/>;

@@ -7,17 +7,17 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 import {useHasChannelPermission} from './permissions';
+
+type RunPermissionsScope = Pick<PlaybookRun, 'type' | 'team_id' | 'channel_id' | 'owner_user_id' | 'participant_ids' | 'current_status'>;
 
 /**
  * Minimal run fields needed for permission checks
  * Accepts both PlaybookRunStatus and RunStatus (GraphQL enum) for current_status
  */
-export type RunPermissionFields = Omit<Pick<PlaybookRun, 'type' | 'team_id' | 'channel_id' | 'owner_user_id' | 'participant_ids' | 'current_status'>, 'current_status'> & {
-    current_status: PlaybookRunStatus | RunStatus;
-};
+export type RunPermissionFields = RunPermissionsScope & Partial<PlaybookRun>;
 
 /**
  * Check if a channel is archived
@@ -100,7 +100,7 @@ export const useCanModifyRun = (run: RunPermissionFields | null | undefined, cur
     }
 
     // Cannot modify finished runs (compare string values to handle both enum types)
-    return run.current_status !== PlaybookRunStatus.Finished && run.current_status !== RunStatus.Finished;
+    return run.current_status !== RunStatus.Finished;
 };
 
 /**
