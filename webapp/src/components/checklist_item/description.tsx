@@ -20,6 +20,7 @@ interface DescriptionProps {
     showDescription: boolean;
     onSave?: () => void;
     onSaveAndAddNew?: () => void;
+    title: string;
 }
 
 const ChecklistItemDescription = (props: DescriptionProps) => {
@@ -30,7 +31,9 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
-            if (props.onSaveAndAddNew) {
+
+            // Only save and add new if the task has a title, similar to title field behavior
+            if (props.title !== '' && props.onSaveAndAddNew) {
                 props.onSaveAndAddNew();
             } else if (props.onSave) {
                 props.onSave();

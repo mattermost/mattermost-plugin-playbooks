@@ -464,6 +464,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     value={descValue}
                     onSave={handleSave}
                     onSaveAndAddNew={props.onSaveAndAddNew ? handleSaveAndAddNew : undefined}
+                    title={titleValue}
                 />
                 }
                 {renderRow()}
