@@ -201,7 +201,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                     <StyledDropdownMenuItemRed
                         onClick={() => props.onDeleteChecklistItem?.()}
                     >
-                        <DropdownIconRed className={'icon-close icon-16'}/>
+                        <DropdownIconRed className={'icon-trash-can-outline icon-16'}/>
                         {formatMessage({defaultMessage: 'Delete task'})}
                     </StyledDropdownMenuItemRed>
                 }

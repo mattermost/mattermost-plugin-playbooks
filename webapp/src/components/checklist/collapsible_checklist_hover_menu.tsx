@@ -75,8 +75,8 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                     <StyledDropdownMenuItemRed
                         onClick={() => props.onDeleteChecklist()}
                     >
-                        <DropdownIconRed className={'icon-close icon-16'}/>
-                        {formatMessage({defaultMessage: 'Delete checklist'})}
+                        <DropdownIconRed className={'icon-trash-can-outline icon-16'}/>
+                        {formatMessage({defaultMessage: 'Delete section'})}
                     </StyledDropdownMenuItemRed>
                 }
             </DotMenu>
