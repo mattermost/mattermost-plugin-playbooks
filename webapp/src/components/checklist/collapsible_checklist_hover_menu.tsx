@@ -63,7 +63,7 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                     <DropdownIcon className='icon-content-copy icon-16'/>
                     {formatMessage({defaultMessage: 'Duplicate section'})}
                 </StyledDropdownMenuItem>
-                {props.playbookRunID !== undefined && !props.isChannelChecklist &&
+                {props.playbookRunID !== undefined &&
                     <StyledDropdownMenuItemRed
                         onClick={() => clientSkipChecklist(props.playbookRunID || '', props.checklistIndex)}
                     >
