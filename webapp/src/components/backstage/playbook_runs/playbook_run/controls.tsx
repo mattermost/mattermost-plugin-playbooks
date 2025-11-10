@@ -18,8 +18,6 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {GlobalState} from '@mattermost/types/store';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
@@ -306,7 +304,6 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
 export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
     const {formatMessage} = useIntl();
     const {create} = usePlaybooksRouting();
-    const channel = useSelector((state: GlobalState) => getChannel(state, props.playbookRun.channel_id));
 
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
 
@@ -324,9 +321,7 @@ export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
             ),
         }));
 
-        // Match channel privacy: private channel -> private playbook, public channel -> public playbook
-        const isPrivateChannel = channel?.type === 'P';
-
+        // Always create public playbooks (can convert public -> private later, but not vice versa)
         // Navigate to create new playbook with the run's checklists as a template
         create({
             teamId: props.playbookRun.team_id,
@@ -334,7 +329,7 @@ export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
         }, {
             title: props.playbookRun.name,
             description: props.playbookRun.summary || formatMessage({defaultMessage: 'Created from "{runName}"'}, {runName: props.playbookRun.name}),
-            public: !isPrivateChannel,
+            public: true,
             checklists: sanitizedChecklists,
         });
     };
