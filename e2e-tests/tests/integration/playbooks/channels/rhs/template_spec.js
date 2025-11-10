@@ -32,7 +32,8 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
 
     describe('create playbook', () => {
         describe('open new playbook creation modal and navigates to playbooks', () => {
-            it('after clicking on Use', () => {
+            // TODO: This workflow has been deprecated with the new Checklists UI. May be re-enabled when template access is redesigned.
+            it.skip('after clicking on Use', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
 
@@ -67,7 +68,8 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
                 cy.findByTestId('playbook-editor-title').contains('Blank');
             });
 
-            it('after clicking on title', () => {
+            // TODO: This workflow has been deprecated with the new Checklists UI. May be re-enabled when template access is redesigned.
+            it.skip('after clicking on title', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
 

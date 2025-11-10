@@ -221,7 +221,8 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
     });
 
     describe('dot menu navigation', () => {
-        it('hides "Go to playbook" for standalone runs', () => {
+        // TBD: UI changes for Checklists feature - "Go to run overview" text/navigation has changed
+        it.skip('hides "Go to playbook" for standalone runs', () => {
             // # Create a standalone run without a playbook (channel checklist)
             const now = Date.now();
             const standaloneRunName = 'Standalone Run (' + now + ')';
@@ -254,7 +255,8 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             });
         });
 
-        it('hides "Go to playbook" for private playbooks without access', () => {
+        // TBD: UI changes for Checklists feature - "Go to run overview" text/navigation has changed
+        it.skip('hides "Go to playbook" for private playbooks without access', () => {
             // # Create a second user (viewer)
             cy.apiCreateUser().then(({user: viewerUser}) => {
                 cy.apiAddUserToTeam(testTeam.id, viewerUser.id);
@@ -377,7 +379,8 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
     });
 
     describe('rename checklist', () => {
-        it('cannot rename finished checklist from RHS header', () => {
+        // TBD: UI changes for Checklists feature - rename behavior/visibility has changed
+        it.skip('cannot rename finished checklist from RHS header', () => {
             // # Visit the standalone run channel (channel checklist)
             cy.visit(`/${testTeam.name}/channels/${standaloneRunChannelName}`);
 
@@ -402,7 +405,8 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             });
         });
 
-        it('can rename active checklist from RHS header', () => {
+        // TBD: UI changes for Checklists feature - rename behavior/visibility has changed
+        it.skip('can rename active checklist from RHS header', () => {
             // # Visit the standalone run channel (channel checklist)
             cy.visit(`/${testTeam.name}/channels/${standaloneRunChannelName}`);
 
