@@ -5,8 +5,8 @@ package api
 
 import (
 	"context"
-	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -39,12 +39,13 @@ func TestValidateToken(t *testing.T) {
 		return request
 	}
 
-	makeKeySet := func(t *testing.T) (ed25519.PublicKey, ed25519.PrivateKey, keyfunc.Keyfunc) {
+	makeKeySet := func(t *testing.T) (*rsa.PublicKey, *rsa.PrivateKey, keyfunc.Keyfunc) {
 		serverStore := jwkset.NewMemoryStorage()
 
 		// Make a public/private key that has the alg property set.
-		pub, priv, err := ed25519.GenerateKey(rand.Reader)
+		priv, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
+		pub := &priv.PublicKey
 
 		jwk, err := jwkset.NewJWKFromKey(priv, jwkset.JWKOptions{
 			Metadata: jwkset.JWKMetadataOptions{
@@ -101,8 +102,8 @@ func TestValidateToken(t *testing.T) {
 		return &token
 	}
 
-	newToken := func(t *testing.T, priv ed25519.PrivateKey, mapClaims jwt.MapClaims) *string {
-		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, mapClaims)
+	newToken := func(t *testing.T, priv *rsa.PrivateKey, mapClaims jwt.MapClaims) *string {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, mapClaims)
 		token.Header[jwkset.HeaderKID] = keyID
 		signed, err := token.SignedString(priv)
 		if err != nil {
@@ -186,7 +187,7 @@ func TestValidateToken(t *testing.T) {
 		t.Run("hmac key pretending to be rsa", func(t *testing.T) {
 			tid := uuid.NewString()
 
-			pub, _, jwtKeyFunc := makeKeySet(t)
+			_, _, jwtKeyFunc := makeKeySet(t)
 
 			token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 				"iat": past(),
@@ -196,7 +197,7 @@ func TestValidateToken(t *testing.T) {
 				"tid": tid,
 			})
 			token.Header[jwkset.HeaderKID] = keyWithoutAlgID
-			signed, err := token.SignedString([]byte(pub))
+			signed, err := token.SignedString([]byte("hmac-secret-key"))
 			require.NoError(t, err)
 
 			r := makeRequest(t, &signed)

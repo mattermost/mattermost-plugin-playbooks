@@ -53,6 +53,19 @@ import GenericChecklist, {generateKeys} from './generic_checklist';
 // @ts-ignore
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
+// Helper function to check if a task is adjacent to other tasks in its condition group
+const isTaskAdjacentToConditionGroup = (
+    items: ChecklistItem[],
+    taskIndex: number,
+    conditionId: string
+): boolean => {
+    // Check if there's another task with the same condition_id immediately before or after
+    const hasPrevSibling = taskIndex > 0 && items[taskIndex - 1].condition_id === conditionId;
+    const hasNextSibling = taskIndex < items.length - 1 && items[taskIndex + 1].condition_id === conditionId;
+
+    return hasPrevSibling || hasNextSibling;
+};
+
 interface Props {
     playbookRun?: PlaybookRun;
     playbook?: Loaded<FullPlaybook>;
@@ -276,6 +289,63 @@ const ChecklistList = ({
         }
     };
 
+    const onMoveItemToCondition = (sourceChecklistIndex: number, itemIndex: number, conditionId: string) => {
+        // Find the target checklist that contains items with this condition_id
+        let targetChecklistIndex = -1;
+        let lastConditionItemIndex = -1;
+
+        // Search for the last item with this condition_id across all checklists
+        for (let checklistIdx = checklists.length - 1; checklistIdx >= 0; checklistIdx--) {
+            const checklist = checklists[checklistIdx];
+            for (let itemIdx = checklist.items.length - 1; itemIdx >= 0; itemIdx--) {
+                if (checklist.items[itemIdx].condition_id === conditionId) {
+                    targetChecklistIndex = checklistIdx;
+                    lastConditionItemIndex = itemIdx;
+                    break;
+                }
+            }
+            if (targetChecklistIndex >= 0) {
+                break;
+            }
+        }
+
+        const newChecklists = [...checklists];
+        const sourceChecklist = checklists[sourceChecklistIndex];
+        const item = {...sourceChecklist.items[itemIndex], condition_id: conditionId};
+
+        if (targetChecklistIndex >= 0 && targetChecklistIndex !== sourceChecklistIndex) {
+            // Move item to a different checklist
+            const newSourceItems = [...sourceChecklist.items];
+            newSourceItems.splice(itemIndex, 1);
+
+            const targetChecklist = checklists[targetChecklistIndex];
+            const newTargetItems = [...targetChecklist.items];
+
+            // Insert after the last item in the condition group
+            newTargetItems.splice(lastConditionItemIndex + 1, 0, item);
+
+            newChecklists[sourceChecklistIndex] = {...sourceChecklist, items: newSourceItems};
+            newChecklists[targetChecklistIndex] = {...targetChecklist, items: newTargetItems};
+        } else if (targetChecklistIndex >= 0) {
+            // Same checklist - reorder within it
+            const newItems = [...sourceChecklist.items];
+            newItems.splice(itemIndex, 1);
+
+            // Adjust target position if we removed an item before it
+            const targetIndex = itemIndex < lastConditionItemIndex ? lastConditionItemIndex : lastConditionItemIndex + 1;
+            newItems.splice(targetIndex, 0, item);
+
+            newChecklists[sourceChecklistIndex] = {...sourceChecklist, items: newItems};
+        } else {
+            // No existing items with this condition - just update the condition_id in place
+            const newItems = [...sourceChecklist.items];
+            newItems[itemIndex] = item;
+            newChecklists[sourceChecklistIndex] = {...sourceChecklist, items: newItems};
+        }
+
+        setChecklistsForPlaybook(newChecklists);
+    };
+
     const onDragStart = () => {
         setIsDragging(true);
     };
@@ -308,7 +378,43 @@ const ChecklistList = ({
                 // Moving within the same checklist - simple reorder
                 const newChecklistItems = [...checklists[srcChecklistIdx].items];
                 const [moved] = newChecklistItems.splice(srcIdx, 1);
+
+                // Check if we should update the condition_id based on adjacent tasks
+                let updatedItem = moved;
+
+                // Temporarily insert to check what's adjacent
                 newChecklistItems.splice(dstIdx, 0, moved);
+
+                // Check if dropped adjacent to a condition group
+                const prevItem = dstIdx > 0 ? newChecklistItems[dstIdx - 1] : null;
+                const nextItem = dstIdx < newChecklistItems.length - 1 ? newChecklistItems[dstIdx + 1] : null;
+
+                // Determine if we should join a condition group or leave one
+                const prevConditionId = prevItem?.condition_id || '';
+                const nextConditionId = nextItem?.condition_id || '';
+
+                if (prevConditionId && prevConditionId === nextConditionId) {
+                    // Dropped between two tasks in the same condition group - join that group
+                    updatedItem = {...moved, condition_id: prevConditionId};
+                } else if (moved.condition_id) {
+                    // Check if still adjacent to original condition group
+                    const isStillAdjacentToOriginalGroup = isTaskAdjacentToConditionGroup(
+                        newChecklistItems,
+                        dstIdx,
+                        moved.condition_id
+                    );
+
+                    if (!isStillAdjacentToOriginalGroup) {
+                        // Separated from original group - remove condition
+                        updatedItem = {...moved, condition_id: ''};
+                    }
+                }
+
+                // Remove the temporarily inserted item
+                newChecklistItems.splice(dstIdx, 1);
+
+                // Insert the final item (either original or updated)
+                newChecklistItems.splice(dstIdx, 0, updatedItem);
 
                 newChecklists[srcChecklistIdx] = {
                     ...newChecklists[srcChecklistIdx],
@@ -323,9 +429,30 @@ const ChecklistList = ({
                 const newSrcChecklistItems = [...srcChecklist.items];
                 const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
 
-                // Insert into destination
+                // Insert into destination temporarily to check adjacency
                 const newDstChecklistItems = [...dstChecklist.items];
                 newDstChecklistItems.splice(dstIdx, 0, moved);
+
+                // Check if dropped adjacent to a condition group in the destination checklist
+                const prevItem = dstIdx > 0 ? newDstChecklistItems[dstIdx - 1] : null;
+                const nextItem = dstIdx < newDstChecklistItems.length - 1 ? newDstChecklistItems[dstIdx + 1] : null;
+
+                const prevConditionId = prevItem?.condition_id || '';
+                const nextConditionId = nextItem?.condition_id || '';
+
+                let updatedItem = moved;
+
+                if (prevConditionId && prevConditionId === nextConditionId) {
+                    // Dropped between two tasks in the same condition group - join that group
+                    updatedItem = {...moved, condition_id: prevConditionId};
+                } else {
+                    // Not between condition group items - clear condition_id
+                    updatedItem = {...moved, condition_id: ''};
+                }
+
+                // Remove the temporarily inserted item and insert the updated one
+                newDstChecklistItems.splice(dstIdx, 1);
+                newDstChecklistItems.splice(dstIdx, 0, updatedItem);
 
                 // Update both checklists
                 newChecklists[srcChecklistIdx] = {
@@ -513,6 +640,8 @@ const ChecklistList = ({
                                                     autoAddTask={autoAddTask && checklistIndex === 0}
                                                     onTaskAdded={onTaskAdded}
                                                     isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
+                                                    allChecklists={checklists}
+                                                    onMoveItemToCondition={(itemIndex: number, conditionId: string) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
                                                 />
                                             </CollapsibleChecklist>
                                         );

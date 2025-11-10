@@ -12,6 +12,8 @@ import theme from '../../fixtures/theme.json';
  * Saves user's preference directly via API
  * This API assume that the user is logged in and has cookie to access
  * @param {Array} preference - a list of user's preferences
+ * Note: failOnStatusCode is false to allow tests to continue even if preference
+ *       setting fails (e.g., 403 with Enterprise Advanced license for onboarding prefs)
  */
 Cypress.Commands.add('apiSaveUserPreference', (preferences = [], userId = 'me') => {
     return cy.request({
@@ -19,6 +21,7 @@ Cypress.Commands.add('apiSaveUserPreference', (preferences = [], userId = 'me') 
         url: `/api/v4/users/${userId}/preferences`,
         method: 'PUT',
         body: preferences,
+        failOnStatusCode: false, // Allow non-critical preference failures
     });
 });
 

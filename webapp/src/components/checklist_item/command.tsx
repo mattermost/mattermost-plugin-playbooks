@@ -122,6 +122,7 @@ const Command = (props: CommandProps) => {
 
     let commandButton = (
         <CommandButton
+            data-testid='command-button'
             $editing={props.isEditing}
             $isDisabled={props.disabled}
             $isPlaceholder={props.command === ''}

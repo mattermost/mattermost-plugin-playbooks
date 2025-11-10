@@ -34,6 +34,7 @@ const TaskActions = (props: TaskActionsProps) => {
 
     let taskActionsButton = (
         <TaskActionsContainer
+            data-testid='task-actions-button'
             $editable={props.editable}
             $isPlaceholder={!hasEnabledActions}
             onClick={() => {

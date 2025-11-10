@@ -249,121 +249,113 @@ func TestConditionExprV1_Evaluate(t *testing.T) {
 		require.False(t, condition.Evaluate(propertyFields, propertyValues))
 	})
 
-	t.Run("text field IS with no value set - should return false", func(t *testing.T) {
-		// Create field without corresponding value
-		fieldsWithExtra := append(propertyFields, PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "unset_text_field_id",
-				Name: "Unset Text Field",
-				Type: model.PropertyFieldTypeText,
-			},
-		})
+	textFieldTestCases := []struct {
+		name       string
+		fieldValue *json.RawMessage
+		useIsNot   bool
+		checkValue json.RawMessage
+		expected   bool
+	}{
+		{"text field IS with no value set and checking non-empty string - should return false", nil, false, json.RawMessage(`"123"`), false},
+		{"text field IS with no value set and checking empty string - should return true", nil, false, json.RawMessage(`""`), true},
+		{"text field IS NOT with no value set and checking non-empty string - should return true", nil, true, json.RawMessage(`"123"`), true},
+		{"text field IS NOT with no value set and checking empty string - should return false", nil, true, json.RawMessage(`""`), false},
+		{"text field with empty string - IS condition match", ptrRawMessage(`""`), false, json.RawMessage(`""`), true},
+		{"text field with empty string - IS condition no match", ptrRawMessage(`""`), false, json.RawMessage(`"some value"`), false},
+		{"text field with empty string - IS NOT condition match", ptrRawMessage(`""`), true, json.RawMessage(`"some value"`), true},
+		{"text field with empty string - IS NOT condition no match", ptrRawMessage(`""`), true, json.RawMessage(`""`), false},
+		{"text field with specific value - IS condition match", ptrRawMessage(`"hello world"`), false, json.RawMessage(`"hello world"`), true},
+		{"text field with specific value - IS condition no match", ptrRawMessage(`"hello world"`), false, json.RawMessage(`"goodbye"`), false},
+	}
 
-		condition := &ConditionExprV1{
-			Is: &ComparisonCondition{
-				FieldID: "unset_text_field_id",
-				Value:   json.RawMessage(`"123"`),
-			},
-		}
-		require.False(t, condition.Evaluate(fieldsWithExtra, propertyValues))
-	})
-
-	t.Run("text field IS NOT with no value set - should return true", func(t *testing.T) {
-		// Create field without corresponding value
-		fieldsWithExtra := append(propertyFields, PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "unset_text_field_id",
-				Name: "Unset Text Field",
-				Type: model.PropertyFieldTypeText,
-			},
-		})
-
-		condition := &ConditionExprV1{
-			IsNot: &ComparisonCondition{
-				FieldID: "unset_text_field_id",
-				Value:   json.RawMessage(`"123"`),
-			},
-		}
-		// No value set, so it is indeed "not 123", so this should return true
-		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
-	})
-
-	t.Run("select field IS with no value set - should return false", func(t *testing.T) {
-		// Create field without corresponding value
-		fieldsWithExtra := append(propertyFields, PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "unset_select_field_id",
-				Name: "Unset Select Field",
-				Type: model.PropertyFieldTypeSelect,
-			},
-			Attrs: Attrs{
-				Options: model.PropertyOptions[*model.PluginPropertyOption]{
-					model.NewPluginPropertyOption("option1_id", "Option 1"),
-					model.NewPluginPropertyOption("option2_id", "Option 2"),
+	for _, tc := range textFieldTestCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fields := append(propertyFields, PropertyField{
+				PropertyField: model.PropertyField{
+					ID:   "test_text_field_id",
+					Name: "Test Text Field",
+					Type: model.PropertyFieldTypeText,
 				},
-			},
+			})
+
+			values := propertyValues
+			if tc.fieldValue != nil {
+				values = append(values, PropertyValue{
+					FieldID: "test_text_field_id",
+					Value:   *tc.fieldValue,
+				})
+			}
+
+			var condition *ConditionExprV1
+			if tc.useIsNot {
+				condition = &ConditionExprV1{
+					IsNot: &ComparisonCondition{
+						FieldID: "test_text_field_id",
+						Value:   tc.checkValue,
+					},
+				}
+			} else {
+				condition = &ConditionExprV1{
+					Is: &ComparisonCondition{
+						FieldID: "test_text_field_id",
+						Value:   tc.checkValue,
+					},
+				}
+			}
+
+			require.Equal(t, tc.expected, condition.Evaluate(fields, values))
 		})
+	}
 
-		condition := &ConditionExprV1{
-			Is: &ComparisonCondition{
-				FieldID: "unset_select_field_id",
-				Value:   json.RawMessage(`["option1_id"]`),
-			},
-		}
-		require.False(t, condition.Evaluate(fieldsWithExtra, propertyValues))
-	})
+	unsetFieldTestCases := []struct {
+		name      string
+		fieldType model.PropertyFieldType
+		fieldID   string
+		fieldName string
+		useIsNot  bool
+		expected  bool
+	}{
+		{"select field IS with no value set - should return false", model.PropertyFieldTypeSelect, "unset_select_field_id", "Unset Select Field", false, false},
+		{"select field IS NOT with no value set - should return true", model.PropertyFieldTypeSelect, "unset_select_field_id", "Unset Select Field", true, true},
+		{"multiselect field IS NOT with no value set - should return true", model.PropertyFieldTypeMultiselect, "unset_multiselect_field_id", "Unset Multiselect Field", true, true},
+	}
 
-	t.Run("select field IS NOT with no value set - should return true", func(t *testing.T) {
-		// Create field without corresponding value
-		fieldsWithExtra := append(propertyFields, PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "unset_select_field_id",
-				Name: "Unset Select Field",
-				Type: model.PropertyFieldTypeSelect,
-			},
-			Attrs: Attrs{
-				Options: model.PropertyOptions[*model.PluginPropertyOption]{
-					model.NewPluginPropertyOption("option1_id", "Option 1"),
-					model.NewPluginPropertyOption("option2_id", "Option 2"),
+	for _, tc := range unsetFieldTestCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fields := append(propertyFields, PropertyField{
+				PropertyField: model.PropertyField{
+					ID:   tc.fieldID,
+					Name: tc.fieldName,
+					Type: tc.fieldType,
 				},
-			},
-		})
-
-		condition := &ConditionExprV1{
-			IsNot: &ComparisonCondition{
-				FieldID: "unset_select_field_id",
-				Value:   json.RawMessage(`["option1_id"]`),
-			},
-		}
-		// No value set, so it is indeed "not option1_id", so this should return true
-		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
-	})
-
-	t.Run("multiselect field IS NOT with no value set - should return true", func(t *testing.T) {
-		// Create field without corresponding value
-		fieldsWithExtra := append(propertyFields, PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "unset_multiselect_field_id",
-				Name: "Unset Multiselect Field",
-				Type: model.PropertyFieldTypeMultiselect,
-			},
-			Attrs: Attrs{
-				Options: model.PropertyOptions[*model.PluginPropertyOption]{
-					model.NewPluginPropertyOption("tag1_id", "Tag 1"),
-					model.NewPluginPropertyOption("tag2_id", "Tag 2"),
+				Attrs: Attrs{
+					Options: model.PropertyOptions[*model.PluginPropertyOption]{
+						model.NewPluginPropertyOption("option1_id", "Option 1"),
+						model.NewPluginPropertyOption("option2_id", "Option 2"),
+					},
 				},
-			},
-		})
+			})
 
-		condition := &ConditionExprV1{
-			IsNot: &ComparisonCondition{
-				FieldID: "unset_multiselect_field_id",
-				Value:   json.RawMessage(`["tag1_id"]`),
-			},
-		}
-		// No value set, so it is indeed "not tag1_id", so this should return true
-		require.True(t, condition.Evaluate(fieldsWithExtra, propertyValues))
-	})
+			var condition *ConditionExprV1
+			if tc.useIsNot {
+				condition = &ConditionExprV1{
+					IsNot: &ComparisonCondition{
+						FieldID: tc.fieldID,
+						Value:   json.RawMessage(`["option1_id"]`),
+					},
+				}
+			} else {
+				condition = &ConditionExprV1{
+					Is: &ComparisonCondition{
+						FieldID: tc.fieldID,
+						Value:   json.RawMessage(`["option1_id"]`),
+					},
+				}
+			}
+
+			require.Equal(t, tc.expected, condition.Evaluate(fields, propertyValues))
+		})
+	}
 }
 
 func TestConditionExprV1_JSON(t *testing.T) {
@@ -468,262 +460,78 @@ func TestConditionExprV1_JSON(t *testing.T) {
 }
 
 func TestIsFunction(t *testing.T) {
-	t.Run("text field - match", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "text_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "text_field",
-			Value:   json.RawMessage(`"Hello World"`),
-		}
-		result := is(field, pv, json.RawMessage(`"Hello World"`))
-		require.True(t, result)
-	})
+	testCases := []struct {
+		name      string
+		fieldType model.PropertyFieldType
+		fieldID   string
+		value     json.RawMessage
+		checkVal  json.RawMessage
+		expected  bool
+	}{
+		{"text field - match", model.PropertyFieldTypeText, "text_field", json.RawMessage(`"Hello World"`), json.RawMessage(`"Hello World"`), true},
+		{"text field - no match", model.PropertyFieldTypeText, "text_field", json.RawMessage(`"Hello World"`), json.RawMessage(`"Goodbye"`), false},
+		{"text field - case insensitive match", model.PropertyFieldTypeText, "text_field", json.RawMessage(`"Hello World"`), json.RawMessage(`"hello world"`), true},
+		{"text field - case insensitive with mixed case", model.PropertyFieldTypeText, "text_field", json.RawMessage(`"Hello World"`), json.RawMessage(`"HeLLo WoRLd"`), true},
+		{"select field - match", model.PropertyFieldTypeSelect, "select_field", json.RawMessage(`"Option1"`), json.RawMessage(`["Option1"]`), true},
+		{"select field - case sensitive no match", model.PropertyFieldTypeSelect, "select_field", json.RawMessage(`"Option1"`), json.RawMessage(`["option1"]`), false},
+		{"multiselect field - contains value", model.PropertyFieldTypeMultiselect, "multiselect_field", json.RawMessage(`["A", "B", "C"]`), json.RawMessage(`["B"]`), true},
+		{"multiselect field - does not contain value", model.PropertyFieldTypeMultiselect, "multiselect_field", json.RawMessage(`["A", "B", "C"]`), json.RawMessage(`["D"]`), false},
+		{"multiselect field - empty array", model.PropertyFieldTypeMultiselect, "multiselect_field", json.RawMessage(`[]`), json.RawMessage(`["A"]`), false},
+		{"nil value", model.PropertyFieldTypeText, "empty_field", nil, json.RawMessage(`"anything"`), false},
+		{"invalid json for text field", model.PropertyFieldTypeText, "invalid_field", json.RawMessage(`invalid json`), json.RawMessage(`"anything"`), false},
+		{"invalid json for multiselect field", model.PropertyFieldTypeMultiselect, "invalid_field", json.RawMessage(`invalid json`), json.RawMessage(`"anything"`), false},
+	}
 
-	t.Run("text field - no match", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "text_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "text_field",
-			Value:   json.RawMessage(`"Hello World"`),
-		}
-		result := is(field, pv, json.RawMessage(`"Goodbye"`))
-		require.False(t, result)
-	})
-
-	t.Run("text field - case insensitive match", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "text_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "text_field",
-			Value:   json.RawMessage(`"Hello World"`),
-		}
-		result := is(field, pv, json.RawMessage(`"hello world"`))
-		require.True(t, result)
-	})
-
-	t.Run("text field - case insensitive with mixed case", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "text_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "text_field",
-			Value:   json.RawMessage(`"Hello World"`),
-		}
-		result := is(field, pv, json.RawMessage(`"HeLLo WoRLd"`))
-		require.True(t, result)
-	})
-
-	t.Run("select field - match", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "select_field",
-				Type: model.PropertyFieldTypeSelect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "select_field",
-			Value:   json.RawMessage(`"Option1"`),
-		}
-		result := is(field, pv, json.RawMessage(`["Option1"]`))
-		require.True(t, result)
-	})
-
-	t.Run("select field - case sensitive no match", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "select_field",
-				Type: model.PropertyFieldTypeSelect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "select_field",
-			Value:   json.RawMessage(`"Option1"`),
-		}
-		result := is(field, pv, json.RawMessage(`["option1"]`))
-		require.False(t, result)
-	})
-
-	t.Run("multiselect field - contains value", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "multiselect_field",
-				Type: model.PropertyFieldTypeMultiselect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "multiselect_field",
-			Value:   json.RawMessage(`["A", "B", "C"]`),
-		}
-		result := is(field, pv, json.RawMessage(`["B"]`))
-		require.True(t, result)
-	})
-
-	t.Run("multiselect field - does not contain value", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "multiselect_field",
-				Type: model.PropertyFieldTypeMultiselect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "multiselect_field",
-			Value:   json.RawMessage(`["A", "B", "C"]`),
-		}
-		result := is(field, pv, json.RawMessage(`["D"]`))
-		require.False(t, result)
-	})
-
-	t.Run("multiselect field - empty array", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "multiselect_field",
-				Type: model.PropertyFieldTypeMultiselect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "multiselect_field",
-			Value:   json.RawMessage(`[]`),
-		}
-		result := is(field, pv, json.RawMessage(`["A"]`))
-		require.False(t, result)
-	})
-
-	t.Run("nil value", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "empty_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "empty_field",
-			Value:   nil,
-		}
-		result := is(field, pv, json.RawMessage(`"anything"`))
-		require.False(t, result)
-	})
-
-	t.Run("invalid json for text field", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "invalid_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "invalid_field",
-			Value:   json.RawMessage(`invalid json`),
-		}
-		result := is(field, pv, json.RawMessage(`"anything"`))
-		require.False(t, result)
-	})
-
-	t.Run("invalid json for multiselect field", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "invalid_field",
-				Type: model.PropertyFieldTypeMultiselect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "invalid_field",
-			Value:   json.RawMessage(`invalid json`),
-		}
-		result := is(field, pv, json.RawMessage(`"anything"`))
-		require.False(t, result)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			field := PropertyField{
+				PropertyField: model.PropertyField{
+					ID:   tc.fieldID,
+					Type: tc.fieldType,
+				},
+			}
+			pv := PropertyValue{
+				FieldID: tc.fieldID,
+				Value:   tc.value,
+			}
+			result := is(field, pv, tc.checkVal)
+			require.Equal(t, tc.expected, result)
+		})
+	}
 }
 
 func TestIsNotFunction(t *testing.T) {
-	t.Run("text field - not match", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "text_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "text_field",
-			Value:   json.RawMessage(`"Hello World"`),
-		}
-		result := isNot(field, pv, json.RawMessage(`"Goodbye"`))
-		require.True(t, result)
-	})
+	testCases := []struct {
+		name      string
+		fieldType model.PropertyFieldType
+		fieldID   string
+		value     json.RawMessage
+		checkVal  json.RawMessage
+		expected  bool
+	}{
+		{"text field - not match", model.PropertyFieldTypeText, "text_field", json.RawMessage(`"Hello World"`), json.RawMessage(`"Goodbye"`), true},
+		{"text field - match (should return false)", model.PropertyFieldTypeText, "text_field", json.RawMessage(`"Hello World"`), json.RawMessage(`"Hello World"`), false},
+		{"text field - case insensitive match (should return false)", model.PropertyFieldTypeText, "text_field", json.RawMessage(`"Hello World"`), json.RawMessage(`"hello world"`), false},
+		{"multiselect field - does not contain value", model.PropertyFieldTypeMultiselect, "multiselect_field", json.RawMessage(`["A", "B", "C"]`), json.RawMessage(`["D"]`), true},
+		{"multiselect field - contains value (should return false)", model.PropertyFieldTypeMultiselect, "multiselect_field", json.RawMessage(`["A", "B", "C"]`), json.RawMessage(`["B"]`), false},
+	}
 
-	t.Run("text field - match (should return false)", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "text_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "text_field",
-			Value:   json.RawMessage(`"Hello World"`),
-		}
-		result := isNot(field, pv, json.RawMessage(`"Hello World"`))
-		require.False(t, result)
-	})
-
-	t.Run("text field - case insensitive match (should return false)", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "text_field",
-				Type: model.PropertyFieldTypeText,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "text_field",
-			Value:   json.RawMessage(`"Hello World"`),
-		}
-		result := isNot(field, pv, json.RawMessage(`"hello world"`))
-		require.False(t, result)
-	})
-
-	t.Run("multiselect field - does not contain value", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "multiselect_field",
-				Type: model.PropertyFieldTypeMultiselect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "multiselect_field",
-			Value:   json.RawMessage(`["A", "B", "C"]`),
-		}
-		result := isNot(field, pv, json.RawMessage(`["D"]`))
-		require.True(t, result)
-	})
-
-	t.Run("multiselect field - contains value (should return false)", func(t *testing.T) {
-		field := PropertyField{
-			PropertyField: model.PropertyField{
-				ID:   "multiselect_field",
-				Type: model.PropertyFieldTypeMultiselect,
-			},
-		}
-		pv := PropertyValue{
-			FieldID: "multiselect_field",
-			Value:   json.RawMessage(`["A", "B", "C"]`),
-		}
-		result := isNot(field, pv, json.RawMessage(`["B"]`))
-		require.False(t, result)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			field := PropertyField{
+				PropertyField: model.PropertyField{
+					ID:   tc.fieldID,
+					Type: tc.fieldType,
+				},
+			}
+			pv := PropertyValue{
+				FieldID: tc.fieldID,
+				Value:   tc.value,
+			}
+			result := isNot(field, pv, tc.checkVal)
+			require.Equal(t, tc.expected, result)
+		})
+	}
 }
 
 func TestConditionExprV1_Validate(t *testing.T) {
@@ -917,6 +725,24 @@ func TestComparisonCondition_Validate(t *testing.T) {
 		require.NoError(t, condition.Validate(propertyFields))
 	})
 
+	t.Run("nil value should fail validation", func(t *testing.T) {
+		condition := &ComparisonCondition{
+			FieldID: "acknowledged_id",
+			Value:   nil,
+		}
+		err := condition.Validate(propertyFields)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "text field condition value must be a string")
+	})
+
+	t.Run("null JSON value is allowed", func(t *testing.T) {
+		condition := &ComparisonCondition{
+			FieldID: "acknowledged_id",
+			Value:   json.RawMessage("null"),
+		}
+		require.NoError(t, condition.Validate(propertyFields))
+	})
+
 	t.Run("select field with no options should fail", func(t *testing.T) {
 		// Create a select field with no options
 		emptySelectFields := []PropertyField{
@@ -1061,6 +887,11 @@ func TestComparisonCondition_Sanitize(t *testing.T) {
 	})
 }
 
+func ptrRawMessage(s string) *json.RawMessage {
+	rm := json.RawMessage(s)
+	return &rm
+}
+
 // Test helper function that creates property fields with corresponding values
 func createTestFieldsAndValues(t *testing.T) ([]PropertyField, []PropertyValue) {
 	t.Helper()
@@ -1168,7 +999,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Severity is Critical", result)
+		require.Equal(t, `"Severity" is Critical`, result)
 	})
 
 	t.Run("simple isNot condition", func(t *testing.T) {
@@ -1179,7 +1010,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Acknowledged is not false", result)
+		require.Equal(t, `"Acknowledged" is not "false"`, result)
 	})
 
 	t.Run("single value array condition", func(t *testing.T) {
@@ -1190,7 +1021,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Status is Open", result)
+		require.Equal(t, `"Status" is Open`, result)
 	})
 
 	t.Run("multi value array condition", func(t *testing.T) {
@@ -1201,7 +1032,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Categories is not [Category A,Category B]", result)
+		require.Equal(t, `"Categories" is not [Category A,Category B]`, result)
 	})
 
 	t.Run("and condition", func(t *testing.T) {
@@ -1222,7 +1053,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Severity is Critical AND Acknowledged is not true", result)
+		require.Equal(t, `"Severity" is Critical AND "Acknowledged" is not "true"`, result)
 	})
 
 	t.Run("or condition", func(t *testing.T) {
@@ -1243,7 +1074,7 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Severity is Low OR Priority is High", result)
+		require.Equal(t, `"Severity" is Low OR "Priority" is High`, result)
 	})
 
 	t.Run("nested conditions", func(t *testing.T) {
@@ -1274,7 +1105,62 @@ func TestConditionExprV1_ToString(t *testing.T) {
 			},
 		}
 		result := condition.ToString(propertyFields)
-		require.Equal(t, "Severity is Critical AND (Status is Open OR Acknowledged is not true)", result)
+		require.Equal(t, `"Severity" is Critical AND ("Status" is Open OR "Acknowledged" is not "true")`, result)
+	})
+
+	t.Run("text field with empty string", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage(`""`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, `"Acknowledged" is empty`, result)
+	})
+
+	t.Run("text field with empty string isNot", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			IsNot: &ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage(`""`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, `"Acknowledged" is not empty`, result)
+	})
+
+	t.Run("text field with whitespace-only string", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage(`"   "`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, `"Acknowledged" is "   "`, result)
+	})
+
+	t.Run("text field with regular string", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage(`"hello world"`),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, `"Acknowledged" is "hello world"`, result)
+	})
+
+	t.Run("text field with null JSON value", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "acknowledged_id",
+				Value:   json.RawMessage("null"),
+			},
+		}
+		result := condition.ToString(propertyFields)
+		require.Equal(t, `"Acknowledged" is empty`, result)
 	})
 
 }
@@ -1749,86 +1635,92 @@ func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
 }
 
 func TestConditionEvaluationResult_AnythingChanged(t *testing.T) {
-	t.Run("returns false for empty result", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
-		}
-		require.False(t, result.AnythingChanged())
-	})
-
-	t.Run("returns false when no changes", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: map[string]*ChecklistConditionChanges{
+	testCases := []struct {
+		name     string
+		changes  map[string]*ChecklistConditionChanges
+		expected bool
+	}{
+		{"returns false for empty result", make(map[string]*ChecklistConditionChanges), false},
+		{
+			"returns false when no changes",
+			map[string]*ChecklistConditionChanges{
 				"Checklist 1": {Added: 0, Hidden: 0, hasChanges: false},
 				"Checklist 2": {Added: 0, Hidden: 0, hasChanges: false},
 			},
-		}
-		require.False(t, result.AnythingChanged())
-	})
-
-	t.Run("returns true when items added", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: map[string]*ChecklistConditionChanges{
+			false,
+		},
+		{
+			"returns true when items added",
+			map[string]*ChecklistConditionChanges{
 				"Checklist 1": {Added: 2, Hidden: 0, hasChanges: true},
 			},
-		}
-		require.True(t, result.AnythingChanged())
-	})
-
-	t.Run("returns true when items hidden", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: map[string]*ChecklistConditionChanges{
+			true,
+		},
+		{
+			"returns true when items hidden",
+			map[string]*ChecklistConditionChanges{
 				"Checklist 1": {Added: 0, Hidden: 3, hasChanges: true},
 			},
-		}
-		require.True(t, result.AnythingChanged())
-	})
-
-	t.Run("returns true when both added and hidden", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: map[string]*ChecklistConditionChanges{
+			true,
+		},
+		{
+			"returns true when both added and hidden",
+			map[string]*ChecklistConditionChanges{
 				"Checklist 1": {Added: 1, Hidden: 2, hasChanges: true},
 				"Checklist 2": {Added: 0, Hidden: 0, hasChanges: false},
 			},
-		}
-		require.True(t, result.AnythingChanged())
-	})
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := &ConditionEvaluationResult{
+				ChecklistChanges: tc.changes,
+			}
+			require.Equal(t, tc.expected, result.AnythingChanged())
+		})
+	}
 }
 
 func TestConditionEvaluationResult_AnythingAdded(t *testing.T) {
-	t.Run("returns false for empty result", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
-		}
-		require.False(t, result.AnythingAdded())
-	})
-
-	t.Run("returns false when no items added", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: map[string]*ChecklistConditionChanges{
+	testCases := []struct {
+		name     string
+		changes  map[string]*ChecklistConditionChanges
+		expected bool
+	}{
+		{"returns false for empty result", make(map[string]*ChecklistConditionChanges), false},
+		{
+			"returns false when no items added",
+			map[string]*ChecklistConditionChanges{
 				"Checklist 1": {Added: 0, Hidden: 5},
 				"Checklist 2": {Added: 0, Hidden: 0},
 			},
-		}
-		require.False(t, result.AnythingAdded())
-	})
-
-	t.Run("returns true when items added", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: map[string]*ChecklistConditionChanges{
+			false,
+		},
+		{
+			"returns true when items added",
+			map[string]*ChecklistConditionChanges{
 				"Checklist 1": {Added: 1, Hidden: 0},
 			},
-		}
-		require.True(t, result.AnythingAdded())
-	})
-
-	t.Run("returns true when items added even with hidden items", func(t *testing.T) {
-		result := &ConditionEvaluationResult{
-			ChecklistChanges: map[string]*ChecklistConditionChanges{
+			true,
+		},
+		{
+			"returns true when items added even with hidden items",
+			map[string]*ChecklistConditionChanges{
 				"Checklist 1": {Added: 0, Hidden: 2},
 				"Checklist 2": {Added: 3, Hidden: 1},
 			},
-		}
-		require.True(t, result.AnythingAdded())
-	})
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := &ConditionEvaluationResult{
+				ChecklistChanges: tc.changes,
+			}
+			require.Equal(t, tc.expected, result.AnythingAdded())
+		})
+	}
 }

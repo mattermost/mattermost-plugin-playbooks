@@ -37,7 +37,10 @@ describe('ConditionIndicator', () => {
     it('should return null when no condition_id', () => {
         const item = emptyChecklistItem();
         const component = renderer.create(
-            <ConditionIndicator checklistItem={item}/>,
+            <ConditionIndicator
+                checklistItem={item}
+                tooltipMessage=''
+            />,
         );
         expect(component.toJSON()).toBeNull();
     });
@@ -48,17 +51,20 @@ describe('ConditionIndicator', () => {
             id: 'test-123',
             condition_id: 'cond-456',
             condition_action: '',
-            condition_reason: 'Priority is "High"',
+            condition_reason: '"Priority" is "High"',
         };
         const component = renderer.create(
-            <ConditionIndicator checklistItem={item}/>,
+            <ConditionIndicator
+                checklistItem={item}
+                tooltipMessage='Shown because "Priority" is "High"'
+            />,
         );
         const tree = component.toJSON();
 
         expect(tree).toBeTruthy();
         expect(Array.isArray(tree)).toBe(false);
         if (tree && !Array.isArray(tree) && tree.children) {
-            expect(tree.props['data-tooltip']).toBe('conditionally rendered: Priority is "High"');
+            expect(tree.props['data-tooltip']).toBe('Shown because "Priority" is "High"');
             const child = tree.children[0] as ReactTestRendererJSON;
             if (child.children) {
                 const grandchild = child.children[0] as ReactTestRendererJSON;
@@ -74,17 +80,20 @@ describe('ConditionIndicator', () => {
             id: 'test-789',
             condition_id: 'cond-012',
             condition_action: 'shown_because_modified',
-            condition_reason: 'Item modified by user',
+            condition_reason: 'shown because the task was modified',
         };
         const component = renderer.create(
-            <ConditionIndicator checklistItem={item}/>,
+            <ConditionIndicator
+                checklistItem={item}
+                tooltipMessage='Condition no longer met, but task shown because it was modified'
+            />,
         );
         const tree = component.toJSON();
 
         expect(tree).toBeTruthy();
         expect(Array.isArray(tree)).toBe(false);
         if (tree && !Array.isArray(tree) && tree.children) {
-            expect(tree.props['data-tooltip']).toBe('conditionally rendered: Item modified by user');
+            expect(tree.props['data-tooltip']).toBe('Condition no longer met, but task shown because it was modified');
             const child = tree.children[0] as ReactTestRendererJSON;
             if (child.children) {
                 const grandchild = child.children[0] as ReactTestRendererJSON;
