@@ -44,6 +44,7 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
 
         describe('shows available', () => {
             // TBD: UI changes for Checklists feature - template access workflow has changed
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('starter templates', () => {
             // templates are defined in webapp/src/components/templates/template_data.tsx
                 const templates = [
@@ -137,6 +138,7 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
             });
 
             // TBD: UI changes for Checklists feature - empty state display has changed
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('without pre-populated channel name template', () => {
                 // * Verify the templates are not shown
                 cy.findAllByTestId('template-details').should('not.exist');
@@ -184,6 +186,7 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
         });
 
         // TBD: UI changes for Checklists feature - permission messaging has changed
+        // eslint-disable-next-line no-only-tests/no-only-tests
         it.skip('permission notice should be shown and no create button should exist', () => {
             // # Ensure any existing runs in this channel are finished so we get the empty state
             cy.apiFinishAllRuns(restrictedTestTeam.id);

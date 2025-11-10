@@ -33,6 +33,7 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
     describe('create playbook', () => {
         describe('open new playbook creation modal and navigates to playbooks', () => {
             // TODO: This workflow has been deprecated with the new Checklists UI. May be re-enabled when template access is redesigned.
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('after clicking on Use', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);
@@ -69,6 +70,7 @@ describe('channels > rhs > template', {testIsolation: true}, () => {
             });
 
             // TODO: This workflow has been deprecated with the new Checklists UI. May be re-enabled when template access is redesigned.
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('after clicking on title', () => {
                 // # Switch to playbooks DM channel
                 cy.visit(`/${team1.name}/messages/@playbooks`);

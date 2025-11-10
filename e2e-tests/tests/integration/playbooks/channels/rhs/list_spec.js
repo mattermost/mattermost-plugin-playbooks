@@ -129,6 +129,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
     });
 
     // TBD: UI changes for Checklists feature - "Runs in progress" text has changed
+    // eslint-disable-next-line no-only-tests/no-only-tests
     it.skip('can filter', () => {
         // # Click the filter menu
         cy.findByTestId('rhs-runs-filter-menu').click();
@@ -148,6 +149,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
     });
 
     // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
+    // eslint-disable-next-line no-only-tests/no-only-tests
     it.skip('can show more (pagination)', () => {
         // * Verify we have the first page
         cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 8);
@@ -160,6 +162,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
     });
 
     // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
+    // eslint-disable-next-line no-only-tests/no-only-tests
     it.skip('card has the basic info', () => {
         // # Click the first run
         cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').within(() => {
@@ -170,6 +173,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
     });
 
     // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
+    // eslint-disable-next-line no-only-tests/no-only-tests
     it.skip('can click though', () => {
         // # Click the first run
         cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').click();
@@ -180,6 +184,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
     });
 
     // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
+    // eslint-disable-next-line no-only-tests/no-only-tests
     describe.skip('dotmenu', () => {
         it('can navigate to RDP', () => {
             // # Click the first run's dotmenu

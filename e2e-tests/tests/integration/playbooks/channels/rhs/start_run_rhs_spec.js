@@ -85,6 +85,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             });
 
             // TBD: UI changes for Checklists feature - RHS workflow has changed
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('change title/summary', () => {
                 // # Fill default values
                 createPlaybook({
@@ -155,6 +156,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             });
 
             // TBD: UI changes for Checklists feature - RHS workflow has changed
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('change to link to existing channel defaults to current channel', () => {
                 // # Fill default values
                 createPlaybook({
@@ -204,6 +206,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             });
 
             // TBD: UI changes for Checklists feature - RHS workflow has changed
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('change to link to existing channel with already selected channel', () => {
                 // # Fill default values
                 createPlaybook({
@@ -254,6 +257,7 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             });
 
             // TBD: UI changes for Checklists feature - RHS workflow has changed
+            // eslint-disable-next-line no-only-tests/no-only-tests
             it.skip('change to link to existing channel', () => {
                 // # Fill default values
                 createPlaybook({
