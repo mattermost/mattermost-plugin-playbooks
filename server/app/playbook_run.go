@@ -1010,6 +1010,7 @@ const (
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
+	PropertyChanged        timelineEventType = "property_changed"
 )
 
 type TimelineEvent struct {

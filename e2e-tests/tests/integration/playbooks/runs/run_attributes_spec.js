@@ -338,18 +338,13 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 });
             });
 
-            it('can edit text attribute value and see post', () => {
+            it('can edit text attribute value', () => {
                 // # Edit text attribute
                 editTextAttribute('Notes', 'Channel edit notes');
                 cy.wait(500);
 
                 // * Verify value is displayed
                 verifyAttributeValue('Notes', 'Channel edit notes');
-
-                // * Verify message posted in channel
-                cy.get('#postListContent').within(() => {
-                    cy.contains('Notes').should('exist');
-                });
             });
 
             it('can edit URL attribute and displays as clickable link', () => {
@@ -366,11 +361,6 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                         should('have.attr', 'target', '_blank').
                         should('have.attr', 'rel', 'noopener noreferrer').
                         should('contain', testUrl);
-                });
-
-                // * Verify message posted in channel
-                cy.get('#postListContent').within(() => {
-                    cy.contains('Documentation').should('exist');
                 });
 
                 // # Capture current URL before navigating away
@@ -418,28 +408,18 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                         should('have.attr', 'href', newUrl).
                         should('contain', newUrl);
                 });
-
-                // * Verify update message posted in channel
-                cy.get('#postListContent').within(() => {
-                    cy.contains('Documentation').should('exist');
-                });
             });
 
-            it('can edit select attribute value and see post', () => {
+            it('can edit select attribute value', () => {
                 // # Edit select attribute
                 editSelectAttribute('Priority', 'Medium');
                 cy.wait(500);
 
                 // * Verify selected value is displayed
                 verifyAttributeValue('Priority', 'Medium');
-
-                // * Verify message posted in channel
-                cy.get('#postListContent').within(() => {
-                    cy.contains('Priority').should('exist');
-                });
             });
 
-            it('can edit multiselect attribute value and see post', () => {
+            it('can edit multiselect attribute value', () => {
                 // # Click on multiselect attribute
                 clickAttributeToEdit('Labels');
 
@@ -452,12 +432,68 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 getAttributeRow('Labels').within(() => {
                     cy.contains('Feature').should('exist');
                 });
-
-                // * Verify message posted in channel
-                cy.get('#postListContent').within(() => {
-                    cy.contains('Labels').should('exist');
-                });
             });
+        });
+    });
+
+    describe('timeline entries for property changes', () => {
+        beforeEach(() => {
+            // # Create playbook with attributes
+            createPlaybookWithAttributes([
+                {name: 'Environment', type: 'text'},
+                {name: 'Severity', type: 'select', options: ['Low', 'Medium', 'High']},
+            ]);
+
+            // # Start a run
+            startRun('Timeline Test Run');
+        });
+
+        it('creates timeline entry when setting text property', () => {
+            // # Navigate to run
+            navigateToRun();
+
+            // # Set text property value
+            editTextAttribute('Environment', 'Production');
+            cy.wait(500);
+
+            // * Verify timeline entry exists with correct format
+            cy.get('[data-testid="timeline-item property_changed"]').should('exist');
+            cy.contains('set Environment to Production').should('exist');
+        });
+
+        it('creates timeline entry when clearing property', () => {
+            // # Navigate to run
+            navigateToRun();
+
+            // # Set and then clear property
+            editTextAttribute('Environment', 'Staging');
+            cy.wait(500);
+
+            clickAttributeToEdit('Environment');
+            cy.focused().clear();
+            cy.get('body').click(0, 0);
+            cy.wait(500);
+
+            // * Verify timeline entries exist
+            cy.get('[data-testid="timeline-item property_changed"]').should('have.length.at.least', 2);
+            cy.contains('cleared Environment').should('exist');
+        });
+
+        it('creates timeline entry when updating select property', () => {
+            // # Navigate to run
+            navigateToRun();
+
+            // # Set initial value
+            editSelectAttribute('Severity', 'Low');
+            cy.wait(500);
+
+            // # Update to different value
+            editSelectAttribute('Severity', 'High');
+            cy.wait(500);
+
+            // * Verify timeline entries exist
+            cy.get('[data-testid="timeline-item property_changed"]').should('have.length.at.least', 2);
+            cy.contains('updated Severity from Low to High').should('exist');
         });
     });
 
