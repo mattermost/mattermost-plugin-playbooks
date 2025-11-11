@@ -21,6 +21,7 @@ interface TextEditProps {
     className?: string;
     noBorder?: boolean;
     disabled?: boolean;
+    testId?: string;
 
     editStyles?: ReturnType<typeof css>;
 }
@@ -50,10 +51,11 @@ const TextEdit = (props: TextEditProps) => {
     };
 
     if (isEditing) {
+        const editableTestId = props.testId ? props.testId.replace('rendered-', 'textarea-') : 'rendered-editable-text';
         return (
             <Container className={props.className}>
                 <EditableTextInput
-                    data-testid={'rendered-editable-text'}
+                    data-testid={editableTestId}
                     value={value}
                     placeholder={props.placeholder}
                     onChange={(e) => {
@@ -88,7 +90,7 @@ const TextEdit = (props: TextEditProps) => {
     }
 
     return (
-        <Container className={props.className}>
+        <Container className={props.className} data-testid={props.testId || 'rendered-text'}>
             {!isEditing && !props.children && (
                 <HoverMenuContainer>
                     <Tooltip
@@ -105,7 +107,7 @@ const TextEdit = (props: TextEditProps) => {
                 </HoverMenuContainer>
             )}
             {resolve(props.children, () => setIsEditing(true)) ?? (
-                <RenderedText data-testid='rendered-text'>
+                <RenderedText>
                     {value}
                 </RenderedText>
             )}

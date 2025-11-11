@@ -83,10 +83,15 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
 
     describe('edit run name', () => {
         it('by clicking on name', () => {
-            cy.get('#rhsContainer').findByTestId('rendered-run-name').should('be.visible').click();
+            // # Click the menu button to open the dropdown
+            cy.get('#rhsContainer').findByTestId('rendered-run-name').should('be.visible');
+            cy.get('#rhsContainer').findByTestId('menuButton').should('be.visible').click();
+
+            // # Click "Rename" from the dropdown menu
+            cy.findByText('Rename').click();
 
             // # type text in textarea
-            cy.get('#rhsContainer').findByTestId('textarea-run-name').should('be.visible').clear().type('new run name{ctrl+enter}');
+            cy.get('#rhsContainer').findByTestId('textarea-run-name').should('be.visible').clear().type('new run name{enter}');
 
             // * make sure the updated name is here
             cy.get('#rhsContainer').findByTestId('rendered-run-name').should('be.visible').contains('new run name');

@@ -139,11 +139,11 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             // # Run a slash command with correct parameters
             cy.uiPostMessageQuickly('/playbook finish');
 
-            // * Verify confirm modal is visible.
-            cy.get('#appsModalLabel').should('exist');
+            // * Verify confirm modal is visible (using standard confirmModal instead of appsModal)
+            cy.get('#confirmModal').should('exist');
 
             // # Confirm finish
-            cy.get('#appsModalSubmit').click();
+            cy.get('#confirmModalButton').click();
 
             // * Verify that the run is finished.
             cy.get('#rhsContainer').findByTestId('badge').contains('Finished');
@@ -481,11 +481,11 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             // # Run a slash command with correct parameters
             cy.uiPostMessageQuickly('/playbook finish 1');
 
-            // * Verify confirm modal is visible.
-            cy.get('#appsModalLabel').should('exist');
+            // * Verify confirm modal is visible (using standard confirmModal instead of appsModal)
+            cy.get('#confirmModal').should('exist');
 
             // # Confirm finish
-            cy.get('#appsModalSubmit').click();
+            cy.get('#confirmModalButton').click();
 
             // * Verify that the run is finished.
             cy.get('#rhsContainer').findByTestId('badge').contains('Finished');

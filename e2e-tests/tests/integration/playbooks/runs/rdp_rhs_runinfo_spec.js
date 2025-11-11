@@ -119,8 +119,8 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     // # Click on the back button
                     cy.findByTestId('rhs-back-button').click();
 
-                    // * Verify that the RHS is back to Run info
-                    cy.findByTestId('rhs-title').contains('Run info');
+                    // * Verify that the RHS is back to Overview
+                    cy.findByTestId('rhs-title').contains('Overview');
                 });
             });
         };

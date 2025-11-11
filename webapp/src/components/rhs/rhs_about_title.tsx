@@ -79,6 +79,7 @@ const RHSAboutTitle = (props: Props) => {
                     placeholder={formatMessage({defaultMessage: 'Run name'})}
                     value={props.playbookRun.name}
                     onSave={(name: string) => props.onEdit(name)}
+                    testId='rendered-run-name'
                     editStyles={css`
                         display: flex;
                         flex-direction: column;

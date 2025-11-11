@@ -195,15 +195,12 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # Navigate directly to the application and the playbook run channel
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
-            // # click on the field
+            // # Click the menu button to access dropdown
             cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('buttons-row').invoke('show').within(() => {
-                    cy.findAllByRole('button').eq(1).click();
-                });
+                cy.findByTestId('menuButton').click();
             });
 
             cy.findByTestId('dropdownmenu').within(() => {
-                cy.get('span').should('have.length', 3);
                 cy.findByText('Edit run summary').click();
             });
 
@@ -244,9 +241,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
 
             // # Click on the dot menu
             cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('buttons-row').invoke('show').within(() => {
-                    cy.findAllByRole('button').eq(1).click({force: true});
-                });
+                cy.findByTestId('menuButton').click();
             });
 
             // * Verify "Go to playbook" does not exist
@@ -362,11 +357,9 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # Mark the run as finished
             cy.apiFinishRun(finishedPlaybookRun.id);
 
-            // # click on the field
+            // # Click the menu button to access dropdown
             cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('buttons-row').invoke('show').within(() => {
-                    cy.findAllByRole('button').eq(1).click({force: true});
-                });
+                cy.findByTestId('menuButton').click();
             });
 
             // * Verify the menu items

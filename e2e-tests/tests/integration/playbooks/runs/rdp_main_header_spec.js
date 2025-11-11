@@ -467,7 +467,7 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
                     cy.findByTestId('assignee-profile-selector').should('contain', testViewerUser.username);
 
                     // # Click on leave run
-                    getDropdownItemByText('Leave and unfollow run').click();
+                    getDropdownItemByText('Leave and unfollow').click();
 
                     // # confirm modal
                     cy.get('#confirmModal').get('#confirmModalButton').click();
