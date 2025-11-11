@@ -108,7 +108,7 @@ const ChecklistsRebrandTour = () => {
             pulsatingDotPlacement='bottom'
             pulsatingDotTranslate={{x: 0, y: 0}}
             width={320}
-            autoTour={true}
+            autoTour={false}
             punchOut={null}
         />
     );
