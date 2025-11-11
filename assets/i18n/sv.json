@@ -222,5 +222,9 @@
     {
         "id": "app.user.new_run.intro",
         "translation": "**Ägare** {{.Username}}"
+    },
+    {
+        "id": "playbooks.checklist.condition.reason.modified",
+        "translation": "visas eftersom uppgiften ändrades"
     }
 ]
