@@ -69,7 +69,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
 
     describe('> overview', () => {
         const getOverviewEntry = (entryName) => (
-            getRHSSection('Overview').findByTestId(`runinfo-${entryName}`)
+            cy.findByRole('complementary').findByTestId(`runinfo-${entryName}`)
         );
 
         const commonTests = () => {
@@ -119,8 +119,8 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     // # Click on the back button
                     cy.findByTestId('rhs-back-button').click();
 
-                    // * Verify that the RHS is back to Overview
-                    cy.findByTestId('rhs-title').contains('Overview');
+                    // * Verify that the RHS is back to Info
+                    cy.findByTestId('rhs-title').contains('Info');
                 });
             });
         };
@@ -203,7 +203,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     getOverviewEntry('playbook').should('not.exist');
 
                     // * Verify that "Private" text is not shown
-                    getRHSSection('Overview').should('not.contain', 'Private');
+                    getRHSSection('Info').should('not.contain', 'Private');
 
                     // * Verify other overview entries are still visible
                     getOverviewEntry('owner').should('exist');
@@ -248,8 +248,8 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                             // * Verify that the playbook entry does not exist
                             getOverviewEntry('playbook').should('not.exist');
 
-                            // * Verify that "Private" text is not shown in the Overview section
-                            getRHSSection('Overview').should('not.contain', 'Private');
+                            // * Verify that "Private" text is not shown in the Info section
+                            getRHSSection('Info').should('not.contain', 'Private');
 
                             // * Verify other overview entries are still visible
                             getOverviewEntry('owner').should('exist');

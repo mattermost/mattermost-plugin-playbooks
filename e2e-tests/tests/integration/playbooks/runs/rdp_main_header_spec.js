@@ -68,8 +68,8 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
         // # Click on the Save button without changing anything
         cy.findByRole('button', {name: /Save/i}).click();
 
-        // * Verify that the modal is no longer there
-        cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
+        // * Verify that the modal is no longer visible (modal may stay in DOM but be hidden)
+        cy.get('#run-actions-modal').should('not.be.visible');
     };
 
     const getHeader = () => {
@@ -173,8 +173,8 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
                         // # Click on the Cancel button
                         cy.findByRole('button', {name: /Cancel/i}).click();
 
-                        // * Verify that the modal is no longer there
-                        cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
+                        // * Verify that the modal is no longer visible (modal may stay in DOM but be hidden)
+                        cy.get('#run-actions-modal').should('not.be.visible');
 
                         // # Open the run actions modal
                         openRunActionsModal();
@@ -451,8 +451,8 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
                     // # Click on cancel
                     cy.findByRole('dialog', {name: /Run Actions/i}).findByTestId('modal-cancel-button').click();
 
-                    // * Assert modal disappeared
-                    cy.findByRole('dialog', {name: /Run Actions/i}).should('not.exist');
+                    // * Assert modal disappeared (check visibility instead of existence)
+                    cy.get('#run-actions-modal').should('not.be.visible');
                 });
             });
 
