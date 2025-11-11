@@ -90,7 +90,10 @@ const TextEdit = (props: TextEditProps) => {
     }
 
     return (
-        <Container className={props.className} data-testid={props.testId || 'rendered-text'}>
+        <Container
+            className={props.className}
+            data-testid={props.testId || 'rendered-text'}
+        >
             {!isEditing && !props.children && (
                 <HoverMenuContainer>
                     <Tooltip
