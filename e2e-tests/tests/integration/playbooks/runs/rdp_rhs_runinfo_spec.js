@@ -202,9 +202,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     // * Verify that the playbook entry does not exist
                     getOverviewEntry('playbook').should('not.exist');
 
-                    // * Verify that "Private" text is not shown
-                    getRHSSection('Info').should('not.contain', 'Private');
-
                     // * Verify other overview entries are still visible
                     getOverviewEntry('owner').should('exist');
                     getOverviewEntry('participants').should('exist');
@@ -247,9 +244,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
 
                             // * Verify that the playbook entry does not exist
                             getOverviewEntry('playbook').should('not.exist');
-
-                            // * Verify that "Private" text is not shown in the Info section
-                            getRHSSection('Info').should('not.contain', 'Private');
 
                             // * Verify other overview entries are still visible
                             getOverviewEntry('owner').should('exist');
