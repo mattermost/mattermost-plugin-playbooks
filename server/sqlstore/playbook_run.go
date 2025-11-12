@@ -1063,6 +1063,7 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 	// 1. Is the user a participant of the run?
 	// 2. Is the playbook open to everyone on the team, or is the user a member of the playbook?
 	//    If so, they have permission to view the run.
+	// 3. For channelChecklists (runs without a playbook), is the user a member of the channel?
 	return sq.Expr(`
         ((
 			EXISTS (
@@ -1073,15 +1074,27 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 						  AND rp.IsParticipant = true
 					  )
 			) OR (
-				(SELECT Public
-					FROM IR_Playbook
-					WHERE ID = i.PlaybookID)
-				  OR EXISTS(
-						SELECT 1
-							FROM IR_PlaybookMember
-							WHERE PlaybookID = i.PlaybookID
-							  AND MemberID = ?)
-		))`, info.UserID, info.UserID)
+				-- Playbook-based runs: check playbook permissions
+				(i.PlaybookID != '' AND i.PlaybookID IS NOT NULL) AND (
+					(SELECT Public
+						FROM IR_Playbook
+						WHERE ID = i.PlaybookID)
+					  OR EXISTS(
+							SELECT 1
+								FROM IR_PlaybookMember
+								WHERE PlaybookID = i.PlaybookID
+								  AND MemberID = ?)
+				)
+			) OR (
+				-- channelChecklists: check channel membership
+				(i.RunType = ? AND (i.PlaybookID = '' OR i.PlaybookID IS NULL)) AND
+				EXISTS(
+					SELECT 1
+					FROM ChannelMembers as cm
+					WHERE cm.ChannelId = i.ChannelID
+					  AND cm.UserId = ?
+				)
+		))`, info.UserID, info.UserID, app.RunTypeChannelChecklist, info.UserID)
 }
 
 func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sqlizer {

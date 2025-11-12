@@ -51,7 +51,7 @@ export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: Checklis
     return confirmationMessage;
 };
 
-export const useOnFinishRun = (playbookRun: PlaybookRun) => {
+export const useOnFinishRun = (playbookRun: PlaybookRun, location: string = 'backstage') => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
@@ -60,7 +60,11 @@ export const useOnFinishRun = (playbookRun: PlaybookRun) => {
     return () => {
         const onConfirm = async () => {
             await finishRun(playbookRun.id);
-            refreshLHS();
+
+            // Only refresh LHS when in Backstage, not in RHS
+            if (location === 'backstage') {
+                refreshLHS();
+            }
         };
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({

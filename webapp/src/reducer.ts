@@ -471,12 +471,12 @@ const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasV
     }
 };
 
-const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action: SetRHSAboutCollapsedState) => {
+const rhsAboutCollapsedByRun = (state: Record<string, boolean> = {}, action: SetRHSAboutCollapsedState) => {
     switch (action.type) {
     case SET_RHS_ABOUT_COLLAPSED_STATE:
         return {
             ...state,
-            [action.channelId]: action.collapsed,
+            [action.runId]: action.collapsed,
         };
     default:
         return state;
@@ -579,7 +579,7 @@ const reducer = combineReducers({
     runActionsModalVisibility,
     playbookActionsModalVisibility,
     hasViewedByChannel,
-    rhsAboutCollapsedByChannel,
+    rhsAboutCollapsedByRun,
     checklistCollapsedState,
     checklistItemsFilterByChannel,
     backstageRHS,

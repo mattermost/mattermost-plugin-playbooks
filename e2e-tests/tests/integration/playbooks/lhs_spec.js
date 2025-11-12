@@ -199,7 +199,7 @@ describe('lhs', {testIsolation: true}, () => {
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
 
             // # Click on leave menu item
-            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow').click();
 
             // * Verify that owner can't leave.
             cy.get('#confirmModal').should('not.exist');
@@ -212,7 +212,7 @@ describe('lhs', {testIsolation: true}, () => {
             cy.wait(HALF_SEC);
 
             // # Click on leave menu item
-            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow').click();
 
             // * Click leave confirmation
             cy.get('#confirmModalButton').click();
@@ -246,7 +246,7 @@ describe('lhs', {testIsolation: true}, () => {
 
         it('leave run, when on rdp of the same run', () => {
             // # Click on leave menu item
-            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow').click();
 
             // # confirm modal
             cy.get('#confirmModal').should('be.visible').within(() => {
@@ -262,7 +262,7 @@ describe('lhs', {testIsolation: true}, () => {
             cy.visit('/playbooks/playbooks');
 
             // # Click on leave menu item
-            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow run').click();
+            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow').click();
 
             // # confirm modal
             cy.get('#confirmModal').should('be.visible').within(() => {

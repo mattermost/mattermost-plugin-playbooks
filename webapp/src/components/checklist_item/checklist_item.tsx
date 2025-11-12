@@ -88,6 +88,7 @@ interface ChecklistItemProps {
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
+    isChannelChecklist?: boolean;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -313,10 +314,11 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const handleSave = () => {
         setIsEditing(false);
+        const finalTitle = titleValue.trim() || 'Untitled task';
         if (props.newItem) {
             props.cancelAddingItem?.();
             const newItem = {
-                title: titleValue,
+                title: finalTitle,
                 command,
                 description: descValue,
                 state: ChecklistItemState.Open,
@@ -337,13 +339,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             }
         } else if (props.playbookRunId) {
             clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                title: titleValue,
+                title: finalTitle,
                 command,
                 description: descValue,
             });
         } else {
             const newItem = {...props.checklistItem};
-            newItem.title = titleValue;
+            newItem.title = finalTitle;
             newItem.command = command;
             newItem.description = descValue;
             newItem.task_actions = taskActions;
@@ -419,6 +421,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onAssignToCondition={props.onAssignToCondition}
                         availableConditions={props.availableConditions}
                         propertyFields={props.propertyFields}
+                        isChannelChecklist={props.isChannelChecklist}
                     />
                     }
                     <DragButton
@@ -430,7 +433,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     />
                     <CheckBoxButton
                         readOnly={props.readOnly}
-                        disabled={isSkipped() || props.playbookRunId === undefined}
+                        disabled={isSkipped() || props.playbookRunId === undefined || props.newItem}
                         item={props.checklistItem}
                         onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                         onReadOnlyInteract={props.onReadOnlyInteract}
@@ -460,6 +463,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     onEdit={setDescValue}
                     value={descValue}
                     onSave={handleSave}
+                    onSaveAndAddNew={props.onSaveAndAddNew ? handleSaveAndAddNew : undefined}
+                    title={titleValue}
                 />
                 }
                 {renderRow()}

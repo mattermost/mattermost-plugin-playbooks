@@ -529,6 +529,13 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
+	// For channelChecklists specifically, verify user has permission to post in the channel
+	if playbookRun.Type == app.RunTypeChannelChecklist && playbookRun.ChannelID != "" {
+		if !h.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionCreatePost) {
+			return nil, errors.Wrap(app.ErrNoPermissions, "You do not have permission to create a checklist in this channel. You must be a member of the channel with posting permissions.")
+		}
+	}
+
 	// Check the permissions on the provided post: the user must have access to the post's channel
 	if playbookRun.PostID != "" {
 		var post *model.Post

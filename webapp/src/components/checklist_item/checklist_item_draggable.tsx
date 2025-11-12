@@ -37,6 +37,7 @@ interface Props {
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
+    isChannelChecklist?: boolean;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -81,6 +82,7 @@ const DraggableChecklistItem = (props: Props) => {
                     hasCondition={props.hasCondition}
                     conditionHeader={props.conditionHeader}
                     onSaveAndAddNew={props.onSaveAndAddNew}
+                    isChannelChecklist={props.isChannelChecklist}
                 />
             )}
         </Draggable>

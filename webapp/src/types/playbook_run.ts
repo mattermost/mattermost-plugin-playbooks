@@ -1,11 +1,14 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {PropertyField, PropertyValue} from 'src/types/properties';
 
 import {TimelineEvent} from 'src/types/rhs';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
+
+// Re-export for backward compatibility
+export {RunStatus as PlaybookRunStatus};
 
 export interface PlaybookRun {
     id: string;
@@ -23,7 +26,7 @@ export interface PlaybookRun {
     playbook_id: string;
     checklists: Checklist[];
     status_posts: StatusPost[];
-    current_status: PlaybookRunStatus;
+    current_status: RunStatus;
     last_status_update_at: number;
     reminder_post_id: string;
     reminder_message_template: string;
@@ -100,18 +103,13 @@ export interface FetchPlaybookRunsReturn {
     items: PlaybookRun[];
 }
 
-export enum PlaybookRunStatus {
-    InProgress = 'InProgress',
-    Finished = 'Finished',
-}
-
 export interface RunMetricData {
     metric_config_id: string;
     value: number | null;
 }
 
 export function playbookRunIsActive(playbookRun: PlaybookRun): boolean {
-    return playbookRun.current_status === PlaybookRunStatus.InProgress;
+    return playbookRun.current_status === RunStatus.InProgress;
 }
 
 export interface FetchPlaybookRunsParams {

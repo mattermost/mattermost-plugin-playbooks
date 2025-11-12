@@ -24,7 +24,6 @@ import {RHSContent} from 'src/components/backstage/playbook_runs/playbook_run/rh
 import {Badge, ExpandRight, Role} from 'src/components/backstage/playbook_runs/shared';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {BadgeType} from 'src/components/backstage/status_badge';
-import RunActionsModal from 'src/components/run_actions_modal';
 import CopyLink from 'src/components/widgets/copy_link';
 import {useFavoriteRun, useParticipateInRun} from 'src/hooks';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
@@ -141,10 +140,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                     {formatMessage({defaultMessage: 'Participate'})}
                 </GetInvolved>
             }
-            <RunActionsModal
-                playbookRun={playbookRun}
-                readOnly={role === Role.Viewer}
-            />
             {ParticipateConfirmModal}
         </Container>
     );

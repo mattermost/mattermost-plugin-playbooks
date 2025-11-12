@@ -190,7 +190,7 @@ export interface SetHasViewedChannel {
 
 export interface SetRHSAboutCollapsedState {
     type: typeof SET_RHS_ABOUT_COLLAPSED_STATE;
-    channelId: string;
+    runId: string;
     collapsed: boolean;
 }
 

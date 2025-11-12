@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {HALF_SEC} from '../../../../fixtures/timeouts';
-
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -125,73 +123,69 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
         cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
         // # Wait the RHS to load
-        cy.findByText('Runs in progress').should('be.visible');
+        cy.findByText('In progress').should('be.visible');
     });
 
-    // TBD: UI changes for Checklists feature - "Runs in progress" text has changed
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    it.skip('can filter', () => {
+    it('can filter', () => {
         // # Click the filter menu
         cy.findByTestId('rhs-runs-filter-menu').click();
 
         // * Verify displayed options
-        cy.get('[data-testid="dropdownmenu"] > :nth-child(1) > div').should('have.text', numActiveRuns);
-        cy.get('[data-testid="dropdownmenu"] > :nth-child(2) > div').should('have.text', numFinishedRuns);
+        cy.findByTestId('dropdownmenu').within(() => {
+            cy.findByText(`${numActiveRuns + 2}`).should('exist');
+            cy.findByText(`${numFinishedRuns}`).should('exist');
+        });
 
         // # Click the filter for finished runs
-        cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
+        cy.findByTestId('dropdownmenu').findByText(`${numFinishedRuns}`).click();
 
         // # Wait for filtering to complete - API needs time to apply include_ended=true
         cy.wait(500);
 
         // * Verify exactly the number of finished runs are displayed
-        cy.get('[data-testid="rhs-runs-list"]').children().should('have.length', numFinishedRuns);
+        cy.findByTestId('rhs-runs-list').children().should('have.length', numFinishedRuns);
     });
 
-    // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    it.skip('can show more (pagination)', () => {
+    it('can show more (pagination)', () => {
         // * Verify we have the first page
-        cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 8);
+        cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').should('have.length', 8);
 
-        // # CLick in the show-more button
-        cy.get('[data-testid="rhs-runs-list"] > button').click();
+        // # Click the show-more button
+        cy.findByTestId('rhs-runs-list').findByRole('button', {name: /show more/i}).click();
 
         // * Verify we have loaded the second page
-        cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 10);
+        cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').should('have.length', numActiveRuns + 2);
     });
 
-    // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    it.skip('card has the basic info', () => {
-        // # Click the first run
-        cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').within(() => {
+    it('card has the basic info', () => {
+        // # Find the run card by its name
+        cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', 'playbook-run-9').within(() => {
             cy.findByText('playbook-run-9').should('be.visible');
             cy.findByText('The playbook name').should('be.visible');
             cy.findByText(testUser.username).should('be.visible');
         });
     });
 
-    // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    it.skip('can click though', () => {
-        // # Click the first run
-        cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').click();
+    it('can click through', () => {
+        // # Click the run card with playbook-run-9
+        cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', 'playbook-run-9').click();
 
         // * Verify we made it to the run details at Channels RHS
-        cy.get('#rhsContainer').contains('playbook-run-9');
-        cy.get('#rhsContainer').contains('Tasks');
+        cy.get('#rhsContainer').should('exist').within(() => {
+            cy.findByText('playbook-run-9').should('exist');
+        });
+        cy.findByTestId('pb-checklists-inner-container').within(() => {
+            cy.findByText('Tasks').should('be.visible');
+        });
     });
 
-    // TBD: UI changes for Checklists feature - "Runs in progress" text has changed (used in beforeEach)
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    describe.skip('dotmenu', () => {
+    describe('dotmenu', () => {
         it('can navigate to RDP', () => {
-            // # Click the first run's dotmenu
-            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
+            // # Click the run's dotmenu button
+            cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', privateRun.name).findByRole('button').click();
 
             // # Click on go to run
-            cy.findByText('Go to run overview').click();
+            cy.findByText('Go to overview').click();
 
             // * Assert we are in the run details page
             cy.url().should('include', '/playbooks/runs/');
@@ -199,14 +193,16 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
         });
 
         it('can navigate to PBE', () => {
-            // # Click the first run's dotmenu
-            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').findByRole('button').click();
+            // # Click the run's dotmenu button
+            cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', privateRun.name).findByRole('button').click();
 
-            // # Click on go to polaybook
+            // # Click on go to playbook
             cy.findByText('Go to playbook').click();
 
+            cy.wait(5000);
+
             // * Assert we are in the PBE page
-            cy.url().should('include', `/playbooks/${testPlaybook.id}`);
+            cy.findByTestId('playbook-editor-title').should('contain', privatePlaybook.title);
         });
 
         it('hides "Go to playbook" for standalone runs', () => {
@@ -214,16 +210,15 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
             // # Wait for the RHS to load
-            cy.findByText('Runs in progress').should('be.visible');
+            cy.findByText('In progress').should('be.visible');
 
             // # Find the standalone run card by its name and click its dotmenu
-            cy.get('[data-testid="rhs-runs-list"]').contains('standalone checklist').parents('div[data-testid="run-list-card"]').findByRole('button').click();
+            cy.findByTestId('rhs-runs-list').contains('standalone checklist').parents('div[data-testid="run-list-card"]').findByRole('button').click();
 
             // * Verify "Go to playbook" does not exist
             cy.findByTestId('dropdownmenu').within(() => {
                 cy.findByText('Go to playbook').should('not.exist');
-                cy.findByText('Rename checklist').should('exist');
-                cy.findByText('Link checklist to a different channel').should('exist');
+                cy.findByText('Move to a different channel').should('exist');
             });
         });
 
@@ -233,116 +228,44 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
 
             // # Wait for the RHS to load
-            cy.findByText('Runs in progress').should('be.visible');
+            cy.findByText('In progress').should('be.visible');
 
             // # Find the private run card by its name and click its dotmenu
-            cy.get('[data-testid="rhs-runs-list"]').contains('private run').parents('div[data-testid="run-list-card"]').findByRole('button').click();
+            cy.findByTestId('rhs-runs-list').contains(privateRun.name).parents('div[data-testid="run-list-card"]').findByRole('button').click();
 
             // * Verify "Go to playbook" does not exist for user without access
             cy.findByTestId('dropdownmenu').within(() => {
                 cy.findByText('Go to playbook').should('not.exist');
-                cy.findByText('Go to run overview').should('exist');
-                cy.findByText('Rename run').should('exist');
-            });
-        });
-
-        it('can change run name', () => {
-            // # Click on the kebab menu
-            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
-
-            // # Click on the rename run option
-            cy.findByText('Rename run').click();
-
-            // # type new name
-            cy.findByTestId('run-name-input').clear().type('My cool new run name').wait(HALF_SEC);
-
-            // # click save
-            cy.findByTestId('modal-confirm-button').click();
-
-            // * Verify the name has changed
-            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1)').contains('My cool new run name');
-        });
-
-        it('cannot rename finished run', () => {
-            // # Switch to finished runs filter
-            cy.findByTestId('rhs-runs-filter-menu').click();
-            cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
-            cy.wait(500);
-
-            // * Verify we have finished runs
-            cy.get('[data-testid="rhs-runs-list"] > div').should('have.length.at.least', 1);
-
-            // # Click on the first finished run's dotmenu
-            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
-
-            // * Verify "Rename run" option is disabled for finished runs
-            cy.findByTestId('dropdownmenu').within(() => {
-                cy.findByText('Rename').should('exist').parent().should('have.attr', 'aria-disabled', 'true');
-            });
-        });
-
-        it('cannot rename finished checklist', () => {
-            // # Create a standalone checklist (channel checklist)
-            cy.apiCreateChannelChecklist({
-                teamId: testTeam.id,
-                channelId: testChannel.id,
-                ownerUserId: testUser.id,
-                name: 'Finished standalone checklist',
-            }).then((checklist) => {
-                // # Finish the checklist
-                cy.apiFinishRun(checklist.id);
-
-                // # Visit the channel to see the checklist in RHS
-                cy.visit(`/${testTeam.name}/channels/${testChannel.name}`);
-
-                // # Wait for the RHS to load
-                cy.findByText('Runs in progress').should('be.visible');
-
-                // # Switch to finished runs filter
-                cy.findByTestId('rhs-runs-filter-menu').click();
-                cy.get('[data-testid="dropdownmenu"] > :nth-child(2)').click();
-                cy.wait(500);
-
-                // # Find the finished checklist by its name and click its dotmenu
-                cy.get('[data-testid="rhs-runs-list"]').contains('Finished standalone checklist').parents('div[data-testid="run-list-card"]').findByRole('button').click();
-
-                // * Verify "Rename checklist" and "Link checklist" are disabled for finished checklists
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Rename checklist').should('exist').parent().should('have.attr', 'aria-disabled', 'true');
-                    cy.findByText('Link checklist to a different channel').should('exist').parent().should('have.attr', 'aria-disabled', 'true');
-                });
+                cy.findByText('Go to overview').should('exist');
             });
         });
 
         // https://mattermost.atlassian.net/browse/MM-63692
         // eslint-disable-next-line no-only-tests/no-only-tests
-        it.skip('can change linked channel', () => {
-            // # Click on the kebab menu
-            cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
+        it('can change linked channel', () => {
+            // # Click on the first run's dotmenu button
+            cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').first().findByRole('button').click();
 
-            // # Click on the rename run option
-            cy.findByText('Link run to a different channel').click();
+            // # Click on the move to a different channel option
+            cy.findByText('Move to a different channel').click();
 
-            // # type new name
-            cy.get('.modal-body').within(() => {
-                // # select town square
-                cy.findByText(testChannel.display_name).click().type('Town Square{enter}');
-            });
+            // # Select town square channel
+            cy.get('#link_existing_channel_selector').click().type('Town Square{enter}');
 
-            // # click save
+            // # Click save
             cy.findByTestId('modal-confirm-button').click();
 
-            // Let the listing refresh
+            // # Let the listing refresh
             cy.wait(1000);
 
-            // * Verify we have the first page
-            cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 8);
+            // * Verify we have the first page (8 cards)
+            cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').should('have.length', 8);
 
-            // # CLick in the show-more button
-            cy.get('[data-testid="rhs-runs-list"] > button').click();
+            // # Click the show-more button
+            cy.findByTestId('rhs-runs-list').findByRole('button', {name: /show more/i}).click();
 
-            // * Verify the channel has changed, now one run less
-            cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 9);
+            // * Verify the channel has changed, now one run less (11 total instead of 12)
+            cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').should('have.length', 11);
         });
 
         describe('navigation', () => {
@@ -372,23 +295,20 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
                 // # Visit channel with 2 runs
                 cy.visit(`/${testTeam.name}/channels/${testChannelWith2Runs.name}`);
 
-                // # Click on the kebab menu
-                cy.get('[data-testid="rhs-runs-list"] > :nth-child(1) .icon-dots-vertical').click();
+                // # Click on the first run's dotmenu button
+                cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').first().findByRole('button').click();
 
-                // # Click on the rename run option
-                cy.findByText('Link run to a different channel').click();
+                // # Click on the move to a different channel option
+                cy.findByText('Move to a different channel').click();
 
-                // # type new name
-                cy.get('.modal-body').within(() => {
-                    // # select town square
-                    cy.findByText(testChannelWith2Runs.display_name).click().type('Town Square{enter}');
-                });
+                // # Select town square channel
+                cy.get('#link_existing_channel_selector').click().type('Town Square{enter}');
 
-                // # click save
+                // # Click save
                 cy.findByTestId('modal-confirm-button').click();
 
-                // * Verify the run is not there, but we are still in the list (not rhs details)
-                cy.get('[data-testid="rhs-runs-list"] > div').should('have.length', 1);
+                // * Verify the run is not there, but we are still in the list (not rhs details) - only 1 card remains
+                cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').should('have.length', 1);
             });
         });
     });

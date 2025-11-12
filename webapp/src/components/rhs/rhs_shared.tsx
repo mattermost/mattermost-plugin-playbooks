@@ -16,9 +16,14 @@ export const RHSContent = styled.div`
     flex: 1 1 auto;
 `;
 
+const ScrollbarView = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
 export function renderView(props: any): JSX.Element {
     return (
-        <div
+        <ScrollbarView
             {...props}
             className='scrollbar--view'
         />

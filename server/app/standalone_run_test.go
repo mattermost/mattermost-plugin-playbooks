@@ -44,15 +44,15 @@ func TestStandaloneRunCreation(t *testing.T) {
 		if standaloneRun.PlaybookID == "" {
 			standaloneRun.Checklists = []Checklist{
 				{
-					Title: "Checklist",
+					Title: "Tasks",
 					Items: []ChecklistItem{},
 				},
 			}
 		}
 
-		require.Len(t, standaloneRun.Checklists, 1, "Should have one default checklist")
-		assert.Equal(t, "Checklist", standaloneRun.Checklists[0].Title, "Default checklist should have correct title")
-		assert.Empty(t, standaloneRun.Checklists[0].Items, "Default checklist should have no items initially")
+		require.Len(t, standaloneRun.Checklists, 1, "Should have one default section")
+		assert.Equal(t, "Tasks", standaloneRun.Checklists[0].Title, "Default section should have correct title")
+		assert.Empty(t, standaloneRun.Checklists[0].Items, "Default section should have no items initially")
 	})
 
 	t.Run("playbook run with PlaybookID remains unchanged", func(t *testing.T) {

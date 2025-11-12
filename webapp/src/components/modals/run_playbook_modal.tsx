@@ -160,7 +160,7 @@ const RunPlaybookModal = ({
         return (
             <StyledGenericModal
                 cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Create checklist'})}
                 showCancel={true}
                 isConfirmDisabled={isSubmitting || !isFormValid}
                 handleConfirm={onSubmit}
@@ -180,7 +180,7 @@ const RunPlaybookModal = ({
                             />
                         </IconWrapper>
                         <HeaderTitle>
-                            <FormattedMessage defaultMessage='Start a run'/>
+                            <FormattedMessage defaultMessage='Run playbook'/>
                             <ModalSideheading>{playbook?.title}</ModalSideheading>
                         </HeaderTitle>
                     </ColContainer>
@@ -193,7 +193,7 @@ const RunPlaybookModal = ({
                         onSetRunName={setRunName}
                     />
 
-                    <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
+                    <InlineLabel>{formatMessage({defaultMessage: 'Summary'})}</InlineLabel>
                     <BaseTextArea
                         data-testid={'run-summary-input'}
                         rows={5}
@@ -224,7 +224,7 @@ const RunPlaybookModal = ({
                 <RowContainer>
                     <ColContainer>
                         <HeaderTitle>
-                            <FormattedMessage defaultMessage='Create checklist from playbook'/>
+                            <FormattedMessage defaultMessage='Run playbook'/>
                         </HeaderTitle>
                         <HeaderButtonWrapper>
                             {canCreatePlaybooks &&
@@ -279,7 +279,7 @@ const RunNameSection = ({runName, onSetRunName}: runNameProps) => {
     return (<>
         <RunNameLabel invalid={Boolean(error)}>
             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-            {formatMessage({defaultMessage: 'Run name'})}{error ? ' *' : ''}
+            {formatMessage({defaultMessage: 'Checklist name'})}{error ? ' *' : ''}
         </RunNameLabel>
         <BaseInput
             $invalid={Boolean(error)}
