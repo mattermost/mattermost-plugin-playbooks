@@ -36,49 +36,28 @@ const ChecklistsRebrandTour = () => {
     const dotLeft = (iconX + (iconWidth / 2)) - 7; // Center on icon (7px = half of dot width)
     const dotTop = (iconY + iconHeight) + 4; // 4px gap below icon
 
-    // Fix the positioning to be relative to viewport
+    // Override positioning to place the pulsating dot over the app bar icon
     useEffect(() => {
-        // Only run if we should show the tour
-        if (!isInChannelView || !showAppBarIconStep || !iconX || !iconY || !iconWidth || !iconHeight) {
+        // Only apply styles if we should show the tour
+        if (!isInChannelView || !showAppBarIconStep || !dotLeft || !dotTop) {
             return;
         }
 
-        // Use a small delay to ensure the element is rendered
-        const fixPosition = () => {
-            const dotContainer = document.querySelector('.pb-tutorial-tour-tip__pulsating-dot-ctr');
-            const backdrop = document.querySelector('.pb-tutorial-tour-tip__backdrop');
+        const dotContainer = document.querySelector('.pb-tutorial-tour-tip__pulsating-dot-ctr') as HTMLElement;
 
-            if (dotContainer) {
-                const element = dotContainer as HTMLElement;
-                element.style.position = 'fixed';
-                element.style.zIndex = '9999';
-
-                // Override the CSS that sets bottom/right based on data-pulsating-dot-placement
-                element.style.top = '0';
-                element.style.left = '0';
-                element.style.bottom = 'auto';
-                element.style.right = 'auto';
-                element.style.transform = 'none';
-
-                // Apply calculated position
-                if (dotLeft && dotTop) {
-                    element.style.left = `${dotLeft}px`;
-                    element.style.top = `${dotTop}px`;
-                }
-            }
-
-            // Hide the backdrop
-            if (backdrop) {
-                (backdrop as HTMLElement).style.display = 'none';
-            }
-
-            if (!dotContainer) {
-                // Retry if element not found yet
-                setTimeout(fixPosition, 50);
-            }
-        };
-        fixPosition();
-    }, [isInChannelView, showAppBarIconStep, dotLeft, dotTop, iconX, iconY, iconWidth, iconHeight]);
+        if (dotContainer) {
+            // Apply all positioning styles at once, overriding default CSS
+            Object.assign(dotContainer.style, {
+                position: 'fixed',
+                zIndex: '9999',
+                top: `${dotTop}px`,
+                left: `${dotLeft}px`,
+                bottom: 'auto',
+                right: 'auto',
+                transform: 'none',
+            });
+        }
+    }, [isInChannelView, showAppBarIconStep, dotLeft, dotTop]);
 
     if (!isInChannelView) {
         return null;
