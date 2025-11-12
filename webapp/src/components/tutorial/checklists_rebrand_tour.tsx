@@ -94,10 +94,6 @@ const ChecklistsRebrandTour = () => {
         return null;
     }
 
-    // Debug: log the calculated position
-    // eslint-disable-next-line no-console
-    console.log('Tour position:', {dotLeft, dotTop, iconX, iconY, iconWidth, iconHeight, punchout: appBarIconPunchout});
-
     return (
         <TutorialTourTip
             title={
