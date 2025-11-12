@@ -36,8 +36,13 @@ const ChecklistsRebrandTour = () => {
     const dotLeft = (iconX + (iconWidth / 2)) - 7; // Center on icon (7px = half of dot width)
     const dotTop = (iconY + iconHeight) + 4; // 4px gap below icon
 
-    // Fix the positioning to be relative to viewport (must be before conditional returns)
+    // Fix the positioning to be relative to viewport
     useEffect(() => {
+        // Only run if we should show the tour
+        if (!isInChannelView || !showAppBarIconStep || !iconX || !iconY || !iconWidth || !iconHeight) {
+            return;
+        }
+
         // Use a small delay to ensure the element is rendered
         const fixPosition = () => {
             const dotContainer = document.querySelector('.pb-tutorial-tour-tip__pulsating-dot-ctr');
@@ -73,7 +78,7 @@ const ChecklistsRebrandTour = () => {
             }
         };
         fixPosition();
-    }, [dotLeft, dotTop]);
+    }, [isInChannelView, showAppBarIconStep, dotLeft, dotTop, iconX, iconY, iconWidth, iconHeight]);
 
     if (!isInChannelView) {
         return null;
