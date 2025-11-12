@@ -226,5 +226,9 @@
     {
         "id": "app.user.new_run.intro",
         "translation": "**Eigentümer** {{.Username}}"
+    },
+    {
+        "id": "playbooks.checklist.condition.reason.modified",
+        "translation": "angezeigt, weil die Aufgabe geändert wurde"
     }
 ]
