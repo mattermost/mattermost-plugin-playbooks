@@ -5,8 +5,8 @@ package app
 
 import (
 	"reflect"
+	"slices"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -451,20 +451,6 @@ func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, r
 			return nil
 		}
 
-		// Grace period for owner: allow access for 5 minutes after channel removal
-		if run.OwnerUserID == userID {
-			gracePeriodSeconds := int64(300) // 5 minutes
-			timeSinceUpdate := time.Now().Unix() - run.UpdateAt/1000
-			if timeSinceUpdate < gracePeriodSeconds {
-				logrus.WithFields(logrus.Fields{
-					"user_id":   userID,
-					"run_id":    run.ID,
-					"time_left": gracePeriodSeconds - timeSinceUpdate,
-				}).Warn("Owner modifying channelChecklist after channel removal (grace period)")
-				return nil
-			}
-		}
-
 		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to modify channelChecklist `%s`", userID, run.ID)
 	}
 
@@ -473,10 +459,8 @@ func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, r
 		return nil
 	}
 
-	for _, participantID := range run.ParticipantIDs {
-		if participantID == userID {
-			return nil
-		}
+	if slices.Contains(run.ParticipantIDs, userID) {
+		return nil
 	}
 
 	if IsSystemAdmin(userID, p.pluginAPI) {
@@ -498,23 +482,10 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 
 	// For channelChecklists, use channel-based permissions
 	if p.isChannelChecklist(run) {
+
 		// Check if user has permission to read the channel
 		if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
 			return nil
-		}
-
-		// Grace period for owner: allow access for 5 minutes after channel removal
-		if run.OwnerUserID == userID {
-			gracePeriodSeconds := int64(300) // 5 minutes
-			timeSinceUpdate := time.Now().Unix() - run.UpdateAt/1000
-			if timeSinceUpdate < gracePeriodSeconds {
-				logrus.WithFields(logrus.Fields{
-					"user_id":   userID,
-					"run_id":    runID,
-					"time_left": gracePeriodSeconds - timeSinceUpdate,
-				}).Warn("Owner accessing channelChecklist after channel removal (grace period)")
-				return nil
-			}
 		}
 
 		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have channel access to view channelChecklist `%s`", userID, runID)
@@ -527,10 +498,8 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 	}
 
 	// Or if is a participant of the run
-	for _, participantID := range run.ParticipantIDs {
-		if participantID == userID {
-			return nil
-		}
+	if slices.Contains(run.ParticipantIDs, userID) {
+		return nil
 	}
 
 	// Or has view access to the playbook that created it
@@ -630,7 +599,7 @@ func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo
 
 // isChannelChecklist returns true if the run is a channelChecklist (not created from a playbook)
 func (p *PermissionsService) isChannelChecklist(run *PlaybookRun) bool {
-	return run.Type == RunTypeChannelChecklist && run.PlaybookID == ""
+	return run.Type == RunTypeChannelChecklist
 }
 
 // isChannelArchived returns true if the channel has been archived/deleted
