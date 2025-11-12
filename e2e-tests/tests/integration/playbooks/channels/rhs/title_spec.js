@@ -62,7 +62,7 @@ describe('channels > rhs > title', {testIsolation: true}, () => {
 
     it('has title', () => {
         // * Verify the title is displayed
-        getHeaderTitle().contains('Run details');
+        getHeaderTitle().contains('Checklist');
     });
 
     it('has following button', () => {
