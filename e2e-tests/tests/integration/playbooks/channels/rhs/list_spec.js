@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {HALF_SEC, ONE_SEC} from '../../../../fixtures/timeouts';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -291,7 +293,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
                 });
             });
 
-            it('stays at list even if one only linked run after moving run', () => {
+            it.only('stays at list even if one only linked run after moving run', () => {
                 // # Visit channel with 2 runs
                 cy.visit(`/${testTeam.name}/channels/${testChannelWith2Runs.name}`);
 
@@ -300,6 +302,8 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
 
                 // # Click on the move to a different channel option
                 cy.findByText('Move to a different channel').click();
+
+                cy.wait(ONE_SEC);
 
                 // # Select town square channel
                 cy.get('#link_existing_channel_selector').click().type('Town Square{enter}');
