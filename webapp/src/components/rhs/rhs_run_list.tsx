@@ -82,7 +82,6 @@ interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void;
     onRunCreated: (runID: string, channelId: string, statsData: object) => void;
-    onLinkRunToChannel: () => void;
     getMore: () => Promise<any>;
     hasMore: boolean;
 
@@ -306,7 +305,6 @@ const RHSRunList = (props: Props) => {
                             {props.runs.map((run: RunToDisplay) => (
                                 <RHSRunListCard
                                     key={run.id}
-                                    onLinkRunToChannel={props.onLinkRunToChannel}
                                     onClick={() => props.onSelectRun(run.id)}
                                     {...run}
                                 />
@@ -574,7 +572,6 @@ const BlueCheckmark = styled(CheckIcon)`
 
 interface RHSRunListCardProps extends RunToDisplay {
     onClick: () => void;
-    onLinkRunToChannel: () => void;
 }
 
 const RHSRunListCard = (props: RHSRunListCardProps) => {
@@ -615,7 +612,6 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                     content: isPlaybookRun ? formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: movedChannel.channelName}) : formatMessage({defaultMessage: 'Checklist moved to {channel}'}, {channel: movedChannel.channelName}),
                     toastStyle: ToastStyle.Success,
                 });
-                props.onLinkRunToChannel();
             }}
         >
             <CardContainer

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
@@ -177,33 +177,36 @@ const RightHandSidebar = () => {
     useSetRHSState();
     const currentTeam = useSelector(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const [currentRunId, setCurrentRunId] = useState<string|undefined>();
-    const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
-    const [userNavigatedAway, setUserNavigatedAway] = useState(false);
+    const [currentRunId, setCurrentRunId] = useState<string | undefined>();
+    const autoSelectCheckedForChannel = useRef<string | undefined>();
     const [autoAddTaskRunId, setAutoAddTaskRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
     const {isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
 
-    // If there is only one active run in this channel select it.
     useEffect(() => {
-        if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1 && !userNavigatedAway) {
-            const singleRunID = fetchedRuns.runsInProgress[0].id;
-            if (singleRunID !== currentRunId && !skipNextDetailNav) {
-                setCurrentRunId(singleRunID);
-            }
-        }
-        if (skipNextDetailNav) {
-            setSkipNextDetailNav(false);
-        }
-    }, [currentChannelId, currentRunId, fetchedRuns.runsInProgress, skipNextDetailNav, userNavigatedAway]);
-
-    // Reset the list options and navigation state on channel change
-    useEffect(() => {
+        // reset filter state
         setListOptions(defaultListOptions);
-        setUserNavigatedAway(false);
-        setCurrentRunId(undefined);
     }, [currentChannelId]);
+
+    // auto-select single in-progress run in channel if applicable
+    useEffect(() => {
+        if (currentChannelId && currentChannelId !== autoSelectCheckedForChannel.current) {
+            setCurrentRunId(() => {
+                if (fetchedRuns.runsInProgress) {
+                    autoSelectCheckedForChannel.current = currentChannelId; // mark that we've checked this channel
+
+                    if (fetchedRuns.runsInProgress.length === 1) {
+                        return fetchedRuns.runsInProgress[0].id; // auto-select the single in-progress run
+                    }
+
+                    return undefined; // no auto-select
+                }
+
+                return undefined; // clear immediately - wait until runsInProgress is loaded
+            });
+        }
+    }, [currentChannelId, fetchedRuns.runsInProgress]);
 
     if (!fetchedRuns.runsInProgress || !fetchedRuns.runsFinished) {
         return <RHSLoading/>;
@@ -212,7 +215,6 @@ const RightHandSidebar = () => {
     const clearCurrentRunId = () => {
         fetchedRuns.refetch();
         setCurrentRunId(undefined);
-        setUserNavigatedAway(true);
     };
 
     const handleOnCreateRun = (runId: string, channelId: string, statsData: {autoAddTask?: boolean}) => {
@@ -275,7 +277,6 @@ const RightHandSidebar = () => {
             hasMore={hasMore}
             numInProgress={fetchedRuns.numRunsInProgress}
             numFinished={fetchedRuns.numRunsFinished}
-            onLinkRunToChannel={() => setSkipNextDetailNav(true)}
         />
     );
 };

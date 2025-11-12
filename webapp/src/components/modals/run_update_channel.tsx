@@ -64,6 +64,7 @@ const UpdateRunModal = ({
                 <InlineLabel>{formatMessage({defaultMessage: 'Select channel'})}</InlineLabel>
                 <StyledChannelSelector
                     id={'link_existing_channel_selector'}
+                    data-testid={'run-update-channel-selector'}
                     onChannelSelected={(channel_id: string, channel_name: string) => {
                         setChannelId(channel_id);
                         setChannelName(channel_name);

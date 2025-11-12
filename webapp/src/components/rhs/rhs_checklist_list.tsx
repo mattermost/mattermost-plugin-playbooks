@@ -209,6 +209,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
     return (
         <InnerContainer
             id='pb-checklists-inner-container'
+            data-testid='pb-checklists-inner-container'
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
             parentContainer={parentContainer}
