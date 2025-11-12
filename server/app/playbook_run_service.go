@@ -5049,3 +5049,119 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 		return string(value), false
 	}
 }
+
+// GetPlaybookRunExportData returns comprehensive data for PDF export
+func (s *PlaybookRunServiceImpl) GetPlaybookRunExportData(playbookRunID string, userID string, pluginAPI *pluginapi.Client) (*PlaybookRunExportData, error) {
+	// Get the playbook run
+	playbookRun, err := s.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get playbook run")
+	}
+
+	exportData := &PlaybookRunExportData{
+		Run: *playbookRun,
+	}
+
+	// Get status updates with complete post information
+	statusUpdates := make([]*StatusPostComplete, 0)
+	for _, p := range playbookRun.StatusPosts {
+		post, err := pluginAPI.Post.GetPost(p.ID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("exportData: cannot retrieve status post", "post_id", p.ID, "error", err.Error())
+			continue
+		}
+		if post.Type == "custom_run_update" {
+			statusUpdates = append(statusUpdates, NewStatusPostComplete(post))
+		}
+	}
+	exportData.StatusUpdates = statusUpdates
+
+	// Get owner information
+	if playbookRun.OwnerUserID != "" {
+		owner, err := pluginAPI.User.Get(playbookRun.OwnerUserID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("exportData: cannot retrieve owner", "user_id", playbookRun.OwnerUserID, "error", err.Error())
+		} else {
+			exportData.Owner = owner
+		}
+	}
+
+	// Get participant information
+	participants := make([]*model.User, 0, len(playbookRun.ParticipantIDs))
+	for _, userID := range playbookRun.ParticipantIDs {
+		user, err := pluginAPI.User.Get(userID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("exportData: cannot retrieve participant", "user_id", userID, "error", err.Error())
+			continue
+		}
+		participants = append(participants, user)
+	}
+	exportData.Participants = participants
+
+	// Get channel information
+	if playbookRun.ChannelID != "" {
+		channel, err := pluginAPI.Channel.Get(playbookRun.ChannelID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("exportData: cannot retrieve channel", "channel_id", playbookRun.ChannelID, "error", err.Error())
+		} else {
+			exportData.Channel = channel
+		}
+	}
+
+	// Get team information
+	if playbookRun.TeamID != "" {
+		team, err := pluginAPI.Team.Get(playbookRun.TeamID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("exportData: cannot retrieve team", "team_id", playbookRun.TeamID, "error", err.Error())
+		} else {
+			exportData.Team = team
+		}
+	}
+
+	// Get chat posts from the run channel (only posts within the run's timeframe)
+	if playbookRun.ChannelID != "" {
+		// Verify user has access to the channel
+		_, err := pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("exportData: user does not have access to channel", "channel_id", playbookRun.ChannelID, "user_id", userID, "error", err.Error())
+			// Don't fail the entire export, just skip chat posts
+			exportData.ChatPosts = make([]*model.Post, 0)
+		} else {
+			chatPosts := make([]*model.Post, 0)
+
+			// Define time range for the run
+			startTime := playbookRun.CreateAt
+			endTime := playbookRun.EndAt
+			if endTime == 0 {
+				// Run is still ongoing, use current time
+				endTime = model.GetMillis()
+			}
+
+			// Use GetPostsSince for more efficient fetching (gets posts after startTime)
+			postList, err := pluginAPI.Post.GetPostsSince(playbookRun.ChannelID, startTime)
+			if err != nil {
+				s.pluginAPI.Log.Warn("exportData: cannot retrieve chat posts", "channel_id", playbookRun.ChannelID, "error", err.Error())
+				exportData.ChatPosts = make([]*model.Post, 0)
+			} else if postList != nil {
+				// Filter posts to only include those within the run's timeframe
+				for _, post := range postList.Posts {
+					if post.CreateAt >= startTime && post.CreateAt <= endTime {
+						chatPosts = append(chatPosts, post)
+					}
+				}
+
+				s.pluginAPI.Log.Info("exportData: fetched chat posts",
+					"channel_id", playbookRun.ChannelID,
+					"total_posts", len(chatPosts),
+					"start_time", startTime,
+					"end_time", endTime)
+
+				exportData.ChatPosts = chatPosts
+			} else {
+				exportData.ChatPosts = make([]*model.Post, 0)
+			}
+		}
+	}
+
+	return exportData, nil
+}

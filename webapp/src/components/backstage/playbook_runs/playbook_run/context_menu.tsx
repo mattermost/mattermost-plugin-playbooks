@@ -21,10 +21,12 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {ExportOptionsModal} from 'src/components/backstage/playbook_runs/run_report';
 
 import {
     CopyRunLinkMenuItem,
     ExportChannelLogsMenuItem,
+    ExportRunReportMenuItem,
     FavoriteRunMenuItem,
     FinishRunMenuItem,
     LeaveRunMenuItem,
@@ -47,6 +49,7 @@ interface Props {
 export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick}: Props) => {
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showModal, setShowModal] = useState(false);
+    const {showExportReportModal, exportReportModal} = useExportRunReport(playbookRun.id);
 
     return (
         <>
@@ -84,6 +87,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     channelId={playbookRun.channel_id}
                     setShowModal={setShowModal}
                 />
+                <ExportRunReportMenuItem
+                    onClick={showExportReportModal}
+                />
                 <FinishRunMenuItem
                     playbookRun={playbookRun}
                     role={role}
@@ -108,6 +114,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 onHide={() => setShowModal(false)}
             />
             {leaveRunConfirmModal}
+            {exportReportModal}
         </>
     );
 };
@@ -165,6 +172,44 @@ export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: st
             }
             setLeaveRunConfirm(true);
         },
+    };
+};
+
+export const useExportRunReport = (playbookRunId: string) => {
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportData, setExportData] = useState<any>(null);
+
+    const showExportReportModal = async () => {
+        setShowExportModal(true);
+
+        try {
+            // Import client here to avoid circular dependencies
+            const {fetchPlaybookRunExportData} = await import('src/client');
+            const data = await fetchPlaybookRunExportData(playbookRunId);
+            setExportData(data);
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Error fetching export data:', error);
+            setExportData(null);
+        }
+    };
+
+    const hideExportModal = () => {
+        setShowExportModal(false);
+        setExportData(null);
+    };
+
+    const exportReportModal = (
+        <ExportOptionsModal
+            show={showExportModal}
+            onHide={hideExportModal}
+            data={exportData}
+        />
+    );
+
+    return {
+        showExportReportModal,
+        exportReportModal,
     };
 };
 

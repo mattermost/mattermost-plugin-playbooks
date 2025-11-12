@@ -13,6 +13,7 @@ import (
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 )
 
@@ -238,6 +239,30 @@ func (r PlaybookRun) Auditable() map[string]any {
 		"type":           r.Type,
 		"public":         len(r.BroadcastChannelIDs) > 0,
 	}
+}
+
+// PlaybookRunExportData represents comprehensive run data for PDF export
+type PlaybookRunExportData struct {
+	// Run is the complete playbook run data
+	Run PlaybookRun `json:"run"`
+
+	// StatusUpdates contains complete status update posts with user info
+	StatusUpdates []*StatusPostComplete `json:"status_updates"`
+
+	// Participants contains information about run participants
+	Participants []*model.User `json:"participants"`
+
+	// Owner contains information about the run owner
+	Owner *model.User `json:"owner"`
+
+	// Channel contains information about the run's channel
+	Channel *model.Channel `json:"channel"`
+
+	// Team contains information about the run's team
+	Team *model.Team `json:"team"`
+
+	// ChatPosts contains all posts from the run channel for chat log export
+	ChatPosts []*model.Post `json:"chat_posts"`
 }
 
 // PlaybookRunUpdate represents an incremental update to a playbook run
@@ -1384,6 +1409,9 @@ type PlaybookRunService interface {
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
 	MessageHasBeenPosted(post *model.Post)
+
+	// GetPlaybookRunExportData returns comprehensive data for PDF export
+	GetPlaybookRunExportData(playbookRunID string, userID string, pluginAPI *pluginapi.Client) (*PlaybookRunExportData, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

@@ -79,6 +79,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("", withContext(handler.getPlaybookRun)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/metadata", withContext(handler.getPlaybookRunMetadata)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/status-updates", withContext(handler.getStatusUpdates)).Methods(http.MethodGet)
+	playbookRunRouter.HandleFunc("/export-data", withContext(handler.getPlaybookRunExportData)).Methods(http.MethodGet)
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
@@ -859,6 +860,27 @@ func (h *PlaybookRunHandler) getStatusUpdates(c *Context, w http.ResponseWriter,
 	})
 
 	ReturnJSON(w, posts, http.StatusOK)
+}
+
+// getPlaybookRunExportData handles the /runs/{id}/export-data endpoint.
+// It returns comprehensive run data for PDF export including metadata, timeline,
+// status updates, checklists, retrospective, and participants.
+func (h *PlaybookRunHandler) getPlaybookRunExportData(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to export run data", nil)
+		return
+	}
+
+	exportData, err := h.playbookRunService.GetPlaybookRunExportData(playbookRunID, userID, h.pluginAPI)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, exportData, http.StatusOK)
 }
 
 // restore "un-finishes" a playbook run
