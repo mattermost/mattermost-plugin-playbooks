@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {HALF_SEC, ONE_SEC} from '../../../../fixtures/timeouts';
+import {ONE_SEC} from '../../../../fixtures/timeouts';
 
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
@@ -293,7 +293,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
                 });
             });
 
-            it.only('stays at list even if one only linked run after moving run', () => {
+            it('stays at list even if one only linked run after moving run', () => {
                 // # Visit channel with 2 runs
                 cy.visit(`/${testTeam.name}/channels/${testChannelWith2Runs.name}`);
 
