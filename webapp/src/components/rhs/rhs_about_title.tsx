@@ -66,7 +66,10 @@ const RHSAboutTitle = (props: Props) => {
                             </Tooltip>
                         }
                     >
-                        <PlaybookChip onClick={handlePlaybookChipClick}>
+                        <PlaybookChip
+                            onClick={handlePlaybookChipClick}
+                            data-testid='playbook-badge'
+                        >
                             <StyledBookOutlineIcon size={11}/>
                             <PlaybookChipText>{playbookName}</PlaybookChipText>
                         </PlaybookChip>
@@ -133,7 +136,7 @@ const PlaybookChipContainer = styled.div`
     margin-bottom: 8px;
 `;
 
-const PlaybookChip = styled.div`
+const PlaybookChip = styled.button`
     display: inline-flex;
     max-width: 100%;
     flex-direction: row;
@@ -144,6 +147,7 @@ const PlaybookChip = styled.div`
     gap: 4px;
     cursor: pointer;
     transition: background 0.15s ease;
+    border: none;
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.16);
