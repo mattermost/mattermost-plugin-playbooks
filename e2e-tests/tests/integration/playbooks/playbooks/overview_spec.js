@@ -305,18 +305,18 @@ describe('playbooks > overview', {testIsolation: true}, () => {
             cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
             // * Verify basic information.
-            cy.findByText('Runs currently in progress').next().should('contain', '1');
+            cy.findByText('Currently in progress').next().should('contain', '1');
             cy.findByText('Participants currently active').next().should('contain', '1');
-            cy.findByText('Runs finished in the last 30 days').next().should('contain', '0');
+            cy.findByText('Finished in the last 30 days').next().should('contain', '0');
 
             // # End the run so those metrics change.
             cy.apiFinishRun(playbookRun.id).then(() => {
                 cy.reload();
 
                 // * Verify changes.
-                cy.findByText('Runs currently in progress').next().should('contain', '0');
+                cy.findByText('Currently in progress').next().should('contain', '0');
                 cy.findByText('Participants currently active').next().should('contain', '0');
-                cy.findByText('Runs finished in the last 30 days').next().should('contain', '1');
+                cy.findByText('Finished in the last 30 days').next().should('contain', '1');
             });
         });
     });
