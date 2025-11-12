@@ -268,15 +268,16 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	return results, nil
 }
 
-func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
+func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID, channelURL string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	return fmt.Sprintf(
-		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
+		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook. [Go to the run channel](%s).",
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
 		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
 		GetPlaybookDetailsRelativeURL(playbookID),
+		channelURL,
 	), nil
 }
 
@@ -587,8 +588,18 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if pb != nil {
+		siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+		if siteURL == nil {
+			return nil, errors.New("failed to build playbook run creation message template, missing siteURL")
+		}
+
+		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get team for playbook run creation message")
+		}
+		channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 		var messageTemplate string
-		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, playbookRun, reporter)
+		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, channelURL, playbookRun, reporter)
 		if err != nil {
 			err := errors.Wrapf(err, "failed to build the playbook run creation message")
 			auditRec.AddErrorDesc(err.Error())
@@ -989,6 +1000,7 @@ func (s *PlaybookRunServiceImpl) buildStatusUpdatePost(statusUpdate, playbookRun
 			"authorUsername":  authorUser.Username,
 			"playbookRunId":   playbookRun.ID,
 			"runName":         playbookRun.Name,
+			"channelId":       playbookRun.ChannelID,
 		},
 	}, nil
 }

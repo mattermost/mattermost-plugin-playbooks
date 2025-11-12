@@ -172,3 +172,9 @@ export function isMetricData(value: unknown): value is RunMetricData {
     return typeof metricData.metric_config_id === 'string' &&
            (typeof metricData.value === 'string' || typeof metricData.value === 'number');
 }
+
+const userAgent = () => window.navigator.userAgent;
+
+export function isDesktopApp(): boolean {
+    return userAgent().indexOf('Mattermost') !== -1 && userAgent().indexOf('Electron') !== -1;
+}

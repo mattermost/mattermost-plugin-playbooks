@@ -14,6 +14,8 @@ import {getCurrentTeamId, getTeam} from 'mattermost-redux/selectors/entities/tea
 import {General} from 'mattermost-redux/constants';
 import {Team} from '@mattermost/types/teams';
 
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
+
 import Tooltip from 'src/components/widgets/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
@@ -32,6 +34,7 @@ export const UpdatePost = (props: Props) => {
     const teamId = channel?.type === General.DM_CHANNEL || channel?.type === General.GM_CHANNEL ? currentTeamId : channel?.team_id;
     const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, teamId ?? ''));
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const siteURL = useSelector<GlobalState, string>((state) => getConfig(state).SiteURL || '');
 
     const markdownOptions = {
         singleline: false,
@@ -56,21 +59,39 @@ export const UpdatePost = (props: Props) => {
     const participantUsernames = participantIDs.map(useFormattedUsernameByID).join(', ');
 
     const playbookRunId = props.post.props.playbookRunId ?? '';
-    const overviewURL = `/playbooks/runs/${playbookRunId}`;
+    const runChannelId = props.post.props.channelId ?? '';
     const runName = typeof props.post.props.runName === 'string' ? props.post.props.runName : '';
 
     if (!team) {
         return null;
     }
 
+    const overviewURL = `/playbooks/runs/${playbookRunId}`;
+
+    let msg = '';
+
+    // Only show the run channel link if the post is a reply to a 'run created' post and the run channel id is set.
+    // Older posts may not have run channel id set.
+    if (runChannelId && props.post.root_id) {
+        const runChannelURL = `${siteURL}/${team.name}/channels/${runChannelId}`;
+        msg = formatMessage({defaultMessage: '@{authorUsername} posted an update for [{runName}]({overviewURL}) in [the run channel]({runChannelURL})'}, {
+            runName,
+            overviewURL,
+            authorUsername,
+            runChannelURL,
+        });
+    } else {
+        msg = formatMessage({defaultMessage: '@{authorUsername} posted an update for [{runName}]({overviewURL})'}, {
+            runName,
+            overviewURL,
+            authorUsername,
+        });
+    }
+
     return (
         <>
             <StyledPostText
-                text={formatMessage({defaultMessage: '@{authorUsername} posted an update for [{runName}]({overviewURL})'}, {
-                    runName,
-                    overviewURL,
-                    authorUsername,
-                })}
+                text={msg}
                 team={team}
             />
             <FullWidthContainer>

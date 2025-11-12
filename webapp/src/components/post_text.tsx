@@ -7,9 +7,11 @@ import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {ChannelNamesMap} from 'src/types/backstage';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
+import {isDesktopApp} from 'src/utils';
 
 interface Props {
     text: string;
@@ -20,9 +22,11 @@ interface Props {
 
 const PostText = (props: Props) => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const siteURL = useSelector<GlobalState, string>((state) => getConfig(state).SiteURL || '');
+    const isDesktop = isDesktopApp();
 
     // @ts-ignore
-    const {formatText, messageHtmlToComponent} = window.PostUtils;
+    const {formatText, messageHtmlToComponent, handleFormattedTextClick} = window.PostUtils;
 
     const markdownOptions = {
         singleline: false,
@@ -30,15 +34,27 @@ const PostText = (props: Props) => {
         atMentions: true,
         team: props.team,
         channelNamesMap,
+        siteURL: isDesktop ? undefined : siteURL, // Desktop app handles internal links itself so we don't want to set siteURL otherwise we'd interrupt that.
     };
 
     const messageHtmlToComponentOptions = {
         hasPluginTooltips: true,
     };
 
+    // Older versions of the web app may not export handleFormattedTextClick, so we need to check for it.
+    const onClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        if (handleFormattedTextClick) {
+            handleFormattedTextClick(e);
+        }
+    };
+
+    const formattedText = formatText(props.text, markdownOptions);
     return (
-        <UpdateBody className={props.className}>
-            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, messageHtmlToComponentOptions)}
+        <UpdateBody
+            className={props.className}
+            onClick={onClick}
+        >
+            {messageHtmlToComponent(formattedText, true, messageHtmlToComponentOptions)}
             {props.children}
         </UpdateBody>
     );

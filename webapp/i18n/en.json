@@ -513,6 +513,7 @@
   "lbs7UO": "per run over the last 10 runs",
   "lgZf0l": "Get started with Playbooks",
   "lkv547": "Due date (Available in the Professional plan)",
+  "lm3vyz": "@{authorUsername} posted an update for [{runName}]({overviewURL}) in [the run channel]({runChannelURL})",
   "lqceIp": "or <ImportPlaybookButton>Import a playbook</ImportPlaybookButton>",
   "lqzBNa": "Remove them from the run channel",
   "lr1CUA": "Browse Playbooks",
