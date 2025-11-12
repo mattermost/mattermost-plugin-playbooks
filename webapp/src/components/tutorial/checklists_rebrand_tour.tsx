@@ -84,7 +84,8 @@ const ChecklistsRebrandTour = () => {
     }
 
     // Wait for the app bar icon to be available before showing tour
-    if (!appBarIconPunchout) {
+    // Check if we have valid coordinates (not just the default 0,0,0,0)
+    if (!appBarIconPunchout || !iconX || !iconY || !iconWidth || !iconHeight) {
         return null;
     }
 
