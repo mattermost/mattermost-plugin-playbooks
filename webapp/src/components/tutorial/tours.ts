@@ -18,6 +18,7 @@ export const TutorialTourCategories: Record<string, string> = {
     PLAYBOOK_EDIT: 'playbook_edit',
     RUN_DETAILS: 'tutorial_pb_run_details',
     PLAYBOOK_PREVIEW: 'playbook_preview',
+    CHECKLISTS_REBRAND: 'checklists_rebrand_v1',
 };
 
 export const PB_TOUR_EX = {
@@ -44,12 +45,17 @@ export const PlaybookPreviewTutorialSteps = {
     RunButton: 2,
     FINISHED,
 };
+export const ChecklistsRebrandTutorialSteps = {
+    AppBarIcon: 0,
+    FINISHED,
+};
 
 export const TTCategoriesMapToSteps: Record<string, Record<string, number>> = {
     [TutorialTourCategories.PB_TOUR_EX]: PB_TOUR_EX,
     [TutorialTourCategories.PLAYBOOK_EDIT]: PlaybookEditTutorialSteps,
     [TutorialTourCategories.PLAYBOOK_PREVIEW]: PlaybookPreviewTutorialSteps,
     [TutorialTourCategories.RUN_DETAILS]: RunDetailsTutorialSteps,
+    [TutorialTourCategories.CHECKLISTS_REBRAND]: ChecklistsRebrandTutorialSteps,
 };
 
 export const TTCategoriesMapToAutoTourStatusKey = Object.values(TutorialTourCategories).reduce((result, category) => {

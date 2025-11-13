@@ -270,10 +270,9 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	return fmt.Sprintf(
-		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
+		"##### [%s](%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
 		GetPlaybookDetailsRelativeURL(playbookID),
@@ -463,7 +462,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if playbookRun.PlaybookID == "" {
 		playbookRun.Checklists = []Checklist{
 			{
-				Title: "Checklist",
+				Title: "Tasks",
 				Items: []ChecklistItem{},
 			},
 		}
@@ -600,8 +599,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		// dm to users who are auto-following the playbook
-		telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_started_dm&telem_run_id=%s", playbookRun.ID)
-		err = s.dmPostToAutoFollows(&model.Post{Message: fmt.Sprintf(messageTemplate, telemetryString)}, pb.ID, playbookRun.ID, userID)
+		err = s.dmPostToAutoFollows(&model.Post{Message: messageTemplate}, pb.ID, playbookRun.ID, userID)
 		if err != nil {
 			logger.WithError(err).Error("failed to dm post to auto follows")
 		}
@@ -1175,40 +1173,34 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 }
 
 func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) string {
-	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_finished_dm&telem_run_id=%s", playbookRun.ID)
 	announcementMsg := fmt.Sprintf(
-		"### Run finished: [%s](%s%s)\n",
+		"### Run finished: [%s](%s)\n",
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
-		"@%s just marked [%s](%s%s) as finished. Visit the link above for more information.",
+		"@%s just marked [%s](%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 
 	return announcementMsg
 }
 
 func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string) string {
-	telemetryString := fmt.Sprintf("?telem_run_id=%s", playbookRun.ID)
 	announcementMsg := fmt.Sprintf(
-		"### Run status update %s : [%s](%s%s)\n",
+		"### Run status update %s : [%s](%s)\n",
 		status,
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
-		"@%s %s status update for [%s](%s%s). Visit the link above for more information.",
+		"@%s %s status update for [%s](%s). Visit the link above for more information.",
 		userName,
 		status,
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 
 	return announcementMsg
@@ -1747,7 +1739,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunsForChannelByUser(channelID strin
 			PerPage:   1000,
 			Sort:      SortByCreateAt,
 			Direction: DirectionDesc,
-			Types:     []string{RunTypePlaybook},
+			Types:     []string{RunTypePlaybook, RunTypeChannelChecklist},
 		},
 	)
 
@@ -2529,6 +2521,13 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
 		err := errors.Wrapf(err, "failed to verify checklist parameters for rename (runID: %s, checklistNumber: %d)", playbookRunID, checklistNumber)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	// Prevent renaming checklists in finished runs
+	if playbookRunToModify.CurrentStatus == StatusFinished {
+		err := errors.Wrap(ErrPlaybookRunNotActive, "cannot rename checklist in a finished run")
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -3319,6 +3318,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 				Type:        "select",
 				Options:     options,
 				Default:     defaultPlaybookID,
+				Optional:    false,
 			},
 			{
 				DisplayName: T("app.user.new_run.run_name"),
@@ -3662,8 +3662,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return err
 	}
 
-	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
-	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, retrospective.Text)
+	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, retrospective.Text)
 	err = s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
 	if err != nil {
 		logger.WithError(err).Error("failed to dm post to run followers")

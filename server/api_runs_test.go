@@ -177,6 +177,63 @@ func TestRunCreation(t *testing.T) {
 					assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 				},
 			},
+			// this use case is currently not allowed by the dialog as
+			// playbook ID is mandatory, but it is supported by the
+			// handler
+			"empty playbook ID creates RunTypeChannelChecklist": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.RegularUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: "", // Empty playbook ID
+						app.DialogFieldNameKey:       "Standalone Run",
+					},
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					require.NoError(t, err)
+					assert.Equal(t, http.StatusCreated, result.StatusCode)
+
+					// Get the created run ID from the Location header
+					url, err := result.Location()
+					require.NoError(t, err)
+					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
+
+					// Verify the run was created with the correct type
+					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
+					require.NoError(t, err)
+					assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
+					assert.Empty(t, run.PlaybookID, "Run should not have a playbook ID")
+					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
+				},
+			},
+			"valid playbook ID creates RunTypePlaybook": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.RegularUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID, // Valid playbook ID
+						app.DialogFieldNameKey:       "Playbook Run",
+					},
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					require.NoError(t, err)
+					assert.Equal(t, http.StatusCreated, result.StatusCode)
+
+					// Get the created run ID from the Location header
+					url, err := result.Location()
+					require.NoError(t, err)
+					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
+
+					// Verify the run was created with the correct type
+					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
+					require.NoError(t, err)
+					assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
+					assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID, "Run should have the correct playbook ID")
+					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
+				},
+			},
 		} {
 			t.Run(name, func(t *testing.T) {
 				dialogRequestBytes, err := json.Marshal(tc.dialogRequest)
@@ -205,6 +262,8 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
+		assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
+		assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID)
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
@@ -215,6 +274,8 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
+		assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
+		assert.Empty(t, run.PlaybookID)
 	})
 
 	t.Run("can't without owner", func(t *testing.T) {
@@ -835,6 +896,28 @@ func TestChecklistManagement(t *testing.T) {
 		// Try to rename a checklist that does not exist (number greater than the index of the last checklist)
 		err = e.PlaybooksClient.PlaybookRuns.RenameChecklist(context.Background(), run.ID, len(run.Checklists), newTitle)
 		require.Error(t, err)
+	})
+
+	t.Run("checklist renaming - failure: run is finished", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+		oldTitle := "Old Title"
+		newTitle := "New Title"
+
+		// Create a new checklist with a known title
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: oldTitle,
+			Items: []client.ChecklistItem{},
+		})
+		require.NoError(t, err)
+
+		// Finish the run
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Try to rename the checklist in the finished run
+		err = e.PlaybooksClient.PlaybookRuns.RenameChecklist(context.Background(), run.ID, 0, newTitle)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "already ended")
 	})
 
 	t.Run("checklist removal - success: result in no checklists", func(t *testing.T) {

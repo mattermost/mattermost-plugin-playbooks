@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
@@ -16,6 +16,7 @@ import {ToastProvider} from 'src/components/backstage/toast_banner';
 import {navigateToChannel} from 'src/browser_routing';
 import {usePlaybooksCrud} from 'src/hooks';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
+import {RunStatus} from 'src/graphql/generated/graphql';
 
 import {graphql} from 'src/graphql/generated/gql';
 
@@ -54,6 +55,9 @@ const RHSRunsQuery = graphql(/* GraphQL */`
                     numTasks
                     lastUpdatedAt
                     type
+                    currentStatus
+                    channelID
+                    teamID
                     propertyFields {
                         id
                         name
@@ -173,29 +177,36 @@ const RightHandSidebar = () => {
     useSetRHSState();
     const currentTeam = useSelector(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const [currentRunId, setCurrentRunId] = useState<string|undefined>();
-    const [skipNextDetailNav, setSkipNextDetailNav] = useState(false);
+    const [currentRunId, setCurrentRunId] = useState<string | undefined>();
+    const autoSelectCheckedForChannel = useRef<string | undefined>();
+    const [autoAddTaskRunId, setAutoAddTaskRunId] = useState<string|undefined>();
     const [listOptions, setListOptions] = useState<RunListOptions>(defaultListOptions);
     const fetchedRuns = useFilteredSortedRuns(currentChannelId, listOptions);
-    const {playbooks, isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
+    const {isLoading} = usePlaybooksCrud({team_id: currentTeam?.id}, {infinitePaging: true});
 
-    // If there is only one active run in this channel select it.
     useEffect(() => {
-        if (fetchedRuns.runsInProgress && fetchedRuns.runsInProgress.length === 1) {
-            const singleRunID = fetchedRuns.runsInProgress[0].id;
-            if (singleRunID !== currentRunId && !skipNextDetailNav) {
-                setCurrentRunId(singleRunID);
-            }
-        }
-        if (skipNextDetailNav) {
-            setSkipNextDetailNav(false);
-        }
-    }, [currentChannelId, fetchedRuns.runsInProgress?.length]);
-
-    // Reset the list options on channel change
-    useEffect(() => {
+        // reset filter state
         setListOptions(defaultListOptions);
     }, [currentChannelId]);
+
+    // auto-select single in-progress run in channel if applicable
+    useEffect(() => {
+        if (currentChannelId && currentChannelId !== autoSelectCheckedForChannel.current) {
+            setCurrentRunId(() => {
+                if (fetchedRuns.runsInProgress) {
+                    autoSelectCheckedForChannel.current = currentChannelId; // mark that we've checked this channel
+
+                    if (fetchedRuns.runsInProgress.length === 1) {
+                        return fetchedRuns.runsInProgress[0].id; // auto-select the single in-progress run
+                    }
+
+                    return undefined; // no auto-select
+                }
+
+                return undefined; // clear immediately - wait until runsInProgress is loaded
+            });
+        }
+    }, [currentChannelId, fetchedRuns.runsInProgress]);
 
     if (!fetchedRuns.runsInProgress || !fetchedRuns.runsFinished) {
         return <RHSLoading/>;
@@ -206,10 +217,13 @@ const RightHandSidebar = () => {
         setCurrentRunId(undefined);
     };
 
-    const handleOnCreateRun = (runId: string, channelId: string) => {
+    const handleOnCreateRun = (runId: string, channelId: string, statsData: {autoAddTask?: boolean}) => {
         if (channelId === currentChannelId) {
             fetchedRuns.refetch();
             setCurrentRunId(runId);
+            if (statsData.autoAddTask) {
+                setAutoAddTaskRunId(runId);
+            }
             return;
         }
 
@@ -223,24 +237,26 @@ const RightHandSidebar = () => {
         return <RHSHome/>;
     }
 
-    // No playbooks
-    if (!isLoading && playbooks?.length === 0) {
-        return <RHSHome/>;
-    }
-
     // Wait for full load to avoid flashing
     if (isLoading) {
         return null;
     }
 
     // If we have a run selected and it's in the current channel show that
-    if (currentRunId && [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRunId)) {
-        return (
-            <RHSRunDetails
-                runID={currentRunId}
-                onBackClick={clearCurrentRunId}
-            />
-        );
+    if (currentRunId) {
+        const currentRun = [...fetchedRuns.runsInProgress, ...fetchedRuns.runsFinished].find((run) => run.id === currentRunId);
+        if (currentRun) {
+            // Only auto-add task if this run matches autoAddTaskRunId AND the run is still in progress
+            const shouldAutoAddTask = currentRunId === autoAddTaskRunId && currentRun.currentStatus === RunStatus.InProgress;
+            return (
+                <RHSRunDetails
+                    runID={currentRunId}
+                    onBackClick={clearCurrentRunId}
+                    autoAddTask={shouldAutoAddTask}
+                    onTaskAdded={() => setAutoAddTaskRunId(undefined)}
+                />
+            );
+        }
     }
 
     const runsList = listOptions.filter === FilterType.InProgress ? fetchedRuns.runsInProgress : (fetchedRuns.runsFinished ?? []);
@@ -261,7 +277,6 @@ const RightHandSidebar = () => {
             hasMore={hasMore}
             numInProgress={fetchedRuns.numRunsInProgress}
             numFinished={fetchedRuns.numRunsFinished}
-            onLinkRunToChannel={() => setSkipNextDetailNav(true)}
         />
     );
 };

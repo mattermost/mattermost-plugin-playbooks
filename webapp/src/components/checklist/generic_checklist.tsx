@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -15,6 +15,7 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Condition, ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
+import {clientDeleteChecklistItem} from 'src/client';
 
 import ConditionHeader from './condition_header';
 
@@ -39,6 +40,9 @@ interface Props {
     onCreateCondition?: (expr: ConditionExprV1, itemIndex: number) => void;
     onUpdateCondition?: (conditionId: string, expr: ConditionExprV1) => void;
     newlyCreatedConditionIds?: Set<string>;
+    autoAddTask?: boolean;
+    onTaskAdded?: () => void;
+    isChannelChecklist?: boolean;
     allChecklists?: Checklist[];
     onMoveItemToCondition?: (itemIndex: number, conditionId: string) => void;
 }
@@ -46,8 +50,17 @@ interface Props {
 const GenericChecklist = (props: Props) => {
     const {formatMessage} = useIntl();
     const myUser = useSelector(getCurrentUser);
-    const [addingItem, setAddingItem] = useState(false);
+    const [addingItem, setAddingItem] = useState(props.autoAddTask ?? false);
     const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+    const [newItemKey, setNewItemKey] = useState(0);
+
+    // Auto-add task on mount if requested
+    useEffect(() => {
+        if (props.autoAddTask && !addingItem) {
+            setAddingItem(true);
+            props.onTaskAdded?.();
+        }
+    }, [props.autoAddTask]); // Only run when autoAddTask changes
 
     const onUpdateChecklistItem = (index: number, newItem: ChecklistItem) => {
         const newChecklistItems = [...props.checklist.items];
@@ -78,11 +91,15 @@ const GenericChecklist = (props: Props) => {
     };
 
     const onDeleteChecklistItem = (index: number) => {
-        const newChecklistItems = [...props.checklist.items];
-        newChecklistItems.splice(index, 1);
-        const newChecklist = {...props.checklist};
-        newChecklist.items = newChecklistItems;
-        props.onUpdateChecklist(newChecklist);
+        if (props.playbookRun && props.isChannelChecklist) {
+            clientDeleteChecklistItem(props.playbookRun.id, props.checklistIndex, index);
+        } else {
+            const newChecklistItems = [...props.checklist.items];
+            newChecklistItems.splice(index, 1);
+            const newChecklist = {...props.checklist};
+            newChecklist.items = newChecklistItems;
+            props.onUpdateChecklist(newChecklist);
+        }
     };
 
     const onOpenConditionEditor = (index: number) => {
@@ -290,6 +307,7 @@ const GenericChecklist = (props: Props) => {
                     setEditingItemIndex(isEditing ? index : null);
                 }}
                 hasCondition={hasCondition}
+                isChannelChecklist={props.isChannelChecklist}
                 conditionHeader={showConditionHeader ? (
                     <ConditionHeader
                         conditionId={conditionId}
@@ -340,7 +358,7 @@ const GenericChecklist = (props: Props) => {
 
                         {addingItem &&
                             <DraggableChecklistItem
-                                key={'new_checklist_item'}
+                                key={`new_checklist_item_${newItemKey}`}
                                 playbookRun={props.playbookRun}
                                 playbookId={props.playbookId}
                                 readOnly={props.readOnly}
@@ -359,6 +377,13 @@ const GenericChecklist = (props: Props) => {
                                     // New item is always in editing mode, so we don't need to track it separately
                                     // addingItem state already handles disabling drag & drop
                                 }}
+                                onSaveAndAddNew={() => {
+                                    // Increment key to force a new component instance with fresh state
+                                    setNewItemKey((prev) => prev + 1);
+
+                                    // Keep adding mode active after saving to create a new item
+                                    setAddingItem(true);
+                                }}
                             />
                         }
                         {droppableProvided.placeholder}
@@ -366,6 +391,7 @@ const GenericChecklist = (props: Props) => {
                             <AddTaskLink
                                 disabled={props.readOnly}
                                 onClick={() => {
+                                    setNewItemKey((prev) => prev + 1);
                                     setAddingItem(true);
                                 }}
                                 data-testid={`add-new-task-${props.checklistIndex}`}

@@ -47,15 +47,15 @@ describe('channels > App Bar', {testIsolation: true}, () => {
         // # Login as testUser
         cy.apiLogin(testUser);
 
-        it('should show "Playbooks" tooltip for Playbook App Bar icon', () => {
+        it('should show "Checklists" tooltip for Playbook App Bar icon', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // # Hover over the channel header icon
             cy.getPlaybooksAppBarIcon().trigger('mouseenter');
 
-            // * Verify tooltip text
-            cy.findByRole('tooltip', {name: 'Playbooks'}).should('be.visible');
+            // * Verify tooltip text (changed from "Playbooks" to "Checklists" for the new feature)
+            cy.findByRole('tooltip', {name: 'Checklists'}).should('be.visible');
         });
     });
 });

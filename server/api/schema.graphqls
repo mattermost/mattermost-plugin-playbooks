@@ -246,6 +246,11 @@ enum PlaybookRunType {
 	channelChecklist
 }
 
+enum RunStatus {
+	InProgress
+	Finished
+}
+
 type Run {
 	id: String!
 	playbookID: String!
@@ -256,7 +261,7 @@ type Run {
 	postID: String!
 	teamID: String!
 	isFavorite: Boolean!
-	currentStatus: String!
+	currentStatus: RunStatus!
 	createAt: Float!
 	endAt: Float!
 	participantIDs: [String!]!

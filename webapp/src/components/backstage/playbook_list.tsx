@@ -362,7 +362,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                         })}
                                     </ImportSub>
                                     <AltSub>
-                                        {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                        {formatMessage({defaultMessage: 'There are pre-built playbooks for a range of use cases and events. You can use a pre-built playbook as-is or customize it—then share it with your team.'})}
                                     </AltSub>
                                 </AltCreatePlaybookHeader>
                             ) : (
@@ -371,7 +371,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
                                         {formatMessage({defaultMessage: 'Do more with Playbooks'})}
                                     </Heading>
                                     <Sub>
-                                        {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                        {formatMessage({defaultMessage: 'There are pre-built playbooks for a range of use cases and events. You can use a pre-built playbook as-is or customize it—then share it with your team.'})}
                                     </Sub>
                                 </CreatePlaybookHeader>
                             )}

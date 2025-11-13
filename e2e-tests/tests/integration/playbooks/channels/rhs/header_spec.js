@@ -6,7 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {ONE_SEC} from '../../../../fixtures/timeouts';
 import * as TIMEOUTS from '../../../../fixtures/timeouts';
 
 // Stage: @prod
@@ -16,6 +15,15 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
     let testPlaybook;
+    let testViewerUser;
+    // eslint-disable-next-line no-unused-vars
+    let standaloneRun;
+    // eslint-disable-next-line no-unused-vars
+    let standaloneRunChannelName;
+    let privatePlaybook;
+    let privateRun;
+    // eslint-disable-next-line no-unused-vars
+    let privateRunChannelName;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -31,6 +39,51 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                 userId: testUser.id,
             }).then((playbook) => {
                 testPlaybook = playbook;
+
+                // # Create a standalone run without a playbook (channel checklist)
+                const now = Date.now();
+                const standaloneRunName = 'Standalone Run (' + now + ')';
+                standaloneRunChannelName = 'standalone-run-' + now;
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: '', // Empty playbook ID for standalone run
+                    playbookRunName: standaloneRunName,
+                    ownerUserId: testUser.id,
+                }).then((run) => {
+                    standaloneRun = run;
+                });
+
+                // # Create a second user (viewer) and add to team
+                cy.apiCreateUser().then(({user: viewerUser}) => {
+                    testViewerUser = viewerUser;
+                    cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
+
+                    // # Create a private playbook with only testUser as member
+                    cy.apiCreatePlaybook({
+                        teamId: testTeam.id,
+                        title: 'Private Playbook',
+                        memberIDs: [testUser.id], // Only testUser is a member
+                        makePublic: false,
+                    }).then((privPlaybook) => {
+                        privatePlaybook = privPlaybook;
+
+                        // # Create a run from the private playbook
+                        const privateNow = Date.now() + 1000; // Add 1000ms to avoid collision
+                        const privateRunName = 'Private Run (' + privateNow + ')';
+                        privateRunChannelName = 'private-run-' + privateNow;
+                        cy.apiRunPlaybook({
+                            teamId: testTeam.id,
+                            playbookId: privatePlaybook.id,
+                            playbookRunName: privateRunName,
+                            ownerUserId: testUser.id,
+                        }).then((run) => {
+                            privateRun = run;
+
+                            // # Add viewerUser as participant to the run
+                            cy.apiAddUsersToRun(privateRun.id, [testViewerUser.id]);
+                        });
+                    });
+                });
             });
         });
     });
@@ -123,10 +176,10 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // * make sure the updated summary is still there
             cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
         });
+    });
 
-        // https://mattermost.atlassian.net/browse/MM-63692
-        // eslint-disable-next-line no-only-tests/no-only-tests
-        it.skip('by clicking on dot menu item', () => {
+    describe('playbook badge', () => {
+        it('is shown for runs started from a playbook and navigates to playbook editor when clicked', () => {
             // # Run the playbook
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
@@ -138,31 +191,34 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                 ownerUserId: testUser.id,
             });
 
-            // # Navigate directly to the application and the playbook run channel
+            // # Navigate to the run channel
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
-            // # click on the field
-            cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('buttons-row').invoke('show').within(() => {
-                    cy.findAllByRole('button').eq(1).click();
-                });
-            });
+            // * Verify the playbook badge is visible and shows the playbook name
+            cy.findByTestId('playbook-badge').should('be.visible').and('contain', 'Playbook');
 
-            cy.findByTestId('dropdownmenu').within(() => {
-                cy.get('span').should('have.length', 3);
-                cy.findByText('Edit run summary').click();
-            });
+            // # Click the playbook badge
+            cy.findByTestId('playbook-badge').click();
 
-            // * Verify textarea is focused
-            cy.get('#rhsContainer').findByTestId('textarea-description').should('be.focused').as('textarea');
+            // * Verify we navigated to the playbook editor
+            cy.url().should('include', `/playbooks/${testPlaybook.id}`);
+        });
 
-            // # Type text in textarea
-            cy.get('@textarea').type('new summary{ctrl+enter}');
+        it('is hidden for runs started from a playbook I do not have access to', () => {
+            // # Login as viewer and navigate to the private run
+            cy.apiLogin(testViewerUser);
+            cy.visit(`/${testTeam.name}/channels/${privateRunChannelName}`);
 
-            cy.wait(ONE_SEC);
+            // * Verify the playbook badge does not exist
+            cy.findByTestId('playbook-badge').should('not.exist');
+        });
 
-            // * make sure the updated summary is here
-            cy.get('#rhsContainer').findByTestId('rendered-description').should('be.visible').contains('new summary');
+        it('is hidden for channel checklists', () => {
+            // # Navigate to the standalone run channel (channel checklist)
+            cy.visit(`/${testTeam.name}/channels/${standaloneRunChannelName}`);
+
+            // * Verify the playbook badge does not exist
+            cy.findByTestId('playbook-badge').should('not.exist');
         });
     });
 
@@ -206,32 +262,45 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // * Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
             cy.findByText('Become a participant to interact with this run', {timeout: 500}).should('not.exist');
         });
+    });
 
-        it('by clicking on dot menu item', () => {
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+    describe('rename checklist', () => {
+        it('can rename active checklist from RHS header', () => {
+            // # Visit the standalone run channel (channel checklist)
+            cy.visit(`/${testTeam.name}/channels/${standaloneRunChannelName}`);
 
-            // # Wait for the RHS to open
-            cy.get('#rhsContainer').should('be.visible');
+            // # Wait for the page to load
+            cy.wait(TIMEOUTS.HALF_SEC);
 
-            // # Mark the run as finished
-            cy.apiFinishRun(finishedPlaybookRun.id);
+            // # Click on the checklist dropdown in the RHS header
+            cy.findByTestId('menuButton').click();
 
-            // # click on the field
-            cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('buttons-row').invoke('show').within(() => {
-                    cy.findAllByRole('button').eq(1).click({force: true});
-                });
-            });
-
-            // * Verify the menu items
+            // * Verify "Rename" option exists for active checklists
             cy.findByTestId('dropdownmenu').within(() => {
-                cy.get('span').should('have.length', 2);
-                cy.findByText('Edit run summary').should('not.exist');
+                cy.findByText('Rename').should('exist');
+                cy.findByText('Finish').should('exist');
             });
+        });
 
-            // * Verify no prompt to join appears (timeout ensures it fails right away before toast disappears)
-            cy.findByText('Become a participant to interact with this run', {timeout: 500}).should('not.exist');
+        it('cannot rename finished checklist from RHS header', () => {
+            // # Visit the standalone run channel (channel checklist)
+            cy.visit(`/${testTeam.name}/channels/${standaloneRunChannelName}`);
+
+            // # Wait for the page to load
+            cy.wait(TIMEOUTS.HALF_SEC);
+
+            // # Finish the checklist
+            cy.apiFinishRun(standaloneRun.id);
+
+            // # Click on the title menu
+            cy.findByTestId('menuButton').click();
+
+            // * Verify "Rename" option does not exist for finished checklists
+            cy.findByTestId('dropdownmenu').within(() => {
+                cy.findByText('Save as playbook');
+                cy.findByText('Resume');
+                cy.findByText('Rename').should('not.exist');
+            });
         });
     });
 });

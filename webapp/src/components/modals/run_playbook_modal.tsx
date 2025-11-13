@@ -23,7 +23,6 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
-import SearchInput from 'src/components/backstage/search_input';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 
@@ -66,7 +65,6 @@ const RunPlaybookModal = ({
     const [channelId, setChannelId] = useState('');
     const [createPublicRun, setCreatePublicRun] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [showsearch, setShowsearch] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
@@ -162,7 +160,7 @@ const RunPlaybookModal = ({
         return (
             <StyledGenericModal
                 cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Start run'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Create checklist'})}
                 showCancel={true}
                 isConfirmDisabled={isSubmitting || !isFormValid}
                 handleConfirm={onSubmit}
@@ -182,7 +180,7 @@ const RunPlaybookModal = ({
                             />
                         </IconWrapper>
                         <HeaderTitle>
-                            <FormattedMessage defaultMessage='Start a run'/>
+                            <FormattedMessage defaultMessage='Run playbook'/>
                             <ModalSideheading>{playbook?.title}</ModalSideheading>
                         </HeaderTitle>
                     </ColContainer>
@@ -195,7 +193,7 @@ const RunPlaybookModal = ({
                         onSetRunName={setRunName}
                     />
 
-                    <InlineLabel>{formatMessage({defaultMessage: 'Run summary'})}</InlineLabel>
+                    <InlineLabel>{formatMessage({defaultMessage: 'Summary'})}</InlineLabel>
                     <BaseTextArea
                         data-testid={'run-summary-input'}
                         rows={5}
@@ -226,7 +224,7 @@ const RunPlaybookModal = ({
                 <RowContainer>
                     <ColContainer>
                         <HeaderTitle>
-                            <FormattedMessage defaultMessage='Select a playbook'/>
+                            <FormattedMessage defaultMessage='Run playbook'/>
                         </HeaderTitle>
                         <HeaderButtonWrapper>
                             {canCreatePlaybooks &&
@@ -239,25 +237,14 @@ const RunPlaybookModal = ({
                             }
                         </HeaderButtonWrapper>
                     </ColContainer>
-                    {showsearch && <SearchWrapper>
-                        <SearchInput
-                            testId={'search-filter'}
-                            default={''}
-                            onSearch={(term) => setSearchTerm(term)}
-                            placeholder={formatMessage({defaultMessage: 'Search playbooks'})}
-                            width={'100%'}
-                        />
-                    </SearchWrapper>}
                 </RowContainer>
             )}
             {...modalProps}
         >
             <Body>
                 <PlaybooksSelector
-                    onCreatePlaybook={onCreatePlaybook}
                     teamID={teamId}
                     channelID={triggerChannelId || ''}
-                    onZeroCaseNoPlaybooks={(isZeroNoShow: boolean) => setShowsearch(!isZeroNoShow)}
                     searchTerm={searchTerm}
                     onSelectPlaybook={(id) => {
                         setSelectedPlaybookId(id);
@@ -292,7 +279,7 @@ const RunNameSection = ({runName, onSetRunName}: runNameProps) => {
     return (<>
         <RunNameLabel invalid={Boolean(error)}>
             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-            {formatMessage({defaultMessage: 'Run name'})}{error ? ' *' : ''}
+            {formatMessage({defaultMessage: 'Checklist name'})}{error ? ' *' : ''}
         </RunNameLabel>
         <BaseInput
             $invalid={Boolean(error)}
@@ -515,8 +502,6 @@ const HeaderButtonWrapper = styled.div`
 const CreatePlaybookButton = styled.button`
     font-family: 'Open Sans';
 `;
-
-const SearchWrapper = styled.div`/* stylelint-disable no-empty-source */`;
 
 const RunNameLabel = styled(InlineLabel)<{invalid?: boolean}>`
     color: ${(props) => (props.invalid ? 'var(--error-text)' : 'rgba(var(--center-channel-color-rgb), 0.64)')};

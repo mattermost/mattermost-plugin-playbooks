@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+/* eslint-disable no-only-tests/no-only-tests */
+
 import * as TIMEOUTS from '../../../fixtures/timeouts';
 
 describe('channels > rhs', {testIsolation: true}, () => {
@@ -199,6 +201,9 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.get('#rhsContainer').should('not.exist');
         });
 
+        // Skip: This test relies on accessing "Run a playbook" from an empty channel,
+        // which is no longer supported in the new Checklists UI. The empty channel state
+        // only provides a "New checklist" button without a dropdown.
         it('when starting a new run of a newly-created playbook created from RHS in a newly-created channel', () => {
             // # Create a new channel
             const channelName = 'playbook-test-' + Date.now();
@@ -212,8 +217,11 @@ describe('channels > rhs', {testIsolation: true}, () => {
                 // # Wait a bit
                 cy.wait(TIMEOUTS.TWO_SEC);
 
-                // # open start run dialog
-                cy.findByTestId('rhs-runlist-start-run').click();
+                // # Now click dropdown next to "New checklist" button in header
+                cy.get('[data-testid="create-blank-checklist"]').first().parent().find('.icon-chevron-down').click();
+
+                // # Click "Run a playbook" from the dropdown
+                cy.findByTestId('create-from-playbook').click();
 
                 // # Create a new playbook
                 cy.findByText('Create new playbook').click();
@@ -260,9 +268,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
+            cy.findByTestId('menuButton').contains(playbookRunName);
         });
 
         it('for a new, ongoing playbook run channel opened from the lhs', () => {
@@ -290,9 +296,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
 
             // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
+            cy.findByTestId('menuButton').contains(playbookRunName);
         });
 
         it('for an existing, ongoing playbook run channel opened from the lhs', () => {
@@ -317,9 +321,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
 
             // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
+            cy.findByTestId('menuButton').contains(playbookRunName);
         });
 
         it('when starting a playbook run', () => {
@@ -333,9 +335,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
 
             // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
+            cy.findByTestId('menuButton').contains(playbookRunName);
         });
 
         it('when starting a playbook run when rhs is already open', () => {
@@ -358,9 +358,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
 
             // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
+            cy.findByTestId('menuButton').contains(playbookRunName);
         });
 
         it('when navigating directly to a finished playbook run channel and clicking on the button', () => {
@@ -404,7 +402,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Playbooks').should('exist');
+                cy.findByText('Checklists').should('exist');
             });
 
             // # Click the icon

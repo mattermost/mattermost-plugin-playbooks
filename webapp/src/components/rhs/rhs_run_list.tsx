@@ -11,10 +11,11 @@ import {
     CheckAllIcon,
     CheckIcon,
     LinkVariantIcon,
-    PencilOutlineIcon,
     PlayOutlineIcon,
+    PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
+
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
@@ -22,26 +23,29 @@ import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
-import appIcon from 'src/components/assets/app-bar-icon.png';
+import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
+
 import {useUpdateRun} from 'src/graphql/hooks';
+import {createPlaybookRun} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {SemiBoldHeading} from 'src/styles/headings';
-import {openPlaybookRunModal, openUpdateRunChannelModal, openUpdateRunNameModal} from 'src/actions';
+import {openPlaybookRunModal, openUpdateRunChannelModal} from 'src/actions';
 import Profile from 'src/components/profile/profile';
 import DotMenu, {DotMenuButton, DropdownMenuItem, TitleButton} from 'src/components/dot_menu';
-import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
-import GiveFeedbackButton from 'src/components/give_feedback_button';
+import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_icon';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
+import Tooltip from 'src/components/widgets/tooltip';
 
-import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 
 import {UserList} from './rhs_participants';
-import {RHSTitleText} from './rhs_title_common';
 
 interface PlaybookToDisplay {
     title: string
@@ -57,7 +61,10 @@ interface RunToDisplay {
     numTasksClosed: number
     numTasks: number
     lastUpdatedAt: number
-    type: string
+    type: PlaybookRunType
+    currentStatus: RunStatus
+    channelID: string
+    teamID: string
 }
 
 export enum FilterType {
@@ -75,7 +82,6 @@ interface Props {
     runs: RunToDisplay[];
     onSelectRun: (runID: string) => void;
     onRunCreated: (runID: string, channelId: string, statsData: object) => void;
-    onLinkRunToChannel: () => void;
     getMore: () => Promise<any>;
     hasMore: boolean;
 
@@ -87,11 +93,32 @@ interface Props {
 
 const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
 
+const PoweredByPlaybooksFooter = () => (
+    <PoweredByFooter>
+        <PoweredByText>
+            <FormattedMessage
+                defaultMessage='POWERED BY{productName}'
+                values={{
+                    productName: (
+                        <ProductName>
+                            <PlaybooksProductIcon/>
+                            {/* product name; don't translate */}
+                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                            {'PLAYBOOKS'}
+                        </ProductName>
+                    ),
+                }}
+            />
+        </PoweredByText>
+    </PoweredByFooter>
+);
+
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const currentTeamId = useSelector(getCurrentTeamId);
     const currentChannelId = useSelector(getCurrentChannelId);
+    const currentUserId = useSelector(getCurrentUserId);
     const [loadingMore, setLoadingMore] = useState(false);
     const debouncedSetLoadingMore = useMemo(() => debounce(setLoadingMore, 100), [setLoadingMore]);
     const getMore = async () => {
@@ -100,7 +127,7 @@ const RHSRunList = (props: Props) => {
         debouncedSetLoadingMore(false);
     };
     const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
-    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'Runs in progress'}) : formatMessage({defaultMessage: 'Finished runs'});
+    const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
 
     const handleStartRun = () => {
@@ -111,16 +138,50 @@ const RHSRunList = (props: Props) => {
         }));
     };
 
+    const handleCreateBlankChecklist = async () => {
+        try {
+            const newRun = await createPlaybookRun(
+                '', // No playbook ID for blank checklist
+                currentUserId,
+                currentTeamId,
+                formatMessage({defaultMessage: 'Untitled checklist'}),
+                '',
+                currentChannelId,
+                undefined
+            );
+
+            // Call the onRunCreated callback with the new run
+            // Pass a flag to indicate we should auto-add a task
+            props.onRunCreated(newRun.id, newRun.channel_id, {
+                playbookId: '',
+                channelMode: 'link_existing_channel',
+                hasPlaybookChanged: false,
+                hasNameChanged: false,
+                hasSummaryChanged: false,
+                hasChannelModeChanged: false,
+                hasChannelIdChanged: false,
+                autoAddTask: true,
+            });
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to create blank checklist:', error);
+        }
+    };
+
+    const handleGoToPlaybooks = () => {
+        navigateToPluginUrl('/playbooks');
+    };
+
     return (
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <ClipboardImage src={appIcon}/>
-                    <RHSTitleText>
-                        {/* product name; don't translate */}
+                    <TitleIcon src={CheckLogoIcon}/>
+                    <>
+                        {/* static title; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                        {'Playbooks'}
-                    </RHSTitleText>
+                        {'Checklists'}
+                    </>
                     <VerticalLine/>
                     <ChannelNameText>
                         {currentChannelName}
@@ -142,7 +203,7 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                         >
-                            {formatMessage({defaultMessage: 'Runs in progress'})}
+                            {formatMessage({defaultMessage: 'In progress'})}
                             <FilterMenuNumericValue>
                                 {props.numInProgress}
                             </FilterMenuNumericValue>
@@ -150,26 +211,53 @@ const RHSRunList = (props: Props) => {
                         <FilterMenuItem
                             onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                         >
-                            {formatMessage({defaultMessage: 'Finished runs'})}
+                            {formatMessage({defaultMessage: 'Finished'})}
                             <FilterMenuNumericValue>
                                 {props.numFinished}
                             </FilterMenuNumericValue>
                         </FilterMenuItem>
                     </DotMenu>
                     <Spacer/>
-                    <StartRunButton
-                        data-testid='rhs-runlist-start-run'
-                        onClick={handleStartRun}
-                    >
-                        <PlayOutlineIcon size={14}/>
-                        {formatMessage({defaultMessage: 'Start run'})}
-                    </StartRunButton>
+                    <SegmentedButtonContainer>
+                        <PrimaryActionButton
+                            onClick={handleCreateBlankChecklist}
+                            data-testid='create-blank-checklist'
+                        >
+                            <PlusIcon size={18}/>
+                            {formatMessage({defaultMessage: 'New checklist'})}
+                        </PrimaryActionButton>
+                        <DotMenu
+                            dotMenuButton={DropdownTriggerButton}
+                            placement='bottom-start'
+                            icon={<i className={'icon icon-chevron-down'}/>}
+                        >
+                            <CreateChecklistMenuItem
+                                onClick={handleStartRun}
+                                data-testid='create-from-playbook'
+                            >
+                                <MenuItemIcon>
+                                    <PlayOutlineIcon size={18}/>
+                                </MenuItemIcon>
+                                <FormattedMessage defaultMessage='Run a playbook'/>
+                            </CreateChecklistMenuItem>
+                            <Separator/>
+                            <CreateChecklistMenuItem
+                                onClick={handleGoToPlaybooks}
+                                data-testid='go-to-playbooks'
+                            >
+                                <MenuItemIcon>
+                                    <PlaybooksProductIcon/>
+                                </MenuItemIcon>
+                                <FormattedMessage defaultMessage='Go to Playbooks'/>
+                            </CreateChecklistMenuItem>
+                        </DotMenu>
+                    </SegmentedButtonContainer>
                     <DotMenu
                         dotMenuButton={SortDotMenuButton}
                         placement='bottom-start'
                         icon={<SortAscendingIcon size={18}/>}
                     >
-                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort runs by'})}</SortMenuTitle>
+                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
                         <SortMenuItem
                             label={formatMessage({defaultMessage: 'Recently created'})}
                             sortItem={'create_at'}
@@ -201,12 +289,10 @@ const RHSRunList = (props: Props) => {
                                 numInProgress={props.numInProgress}
                                 numFinished={props.numFinished}
                                 setOptions={props.setOptions}
-                                onStartRunClicked={handleStartRun}
+                                onCreateChecklistClicked={handleCreateBlankChecklist}
                             />
                         </NoRunsWrapper>
-                        <FeedbackWrapper>
-                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
-                        </FeedbackWrapper>
+                        <PoweredByPlaybooksFooter/>
                     </>
                 }
                 {!showNoRuns &&
@@ -219,7 +305,6 @@ const RHSRunList = (props: Props) => {
                             {props.runs.map((run: RunToDisplay) => (
                                 <RHSRunListCard
                                     key={run.id}
-                                    onLinkRunToChannel={props.onLinkRunToChannel}
                                     onClick={() => props.onSelectRun(run.id)}
                                     {...run}
                                 />
@@ -235,9 +320,7 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
-                        <FeedbackWrapper>
-                            <StyledGiveFeedbackButton tooltipPlacement='top'/>
-                        </FeedbackWrapper>
+                        <PoweredByPlaybooksFooter/>
                     </Scrollbars>
                 }
             </Container>
@@ -245,11 +328,29 @@ const RHSRunList = (props: Props) => {
     );
 };
 
-const FeedbackWrapper = styled.div`
+const PoweredByFooter = styled.div`
     padding: 0 16px;
     margin-top: 10px;
     margin-bottom: 30px;
     text-align: center;
+`;
+
+const PoweredByText = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    line-height: 16px;
+`;
+
+const ProductName = styled.span`
+    i {
+        font-size: 16px;
+    }
 `;
 
 const Container = styled.div`
@@ -319,23 +420,94 @@ const ChannelNameText = styled.div`
     text-overflow: ellipsis;
 `;
 
-const ClipboardImage = styled.img`
+const TitleIcon = styled.img`
     width: 24px;
     height: 24px;
     border-radius: 50%;
+    background: rgba(var(--button-bg-rgb), 0.08);
+    color: var(--button-bg);
 `;
 
-const StartRunButton = styled(SecondaryButton)`
+const SegmentedButtonContainer = styled.div`
     display: flex;
-    height: 100%;
     flex-direction: row;
-    padding: 8px 16px;
+    align-items: center;
+    height: 32px;
+    border-radius: 4px;
+`;
+
+const PrimaryActionButton = styled.button`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px;
     border: 0;
     background: rgba(var(--button-bg-rgb), 0.08);
     color: var(--button-bg);
     font-size: 12px;
     font-weight: 600;
-    gap: 6px;
+    gap: 4px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-right: 1px solid rgba(var(--button-bg-rgb), 0.16);
+    cursor: pointer;
+    height: 100%;
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.12);
+    }
+
+    &:active {
+        background: rgba(var(--button-bg-rgb), 0.16);
+    }
+`;
+
+const DropdownTriggerButton = styled(TitleButton)`
+    && {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 2px;
+        width: 24px;
+        height: 100%;
+        border-radius: 0 4px 4px 0;
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+        font-size: 12px;
+
+        &:hover {
+            background: rgba(var(--button-bg-rgb), 0.12);
+        }
+
+        &:active {
+            background: rgba(var(--button-bg-rgb), 0.16);
+        }
+
+        i {
+            font-size: 18px;
+        }
+    }
+`;
+
+const CreateChecklistMenuItem = styled(DropdownMenuItem)`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    min-height: 40px;
+`;
+
+const MenuItemIcon = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    flex-shrink: 0;
+    width: 24px;
+
+    i {
+        font-size: 18px;
+    }
 `;
 
 const SortDotMenuButton = styled(DotMenuButton)`
@@ -365,20 +537,6 @@ const StyledDropdownMenuSort = styled(DropdownMenuItem)`
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-`;
-
-const StyledGiveFeedbackButton = styled(GiveFeedbackButton)`
-    && {
-        width: 100%;
-        color: var(--center-channel-color-64);
-        font-size: 12px;
-    }
-
-    &&:hover:not([disabled]) {
-        background-color: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
-    }
-
 `;
 
 interface SortMenuItemProps {
@@ -414,7 +572,6 @@ const BlueCheckmark = styled(CheckIcon)`
 
 interface RHSRunListCardProps extends RunToDisplay {
     onClick: () => void;
-    onLinkRunToChannel: () => void;
 }
 
 const RHSRunListCard = (props: RHSRunListCardProps) => {
@@ -423,7 +580,19 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {add: addToastMessage} = useToaster();
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
-    const canEditRun = currentUserId === props.ownerUserID || props.participantIDs.includes(currentUserId);
+
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: props.type,
+        channel_id: props.channelID,
+        team_id: props.teamID,
+        owner_user_id: props.ownerUserID,
+        participant_ids: props.participantIDs,
+        current_status: props.currentStatus,
+    };
+
+    const canEditRun = useCanModifyRun(runForPermissions, currentUserId);
+
     const participatIDsWithoutOwner = props.participantIDs.filter((id) => id !== props.ownerUserID);
     const [movedChannel, setMovedChannel] = useState({channelId: '', channelName: ''});
     const updateRun = useUpdateRun(props.id);
@@ -443,7 +612,6 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                     content: isPlaybookRun ? formatMessage({defaultMessage: 'Run moved to {channel}'}, {channel: movedChannel.channelName}) : formatMessage({defaultMessage: 'Checklist moved to {channel}'}, {channel: movedChannel.channelName}),
                     toastStyle: ToastStyle.Success,
                 });
-                props.onLinkRunToChannel();
             }}
         >
             <CardContainer
@@ -456,43 +624,26 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                     </IconWrapper>
                     <TitleRow>{props.name}</TitleRow>
                     <Spacer/>
-                    {isPlaybookRun &&
-                        <ContextMenu
-                            playbookID={props.playbookID}
-                            playbookTitle={props.playbook?.title || ''}
-                            playbookRunID={props.id}
-                            teamID={teamId}
-                            canSeePlaybook={Boolean(props.playbook?.title)}
-                            canEditRun={canEditRun}
-                            onUpdateName={(newName) => {
-                                updateRun({name: newName});
-                            }}
-                            onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                                setRemoved(true);
-                                setMovedChannel({
-                                    channelId: newChannelId,
-                                    channelName: newChannelName,
-                                });
-                            }}
-                        />
-                    }
-                    {!isPlaybookRun &&
-                        <ChannelChecklistContextMenu
-                            playbookRunID={props.id}
-                            teamID={teamId}
-                            canEditRun={canEditRun}
-                            onUpdateName={(newName) => {
-                                updateRun({name: newName});
-                            }}
-                            onUpdateChannel={(newChannelId: string, newChannelName: string) => {
-                                setRemoved(true);
-                                setMovedChannel({
-                                    channelId: newChannelId,
-                                    channelName: newChannelName,
-                                });
-                            }}
-                        />
-                    }
+                    <ContextMenu
+                        runType={props.type}
+                        playbookID={props.playbookID}
+                        playbookTitle={props.playbook?.title || ''}
+                        playbookRunID={props.id}
+                        teamID={teamId}
+                        canSeePlaybook={Boolean(props.playbook?.title)}
+                        canEditRun={canEditRun}
+                        onClick={props.onClick}
+                        onUpdateName={(newName) => {
+                            updateRun({name: newName});
+                        }}
+                        onUpdateChannel={(newChannelId: string, newChannelName: string) => {
+                            setRemoved(true);
+                            setMovedChannel({
+                                channelId: newChannelId,
+                                channelName: newChannelName,
+                            });
+                        }}
+                    />
                 </CardTitleContainer>
                 {isPlaybookRun &&
                     <PeopleRow>
@@ -524,12 +675,20 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         )}
                     </LastUpdatedText>
                     {props.playbook && isPlaybookRun &&
-                        <PlaybookChip>
-                            <StyledBookOutlineIcon
-                                size={11}
-                            />
-                            <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
-                        </PlaybookChip>
+                        <Tooltip
+                            id={`playbook-chip-${props.id}`}
+                            content={formatMessage(
+                                {defaultMessage: 'Checklist created from {playbook} playbook'},
+                                {playbook: props.playbook.title}
+                            )}
+                        >
+                            <PlaybookChip>
+                                <StyledBookOutlineIcon
+                                    size={11}
+                                />
+                                <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
+                            </PlaybookChip>
+                        </Tooltip>
                     }
                 </InfoRow>
             </CardContainer>
@@ -682,7 +841,7 @@ const StyledDotMenuButton = styled(DotMenuButton)`
 
 const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     display: flex;
-    align-content: center;
+    align-items: center;
 `;
 
 const Separator = styled.hr`
@@ -696,22 +855,29 @@ const Separator = styled.hr`
 const IconWrapper = styled.div<{$margin?: string}>`
     margin-right: ${({$margin}) => ($margin || '11px')};
     color: rgba(var(--center-channel-color-rgb), 0.56);
+
+    svg {
+        vertical-align: middle;
+    }
 `;
 
 interface NoRunsProps {
     active: boolean
     numInProgress: number;
     numFinished: number;
-    onStartRunClicked: () => void;
+    onCreateChecklistClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
 }
 
 const NoRuns = (props: NoRunsProps) => {
     const {formatMessage} = useIntl();
 
-    let text = formatMessage({defaultMessage: 'There are no runs in progress linked to this channel'});
-    if (!props.active) {
-        text = formatMessage({defaultMessage: 'There are no finished runs linked to this channel'});
+    let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
+
+    if (props.active && props.numFinished > 0) {
+        text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
+    } else if (!props.active) {
+        text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
     }
 
     return (
@@ -720,22 +886,25 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton onClick={props.onStartRunClicked}>
-                <PlayOutlineIcon size={18}/>
-                <FormattedMessage defaultMessage={'Start a run'}/>
+            <PrimaryButton
+                onClick={props.onCreateChecklistClicked}
+                data-testid='create-blank-checklist'
+            >
+                <PlusIcon size={18}/>
+                <FormattedMessage defaultMessage={'New checklist'}/>
             </PrimaryButton>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                 >
-                    {formatMessage({defaultMessage: 'View finished runs'})}
+                    {formatMessage({defaultMessage: 'View finished'})}
                 </ViewOtherRunsButton>
             }
             {!props.active && props.numInProgress > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                 >
-                    {formatMessage({defaultMessage: 'View in progress runs'})}
+                    {formatMessage({defaultMessage: 'View in progress'})}
                 </ViewOtherRunsButton>
             }
         </NoActiveRunsContainer>
@@ -766,20 +935,23 @@ const StyledClipboardChecklist = styled(ClipboardChecklist)`
 `;
 
 interface ContextMenuProps {
-    playbookID: string;
+    runType: PlaybookRunType;
+    playbookID?: string;
     teamID: string;
     playbookRunID: string;
-    playbookTitle: string;
-    canSeePlaybook: boolean;
+    playbookTitle?: string;
+    canSeePlaybook?: boolean;
     canEditRun: boolean;
+    onClick: () => void;
     onUpdateChannel: (channelId: string, channelName: string) => void;
     onUpdateName: (name: string) => void;
 }
 const ContextMenu = (props: ContextMenuProps) => {
     const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
     const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
-    const playbookURL = `/playbooks/${props.playbookID}`;
+    const playbookURL = props.playbookID ? `/playbooks/${props.playbookID}` : '';
+
+    const isPlaybookRun = props.runType === PlaybookRunType.Playbook;
 
     return (
         <DotMenu
@@ -787,89 +959,44 @@ const ContextMenu = (props: ContextMenuProps) => {
             placement='bottom-start'
             icon={<ThreeDotsIcon/>}
         >
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.Playbook, props.onUpdateChannel))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
-            >
+            <StyledDropdownMenuItem onClick={props.onClick}>
                 <IconWrapper>
-                    <LinkVariantIcon size={22}/>
+                    {isPlaybookRun ? <PlayOutlineIcon size={22}/> : <CheckAllIcon size={22}/>}
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Link run to a different channel'/>
+                <FormattedMessage defaultMessage='Open'/>
             </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.onUpdateName))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this run'})}
-            >
-                <IconWrapper>
-                    <PencilOutlineIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Rename run'/>
-            </StyledDropdownMenuItem>
-            <Separator/>
             <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                 <IconWrapper>
-                    <PlayOutlineIcon size={22}/>
+                    {isPlaybookRun ? <PlayOutlineIcon size={22}/> : <CheckAllIcon size={22}/>}
                 </IconWrapper>
-                <FormattedMessage defaultMessage='Go to run overview'/>
+                <FormattedMessage defaultMessage='Go to overview'/>
             </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                disabled={!props.canSeePlaybook}
-                onClick={() => navigateToPluginUrl(playbookURL)}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to see this playbook'})}
-            >
-                <RowContainer>
-                    <ColContainer>
+            {isPlaybookRun && props.playbookID && props.canSeePlaybook && (
+                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+                    <RowContainer>
+                        <ColContainer>
+                            <IconWrapper>
+                                <BookOutlineIcon size={22}/>
+                            </IconWrapper>
+                            <FormattedMessage defaultMessage='Go to playbook'/>
+                        </ColContainer>
+                        <MenuItemSubTitle>{props.playbookTitle}</MenuItemSubTitle>
+                    </RowContainer>
+                </StyledDropdownMenuItem>
+            )}
+            {props.canEditRun && (
+                <>
+                    <Separator/>
+                    <StyledDropdownMenuItem
+                        onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, props.runType, props.onUpdateChannel))}
+                    >
                         <IconWrapper>
-                            <BookOutlineIcon size={22}/>
+                            <LinkVariantIcon size={22}/>
                         </IconWrapper>
-                        <FormattedMessage defaultMessage='Go to playbook'/>
-                    </ColContainer>
-                    <MenuItemSubTitle>{props.playbookTitle}</MenuItemSubTitle>
-                </RowContainer>
-            </StyledDropdownMenuItem>
-        </DotMenu>
-    );
-};
-
-interface ChannelChecklistContextMenuProps {
-    teamID: string;
-    playbookRunID: string;
-    canEditRun: boolean;
-    onUpdateChannel: (channelId: string, channelName: string) => void;
-    onUpdateName: (name: string) => void;
-}
-const ChannelChecklistContextMenu = (props: ChannelChecklistContextMenuProps) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-
-    return (
-        <DotMenu
-            dotMenuButton={StyledDotMenuButton}
-            placement='bottom-start'
-            icon={<ThreeDotsIcon/>}
-        >
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunChannelModal(props.playbookRunID, props.teamID, PlaybookRunType.ChannelChecklist, props.onUpdateChannel))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this checklist'})}
-            >
-                <IconWrapper>
-                    <LinkVariantIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Link checklist to a different channel'/>
-            </StyledDropdownMenuItem>
-            <StyledDropdownMenuItem
-                onClick={() => dispatch(openUpdateRunNameModal(props.playbookRunID, props.onUpdateName))}
-                disabled={!props.canEditRun}
-                disabledAltText={formatMessage({defaultMessage: 'You do not have permission to edit this checklist'})}
-            >
-                <IconWrapper>
-                    <PencilOutlineIcon size={22}/>
-                </IconWrapper>
-                <FormattedMessage defaultMessage='Rename checklist'/>
-            </StyledDropdownMenuItem>
+                        <FormattedMessage defaultMessage='Move to a different channel'/>
+                    </StyledDropdownMenuItem>
+                </>
+            )}
         </DotMenu>
     );
 };

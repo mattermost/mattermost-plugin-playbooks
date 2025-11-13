@@ -345,6 +345,13 @@ export async function clientDuplicateChecklistItem(playbookRunID: string, checkl
     });
 }
 
+export async function clientDeleteChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
+        method: 'delete',
+        body: '',
+    });
+}
+
 export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
         method: 'put',
@@ -418,6 +425,13 @@ export async function clientAddChecklist(playbookRunID: string, checklist: Omit<
 export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/duplicate`, {
         method: 'post',
+        body: '',
+    });
+}
+
+export async function clientDeleteChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`, {
+        method: 'delete',
         body: '',
     });
 }

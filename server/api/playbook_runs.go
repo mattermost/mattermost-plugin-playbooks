@@ -176,6 +176,12 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
+	// Set the run type based on whether a playbook ID is provided
+	runType := app.RunTypeChannelChecklist
+	if playbookRunCreateOptions.PlaybookID != "" {
+		runType = app.RunTypePlaybook
+	}
+
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
@@ -185,7 +191,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
-			Type:        playbookRunCreateOptions.Type,
+			Type:        runType,
 		},
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
@@ -266,21 +272,29 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
-	playbook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
-		return
+	channelID := ""
+	runType := app.RunTypeChannelChecklist
+
+	// if a playbook ID exists, link the run to the channel and set the right type
+	if playbookID != "" {
+		playbook, err := h.playbookService.Get(playbookID)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
+			return
+		}
+		channelID = playbook.GetRunChannelID()
+		runType = app.RunTypePlaybook
 	}
 
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
-			ChannelID:   playbook.GetRunChannelID(),
+			ChannelID:   channelID,
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
-			Type:        app.RunTypePlaybook,
+			Type:        runType,
 		},
 		request.UserId,
 		nil,
@@ -512,6 +526,13 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		if !h.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
 			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+		}
+	}
+
+	// For channelChecklists specifically, verify user has permission to post in the channel
+	if playbookRun.Type == app.RunTypeChannelChecklist && playbookRun.ChannelID != "" {
+		if !h.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionCreatePost) {
+			return nil, errors.Wrap(app.ErrNoPermissions, "You do not have permission to create a checklist in this channel. You must be a member of the channel with posting permissions.")
 		}
 	}
 
@@ -1698,6 +1719,10 @@ func (h *PlaybookRunHandler) renameChecklist(c *Context, w http.ResponseWriter, 
 	}
 
 	if err := h.playbookRunService.RenameChecklist(id, userID, checklistNum, modificationParams.NewTitle); err != nil {
+		if errors.Is(err, app.ErrPlaybookRunNotActive) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

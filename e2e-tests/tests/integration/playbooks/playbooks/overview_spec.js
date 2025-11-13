@@ -139,7 +139,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
 
             // * Verify the playbook run creation dialog has opened
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
-                cy.findByText('Start run').should('exist');
+                cy.findByText('Create checklist').should('exist');
             });
         };
 
@@ -168,7 +168,7 @@ describe('playbooks > overview', {testIsolation: true}, () => {
 
             // * Verify the playbook run creation dialog has opened
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
-                cy.findByText('Start run').should('exist');
+                cy.findByText('Create checklist').should('exist');
             });
         });
     });
