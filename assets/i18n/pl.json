@@ -161,18 +161,18 @@
     },
     {
         "id": "app.user.run.confirm_finish.title",
-        "translation": "Potwierdź zakończenie uruchomienia"
+        "translation": "Potwierdź zakończenie"
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "Zakończ uruchomienie"
+        "translation": "Zakończ"
     },
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Jest **{{.Count}} zaległe zadanie**. Czy na pewno chcesz zakończyć uruchomienie *{{.RunName}}* dla wszystkich uczestników?",
-            "few": "Jest **{{.Count}} zaległe zadania**. Czy na pewno chcesz zakończyć bieg *{{.RunName}}* dla wszystkich uczestników?",
-            "many": "Jest **{{.Count}} zaległych zadań**. Czy na pewno chcesz zakończyć bieg *{{.RunName}}* dla wszystkich uczestników?"
+            "one": "Istnieje **{{.Count}} zaległe zadanie**. Czy na pewno chcesz ukończyć *{{.RunName}}* dla wszystkich uczestników?",
+            "few": "Istnieją **{{.Count}} zaległe zadania**. Czy na pewno chcesz ukończyć *{{.RunName}}* dla wszystkich uczestników?",
+            "many": "Istnieje **{{.Count}} zaległych zadań**. Czy na pewno chcesz ukończyć *{{.RunName}}* dla wszystkich uczestników?"
         }
     },
     {
@@ -234,5 +234,9 @@
     {
         "id": "app.user.new_run.intro",
         "translation": "**Właściciel** {{.Username}}"
+    },
+    {
+        "id": "playbooks.checklist.condition.reason.modified",
+        "translation": "ponieważ zadanie zostało zmodyfikowane"
     }
 ]
