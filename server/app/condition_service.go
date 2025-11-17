@@ -12,11 +12,12 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 )
 
-const (
-	conditionCreatedWSEvent = "condition_created"
-	conditionUpdatedWSEvent = "condition_updated"
-	conditionDeletedWSEvent = "condition_deleted"
-)
+// Websocket event constants disabled until we implement proper user targeting
+// const (
+// 	conditionCreatedWSEvent = "condition_created"
+// 	conditionUpdatedWSEvent = "condition_updated"
+// 	conditionDeletedWSEvent = "condition_deleted"
+// )
 
 type conditionService struct {
 	store           ConditionStore
@@ -448,17 +449,18 @@ func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun)
 	return s.applyConditionResults(playbookRun, conditionResults), nil
 }
 
-func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
-	s.poster.PublishWebsocketEventToTeam(conditionCreatedWSEvent, condition, teamID)
-	return nil
-}
-
-func (s *conditionService) sendConditionUpdatedWS(condition *Condition, teamID string) error {
-	s.poster.PublishWebsocketEventToTeam(conditionUpdatedWSEvent, condition, teamID)
-	return nil
-}
-
-func (s *conditionService) sendConditionDeletedWS(condition *Condition, teamID string) error {
-	s.poster.PublishWebsocketEventToTeam(conditionDeletedWSEvent, condition, teamID)
-	return nil
-}
+// Websocket helper functions disabled until we implement proper user targeting
+// func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionCreatedWSEvent, condition, teamID)
+// 	return nil
+// }
+//
+// func (s *conditionService) sendConditionUpdatedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionUpdatedWSEvent, condition, teamID)
+// 	return nil
+// }
+//
+// func (s *conditionService) sendConditionDeletedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionDeletedWSEvent, condition, teamID)
+// 	return nil
+// }
