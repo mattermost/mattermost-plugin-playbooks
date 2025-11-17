@@ -42,6 +42,16 @@ const (
 	noAssigneeName = "No Assignee"
 )
 
+// PropertyChangedDetails represents the details of a property change timeline event
+type PropertyChangedDetails struct {
+	PropertyFieldID   string          `json:"property_field_id"`
+	PropertyFieldName string          `json:"property_field_name"`
+	OldValue          json.RawMessage `json:"old_value"`
+	NewValue          json.RawMessage `json:"new_value"`
+	OldValueDisplay   *string         `json:"old_value_display"`
+	NewValueDisplay   *string         `json:"new_value_display"`
+}
+
 // sendPlaybookRunObjectUpdatedWS sends updates for a playbook run object to all participants.
 // If incremental updates are enabled, it compares the previous and current states once
 // and sends granular update events with only the changed fields. It also sends more
@@ -260,10 +270,9 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	return fmt.Sprintf(
-		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
+		"##### [%s](%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
 		GetPlaybookDetailsRelativeURL(playbookID),
@@ -453,7 +462,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if playbookRun.PlaybookID == "" {
 		playbookRun.Checklists = []Checklist{
 			{
-				Title: "Checklist",
+				Title: "Tasks",
 				Items: []ChecklistItem{},
 			},
 		}
@@ -590,8 +599,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		// dm to users who are auto-following the playbook
-		telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_started_dm&telem_run_id=%s", playbookRun.ID)
-		err = s.dmPostToAutoFollows(&model.Post{Message: fmt.Sprintf(messageTemplate, telemetryString)}, pb.ID, playbookRun.ID, userID)
+		err = s.dmPostToAutoFollows(&model.Post{Message: messageTemplate}, pb.ID, playbookRun.ID, userID)
 		if err != nil {
 			logger.WithError(err).Error("failed to dm post to auto follows")
 		}
@@ -1165,40 +1173,34 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 }
 
 func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) string {
-	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_finished_dm&telem_run_id=%s", playbookRun.ID)
 	announcementMsg := fmt.Sprintf(
-		"### Run finished: [%s](%s%s)\n",
+		"### Run finished: [%s](%s)\n",
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
-		"@%s just marked [%s](%s%s) as finished. Visit the link above for more information.",
+		"@%s just marked [%s](%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 
 	return announcementMsg
 }
 
 func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string) string {
-	telemetryString := fmt.Sprintf("?telem_run_id=%s", playbookRun.ID)
 	announcementMsg := fmt.Sprintf(
-		"### Run status update %s : [%s](%s%s)\n",
+		"### Run status update %s : [%s](%s)\n",
 		status,
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
-		"@%s %s status update for [%s](%s%s). Visit the link above for more information.",
+		"@%s %s status update for [%s](%s). Visit the link above for more information.",
 		userName,
 		status,
 		playbookRun.Name,
 		GetRunDetailsRelativeURL(playbookRun.ID),
-		telemetryString,
 	)
 
 	return announcementMsg
@@ -1737,7 +1739,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunsForChannelByUser(channelID strin
 			PerPage:   1000,
 			Sort:      SortByCreateAt,
 			Direction: DirectionDesc,
-			Types:     []string{RunTypePlaybook},
+			Types:     []string{RunTypePlaybook, RunTypeChannelChecklist},
 		},
 	)
 
@@ -2519,6 +2521,13 @@ func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, c
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
 	if err != nil {
 		err := errors.Wrapf(err, "failed to verify checklist parameters for rename (runID: %s, checklistNumber: %d)", playbookRunID, checklistNumber)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
+
+	// Prevent renaming checklists in finished runs
+	if playbookRunToModify.CurrentStatus == StatusFinished {
+		err := errors.Wrap(ErrPlaybookRunNotActive, "cannot rename checklist in a finished run")
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -3309,6 +3318,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 				Type:        "select",
 				Options:     options,
 				Default:     defaultPlaybookID,
+				Optional:    false,
 			},
 			{
 				DisplayName: T("app.user.new_run.run_name"),
@@ -3652,8 +3662,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return err
 	}
 
-	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
-	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, retrospective.Text)
+	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, retrospective.Text)
 	err = s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
 	if err != nil {
 		logger.WithError(err).Error("failed to dm post to run followers")
@@ -4705,6 +4714,80 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 	return s.store.GetPlaybookRunIDsForUser(userID)
 }
 
+// createPropertyChangeTimelineEvent creates a timeline event for property changes
+func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
+	userID string,
+	playbookRunID string,
+	propertyField *PropertyField,
+	oldValue json.RawMessage,
+	newValue json.RawMessage,
+) error {
+	// Get user info for summary
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve user %s", userID)
+	}
+
+	// Format values for display
+	oldValueDisplay, oldIsEmpty := s.formatPropertyValueForDisplay(propertyField, oldValue)
+	newValueDisplay, newIsEmpty := s.formatPropertyValueForDisplay(propertyField, newValue)
+
+	// Build summary based on change type
+	var summary string
+	if oldIsEmpty && !newIsEmpty {
+		// Initial set
+		summary = fmt.Sprintf("@%s set %s to %s", user.Username, propertyField.Name, newValueDisplay)
+	} else if newIsEmpty {
+		// Cleared
+		summary = fmt.Sprintf("@%s cleared %s", user.Username, propertyField.Name)
+	} else {
+		// Normal update
+		summary = fmt.Sprintf("@%s updated %s from %s to %s", user.Username, propertyField.Name, oldValueDisplay, newValueDisplay)
+	}
+
+	// Create details struct
+	details := PropertyChangedDetails{
+		PropertyFieldID:   propertyField.ID,
+		PropertyFieldName: propertyField.Name,
+		OldValue:          oldValue,
+		NewValue:          newValue,
+		OldValueDisplay:   nil,
+		NewValueDisplay:   nil,
+	}
+
+	// Set display values only if not empty
+	if !oldIsEmpty {
+		details.OldValueDisplay = &oldValueDisplay
+	}
+	if !newIsEmpty {
+		details.NewValueDisplay = &newValueDisplay
+	}
+
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal property change details")
+	}
+
+	// Create timeline event
+	timestamp := model.GetMillis()
+	event := &TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      timestamp,
+		EventAt:       timestamp,
+		EventType:     PropertyChanged,
+		Summary:       summary,
+		Details:       string(detailsJSON),
+		SubjectUserID: userID,
+	}
+
+	_, err = s.store.CreateTimelineEvent(event)
+	if err != nil {
+		return errors.Wrap(err, "failed to create timeline event for property change")
+	}
+
+	return nil
+}
+
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
 func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
 	run, err := s.GetPlaybookRun(playbookRunID)
@@ -4753,7 +4836,14 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 			return nil, errors.Wrap(err, "failed to evaluate property conditions")
 		}
 
-		s.postPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
+		if err = s.createPropertyChangeTimelineEvent(userID, playbookRunID, propertyField, currentValue, value); err != nil {
+			return nil, errors.Wrap(err, "failed to create timeline event for property change")
+		}
+
+		// ONLY post channel message if new tasks were added
+		if evaluationResult != nil && evaluationResult.AnythingAdded() {
+			s.PostPropertyChangeMessage(userID, run, propertyField, value, evaluationResult)
+		}
 
 		if evaluationResult.AnythingChanged() {
 			if _, err := s.store.UpdatePlaybookRun(run); err != nil {
@@ -4851,8 +4941,8 @@ func (s *PlaybookRunServiceImpl) normalizeStringValue(value json.RawMessage) str
 	return str
 }
 
-// postPropertyChangeMessage posts a bot message when a property value changes
-func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID string, run *PlaybookRun, propertyField *PropertyField, newValue json.RawMessage, evaluationResult *ConditionEvaluationResult) {
+// PostPropertyChangeMessage posts a bot message when a property value changes
+func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *PlaybookRun, propertyField *PropertyField, newValue json.RawMessage, evaluationResult *ConditionEvaluationResult) {
 	// Get user info
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
@@ -4861,10 +4951,15 @@ func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID string, run *P
 	}
 
 	// Format the new value for display
-	displayValue := s.formatPropertyValueForDisplay(propertyField, newValue)
+	displayValue, isEmpty := s.formatPropertyValueForDisplay(propertyField, newValue)
 
 	// Build base message
-	message := fmt.Sprintf("@%s updated %s to %s", user.Username, propertyField.Name, displayValue)
+	var message string
+	if isEmpty {
+		message = fmt.Sprintf("@%s cleared %s", user.Username, propertyField.Name)
+	} else {
+		message = fmt.Sprintf("@%s updated %s to %s", user.Username, propertyField.Name, displayValue)
+	}
 
 	// Add condition changes if any
 	if evaluationResult != nil && evaluationResult.AnythingAdded() {
@@ -4897,42 +4992,43 @@ func (s *PlaybookRunServiceImpl) postPropertyChangeMessage(userID string, run *P
 }
 
 // formatPropertyValueForDisplay formats a property value for display in bot messages
-func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) string {
+// Returns the display string and a boolean indicating if the value is empty
+func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) (string, bool) {
 	if len(value) == 0 || string(value) == "null" || string(value) == `""` {
-		return "(empty)"
+		return "", true
 	}
 
 	switch propertyField.Type {
 	case "text":
 		var stringValue string
 		if err := json.Unmarshal(value, &stringValue); err != nil {
-			return string(value)
+			return string(value), false
 		}
 		if len(stringValue) > propertyValueMaxDisplayLength {
-			return stringValue[:propertyValueMaxDisplayLength-3] + "..."
+			return stringValue[:propertyValueMaxDisplayLength-3] + "...", false
 		}
-		return stringValue
+		return stringValue, false
 
 	case "select":
 		var stringValue string
 		if err := json.Unmarshal(value, &stringValue); err != nil {
-			return string(value)
+			return string(value), false
 		}
 		// Find the option label for this value
 		for _, option := range propertyField.Attrs.Options {
 			if option.GetID() == stringValue {
-				return option.GetName()
+				return option.GetName(), false
 			}
 		}
-		return stringValue
+		return stringValue, false
 
 	case "multiselect":
 		var arrayValue []string
 		if err := json.Unmarshal(value, &arrayValue); err != nil {
-			return string(value)
+			return string(value), false
 		}
 		if len(arrayValue) == 0 {
-			return "(empty)"
+			return "", true
 		}
 		// Convert option IDs to labels
 		var labels []string
@@ -4946,9 +5042,9 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 			}
 			labels = append(labels, label)
 		}
-		return strings.Join(labels, ", ")
+		return strings.Join(labels, ", "), false
 
 	default:
-		return string(value)
+		return string(value), false
 	}
 }

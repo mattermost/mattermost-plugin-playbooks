@@ -152,7 +152,7 @@ export function useTimeout(callback: () => void, delay: number | null) {
 export function useClientRect() {
     const [rect, setRect] = useState(new DOMRect());
 
-    const ref = useCallback((node) => {
+    const ref = useCallback((node: HTMLElement | null) => {
         if (node !== null) {
             setRect(node.getBoundingClientRect());
         }
@@ -614,7 +614,7 @@ export const useReservedCategoryTitleMapper = () => {
         case ReservedCategory.Favorite:
             return formatMessage({defaultMessage: 'Favorites'});
         case ReservedCategory.Runs:
-            return formatMessage({defaultMessage: 'Runs'});
+            return formatMessage({defaultMessage: 'Runs and Checklists'});
         case ReservedCategory.Playbooks:
             return formatMessage({defaultMessage: 'Playbooks'});
         default:

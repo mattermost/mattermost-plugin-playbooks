@@ -49,7 +49,7 @@ const RHSPostUpdate = (props: Props) => {
 
     let pretext = <FormattedMessage defaultMessage='Last update'/>;
     if (isFinished) {
-        pretext = <FormattedMessage defaultMessage='Run finished'/>;
+        pretext = <FormattedMessage defaultMessage='Finished'/>;
     } else if (isNextUpdateScheduled) {
         pretext = (isDue ? <FormattedMessage defaultMessage='Update overdue'/> : <FormattedMessage defaultMessage='Update due'/>);
     }

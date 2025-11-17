@@ -169,8 +169,8 @@ describe('channels > general actions', {testIsolation: true}, () => {
                 cy.findByTestId('playbookRunNameinput').type('run from trigger');
                 cy.findByRole('button', {name: /start run/i}).click();
 
-                // * Verify text from the run channel description
-                cy.findByTestId('rendered-run-name').type('run from trigger');
+                // * Verify the run name is displayed in the RHS
+                cy.findByTestId('rendered-run-name').should('be.visible').contains('run from trigger');
             });
         });
 

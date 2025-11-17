@@ -66,8 +66,8 @@ describe('runs > list', {testIsolation: true}, () => {
         // # Switch to playbook runs
         cy.findByTestId('playbookRunsLHSButton').click();
 
-        // * Assert contents of heading.
-        cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
+        // * Assert playbook runs page is shown (header was removed, check for run list)
+        cy.get('#playbookRunList').should('exist');
     });
 
     it('loads playbook run details page when clicking on a playbook run', () => {

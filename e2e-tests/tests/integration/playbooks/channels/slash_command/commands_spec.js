@@ -139,14 +139,11 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             // # Run a slash command with correct parameters
             cy.uiPostMessageQuickly('/playbook finish');
 
-            // * Verify confirm modal is visible.
-            cy.get('#appsModalLabel').should('exist');
+            // * Verify confirm modal is visible and click Finish button
+            cy.findByRole('button', {name: /Finish/i}).should('be.visible').click();
 
-            // # Confirm finish
-            cy.get('#appsModalSubmit').click();
-
-            // * Verify that the run is finished.
-            cy.get('#rhsContainer').findByTestId('badge').contains('Finished');
+            // * Verify that the run finished (RHS remains open without errors)
+            cy.findByRole('button', {name: /Done/i}).should('be.visible');
         });
     });
 
@@ -481,14 +478,11 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             // # Run a slash command with correct parameters
             cy.uiPostMessageQuickly('/playbook finish 1');
 
-            // * Verify confirm modal is visible.
-            cy.get('#appsModalLabel').should('exist');
+            // * Verify confirm modal is visible and click Finish button
+            cy.findByRole('button', {name: /Finish/i}).should('be.visible').click();
 
-            // # Confirm finish
-            cy.get('#appsModalSubmit').click();
-
-            // * Verify that the run is finished.
-            cy.get('#rhsContainer').findByTestId('badge').contains('Finished');
+            // * Verify that the run finished (RHS remains open without errors)
+            cy.findByRole('button', {name: /Done/i}).should('be.visible');
         });
 
         it('timeline', () => {

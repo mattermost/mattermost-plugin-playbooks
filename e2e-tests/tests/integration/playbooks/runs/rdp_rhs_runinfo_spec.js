@@ -69,11 +69,14 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
 
     describe('> overview', () => {
         const getOverviewEntry = (entryName) => (
-            getRHSSection('Overview').findByTestId(`runinfo-${entryName}`)
+            cy.findByRole('complementary').findByTestId(`runinfo-${entryName}`)
         );
 
         const commonTests = () => {
-            it('Playbook entry links to the playbook', () => {
+            it('Playbook entry is visible and links to the playbook', () => {
+                // * Verify that the playbook entry exists
+                getOverviewEntry('playbook').should('exist');
+
                 // # Click on the Playbook entry
                 getOverviewEntry('playbook').within(() => cy.getStyledComponent('ItemLink').click());
 
@@ -116,8 +119,8 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     // # Click on the back button
                     cy.findByTestId('rhs-back-button').click();
 
-                    // * Verify that the RHS is back to Run info
-                    cy.findByTestId('rhs-title').contains('Run info');
+                    // * Verify that the RHS is back to Info
+                    cy.findByTestId('rhs-title').contains('Info');
                 });
             });
         };
@@ -184,6 +187,27 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     getOverviewEntry('channel').contains('Channel deleted');
                 });
             });
+
+            it('Playbook entry is hidden for standalone run without playbook', () => {
+                // # Create a standalone run without a playbook (channel checklist)
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: '', // Empty playbook ID for standalone run
+                    playbookRunName: 'standalone run',
+                    ownerUserId: testUser.id,
+                }).then((standaloneRun) => {
+                    // # Visit the standalone run
+                    cy.visit(`/playbooks/runs/${standaloneRun.id}`);
+
+                    // * Verify that the playbook entry does not exist
+                    getOverviewEntry('playbook').should('not.exist');
+
+                    // * Verify other overview entries are still visible
+                    getOverviewEntry('owner').should('exist');
+                    getOverviewEntry('participants').should('exist');
+                    getOverviewEntry('channel').should('exist');
+                });
+            });
         });
 
         describe('as viewer', () => {
@@ -194,6 +218,40 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
             });
 
             commonTests();
+
+            it('Playbook entry is hidden when playbook is private', () => {
+                // # Create a private playbook with only testUser as member
+                cy.apiLogin(testUser);
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Private Playbook',
+                    memberIDs: [testUser.id],
+                    makePublic: false,
+                }).then((privatePlaybook) => {
+                    // # Create a run from the private playbook
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: privatePlaybook.id,
+                        playbookRunName: 'private run',
+                        ownerUserId: testUser.id,
+                    }).then((privateRun) => {
+                        // # Add testViewerUser as participant
+                        cy.apiAddUsersToRun(privateRun.id, [testViewerUser.id]);
+
+                        // # Login as viewer and visit the run
+                        cy.apiLogin(testViewerUser).then(() => {
+                            cy.visit(`/playbooks/runs/${privateRun.id}`);
+
+                            // * Verify that the playbook entry does not exist
+                            getOverviewEntry('playbook').should('not.exist');
+
+                            // * Verify other overview entries are still visible
+                            getOverviewEntry('owner').should('exist');
+                            getOverviewEntry('participants').should('exist');
+                        });
+                    });
+                });
+            });
 
             it('Following button can be toggled', () => {
                 getOverviewEntry('following').within(() => {

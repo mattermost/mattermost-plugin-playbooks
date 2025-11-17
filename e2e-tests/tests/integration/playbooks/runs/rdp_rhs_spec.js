@@ -74,7 +74,7 @@ describe('runs > run details page > RHS', {testIsolation: true}, () => {
     const commonTests = () => {
         it('timeline button toggles timeline in the RHS', () => {
             // * Verify that the run info RHS is open
-            checkRHSTitle('Run info');
+            checkRHSTitle('Info');
 
             // # Click on the header timeline button
             getHeaderButton('timeline').click();
@@ -94,7 +94,7 @@ describe('runs > run details page > RHS', {testIsolation: true}, () => {
 
         it('info button toggles info in the RHS', () => {
             // * Verify that the run info RHS is open
-            checkRHSTitle('Run info');
+            checkRHSTitle('Info');
 
             // # Click on the header info button
             getHeaderButton('info').click();
@@ -109,7 +109,7 @@ describe('runs > run details page > RHS', {testIsolation: true}, () => {
             getHeaderButton('info').click();
 
             // * Verify that the run info RHS is open again
-            checkRHSTitle('Run info');
+            checkRHSTitle('Info');
         });
     };
 

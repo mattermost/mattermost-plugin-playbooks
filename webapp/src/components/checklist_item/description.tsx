@@ -18,12 +18,28 @@ interface DescriptionProps {
     onEdit: (value: string) => void;
     editingItem: boolean;
     showDescription: boolean;
+    onSave?: () => void;
+    onSaveAndAddNew?: () => void;
+    title: string;
 }
 
 const ChecklistItemDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a description (optional)'});
     const id = useUniqueId('editabletext-markdown-textbox');
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+
+            // Only save and add new if the task has a title, similar to title field behavior
+            if (props.title !== '' && props.onSaveAndAddNew) {
+                props.onSaveAndAddNew();
+            } else if (props.onSave) {
+                props.onSave();
+            }
+        }
+    };
 
     if (props.editingItem) {
         return (
@@ -36,6 +52,7 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
                     setValue={props.onEdit}
                     autoFocus={props.value !== ''}
                     hideHelpBar={true}
+                    onKeyDown={handleKeyDown}
                 />
             </ChecklistItemDescriptionContainer>
         );

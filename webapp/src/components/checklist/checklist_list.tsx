@@ -20,6 +20,7 @@ import classNames from 'classnames';
 import {FloatingPortal} from '@floating-ui/react';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRunType, PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {
     conditionCreated,
     conditionDeleted,
@@ -29,6 +30,7 @@ import {
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {
     clientAddChecklist,
+    clientDeleteChecklist,
     clientMoveChecklist,
     clientMoveChecklistItem,
     deletePlaybookCondition,
@@ -40,7 +42,6 @@ import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {useProxyState} from 'src/hooks';
 import {usePlaybookConditions} from 'src/hooks/conditions';
-import {PlaybookUpdates} from 'src/graphql/generated/graphql';
 import {getDistinctAssignees} from 'src/utils';
 import {ConditionExprV1} from 'src/types/conditions';
 
@@ -75,6 +76,8 @@ interface Props {
     showItem?: (checklistItem: ChecklistItem, myId: string) => boolean;
     itemButtonsFormat?: ItemButtonsFormat;
     onReadOnlyInteract?: () => void;
+    autoAddTask?: boolean;
+    onTaskAdded?: () => void;
 }
 
 const ChecklistList = ({
@@ -87,6 +90,8 @@ const ChecklistList = ({
     showItem,
     itemButtonsFormat,
     onReadOnlyInteract,
+    autoAddTask,
+    onTaskAdded,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -186,9 +191,13 @@ const ChecklistList = ({
     };
 
     const onDeleteChecklist = (index: number) => {
-        const newChecklists = [...checklists];
-        newChecklists.splice(index, 1);
-        setChecklistsForPlaybook(newChecklists);
+        if (playbookRun && playbookRun.type === PlaybookRunType.ChannelChecklist) {
+            clientDeleteChecklist(playbookRun.id, index);
+        } else {
+            const newChecklists = [...checklists];
+            newChecklists.splice(index, 1);
+            setChecklistsForPlaybook(newChecklists);
+        }
     };
 
     const onUpdateChecklist = (index: number, newChecklist: Checklist) => {
@@ -513,14 +522,13 @@ const ChecklistList = ({
             <IconWrapper>
                 <i className='icon icon-plus'/>
             </IconWrapper>
-            {formatMessage({defaultMessage: 'Add a checklist'})}
+            {formatMessage({defaultMessage: 'Add a section'})}
         </AddChecklistLink>
     );
 
     if (addingChecklist) {
         addChecklist = (
             <NewChecklist>
-                <Icon className={'icon-chevron-down'}/>
                 <ChecklistInputComponent
                     title={newChecklistName}
                     setTitle={setNewChecklistName}
@@ -529,12 +537,13 @@ const ChecklistList = ({
                         setNewChecklistName('');
                     }}
                     onSave={() => {
+                        const finalTitle = newChecklistName.trim() || 'Untitled section';
                         if (playbookRun) {
-                            const newChecklist: Omit<Checklist, 'id'> = {title: newChecklistName, items: [] as ChecklistItem[]};
+                            const newChecklist: Omit<Checklist, 'id'> = {title: finalTitle, items: [] as ChecklistItem[]};
                             clientAddChecklist(playbookRun.id, newChecklist);
                         } else {
                             const newChecklist: Checklist = {
-                                title: newChecklistName,
+                                title: finalTitle,
                                 items: [] as ChecklistItem[],
                             };
                             setChecklistsForPlaybook([...checklists, newChecklist]);
@@ -586,6 +595,7 @@ const ChecklistList = ({
                                                 onRenameChecklist={onRenameChecklist}
                                                 onDuplicateChecklist={onDuplicateChecklist}
                                                 onDeleteChecklist={onDeleteChecklist}
+                                                isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
                                                 titleHelpText={playbook ? (
                                                     <TitleHelpTextWrapper>
                                                         {formatMessage(
@@ -627,8 +637,11 @@ const ChecklistList = ({
                                                     onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
                                                     onUpdateCondition={onUpdateCondition}
                                                     newlyCreatedConditionIds={newlyCreatedConditionIds}
+                                                    autoAddTask={autoAddTask && checklistIndex === 0}
+                                                    onTaskAdded={onTaskAdded}
+                                                    isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
                                                     allChecklists={checklists}
-                                                    onMoveItemToCondition={(itemIndex, conditionId) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
+                                                    onMoveItemToCondition={(itemIndex: number, conditionId: string) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -684,15 +697,11 @@ const NewChecklist = styled.div`
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
-const Icon = styled.i`
-    position: relative;
-    top: 2px;
-    margin: 0 0 0 6px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    font-size: 18px;
+const ChecklistsContainer = styled.div`
+    :is(:first-child) {
+        margin-top: 12px;
+    }
 `;
-
-const ChecklistsContainer = styled.div`/* stylelint-disable no-empty-source */`;
 
 const IconWrapper = styled.div`
     padding: 3px 0 0 1px;

@@ -116,18 +116,18 @@
     },
     {
         "id": "app.user.run.confirm_finish.title",
-        "translation": "Bevestig beëindigen uitvoering"
+        "translation": "Beëindigen bevestigen"
     },
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Er is **{{.Count}} openstaande taak**. Weet je zeker dat je de uitvoering *{{.RunName}}* voor alle deelnemer wilt beëindigen?Er zijn **{{.Count}} openstaande taak**. Weet je zeker dat je de run *{{.RunName}}* voor alle deelnemers wil beëindigen?",
-            "other": "Er is **{{.Count}} openstaande taken**. Weet je zeker dat je de uitvoering *{{.RunName}}* voor alle deelnemer wilt beëindigen?Er zijn **{{.Count}} openstaande taken**. Weet je zeker dat je de run *{{.RunName}}* voor alle deelnemers wil beëindigen?"
+            "one": "Er is **{{.Count}} openstaande taak**. Weet je zeker dat je *{{.RunName}}* voor alle deelnemer wilt beëindigen?",
+            "other": "Er is **{{.Count}} openstaande taken**. Weet je zeker dat je *{{.RunName}}* voor alle deelnemer wilt beëindigen?"
         }
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "Uitvoering beëindigen"
+        "translation": "Voltooien"
     },
     {
         "id": "app.user.run.add_to_timeline.title",
@@ -210,5 +210,9 @@
     {
         "id": "app.user.digest.tasks.due_today",
         "translation": "Verloopt vandaag"
+    },
+    {
+        "id": "playbooks.checklist.condition.reason.modified",
+        "translation": "weergegeven omdat de taak gewijzigd werd"
     }
 ]

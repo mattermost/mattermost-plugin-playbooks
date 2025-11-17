@@ -137,9 +137,9 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             // # Navigate directly to the application and the playbook run channel
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
-            // * Verify the playbook run RHS is open.
+            // * Verify the playbook run RHS is open (use test ID to avoid multiple matches)
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
+                cy.findByTestId('rendered-run-name').should('contain', playbookRunName);
             });
         });
 
@@ -310,7 +310,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
                     cy.findByTitle('More').click();
                 });
             });
-            cy.findByTestId('dropdownmenu').findByText('Rename checklist').click();
+            cy.findByTestId('dropdownmenu').findByText('Rename section').click();
 
             // # Type the new title and click the confirm button
             cy.findByTestId('checklist-title-input').type(newTitle, {force: true});

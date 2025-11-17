@@ -64,6 +64,7 @@ const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
             editable={!readOnly}
             onSave={onSave}
             isValid={true}
+            autoCloseOnConfirmButton={true}
         >
             <TriggersContainer>
                 <Trigger

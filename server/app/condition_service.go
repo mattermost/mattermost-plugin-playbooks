@@ -248,15 +248,15 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 		return err
 	}
 
-	if err := s.sendConditionDeletedWS(existing, teamID); err != nil {
-		// Log but don't fail the operation for websocket errors
-		logrus.WithError(err).WithField("condition_id", existing.ID).Error("failed to send condition deleted websocket event")
-	}
-
 	err = s.store.DeleteCondition(playbookID, conditionID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
 		return err
+	}
+
+	if err := s.sendConditionDeletedWS(existing, teamID); err != nil {
+		// Log but don't fail the operation for websocket errors
+		logrus.WithError(err).WithField("condition_id", existing.ID).Error("failed to send condition deleted websocket event")
 	}
 
 	auditRec.Success()

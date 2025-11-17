@@ -338,9 +338,9 @@ export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => (
     hasViewed: true,
 });
 
-export const setRHSAboutCollapsedState = (channelId: string, collapsed: boolean): SetRHSAboutCollapsedState => ({
+export const setRHSAboutCollapsedState = (runId: string, collapsed: boolean): SetRHSAboutCollapsedState => ({
     type: SET_RHS_ABOUT_COLLAPSED_STATE,
-    channelId,
+    runId,
     collapsed,
 });
 

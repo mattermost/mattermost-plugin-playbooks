@@ -970,6 +970,29 @@ func TestUpdateRun(t *testing.T) {
 		require.Equal(t, updates["name"], editedRun.Name)
 	})
 
+	t.Run("update run name fails when run is finished", func(t *testing.T) {
+		run := createRun()
+		require.Equal(t, "Run with private channel", run.Name)
+
+		// Finish the run
+		err := e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Verify the run is finished
+		finishedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.StatusFinished, finishedRun.CurrentStatus)
+
+		// Try to update the name
+		updates := map[string]interface{}{
+			"name": "The updated name",
+		}
+		response, err := updateRun(e.PlaybooksClient, run.ID, updates)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Errors, "Expected error when renaming a finished run")
+		require.Contains(t, response.Errors[0].Message, "already ended")
+	})
+
 	t.Run("update run actions", func(t *testing.T) {
 		run := createRun()
 

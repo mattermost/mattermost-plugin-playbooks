@@ -81,7 +81,7 @@ describe('channels > channel header', {testIsolation: true}, () => {
             });
         });
 
-        it('tooltip text should show "Playbooks" for Playbook channel header button', () => {
+        it('tooltip text should show "Checklists" for channel header button', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
@@ -90,8 +90,8 @@ describe('channels > channel header', {testIsolation: true}, () => {
                 cy.get('#incidentIcon').trigger('mouseenter');
             });
 
-            // * Verify tooltip text
-            cy.findByRole('tooltip', {name: 'Playbooks'}).should('be.visible');
+            // * Verify tooltip text (changed from "Playbooks" to "Checklists" for the new feature)
+            cy.findByRole('tooltip', {name: 'Checklists'}).should('be.visible');
         });
 
         it('webapp should make the Playbook channel header button active when opened', () => {

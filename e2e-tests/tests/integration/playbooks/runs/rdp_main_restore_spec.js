@@ -94,7 +94,7 @@ describe('runs > run details page > restart run', {testIsolation: true}, () => {
             cy.findByTestId('run-header-section').findByTestId('badge').contains('Finished');
 
             cy.findByTestId('runDropdown').click();
-            cy.get('.restartRun').find('span').contains('Restart run');
+            cy.get('.restartRun').find('span').contains('Restart');
 
             cy.get('.restartRun').click();
             cy.get('#confirmModal').get('#confirmModalButton').click();

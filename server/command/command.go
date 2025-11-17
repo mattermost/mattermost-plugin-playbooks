@@ -24,7 +24,7 @@ import (
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
-	"* `/playbook run` - Run a playbook. \n" +
+	"* `/playbook run` - Run a playbook\n" +
 	"* `/playbook finish` - Finish the playbook run in this channel. \n" +
 	"* `/playbook update` - Provide a status update. \n" +
 	"* `/playbook check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
@@ -66,7 +66,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
 		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo, settings")
 
-	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
+	run := model.NewAutocompleteData("run", "", "Start a new run")
 	command.AddCommand(run)
 
 	finish := model.NewAutocompleteData("finish", "",
