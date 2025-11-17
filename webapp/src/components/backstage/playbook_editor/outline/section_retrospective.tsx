@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAllowRetrospectiveAccess, usePlaybookAttributes} from 'src/hooks';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {Metric, PlaybookWithChecklist} from 'src/types/playbook';
 import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
@@ -21,7 +21,7 @@ export interface EditingMetric {
 }
 
 // Convert GraphQL FullPlaybook to PlaybookWithChecklist format for legacy components
-const convertToPlaybookWithChecklist = (playbook: FullPlaybook): PlaybookWithChecklist => {
+const convertToPlaybookWithChecklist = (playbook: FullPlaybook, propertyFields: any[] = []): PlaybookWithChecklist => {
     if (!playbook) {
         throw new Error('Playbook is required');
     }
@@ -36,19 +36,7 @@ const convertToPlaybookWithChecklist = (playbook: FullPlaybook): PlaybookWithChe
         num_actions: 0, // This would need to be calculated
         last_run_at: 0, // This would need to be fetched separately
         active_runs: 0, // This would need to be fetched separately
-        // Convert GraphQL PropertyField format to TypeScript PropertyField format
-        propertyFields: (playbook.propertyFields || []).map((field) => ({
-            ...field,
-            createAt: field.create_at,
-            updateAt: field.update_at,
-            deleteAt: field.delete_at,
-            groupID: field.group_id,
-            attrs: {
-                ...field.attrs,
-                parentId: field.attrs?.parent_id || '',
-                sortOrder: field.attrs?.sort_order || 0,
-            },
-        })),
+        propertyFields: propertyFields || [],
     } as PlaybookWithChecklist;
 };
 
@@ -62,6 +50,7 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const propertyFields = usePlaybookAttributes(playbook.id);
     const archived = playbook.delete_at !== 0;
 
     if (!retrospectiveAccess) {
@@ -101,9 +90,9 @@ const SectionRetrospective = ({playbook, refetch}: Props) => {
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
                 <Metrics
-                    playbook={convertToPlaybookWithChecklist(playbook)} // TODO reduce prop scope to min-essentials
+                    playbook={convertToPlaybookWithChecklist(playbook, propertyFields || [])} // TODO reduce prop scope to min-essentials
                     setPlaybook={async (update) => {
-                        const playbookWithChecklist = convertToPlaybookWithChecklist(playbook);
+                        const playbookWithChecklist = convertToPlaybookWithChecklist(playbook, propertyFields || []);
                         await savePlaybook({...playbook, ...typeof update === 'function' ? update(playbookWithChecklist) : update}); // TODO replace with graphql / useUpdatePlaybook
                         refetch();
                     }}
