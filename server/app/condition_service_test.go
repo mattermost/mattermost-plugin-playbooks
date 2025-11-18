@@ -127,6 +127,42 @@ func TestConditionService_Create_Limit(t *testing.T) {
 		require.Contains(t, err.Error(), "cannot create condition: playbook already has the maximum allowed number of conditions")
 		require.Contains(t, err.Error(), "1000")
 	})
+
+	t.Run("DeleteAt is always set to 0 on creation", func(t *testing.T) {
+		auditRec := &model.AuditRecord{}
+		mockAuditor.EXPECT().
+			MakeAuditRecord("createCondition", model.AuditStatusFail).
+			Return(auditRec)
+		mockAuditor.EXPECT().
+			LogAuditRec(auditRec)
+
+		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{}, nil)
+
+		mockStore.EXPECT().
+			GetPlaybookConditionCount(playbookID).
+			Return(0, nil)
+
+		conditionWithDeleteAt := *condition
+		conditionWithDeleteAt.DeleteAt = model.GetMillis()
+
+		mockStore.EXPECT().
+			CreateCondition(playbookID, gomock.Any()).
+			DoAndReturn(func(playbookID string, cond app.Condition) (*app.Condition, error) {
+				require.Equal(t, int64(0), cond.DeleteAt, "DeleteAt should be cleared on creation")
+				cond.ID = model.NewId()
+				return &cond, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("condition_created", gomock.Any(), teamID)
+
+		result, err := service.CreatePlaybookCondition(userID, conditionWithDeleteAt, teamID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, int64(0), result.DeleteAt)
+	})
 }
 
 func TestConditionService_Update(t *testing.T) {
@@ -195,6 +231,55 @@ func TestConditionService_Update(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, conditionID, result.ID)
+	})
+
+	t.Run("DeleteAt is preserved from existing condition", func(t *testing.T) {
+		auditRec := &model.AuditRecord{}
+		mockAuditor.EXPECT().
+			MakeAuditRecord("updateCondition", model.AuditStatusFail).
+			Return(auditRec)
+		mockAuditor.EXPECT().
+			LogAuditRec(auditRec)
+
+		existingDeletedCondition := &app.Condition{
+			ID:         conditionID,
+			PlaybookID: playbookID,
+			CreateAt:   model.GetMillis() - 2000,
+			UpdateAt:   model.GetMillis() - 2000,
+			DeleteAt:   model.GetMillis() - 1000,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["low_id"]`),
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetCondition(playbookID, conditionID).
+			Return(existingDeletedCondition, nil)
+
+		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{}, nil)
+
+		updateWithDifferentDeleteAt := *updatedCondition
+		updateWithDifferentDeleteAt.DeleteAt = 0
+
+		mockStore.EXPECT().
+			UpdateCondition(playbookID, gomock.Any()).
+			DoAndReturn(func(playbookID string, cond app.Condition) (*app.Condition, error) {
+				require.Equal(t, existingDeletedCondition.DeleteAt, cond.DeleteAt, "DeleteAt should be preserved from existing condition")
+				return &cond, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("condition_updated", gomock.Any(), teamID)
+
+		result, err := service.UpdatePlaybookCondition(userID, updateWithDifferentDeleteAt, teamID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, existingDeletedCondition.DeleteAt, result.DeleteAt)
 	})
 }
 

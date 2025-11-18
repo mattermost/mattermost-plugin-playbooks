@@ -110,6 +110,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	now := model.GetMillis()
 	condition.CreateAt = now
 	condition.UpdateAt = now
+	condition.DeleteAt = 0
 
 	if err := condition.IsValid(true, propertyFields); err != nil {
 		auditRec.AddErrorDesc(err.Error())
@@ -195,6 +196,7 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 	// Preserve immutable fields from existing condition
 	condition.CreateAt = existing.CreateAt
 	condition.UpdateAt = model.GetMillis()
+	condition.DeleteAt = existing.DeleteAt
 
 	propertyFields, err := s.propertyService.GetPropertyFields(condition.PlaybookID)
 	if err != nil {
