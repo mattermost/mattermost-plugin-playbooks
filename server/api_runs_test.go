@@ -2410,4 +2410,45 @@ func TestGuestCannotAccessPrivateChannelTasks(t *testing.T) {
 		require.Error(t, err, "Guest should not be able to access run in private channel")
 		// Note: Returns 404 instead of 403 to avoid information disclosure about private channel existence
 	})
+
+	t.Run("guest cannot access run when channel is deleted or invalid", func(t *testing.T) {
+		// Create another private channel
+		anotherPrivateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Name:        "private-to-delete",
+			DisplayName: "Private Channel To Delete",
+			Type:        model.ChannelTypePrivate,
+		})
+		require.NoError(t, err)
+
+		// Create a run in this channel
+		runWithDeletedChannel, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with Channel to be Deleted",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  publicPlaybook,
+			ChannelID:   anotherPrivateChannel.Id,
+		})
+		require.NoError(t, err)
+
+		// Delete the channel (this tests the edge case where ChannelId might reference a non-existent channel)
+		_, err = e.ServerAdminClient.DeleteChannel(context.Background(), anotherPrivateChannel.Id)
+		require.NoError(t, err)
+
+		// Guest should still not be able to access the run even though the channel is deleted
+		// The permission check should handle NULL/invalid channel IDs gracefully
+		runs, err := e.PlaybooksClientGuest.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Verify the run with the deleted channel is not in the results
+		for _, r := range runs.Items {
+			assert.NotEqual(t, runWithDeletedChannel.ID, r.ID, "Guest should not see run when associated channel is deleted")
+		}
+
+		// Also test direct access by run ID should fail
+		_, err = e.PlaybooksClientGuest.PlaybookRuns.Get(context.Background(), runWithDeletedChannel.ID)
+		require.Error(t, err, "Guest should not be able to directly access run with deleted channel")
+	})
 }

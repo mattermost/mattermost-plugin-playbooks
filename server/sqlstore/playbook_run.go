@@ -1041,7 +1041,7 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		return nil
 	}
 
-	// Guests must be participants AND have access to the channel
+	// Guests must be participants
 	if info.IsGuest {
 		return sq.Expr(`
 			  EXISTS(SELECT 1
@@ -1050,11 +1050,7 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 						   AND rp.UserId = ?
 						   AND rp.IsParticipant = true
 					   )
-			  AND EXISTS(SELECT 1
-			  				 FROM ChannelMembers as cm
-			  				 WHERE cm.ChannelId = i.ChannelId
-			  				   AND cm.UserId = ?)
-		`, info.UserID, info.UserID)
+		`, info.UserID)
 	}
 
 	// 1. Is the user a participant of the run?
