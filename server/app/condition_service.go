@@ -12,11 +12,12 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 )
 
-const (
-	conditionCreatedWSEvent = "condition_created"
-	conditionUpdatedWSEvent = "condition_updated"
-	conditionDeletedWSEvent = "condition_deleted"
-)
+// Websocket event constants disabled until we implement proper user targeting
+// const (
+// 	conditionCreatedWSEvent = "condition_created"
+// 	conditionUpdatedWSEvent = "condition_updated"
+// 	conditionDeletedWSEvent = "condition_deleted"
+// )
 
 type conditionService struct {
 	store           ConditionStore
@@ -142,10 +143,11 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 		return nil, err
 	}
 
-	if err := s.sendConditionCreatedWS(createdCondition, teamID); err != nil {
-		// Log but don't fail the operation for websocket errors
-		logrus.WithError(err).WithField("condition_id", createdCondition.ID).Error("failed to send condition created websocket event")
-	}
+	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
+	// if err := s.sendConditionCreatedWS(createdCondition, teamID); err != nil {
+	// 	// Log but don't fail the operation for websocket errors
+	// 	logrus.WithError(err).WithField("condition_id", createdCondition.ID).Error("failed to send condition created websocket event")
+	// }
 
 	auditRec.Success()
 	auditRec.AddEventResultState(createdCondition)
@@ -213,10 +215,11 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 		return nil, err
 	}
 
-	if err := s.sendConditionUpdatedWS(updatedCondition, teamID); err != nil {
-		// Log but don't fail the operation for websocket errors
-		logrus.WithError(err).WithField("condition_id", updatedCondition.ID).Error("failed to send condition updated websocket event")
-	}
+	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
+	// if err := s.sendConditionUpdatedWS(updatedCondition, teamID); err != nil {
+	// 	// Log but don't fail the operation for websocket errors
+	// 	logrus.WithError(err).WithField("condition_id", updatedCondition.ID).Error("failed to send condition updated websocket event")
+	// }
 
 	auditRec.Success()
 	auditRec.AddEventResultState(updatedCondition)
@@ -254,10 +257,11 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 		return err
 	}
 
-	if err := s.sendConditionDeletedWS(existing, teamID); err != nil {
-		// Log but don't fail the operation for websocket errors
-		logrus.WithError(err).WithField("condition_id", existing.ID).Error("failed to send condition deleted websocket event")
-	}
+	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
+	// if err := s.sendConditionDeletedWS(existing, teamID); err != nil {
+	// 	// Log but don't fail the operation for websocket errors
+	// 	logrus.WithError(err).WithField("condition_id", existing.ID).Error("failed to send condition deleted websocket event")
+	// }
 
 	auditRec.Success()
 
@@ -445,17 +449,18 @@ func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun)
 	return s.applyConditionResults(playbookRun, conditionResults), nil
 }
 
-func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
-	s.poster.PublishWebsocketEventToTeam(conditionCreatedWSEvent, condition, teamID)
-	return nil
-}
-
-func (s *conditionService) sendConditionUpdatedWS(condition *Condition, teamID string) error {
-	s.poster.PublishWebsocketEventToTeam(conditionUpdatedWSEvent, condition, teamID)
-	return nil
-}
-
-func (s *conditionService) sendConditionDeletedWS(condition *Condition, teamID string) error {
-	s.poster.PublishWebsocketEventToTeam(conditionDeletedWSEvent, condition, teamID)
-	return nil
-}
+// Websocket helper functions disabled until we implement proper user targeting
+// func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionCreatedWSEvent, condition, teamID)
+// 	return nil
+// }
+//
+// func (s *conditionService) sendConditionUpdatedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionUpdatedWSEvent, condition, teamID)
+// 	return nil
+// }
+//
+// func (s *conditionService) sendConditionDeletedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionDeletedWSEvent, condition, teamID)
+// 	return nil
+// }

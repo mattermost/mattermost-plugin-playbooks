@@ -70,9 +70,6 @@ func TestConditionService_Create_Limit(t *testing.T) {
 			CreateCondition(playbookID, gomock.Any()).
 			Return(&createdCondition, nil)
 
-		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam("condition_created", &createdCondition, teamID)
-
 		result, err := service.CreatePlaybookCondition(userID, *condition, teamID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -194,9 +191,6 @@ func TestConditionService_Update(t *testing.T) {
 			UpdateCondition(playbookID, gomock.Any()).
 			Return(updatedCondition, nil)
 
-		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam("condition_updated", updatedCondition, teamID)
-
 		result, err := service.UpdatePlaybookCondition(userID, *updatedCondition, teamID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -248,9 +242,6 @@ func TestConditionService_Delete(t *testing.T) {
 		mockStore.EXPECT().
 			DeleteCondition(playbookID, conditionID).
 			Return(nil)
-
-		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam("condition_deleted", existingCondition, teamID)
 
 		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
 		require.NoError(t, err)
