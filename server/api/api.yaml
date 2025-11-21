@@ -573,6 +573,10 @@ paths:
                   type: integer
                   description: Zero-based index of the stage that will be made active.
                   example: 2
+                name:
+                  type: string
+                  description: The new name of the playbook run.
+                  example: Updated Server Down Incident
       x-codeSamples:
         - lang: curl
           source: |
