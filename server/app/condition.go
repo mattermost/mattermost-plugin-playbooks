@@ -781,6 +781,9 @@ type ConditionService interface {
 	// Copy conditions from playbook to run with field ID mappings, returns old condition ID to new condition mapping
 	CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
 
+	// Copy conditions from playbook to playbook with field ID mappings, returns old condition ID to new condition mapping
+	CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
+
 	// Evaluate conditions for a run when a property field changes
 	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
 

@@ -24,15 +24,17 @@ func TestPlaybookService_CreatePropertyField(t *testing.T) {
 
 	mockStore := mock_app.NewMockPlaybookStore(ctrl)
 	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockConditionService := mock_app.NewMockConditionService(ctrl)
 	mockPoster := mock_bot.NewMockPoster(ctrl)
 
 	service := app.NewPlaybookService(
 		mockStore,
 		mockPoster,
 		nil, // api client
-		nil, // pluginAPI
+		nil, // auditor
 		&metrics.Metrics{},
 		mockPropertyService,
+		mockConditionService,
 	)
 
 	playbookID := "playbook123"
@@ -112,6 +114,7 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 
 	mockStore := mock_app.NewMockPlaybookStore(ctrl)
 	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockConditionService := mock_app.NewMockConditionService(ctrl)
 	mockPoster := mock_bot.NewMockPoster(ctrl)
 
 	service := app.NewPlaybookService(
@@ -121,6 +124,7 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 		nil, // pluginAPI
 		&metrics.Metrics{},
 		mockPropertyService,
+		mockConditionService,
 	)
 
 	playbookID := "playbook123"
@@ -201,6 +205,7 @@ func TestPlaybookService_DeletePropertyField(t *testing.T) {
 
 	mockStore := mock_app.NewMockPlaybookStore(ctrl)
 	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockConditionService := mock_app.NewMockConditionService(ctrl)
 	mockPoster := mock_bot.NewMockPoster(ctrl)
 
 	service := app.NewPlaybookService(
@@ -210,6 +215,7 @@ func TestPlaybookService_DeletePropertyField(t *testing.T) {
 		nil, // pluginAPI
 		&metrics.Metrics{},
 		mockPropertyService,
+		mockConditionService,
 	)
 
 	playbookID := "playbook123"
@@ -257,5 +263,179 @@ func TestPlaybookService_DeletePropertyField(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to bump playbook timestamp")
+	})
+}
+
+func TestPlaybookService_Duplicate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockPlaybookStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockConditionService := mock_app.NewMockConditionService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	mockAuditor.EXPECT().
+		MakeAuditRecord(gomock.Any(), gomock.Any()).
+		Return(&model.AuditRecord{}).
+		AnyTimes()
+
+	mockAuditor.EXPECT().
+		LogAuditRec(gomock.Any()).
+		AnyTimes()
+
+	service := app.NewPlaybookService(
+		mockStore,
+		mockPoster,
+		nil,
+		mockAuditor,
+		nil, // metrics
+		mockPropertyService,
+		mockConditionService,
+	)
+
+	userID := model.NewId()
+	originalPlaybookID := model.NewId()
+	teamID := model.NewId()
+
+	originalPlaybook := app.Playbook{
+		ID:    originalPlaybookID,
+		Title: "Original Playbook",
+		TeamID: teamID,
+	}
+
+	t.Run("successfully duplicates playbook with properties and conditions", func(t *testing.T) {
+		var capturedPlaybookID string
+
+		propertyMappings := &app.PropertyCopyResult{
+			FieldMappings:  map[string]string{"field1": "field2"},
+			OptionMappings: map[string]string{"opt1": "opt2"},
+		}
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			DoAndReturn(func(sourceID, targetID string) (*app.PropertyCopyResult, error) {
+				capturedPlaybookID = targetID
+				return propertyMappings, nil
+			})
+
+		mockConditionService.EXPECT().
+			CopyPlaybookConditionsToPlaybook(originalPlaybookID, gomock.Any(), propertyMappings).
+			DoAndReturn(func(sourceID, targetID string, mappings *app.PropertyCopyResult) (map[string]*app.Condition, error) {
+				assert.Equal(t, capturedPlaybookID, targetID)
+				return map[string]*app.Condition{}, nil
+			})
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				assert.Equal(t, "Copy of Original Playbook", pb.Title)
+				assert.Equal(t, teamID, pb.TeamID)
+				assert.Len(t, pb.Members, 1)
+				assert.Equal(t, userID, pb.Members[0].UserID)
+				assert.NotEmpty(t, pb.ID)
+				assert.Equal(t, capturedPlaybookID, pb.ID)
+				return pb.ID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		resultID, err := service.Duplicate(originalPlaybook, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, capturedPlaybookID, resultID)
+	})
+
+	t.Run("duplicates playbook even if property copying fails", func(t *testing.T) {
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(nil, errors.New("property copy failed"))
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				return pb.ID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		resultID, err := service.Duplicate(originalPlaybook, userID)
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultID)
+	})
+
+	t.Run("duplicates playbook even if condition copying fails", func(t *testing.T) {
+		propertyMappings := &app.PropertyCopyResult{
+			FieldMappings:  map[string]string{},
+			OptionMappings: map[string]string{},
+		}
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(propertyMappings, nil)
+
+		mockConditionService.EXPECT().
+			CopyPlaybookConditionsToPlaybook(originalPlaybookID, gomock.Any(), propertyMappings).
+			Return(nil, errors.New("condition copy failed"))
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				return pb.ID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		resultID, err := service.Duplicate(originalPlaybook, userID)
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultID)
+	})
+
+	t.Run("fails if playbook creation fails", func(t *testing.T) {
+		expectedError := errors.New("database error")
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(&app.PropertyCopyResult{}, nil)
+
+		mockConditionService.EXPECT().
+			CopyPlaybookConditionsToPlaybook(originalPlaybookID, gomock.Any(), gomock.Any()).
+			Return(map[string]*app.Condition{}, nil)
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			Return("", expectedError)
+
+		resultID, err := service.Duplicate(originalPlaybook, userID)
+
+		require.Error(t, err)
+		assert.Equal(t, "", resultID)
+		assert.Equal(t, expectedError, err)
+	})
+
+	t.Run("does not copy conditions if property copying fails", func(t *testing.T) {
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(nil, errors.New("property copy failed"))
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				return pb.ID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+
+		resultID, err := service.Duplicate(originalPlaybook, userID)
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultID)
 	})
 }

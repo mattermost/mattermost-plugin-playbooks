@@ -212,10 +212,9 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 
 // Create creates a new playbook
 func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
-	if playbook.ID != "" {
-		return "", errors.New("ID should be empty")
+	if playbook.ID == "" {
+		playbook.ID = model.NewId()
 	}
-	playbook.ID = model.NewId()
 
 	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
