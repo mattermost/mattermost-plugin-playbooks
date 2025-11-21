@@ -19,9 +19,9 @@ import {
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
-import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+import {General} from 'mattermost-redux/constants';
 
 import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
 
@@ -41,6 +41,7 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import Tooltip from 'src/components/widgets/tooltip';
+import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
@@ -91,8 +92,6 @@ interface Props {
     numFinished: number;
 }
 
-const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
-
 const PoweredByPlaybooksFooter = () => (
     <PoweredByFooter>
         <PoweredByText>
@@ -126,7 +125,9 @@ const RHSRunList = (props: Props) => {
         await props.getMore();
         debouncedSetLoadingMore(false);
     };
-    const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
+    const currentChannel = useSelector(getCurrentChannel);
+    const currentChannelName = currentChannel?.display_name;
+    const isDirectOrGroupMessage = currentChannel?.type === General.DM_CHANNEL || currentChannel?.type === General.GM_CHANNEL;
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
 
@@ -219,13 +220,21 @@ const RHSRunList = (props: Props) => {
                     </DotMenu>
                     <Spacer/>
                     <SegmentedButtonContainer>
-                        <PrimaryActionButton
-                            onClick={handleCreateBlankChecklist}
-                            data-testid='create-blank-checklist'
+                        <ConditionalTooltip
+                            show={isDirectOrGroupMessage}
+                            id='create-checklist-disabled-dm-gm'
+                            content={formatMessage({defaultMessage: 'Checklists are not yet available in direct or group messages'})}
+                            disableChildrenOnShow={true}
                         >
-                            <PlusIcon size={18}/>
-                            {formatMessage({defaultMessage: 'New checklist'})}
-                        </PrimaryActionButton>
+                            <PrimaryActionButton
+                                onClick={handleCreateBlankChecklist}
+                                data-testid='create-blank-checklist'
+                                disabled={isDirectOrGroupMessage}
+                            >
+                                <PlusIcon size={18}/>
+                                {formatMessage({defaultMessage: 'New checklist'})}
+                            </PrimaryActionButton>
+                        </ConditionalTooltip>
                         <DotMenu
                             dotMenuButton={DropdownTriggerButton}
                             placement='bottom-start'
@@ -290,6 +299,7 @@ const RHSRunList = (props: Props) => {
                                 numFinished={props.numFinished}
                                 setOptions={props.setOptions}
                                 onCreateChecklistClicked={handleCreateBlankChecklist}
+                                isDirectOrGroupMessage={isDirectOrGroupMessage}
                             />
                         </NoRunsWrapper>
                         <PoweredByPlaybooksFooter/>
@@ -459,6 +469,11 @@ const PrimaryActionButton = styled.button`
 
     &:active {
         background: rgba(var(--button-bg-rgb), 0.16);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 `;
 
@@ -867,6 +882,7 @@ interface NoRunsProps {
     numFinished: number;
     onCreateChecklistClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
+    isDirectOrGroupMessage: boolean;
 }
 
 const NoRuns = (props: NoRunsProps) => {
@@ -886,13 +902,21 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton
-                onClick={props.onCreateChecklistClicked}
-                data-testid='create-blank-checklist'
+            <ConditionalTooltip
+                show={props.isDirectOrGroupMessage}
+                id='create-checklist-disabled-dm-gm-empty-state'
+                content={formatMessage({defaultMessage: 'Checklists are not yet available in direct or group messages'})}
+                disableChildrenOnShow={true}
             >
-                <PlusIcon size={18}/>
-                <FormattedMessage defaultMessage={'New checklist'}/>
-            </PrimaryButton>
+                <PrimaryButton
+                    onClick={props.onCreateChecklistClicked}
+                    data-testid='create-blank-checklist'
+                    disabled={props.isDirectOrGroupMessage}
+                >
+                    <PlusIcon size={18}/>
+                    <FormattedMessage defaultMessage={'New checklist'}/>
+                </PrimaryButton>
+            </ConditionalTooltip>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
