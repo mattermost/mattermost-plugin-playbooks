@@ -218,7 +218,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 	ReturnJSON(w, &playbookRun, http.StatusCreated)
 }
 
-// Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status.
 func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
@@ -229,15 +228,56 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		return
 	}
 
-	var updates app.UpdateOptions
+	var updates struct {
+		Name *string `json:"name"`
+	}
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	updatedPlaybookRun := oldPlaybookRun
+	// If name is being updated, validate and apply the change
+	if updates.Name != nil {
+		newName := strings.TrimSpace(*updates.Name)
+		if newName == "" {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
+			return
+		}
 
-	ReturnJSON(w, updatedPlaybookRun, http.StatusOK)
+		// Validate name length (Mattermost channel display names have a 64 character limit)
+		if len(newName) > 64 {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must be 64 characters or fewer", errors.New("name field exceeds 64 characters"))
+			return
+		}
+
+		// Prevent renaming finished runs
+		if oldPlaybookRun.CurrentStatus == app.StatusFinished {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)
+			return
+		}
+
+		// Update the name using GraphqlUpdate
+		setmap := map[string]interface{}{
+			"Name": newName,
+		}
+		if err := h.playbookRunService.GraphqlUpdate(playbookRunID, setmap); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+
+		// Retrieve the updated playbook run
+		updatedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+		if err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+
+		ReturnJSON(w, updatedPlaybookRun, http.StatusOK)
+		return
+	}
+
+	// If no updates were provided, return the existing run
+	ReturnJSON(w, oldPlaybookRun, http.StatusOK)
 }
 
 // createPlaybookRunFromDialog handles the interactive dialog submission when a user presses confirm on
