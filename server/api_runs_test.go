@@ -2243,6 +2243,138 @@ func TestGetOwners(t *testing.T) {
 	}
 }
 
+func TestUpdatePlaybookRun(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update run name", func(t *testing.T) {
+		// Create a fresh run for this test
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Original Run Name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		originalName := testRun.Name
+		newName := "Updated Run Name"
+
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.NoError(t, err)
+		require.Equal(t, newName, updatedRun.Name)
+
+		// Verify the update persisted
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, newName, run.Name)
+		require.NotEqual(t, originalName, run.Name)
+	})
+
+	t.Run("update run name with empty string fails", func(t *testing.T) {
+		emptyName := ""
+		_, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &emptyName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update run name with whitespace-only string fails", func(t *testing.T) {
+		whitespaceName := "   \t  "
+		_, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &whitespaceName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update run name with name exceeding 64 characters fails", func(t *testing.T) {
+		longName := strings.Repeat("a", 65) // 65 characters
+		_, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &longName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update run name with exactly 64 characters succeeds", func(t *testing.T) {
+		// Create a fresh run for this test
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Test Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		exactLengthName := strings.Repeat("a", 64) // Exactly 64 characters
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &exactLengthName,
+		})
+		require.NoError(t, err)
+		require.Equal(t, exactLengthName, updatedRun.Name)
+	})
+
+	t.Run("update finished run name fails", func(t *testing.T) {
+		// Create and finish a run
+		finishedRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run to finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), finishedRun.ID)
+		require.NoError(t, err)
+
+		newName := "Cannot update finished run"
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), finishedRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update run without name field returns existing run", func(t *testing.T) {
+		// Create a fresh run for this test
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Test Run Name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		originalName := testRun.Name
+
+		// Update without name field
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{})
+		require.NoError(t, err)
+		require.Equal(t, originalName, updatedRun.Name)
+	})
+
+	t.Run("no permissions to update run", func(t *testing.T) {
+		// Remove user from team to revoke permissions
+		_, err := e.ServerAdminClient.RemoveTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		newName := "Should fail"
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		// Restore team membership
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+	})
+}
+
 func TestRunGetMetadata(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
