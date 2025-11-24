@@ -1386,7 +1386,7 @@ func TestConditionService_CopyPlaybookConditionsToPlaybook(t *testing.T) {
 				require.Equal(t, targetPlaybookID, condition.PlaybookID)
 				require.Empty(t, condition.RunID)
 				require.Empty(t, condition.ID)
-				
+
 				createdCondition := condition
 				createdCondition.ID = model.NewId()
 				return &createdCondition, nil

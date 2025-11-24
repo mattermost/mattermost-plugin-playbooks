@@ -268,11 +268,8 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 		"user_id":              userID,
 	})
 
-	// Generate new playbook ID upfront
-	newPlaybookID := model.NewId()
-
 	newPlaybook := playbook.Clone()
-	newPlaybook.ID = newPlaybookID
+	newPlaybook.ID = ""
 	// Empty metric IDs if there are such. Otherwise, metrics will not be saved in the database.
 	for i := range newPlaybook.Metrics {
 		newPlaybook.Metrics[i].ID = ""
@@ -285,37 +282,55 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 		Roles:  []string{PlaybookRoleMember, PlaybookRoleAdmin},
 	}}
 
-	// Copy property fields from the original playbook to the new playbook BEFORE creating it
-	propertyMappings, err := s.propertyService.CopyPlaybookPropertiesToPlaybook(playbook.ID, newPlaybookID)
-	if err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"original_playbook_id": playbook.ID,
-			"new_playbook_id":      newPlaybookID,
-		}).Warn("failed to copy property fields to duplicated playbook - skipping condition copying since conditions require valid property field mappings")
-	}
-
-	// Copy conditions from the original playbook to the new playbook BEFORE creating it
-	var conditionMapping map[string]*Condition
-	if propertyMappings != nil {
-		conditionMapping, err = s.conditionService.CopyPlaybookConditionsToPlaybook(playbook.ID, newPlaybookID, propertyMappings)
-		if err != nil {
-			logrus.WithError(err).WithFields(logrus.Fields{
-				"original_playbook_id": playbook.ID,
-				"new_playbook_id":      newPlaybookID,
-			}).Warn("failed to copy conditions to duplicated playbook - playbook will be created without conditions and condition-based checklist items may not work correctly")
-		}
-	}
-
-	// Update checklist item condition IDs to reference the new condition IDs BEFORE creating playbook
-	if len(conditionMapping) > 0 {
-		newPlaybook.SwapConditionIDs(conditionMapping)
-	}
-
-	// Create the playbook with all correct IDs in a single save
+	// Create the playbook FIRST so it exists before we create properties/conditions
 	playbookID, err := s.Create(newPlaybook, userID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
 		return "", err
+	}
+
+	// Copy property fields from the original playbook to the new playbook AFTER creating it
+	propertyMappings, err := s.propertyService.CopyPlaybookPropertiesToPlaybook(playbook.ID, playbookID)
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"original_playbook_id": playbook.ID,
+			"new_playbook_id":      playbookID,
+		}).Warn("failed to copy property fields to duplicated playbook - skipping condition copying since conditions require valid property field mappings")
+	}
+
+	// Copy conditions from the original playbook to the new playbook AFTER creating it
+	var conditionMapping map[string]*Condition
+	if propertyMappings != nil {
+		conditionMapping, err = s.conditionService.CopyPlaybookConditionsToPlaybook(playbook.ID, playbookID, propertyMappings)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"original_playbook_id": playbook.ID,
+				"new_playbook_id":      playbookID,
+			}).Warn("failed to copy conditions to duplicated playbook - playbook will be created without conditions and condition-based checklist items may not work correctly")
+		}
+	}
+
+	// Update checklist item condition IDs to reference the new condition IDs
+	if len(conditionMapping) > 0 {
+		// Need to get the playbook, update it, and save it back
+		newPlaybook, err = s.Get(playbookID)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id": playbookID,
+			}).Error("failed to get newly created playbook for updating condition IDs")
+			auditRec.AddErrorDesc(err.Error())
+			return "", err
+		}
+
+		newPlaybook.SwapConditionIDs(conditionMapping)
+
+		if err := s.Update(newPlaybook, userID); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id": playbookID,
+			}).Error("failed to update playbook with new condition IDs")
+			auditRec.AddErrorDesc(err.Error())
+			return "", err
+		}
 	}
 
 	// Mark success and add result state
