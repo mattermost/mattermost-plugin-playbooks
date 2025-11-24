@@ -223,7 +223,7 @@ const RHSRunList = (props: Props) => {
                         <ConditionalTooltip
                             show={isDirectOrGroupMessage}
                             id='create-checklist-disabled-dm-gm'
-                            content={formatMessage({defaultMessage: 'Checklists are not yet available in direct or group messages'})}
+                            content={formatMessage({defaultMessage: 'Checklists are not available in direct or group messages'})}
                             disableChildrenOnShow={true}
                         >
                             <PrimaryActionButton
@@ -905,7 +905,7 @@ const NoRuns = (props: NoRunsProps) => {
             <ConditionalTooltip
                 show={props.isDirectOrGroupMessage}
                 id='create-checklist-disabled-dm-gm-empty-state'
-                content={formatMessage({defaultMessage: 'Checklists are not yet available in direct or group messages'})}
+                content={formatMessage({defaultMessage: 'Checklists are not available in direct or group messages'})}
                 disableChildrenOnShow={true}
             >
                 <PrimaryButton
