@@ -890,7 +890,9 @@ const NoRuns = (props: NoRunsProps) => {
 
     let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
 
-    if (props.active && props.numFinished > 0) {
+    if (props.isDirectOrGroupMessage) {
+        text = formatMessage({defaultMessage: 'Checklists aren\'t available for direct or group messages'});
+    } else if (props.active && props.numFinished > 0) {
         text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
     } else if (!props.active) {
         text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
@@ -902,21 +904,19 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <ConditionalTooltip
-                show={props.isDirectOrGroupMessage}
-                id='create-checklist-disabled-dm-gm-empty-state'
-                content={formatMessage({defaultMessage: 'Checklists are not available in direct or group messages'})}
-                disableChildrenOnShow={true}
-            >
+            {props.isDirectOrGroupMessage ? (
+                <NoRunsSubtext>
+                    <FormattedMessage defaultMessage='Open a channel to create and run checklists.'/>
+                </NoRunsSubtext>
+            ) : (
                 <PrimaryButton
                     onClick={props.onCreateChecklistClicked}
                     data-testid='create-blank-checklist'
-                    disabled={props.isDirectOrGroupMessage}
                 >
                     <PlusIcon size={18}/>
                     <FormattedMessage defaultMessage={'New checklist'}/>
                 </PrimaryButton>
-            </ConditionalTooltip>
+            )}
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
@@ -948,6 +948,12 @@ const NoRunsText = styled.div`
     ${SemiBoldHeading}
     font-size: 20px;
     line-height: 28px;
+    text-align: center;
+`;
+const NoRunsSubtext = styled.div`
+    color: var(--center-channel-color);
+    font-size: 14px;
+    line-height: 20px;
     text-align: center;
 `;
 const ViewOtherRunsButton = styled(TertiaryButton)`
