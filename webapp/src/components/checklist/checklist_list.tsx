@@ -40,7 +40,7 @@ import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
-import {useProxyState} from 'src/hooks';
+import {usePlaybookAttributes, useProxyState} from 'src/hooks';
 import {usePlaybookConditions} from 'src/hooks/conditions';
 import {getDistinctAssignees} from 'src/utils';
 import {ConditionExprV1} from 'src/types/conditions';
@@ -102,6 +102,7 @@ const ChecklistList = ({
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
+    const propertyFields = usePlaybookAttributes(inPlaybook?.id || '');
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
@@ -617,22 +618,7 @@ const ChecklistList = ({
                                                     itemButtonsFormat={itemButtonsFormat}
                                                     onReadOnlyInteract={onReadOnlyInteract}
                                                     conditions={conditions}
-                                                    propertyFields={playbook?.propertyFields.map((pf) => ({
-                                                        id: pf.id,
-                                                        name: pf.name,
-                                                        type: pf.type,
-                                                        group_id: pf.group_id,
-                                                        create_at: pf.create_at,
-                                                        update_at: pf.update_at,
-                                                        delete_at: pf.delete_at,
-                                                        target_type: 'playbook' as const,
-                                                        attrs: {
-                                                            visibility: pf.attrs.visibility as any,
-                                                            sort_order: pf.attrs.sort_order,
-                                                            options: pf.attrs.options as any,
-                                                            parent_id: pf.attrs.parent_id || undefined,
-                                                        },
-                                                    })) || []}
+                                                    propertyFields={propertyFields || []}
                                                     onDeleteCondition={onDeleteCondition}
                                                     onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
                                                     onUpdateCondition={onUpdateCondition}

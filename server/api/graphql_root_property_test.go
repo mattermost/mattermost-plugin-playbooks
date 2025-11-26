@@ -12,14 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
+func TestConvertPropertyFieldGraphQLInputToPropertyField(t *testing.T) {
 	t.Run("basic text field with minimal attrs", func(t *testing.T) {
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Test Field",
 			Type: model.PropertyFieldTypeText,
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Test Field", result.Name)
@@ -31,13 +31,13 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	})
 
 	t.Run("basic field with nil attrs", func(t *testing.T) {
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name:  "Test Field",
 			Type:  model.PropertyFieldTypeText,
 			Attrs: nil,
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Test Field", result.Name)
@@ -53,17 +53,17 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		sortOrder := 10.5
 		parentID := "parent-123"
 
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Complete Field",
 			Type: model.PropertyFieldTypeSelect,
-			Attrs: &PropertyFieldAttrsInput{
+			Attrs: &PropertyFieldAttrsGraphQLInput{
 				Visibility: &visibility,
 				SortOrder:  &sortOrder,
 				ParentID:   &parentID,
 			},
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Complete Field", result.Name)
@@ -76,7 +76,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	t.Run("field with options without IDs", func(t *testing.T) {
 		color1 := "red"
 		color2 := "blue"
-		options := []PropertyOptionInput{
+		options := []PropertyOptionGraphQLInput{
 			{
 				Name:  "Option 1",
 				Color: &color1,
@@ -87,15 +87,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 			},
 		}
 
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Select Field",
 			Type: model.PropertyFieldTypeSelect,
-			Attrs: &PropertyFieldAttrsInput{
+			Attrs: &PropertyFieldAttrsGraphQLInput{
 				Options: &options,
 			},
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Select Field", result.Name)
@@ -117,7 +117,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		id1 := "opt-1"
 		id2 := "opt-2"
 		color1 := "green"
-		options := []PropertyOptionInput{
+		options := []PropertyOptionGraphQLInput{
 			{
 				ID:    &id1,
 				Name:  "Existing Option 1",
@@ -129,15 +129,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 			},
 		}
 
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Select Field",
 			Type: "select",
-			Attrs: &PropertyFieldAttrsInput{
+			Attrs: &PropertyFieldAttrsGraphQLInput{
 				Options: &options,
 			},
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		require.Len(t, result.Attrs.Options, 2)
@@ -154,7 +154,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	})
 
 	t.Run("field with options without colors", func(t *testing.T) {
-		options := []PropertyOptionInput{
+		options := []PropertyOptionGraphQLInput{
 			{
 				Name: "Plain Option 1",
 			},
@@ -163,15 +163,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 			},
 		}
 
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Select Field",
 			Type: "select",
-			Attrs: &PropertyFieldAttrsInput{
+			Attrs: &PropertyFieldAttrsGraphQLInput{
 				Options: &options,
 			},
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		require.Len(t, result.Attrs.Options, 2)
@@ -186,17 +186,17 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	})
 
 	t.Run("field with empty options array", func(t *testing.T) {
-		options := []PropertyOptionInput{}
+		options := []PropertyOptionGraphQLInput{}
 
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Select Field",
 			Type: "select",
-			Attrs: &PropertyFieldAttrsInput{
+			Attrs: &PropertyFieldAttrsGraphQLInput{
 				Options: &options,
 			},
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Empty(t, result.Attrs.Options)
@@ -218,12 +218,12 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				input := PropertyFieldInput{
+				input := PropertyFieldGraphQLInput{
 					Name: "Test Field",
 					Type: tc.fieldType,
 				}
 
-				result := convertPropertyFieldInputToPropertyField(input)
+				result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 				require.NotNil(t, result)
 				assert.Equal(t, tc.expectedType, result.Type)
@@ -234,15 +234,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 	t.Run("attrs with partial values", func(t *testing.T) {
 		sortOrder := 5.0
 
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Partial Attrs Field",
 			Type: model.PropertyFieldTypeText,
-			Attrs: &PropertyFieldAttrsInput{
+			Attrs: &PropertyFieldAttrsGraphQLInput{
 				SortOrder: &sortOrder,
 			},
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Equal(t, app.PropertyFieldVisibilityDefault, result.Attrs.Visibility)
@@ -259,7 +259,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		color1 := "purple"
 		color2 := "orange"
 
-		options := []PropertyOptionInput{
+		options := []PropertyOptionGraphQLInput{
 			{
 				ID:    &id1,
 				Name:  "Complex Option 1",
@@ -271,10 +271,10 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 			},
 		}
 
-		input := PropertyFieldInput{
+		input := PropertyFieldGraphQLInput{
 			Name: "Complex Field",
 			Type: model.PropertyFieldTypeMultiselect,
-			Attrs: &PropertyFieldAttrsInput{
+			Attrs: &PropertyFieldAttrsGraphQLInput{
 				Visibility: &visibility,
 				SortOrder:  &sortOrder,
 				ParentID:   &parentID,
@@ -282,7 +282,7 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 			},
 		}
 
-		result := convertPropertyFieldInputToPropertyField(input)
+		result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "Complex Field", result.Name)
@@ -315,15 +315,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				input := PropertyFieldInput{
+				input := PropertyFieldGraphQLInput{
 					Name: "Test Field",
 					Type: model.PropertyFieldTypeText,
-					Attrs: &PropertyFieldAttrsInput{
+					Attrs: &PropertyFieldAttrsGraphQLInput{
 						Visibility: &tc.visibility,
 					},
 				}
 
-				result := convertPropertyFieldInputToPropertyField(input)
+				result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 				require.NotNil(t, result)
 				assert.Equal(t, tc.visibility, result.Attrs.Visibility)
@@ -333,12 +333,12 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 	t.Run("edge cases", func(t *testing.T) {
 		t.Run("empty field name", func(t *testing.T) {
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "",
 				Type: model.PropertyFieldTypeText,
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			assert.Equal(t, "", result.Name)
@@ -346,12 +346,12 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		})
 
 		t.Run("empty field type", func(t *testing.T) {
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "Test Field",
 				Type: "",
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			assert.Equal(t, "Test Field", result.Name)
@@ -361,15 +361,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		t.Run("zero sort order", func(t *testing.T) {
 			sortOrder := 0.0
 
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "Test Field",
 				Type: "text",
-				Attrs: &PropertyFieldAttrsInput{
+				Attrs: &PropertyFieldAttrsGraphQLInput{
 					SortOrder: &sortOrder,
 				},
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			assert.Equal(t, 0.0, result.Attrs.SortOrder)
@@ -378,15 +378,15 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		t.Run("negative sort order", func(t *testing.T) {
 			sortOrder := -5.5
 
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "Test Field",
 				Type: "text",
-				Attrs: &PropertyFieldAttrsInput{
+				Attrs: &PropertyFieldAttrsGraphQLInput{
 					SortOrder: &sortOrder,
 				},
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			assert.Equal(t, -5.5, result.Attrs.SortOrder)
@@ -395,36 +395,36 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 		t.Run("empty parent ID", func(t *testing.T) {
 			parentID := ""
 
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "Test Field",
 				Type: "text",
-				Attrs: &PropertyFieldAttrsInput{
+				Attrs: &PropertyFieldAttrsGraphQLInput{
 					ParentID: &parentID,
 				},
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			assert.Equal(t, "", result.Attrs.ParentID)
 		})
 
 		t.Run("option with empty name", func(t *testing.T) {
-			options := []PropertyOptionInput{
+			options := []PropertyOptionGraphQLInput{
 				{
 					Name: "",
 				},
 			}
 
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "Select Field",
 				Type: "select",
-				Attrs: &PropertyFieldAttrsInput{
+				Attrs: &PropertyFieldAttrsGraphQLInput{
 					Options: &options,
 				},
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			require.Len(t, result.Attrs.Options, 1)
@@ -433,22 +433,22 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		t.Run("option with empty ID", func(t *testing.T) {
 			emptyID := ""
-			options := []PropertyOptionInput{
+			options := []PropertyOptionGraphQLInput{
 				{
 					ID:   &emptyID,
 					Name: "Option with empty ID",
 				},
 			}
 
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "Select Field",
 				Type: "select",
-				Attrs: &PropertyFieldAttrsInput{
+				Attrs: &PropertyFieldAttrsGraphQLInput{
 					Options: &options,
 				},
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			require.Len(t, result.Attrs.Options, 1)
@@ -457,22 +457,22 @@ func TestConvertPropertyFieldInputToPropertyField(t *testing.T) {
 
 		t.Run("option with empty color", func(t *testing.T) {
 			emptyColor := ""
-			options := []PropertyOptionInput{
+			options := []PropertyOptionGraphQLInput{
 				{
 					Name:  "Option with empty color",
 					Color: &emptyColor,
 				},
 			}
 
-			input := PropertyFieldInput{
+			input := PropertyFieldGraphQLInput{
 				Name: "Select Field",
 				Type: "select",
-				Attrs: &PropertyFieldAttrsInput{
+				Attrs: &PropertyFieldAttrsGraphQLInput{
 					Options: &options,
 				},
 			}
 
-			result := convertPropertyFieldInputToPropertyField(input)
+			result := convertPropertyFieldGraphQLInputToPropertyField(input)
 
 			require.NotNil(t, result)
 			require.Len(t, result.Attrs.Options, 1)

@@ -7,6 +7,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
+import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
     createColumnHelper,
@@ -23,20 +24,18 @@ import {
     MenuVariantIcon,
 } from '@mattermost/compass-icons/components';
 
-import {
-    FullPlaybook,
-    PlaybookPropertyField as GraphQLPropertyField,
-    useAddPlaybookPropertyField,
-    useDeletePlaybookPropertyField,
-    usePlaybook,
-    useUpdatePlaybookPropertyField,
-} from 'src/graphql/hooks';
-import {PropertyFieldInput, PropertyFieldType} from 'src/graphql/generated/graphql';
-import {PropertyField} from 'src/types/properties';
+import {usePlaybook} from 'src/graphql/hooks';
+import {PropertyField, PropertyFieldInput, PropertyFieldType} from 'src/types/properties';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 
-import {useProxyState} from 'src/hooks';
+import {usePlaybookAttributes} from 'src/hooks';
+import {
+    addPlaybookPropertyFieldAction,
+    deletePlaybookPropertyFieldAction,
+    reorderPlaybookPropertyFieldsAction,
+    updatePlaybookPropertyFieldAction,
+} from 'src/actions';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 
@@ -52,94 +51,54 @@ interface Props {
     playbookID: string;
 }
 
-const toPropertyField = (gqlField: GraphQLPropertyField, playbookID: string): PropertyField => {
-    return {...gqlField, target_type: 'playbook', target_id: playbookID} as PropertyField;
-};
-
-const usePlaybookPropertyFields = (playbook: Maybe<FullPlaybook>): PropertyField[] => {
-    return useMemo(() => {
-        if (!playbook || !playbook.propertyFields) {
-            return [];
-        }
-        return playbook.propertyFields.map((field) => toPropertyField(field, playbook.id));
-    }, [playbook]);
-};
-
 const PlaybookProperties = ({playbookID}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
+    const dispatch = useDispatch();
 
     const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
     const [deletingProperty, setDeletingProperty] = useState<PropertyField | null>(null);
     const nameInputRefs = useRef<{[key: string]: PropertyNameInputRef | null}>({});
 
     const [playbook, playbookResult] = usePlaybook(playbookID);
-    const inProperties = usePlaybookPropertyFields(playbook);
-
-    const [addPropertyField] = useAddPlaybookPropertyField();
-    const [updatePropertyField] = useUpdatePlaybookPropertyField();
-    const [deletePropertyField] = useDeletePlaybookPropertyField();
-
-    const [properties, updatePropertiesOptimistically] = useProxyState(inProperties, useCallback((updatedProperties) => {
-        updatedProperties.forEach((updatedProperty, index) => {
-            if (updatedProperty === inProperties[index]) {
-                return; // No change needed for unchanged properties
-            }
-
-            updateProperty(updatedProperty);
-        });
-    }, [updatePropertyField, inProperties]), 0);
-
-    const updatePropertyOptimistically = useCallback((updatedProperty: PropertyField) => {
-        updatePropertiesOptimistically((prevProperties) => {
-            return prevProperties.map((property) => {
-                if (property.id === updatedProperty.id) {
-                    return updatedProperty;
-                }
-                return property;
-            });
-        });
-    }, [updatePropertiesOptimistically]);
+    const properties = usePlaybookAttributes(playbookID) || [];
 
     const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
         const propertyFieldInput: PropertyFieldInput = {
             name: updatedProperty.name,
-            type: updatedProperty.type as PropertyFieldType,
+            type: updatedProperty.type,
             attrs: {
                 visibility: updatedProperty.attrs.visibility,
-                sortOrder: updatedProperty.attrs.sort_order,
-                options: updatedProperty.attrs.options,
-                valueType: updatedProperty.attrs.value_type,
+                sort_order: updatedProperty.attrs.sort_order,
+                options: updatedProperty.attrs.options || undefined,
+                value_type: updatedProperty.attrs.value_type,
             },
         };
 
-        const result = await updatePropertyField(playbookID, updatedProperty.id, propertyFieldInput);
-        if (result.errors && result.errors.length > 0) {
-            // if there's an error, restore the property as it was
-            const originalProperty = inProperties.find((p) => p.id === updatedProperty.id);
-            if (originalProperty) {
-                updatePropertyOptimistically(originalProperty);
-            }
+        try {
+            await dispatch(updatePlaybookPropertyFieldAction(playbookID, updatedProperty.id, propertyFieldInput));
+        } catch (error) {
             addToast({
-                content: result.errors[0].message,
+                content: error instanceof Error ? error.message : 'Failed to update property field',
                 toastStyle: ToastStyle.Failure,
                 duration: 8000,
             });
         }
-    }, [updatePropertyField, playbookID, addToast, inProperties, updatePropertyOptimistically]);
+    }, [dispatch, playbookID, addToast]);
 
     const deleteProperty = useCallback(async (propertyId: string) => {
-        const result = await deletePropertyField(playbookID, propertyId);
-        if (result.errors && result.errors.length > 0) {
+        try {
+            await dispatch(deletePlaybookPropertyFieldAction(playbookID, propertyId));
+            return true;
+        } catch (error) {
             addToast({
-                content: result.errors[0].message,
+                content: error instanceof Error ? error.message : 'Failed to delete property field',
                 toastStyle: ToastStyle.Failure,
                 duration: 8000,
             });
             return false;
         }
-        return true;
-    }, [deletePropertyField, playbookID, addToast]);
+    }, [dispatch, playbookID, addToast]);
 
     const addProperty = useCallback(async () => {
         if (properties.length >= MAX_PROPERTIES_LIMIT) {
@@ -160,55 +119,48 @@ const PlaybookProperties = ({playbookID}: Props) => {
             type: PropertyFieldType.Text,
             attrs: {
                 visibility: 'when_set',
-                sortOrder: properties.length,
+                sort_order: properties.length,
             },
         };
 
-        const result = await addPropertyField(playbookID, newPropertyField);
+        await dispatch(addPlaybookPropertyFieldAction(playbookID, newPropertyField));
 
-        // Auto-focus and select the newly created attribute's name field
-        // The mutation returns the new property ID as a string
-        if (result.data?.addPlaybookPropertyField) {
-            const newPropertyId = result.data.addPlaybookPropertyField;
-
-            // Wait for the property to be added to the list and rendered
-            setTimeout(() => {
-                const input = nameInputRefs.current[newPropertyId];
+        // Wait for the property to be added to the list and rendered
+        // Redux state will update automatically
+        setTimeout(() => {
+            // Find the newly added property by name
+            const newProperty = properties.find((p) => p.name === newPropertyField.name);
+            if (newProperty) {
+                const input = nameInputRefs.current[newProperty.id];
                 if (input) {
                     input.focus();
                     input.select();
                 }
-            }, 200);
-        }
-    }, [addPropertyField, playbookID, properties]);
+            }
+        }, 200);
+    }, [dispatch, playbookID, properties]);
 
     const handleDragEnd = useCallback(async (result: any) => {
         if (!result.destination) {
             return;
         }
 
-        updatePropertiesOptimistically((prevProperties) => {
-            const reorderedProperties = Array.from(prevProperties);
-            const [removed] = reorderedProperties.splice(result.source.index, 1);
-            reorderedProperties.splice(result.destination.index, 0, removed);
+        const sourceField = properties[result.source.index];
 
-            return reorderedProperties.map((field, index) => {
-                const nextSortOrder = index;
+        if (!sourceField) {
+            return;
+        }
 
-                if (field.attrs.sort_order === nextSortOrder) {
-                    return field; // No change needed
-                }
-
-                return {
-                    ...field,
-                    attrs: {
-                        ...field.attrs,
-                        sort_order: nextSortOrder,
-                    },
-                };
+        try {
+            await dispatch(reorderPlaybookPropertyFieldsAction(playbookID, sourceField.id, result.destination.index));
+        } catch (error) {
+            addToast({
+                content: error instanceof Error ? error.message : 'Failed to reorder property fields',
+                toastStyle: ToastStyle.Failure,
+                duration: 8000,
             });
-        });
-    }, [properties, updatePropertyField, playbookID]);
+        }
+    }, [properties, dispatch, playbookID, addToast]);
 
     const columnHelper = createColumnHelper<PropertyField>();
 
@@ -263,7 +215,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                             {editingTypeId === info.row.original.id ? (
                                 <PropertyTypeSelector
                                     field={info.row.original}
-                                    updateField={updatePropertyOptimistically}
+                                    updateField={updateProperty}
                                     onClose={() => setEditingTypeId(null)}
                                     isOpen={editingTypeId === info.row.original.id}
                                     onOpenChange={(isOpen) => {
@@ -281,7 +233,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                     nameInputRefs.current[info.row.original.id] = el;
                                 }}
                                 field={info.row.original}
-                                updateField={updatePropertyOptimistically}
+                                updateField={updateProperty}
                                 existingNames={properties.map((p) => p.name)}
                             />
                         </PropertyCellContent>
@@ -297,7 +249,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 cell: (info) => (
                     <PropertyValuesInput
                         field={info.row.original}
-                        updateField={updatePropertyOptimistically}
+                        updateField={updateProperty}
                     />
                 ),
             }),
@@ -331,18 +283,24 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                 type: field.type as PropertyFieldType,
                                 attrs: {
                                     visibility: field.attrs.visibility,
-                                    sortOrder: properties.length + 1,
-                                    options: field.attrs.options,
+                                    sort_order: properties.length + 1,
+
+                                    // Omit IDs to ensure new options are created
+                                    options: field.attrs.options?.map((opt) => ({
+                                        name: opt.name,
+                                        color: opt.color,
+                                    })) || undefined,
+                                    value_type: field.attrs.value_type,
                                 },
                             };
 
-                            await addPropertyField(playbookID, duplicatedPropertyField);
+                            await dispatch(addPlaybookPropertyFieldAction(playbookID, duplicatedPropertyField));
                         }}
                     />
                 ),
             }),
         ],
-        [columnHelper, formatMessage, updateProperty, deleteProperty, properties, editingTypeId]
+        [columnHelper, formatMessage, updateProperty, deleteProperty, properties, editingTypeId, dispatch, playbookID]
     );
 
     const table = useReactTable({

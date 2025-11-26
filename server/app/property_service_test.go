@@ -665,3 +665,113 @@ func (m *mockPropertyServiceForValidation) validatePropertyLimit(playbookID stri
 
 	return nil
 }
+
+func TestReorderPropertyFieldsLogic(t *testing.T) {
+	playbookID := model.NewId()
+
+	createField := func(id string, name string, sortOrder float64) PropertyField {
+		return PropertyField{
+			PropertyField: model.PropertyField{
+				ID:         id,
+				Name:       name,
+				Type:       model.PropertyFieldTypeText,
+				TargetType: PropertyTargetTypePlaybook,
+				TargetID:   playbookID,
+			},
+			Attrs: Attrs{
+				Visibility: PropertyFieldVisibilityWhenSet,
+				SortOrder:  sortOrder,
+			},
+		}
+	}
+
+	t.Run("move field forward (from position 1 to position 4)", func(t *testing.T) {
+		field1 := createField("field1", "Field 1", 0)
+		field2 := createField("field2", "Field 2", 1)
+		field3 := createField("field3", "Field 3", 2)
+		field4 := createField("field4", "Field 4", 3)
+		field5 := createField("field5", "Field 5", 4)
+		fields := []PropertyField{field1, field2, field3, field4, field5}
+
+		result, changedIndices, err := reorderPropertyFieldsLogic(fields, "field2", 4)
+		require.NoError(t, err)
+		require.Len(t, result, 5)
+
+		assert.Equal(t, "field1", result[0].ID)
+		assert.Equal(t, float64(0), result[0].Attrs.SortOrder)
+		assert.Equal(t, "field3", result[1].ID)
+		assert.Equal(t, float64(1), result[1].Attrs.SortOrder)
+		assert.Equal(t, "field4", result[2].ID)
+		assert.Equal(t, float64(2), result[2].Attrs.SortOrder)
+		assert.Equal(t, "field5", result[3].ID)
+		assert.Equal(t, float64(3), result[3].Attrs.SortOrder)
+		assert.Equal(t, "field2", result[4].ID)
+		assert.Equal(t, float64(4), result[4].Attrs.SortOrder)
+
+		assert.Equal(t, []int{1, 2, 3, 4}, changedIndices)
+	})
+
+	t.Run("move field backward (from position 3 to position 0)", func(t *testing.T) {
+		field1 := createField("field1", "Field 1", 0)
+		field2 := createField("field2", "Field 2", 1)
+		field3 := createField("field3", "Field 3", 2)
+		field4 := createField("field4", "Field 4", 3)
+		fields := []PropertyField{field1, field2, field3, field4}
+
+		result, changedIndices, err := reorderPropertyFieldsLogic(fields, "field4", 0)
+		require.NoError(t, err)
+		require.Len(t, result, 4)
+
+		assert.Equal(t, "field4", result[0].ID)
+		assert.Equal(t, float64(0), result[0].Attrs.SortOrder)
+		assert.Equal(t, "field1", result[1].ID)
+		assert.Equal(t, float64(1), result[1].Attrs.SortOrder)
+		assert.Equal(t, "field2", result[2].ID)
+		assert.Equal(t, float64(2), result[2].Attrs.SortOrder)
+		assert.Equal(t, "field3", result[3].ID)
+		assert.Equal(t, float64(3), result[3].Attrs.SortOrder)
+
+		assert.Equal(t, []int{0, 1, 2, 3}, changedIndices)
+	})
+
+	t.Run("same source and target position returns unchanged", func(t *testing.T) {
+		field1 := createField("field1", "Field 1", 0)
+		field2 := createField("field2", "Field 2", 1)
+		fields := []PropertyField{field1, field2}
+
+		result, changedIndices, err := reorderPropertyFieldsLogic(fields, "field1", 0)
+		require.NoError(t, err)
+		require.Len(t, result, 2)
+
+		assert.Equal(t, "field1", result[0].ID)
+		assert.Equal(t, "field2", result[1].ID)
+		assert.Empty(t, changedIndices)
+	})
+
+	t.Run("error when field not found", func(t *testing.T) {
+		field1 := createField("field1", "Field 1", 0)
+		fields := []PropertyField{field1}
+
+		_, _, err := reorderPropertyFieldsLogic(fields, "nonexistent", 0)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "field not found")
+	})
+
+	t.Run("error when target position out of bounds (negative)", func(t *testing.T) {
+		field1 := createField("field1", "Field 1", 0)
+		fields := []PropertyField{field1}
+
+		_, _, err := reorderPropertyFieldsLogic(fields, "field1", -1)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "target position out of bounds")
+	})
+
+	t.Run("error when target position out of bounds (too large)", func(t *testing.T) {
+		field1 := createField("field1", "Field 1", 0)
+		fields := []PropertyField{field1}
+
+		_, _, err := reorderPropertyFieldsLogic(fields, "field1", 5)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "target position out of bounds")
+	})
+}
