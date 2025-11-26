@@ -155,9 +155,6 @@ func TestConditionService_Create_Limit(t *testing.T) {
 				return &cond, nil
 			})
 
-		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam("condition_created", gomock.Any(), teamID)
-
 		result, err := service.CreatePlaybookCondition(userID, conditionWithDeleteAt, teamID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -272,9 +269,6 @@ func TestConditionService_Update(t *testing.T) {
 				require.Equal(t, existingDeletedCondition.DeleteAt, cond.DeleteAt, "DeleteAt should be preserved from existing condition")
 				return &cond, nil
 			})
-
-		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam("condition_updated", gomock.Any(), teamID)
 
 		result, err := service.UpdatePlaybookCondition(userID, updateWithDifferentDeleteAt, teamID)
 		require.NoError(t, err)
