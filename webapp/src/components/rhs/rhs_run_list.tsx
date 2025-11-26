@@ -41,7 +41,6 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import Tooltip from 'src/components/widgets/tooltip';
-import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
@@ -190,106 +189,100 @@ const RHSRunList = (props: Props) => {
                 </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
-                <Header>
-                    <DotMenu
-                        dotMenuButton={TitleButton}
-                        placement='bottom-start'
-                        icon={
-                            <FilterMenuTitle data-testid='rhs-runs-filter-menu'>
-                                {filterMenuTitleText}
-                                <i className={'icon icon-chevron-down'}/>
-                            </FilterMenuTitle>
-                        }
-                    >
-                        <FilterMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
+                {!isDirectOrGroupMessage && (
+                    <Header>
+                        <DotMenu
+                            dotMenuButton={TitleButton}
+                            placement='bottom-start'
+                            icon={
+                                <FilterMenuTitle data-testid='rhs-runs-filter-menu'>
+                                    {filterMenuTitleText}
+                                    <i className={'icon icon-chevron-down'}/>
+                                </FilterMenuTitle>
+                            }
                         >
-                            {formatMessage({defaultMessage: 'In progress'})}
-                            <FilterMenuNumericValue>
-                                {props.numInProgress}
-                            </FilterMenuNumericValue>
-                        </FilterMenuItem>
-                        <FilterMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
-                        >
-                            {formatMessage({defaultMessage: 'Finished'})}
-                            <FilterMenuNumericValue>
-                                {props.numFinished}
-                            </FilterMenuNumericValue>
-                        </FilterMenuItem>
-                    </DotMenu>
-                    <Spacer/>
-                    <SegmentedButtonContainer>
-                        <ConditionalTooltip
-                            show={isDirectOrGroupMessage}
-                            id='create-checklist-disabled-dm-gm'
-                            content={formatMessage({defaultMessage: "Checklists aren't available for direct or group messages"})}
-                            disableChildrenOnShow={true}
-                        >
+                            <FilterMenuItem
+                                onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
+                            >
+                                {formatMessage({defaultMessage: 'In progress'})}
+                                <FilterMenuNumericValue>
+                                    {props.numInProgress}
+                                </FilterMenuNumericValue>
+                            </FilterMenuItem>
+                            <FilterMenuItem
+                                onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
+                            >
+                                {formatMessage({defaultMessage: 'Finished'})}
+                                <FilterMenuNumericValue>
+                                    {props.numFinished}
+                                </FilterMenuNumericValue>
+                            </FilterMenuItem>
+                        </DotMenu>
+                        <Spacer/>
+                        <SegmentedButtonContainer>
                             <PrimaryActionButton
                                 onClick={handleCreateBlankChecklist}
                                 data-testid='create-blank-checklist'
-                                disabled={isDirectOrGroupMessage}
                             >
                                 <PlusIcon size={18}/>
                                 {formatMessage({defaultMessage: 'New checklist'})}
                             </PrimaryActionButton>
-                        </ConditionalTooltip>
+                            <DotMenu
+                                dotMenuButton={DropdownTriggerButton}
+                                placement='bottom-start'
+                                icon={<i className={'icon icon-chevron-down'}/>}
+                            >
+                                <CreateChecklistMenuItem
+                                    onClick={handleStartRun}
+                                    data-testid='create-from-playbook'
+                                >
+                                    <MenuItemIcon>
+                                        <PlayOutlineIcon size={18}/>
+                                    </MenuItemIcon>
+                                    <FormattedMessage defaultMessage='Run a playbook'/>
+                                </CreateChecklistMenuItem>
+                                <Separator/>
+                                <CreateChecklistMenuItem
+                                    onClick={handleGoToPlaybooks}
+                                    data-testid='go-to-playbooks'
+                                >
+                                    <MenuItemIcon>
+                                        <PlaybooksProductIcon/>
+                                    </MenuItemIcon>
+                                    <FormattedMessage defaultMessage='Go to Playbooks'/>
+                                </CreateChecklistMenuItem>
+                            </DotMenu>
+                        </SegmentedButtonContainer>
                         <DotMenu
-                            dotMenuButton={DropdownTriggerButton}
+                            dotMenuButton={SortDotMenuButton}
                             placement='bottom-start'
-                            icon={<i className={'icon icon-chevron-down'}/>}
+                            icon={<SortAscendingIcon size={18}/>}
                         >
-                            <CreateChecklistMenuItem
-                                onClick={handleStartRun}
-                                data-testid='create-from-playbook'
-                            >
-                                <MenuItemIcon>
-                                    <PlayOutlineIcon size={18}/>
-                                </MenuItemIcon>
-                                <FormattedMessage defaultMessage='Run a playbook'/>
-                            </CreateChecklistMenuItem>
-                            <Separator/>
-                            <CreateChecklistMenuItem
-                                onClick={handleGoToPlaybooks}
-                                data-testid='go-to-playbooks'
-                            >
-                                <MenuItemIcon>
-                                    <PlaybooksProductIcon/>
-                                </MenuItemIcon>
-                                <FormattedMessage defaultMessage='Go to Playbooks'/>
-                            </CreateChecklistMenuItem>
+                            <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
+                            <SortMenuItem
+                                label={formatMessage({defaultMessage: 'Recently created'})}
+                                sortItem={'create_at'}
+                                sortDirection={'DESC'}
+                                options={props.options}
+                                setOptions={props.setOptions}
+                            />
+                            <SortMenuItem
+                                label={formatMessage({defaultMessage: 'Last status update'})}
+                                sortItem={'last_status_update_at'}
+                                sortDirection={'DESC'}
+                                options={props.options}
+                                setOptions={props.setOptions}
+                            />
+                            <SortMenuItem
+                                label={formatMessage({defaultMessage: 'Alphabetically'})}
+                                sortItem={'name'}
+                                sortDirection={'ASC'}
+                                options={props.options}
+                                setOptions={props.setOptions}
+                            />
                         </DotMenu>
-                    </SegmentedButtonContainer>
-                    <DotMenu
-                        dotMenuButton={SortDotMenuButton}
-                        placement='bottom-start'
-                        icon={<SortAscendingIcon size={18}/>}
-                    >
-                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
-                        <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Recently created'})}
-                            sortItem={'create_at'}
-                            sortDirection={'DESC'}
-                            options={props.options}
-                            setOptions={props.setOptions}
-                        />
-                        <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Last status update'})}
-                            sortItem={'last_status_update_at'}
-                            sortDirection={'DESC'}
-                            options={props.options}
-                            setOptions={props.setOptions}
-                        />
-                        <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Alphabetically'})}
-                            sortItem={'name'}
-                            sortDirection={'ASC'}
-                            options={props.options}
-                            setOptions={props.setOptions}
-                        />
-                    </DotMenu>
-                </Header>
+                    </Header>
+                )}
                 {showNoRuns &&
                     <>
                         <NoRunsWrapper>
@@ -469,11 +462,6 @@ const PrimaryActionButton = styled.button`
 
     &:active {
         background: rgba(var(--button-bg-rgb), 0.16);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
     }
 `;
 
@@ -891,7 +879,7 @@ const NoRuns = (props: NoRunsProps) => {
     let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
 
     if (props.isDirectOrGroupMessage) {
-        text = formatMessage({defaultMessage: 'Checklists aren\'t available for direct or group messages'});
+        text = formatMessage({defaultMessage: "Checklists aren't available for direct or group messages"});
     } else if (props.active && props.numFinished > 0) {
         text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
     } else if (!props.active) {
