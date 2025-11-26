@@ -223,7 +223,7 @@ const RHSRunList = (props: Props) => {
                         <ConditionalTooltip
                             show={isDirectOrGroupMessage}
                             id='create-checklist-disabled-dm-gm'
-                            content={formatMessage({defaultMessage: 'Checklists are not available in direct or group messages'})}
+                            content={formatMessage({defaultMessage: "Checklists aren't available for direct or group messages"})}
                             disableChildrenOnShow={true}
                         >
                             <PrimaryActionButton
