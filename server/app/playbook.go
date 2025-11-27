@@ -155,6 +155,20 @@ func (p Playbook) Clone() Playbook {
 	return newPlaybook
 }
 
+func (p *Playbook) SwapConditionIDs(conditionMapping map[string]*Condition) {
+	for i := range p.Checklists {
+		for j := range p.Checklists[i].Items {
+			item := &p.Checklists[i].Items[j]
+			if item.ConditionID != "" {
+				if newCondition, exists := conditionMapping[item.ConditionID]; exists {
+					item.ConditionID = newCondition.ID
+					item.ConditionAction = ConditionActionHidden
+				}
+			}
+		}
+	}
+}
+
 func (p Playbook) MarshalJSON() ([]byte, error) {
 	type Alias Playbook
 
