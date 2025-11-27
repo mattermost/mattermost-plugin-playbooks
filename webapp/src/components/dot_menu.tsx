@@ -144,6 +144,8 @@ export const DropdownMenuItemStyled = styled.a`
         font-style: normal;
         font-weight: normal;
         text-decoration: unset;
+        display: flex;
+        align-items: center;
 
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.08);
