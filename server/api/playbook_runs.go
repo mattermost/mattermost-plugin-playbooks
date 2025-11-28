@@ -244,12 +244,6 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 			return
 		}
 
-		// Validate name length (Mattermost channel display names have a 64 character limit)
-		if len(newName) > 64 {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must be 64 characters or fewer", errors.New("name field exceeds 64 characters"))
-			return
-		}
-
 		// Prevent renaming finished runs
 		if oldPlaybookRun.CurrentStatus == app.StatusFinished {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)

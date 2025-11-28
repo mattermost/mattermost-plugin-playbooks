@@ -2291,16 +2291,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
-	t.Run("update run name with name exceeding 64 characters fails", func(t *testing.T) {
-		longName := strings.Repeat("a", 65) // 65 characters
-		_, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
-			Name: &longName,
-		})
-		require.Error(t, err)
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-	})
-
-	t.Run("update run name with exactly 64 characters succeeds", func(t *testing.T) {
+	t.Run("update run name with name exceeding 64 characters succeeds", func(t *testing.T) {
 		// Create a fresh run for this test
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Test Run",
@@ -2310,12 +2301,12 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		exactLengthName := strings.Repeat("a", 64) // Exactly 64 characters
+		longName := strings.Repeat("a", 65) // 65 characters
 		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
-			Name: &exactLengthName,
+			Name: &longName,
 		})
 		require.NoError(t, err)
-		require.Equal(t, exactLengthName, updatedRun.Name)
+		require.Equal(t, longName, updatedRun.Name)
 	})
 
 	t.Run("update finished run name fails", func(t *testing.T) {
