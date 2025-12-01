@@ -251,10 +251,10 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		}
 
 		// Update the name using GraphqlUpdate
-		setmap := map[string]interface{}{
+		fieldsToUpdate := map[string]interface{}{
 			"Name": newName,
 		}
-		if err := h.playbookRunService.GraphqlUpdate(playbookRunID, setmap); err != nil {
+		if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
 			h.HandleError(w, c.logger, err)
 			return
 		}
