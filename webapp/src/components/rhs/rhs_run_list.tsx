@@ -353,6 +353,7 @@ const PoweredByText = styled.div`
 const ProductName = styled.span`
     i {
         font-size: 16px;
+        display: inline-block;
     }
 `;
 
