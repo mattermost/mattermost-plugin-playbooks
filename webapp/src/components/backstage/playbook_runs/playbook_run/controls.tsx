@@ -325,11 +325,10 @@ export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
         // Navigate to create new playbook with the run's checklists as a template
         create({
             teamId: props.playbookRun.team_id,
-            description: formatMessage({defaultMessage: 'Created from "{runName}"'}, {runName: props.playbookRun.name}),
-        }, {
-            title: props.playbookRun.name,
             description: props.playbookRun.summary || formatMessage({defaultMessage: 'Created from "{runName}"'}, {runName: props.playbookRun.name}),
             public: true,
+            name: props.playbookRun.name,
+        }, {
             checklists: sanitizedChecklists,
         });
     };
