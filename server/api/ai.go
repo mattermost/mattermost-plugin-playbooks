@@ -4,7 +4,7 @@
 package api
 
 import (
-	"encoding/base64"
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -91,7 +91,7 @@ func (h *AIHandler) playbookCompletion(c *Context, w http.ResponseWriter, r *htt
 				return
 			}
 
-			// Convert files to base64 and attach to the last post
+			// Upload files to Mattermost and get real file IDs
 			if len(request.Posts) > 0 && len(files) > 0 {
 				lastPostIdx := len(request.Posts) - 1
 				request.Posts[lastPostIdx].Files = make([]ai.File, 0, len(files))
@@ -116,24 +116,24 @@ func (h *AIHandler) playbookCompletion(c *Context, w http.ResponseWriter, r *htt
 						return
 					}
 
-					// Encode to base64
-					base64Data := base64.StdEncoding.EncodeToString(fileData)
-
-					// Detect mime type from header
-					mimeType := fileHeader.Header.Get("Content-Type")
-					if mimeType == "" {
-						mimeType = "application/octet-stream"
+					// Upload file to Mattermost to get a real file ID
+					// Create a temporary channel for file uploads (using DM channel with bot or a system channel)
+					// For now, we'll upload without a channel ID (orphaned file)
+					fileInfo, appErr := h.pluginAPI.File.Upload(bytes.NewReader(fileData), fileHeader.Filename, "")
+					if appErr != nil {
+						h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "Failed to upload file to Mattermost", appErr)
+						return
 					}
 
-					// Add to post
+					// Add the real Mattermost file ID to the post
 					request.Posts[lastPostIdx].Files = append(request.Posts[lastPostIdx].Files, ai.File{
-						ID:       fileHeader.Filename, // Use filename as ID for now
-						Name:     fileHeader.Filename,
-						MimeType: mimeType,
-						Data:     base64Data,
+						ID:       fileInfo.Id,
+						Name:     fileInfo.Name,
+						MimeType: fileInfo.MimeType,
+						Data:     "", // No need to send base64 data, bridge will fetch by ID
 					})
 
-					c.logger.WithField("file", fileHeader.Filename).WithField("index", i).Debug("Processed uploaded file")
+					c.logger.WithField("file", fileHeader.Filename).WithField("fileID", fileInfo.Id).WithField("index", i).Debug("Uploaded file to Mattermost")
 				}
 			}
 		}
@@ -155,7 +155,7 @@ func (h *AIHandler) playbookCompletion(c *Context, w http.ResponseWriter, r *htt
 	// For now, we assume authenticated users can use this feature
 
 	// Get completion from AI service
-	response, err := h.aiService.GetCompletion(request.Posts)
+	response, err := h.aiService.GetCompletion(userID, request.Posts)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "Failed to get AI completion", err)
 		return

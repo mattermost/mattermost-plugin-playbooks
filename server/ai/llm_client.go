@@ -6,7 +6,7 @@ package ai
 import (
 	"github.com/pkg/errors"
 
-	aiclient "github.com/mattermost/mattermost-plugin-ai/public/client"
+	aiclient "github.com/mattermost/mattermost-plugin-ai/public/bridgeclient"
 	"github.com/mattermost/mattermost/server/public/plugin"
 )
 
@@ -113,7 +113,7 @@ type CompletionResponse struct {
 }
 
 // GetCompletion sends a conversation to the LLM agent and returns the response
-func (s *Service) GetCompletion(posts []Post) (string, error) {
+func (s *Service) GetCompletion(userID string, posts []Post) (string, error) {
 	if len(posts) == 0 {
 		return "", errors.New("posts cannot be empty")
 	}
@@ -135,18 +135,13 @@ func (s *Service) GetCompletion(posts []Post) (string, error) {
 			Message: post.Message,
 		}
 
-		// Include files if present
+		// Include file IDs if present
 		if len(post.Files) > 0 {
-			clientFiles := make([]aiclient.File, len(post.Files))
+			fileIDs := make([]string, len(post.Files))
 			for i, f := range post.Files {
-				clientFiles[i] = aiclient.File{
-					ID:       f.ID,
-					Name:     f.Name,
-					MimeType: f.MimeType,
-					Data:     f.Data,
-				}
+				fileIDs[i] = f.ID
 			}
-			clientPost.Files = clientFiles
+			clientPost.FileIDs = fileIDs
 		}
 
 		allPosts = append(allPosts, clientPost)
@@ -154,7 +149,8 @@ func (s *Service) GetCompletion(posts []Post) (string, error) {
 
 	// Create the completion request with system prompt + conversation
 	request := aiclient.CompletionRequest{
-		Posts: allPosts,
+		Posts:  allPosts,
+		UserID: userID,
 	}
 
 	// Call the AI agent
@@ -188,31 +184,26 @@ type AIBotsResponse struct {
 
 // GetAIBots fetches the available AI bots from the AI plugin
 func (s *Service) GetAIBots() (*AIBotsResponse, error) {
-	// Call the AI plugin to get bots
-	botsResp, err := s.client.GetAIBots()
+	// Call the AI plugin to get agents (bots)
+	agents, err := s.client.GetAgents("")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get AI bots")
+		return nil, errors.Wrap(err, "failed to get AI agents")
 	}
 
 	// Convert to our response format
-	bots := make([]AIBot, len(botsResp.Bots))
-	for i, bot := range botsResp.Bots {
+	bots := make([]AIBot, len(agents))
+	for i, agent := range agents {
 		bots[i] = AIBot{
-			ID:                 bot.ID,
-			DisplayName:        bot.DisplayName,
-			Username:           bot.Username,
-			LastIconUpdate:     bot.LastIconUpdate,
-			DMChannelID:        bot.DMChannelID,
-			ChannelAccessLevel: string(bot.ChannelAccessLevel),
-			ChannelIDs:         bot.ChannelIDs,
-			UserAccessLevel:    string(bot.UserAccessLevel),
-			UserIDs:            bot.UserIDs,
+			ID:          agent.ID,
+			DisplayName: agent.DisplayName,
+			Username:    agent.Username,
+			// Note: bridgeclient.BridgeAgentInfo doesn't include all fields
+			// The UI may need to be updated to use the available fields
 		}
 	}
 
 	return &AIBotsResponse{
-		Bots:             bots,
-		SearchEnabled:    botsResp.SearchEnabled,
-		AllowUnsafeLinks: botsResp.AllowUnsafeLinks,
+		Bots: bots,
+		// Note: SearchEnabled and AllowUnsafeLinks are not available in bridge API
 	}, nil
 }
