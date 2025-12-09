@@ -115,8 +115,7 @@ describe('playbooks > list', {testIsolation: true}, () => {
         });
     });
 
-    it.only('can duplicate playbook with attributes and conditions', () => {
-        let playbookWithAttrs;
+    it('can duplicate playbook with attributes and conditions', () => {
         let priorityField;
         let statusField;
 
@@ -126,7 +125,6 @@ describe('playbooks > list', {testIsolation: true}, () => {
             title: 'Playbook with Attributes',
             userId: testUser.id,
         }).then((playbook) => {
-            playbookWithAttrs = playbook;
 
             // # Add a text attribute
             cy.apiAddPropertyField(playbook.id, {
