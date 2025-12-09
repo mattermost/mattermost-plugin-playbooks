@@ -125,7 +125,6 @@ describe('playbooks > list', {testIsolation: true}, () => {
             title: 'Playbook with Attributes',
             userId: testUser.id,
         }).then((playbook) => {
-
             // # Add a text attribute
             cy.apiAddPropertyField(playbook.id, {
                 name: 'Customer Name',
