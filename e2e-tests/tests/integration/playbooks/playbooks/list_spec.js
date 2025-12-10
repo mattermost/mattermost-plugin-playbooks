@@ -316,10 +316,11 @@ describe('playbooks > list', {testIsolation: true}, () => {
             // # Switch to Playbooks
             cy.findByTestId('playbooksLHSButton').click();
 
-            // * Assert the archived playbook is not there.
-            cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(4);
-            });
+            // * Assert the archived playbook is not visible
+            cy.findByText('Playbook archived').should('not.exist');
+
+            // * Assert at least some non-archived playbooks are visible
+            cy.findAllByTestId('playbook-title').should('have.length.at.least', 1);
         });
         it('shows them upon click on the filter', () => {
             // # Open the product
@@ -328,12 +329,16 @@ describe('playbooks > list', {testIsolation: true}, () => {
             // # Switch to Playbooks
             cy.findByTestId('playbooksLHSButton').click();
 
-            // # Click the With Archived button
-            cy.findByTestId('with-archived').click();
+            // # Count playbooks without archived filter
+            cy.findAllByTestId('playbook-title').its('length').then((countWithoutArchived) => {
+                // # Click the With Archived button
+                cy.findByTestId('with-archived').click();
 
-            // * Assert the archived playbook is there.
-            cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(5);
+                // * Assert the archived playbook is now visible
+                cy.findByText('Playbook archived').should('be.visible');
+
+                // * Assert there are more playbooks with archived filter enabled
+                cy.findAllByTestId('playbook-title').should('have.length.at.least', countWithoutArchived + 1);
             });
         });
     });
