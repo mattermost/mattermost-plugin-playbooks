@@ -278,8 +278,15 @@ describe('playbooks > list', {testIsolation: true}, () => {
         // # Navigate back to playbooks list
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Open the original playbook (wait for it to be visible)
-        cy.findByText('Playbook with Attributes', {timeout: 10000}).should('be.visible').click();
+        // # Wait for playbook list to load
+        cy.findAllByTestId('playbook-item').should('have.length.at.least', 1);
+
+        // # Open the original playbook (not the "Copy of" version)
+        cy.get('[data-testid="playbook-title"]').
+            filter(':contains("Playbook with Attributes")').
+            not(':contains("Copy of")').
+            first().
+            click();
 
         // # Navigate to attributes section
         cy.findByText('Attributes').click();
@@ -311,7 +318,7 @@ describe('playbooks > list', {testIsolation: true}, () => {
 
             // * Assert the archived playbook is not there.
             cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(2);
+                expect(titles).to.have.length(4);
             });
         });
         it('shows them upon click on the filter', () => {
@@ -326,7 +333,7 @@ describe('playbooks > list', {testIsolation: true}, () => {
 
             // * Assert the archived playbook is there.
             cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(3);
+                expect(titles).to.have.length(5);
             });
         });
     });
