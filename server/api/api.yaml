@@ -569,10 +569,6 @@ paths:
             schema:
               type: object
               properties:
-                active_stage:
-                  type: integer
-                  description: Zero-based index of the stage that will be made active.
-                  example: 2
                 name:
                   type: string
                   description: The new name of the playbook run.
@@ -583,7 +579,7 @@ paths:
             curl -X PATCH 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"active_stage": 2}'
+            -d '{"name": "Updated Server Down Incident"}'
       responses:
         200:
           description: Playbook run successfully updated.
