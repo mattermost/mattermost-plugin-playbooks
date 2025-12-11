@@ -233,9 +233,13 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		return
 	}
 
-	var updates struct {
-		Name *string `json:"name"`
+	// Prevent renaming finished runs
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)
+		return
 	}
+
+	var updates client.PlaybookRunUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
 		return
@@ -243,22 +247,16 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 
 	// If name is being updated, validate and apply the change
 	if updates.Name != nil {
-		newName := strings.TrimSpace(*updates.Name)
-		if newName == "" {
+
+		fieldsToUpdate := map[string]interface{}{
+			"Name": strings.TrimSpace(*updates.Name),
+		}
+		if strings.TrimSpace(*updates.Name) == "" {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
 			return
 		}
 
-		// Prevent renaming finished runs
-		if oldPlaybookRun.CurrentStatus == app.StatusFinished {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)
-			return
-		}
-
 		// Update the name using GraphqlUpdate
-		fieldsToUpdate := map[string]interface{}{
-			"Name": newName,
-		}
 		if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
 			h.HandleError(w, c.logger, err)
 			return
