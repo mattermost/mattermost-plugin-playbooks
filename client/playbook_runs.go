@@ -160,6 +160,24 @@ func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID str
 	return nil
 }
 
+// Update updates a playbook run.
+func (s *PlaybookRunService) Update(ctx context.Context, playbookRunID string, updates PlaybookRunUpdateOptions) (*PlaybookRun, error) {
+	updateURL := fmt.Sprintf("runs/%s", playbookRunID)
+	req, err := s.client.newAPIRequest(http.MethodPatch, updateURL, updates)
+	if err != nil {
+		return nil, err
+	}
+
+	playbookRun := new(PlaybookRun)
+	resp, err := s.client.do(ctx, req, playbookRun)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return playbookRun, nil
+}
+
 func (s *PlaybookRunService) RequestUpdate(ctx context.Context, playbookRunID, userID string) error {
 	requestURL := fmt.Sprintf("runs/%s/request-update", playbookRunID)
 	req, err := s.client.newAPIRequest(http.MethodPost, requestURL, nil)
