@@ -202,11 +202,14 @@ describe('playbooks > list', {testIsolation: true}, () => {
         // # Click on duplicate
         cy.findByText('Duplicate').click();
 
-        // * Verify that playbook got duplicated
-        cy.findByText('Copy of Playbook with Attributes', {timeout: 10000}).should('exist');
+        // * Verify that playbook got duplicated (there may be multiple from previous runs)
+        cy.contains('Copy of Playbook with Attributes', {timeout: 10000}).should('be.visible');
 
-        // # Click on the duplicated playbook to open it
-        cy.findByText('Copy of Playbook with Attributes').click();
+        // # Click on the duplicated playbook to open it (use first match if multiple exist)
+        cy.get('[data-testid="playbook-title"]').
+            contains('Copy of Playbook with Attributes').
+            first().
+            click();
 
         // # Navigate to attributes section
         cy.findByText('Attributes').click();
