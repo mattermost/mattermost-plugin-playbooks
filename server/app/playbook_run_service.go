@@ -268,7 +268,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	return results, nil
 }
 
-func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
+func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	return fmt.Sprintf(
 		"##### [%s](%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
@@ -586,8 +586,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if pb != nil {
-		var messageTemplate string
-		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, playbookRun, reporter)
+		var message string
+		message, err = s.buildPlaybookRunCreationMessage(pb.Title, pb.ID, playbookRun, reporter)
 		if err != nil {
 			err := errors.Wrapf(err, "failed to build the playbook run creation message")
 			auditRec.AddErrorDesc(err.Error())
@@ -595,11 +595,11 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		if playbookRun.StatusUpdateBroadcastChannelsEnabled {
-			s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun, logger)
+			s.broadcastPlaybookRunMessageToChannels(playbookRun.BroadcastChannelIDs, &model.Post{Message: message}, creationMessage, playbookRun, logger)
 		}
 
 		// dm to users who are auto-following the playbook
-		err = s.dmPostToAutoFollows(&model.Post{Message: messageTemplate}, pb.ID, playbookRun.ID, userID)
+		err = s.dmPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID)
 		if err != nil {
 			logger.WithError(err).Error("failed to dm post to auto follows")
 		}
