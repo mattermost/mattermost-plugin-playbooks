@@ -3,6 +3,7 @@
 
 import React, {
     forwardRef,
+    useEffect,
     useImperativeHandle,
     useRef,
     useState,
@@ -17,6 +18,7 @@ interface Props {
     field: PropertyField;
     updateField: (field: PropertyField) => void;
     existingNames: string[];
+    autoFocus?: boolean;
 }
 
 export interface PropertyNameInputRef {
@@ -24,13 +26,21 @@ export interface PropertyNameInputRef {
     select: () => void;
 }
 
-const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updateField, existingNames}, ref) => {
+const PropertyNameInput = forwardRef<PropertyNameInputRef, Props>(({field, updateField, existingNames, autoFocus}, ref) => {
     const {formatMessage} = useIntl();
 
     const [localValue, setLocalValue] = useState<string | null>(null);
     const [originalValue, setOriginalValue] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Auto-focus and select on mount if requested
+    useEffect(() => {
+        if (autoFocus && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [autoFocus]);
 
     useImperativeHandle(ref, () => ({
         focus: () => inputRef.current?.focus(),
