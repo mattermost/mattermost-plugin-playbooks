@@ -222,6 +222,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+	fieldsToUpdate := map[string]interface{}{}
 
 	oldPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -248,33 +249,27 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	// If name is being updated, validate and apply the change
 	if updates.Name != nil {
 
-		fieldsToUpdate := map[string]interface{}{
-			"Name": strings.TrimSpace(*updates.Name),
-		}
-		if strings.TrimSpace(*updates.Name) == "" {
+		fieldsToUpdate["Name"] = strings.TrimSpace(*updates.Name)
+		if fieldsToUpdate["Name"] == "" {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
 			return
 		}
+	}
 
-		// Update the name using GraphqlUpdate
-		if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
-			h.HandleError(w, c.logger, err)
-			return
-		}
-
-		// Retrieve the updated playbook run
-		updatedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-		if err != nil {
-			h.HandleError(w, c.logger, err)
-			return
-		}
-
-		ReturnJSON(w, updatedPlaybookRun, http.StatusOK)
+	// Update using GraphqlUpdate
+	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	// If no updates were provided, return the existing run
-	ReturnJSON(w, oldPlaybookRun, http.StatusOK)
+	// Retrieve the updated playbook run
+	updatedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, updatedPlaybookRun, http.StatusOK)
 }
 
 // createPlaybookRunFromDialog handles the interactive dialog submission when a user presses confirm on
