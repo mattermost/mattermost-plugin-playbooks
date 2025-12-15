@@ -248,7 +248,6 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 
 	// If name is being updated, validate and apply the change
 	if updates.Name != nil {
-
 		fieldsToUpdate["Name"] = strings.TrimSpace(*updates.Name)
 		if fieldsToUpdate["Name"] == "" {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
