@@ -169,11 +169,9 @@ type Playbook {
 	signalAnyKeywordsEnabled: Boolean!
 	categorizeChannelEnabled: Boolean!
 	categoryName: String!
-	runSummaryTemplateEnabled: Boolean!
 	runSummaryTemplate: String!
 	channelNameTemplate: String!
 	defaultPlaybookAdminRole: String!
-	defaultPlaybookMemberRole: String!
 	defaultRunAdminRole: String!
 	defaultRunMemberRole: String!
 	metrics: [PlaybookMetricConfig!]!
@@ -286,7 +284,6 @@ type Run {
 	previousReminder: Float!
 
 	statusUpdateBroadcastChannelsEnabled: Boolean!
-	statusUpdateBroadcastWebhooksEnabled: Boolean!
 	broadcastChannelIDs: [String!]!
 	webhookOnStatusUpdateURLs: [String!]!
 	createChannelMemberOnNewParticipant: Boolean!
