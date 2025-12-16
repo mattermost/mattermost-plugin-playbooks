@@ -1325,3 +1325,147 @@ func TestConditionService_EvaluateAllConditionsForRun(t *testing.T) {
 		require.True(t, result.AnythingAdded())
 	})
 }
+
+func TestConditionService_CopyPlaybookConditionsToPlaybook(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockConditionStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	service := app.NewConditionService(mockStore, mockPropertyService, mockPoster, mockAuditor)
+
+	sourcePlaybookID := model.NewId()
+	targetPlaybookID := model.NewId()
+	sourceFieldID := model.NewId()
+	targetFieldID := model.NewId()
+
+	propertyMappings := &app.PropertyCopyResult{
+		FieldMappings: map[string]string{
+			sourceFieldID: targetFieldID,
+		},
+		OptionMappings: make(map[string]string),
+		CopiedFields: []app.PropertyField{
+			{
+				PropertyField: model.PropertyField{
+					ID:   targetFieldID,
+					Type: model.PropertyFieldTypeText,
+				},
+			},
+		},
+	}
+
+	t.Run("successfully copies conditions", func(t *testing.T) {
+		sourceConditionID := model.NewId()
+
+		sourceConditions := []app.Condition{
+			{
+				ID:         sourceConditionID,
+				PlaybookID: sourcePlaybookID,
+				RunID:      "",
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: sourceFieldID,
+						Value:   json.RawMessage(`"test_value"`),
+					},
+				},
+				CreateAt: 1000,
+				UpdateAt: 2000,
+			},
+		}
+
+		mockStore.EXPECT().
+			GetPlaybookConditions(sourcePlaybookID, 0, app.MaxConditionsPerPlaybook).
+			Return(sourceConditions, nil)
+
+		mockStore.EXPECT().
+			CreateCondition(targetPlaybookID, gomock.Any()).
+			DoAndReturn(func(playbookID string, condition app.Condition) (*app.Condition, error) {
+				require.Equal(t, targetPlaybookID, condition.PlaybookID)
+				require.Empty(t, condition.RunID)
+				require.Empty(t, condition.ID)
+
+				createdCondition := condition
+				createdCondition.ID = model.NewId()
+				return &createdCondition, nil
+			})
+
+		result, err := service.CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID, propertyMappings)
+
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+		require.NotNil(t, result[sourceConditionID])
+	})
+
+	t.Run("successfully copies multiple conditions", func(t *testing.T) {
+		condition1ID := model.NewId()
+		condition2ID := model.NewId()
+
+		sourceConditions := []app.Condition{
+			{
+				ID:         condition1ID,
+				PlaybookID: sourcePlaybookID,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: sourceFieldID,
+						Value:   json.RawMessage(`"value1"`),
+					},
+				},
+			},
+			{
+				ID:         condition2ID,
+				PlaybookID: sourcePlaybookID,
+				ConditionExpr: &app.ConditionExprV1{
+					IsNot: &app.ComparisonCondition{
+						FieldID: sourceFieldID,
+						Value:   json.RawMessage(`"value2"`),
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			GetPlaybookConditions(sourcePlaybookID, 0, app.MaxConditionsPerPlaybook).
+			Return(sourceConditions, nil)
+
+		mockStore.EXPECT().
+			CreateCondition(targetPlaybookID, gomock.Any()).
+			Times(2).
+			DoAndReturn(func(playbookID string, condition app.Condition) (*app.Condition, error) {
+				createdCondition := condition
+				createdCondition.ID = model.NewId()
+				return &createdCondition, nil
+			})
+
+		result, err := service.CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID, propertyMappings)
+
+		require.NoError(t, err)
+		require.Len(t, result, 2)
+	})
+
+	t.Run("returns empty map when no conditions exist", func(t *testing.T) {
+		mockStore.EXPECT().
+			GetPlaybookConditions(sourcePlaybookID, 0, app.MaxConditionsPerPlaybook).
+			Return([]app.Condition{}, nil)
+
+		result, err := service.CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID, propertyMappings)
+
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+
+	t.Run("returns error when getting source conditions fails", func(t *testing.T) {
+		expectedError := errors.New("database error")
+
+		mockStore.EXPECT().
+			GetPlaybookConditions(sourcePlaybookID, 0, app.MaxConditionsPerPlaybook).
+			Return(nil, expectedError)
+
+		result, err := service.CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID, propertyMappings)
+
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
