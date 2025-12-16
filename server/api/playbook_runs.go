@@ -218,10 +218,11 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 	ReturnJSON(w, &playbookRun, http.StatusCreated)
 }
 
-// Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status.
 func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+	fieldsToUpdate := map[string]interface{}{}
 
 	oldPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -229,13 +230,43 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		return
 	}
 
-	var updates app.UpdateOptions
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+		return
+	}
+
+	// Prevent renaming finished runs
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)
+		return
+	}
+
+	var updates client.PlaybookRunUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	updatedPlaybookRun := oldPlaybookRun
+	// If name is being updated, validate and apply the change
+	if updates.Name != nil {
+		fieldsToUpdate["Name"] = strings.TrimSpace(*updates.Name)
+		if fieldsToUpdate["Name"] == "" {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
+			return
+		}
+	}
+
+	// Update using GraphqlUpdate
+	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Retrieve the updated playbook run
+	updatedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
 
 	ReturnJSON(w, updatedPlaybookRun, http.StatusOK)
 }

@@ -289,6 +289,11 @@ type StatusUpdateOptions struct {
 	FinishRun bool          `json:"finish_run"`
 }
 
+// PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
+type PlaybookRunUpdateOptions struct {
+	Name *string `json:"name,omitempty"`
+}
+
 type RunMetricData struct {
 	MetricConfigID string   `json:"metric_config_id"`
 	Value          null.Int `json:"value"`
