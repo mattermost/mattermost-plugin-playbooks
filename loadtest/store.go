@@ -2,6 +2,7 @@ package loadtest
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
@@ -96,6 +97,9 @@ func (s *PluginStore) SetRunsOnTeam(runs []graphql.RunEdge) error {
 // SetRuns stores the provided runs (encoded as GraphQL RunConnection structs)
 // returned by the RHSRuns GraphQL query.
 func (s *PluginStore) SetRuns(connections graphql.RunConnection) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	if connections.TotalCount == 0 {
 		return nil
 	}
@@ -124,6 +128,9 @@ func (s *PluginStore) SetRuns(connections graphql.RunConnection) error {
 // SetPlaybooks stores the provided playbooks, returned by e.g. the
 // [client.PlaybookService] methods.
 func (s *PluginStore) SetPlaybooks(playbooks []client.Playbook) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	if len(playbooks) == 0 {
 		return nil
 	}
@@ -140,6 +147,31 @@ func (s *PluginStore) SetPlaybooks(playbooks []client.Playbook) error {
 	s.playbooksByTeam[teamID] = append(s.playbooksByTeam[teamID], playbooks...)
 
 	return nil
+}
+
+// SetPlaybook stores the provided playbook, returned by e.g. the
+// [client.PlaybookService] methods.
+func (s *PluginStore) SetPlaybook(playbook client.Playbook) error {
+	return s.SetPlaybooks([]client.Playbook{playbook})
+}
+
+func (s *PluginStore) GetPlaybooks(teamID string) []client.Playbook {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	return s.playbooksByTeam[teamID]
+}
+
+func (s *PluginStore) RandomPlaybook(teamID string) (client.Playbook, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	pbs := s.playbooksByTeam[teamID]
+	if len(pbs) == 0 {
+		return client.Playbook{}, fmt.Errorf("no playbooks in team %q", teamID)
+	}
+
+	return pbs[rand.Intn(len(pbs))], nil
 }
 
 // SetActions stores the provided actions mapped to the provided channel, as returned by the

@@ -13,6 +13,8 @@ replace github.com/ledongthuc/pdf => github.com/ledongthuc/pdf v0.0.0-2024020113
 
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
+replace github.com/mattermost/mattermost-load-test-ng => ../mattermost-load-test-ng
+
 require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/MicahParks/jwkset v0.5.18

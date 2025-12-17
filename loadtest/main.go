@@ -16,4 +16,10 @@ func init() {
 		store.Clear()
 		return &SimulController{store}
 	})
+
+	ltplugins.RegisterPlugin(ltplugins.TypeGenController, func() ltplugins.Plugin {
+		store := &PluginStore{}
+		store.Clear()
+		return &GenController{store}
+	})
 }
