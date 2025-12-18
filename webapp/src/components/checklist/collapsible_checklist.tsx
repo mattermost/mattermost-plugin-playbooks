@@ -28,6 +28,7 @@ export interface Props {
     onDeleteChecklist: (index: number) => void;
     titleHelpText?: React.ReactNode;
     draggableProvided?: DraggableProvided;
+    isChannelChecklist?: boolean;
 }
 
 const CollapsibleChecklist = ({
@@ -44,6 +45,7 @@ const CollapsibleChecklist = ({
     onDeleteChecklist,
     titleHelpText,
     draggableProvided,
+    isChannelChecklist,
 }: Props) => {
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
@@ -91,10 +93,11 @@ const CollapsibleChecklist = ({
                     setNewChecklistTitle(title);
                 }}
                 onSave={() => {
+                    const finalTitle = newChecklistTitle.trim() || 'Untitled section';
                     if (playbookRunID) {
-                        clientRenameChecklist(playbookRunID, index, newChecklistTitle);
+                        clientRenameChecklist(playbookRunID, index, finalTitle);
                     } else {
-                        onRenameChecklist(index, newChecklistTitle);
+                        onRenameChecklist(index, finalTitle);
                     }
                     setTimeout(() => setNewChecklistTitle(''), 300);
                     setIsRenaming(false);
@@ -137,6 +140,7 @@ const CollapsibleChecklist = ({
                 isChecklistSkipped={isChecklistSkipped}
                 onDuplicateChecklist={() => onDuplicateChecklist(index)}
                 onDeleteChecklist={() => onDeleteChecklist(index)}
+                isChannelChecklist={isChannelChecklist}
             />
         );
     };
@@ -152,7 +156,7 @@ const CollapsibleChecklist = ({
                     onMouseEnter={() => setShowMenu(true)}
                     onMouseLeave={() => setShowMenu(false)}
                 >
-                    <Icon className={icon}/>
+                    {!isRenaming && <Icon className={icon}/>}
                     {titleComp}
                     {renderTitleHelpText()}
                     {renderHoverMenu()}
@@ -303,7 +307,7 @@ export const ChecklistInputComponent = (props: ChecklistInputProps) => {
                     e.target.value = '';
                     e.target.value = val;
                 }}
-                placeholder={formatMessage({defaultMessage: 'Add checklist name'})}
+                placeholder={formatMessage({defaultMessage: 'Section name'})}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                         props.onSave();
@@ -330,6 +334,7 @@ const ChecklistInput = styled.input`
     background: var(--center-channel-bg);
     font-size: 14px;
     font-weight: 600;
+    margin-left: 10px;
 
     ::placeholder {
         font-style: italic;

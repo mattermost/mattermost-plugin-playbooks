@@ -18,7 +18,8 @@ export enum TimelineEventType {
     RunFinished = 'run_finished',
     RunRestored = 'run_restored',
     StatusUpdatesEnabled = 'status_updates_enabled',
-    StatusUpdatesDisabled = 'status_updates_disabled'
+    StatusUpdatesDisabled = 'status_updates_disabled',
+    PropertyChanged = 'property_changed'
 }
 
 export interface TimelineEvent {
@@ -77,4 +78,13 @@ export interface UserJoinedLeftDetails {
 export interface TaskStateModifiedDetails {
     action: string | 'check' | 'uncheck' | 'skip' | 'restore';
     task: string;
+}
+
+export interface PropertyChangedDetails {
+    property_field_id: string;
+    property_field_name: string;
+    old_value: string | string[];
+    new_value: string | string[];
+    old_value_display: string | null;
+    new_value_display: string | null;
 }

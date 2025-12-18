@@ -22,6 +22,7 @@ import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as Ta
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
+import {formatConditionExpr} from 'src/utils/condition_format';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 
@@ -54,8 +55,6 @@ export enum ButtonsFormat {
     Short = 'short',
 }
 
-const defaultButtonsFormat = ButtonsFormat.Short;
-
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
     checklistNum: number;
@@ -83,16 +82,49 @@ interface ChecklistItemProps {
     onRemoveFromCondition?: () => void;
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
+    conditions?: Condition[];
     propertyFields?: PropertyField[];
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
+    onSaveAndAddNew?: () => void;
+    isChannelChecklist?: boolean;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
+    const isPlaybookEditor = !props.playbookRunId;
 
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
+
+    const getConditionTooltip = (item: ChecklistItemType): string => {
+        if (item.condition_action === 'shown_because_modified') {
+            return formatMessage({
+                defaultMessage: 'Condition no longer met, but task shown because it was modified',
+            });
+        }
+
+        // Get the reason - either from the item or format the condition expression
+        let reason = item.condition_reason;
+        if (!reason && item.condition_id && props.conditions && props.propertyFields) {
+            const condition = props.conditions.find((c) => c.id === item.condition_id);
+            if (condition) {
+                reason = formatConditionExpr(condition.condition_expr, props.propertyFields);
+            }
+        }
+
+        if (isPlaybookEditor) {
+            return formatMessage(
+                {defaultMessage: 'Shown when {reason}'},
+                {reason},
+            );
+        }
+
+        return formatMessage(
+            {defaultMessage: 'Shown because {reason}'},
+            {reason},
+        );
+    };
     const [isEditing, setIsEditing] = useState(props.newItem);
     const [isHoverMenuItemOpen, setIsHoverMenuItemOpen] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
@@ -101,7 +133,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
-    const buttonsFormat = props.buttonsFormat ?? defaultButtonsFormat;
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
 
     // Notify parent when editing state changes
@@ -207,7 +238,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderAssignTo = (): null | React.ReactNode => {
-        if (buttonsFormat !== ButtonsFormat.Long && (!assigneeID && !isEditing)) {
+        if (!isEditing && !assigneeID) {
+            // when not editing, hide when not set
             return null;
         }
 
@@ -218,12 +250,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={isEditing || (!props.readOnly && !isSkipped())}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
+                isEditing={isEditing}
             />
         );
     };
 
     const renderCommand = (): null | React.ReactNode => {
-        if (buttonsFormat !== ButtonsFormat.Long && (!command && !isEditing)) {
+        if (!isEditing && !command) {
+            // when not editing, hide when not set
             return null;
         }
         return (
@@ -243,7 +277,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const renderDueDate = (): null | React.ReactNode => {
         const isTaskFinishedOrSkipped = props.checklistItem.state === ChecklistItemState.Closed || isSkipped();
 
-        if (buttonsFormat !== ButtonsFormat.Long && (!dueDate && !isEditing)) {
+        if (!isEditing && !dueDate) {
+            // when not editing, hide when not set
             return null;
         }
 
@@ -255,18 +290,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 mode={props.playbookRunId ? Mode.DateTimeValue : Mode.DurationValue}
                 onSelectedChange={onDueDateChange}
                 placement={'bottom-start'}
+                isEditing={isEditing}
             />
         );
     };
 
     const renderTaskActions = (): null | React.ReactNode => {
-        const haveTaskActions = taskActions?.length > 0;
-        const enabledAction = haveAtleastOneEnabledAction(taskActions);
-        if (
-            buttonsFormat !== ButtonsFormat.Long &&
-            !isEditing &&
-            !(haveTaskActions && enabledAction)
-        ) {
+        const hasEnabledActions = haveAtleastOneEnabledAction(taskActions);
+        if (!isEditing && !hasEnabledActions) {
+            // when not editing, hide when not set
             return null;
         }
 
@@ -275,20 +307,67 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 editable={isEditing || (!props.readOnly && !isSkipped())}
                 taskActions={taskActions}
                 onTaskActionsChange={onTaskActionsChange}
+                isEditing={isEditing}
             />
         );
+    };
+
+    const handleSave = () => {
+        setIsEditing(false);
+        const finalTitle = titleValue.trim() || 'Untitled task';
+        if (props.newItem) {
+            props.cancelAddingItem?.();
+            const newItem = {
+                title: finalTitle,
+                command,
+                description: descValue,
+                state: ChecklistItemState.Open,
+                command_last_run: 0,
+                due_date: dueDate,
+                assignee_id: assigneeID,
+                task_actions: taskActions,
+                state_modified: 0,
+                assignee_modified: 0,
+                condition_id: '',
+                condition_action: '',
+                condition_reason: '',
+            };
+            if (props.playbookRunId) {
+                clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
+            } else {
+                props.onAddChecklistItem?.(newItem);
+            }
+        } else if (props.playbookRunId) {
+            clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
+                title: finalTitle,
+                command,
+                description: descValue,
+            });
+        } else {
+            const newItem = {...props.checklistItem};
+            newItem.title = finalTitle;
+            newItem.command = command;
+            newItem.description = descValue;
+            newItem.task_actions = taskActions;
+            props.onUpdateChecklistItem?.(newItem);
+        }
+    };
+
+    const handleSaveAndAddNew = () => {
+        handleSave();
+        props.onSaveAndAddNew?.();
     };
 
     const renderRow = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
         if (
-            buttonsFormat !== ButtonsFormat.Long &&
+            !isEditing &&
             !assigneeID &&
             !command &&
             !dueDate &&
-            !haveTaskActions &&
-            !isEditing
+            !haveTaskActions
         ) {
+            // when not editing, hide row when nothing is set
             return null;
         }
         return (
@@ -313,6 +392,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 $hoverMenuItemOpen={isHoverMenuItemOpen}
                 $disabled={props.readOnly || isSkipped()}
                 $hasCondition={props.hasCondition ?? false}
+                $isPlaybookEditor={isPlaybookEditor}
             >
                 <CheckboxContainer>
                     {!props.readOnly && !props.dragging &&
@@ -341,6 +421,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onAssignToCondition={props.onAssignToCondition}
                         availableConditions={props.availableConditions}
                         propertyFields={props.propertyFields}
+                        isChannelChecklist={props.isChannelChecklist}
                     />
                     }
                     <DragButton
@@ -352,12 +433,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     />
                     <CheckBoxButton
                         readOnly={props.readOnly}
-                        disabled={isSkipped() || props.playbookRunId === undefined}
+                        disabled={isSkipped() || props.playbookRunId === undefined || props.newItem}
                         item={props.checklistItem}
                         onChange={(item: ChecklistItemState) => props.onChange?.(item)}
                         onReadOnlyInteract={props.onReadOnlyInteract}
                     />
-                    <ConditionIndicator checklistItem={props.checklistItem}/>
+                    <ConditionIndicator
+                        checklistItem={props.checklistItem}
+                        tooltipMessage={getConditionTooltip(props.checklistItem)}
+                    />
                     <ChecklistItemTitleWrapper
                         onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
                     >
@@ -367,6 +451,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                             value={titleValue}
                             skipped={isSkipped()}
                             clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                            onDeleteEmpty={props.newItem ? props.cancelAddingItem : props.onDeleteChecklistItem}
+                            onSaveAndAddNew={props.onSaveAndAddNew ? handleSaveAndAddNew : undefined}
                         />
                     </ChecklistItemTitleWrapper>
                 </CheckboxContainer>
@@ -376,6 +462,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     showDescription={showDescription}
                     onEdit={setDescValue}
                     value={descValue}
+                    onSave={handleSave}
+                    onSaveAndAddNew={props.onSaveAndAddNew ? handleSaveAndAddNew : undefined}
+                    title={titleValue}
                 />
                 }
                 {renderRow()}
@@ -387,45 +476,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         setDescValue(props.checklistItem.description);
                         props.cancelAddingItem?.();
                     }}
-                    onSave={() => {
-                        setIsEditing(false);
-                        if (props.newItem) {
-                            props.cancelAddingItem?.();
-                            const newItem = {
-                                title: titleValue,
-                                command,
-                                description: descValue,
-                                state: ChecklistItemState.Open,
-                                command_last_run: 0,
-                                due_date: dueDate,
-                                assignee_id: assigneeID,
-                                task_actions: taskActions,
-                                state_modified: 0,
-                                assignee_modified: 0,
-                                condition_id: '',
-                                condition_action: '',
-                                condition_reason: '',
-                            };
-                            if (props.playbookRunId) {
-                                clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
-                            } else {
-                                props.onAddChecklistItem?.(newItem);
-                            }
-                        } else if (props.playbookRunId) {
-                            clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                                title: titleValue,
-                                command,
-                                description: descValue,
-                            });
-                        } else {
-                            const newItem = {...props.checklistItem};
-                            newItem.title = titleValue;
-                            newItem.command = command;
-                            newItem.description = descValue;
-                            newItem.task_actions = taskActions;
-                            props.onUpdateChecklistItem?.(newItem);
-                        }
-                    }}
+                    onSave={handleSave}
                 />
                 }
             </ItemContainer>
@@ -547,11 +598,11 @@ const DraggableWrapper = styled.div`
     /* Wrapper for draggable item including condition header */
 `;
 
-const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean}>`
+const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean, $isPlaybookEditor: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0;
 
-    ${({$hasCondition}) => $hasCondition && css`
+    ${({$hasCondition, $isPlaybookEditor}) => $hasCondition && $isPlaybookEditor && css`
         margin-left: 15px;
         padding-left: 5px;
         border-left: 2px solid rgba(var(--center-channel-color-rgb), 0.16);

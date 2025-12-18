@@ -7,8 +7,6 @@ import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
-import {useIntl} from 'react-intl';
-
 import {useSelector} from 'react-redux';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -20,8 +18,6 @@ import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {useRunsList} from 'src/hooks';
 
 import {pluginUrl} from 'src/browser_routing';
-
-import Header from 'src/components/widgets/header';
 
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
@@ -48,7 +44,7 @@ const defaultPlaybookFetchParams = {
     statuses: statusOptions
         .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
         .map((opt) => opt.value),
-    types: [PlaybookRunType.Playbook],
+    types: [PlaybookRunType.Playbook, PlaybookRunType.ChannelChecklist],
 };
 
 const RunListContainer = styled.div`
@@ -56,7 +52,6 @@ const RunListContainer = styled.div`
 `;
 
 const RunsPage = () => {
-    const {formatMessage} = useIntl();
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
     const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState<boolean | null>(null);
     const [noPlaybooks, setNoPlaybooks] = useState<boolean | null>(null);
@@ -89,15 +84,6 @@ const RunsPage = () => {
 
     return (
         <RunListContainer>
-            <Header
-                data-testid='titlePlaybookRun'
-                level={2}
-                heading={formatMessage({defaultMessage: 'Runs'})}
-                subtitle={formatMessage({defaultMessage: 'All the runs that you can access will show here'})}
-                style={{
-                    borderBottom: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
-                }}
-            />
             <RunList
                 playbookRuns={playbookRuns}
                 totalCount={totalCount}

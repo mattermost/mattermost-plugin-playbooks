@@ -61,12 +61,21 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
             cy.findByText('Test Task').trigger('mouseover');
             cy.findByTestId('hover-menu-edit-button').click();
         });
+
+        // Wait for edit mode to render - assignee button appears in edit mode
+        cy.findByTestId('checkbox-item-container').within(() => {
+            cy.findByTestId('assignee-profile-selector', {timeout: 10000}).should('be.visible');
+        });
+    };
+
+    const getTaskActionsButton = () => {
+        return cy.findByTestId('checkbox-item-container').findByTestId('task-actions-button', {timeout: 10000});
     };
 
     it('disallows no keywords', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Attempt to enable the trigger
         cy.findByText('Mark the task as done').click();
@@ -75,7 +84,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
         cy.findByTestId('modal-confirm-button').click();
 
         // Verify no actions are configured
-        cy.findByText('Task Actions').should('exist');
+        getTaskActionsButton().should('exist');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
             const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
@@ -89,7 +98,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('allows a single keyword', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add a keyword
         cy.get('.modal-body').within(() => {
@@ -117,7 +126,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('allows multiple keywords', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add multiple keywords
         cy.get('.modal-body').within(() => {
@@ -146,7 +155,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('allows multi-word phrases', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add a phrase
         cy.get('.modal-body').within(() => {
@@ -174,7 +183,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('allows removing previously configured keywords', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add multiple keywords
         cy.get('.modal-body').within(() => {
@@ -214,7 +223,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('disables when all keywords removed', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add multiple keywords
         cy.get('.modal-body').within(() => {
@@ -241,7 +250,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
         cy.findByTestId('modal-confirm-button').click();
 
         // Verify configured actions
-        cy.findByText('Task Actions');
+        getTaskActionsButton().should('exist');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
             const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
@@ -255,7 +264,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('disallows a user without keywords', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add a user
         cy.get('.modal-body').within(() => {
@@ -272,7 +281,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
         cy.findByTestId('modal-confirm-button').click();
 
         // Verify no actions are configured
-        cy.findByText('Task Actions').should('exist');
+        getTaskActionsButton().should('exist');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
             const actions = JSON.parse(playbook.checklists[0].items[0].task_actions[0].actions[0].payload);
@@ -286,7 +295,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('allows a single user', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add a keyword
         cy.get('.modal-body').within(() => {
@@ -322,7 +331,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('allows configuring multiple users', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add a keyword
         cy.get('.modal-body').within(() => {
@@ -362,7 +371,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('rejects unknown user', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add a keyword
         cy.get('.modal-body').within(() => {
@@ -401,7 +410,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     it('allows removing previously configured users', () => {
         // Open the task actions modal
         editTask();
-        cy.findByText('Task Actions').click();
+        getTaskActionsButton().click();
 
         // Add a keyword
         cy.get('.modal-body').within(() => {

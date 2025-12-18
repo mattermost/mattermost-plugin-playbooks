@@ -176,6 +176,12 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
+	// Set the run type based on whether a playbook ID is provided
+	runType := app.RunTypeChannelChecklist
+	if playbookRunCreateOptions.PlaybookID != "" {
+		runType = app.RunTypePlaybook
+	}
+
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
@@ -185,7 +191,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
-			Type:        playbookRunCreateOptions.Type,
+			Type:        runType,
 		},
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
@@ -212,10 +218,11 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 	ReturnJSON(w, &playbookRun, http.StatusCreated)
 }
 
-// Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status.
 func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+	fieldsToUpdate := map[string]interface{}{}
 
 	oldPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -223,13 +230,43 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		return
 	}
 
-	var updates app.UpdateOptions
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+		return
+	}
+
+	// Prevent renaming finished runs
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)
+		return
+	}
+
+	var updates client.PlaybookRunUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	updatedPlaybookRun := oldPlaybookRun
+	// If name is being updated, validate and apply the change
+	if updates.Name != nil {
+		fieldsToUpdate["Name"] = strings.TrimSpace(*updates.Name)
+		if fieldsToUpdate["Name"] == "" {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
+			return
+		}
+	}
+
+	// Update using GraphqlUpdate
+	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Retrieve the updated playbook run
+	updatedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
 
 	ReturnJSON(w, updatedPlaybookRun, http.StatusOK)
 }
@@ -266,21 +303,29 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
-	playbook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
-		return
+	channelID := ""
+	runType := app.RunTypeChannelChecklist
+
+	// if a playbook ID exists, link the run to the channel and set the right type
+	if playbookID != "" {
+		playbook, err := h.playbookService.Get(playbookID)
+		if err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
+			return
+		}
+		channelID = playbook.GetRunChannelID()
+		runType = app.RunTypePlaybook
 	}
 
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: request.UserId,
 			TeamID:      request.TeamId,
-			ChannelID:   playbook.GetRunChannelID(),
+			ChannelID:   channelID,
 			Name:        name,
 			PostID:      state.PostID,
 			PlaybookID:  playbookID,
-			Type:        app.RunTypePlaybook,
+			Type:        runType,
 		},
 		request.UserId,
 		nil,
@@ -517,6 +562,13 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		if !h.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
 			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+		}
+	}
+
+	// For channelChecklists specifically, verify user has permission to post in the channel
+	if playbookRun.Type == app.RunTypeChannelChecklist && playbookRun.ChannelID != "" {
+		if !h.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionCreatePost) {
+			return nil, errors.Wrap(app.ErrNoPermissions, "You do not have permission to create a checklist in this channel. You must be a member of the channel with posting permissions.")
 		}
 	}
 
@@ -1114,6 +1166,19 @@ func (h *PlaybookRunHandler) getChecklistAutocompleteItem(c *Context, w http.Res
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	// Require channel_id to prevent unauthorized access to runs from other channels
+	if channelID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel_id is required", nil)
+		return
+	}
+
+	// Verify user has access to the channel
+	// Return 404 instead of 403 to avoid leaking information about private channel existence
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found", nil)
+		return
+	}
+
 	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
@@ -1140,6 +1205,19 @@ func (h *PlaybookRunHandler) getChecklistAutocomplete(c *Context, w http.Respons
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	// Require channel_id to prevent unauthorized access to runs from other channels
+	if channelID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel_id is required", nil)
+		return
+	}
+
+	// Verify user has access to the channel
+	// Return 404 instead of 403 to avoid leaking information about private channel existence
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found", nil)
+		return
+	}
+
 	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError,
@@ -1165,6 +1243,19 @@ func (h *PlaybookRunHandler) getChannelRunsAutocomplete(c *Context, w http.Respo
 	query := r.URL.Query()
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Require channel_id to prevent unauthorized access to runs from other channels
+	if channelID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel_id is required", nil)
+		return
+	}
+
+	// Verify user has access to the channel
+	// Return 404 instead of 403 to avoid leaking information about private channel existence
+	if !h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Not found", nil)
+		return
+	}
 
 	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
@@ -1703,6 +1794,10 @@ func (h *PlaybookRunHandler) renameChecklist(c *Context, w http.ResponseWriter, 
 	}
 
 	if err := h.playbookRunService.RenameChecklist(id, userID, checklistNum, modificationParams.NewTitle); err != nil {
+		if errors.Is(err, app.ErrPlaybookRunNotActive) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

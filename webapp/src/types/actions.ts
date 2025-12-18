@@ -10,6 +10,7 @@ import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {PresetTemplate} from 'src/components/templates/template_data';
 import {Condition} from 'src/types/conditions';
+import {PropertyField} from 'src/types/properties';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = manifest.id + '_toggle_rhs';
 export const SET_RHS_OPEN = manifest.id + '_set_rhs_open';
@@ -39,6 +40,11 @@ export const SET_CHECKLIST_COLLAPSED_STATE = manifest.id + '_set_checklist_colla
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = manifest.id + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = manifest.id + '_set_checklist_items_filter';
 export const RECEIVED_PLAYBOOK_CONDITIONS = manifest.id + '_received_playbook_conditions';
+export const RECEIVED_PLAYBOOK_PROPERTY_FIELDS = manifest.id + '_received_playbook_property_fields';
+export const ADDED_PLAYBOOK_PROPERTY_FIELD = manifest.id + '_added_playbook_property_field';
+export const UPDATED_PLAYBOOK_PROPERTY_FIELD = manifest.id + '_updated_playbook_property_field';
+export const DELETED_PLAYBOOK_PROPERTY_FIELD = manifest.id + '_deleted_playbook_property_field';
+export const REORDERED_PLAYBOOK_PROPERTY_FIELDS = manifest.id + '_reordered_playbook_property_fields';
 
 // Condition websocket action types
 export const CONDITION_CREATED = manifest.id + '_condition_created';
@@ -190,7 +196,7 @@ export interface SetHasViewedChannel {
 
 export interface SetRHSAboutCollapsedState {
     type: typeof SET_RHS_ABOUT_COLLAPSED_STATE;
-    channelId: string;
+    runId: string;
     collapsed: boolean;
 }
 
@@ -242,4 +248,34 @@ export interface WebsocketPlaybookRunIncrementalUpdateReceived {
 export interface PublishTemplates {
     type: typeof PUBLISH_TEMPLATES;
     templates: PresetTemplate[];
+}
+
+export interface ReceivedPlaybookPropertyFields {
+    type: typeof RECEIVED_PLAYBOOK_PROPERTY_FIELDS;
+    playbookId: string;
+    propertyFields: PropertyField[];
+}
+
+export interface AddedPlaybookPropertyField {
+    type: typeof ADDED_PLAYBOOK_PROPERTY_FIELD;
+    playbookId: string;
+    propertyField: PropertyField;
+}
+
+export interface UpdatedPlaybookPropertyField {
+    type: typeof UPDATED_PLAYBOOK_PROPERTY_FIELD;
+    playbookId: string;
+    propertyField: PropertyField;
+}
+
+export interface DeletedPlaybookPropertyField {
+    type: typeof DELETED_PLAYBOOK_PROPERTY_FIELD;
+    playbookId: string;
+    fieldId: string;
+}
+
+export interface ReorderedPlaybookPropertyFields {
+    type: typeof REORDERED_PLAYBOOK_PROPERTY_FIELDS;
+    playbookId: string;
+    reorderedFieldIds: string[];
 }

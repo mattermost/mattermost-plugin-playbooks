@@ -428,6 +428,9 @@ type PlaybookService interface {
 
 	// DeletePropertyField deletes a property field for a playbook and bumps the playbook's updated_at
 	DeletePropertyField(playbookID, propertyID string) error
+
+	// ReorderPropertyFields reorders property fields for a playbook and bumps the playbook's updated_at
+	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
 }
 
 // PlaybookStore is an interface for storing playbooks

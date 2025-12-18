@@ -20,6 +20,7 @@ export interface Props {
     onDeleteChecklist: () => void;
     dragHandleProps: DraggableProvidedDragHandleProps | undefined;
     isChecklistSkipped: boolean;
+    isChannelChecklist?: boolean;
 }
 
 const CollapsibleChecklistHoverMenu = (props: Props) => {
@@ -48,7 +49,7 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
             >
                 <StyledDropdownMenuItem onClick={props.onRenameChecklist}>
                     <DropdownIcon className='icon-pencil-outline icon-16'/>
-                    {formatMessage({defaultMessage: 'Rename checklist'})}
+                    {formatMessage({defaultMessage: 'Rename section'})}
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem
                     onClick={() => {
@@ -60,22 +61,30 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                     }}
                 >
                     <DropdownIcon className='icon-content-copy icon-16'/>
-                    {formatMessage({defaultMessage: 'Duplicate checklist'})}
+                    {formatMessage({defaultMessage: 'Duplicate section'})}
                 </StyledDropdownMenuItem>
-                {props.playbookRunID !== undefined &&
+                {props.playbookRunID !== undefined && props.isChannelChecklist &&
+                    <StyledDropdownMenuItem
+                        onClick={() => clientSkipChecklist(props.playbookRunID || '', props.checklistIndex)}
+                    >
+                        <DropdownIcon className={'icon-close icon-16'}/>
+                        {formatMessage({defaultMessage: 'Skip section'})}
+                    </StyledDropdownMenuItem>
+                }
+                {props.playbookRunID !== undefined && !props.isChannelChecklist &&
                     <StyledDropdownMenuItemRed
                         onClick={() => clientSkipChecklist(props.playbookRunID || '', props.checklistIndex)}
                     >
                         <DropdownIconRed className={'icon-close icon-16'}/>
-                        {formatMessage({defaultMessage: 'Skip checklist'})}
+                        {formatMessage({defaultMessage: 'Skip section'})}
                     </StyledDropdownMenuItemRed>
                 }
-                {props.playbookRunID === undefined &&
+                {(props.playbookRunID === undefined || props.isChannelChecklist) &&
                     <StyledDropdownMenuItemRed
                         onClick={() => props.onDeleteChecklist()}
                     >
-                        <DropdownIconRed className={'icon-close icon-16'}/>
-                        {formatMessage({defaultMessage: 'Delete checklist'})}
+                        <DropdownIconRed className={'icon-trash-can-outline icon-16'}/>
+                        {formatMessage({defaultMessage: 'Delete section'})}
                     </StyledDropdownMenuItemRed>
                 }
             </DotMenu>

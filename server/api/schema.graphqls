@@ -1,7 +1,7 @@
 scalar JSON
 
 type Query {
-	playbook(id: String!): Playbook
+	playbook(id: String!): Playbook @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	playbooks(
 		teamID: String = "",
 		sort: String = "title",
@@ -9,9 +9,9 @@ type Query {
 		searchTerm: String = "",
 		withArchived: Boolean = false,
 		withMembershipOnly: Boolean = false,
-	): [Playbook!]!
+	): [Playbook!]! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
-	run(id: String!): Run
+	run(id: String!): Run @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	runs(
 		teamID: String = "",
 		sort: String = "",
@@ -23,34 +23,34 @@ type Query {
 		after: String,
 		types: [PlaybookRunType!] = [],
 		omitEnded: Boolean = false,
-	): RunConnection!
+	): RunConnection! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
-	playbookProperty(playbookID: String!, propertyID: String!): PropertyField
+	playbookProperty(playbookID: String!, propertyID: String!): PropertyField @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 }
 
 type Mutation {
-	updatePlaybookFavorite(id: String!, favorite: Boolean!): String!
-	updatePlaybook(id: String!, updates: PlaybookUpdates!): String!
+	updatePlaybookFavorite(id: String!, favorite: Boolean!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	updatePlaybook(id: String!, updates: PlaybookUpdates!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
-	addMetric(playbookID: String!, title: String!, description: String!, type: String!, target: Int): String!
-	updateMetric(id: String!, title: String, description: String, target: Int): String!
-	deleteMetric(id: String!): String!
+	addMetric(playbookID: String!, title: String!, description: String!, type: String!, target: Int): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	updateMetric(id: String!, title: String, description: String, target: Int): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	deleteMetric(id: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
-	addPlaybookMember(playbookID: String!, userID: String!): String!
-	removePlaybookMember(playbookID: String!, userID: String!): String!
+	addPlaybookMember(playbookID: String!, userID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	removePlaybookMember(playbookID: String!, userID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
-	addPlaybookPropertyField(playbookID: String!, propertyField: PropertyFieldInput!): String!
-	updatePlaybookPropertyField(playbookID: String!, propertyFieldID: String!, propertyField: PropertyFieldInput!): String!
-	deletePlaybookPropertyField(playbookID: String!, propertyFieldID: String!): String!
+	addPlaybookPropertyField(playbookID: String!, propertyField: PropertyFieldInput!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	updatePlaybookPropertyField(playbookID: String!, propertyFieldID: String!, propertyField: PropertyFieldInput!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	deletePlaybookPropertyField(playbookID: String!, propertyFieldID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
-	setRunFavorite(id: String!, fav: Boolean!): String!
-	updateRun(id: String!, updates: RunUpdates!): String!
-	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String!
-	removeRunParticipants(runID: String!, userIDs: [String!]!): String!
-	changeRunOwner(runID: String!, ownerID: String!): String!
-	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String!
+	setRunFavorite(id: String!, fav: Boolean!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	updateRun(id: String!, updates: RunUpdates!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	removeRunParticipants(runID: String!, userIDs: [String!]!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	changeRunOwner(runID: String!, ownerID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
-	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String!
+	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 }
 
 type PageInfo {
@@ -246,6 +246,11 @@ enum PlaybookRunType {
 	channelChecklist
 }
 
+enum RunStatus {
+	InProgress
+	Finished
+}
+
 type Run {
 	id: String!
 	playbookID: String!
@@ -256,7 +261,7 @@ type Run {
 	postID: String!
 	teamID: String!
 	isFavorite: Boolean!
-	currentStatus: String!
+	currentStatus: RunStatus!
 	createAt: Float!
 	endAt: Float!
 	participantIDs: [String!]!

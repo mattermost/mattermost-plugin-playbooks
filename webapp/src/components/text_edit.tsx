@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -21,6 +21,7 @@ interface TextEditProps {
     className?: string;
     noBorder?: boolean;
     disabled?: boolean;
+    testId?: string;
 
     editStyles?: ReturnType<typeof css>;
 }
@@ -31,6 +32,7 @@ const TextEdit = (props: TextEditProps) => {
     const id = useUniqueId('editabletext-markdown-textbox');
     const [isEditing, setIsEditing] = useState(false);
     const [value, setValue] = useState(props.value);
+    const hasAutoFocused = useRef(false);
 
     useUpdateEffect(() => {
         setValue(props.value);
@@ -38,19 +40,22 @@ const TextEdit = (props: TextEditProps) => {
 
     const save = () => {
         setIsEditing(false);
+        hasAutoFocused.current = false;
         props.onSave(value);
     };
 
     const cancel = () => {
         setIsEditing(false);
+        hasAutoFocused.current = false;
         setValue(props.value);
     };
 
     if (isEditing) {
+        const editableTestId = props.testId ? props.testId.replace('rendered-', 'textarea-') : 'rendered-editable-text';
         return (
             <Container className={props.className}>
                 <EditableTextInput
-                    data-testid={'rendered-editable-text'}
+                    data-testid={editableTestId}
                     value={value}
                     placeholder={props.placeholder}
                     onChange={(e) => {
@@ -58,6 +63,16 @@ const TextEdit = (props: TextEditProps) => {
                     }}
                     autoFocus={true}
                     disabled={props.disabled}
+                    onFocus={(e) => {
+                        // Select all text only on initial auto-focus
+                        if (!hasAutoFocused.current) {
+                            hasAutoFocused.current = true;
+                            const target = e.target;
+                            setTimeout(() => {
+                                target.select();
+                            }, 0);
+                        }
+                    }}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                             save();
@@ -75,7 +90,10 @@ const TextEdit = (props: TextEditProps) => {
     }
 
     return (
-        <Container className={props.className}>
+        <Container
+            className={props.className}
+            data-testid={props.testId || 'rendered-text'}
+        >
             {!isEditing && !props.children && (
                 <HoverMenuContainer>
                     <Tooltip
@@ -92,7 +110,7 @@ const TextEdit = (props: TextEditProps) => {
                 </HoverMenuContainer>
             )}
             {resolve(props.children, () => setIsEditing(true)) ?? (
-                <RenderedText data-testid='rendered-text'>
+                <RenderedText>
                     {value}
                 </RenderedText>
             )}

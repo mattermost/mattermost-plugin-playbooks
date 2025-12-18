@@ -31,6 +31,7 @@ type PlaybookRun struct {
 	ActiveStageTitle                        string          `json:"active_stage_title"`
 	PostID                                  string          `json:"post_id"`
 	PlaybookID                              string          `json:"playbook_id"`
+	Type                                    string          `json:"type"`
 	Checklists                              []Checklist     `json:"checklists"`
 	StatusPosts                             []StatusPost    `json:"status_posts"`
 	CurrentStatus                           string          `json:"current_status"`
@@ -286,6 +287,11 @@ type StatusUpdateOptions struct {
 	Message   string        `json:"message"`
 	Reminder  time.Duration `json:"reminder"`
 	FinishRun bool          `json:"finish_run"`
+}
+
+// PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
+type PlaybookRunUpdateOptions struct {
+	Name *string `json:"name,omitempty"`
 }
 
 type RunMetricData struct {

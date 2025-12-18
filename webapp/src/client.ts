@@ -40,6 +40,7 @@ import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
 import {Condition} from './types/conditions';
+import {PropertyField, PropertyFieldInput} from './types/properties';
 
 let siteURL = '';
 let basePath = '';
@@ -345,6 +346,13 @@ export async function clientDuplicateChecklistItem(playbookRunID: string, checkl
     });
 }
 
+export async function clientDeleteChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
+        method: 'delete',
+        body: '',
+    });
+}
+
 export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
         method: 'put',
@@ -418,6 +426,13 @@ export async function clientAddChecklist(playbookRunID: string, checklist: Omit<
 export async function clientDuplicateChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/duplicate`, {
         method: 'post',
+        body: '',
+    });
+}
+
+export async function clientDeleteChecklist(playbookRunID: string, checklistNum: number): Promise<void> {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`, {
+        method: 'delete',
         body: '',
     });
 }
@@ -673,6 +688,26 @@ export const doPut = async <TData = any>(url: string, body: any = undefined) => 
     return data;
 };
 
+const parseErrorResponse = async (response: Response): Promise<string> => {
+    let errorMessage = '';
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || '';
+        } catch {
+            errorMessage = '';
+        }
+    } else {
+        try {
+            errorMessage = await response.text();
+        } catch {
+            errorMessage = '';
+        }
+    }
+    return errorMessage;
+};
+
 export const doFetchWithResponse = async <TData = any>(url: string, options = {}) => {
     const response = await fetch(url, Client4.getOptions(options));
     let data;
@@ -688,10 +723,10 @@ export const doFetchWithResponse = async <TData = any>(url: string, options = {}
         };
     }
 
-    data = await response.text();
+    const errorMessage = await parseErrorResponse(response);
 
     throw new ClientError(Client4.url, {
-        message: data || '',
+        message: errorMessage,
         status_code: response.status,
         url,
     });
@@ -710,10 +745,10 @@ export const doFetchWithTextResponse = async <TData extends string>(url: string,
         };
     }
 
-    data = await response.text();
+    const errorMessage = await parseErrorResponse(response);
 
     throw new ClientError(Client4.url, {
-        message: data || '',
+        message: errorMessage,
         status_code: response.status,
         url,
     });
@@ -726,8 +761,10 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
         return;
     }
 
+    const errorMessage = await parseErrorResponse(response);
+
     throw new ClientError(Client4.url, {
-        message: '',
+        message: errorMessage,
         status_code: response.status,
         url,
     });
@@ -825,4 +862,53 @@ export async function deletePlaybookCondition(playbookId: string, conditionId: s
     await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/conditions/${conditionId}`, {
         method: 'DELETE',
     });
+}
+
+export async function fetchPlaybookPropertyFields(playbookId: string, updatedSince?: number): Promise<PropertyField[]> {
+    let url = `${apiUrl}/playbooks/${playbookId}/property_fields`;
+    if (updatedSince) {
+        url += `?updated_since=${updatedSince}`;
+    }
+    const data = await doGet<PropertyField[]>(url);
+    if (!data) {
+        return [];
+    }
+    return data;
+}
+
+export async function createPlaybookPropertyField(playbookId: string, propertyField: PropertyFieldInput): Promise<PropertyField> {
+    const url = `${apiUrl}/playbooks/${playbookId}/property_fields`;
+    const data = await doPost<PropertyField>(url, JSON.stringify(propertyField));
+    if (!data) {
+        throw new Error('Failed to create playbook property field');
+    }
+    return data;
+}
+
+export async function updatePlaybookPropertyField(playbookId: string, fieldId: string, propertyField: PropertyFieldInput): Promise<PropertyField> {
+    const url = `${apiUrl}/playbooks/${playbookId}/property_fields/${fieldId}`;
+    const data = await doPut<PropertyField>(url, JSON.stringify(propertyField));
+    if (!data) {
+        throw new Error('Failed to update playbook property field');
+    }
+    return data;
+}
+
+export async function deletePlaybookPropertyField(playbookId: string, fieldId: string): Promise<void> {
+    const url = `${apiUrl}/playbooks/${playbookId}/property_fields/${fieldId}`;
+    await doFetchWithoutResponse(url, {
+        method: 'DELETE',
+    });
+}
+
+export async function reorderPlaybookPropertyFields(playbookId: string, fieldId: string, targetPosition: number): Promise<PropertyField[]> {
+    const url = `${apiUrl}/playbooks/${playbookId}/property_fields/reorder`;
+    const data = await doPost<PropertyField[]>(url, JSON.stringify({
+        field_id: fieldId,
+        target_position: targetPosition,
+    }));
+    if (!data) {
+        return [];
+    }
+    return data;
 }

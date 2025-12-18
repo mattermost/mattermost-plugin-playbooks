@@ -13,6 +13,7 @@ import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {
     ParticipantsChangedDetails,
+    PropertyChangedDetails,
     TaskStateModifiedDetails,
     TimelineEvent,
     TimelineEventType,
@@ -276,6 +277,27 @@ const TimelineEventItem = (props: Props) => {
             return formatMessage({defaultMessage: 'Run status updates enabled by {name}'}, {name: event.subject_display_name});
         case TimelineEventType.StatusUpdatesDisabled:
             return formatMessage({defaultMessage: 'Run status updates disabled by {name}'}, {name: event.subject_display_name});
+        case TimelineEventType.PropertyChanged: {
+            const details = parsedDetails as PropertyChangedDetails;
+            if (details.old_value_display === null && details.new_value_display !== null) {
+                return formatMessage({defaultMessage: '{name} set {property} to {value}'}, {
+                    name: event.subject_display_name,
+                    property: details.property_field_name,
+                    value: details.new_value_display,
+                });
+            } else if (details.new_value_display === null) {
+                return formatMessage({defaultMessage: '{name} cleared {property}'}, {
+                    name: event.subject_display_name,
+                    property: details.property_field_name,
+                });
+            }
+            return formatMessage({defaultMessage: '{name} updated {property} from {oldValue} to {newValue}'}, {
+                name: event.subject_display_name,
+                property: details.property_field_name,
+                oldValue: details.old_value_display,
+                newValue: details.new_value_display,
+            });
+        }
         default:
             return '';
         }
@@ -308,6 +330,8 @@ const TimelineEventItem = (props: Props) => {
         case TimelineEventType.StatusUpdatesEnabled:
         case TimelineEventType.StatusUpdatesDisabled:
             return 'icon-clock-outline';
+        case TimelineEventType.PropertyChanged:
+            return 'icon-pencil-outline';
         default:
             return '';
         }

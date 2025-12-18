@@ -119,11 +119,15 @@ const ClickableMultiValue = (props: {
         setEditValue(props.data.label);
     }, [props.data.label]);
 
-    const onDropdownChange = (isOpen: boolean) => {
-        if (isOpen) {
-            inputRef.current?.focus();
+    const onDropdownChange = (open: boolean) => {
+        if (open) {
+            setTimeout(() => {
+                inputRef.current?.focus();
+                inputRef.current?.select();
+            }, 50);
         } else {
             handleRename();
+            setEditValue(props.data.label);
         }
     };
 
@@ -161,8 +165,10 @@ const ClickableMultiValue = (props: {
         e.stopPropagation();
         if (e.key === 'Enter') {
             handleRename();
+            inputRef.current?.blur();
         } else if (e.key === 'Escape') {
             setEditValue(props.data.label);
+            inputRef.current?.blur();
         }
     };
 

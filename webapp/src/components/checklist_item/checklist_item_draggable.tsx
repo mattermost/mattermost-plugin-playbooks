@@ -31,10 +31,13 @@ interface Props {
     onRemoveFromCondition?: () => void;
     onAssignToCondition?: (conditionId: string) => void;
     availableConditions?: Condition[];
+    conditions?: Condition[];
     propertyFields?: PropertyField[];
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
+    onSaveAndAddNew?: () => void;
+    isChannelChecklist?: boolean;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -73,10 +76,13 @@ const DraggableChecklistItem = (props: Props) => {
                     onRemoveFromCondition={props.onRemoveFromCondition}
                     onAssignToCondition={props.onAssignToCondition}
                     availableConditions={props.availableConditions}
+                    conditions={props.conditions}
                     propertyFields={props.propertyFields}
                     onEditingChange={props.onEditingChange}
                     hasCondition={props.hasCondition}
                     conditionHeader={props.conditionHeader}
+                    onSaveAndAddNew={props.onSaveAndAddNew}
+                    isChannelChecklist={props.isChannelChecklist}
                 />
             )}
         </Draggable>

@@ -384,3 +384,17 @@ func (s *playbookService) DeletePropertyField(playbookID, propertyID string) err
 
 	return nil
 }
+
+// ReorderPropertyFields reorders property fields for a playbook and bumps the playbook's updated_at
+func (s *playbookService) ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error) {
+	reorderedFields, err := s.propertyService.ReorderPropertyFields(playbookID, fieldID, targetPosition)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.store.BumpPlaybookUpdatedAt(playbookID); err != nil {
+		return nil, errors.Wrap(err, "failed to bump playbook timestamp")
+	}
+
+	return reorderedFields, nil
+}

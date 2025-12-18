@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"math"
 	"os"
@@ -78,8 +79,9 @@ func (s *Specs) generateSplits() {
 		}
 
 		fileGroup := strings.Join(s.rawFiles[i:end], ",")
-		specFileGroup := newSpecGroup(strconv.Itoa(runNo), fileGroup)
-		s.groupedFiles = append(s.groupedFiles, *specFileGroup)
+
+		specGroup := newSpecGroup(fmt.Sprintf("%d", runNo), fileGroup)
+		s.groupedFiles = append(s.groupedFiles, *specGroup)
 
 		// Break when we reach the end to avoid duplicate groups
 		if end == len(s.rawFiles) {

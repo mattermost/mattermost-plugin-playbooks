@@ -66,7 +66,7 @@ describe('navigation', {testIsolation: true}, () => {
         // # Switch to playbook runs
         cy.findByTestId('playbookRunsLHSButton').click();
 
-        // * Verify that playbook runs are shown
-        cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
+        // * Verify that playbook runs page is shown (header was removed, check for run list)
+        cy.get('#playbookRunList').should('exist');
     });
 });

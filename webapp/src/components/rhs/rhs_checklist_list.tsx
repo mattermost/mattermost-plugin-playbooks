@@ -6,7 +6,6 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
@@ -14,8 +13,8 @@ import {DateTime} from 'luxon';
 import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {
-    finishRun,
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
@@ -33,14 +32,15 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import ChecklistList from 'src/components/checklist/checklist_list';
-
 import {AnchorLinkTitle} from 'src/components/backstage/playbook_runs/shared';
-
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
 import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
-import GiveFeedbackButton from 'src/components/give_feedback_button';
+import {useParticipateInRun} from 'src/hooks';
+import {useOnRestoreRun} from 'src/components/backstage/playbook_runs/playbook_run/restore_run';
+import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
+
+import RHSFooter from './rhs_checklist_list_footer';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -48,6 +48,9 @@ interface Props {
     id?: string;
     readOnly: boolean;
     onReadOnlyInteract?: () => void
+    autoAddTask?: boolean;
+    onTaskAdded?: () => void;
+    onBackClick?: () => void;
 }
 
 export enum ChecklistParent {
@@ -55,48 +58,10 @@ export enum ChecklistParent {
     RunDetails = 'run_details',
 }
 
-const StyledTertiaryButton = styled(TertiaryButton)`
-    display: inline-block;
-    margin: 12px 0;
-`;
-
-const StyledPrimaryButton = styled(PrimaryButton)`
-    display: inline-block;
-    margin: 12px 0;
-`;
-
-const RHSGiveFeedbackButton = styled(GiveFeedbackButton)`
-    && {
-        color: var(--center-channel-color-64);
-    }
-
-    &&:hover:not([disabled]) {
-        background-color: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
-    }
-`;
-
-const allComplete = (checklists: Checklist[]) => {
-    return notFinishedTasks(checklists) === 0;
-};
-
-const notFinishedTasks = (checklists: Checklist[]) => {
-    let count = 0;
-    for (const list of checklists) {
-        for (const item of list.items) {
-            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
-                count++;
-            }
-        }
-    }
-    return count;
-};
-
-const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const channelId = useSelector(getCurrentChannelId);
-    const stateKey = parentContainer + '_' + (parentContainer === ChecklistParent.RHS ? channelId : playbookRun.id);
+    const stateKey = parentContainer + '_' + playbookRun.id;
     const allCollapsed = useSelector(currentChecklistAllCollapsed(stateKey));
     const checklistsState = useSelector(currentChecklistCollapsedState(stateKey));
     const checklistItemsFilter = useSelector((state) => currentChecklistItemsFilter(state as GlobalState, stateKey));
@@ -104,6 +69,22 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+
+    const isParticipant = playbookRun.participant_ids.includes(myUser.id);
+    const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(playbookRun ?? undefined);
+
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: playbookRun.type,
+        channel_id: playbookRun.channel_id,
+        team_id: playbookRun.team_id,
+        owner_user_id: playbookRun.owner_user_id,
+        participant_ids: playbookRun.participant_ids,
+        current_status: playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, myUser.id);
+    const canRestore = useCanRestoreRun(runForPermissions, myUser.id);
 
     const checklists = playbookRun.checklists || [];
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
@@ -210,8 +191,10 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
 
         return ItemButtonsFormat.Long;
     };
-    const FinishButton = allComplete(checklists) ? StyledPrimaryButton : StyledTertiaryButton;
-    const active = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.InProgress);
+    const active = playbookRun.current_status === PlaybookRunStatus.InProgress;
+    const finished = playbookRun.current_status === PlaybookRunStatus.Finished;
+
+    const handleResume = useOnRestoreRun(playbookRun, 'rhs');
 
     const checklistsPunchout = useMeasurePunchouts(
         ['pb-checklists-inner-container'],
@@ -226,46 +209,49 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
     return (
         <InnerContainer
             id='pb-checklists-inner-container'
+            data-testid='pb-checklists-inner-container'
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
             parentContainer={parentContainer}
         >
-            <MainTitleBG numChecklists={checklists.length}>
-                <MainTitle parentContainer={parentContainer}>
-                    {title}
-                    {
-                        overdueTasksNum > 0 &&
-                        <OverdueTasksToggle
-                            data-testid='overdue-tasks-filter'
-                            toggled={checklistItemsFilter.overdueOnly}
-                            onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
-                        >
-                            {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
-                        </OverdueTasksToggle>
-                    }
-                    {
-                        showMenu &&
-                        <HoverRow>
-                            <ExpandHoverButton
-                                title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
-                                className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                                onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
-                            />
-                            <MultiCheckbox
-                                options={filterOptions}
-                                onselect={selectOption}
-                                placement='bottom-end'
-                                dotMenuButton={StyledDotMenuButton}
-                                icon={
-                                    <IconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
-                                        <i className='icon icon-filter-variant'/>
-                                    </IconWrapper>
-                                }
-                            />
-                        </HoverRow>
-                    }
-                </MainTitle>
-            </MainTitleBG>
+            {playbookRun.type !== PlaybookRunType.ChannelChecklist && (
+                <MainTitleBG numChecklists={checklists.length}>
+                    <MainTitle parentContainer={parentContainer}>
+                        {title}
+                        {
+                            overdueTasksNum > 0 &&
+                            <OverdueTasksToggle
+                                data-testid='overdue-tasks-filter'
+                                toggled={checklistItemsFilter.overdueOnly}
+                                onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
+                            >
+                                {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
+                            </OverdueTasksToggle>
+                        }
+                        {
+                            showMenu &&
+                            <HoverRow>
+                                <ExpandHoverButton
+                                    title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
+                                    className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                                    onClick={() => dispatch(setAllChecklistsCollapsedState(stateKey, !allCollapsed, checklists.length))}
+                                />
+                                <MultiCheckbox
+                                    options={filterOptions}
+                                    onselect={selectOption}
+                                    placement='bottom-end'
+                                    dotMenuButton={StyledDotMenuButton}
+                                    icon={
+                                        <FilterIconWrapper title={formatMessage({defaultMessage: 'Filter items'})}>
+                                            <i className='icon icon-filter-variant'/>
+                                        </FilterIconWrapper>
+                                    }
+                                />
+                            </HoverRow>
+                        }
+                    </MainTitle>
+                </MainTitleBG>
+            )}
             <ChecklistList
                 playbookRun={playbookRun}
                 isReadOnly={readOnly}
@@ -275,22 +261,21 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 showItem={showItem}
                 itemButtonsFormat={itemButtonsFormat()}
                 onReadOnlyInteract={onReadOnlyInteract}
+                autoAddTask={autoAddTask}
+                onTaskAdded={onTaskAdded}
             />
-            {
-                active && parentContainer === ChecklistParent.RHS && playbookRun &&
-                <FinishButton
-                    onClick={() => {
-                        if (readOnly && onReadOnlyInteract) {
-                            onReadOnlyInteract();
-                        } else {
-                            dispatch(finishRun(playbookRun?.team_id || '', playbookRun?.id));
-                        }
-                    }}
-                >
-                    {formatMessage({defaultMessage: 'Finish run'})}
-                </FinishButton>
-            }
-            <RHSGiveFeedbackButton/>
+            <RHSFooter
+                playbookRun={playbookRun}
+                parentContainer={parentContainer}
+                active={active}
+                finished={finished}
+                canModify={canModify}
+                canRestore={canRestore}
+                isParticipant={isParticipant}
+                showParticipateConfirm={showParticipateConfirm}
+                handleResume={handleResume}
+                onBackClick={onBackClick}
+            />
             {showRunDetailsChecklistsStep && (
                 <TutorialTourTip
                     title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
@@ -306,6 +291,7 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                     punchOut={checklistsPunchout}
                 />
             )}
+            {ParticipateConfirmModal}
         </InnerContainer>
     );
 };
@@ -315,13 +301,12 @@ const InnerContainer = styled.div<{parentContainer?: ChecklistParent}>`
     z-index: 1;
     display: flex;
     flex-direction: column;
+    flex: 1;
 
     ${({parentContainer}) => parentContainer !== ChecklistParent.RunDetails && css`
+        /* in playbook editor */
         padding: 0 12px 24px;
 
-        &:hover {
-            background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        }
     `};
 
     .pb-tutorial-tour-tip__pulsating-dot-ctr {
@@ -359,7 +344,7 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     height: 28px;
 `;
 
-const IconWrapper = styled.div`
+const FilterIconWrapper = styled.div`
     padding: 3px 0 0 1px;
     margin: 0;
 `;
@@ -455,7 +440,7 @@ const makeFilterOptions = (filter: ChecklistItemsFilter, name: string): Checkbox
 // isLastCheckedValueInBottomCategory returns true only if this value is in the bottom category and
 // it is the last checked value. We don't want to allow the user to deselect all the options in
 // the bottom category.
-const isLastCheckedValueInBottomCategory = (value: string, nextState: boolean, filter: ChecklistItemsFilter) => {
+const isLastCheckedValueInBottomCategory = (value: string, _nextState: boolean, filter: ChecklistItemsFilter) => {
     const inBottomCategory = (val: string) => val === 'me' || val === 'unassigned' || val === 'others';
     if (!inBottomCategory(value)) {
         return false;

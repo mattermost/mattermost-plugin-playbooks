@@ -177,6 +177,63 @@ func TestRunCreation(t *testing.T) {
 					assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 				},
 			},
+			// this use case is currently not allowed by the dialog as
+			// playbook ID is mandatory, but it is supported by the
+			// handler
+			"empty playbook ID creates RunTypeChannelChecklist": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.RegularUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: "", // Empty playbook ID
+						app.DialogFieldNameKey:       "Standalone Run",
+					},
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					require.NoError(t, err)
+					assert.Equal(t, http.StatusCreated, result.StatusCode)
+
+					// Get the created run ID from the Location header
+					url, err := result.Location()
+					require.NoError(t, err)
+					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
+
+					// Verify the run was created with the correct type
+					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
+					require.NoError(t, err)
+					assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
+					assert.Empty(t, run.PlaybookID, "Run should not have a playbook ID")
+					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
+				},
+			},
+			"valid playbook ID creates RunTypePlaybook": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.RegularUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID, // Valid playbook ID
+						app.DialogFieldNameKey:       "Playbook Run",
+					},
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					require.NoError(t, err)
+					assert.Equal(t, http.StatusCreated, result.StatusCode)
+
+					// Get the created run ID from the Location header
+					url, err := result.Location()
+					require.NoError(t, err)
+					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
+
+					// Verify the run was created with the correct type
+					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
+					require.NoError(t, err)
+					assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
+					assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID, "Run should have the correct playbook ID")
+					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
+				},
+			},
 		} {
 			t.Run(name, func(t *testing.T) {
 				dialogRequestBytes, err := json.Marshal(tc.dialogRequest)
@@ -205,6 +262,8 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
+		assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
+		assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID)
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
@@ -240,6 +299,8 @@ func TestRunCreation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, run)
+		assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
+		assert.Empty(t, run.PlaybookID)
 	})
 
 	t.Run("can't without owner", func(t *testing.T) {
@@ -860,6 +921,28 @@ func TestChecklistManagement(t *testing.T) {
 		// Try to rename a checklist that does not exist (number greater than the index of the last checklist)
 		err = e.PlaybooksClient.PlaybookRuns.RenameChecklist(context.Background(), run.ID, len(run.Checklists), newTitle)
 		require.Error(t, err)
+	})
+
+	t.Run("checklist renaming - failure: run is finished", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+		oldTitle := "Old Title"
+		newTitle := "New Title"
+
+		// Create a new checklist with a known title
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: oldTitle,
+			Items: []client.ChecklistItem{},
+		})
+		require.NoError(t, err)
+
+		// Finish the run
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		// Try to rename the checklist in the finished run
+		err = e.PlaybooksClient.PlaybookRuns.RenameChecklist(context.Background(), run.ID, 0, newTitle)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "already ended")
 	})
 
 	t.Run("checklist removal - success: result in no checklists", func(t *testing.T) {
@@ -2185,6 +2268,129 @@ func TestGetOwners(t *testing.T) {
 	}
 }
 
+func TestUpdatePlaybookRun(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update run name", func(t *testing.T) {
+		// Create a fresh run for this test
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Original Run Name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		originalName := testRun.Name
+		newName := "Updated Run Name"
+
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.NoError(t, err)
+		require.Equal(t, newName, updatedRun.Name)
+
+		// Verify the update persisted
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, newName, run.Name)
+		require.NotEqual(t, originalName, run.Name)
+	})
+
+	t.Run("update run name with empty string fails", func(t *testing.T) {
+		emptyName := ""
+		_, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &emptyName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update run name with whitespace-only string fails", func(t *testing.T) {
+		whitespaceName := "   \t  "
+		_, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &whitespaceName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update run name with name exceeding 64 characters succeeds", func(t *testing.T) {
+		// Create a fresh run for this test
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Test Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		longName := strings.Repeat("a", 65) // 65 characters
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &longName,
+		})
+		require.NoError(t, err)
+		require.Equal(t, longName, updatedRun.Name)
+	})
+
+	t.Run("update finished run name fails", func(t *testing.T) {
+		// Create and finish a run
+		finishedRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run to finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), finishedRun.ID)
+		require.NoError(t, err)
+
+		newName := "Cannot update finished run"
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), finishedRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update run without name field returns existing run", func(t *testing.T) {
+		// Create a fresh run for this test
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Test Run Name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		originalName := testRun.Name
+
+		// Update without name field
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{})
+		require.NoError(t, err)
+		require.Equal(t, originalName, updatedRun.Name)
+	})
+
+	t.Run("no permissions to update run", func(t *testing.T) {
+		// Remove user from team to revoke permissions
+		_, err := e.ServerAdminClient.RemoveTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		newName := "Should fail"
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), e.BasicRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		// Restore team membership
+		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
+		require.NoError(t, err)
+	})
+}
+
 func TestRunGetMetadata(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -2368,6 +2574,113 @@ func TestRunGetMetadata(t *testing.T) {
 		// Test as non-member - should not be able to access metadata at all
 		_, err = e.PlaybooksClient2.PlaybookRuns.GetMetadata(context.Background(), privateRun.ID)
 		require.Error(t, err)
+	})
+}
+
+// TestGuestCannotAccessPrivateChannelTasks tests that guests cannot access
+// tasks from runs linked to private channels they don't have membership in.
+// MM-65795
+func TestGuestCannotAccessPrivateChannelTasks(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.CreateGuest()
+
+	// Create a private channel that the guest is NOT a member of
+	privateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+		TeamId:      e.BasicTeam.Id,
+		Name:        "private-test-channel",
+		DisplayName: "Private Test Channel",
+		Type:        model.ChannelTypePrivate,
+	})
+	require.NoError(t, err)
+
+	// Create a public playbook (guests should not see runs from it if they're not in the channel)
+	publicPlaybook, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Public Playbook for Guest Test",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Checklists: []client.Checklist{
+			{
+				Title: "Test Checklist",
+				Items: []client.ChecklistItem{
+					{
+						Title: "Sensitive Task",
+					},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// Create a run in the private channel that the guest is not a member of
+	run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Run in Private Channel",
+		OwnerUserID: e.AdminUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  publicPlaybook,
+		ChannelID:   privateChannel.Id,
+	})
+	require.NoError(t, err)
+
+	t.Run("guest cannot access run data through GetPlaybookRuns", func(t *testing.T) {
+		// Guest should not see the run as they are not a member of the channel
+		runs, err := e.PlaybooksClientGuest.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Verify the run from the private channel is not in the results
+		for _, r := range runs.Items {
+			assert.NotEqual(t, run.ID, r.ID, "Guest should not see run from private channel they are not a member of")
+		}
+	})
+
+	t.Run("guest cannot access run in private channel even if they know the channel ID", func(t *testing.T) {
+		// Try to get the run by channel ID - should fail with 404 (not 403) to avoid leaking channel existence
+		_, err := e.PlaybooksClientGuest.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
+		require.Error(t, err, "Guest should not be able to access run in private channel")
+		// Note: Returns 404 instead of 403 to avoid information disclosure about private channel existence
+	})
+
+	t.Run("guest cannot access run when channel is deleted or invalid", func(t *testing.T) {
+		// Create another private channel
+		anotherPrivateChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Name:        "private-to-delete",
+			DisplayName: "Private Channel To Delete",
+			Type:        model.ChannelTypePrivate,
+		})
+		require.NoError(t, err)
+
+		// Create a run in this channel
+		runWithDeletedChannel, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with Channel to be Deleted",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  publicPlaybook,
+			ChannelID:   anotherPrivateChannel.Id,
+		})
+		require.NoError(t, err)
+
+		// Delete the channel (this tests the edge case where ChannelId might reference a non-existent channel)
+		_, err = e.ServerAdminClient.DeleteChannel(context.Background(), anotherPrivateChannel.Id)
+		require.NoError(t, err)
+
+		// Guest should still not be able to access the run even though the channel is deleted
+		// The permission check should handle NULL/invalid channel IDs gracefully
+		runs, err := e.PlaybooksClientGuest.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+
+		// Verify the run with the deleted channel is not in the results
+		for _, r := range runs.Items {
+			assert.NotEqual(t, runWithDeletedChannel.ID, r.ID, "Guest should not see run when associated channel is deleted")
+		}
+
+		// Also test direct access by run ID should fail
+		_, err = e.PlaybooksClientGuest.PlaybookRuns.Get(context.Background(), runWithDeletedChannel.ID)
+		require.Error(t, err, "Guest should not be able to directly access run with deleted channel")
 	})
 }
 

@@ -152,7 +152,7 @@ export function useTimeout(callback: () => void, delay: number | null) {
 export function useClientRect() {
     const [rect, setRect] = useState(new DOMRect());
 
-    const ref = useCallback((node) => {
+    const ref = useCallback((node: HTMLElement | null) => {
         if (node !== null) {
             setRect(node.getBoundingClientRect());
         }
@@ -220,6 +220,9 @@ export function useProfilesInTeam() {
 
 /**
  * Use thing from API and/or Store
+ *
+ * @deprecated Use `makeUseEntity` instead to create hooks with Redux integration and proper memoization.
+ * See `usePlaybookAttributes` for an example of the recommended pattern.
  *
  * @param id The ID of the thing to fetch
  * @param fetchFunc required thing fetcher function
@@ -614,7 +617,7 @@ export const useReservedCategoryTitleMapper = () => {
         case ReservedCategory.Favorite:
             return formatMessage({defaultMessage: 'Favorites'});
         case ReservedCategory.Runs:
-            return formatMessage({defaultMessage: 'Runs'});
+            return formatMessage({defaultMessage: 'Runs and Checklists'});
         case ReservedCategory.Playbooks:
             return formatMessage({defaultMessage: 'Playbooks'});
         default:

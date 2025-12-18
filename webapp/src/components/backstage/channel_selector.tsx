@@ -21,6 +21,7 @@ import {StyledSelect} from './styles';
 
 export interface Props {
     id?: string;
+    'data-testid'?: string;
     onChannelsSelected?: (channelIds: string[]) => void; // if isMulti=true
     onChannelSelected?: (channelId: string, channelName: string) => void; // if isMulti=false
     channelIds: string[];
@@ -158,6 +159,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         <StyledSelect
             className={props.className}
             id={props.id}
+            data-testid={props['data-testid']}
             isMulti={props.isMulti}
             controlShouldRenderValue={props.shouldRenderValue}
             options={selectableChannels}

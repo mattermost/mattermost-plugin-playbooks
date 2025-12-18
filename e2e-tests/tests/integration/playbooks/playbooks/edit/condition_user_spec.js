@@ -188,6 +188,83 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
         });
     });
 
+    describe('channel messages for conditional tasks', () => {
+        it('posts channel message when property change adds new tasks', () => {
+            createPlaybookWithConditionalTask('High');
+
+            startRun();
+
+            navigateToRun();
+
+            // # Change property to trigger task addition
+            setPropertyValue('Priority', 'High');
+
+            // # Navigate to the run's channel
+            cy.then(() => {
+                cy.visit(`/${testTeam.name}/channels/${testRun.channel_id}`);
+            });
+
+            // * Verify message posted about new tasks
+            cy.get('#postListContent').within(() => {
+                cy.contains('updated Priority to High, resulting in the addition of 1 new task to Stage 1 checklist').should('exist');
+            });
+        });
+
+        it('posts message when multiple tasks are added', () => {
+            createPlaybookWithAttributes();
+
+            cy.then(() => {
+                const highOptionId = priorityField.attrs.options.find((o) => o.name === 'High').id;
+
+                // Create condition and add multiple conditional tasks
+                cy.apiCreatePlaybookCondition(testPlaybook.id, {
+                    is: {
+                        field_id: priorityField.id,
+                        value: [highOptionId],
+                    },
+                }).then((condition) => {
+                    testCondition = condition;
+
+                    return cy.apiGetPlaybook(testPlaybook.id);
+                }).then((playbook) => {
+                    // Add multiple conditional tasks
+                    playbook.checklists[0].items = [
+                        {
+                            title: 'High Priority Task 1',
+                            condition_id: testCondition.id,
+                        },
+                        {
+                            title: 'High Priority Task 2',
+                            condition_id: testCondition.id,
+                        },
+                        {
+                            title: 'High Priority Task 3',
+                            condition_id: testCondition.id,
+                        },
+                    ];
+                    return cy.apiUpdatePlaybook(playbook);
+                }).then(() => {
+                    startRun();
+
+                    navigateToRun();
+
+                    // # Change property to trigger task additions
+                    setPropertyValue('Priority', 'High');
+
+                    // # Navigate to the run's channel
+                    cy.then(() => {
+                        cy.visit(`/${testTeam.name}/channels/${testRun.channel_id}`);
+                    });
+
+                    // * Verify message posted about multiple tasks
+                    cy.get('#postListContent').within(() => {
+                        cy.contains('updated Priority to High, resulting in the addition of 3 new tasks to Stage 1 checklist').should('exist');
+                    });
+                });
+            });
+        });
+    });
+
     describe('text property conditions', () => {
         it('evaluates is and is_not conditions for text fields', () => {
             let textField;

@@ -148,17 +148,17 @@
   {
     "id": "app.user.run.confirm_finish.num_outstanding",
     "translation": {
-      "one": "There is **{{.Count}} outstanding task**. Are you sure you want to finish the run *{{.RunName}}* for all participants?",
-      "other": "There are **{{.Count}} outstanding tasks**. Are you sure you want to finish the run *{{.RunName}}* for all participants?"
+      "one": "There is **{{.Count}} outstanding task**. Are you sure you want to finish *{{.RunName}}* for all participants?",
+      "other": "There are **{{.Count}} outstanding tasks**. Are you sure you want to finish *{{.RunName}}* for all participants?"
     }
   },
   {
     "id": "app.user.run.confirm_finish.submit_label",
-    "translation": "Finish run"
+    "translation": "Finish"
   },
   {
     "id": "app.user.run.confirm_finish.title",
-    "translation": "Confirm finish run"
+    "translation": "Confirm finish"
   },
   {
     "id": "app.user.run.request_join_channel",

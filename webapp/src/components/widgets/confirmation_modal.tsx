@@ -242,6 +242,9 @@ export default class ConfirmModal extends React.Component<Props, State> {
                 <Modal.Header
                     className='GenericModal__header'
                     closeButton={false}
+                    placeholder={undefined}
+                    onPointerEnterCapture={undefined}
+                    onPointerLeaveCapture={undefined}
                 >
                     <ModalHeading id={'confirmModalLabel'}>
                         {this.props.title}

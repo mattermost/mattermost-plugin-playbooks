@@ -37,6 +37,20 @@ type PlaybookHandler struct {
 const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
+type PropertyOptionInput struct {
+	ID    *string `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color"`
+}
+
+type PropertyFieldAttrsInput struct {
+	Visibility string                `json:"visibility"`
+	SortOrder  float64               `json:"sort_order"`
+	Options    []PropertyOptionInput `json:"options"`
+	ParentID   string                `json:"parent_id"`
+	ValueType  string                `json:"value_type"`
+}
+
 type PropertyFieldRequest struct {
 	Name  string                   `json:"name"`
 	Type  string                   `json:"type"`
@@ -74,6 +88,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	propertyFieldsRouter := playbookRouter.PathPrefix("/property_fields").Subrouter()
 	propertyFieldsRouter.HandleFunc("", withContext(handler.getPlaybookPropertyFields)).Methods(http.MethodGet)
 	propertyFieldsRouter.HandleFunc("", withContext(handler.createPlaybookPropertyField)).Methods(http.MethodPost)
+	propertyFieldsRouter.HandleFunc("/reorder", withContext(handler.reorderPlaybookPropertyFields)).Methods(http.MethodPost)
 	propertyFieldRouter := propertyFieldsRouter.PathPrefix("/{fieldID:[A-Za-z0-9]+}").Subrouter()
 	propertyFieldRouter.HandleFunc("", withContext(handler.updatePlaybookPropertyField)).Methods(http.MethodPut)
 	propertyFieldRouter.HandleFunc("", withContext(handler.deletePlaybookPropertyField)).Methods(http.MethodDelete)
@@ -962,6 +977,14 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
 	if err != nil {
+		if errors.Is(err, app.ErrPropertyOptionsInUse) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
+		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, logger, err)
 		return
 	}
@@ -1010,6 +1033,10 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	}
 
 	if err := h.playbookService.DeletePropertyField(playbookID, fieldID); err != nil {
+		if errors.Is(err, app.ErrPropertyFieldInUse) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, logger, err)
 		return
 	}
@@ -1017,12 +1044,106 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyField {
-	field := PropertyFieldInput{
-		Name:  request.Name,
-		Type:  model.PropertyFieldType(request.Type),
-		Attrs: request.Attrs,
+type ReorderPropertyFieldsRequest struct {
+	FieldID        string `json:"field_id"`
+	TargetPosition int    `json:"target_position"`
+}
+
+func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID})
+
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+		return
 	}
 
-	return convertPropertyFieldInputToPropertyField(field)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	currentPlaybook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return
+	}
+
+	if currentPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return
+	}
+
+	var request ReorderPropertyFieldsRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode request", err)
+		return
+	}
+
+	if request.FieldID == "" {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "field_id is required", errors.New("missing required field"))
+		return
+	}
+
+	if request.TargetPosition < 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "target_position must be non-negative", errors.New("invalid target position"))
+		return
+	}
+
+	reorderedFields, err := h.playbookService.ReorderPropertyFields(playbookID, request.FieldID, request.TargetPosition)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return
+	}
+
+	ReturnJSON(w, reorderedFields, http.StatusOK)
+}
+
+func convertRequestToPropertyField(request PropertyFieldRequest) *app.PropertyField {
+	propertyField := &app.PropertyField{
+		PropertyField: model.PropertyField{
+			Name: request.Name,
+			Type: model.PropertyFieldType(request.Type),
+		},
+	}
+
+	if request.Attrs != nil {
+		attrs := app.Attrs{
+			Visibility: request.Attrs.Visibility,
+			SortOrder:  request.Attrs.SortOrder,
+			ParentID:   request.Attrs.ParentID,
+			ValueType:  request.Attrs.ValueType,
+		}
+
+		if request.Attrs.Visibility == "" {
+			attrs.Visibility = app.PropertyFieldVisibilityDefault
+		}
+
+		if request.Attrs.Options != nil {
+			options := make(model.PropertyOptions[*model.PluginPropertyOption], 0, len(request.Attrs.Options))
+			for _, opt := range request.Attrs.Options {
+				var id string
+				if opt.ID != nil {
+					id = *opt.ID
+				}
+				option := model.NewPluginPropertyOption(id, opt.Name)
+				if opt.Color != nil {
+					option.SetValue("color", *opt.Color)
+				}
+				options = append(options, option)
+			}
+			attrs.Options = options
+		}
+
+		propertyField.Attrs = attrs
+	} else {
+		propertyField.Attrs = app.Attrs{
+			Visibility: app.PropertyFieldVisibilityDefault,
+		}
+	}
+
+	return propertyField
 }

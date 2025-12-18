@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {render, unmountComponentAtNode} from 'react-dom';
+import {Root, createRoot} from 'react-dom/client';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {GlobalState} from '@mattermost/types/store';
@@ -13,11 +13,12 @@ import {FormattedMessage} from 'react-intl';
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import appIcon from 'src/components/assets/app-bar-icon.png';
+import appIcon from 'src/components/assets/app-bar-icon-check.svg';
 import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
 import LoginHook from 'src/components/login_hook';
+import ChecklistsRebrandTour from 'src/components/tutorial/checklists_rebrand_tour';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeWelcomeMessagePoster} from 'src/welcome_message_poster';
 import {makeSlashCommandHook} from 'src/slash_command';
@@ -145,13 +146,14 @@ export default class Plugin {
     activityFunc?: () => void;
 
     stylesContainer?: Element;
+    stylesRoot?: Root;
 
     doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
             try {
-                // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports
+                // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports, no-warning-comments
                 return require(`../i18n/${locale}.json`); // TODO make async, this increases bundle size exponentially
             } catch {
                 return {};
@@ -213,6 +215,7 @@ export default class Plugin {
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
         registry.registerRootComponent(LoginHook);
+        registry.registerRootComponent(ChecklistsRebrandTour);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
@@ -308,7 +311,8 @@ export default class Plugin {
     public initialize(registry: any, store: Store<GlobalState>): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
-        render(<><GlobalSelectStyle/></>, this.stylesContainer);
+        this.stylesRoot = createRoot(this.stylesContainer);
+        this.stylesRoot.render(<><GlobalSelectStyle/></>);
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
@@ -358,8 +362,9 @@ export default class Plugin {
             document.removeEventListener('click', this.activityFunc);
             delete this.activityFunc;
         }
-        if (this.stylesContainer) {
-            unmountComponentAtNode(this.stylesContainer);
+        if (this.stylesRoot) {
+            this.stylesRoot.unmount();
+            delete this.stylesRoot;
         }
     }
 }

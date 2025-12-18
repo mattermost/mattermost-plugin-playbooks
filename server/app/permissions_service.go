@@ -5,6 +5,7 @@ package app
 
 import (
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -438,14 +439,28 @@ func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, r
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
+	// For channelChecklists, use channel-based permissions
+	if p.isChannelChecklist(run) {
+		// Cannot modify checklists in archived channels
+		if p.isChannelArchived(run.ChannelID) {
+			return errors.Wrap(ErrNoPermissions, "cannot modify checklist in archived channel")
+		}
+
+		// Allow modification if user can post in channel
+		if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionCreatePost) {
+			return nil
+		}
+
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to modify channelChecklist `%s`", userID, run.ID)
+	}
+
+	// For playbook-based runs, use existing logic
 	if run.OwnerUserID == userID {
 		return nil
 	}
 
-	for _, participantID := range run.ParticipantIDs {
-		if participantID == userID {
-			return nil
-		}
+	if slices.Contains(run.ParticipantIDs, userID) {
+		return nil
 	}
 
 	if IsSystemAdmin(userID, p.pluginAPI) {
@@ -465,16 +480,26 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
+	// For channelChecklists, use channel-based permissions
+	if p.isChannelChecklist(run) {
+
+		// Check if user has permission to read the channel
+		if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
+			return nil
+		}
+
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have channel access to view channelChecklist `%s`", userID, runID)
+	}
+
+	// For playbook-based runs, use existing logic
 	// Has permission if is the owner of the run
 	if run.OwnerUserID == userID {
 		return nil
 	}
 
 	// Or if is a participant of the run
-	for _, participantID := range run.ParticipantIDs {
-		if participantID == userID {
-			return nil
-		}
+	if slices.Contains(run.ParticipantIDs, userID) {
+		return nil
 	}
 
 	// Or has view access to the playbook that created it
@@ -570,4 +595,19 @@ func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo
 		IsAdmin: isAdmin,
 		IsGuest: isGuest,
 	}, nil
+}
+
+// isChannelChecklist returns true if the run is a channelChecklist (not created from a playbook)
+func (p *PermissionsService) isChannelChecklist(run *PlaybookRun) bool {
+	return run.Type == RunTypeChannelChecklist
+}
+
+// isChannelArchived returns true if the channel has been archived/deleted
+func (p *PermissionsService) isChannelArchived(channelID string) bool {
+	channel, err := p.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to get channel")
+		return false
+	}
+	return channel.DeleteAt > 0
 }

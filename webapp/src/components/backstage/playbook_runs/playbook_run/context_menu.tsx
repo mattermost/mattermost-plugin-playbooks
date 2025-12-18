@@ -5,11 +5,13 @@ import styled from 'styled-components';
 
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useCanModifyRun} from 'src/hooks/run_permissions';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
-import {showRunActionsModal} from 'src/actions';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {PlaybookRun} from 'src/types/playbook_run';
 import DotMenu, {TitleButton} from 'src/components/dot_menu';
@@ -21,6 +23,10 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {AdminNotificationType} from 'src/constants';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import RunActionsModal from 'src/components/run_actions_modal';
+import {hideRunActionsModal} from 'src/actions';
+import {isRunActionsModalVisible} from 'src/selectors';
 
 import {
     CopyRunLinkMenuItem,
@@ -31,8 +37,16 @@ import {
     RenameRunItem,
     RestoreRunMenuItem,
     RunActionsMenuItem,
+    SaveAsPlaybookMenuItem,
     ToggleRunStatusUpdateMenuItem,
 } from './controls';
+
+export const CONTEXT_MENU_LOCATION = {
+    RHS: 'rhs',
+    BACKSTAGE: 'backstage',
+} as const;
+
+export type ContextMenuLocation = typeof CONTEXT_MENU_LOCATION[keyof typeof CONTEXT_MENU_LOCATION];
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -42,11 +56,24 @@ interface Props {
     hasPermanentViewerAccess: boolean;
     toggleFavorite: () => void;
     onRenameClick: () => void;
+    location?: ContextMenuLocation;
 }
 
-export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick}: Props) => {
+export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick, location = CONTEXT_MENU_LOCATION.BACKSTAGE}: Props) => {
+    const dispatch = useDispatch();
+    const currentUserId = useSelector(getCurrentUserId);
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
-    const [showModal, setShowModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
+    const showRunActionsFromRedux = useSelector(isRunActionsModalVisible);
+    const [showRunActionsFromMenu, setShowRunActionsFromMenu] = useState(false);
+
+    // Show modal if either Redux state or local state is true
+    const showRunActionsModal = showRunActionsFromRedux || showRunActionsFromMenu;
+
+    const canModify = useCanModifyRun(playbookRun, currentUserId);
+
+    const isPlaybookRun = playbookRun.type === PlaybookRunType.Playbook;
+    const icon = isPlaybookRun ? <PlayOutlineIcon size={18}/> : <CheckAllIcon size={18}/>;
 
     return (
         <>
@@ -55,7 +82,12 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 placement='bottom-start'
                 icon={
                     <>
-                        <Title>{playbookRun.name}</Title>
+                        <Title>
+                            <IconWrapper>
+                                {icon}
+                            </IconWrapper>
+                            <TitleText>{playbookRun.name}</TitleText>
+                        </Title>
                         <i
                             className={'icon icon-chevron-down'}
                             data-testid='runDropdown'
@@ -78,19 +110,26 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                 />
                 <Separator/>
                 <RunActionsMenuItem
-                    showRunActionsModal={showRunActionsModal}
+                    onClick={() => setShowRunActionsFromMenu(true)}
+                    playbookRun={playbookRun}
+                    role={role}
                 />
                 <ExportChannelLogsMenuItem
                     channelId={playbookRun.channel_id}
-                    setShowModal={setShowModal}
+                    setShowModal={setShowExportModal}
+                />
+                <SaveAsPlaybookMenuItem
+                    playbookRun={playbookRun}
                 />
                 <FinishRunMenuItem
                     playbookRun={playbookRun}
                     role={role}
+                    location={location}
                 />
                 <RestoreRunMenuItem
                     playbookRun={playbookRun}
                     role={role}
+                    location={location}
                 />
                 <ToggleRunStatusUpdateMenuItem
                     playbookRun={playbookRun}
@@ -104,8 +143,17 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
             </DotMenu>
             <UpgradeModal
                 messageType={AdminNotificationType.EXPORT_CHANNEL}
-                show={showModal}
-                onHide={() => setShowModal(false)}
+                show={showExportModal}
+                onHide={() => setShowExportModal(false)}
+            />
+            <RunActionsModal
+                playbookRun={playbookRun}
+                readOnly={!canModify}
+                show={showRunActionsModal}
+                onHide={() => {
+                    setShowRunActionsFromMenu(false);
+                    dispatch(hideRunActionsModal());
+                }}
             />
             {leaveRunConfirmModal}
         </>
@@ -174,8 +222,26 @@ const Title = styled.h1`
     font-size: 16px;
     line-height: 24px;
     margin: 0;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+`;
+
+const TitleText = styled.span`
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+`;
+
+const IconWrapper = styled.div`
+    margin-right: 6px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 `;
 

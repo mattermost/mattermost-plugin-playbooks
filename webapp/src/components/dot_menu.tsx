@@ -216,6 +216,7 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
 export const TitleButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
     min-width: 0;
+    max-width: 100%;
     padding: 2px 2px 2px 6px;
     border-radius: 4px;
     background: ${({$isActive}) => ($isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'none')};

@@ -257,14 +257,13 @@ export const isTeamEdition = createSelector(
     (config) => config.BuildEnterpriseReady !== 'true',
 );
 
-const rhsAboutCollapsedState = (state: GlobalState): Record<string, boolean> => pluginState(state).rhsAboutCollapsedByChannel;
+const rhsAboutCollapsedState = (state: GlobalState): Record<string, boolean> => pluginState(state).rhsAboutCollapsedByRun;
 
-export const currentRHSAboutCollapsedState = createSelector(
+export const currentRHSAboutCollapsedState = (runId: string) => createSelector(
     'currentRHSAboutCollapsedState',
-    getCurrentChannelId,
     rhsAboutCollapsedState,
-    (channelId, stateByChannel) => {
-        return stateByChannel[channelId] ?? false;
+    (stateByRun) => {
+        return stateByRun[runId] ?? undefined;
     },
 );
 
@@ -354,5 +353,25 @@ export const getConditionsByPlaybookId = createSelector(
     (conditions, conditionsPerPlaybook, playbookId) => {
         const conditionIds = conditionsPerPlaybook[playbookId] || [];
         return conditionIds.map((id: string) => conditions[id]).filter(Boolean);
+    }
+);
+
+export const getPropertyFields = (state: GlobalState) => pluginState(state).propertyFields || {};
+
+export const getPropertyFieldsPerPlaybook = (state: GlobalState) => pluginState(state).propertyFieldsPerPlaybook || {};
+
+export const getPropertyFieldsByPlaybookId = createSelector(
+    'getPropertyFieldsByPlaybookId',
+    [
+        getPropertyFields,
+        getPropertyFieldsPerPlaybook,
+        (state: GlobalState, playbookId: string) => playbookId,
+    ],
+    (propertyFields, propertyFieldsPerPlaybook, playbookId) => {
+        const fieldIds = propertyFieldsPerPlaybook[playbookId];
+        if (!fieldIds) {
+            return undefined;
+        }
+        return fieldIds.map((id: string) => propertyFields[id]).filter(Boolean);
     }
 );

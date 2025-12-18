@@ -569,17 +569,17 @@ paths:
             schema:
               type: object
               properties:
-                active_stage:
-                  type: integer
-                  description: Zero-based index of the stage that will be made active.
-                  example: 2
+                name:
+                  type: string
+                  description: The new name of the playbook run.
+                  example: Updated Server Down Incident
       x-codeSamples:
         - lang: curl
           source: |
             curl -X PATCH 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"active_stage": 2}'
+            -d '{"name": "Updated Server Down Incident"}'
       responses:
         200:
           description: Playbook run successfully updated.
@@ -1848,6 +1848,69 @@ paths:
           description: Property field deleted successfully.
         403:
           $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+
+  /plugins/playbooks/api/v0/playbooks/{id}/property_fields/reorder:
+    post:
+      summary: Reorder property fields for a playbook
+      operationId: reorderPlaybookPropertyFields
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - field_id
+                - target_position
+              properties:
+                field_id:
+                  type: string
+                  description: ID of the property field to move.
+                  example: p7fj3k2l5m8n9q1r4s6t8v0w2x
+                target_position:
+                  type: integer
+                  format: int32
+                  description: Target position index (zero-based) where the field should be moved.
+                  example: 3
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields/reorder' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "field_id": "p7fj3k2l5m8n9q1r4s6t8v0w2x",
+              "target_position": 3
+            }'
+      responses:
+        200:
+          description: Property fields reordered successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PropertyField"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
         500:
           $ref: "#/components/responses/500"
 

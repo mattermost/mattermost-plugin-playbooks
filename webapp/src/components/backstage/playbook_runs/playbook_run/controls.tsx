@@ -3,6 +3,7 @@
 
 import {
     ArrowDownIcon,
+    BookOutlineIcon,
     BullhornOutlineIcon,
     CloseIcon,
     FlagOutlineIcon,
@@ -15,17 +16,20 @@ import {
 } from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+import {useSelector} from 'react-redux';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
-import {useAllowChannelExport, useExportLogAvailable} from 'src/hooks';
-import {ShowRunActionsModal} from 'src/types/actions';
+import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {copyToClipboard} from 'src/utils';
 
 import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/backstage/shared';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
+import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
+import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
@@ -68,13 +72,27 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
 };
 
 export const RenameRunItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
-    if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+    const currentUserId = useSelector(getCurrentUserId);
+
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, currentUserId);
+
+    if (canModify) {
         return (
             <StyledDropdownMenuItem
                 onClick={props.onClick}
             >
                 <PencilOutlineIcon size={18}/>
-                <FormattedMessage defaultMessage='Rename run'/>
+                <FormattedMessage defaultMessage='Rename'/>
             </StyledDropdownMenuItem>
         );
     }
@@ -102,7 +120,7 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
                 <StyledDropdownMenuItemRed onClick={props.showLeaveRunConfirm}>
                     <CloseIcon size={18}/>
                     <FormattedMessage
-                        defaultMessage='Leave {isFollowing, select, true { and unfollow } other {}}run'
+                        defaultMessage='Leave{isFollowing, select, true { and unfollow} other {}}'
                         values={{isFollowing}}
                     />
                 </StyledDropdownMenuItemRed>
@@ -113,17 +131,33 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
     return null;
 };
 
-export const RunActionsMenuItem = (props: {showRunActionsModal(): ShowRunActionsModal}) => {
-    const dispatch = useDispatch();
+export const RunActionsMenuItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
+    const currentUserId = useSelector(getCurrentUserId);
 
-    return (
-        <StyledDropdownMenuItem
-            onClick={() => dispatch(props.showRunActionsModal())}
-        >
-            <LightningBoltOutlineIcon size={18}/>
-            <FormattedMessage defaultMessage='Run actions'/>
-        </StyledDropdownMenuItem>
-    );
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, currentUserId);
+
+    if (canModify) {
+        return (
+            <StyledDropdownMenuItem
+                onClick={props.onClick}
+            >
+                <LightningBoltOutlineIcon size={18}/>
+                <FormattedMessage defaultMessage='Actions'/>
+            </StyledDropdownMenuItem>
+        );
+    }
+
+    return null;
 };
 
 export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportClick: () => void}) => {
@@ -141,10 +175,23 @@ export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportCli
     );
 };
 
-export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const onFinishRun = useOnFinishRun(props.playbookRun);
+export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
+    const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
+    const currentUserId = useSelector(getCurrentUserId);
 
-    if (playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, currentUserId);
+
+    if (canModify) {
         return (
             <>
                 <Separator/>
@@ -152,7 +199,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role})
                     onClick={onFinishRun}
                 >
                     <FlagOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Finish run'/>
+                    <FormattedMessage defaultMessage='Finish'/>
                 </StyledDropdownMenuItem>
             </>
         );
@@ -182,10 +229,24 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
     );
 };
 
-export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
-    const onRestoreRun = useOnRestoreRun(props.playbookRun);
+export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
+    const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
+    const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
+    const currentUserId = useSelector(getCurrentUserId);
 
-    if (!playbookRunIsActive(props.playbookRun) && props.role === Role.Participant) {
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canRestore = useCanRestoreRun(runForPermissions, currentUserId);
+
+    if (!playbookRunIsActive(props.playbookRun) && canRestore) {
         return (
             <>
                 <Separator/>
@@ -194,7 +255,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
                     className='restartRun'
                 >
                     <FlagOutlineIcon size={18}/>
-                    <FormattedMessage defaultMessage='Restart run'/>
+                    {isChannelChecklist ? <FormattedMessage defaultMessage='Resume'/> : <FormattedMessage defaultMessage='Restart'/>}
                 </StyledDropdownMenuItem>
             </>
         );
@@ -205,12 +266,25 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role}
 
 export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
     const toggleRunStatusUpdates = useToggleRunStatusUpdate(props.playbookRun);
+    const currentUserId = useSelector(getCurrentUserId);
 
     const statusUpdateEnabled = props.playbookRun.status_update_enabled;
 
+    // Create a minimal run object with only the fields needed for permission checking
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, currentUserId);
+
     return (
         <>
-            { props.role === Role.Participant &&
+            { canModify &&
                 <>
                     <Separator/>
                     <StyledDropdownMenuItem
@@ -224,5 +298,49 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                 </>
             }
         </>
+    );
+};
+
+export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
+    const {formatMessage} = useIntl();
+    const {create} = usePlaybooksRouting();
+
+    const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
+
+    const handleSaveAsPlaybook = () => {
+        // Sanitize checklists by removing IDs and using newChecklistItem helper
+        const sanitizedChecklists = props.playbookRun.checklists.map((checklist) => ({
+            title: checklist.title,
+            items: checklist.items.map((item) =>
+                newChecklistItem(
+                    item.title,
+                    item.description,
+                    item.command,
+                    item.state as ChecklistItemState
+                )
+            ),
+        }));
+
+        // Always create public playbooks (can convert public -> private later, but not vice versa)
+        // Navigate to create new playbook with the run's checklists as a template
+        create({
+            teamId: props.playbookRun.team_id,
+            description: props.playbookRun.summary || formatMessage({defaultMessage: 'Created from "{runName}"'}, {runName: props.playbookRun.name}),
+            public: true,
+            name: props.playbookRun.name,
+        }, {
+            checklists: sanitizedChecklists,
+        });
+    };
+
+    if (!isChannelChecklist) {
+        return null;
+    }
+
+    return (
+        <StyledDropdownMenuItem onClick={handleSaveAsPlaybook}>
+            <BookOutlineIcon size={18}/>
+            <FormattedMessage defaultMessage='Save as playbook'/>
+        </StyledDropdownMenuItem>
     );
 };

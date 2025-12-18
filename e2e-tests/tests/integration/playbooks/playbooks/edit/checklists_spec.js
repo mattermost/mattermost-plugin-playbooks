@@ -50,7 +50,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     // # Trigger assignee select menu
                     cy.findByText('Untitled task').trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    cy.findByText('Assignee...').click();
+                    cy.findByTestId('assignee-profile-selector').click();
 
                     // * Verify that the assignee input is focused now
                     cy.focused().
@@ -110,7 +110,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     // # Open the slash command input on a step
                     cy.findByText('Untitled task').trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    cy.findByText('Command...').click();
+                    cy.findByTestId('command-button').click();
 
                     // * Verify the slash command input field now has focus
                     // * and starts with a slash prefix.
@@ -135,7 +135,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     // # Open the slash command input on a step
                     cy.findByText('Untitled task').trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    cy.findByText('Command...').click();
+                    cy.findByTestId('command-button').click();
                 });
 
                 cy.get('#floating-ui-root').within(() => {
@@ -150,8 +150,9 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     cy.findByText('Save').click();
                 });
 
-                // * Verify no slash command was saved
-                cy.findByText('Command...').should('be.visible');
+                // * Verify no slash command was saved (icon shows when no command)
+                cy.findByTestId('command-button').should('be.visible');
+                cy.get('.icon-slash-forward').should('exist');
             });
 
             it('removes the input prompt when blurring with an invalid slash command', () => {
@@ -166,7 +167,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     // # Open the slash command input on a step
                     cy.findByText('Untitled task').trigger('mouseover');
                     cy.findByTestId('hover-menu-edit-button').click();
-                    cy.findByText('Command...').click();
+                    cy.findByTestId('command-button').click();
                 });
 
                 cy.get('#floating-ui-root').within(() => {
@@ -179,8 +180,9 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     cy.findByText('Save').click();
                 });
 
-                // * Verify no slash command was saved
-                cy.findByText('Command...').should('be.visible');
+                // * Verify no slash command was saved (icon shows when no command)
+                cy.findByTestId('command-button').should('be.visible');
+                cy.get('.icon-slash-forward').should('exist');
             });
         });*/
     });
