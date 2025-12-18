@@ -56,15 +56,21 @@ func (c *GenController) CreatePlaybook(u ltuser.User, pbClient *client.Client) (
 		return ltcontrol.UserActionResponse{Err: ltcontrol.NewUserError(err)}
 	}
 
+	// These numbers assume there are at least 10k users in each team, which
+	// happens in the 100M posts DB dump
+	page := rand.Intn(100)
+	perPage := 100
+	teamMembers, _, err := u.Client().GetTeamMembers(context.Background(), team.Id, page, perPage, "")
+	if err := u.GetTeamMembers(team.Id, page, perPage); err != nil {
+		return ltcontrol.UserActionResponse{Err: ltcontrol.NewUserError(err)}
+	}
+
 	// Get between 1 and 10 random team members
 	numMembers := 1 + rand.Intn(10)
 	addedMembers := map[string]struct{}{}
 	members := make([]client.PlaybookMember, 0, numMembers)
 	for range numMembers {
-		teamMember, err := u.Store().RandomTeamMember(team.Id)
-		if err != nil {
-			return ltcontrol.UserActionResponse{Err: ltcontrol.NewUserError(err)}
-		}
+		teamMember := teamMembers[rand.Intn(len(teamMembers))]
 
 		// Make sure not to add the same user more than once
 		if _, ok := addedMembers[teamMember.UserId]; ok {
