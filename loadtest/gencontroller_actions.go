@@ -61,7 +61,7 @@ func (c *GenController) CreatePlaybook(u ltuser.User, pbClient *client.Client) (
 	page := rand.Intn(100)
 	perPage := 100
 	teamMembers, _, err := u.Client().GetTeamMembers(context.Background(), team.Id, page, perPage, "")
-	if err := u.GetTeamMembers(team.Id, page, perPage); err != nil {
+	if err != nil {
 		return ltcontrol.UserActionResponse{Err: ltcontrol.NewUserError(err)}
 	}
 
@@ -172,7 +172,7 @@ func (c *GenController) CreateRun(u ltuser.User, pbClient *client.Client) (res l
 		}
 	}
 
-	channelId := ""
+	channelID := ""
 	// A third of the runs will be created in existing channels
 	if randBool(0.3) {
 		// Select a random public channel
@@ -190,14 +190,14 @@ func (c *GenController) CreateRun(u ltuser.User, pbClient *client.Client) (res l
 
 			channel = *channels[rand.Intn(len(channels))]
 		}
-		channelId = channel.Id
+		channelID = channel.Id
 	}
 
 	run, err := pbClient.PlaybookRuns.Create(ctx, client.PlaybookRunCreateOptions{
 		Name:            ltcontrol.GenerateRandomSentences(1 + rand.Intn(5)),
 		OwnerUserID:     u.Store().Id(),
 		TeamID:          team.Id,
-		ChannelID:       channelId,
+		ChannelID:       channelID,
 		Description:     ltcontrol.GenerateRandomSentences(1 + rand.Intn(50)),
 		PlaybookID:      playbook.ID,
 		CreatePublicRun: model.NewPointer(true),

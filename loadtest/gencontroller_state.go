@@ -27,26 +27,26 @@ func init() {
 	}
 }
 
-func (s *state) inc(targetId string, targetVal int64) bool {
+func (s *state) inc(targetID string, targetVal int64) bool {
 	s.targetsMut.Lock()
 	defer s.targetsMut.Unlock()
-	if s.targets[targetId] == targetVal {
+	if s.targets[targetID] == targetVal {
 		return false
 	}
-	s.targets[targetId]++
+	s.targets[targetID]++
 	return true
 }
 
-func (s *state) dec(targetId string) {
+func (s *state) dec(targetID string) {
 	s.targetsMut.Lock()
 	defer s.targetsMut.Unlock()
-	s.targets[targetId]--
+	s.targets[targetID]--
 }
 
-func (s *state) get(targetId string) int64 {
+func (s *state) get(targetID string) int64 {
 	s.targetsMut.RLock()
 	defer s.targetsMut.RUnlock()
-	return s.targets[targetId]
+	return s.targets[targetID]
 }
 
 func (s *state) done() bool {

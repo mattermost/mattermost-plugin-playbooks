@@ -2,7 +2,6 @@ package loadtest
 
 import (
 	"github.com/blang/semver"
-	"github.com/mattermost/mattermost-load-test-ng/loadtest/plugins"
 	ltplugins "github.com/mattermost/mattermost-load-test-ng/loadtest/plugins"
 )
 
@@ -51,4 +50,4 @@ func (c *GenController) Done() bool {
 	return globalState.done()
 }
 
-var _ plugins.GenPlugin = &GenController{}
+var _ ltplugins.GenPlugin = &GenController{}
