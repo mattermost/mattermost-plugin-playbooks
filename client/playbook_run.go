@@ -196,10 +196,10 @@ type SortDirection string
 
 const (
 	// Desc sorts the results in descending order.
-	SortDesc SortDirection = "desc"
+	SortDesc SortDirection = "DESC"
 
 	// Asc sorts the results in ascending order.
-	SortAsc SortDirection = "asc"
+	SortAsc SortDirection = "ASC"
 )
 
 // PlaybookRunListOptions specifies the optional parameters to the
