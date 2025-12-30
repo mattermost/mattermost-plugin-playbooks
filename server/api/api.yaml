@@ -1057,6 +1057,7 @@ paths:
                   example: Ask the customer for more information in [Zendesk](https://www.zendesk.com/).
               required:
                 - title
+                - command
       x-codeSamples:
         - lang: curl
           source: |
