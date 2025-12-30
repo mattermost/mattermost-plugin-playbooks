@@ -174,9 +174,9 @@ paths:
                   type: string
                   description: The name of the playbook run.
                   example: Server down in EU cluster
-                description:
+                summary:
                   type: string
-                  description: The description of the playbook run.
+                  description: The summary of the playbook run.
                   example: There is one server in the EU cluster that is not responding since April 12.
                 owner_user_id:
                   type: string
@@ -200,7 +200,7 @@ paths:
             curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "owner_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
+            -d '{"name": "Server down in EU cluster", "summary": "There is one server in the EU cluster that is not responding since April 12.", "owner_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
       responses:
         201:
           description: Created playbook run.
@@ -573,9 +573,9 @@ paths:
                   type: string
                   description: The new name of the playbook run. Must not be empty.
                   example: Updated Server Down Incident
-                description:
+                summary:
                   type: string
-                  description: The new description/summary of the playbook run. Can be empty to clear the description.
+                  description: The new summary of the playbook run. Can be empty to clear the summary.
                   example: "## Incident Summary\n\nResolved the server outage."
       x-codeSamples:
         - lang: curl
@@ -583,7 +583,7 @@ paths:
             curl -X PATCH 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"name": "Updated Server Down Incident", "description": "## Summary\n\nResolved the server outage."}'
+            -d '{"name": "Updated Server Down Incident", "summary": "## Summary\n\nResolved the server outage."}'
       responses:
         200:
           description: Playbook run successfully updated.
@@ -2382,9 +2382,9 @@ components:
           type: string
           description: The name of the playbook run.
           example: Server down in EU cluster
-        description:
+        summary:
           type: string
-          description: The description of the playbook run.
+          description: The summary of the playbook run.
           example: There is one server in the EU cluster that is not responding since April 12.
         is_active:
           type: boolean

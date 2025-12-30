@@ -255,7 +255,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		}
 	}
 
-	// If description is being updated, apply the change (empty is allowed)
+	// If summary is being updated, apply the change (empty is allowed)
 	if updates.Description != nil {
 		trimmedDescription := strings.TrimSpace(*updates.Description)
 		fieldsToUpdate["Description"] = trimmedDescription
