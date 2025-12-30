@@ -188,7 +188,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			TeamID:      playbookRunCreateOptions.TeamID,
 			ChannelID:   playbookRunCreateOptions.ChannelID,
 			Name:        playbookRunCreateOptions.Name,
-			Summary:     playbookRunCreateOptions.Description,
+			Summary:     playbookRunCreateOptions.Summary,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 			Type:        runType,
@@ -241,7 +241,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	}
 
 	// Prevent updates on finished runs
-	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Description != nil) {
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Summary != nil) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", app.ErrPlaybookRunNotActive)
 		return
 	}
@@ -256,9 +256,9 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	}
 
 	// If summary is being updated, apply the change (empty is allowed)
-	if updates.Description != nil {
-		trimmedDescription := strings.TrimSpace(*updates.Description)
-		fieldsToUpdate["Description"] = trimmedDescription
+	if updates.Summary != nil {
+		trimmedSummary := strings.TrimSpace(*updates.Summary)
+		fieldsToUpdate["Description"] = trimmedSummary
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 

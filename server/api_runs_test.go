@@ -480,13 +480,13 @@ func TestCreateInvalidRuns(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("fails if description is longer than 4096", func(t *testing.T) {
+	t.Run("fails if summary is longer than 4096", func(t *testing.T) {
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "test run",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  e.BasicPlaybook.ID,
-			Description: strings.Repeat("A", 4097),
+			Summary:     strings.Repeat("A", 4097),
 		})
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 		assert.Nil(t, run)
@@ -2348,7 +2348,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		require.Equal(t, originalName, updatedRun.Name)
 	})
 
-	t.Run("update run description", func(t *testing.T) {
+	t.Run("update run summary", func(t *testing.T) {
 		// Create a fresh run
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Test Run",
@@ -2361,21 +2361,21 @@ func TestUpdatePlaybookRun(t *testing.T) {
 
 		oldSummaryModifiedAt := testRun.SummaryModifiedAt
 
-		newDescription := "## Incident Summary\n\nThis is a test description."
+		newSummary := "## Incident Summary\n\nThis is a test description."
 		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
-			Description: &newDescription,
+			Summary: &newSummary,
 		})
 		require.NoError(t, err)
-		require.Equal(t, newDescription, updatedRun.Summary)
+		require.Equal(t, newSummary, updatedRun.Summary)
 		require.Greater(t, updatedRun.SummaryModifiedAt, oldSummaryModifiedAt)
 
 		// Verify persistence
 		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
 		require.NoError(t, err)
-		require.Equal(t, newDescription, run.Summary)
+		require.Equal(t, newSummary, run.Summary)
 	})
 
-	t.Run("update run name and description together", func(t *testing.T) {
+	t.Run("update run name and summary together", func(t *testing.T) {
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Original Name",
 			OwnerUserID: e.RegularUser.Id,
@@ -2385,23 +2385,23 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		require.NoError(t, err)
 
 		newName := "Updated Name"
-		newDescription := "Updated description"
+		newSummary := "Updated description"
 		oldSummaryModifiedAt := testRun.SummaryModifiedAt
 
 		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
-			Name:        &newName,
-			Description: &newDescription,
+			Name:    &newName,
+			Summary: &newSummary,
 		})
 		require.NoError(t, err)
 		require.Equal(t, newName, updatedRun.Name)
-		require.Equal(t, newDescription, updatedRun.Summary)
+		require.Equal(t, newSummary, updatedRun.Summary)
 		require.Greater(t, updatedRun.SummaryModifiedAt, oldSummaryModifiedAt)
 	})
 
-	t.Run("update run with empty description succeeds", func(t *testing.T) {
+	t.Run("update run with empty summary succeeds", func(t *testing.T) {
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Test Run",
-			Description: "Initial description",
+			Summary:     "Initial description",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  e.BasicPlaybook.ID,
@@ -2409,9 +2409,9 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "Initial description", testRun.Summary)
 
-		emptyDescription := ""
+		emptySummary := ""
 		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
-			Description: &emptyDescription,
+			Summary: &emptySummary,
 		})
 		require.NoError(t, err)
 		require.Equal(t, "", updatedRun.Summary)
@@ -2422,7 +2422,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		require.Equal(t, "", run.Summary)
 	})
 
-	t.Run("update run description trims whitespace", func(t *testing.T) {
+	t.Run("update run summary trims whitespace", func(t *testing.T) {
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Test Run",
 			OwnerUserID: e.RegularUser.Id,
@@ -2431,15 +2431,15 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		descriptionWithWhitespace := "  Test description  \n\t"
+		summaryWithWhitespace := "  Test description  \n\t"
 		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
-			Description: &descriptionWithWhitespace,
+			Summary: &summaryWithWhitespace,
 		})
 		require.NoError(t, err)
 		require.Equal(t, "Test description", updatedRun.Summary)
 	})
 
-	t.Run("update finished run description fails", func(t *testing.T) {
+	t.Run("update finished run summary fails", func(t *testing.T) {
 		// Create and finish a run
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Run to finish",
@@ -2452,9 +2452,9 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), testRun.ID)
 		require.NoError(t, err)
 
-		newDescription := "Updated description for finished run"
+		newSummary := "Updated description for finished run"
 		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
-			Description: &newDescription,
+			Summary: &newSummary,
 		})
 		require.Error(t, err)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
