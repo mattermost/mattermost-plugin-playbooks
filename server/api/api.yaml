@@ -571,15 +571,19 @@ paths:
               properties:
                 name:
                   type: string
-                  description: The new name of the playbook run.
+                  description: The new name of the playbook run. Must not be empty.
                   example: Updated Server Down Incident
+                description:
+                  type: string
+                  description: The new description/summary of the playbook run. Can be empty to clear the description.
+                  example: "## Incident Summary\n\nResolved the server outage."
       x-codeSamples:
         - lang: curl
           source: |
             curl -X PATCH 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"name": "Updated Server Down Incident"}'
+            -d '{"name": "Updated Server Down Incident", "description": "## Summary\n\nResolved the server outage."}'
       responses:
         200:
           description: Playbook run successfully updated.
@@ -1004,7 +1008,7 @@ paths:
   /plugins/playbooks/api/v0/runs/{id}/checklists/{checklist}/item/{item}:
     put:
       summary: Update an item of a playbook run's checklist
-      description: Update the title and the slash command of an item in one of the playbook run's checklists.
+      description: Update the title, slash command, and description of an item in one of the playbook run's checklists.
       operationId: itemRename
       security:
         - BearerAuth: []
@@ -1047,15 +1051,18 @@ paths:
                   type: string
                   description: The new slash command of the item.
                   example: /jira update ticket
+                description:
+                  type: string
+                  description: The new description of the item, formatted with Markdown.
+                  example: Ask the customer for more information in [Zendesk](https://www.zendesk.com/).
               required:
                 - title
-                - command
       x-codeSamples:
         - lang: curl
           source: |
             curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/6t7jdgyqr7b5sk24zkauhmrb06/checklists/1/item/0' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "Gather information from server's logs.", "command": "/jira update ticket"}'
+            -d '{"title": "Gather information from server's logs.", "command": "/jira update ticket", "description": "Ask the customer for more information in [Zendesk](https://www.zendesk.com/)."}'
       responses:
         200:
           description: Item updated.

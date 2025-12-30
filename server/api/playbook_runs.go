@@ -234,15 +234,15 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		return
 	}
 
-	// Prevent renaming finished runs
-	if oldPlaybookRun.CurrentStatus == app.StatusFinished {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)
-		return
-	}
-
 	var updates client.PlaybookRunUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	// Prevent updates on finished runs
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Description != nil) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", app.ErrPlaybookRunNotActive)
 		return
 	}
 
@@ -253,6 +253,13 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
 			return
 		}
+	}
+
+	// If description is being updated, apply the change (empty is allowed)
+	if updates.Description != nil {
+		trimmedDescription := strings.TrimSpace(*updates.Description)
+		fieldsToUpdate["Description"] = trimmedDescription
+		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 
 	// Update using GraphqlUpdate
