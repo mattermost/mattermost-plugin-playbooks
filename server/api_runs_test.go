@@ -190,6 +190,10 @@ func TestRunCreation(t *testing.T) {
 						app.DialogFieldNameKey:       "Standalone Run",
 					},
 				},
+				permissionsPrep: func() {
+					// Grant run_create permission for creating runs without a playbook ID (MM-66249)
+					e.Permissions.AddPermissionToRole(model.PermissionRunCreate.Id, model.TeamUserRoleId)
+				},
 				expected: func(t *testing.T, result *http.Response, err error) {
 					require.NoError(t, err)
 					assert.Equal(t, http.StatusCreated, result.StatusCode)
