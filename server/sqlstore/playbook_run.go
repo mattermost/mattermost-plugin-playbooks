@@ -4,6 +4,7 @@
 package sqlstore
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -364,7 +365,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		return nil, errors.Wrap(err, "failed to apply sort options")
 	}
 
-	tx, err := s.store.db.Beginx()
+	tx, err := s.store.db.BeginTxx(context.Background(), &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not begin transaction")
 	}
@@ -746,7 +747,7 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 		return nil, errors.New("ID cannot be empty")
 	}
 
-	tx, err := s.store.db.Beginx()
+	tx, err := s.store.db.BeginTxx(context.Background(), &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not begin transaction")
 	}
