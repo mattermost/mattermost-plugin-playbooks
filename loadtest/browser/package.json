@@ -1,0 +1,33 @@
+{
+  "name": "playbooks-load-simulations",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs && tsc --declaration --emitDeclarationOnly --outDir dist",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mattermost/playwright-lib": "file:../../../mattermost/e2e-tests/playwright/lib"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0",
+    "@types/node": "24.10.1",
+    "esbuild": "^0.27.2",
+    "playwright": "1.57.0",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.57.0",
+    "playwright": ">=1.57.0"
+  }
+}
