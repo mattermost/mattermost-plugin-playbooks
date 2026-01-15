@@ -92,7 +92,7 @@ export async function createPlaybookRun(
     owner_user_id: string,
     team_id: string,
     name: string,
-    description: string,
+    summary: string,
     channel_id?: string,
     create_public_run?: boolean
 ) {
@@ -100,7 +100,7 @@ export async function createPlaybookRun(
         owner_user_id,
         team_id,
         name,
-        description,
+        summary,
         playbook_id,
         channel_id,
         create_public_run,
