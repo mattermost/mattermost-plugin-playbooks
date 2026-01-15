@@ -29,6 +29,17 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             testTeam = team;
             testUser = user;
 
+            // # Grant run_create permission to team_user role for creating standalone runs
+            // (runs without a playbook ID require this permission - see MM-66249)
+            // Note: This must be done while still logged in as admin (before cy.apiLogin(testUser))
+            cy.apiGetRolesByNames(['team_user']).then(({roles}) => {
+                const teamUserRole = roles[0];
+                if (!teamUserRole.permissions.includes('run_create')) {
+                    const updatedPermissions = [...teamUserRole.permissions, 'run_create'];
+                    cy.apiPatchRole(teamUserRole.id, {permissions: updatedPermissions});
+                }
+            });
+
             cy.apiLogin(testUser);
 
             // # Create a playbook
@@ -68,16 +79,6 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
                             cy.apiFinishRun(run.id);
                         });
                     }
-
-                    // # Grant run_create permission to team_user role for creating standalone runs
-                    // (runs without a playbook ID require this permission - see MM-66249)
-                    cy.apiGetRolesByNames(['team_user']).then(({roles}) => {
-                        const teamUserRole = roles[0];
-                        if (!teamUserRole.permissions.includes('run_create')) {
-                            const updatedPermissions = [...teamUserRole.permissions, 'run_create'];
-                            cy.apiPatchRole(teamUserRole.id, {permissions: updatedPermissions});
-                        }
-                    });
 
                     // # Create a standalone run without a playbook (channel checklist) in the same channel
                     cy.apiRunPlaybook({
