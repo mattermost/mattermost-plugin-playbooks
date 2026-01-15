@@ -220,6 +220,7 @@ const ConditionHeader = ({
             >
                 <span>
                     <DestructiveActionButton
+                        aria-label={formatMessage({defaultMessage: 'Delete condition'})}
                         data-testid='condition-header-delete-button'
                         onClick={() => {
                             openConfirmModal({
@@ -391,7 +392,11 @@ const ConditionHeader = ({
                         content={formatMessage({defaultMessage: 'Done editing'})}
                     >
                         <span>
-                            <ActionButton onClick={() => setIsEditing(false)}>
+                            <ActionButton
+                                aria-label={formatMessage({defaultMessage: 'Save condition changes'})}
+                                data-testid='condition-header-save-button'
+                                onClick={() => setIsEditing(false)}
+                            >
                                 <i className='icon-check'/>
                             </ActionButton>
                         </span>

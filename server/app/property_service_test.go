@@ -775,3 +775,110 @@ func TestReorderPropertyFieldsLogic(t *testing.T) {
 		assert.Contains(t, err.Error(), "target position out of bounds")
 	})
 }
+
+func TestPropertyService_copyPropertyFieldForPlaybook(t *testing.T) {
+	s := &propertyService{}
+	sourcePlaybookID := model.NewId()
+	targetPlaybookID := model.NewId()
+
+	t.Run("text field copied to new playbook", func(t *testing.T) {
+		sourceProperty := &model.PropertyField{
+			ID:         model.NewId(),
+			Name:       "Test Field",
+			Type:       model.PropertyFieldTypeText,
+			TargetType: PropertyTargetTypePlaybook,
+			TargetID:   sourcePlaybookID,
+			Attrs: model.StringInterface{
+				PropertyAttrsVisibility: PropertyFieldVisibilityDefault,
+			},
+		}
+
+		targetProperty, err := s.copyPropertyFieldForPlaybook(sourceProperty, targetPlaybookID)
+		require.NoError(t, err)
+
+		require.Empty(t, targetProperty.ID)
+		require.Equal(t, sourceProperty.Name, targetProperty.Name)
+		require.Equal(t, sourceProperty.Type, targetProperty.Type)
+		require.Equal(t, PropertyTargetTypePlaybook, targetProperty.TargetType)
+		require.Equal(t, targetPlaybookID, targetProperty.TargetID)
+		require.Empty(t, targetProperty.Attrs[PropertyAttrsParentID])
+	})
+
+	t.Run("select field with options copied to new playbook", func(t *testing.T) {
+		option1 := model.NewPluginPropertyOption("opt1", "High")
+		option2 := model.NewPluginPropertyOption("opt2", "Low")
+		originalOptions := []*model.PluginPropertyOption{option1, option2}
+
+		sourceProperty := &model.PropertyField{
+			ID:         model.NewId(),
+			Name:       "Priority",
+			Type:       model.PropertyFieldTypeSelect,
+			TargetType: PropertyTargetTypePlaybook,
+			TargetID:   sourcePlaybookID,
+			Attrs: model.StringInterface{
+				PropertyAttrsVisibility:             PropertyFieldVisibilityDefault,
+				model.PropertyFieldAttributeOptions: originalOptions,
+			},
+		}
+
+		targetProperty, err := s.copyPropertyFieldForPlaybook(sourceProperty, targetPlaybookID)
+		require.NoError(t, err)
+
+		require.Empty(t, targetProperty.ID)
+		require.Equal(t, sourceProperty.Name, targetProperty.Name)
+		require.Equal(t, PropertyTargetTypePlaybook, targetProperty.TargetType)
+		require.Equal(t, targetPlaybookID, targetProperty.TargetID)
+
+		targetOptions, ok := targetProperty.Attrs[model.PropertyFieldAttributeOptions].(model.PropertyOptions[*model.PluginPropertyOption])
+		require.True(t, ok)
+		require.Len(t, targetOptions, 2)
+
+		require.NotEqual(t, option1.GetID(), targetOptions[0].GetID())
+		require.NotEqual(t, option2.GetID(), targetOptions[1].GetID())
+		require.NotEmpty(t, targetOptions[0].GetID())
+		require.NotEmpty(t, targetOptions[1].GetID())
+		require.Equal(t, "High", targetOptions[0].GetName())
+		require.Equal(t, "Low", targetOptions[1].GetName())
+	})
+
+	t.Run("multiselect field with options copied to new playbook", func(t *testing.T) {
+		option1 := model.NewPluginPropertyOption("opt1", "Bug")
+		option2 := model.NewPluginPropertyOption("opt2", "Feature")
+		option3 := model.NewPluginPropertyOption("opt3", "Improvement")
+		originalOptions := []*model.PluginPropertyOption{option1, option2, option3}
+
+		sourceProperty := &model.PropertyField{
+			ID:         model.NewId(),
+			Name:       "Tags",
+			Type:       model.PropertyFieldTypeMultiselect,
+			TargetType: PropertyTargetTypePlaybook,
+			TargetID:   sourcePlaybookID,
+			Attrs: model.StringInterface{
+				PropertyAttrsVisibility:             PropertyFieldVisibilityDefault,
+				model.PropertyFieldAttributeOptions: originalOptions,
+			},
+		}
+
+		targetProperty, err := s.copyPropertyFieldForPlaybook(sourceProperty, targetPlaybookID)
+		require.NoError(t, err)
+
+		require.Empty(t, targetProperty.ID)
+		require.Equal(t, sourceProperty.Name, targetProperty.Name)
+		require.Equal(t, PropertyTargetTypePlaybook, targetProperty.TargetType)
+		require.Equal(t, targetPlaybookID, targetProperty.TargetID)
+
+		targetOptions, ok := targetProperty.Attrs[model.PropertyFieldAttributeOptions].(model.PropertyOptions[*model.PluginPropertyOption])
+		require.True(t, ok)
+		require.Len(t, targetOptions, 3)
+
+		require.NotEqual(t, option1.GetID(), targetOptions[0].GetID())
+		require.NotEqual(t, option2.GetID(), targetOptions[1].GetID())
+		require.NotEqual(t, option3.GetID(), targetOptions[2].GetID())
+		require.NotEmpty(t, targetOptions[0].GetID())
+		require.NotEmpty(t, targetOptions[1].GetID())
+		require.NotEmpty(t, targetOptions[2].GetID())
+		require.Equal(t, "Bug", targetOptions[0].GetName())
+		require.Equal(t, "Feature", targetOptions[1].GetName())
+		require.Equal(t, "Improvement", targetOptions[2].GetName())
+	})
+}
