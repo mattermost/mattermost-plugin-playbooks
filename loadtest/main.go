@@ -1,3 +1,6 @@
+// Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 // Package loadtest implements a load-test Playbooks' controller.
 //
 // To register the plugin in the load-test tool, this package must be imported:
