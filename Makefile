@@ -426,7 +426,7 @@ enable:
 graphql:
 	cd webapp && npm run graphql
 	$(GO) install github.com/jkrajniak/graphql-codegen-go@v1.2.1
-	cd server && graphql-codegen-go -schemas api/schema.graphqls -packageName graphql -out graphql/models.go
+	cd server && $(GOBIN)/graphql-codegen-go -schemas api/schema.graphqls -packageName graphql -out graphql/models.go
 
 
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
