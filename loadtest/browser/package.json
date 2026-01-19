@@ -1,5 +1,5 @@
 {
-  "name": "playbooks-load-simulations",
+  "name": "mattermost-plugin-playbooks-loadtest-browser",
   "type": "module",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -13,21 +13,18 @@
     "dist"
   ],
   "scripts": {
-    "build": "node scripts/build.mjs && tsc --declaration --emitDeclarationOnly --outDir dist",
+    "build": "node scripts/build.mjs",
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@mattermost/playwright-lib": "file:../../../mattermost/e2e-tests/playwright/lib"
+    "@mattermost/loadtest-browser-lib": "file:../../../mattermost-load-test-ng/browser/src/lib",
+    "@mattermost/playwright-lib": "file:../../../mattermost/e2e-tests/playwright/lib",
+    "@playwright/test": "^1.57.0",
+    "playwright": "^1.57.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.57.0",
     "@types/node": "24.10.1",
     "esbuild": "^0.27.2",
-    "playwright": "1.57.0",
     "typescript": "5.9.3"
-  },
-  "peerDependencies": {
-    "@playwright/test": ">=1.57.0",
-    "playwright": ">=1.57.0"
   }
 }
