@@ -77,7 +77,7 @@ define prompt_approval
 endef
 # ====================================================================================
 
-.PHONY: patch minor major patch-rc minor-rc major-rc
+.PHONY: patch minor major patch-rc minor-rc major-rc tag-release
 
 patch: ## to bump patch version (semver)
 	$(call check_protected_branch)
@@ -146,6 +146,30 @@ major-rc: ## to bump major release candidate version (semver)
 	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC) -m "Bumping $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)"
 	git push origin v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
 	@echo Bumped $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
+
+tag-release: ## to create a release tag with a specific version (e.g., make tag-release VERSION=1.2.3 or VERSION=1.2.3-rc1)
+	$(call check_protected_branch)
+	$(call check_pending_pulls)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Current version: $(CURRENT_VERSION)"; \
+		read -p "Enter new version (e.g., 1.2.3 or 1.2.3-rc1): " input_version; \
+		if [ -z "$$input_version" ]; then \
+			echo "Error: Version cannot be empty."; \
+			exit 1; \
+		fi; \
+		version="$$input_version"; \
+	else \
+		version="$(VERSION)"; \
+	fi; \
+	read -p "About to tag $(APP_NAME) as v$$version, approve? (y/n) " userinput; \
+	if [ "$$userinput" != "y" ]; then \
+		echo "Release aborted."; \
+		exit 1; \
+	fi; \
+	echo "Tagging $(APP_NAME) as v$$version"; \
+	git tag -s -a "v$$version" -m "Release $(APP_NAME) v$$version"; \
+	git push origin "v$$version"; \
+	echo "Released $(APP_NAME) v$$version"
 
 ## Checks the code style, tests, builds and bundles the plugin.
 .PHONY: all
