@@ -4,33 +4,6 @@
 import {type Page} from "@playwright/test";
 import type {Logger} from "@mattermost/loadtest-browser-lib";
 
-/**
- * Clicks the "View all..." link in the sidebar to navigate to the playbooks list.
- */
-export async function viewAllPlaybooks(page: Page, log: Logger): Promise<void> {
-  log.info("run--viewAllPlaybooks");
-  try {
-    // Click the "View all..." link in the sidebar
-    const viewAllLink = page
-      .locator("#sidebarItem_view_all_playbooks")
-      .or(page.locator('[data-testid="playbooksLHSButton"]'))
-      .or(page.getByRole("link", {name: "View all playbooks"}));
-
-    await viewAllLink.waitFor({state: "visible"});
-    await viewAllLink.scrollIntoViewIfNeeded();
-    await viewAllLink.click();
-
-    // Wait for navigation to the playbooks list page
-    await page.waitForURL((url) =>
-      url.pathname.includes("/playbooks/playbooks"),
-    );
-
-    log.info("pass--viewAllPlaybooks");
-  } catch (error) {
-    throw {error, testId: "viewAllPlaybooks"};
-  }
-}
-
 export async function createNewPlaybook(
   page: Page,
   log: Logger,

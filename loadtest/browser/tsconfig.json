@@ -14,7 +14,7 @@
     "strict": true,
     "isolatedModules": true,
     "importHelpers": true,
-    "allowJs": true,
+    "allowJs": false,
     "outDir": "./dist",
     "noImplicitAny": true,
     "alwaysStrict": true,
