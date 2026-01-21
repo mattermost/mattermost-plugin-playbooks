@@ -301,6 +301,9 @@ endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
 endif
+	@echo "Running submodule tests..."
+	cd client && $(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
+	cd build && $(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 
 ## Creates a coverage report for the server code.
 .PHONY: coverage
