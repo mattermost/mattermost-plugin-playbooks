@@ -14,17 +14,27 @@
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
-    "types:check": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@mattermost/loadtest-browser-lib": "file:../../../mattermost-load-test-ng/browser/src/lib",
-    "@mattermost/playwright-lib": "file:../../../mattermost/e2e-tests/playwright/lib",
-    "@playwright/test": "^1.57.0",
-    "playwright": "^1.57.0"
+    "check-types": "tsc --noEmit",
+    "lint": "npm run lint:eslint && npm run lint:prettier",
+    "lint:eslint": "eslint src --quiet",
+    "lint:prettier": "prettier --check \"src/**/*.ts\"",
+    "fix": "npm run fix:eslint && npm run fix:prettier",
+    "fix:eslint": "eslint src --quiet --fix",
+    "fix:prettier": "prettier --write \"src/**/*.ts\"",
+    "clean": "rm -rf node_modules dist"
   },
   "devDependencies": {
-    "@types/node": "24.10.1",
+    "@eslint/js": "^9.39.2",
+    "@types/node": "25.0.9",
     "esbuild": "^0.27.2",
-    "typescript": "5.9.3"
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.53.1"
+  },
+  "peerDependencies": {
+    "@mattermost/loadtest-browser-lib": "file:../../../mattermost-load-test-ng/browser/src/lib",
+    "@mattermost/playwright-lib": "^11.3.0",
+    "@playwright/test": "^1.57.0"
   }
 }
