@@ -349,9 +349,8 @@ func (m model) updateCustom(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 			}
 			m.mkBranch = targetBranch
-		} else if strings.HasPrefix(m.branch, "release-") {
+		} else if branchVer, ok := strings.CutPrefix(m.branch, "release-"); ok {
 			// Patch bump on release branch - validate branch matches target version
-			branchVer := strings.TrimPrefix(m.branch, "release-")
 			expectedVer := fmt.Sprintf("%d.%d", newMajor, newMinor)
 			if branchVer != expectedVer {
 				msg := fmt.Sprintf("branch %s doesn't match version %s", m.branch, expectedVer)
@@ -465,7 +464,7 @@ func (m model) View() string {
 			if !opt.valid && opt.validMsg != "" {
 				validationMsg = warnStyle.Render(fmt.Sprintf("  (%s)", opt.validMsg))
 			}
-			s.WriteString(fmt.Sprintf("%s%s %s%s\n", cursor, style.Render(paddedName), preview, validationMsg))
+			fmt.Fprintf(&s, "%s%s %s%s\n", cursor, style.Render(paddedName), preview, validationMsg)
 		}
 		s.WriteString(dimStyle.Render("\n[j/k or arrows to move, enter to select, q/esc to quit]\n"))
 
@@ -556,6 +555,8 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		if err := warnOrFail("must be on %s or release-* branch (currently on %s)", protectedBranch, branch); err != nil {
 			return err
 		}
+	} else {
+		fmt.Println(successStyle.Render("✓") + dimStyle.Render(" on valid branch "+branch))
 	}
 
 	// Check for uncommitted changes
@@ -610,6 +611,7 @@ func runRelease(cmd *cobra.Command, args []string) error {
 	// Determine bump type
 	var bumpType string
 	var newVersion, mkBranch string
+	var fromTUI bool // Track if we used TUI mode (to skip duplicate validations)
 
 	if version != "" {
 		// Explicit version provided via flag
@@ -662,6 +664,7 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		}
 		newVersion = fm.newVersion
 		mkBranch = fm.mkBranch
+		fromTUI = true // TUI already performed validations
 	}
 
 	// Validate branch matches version
@@ -701,33 +704,36 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Check if release branch already exists
-	if mkBranch != "" {
-		exists, _ := branchExists(mkBranch)
-		if exists {
-			if bumpType != "" && strings.Contains(bumpType, "rc") {
-				if err := warnOrFail("release branch %s already exists, can't start new RC cycle", mkBranch); err != nil {
+	// Skip these validations if TUI mode already performed them
+	if !fromTUI {
+		// Check if release branch already exists
+		if mkBranch != "" {
+			exists, _ := branchExists(mkBranch)
+			if exists {
+				if bumpType != "" && strings.Contains(bumpType, "rc") {
+					if err := warnOrFail("release branch %s already exists, can't start new RC cycle", mkBranch); err != nil {
+						return err
+					}
+				}
+				mkBranch = "" // Skip branch creation for non-RC
+			}
+		}
+
+		// Check if creating RC when stable version already exists
+		if strings.Contains(newVersion, "-rc") {
+			stableVersion := strings.Split(newVersion, "-rc")[0]
+			if tagExists("v" + stableVersion) {
+				if err := warnOrFail("stable version v%s already exists, can't create RC", stableVersion); err != nil {
 					return err
 				}
 			}
-			mkBranch = "" // Skip branch creation for non-RC
 		}
-	}
 
-	// Check if creating RC when stable version already exists
-	if strings.Contains(newVersion, "-rc") {
-		stableVersion := strings.Split(newVersion, "-rc")[0]
-		if tagExists("v" + stableVersion) {
-			if err := warnOrFail("stable version v%s already exists, can't create RC", stableVersion); err != nil {
+		// Check if tag already exists
+		if tagExists("v" + newVersion) {
+			if err := warnOrFail("tag v%s already exists", newVersion); err != nil {
 				return err
 			}
-		}
-	}
-
-	// Check if tag already exists
-	if tagExists("v" + newVersion) {
-		if err := warnOrFail("tag v%s already exists", newVersion); err != nil {
-			return err
 		}
 	}
 
@@ -995,18 +1001,17 @@ func hasUncommittedChanges() bool {
 }
 
 func isGPGConfigured() bool {
-	// Check if user has GPG signing configured
+	// Check if user has explicit signing key configured
 	key, _ := gitOutput("config", "--get", "user.signingkey")
 	if key != "" {
 		return true
 	}
-	// Also check if gpg.format is set to ssh (for SSH signing)
+	// SSH signing requires explicit signingkey, so if format is ssh but no key, fail
 	format, _ := gitOutput("config", "--get", "gpg.format")
 	if format == "ssh" {
-		sshKey, _ := gitOutput("config", "--get", "user.signingkey")
-		return sshKey != ""
+		return false // SSH signing requires explicit user.signingkey
 	}
-	// Try to get default GPG key
+	// For GPG, try to detect if any secret keys exist
 	gpgProgram, _ := gitOutput("config", "--get", "gpg.program")
 	if gpgProgram == "" {
 		gpgProgram = "gpg"
