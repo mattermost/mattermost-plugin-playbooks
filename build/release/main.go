@@ -681,23 +681,22 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		fromTUI = true // TUI already performed validations
 	}
 
-	// Validate branch matches version
-	tagMajor, tagMinor, _, _ := parseVersion("v" + newVersion)
-	expectedBranch := fmt.Sprintf("release-%d.%d", tagMajor, tagMinor)
-	if strings.HasPrefix(branch, "release-") {
-		if branch == expectedBranch {
-			fmt.Println(successStyle.Render("✓") + dimStyle.Render(" on version-matched release branch "+branch))
-		} else {
-			if err := warnOrFail("not on version-matched release branch (expected %s, on %s)", expectedBranch, branch); err != nil {
-				return err
-			}
-		}
-	} else if branch == protectedBranch {
-		fmt.Println(successStyle.Render("✓") + dimStyle.Render(" on protected branch "+branch))
-	}
-
 	// Skip these validations if TUI mode already performed them
 	if !fromTUI {
+		// Validate branch matches version
+		tagMajor, tagMinor, _, _ := parseVersion("v" + newVersion)
+		expectedBranch := fmt.Sprintf("release-%d.%d", tagMajor, tagMinor)
+		if strings.HasPrefix(branch, "release-") {
+			if branch == expectedBranch {
+				fmt.Println(successStyle.Render("✓") + dimStyle.Render(" on version-matched release branch "+branch))
+			} else {
+				if err := warnOrFail("not on version-matched release branch (expected %s, on %s)", expectedBranch, branch); err != nil {
+					return err
+				}
+			}
+		} else if branch == protectedBranch {
+			fmt.Println(successStyle.Render("✓") + dimStyle.Render(" on protected branch "+branch))
+		}
 		// Check for version regression (scoped to the target release line)
 		newMajor, newMinor, newPatch, newRC := parseVersion("v" + newVersion)
 		if newMajor == major && newMinor == minor {
