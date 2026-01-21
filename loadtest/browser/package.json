@@ -13,14 +13,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "check-types": "tsc --noEmit",
-    "lint": "npm run lint:eslint && npm run lint:prettier",
-    "lint:eslint": "eslint src --quiet",
-    "lint:prettier": "prettier --check \"src/**/*.ts\"",
-    "fix": "npm run fix:eslint && npm run fix:prettier",
-    "fix:eslint": "eslint src --quiet --fix",
-    "fix:prettier": "prettier --write \"src/**/*.ts\"",
+    "build": "npm run build:bundle && npm run types:generate",
+    "build:bundle": "node scripts/generate_bundle.mjs",
+    "types:check": "tsc --noEmit",
+    "types:generate": "node scripts/generate_types.mjs",
+    "lint:check": "eslint src --quiet && prettier --check \"src/**/*.ts\"",
+    "lint:fix": "eslint src --quiet --fix && prettier --write \"src/**/*.ts\"",
     "clean": "rm -rf node_modules dist"
   },
   "devDependencies": {
