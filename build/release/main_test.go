@@ -849,10 +849,10 @@ func TestModelUpdate_NavigationBounds(t *testing.T) {
 }
 
 func TestModelUpdate_SelectOption(t *testing.T) {
-	// Use version 99.99.99 to avoid conflicts with existing branches/tags
-	m := initialModel(99, 99, 99, 0, "master")
+	// Use version 99.99.99 on matching release branch to avoid validation errors
+	m := initialModel(99, 99, 99, 0, "release-99.99")
 
-	// Select patch (first option)
+	// Select patch (first option) - valid from release branch
 	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	m = newModel.(model)
 
@@ -912,8 +912,8 @@ func TestModelUpdate_Quit(t *testing.T) {
 }
 
 func TestModelUpdate_ConfirmStage(t *testing.T) {
-	// Use version 99.99.99 to avoid conflicts with existing branches/tags
-	m := initialModel(99, 99, 99, 0, "master")
+	// Use version 99.99.99 on matching release branch to avoid validation errors
+	m := initialModel(99, 99, 99, 0, "release-99.99")
 
 	// Select patch to get to confirm stage
 	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -929,8 +929,8 @@ func TestModelUpdate_ConfirmStage(t *testing.T) {
 }
 
 func TestModelUpdate_ConfirmStageReject(t *testing.T) {
-	// Use version 99.99.99 to avoid conflicts with existing branches/tags
-	m := initialModel(99, 99, 99, 0, "master")
+	// Use version 99.99.99 on matching release branch to avoid validation errors
+	m := initialModel(99, 99, 99, 0, "release-99.99")
 
 	// Select patch to get to confirm stage
 	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -1006,8 +1006,8 @@ func TestModelView_SelectStage(t *testing.T) {
 }
 
 func TestModelView_ConfirmStage(t *testing.T) {
-	// Use version 99.99.99 to avoid conflicts with existing branches/tags
-	m := initialModel(99, 99, 99, 0, "master")
+	// Use version 99.99.99 on matching release branch to avoid validation errors
+	m := initialModel(99, 99, 99, 0, "release-99.99")
 
 	// Select patch to get to confirm
 	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -1118,6 +1118,73 @@ func TestModelInit(t *testing.T) {
 
 	if cmd != nil {
 		t.Error("Init should return nil command")
+	}
+}
+
+func TestModelUpdate_InvalidOptionWithForce(t *testing.T) {
+	// Save and restore forceMode
+	originalForce := forceMode
+	defer func() { forceMode = originalForce }()
+
+	// Test selecting invalid option (patch from master) WITH force mode
+	// Use high version number to avoid conflicts with real tags
+	forceMode = true
+	m := initialModel(99, 99, 1, 0, "master")
+
+	// First option is patch, which is invalid from master
+	if m.options[0].valid {
+		t.Fatal("patch option should be invalid from master")
+	}
+
+	// Select patch (invalid option) - should proceed with warning
+	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = newModel.(model)
+
+	// Should proceed to confirm stage with warning
+	if m.stage != stageConfirm {
+		t.Errorf("expected stage confirm, got %d", m.stage)
+	}
+	if len(m.warnings) == 0 {
+		t.Error("expected warning for invalid option selection with --force")
+	}
+	// Verify warning message mentions the branch requirement
+	found := false
+	for _, w := range m.warnings {
+		if strings.Contains(w, "release-99.99") || strings.Contains(w, "switch to") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected warning about release branch, got: %v", m.warnings)
+	}
+}
+
+func TestModelUpdate_InvalidOptionWithoutForce(t *testing.T) {
+	// Save and restore forceMode
+	originalForce := forceMode
+	defer func() { forceMode = originalForce }()
+
+	// Test selecting invalid option (patch from master) WITHOUT force mode
+	// Use high version number to avoid conflicts with real tags
+	forceMode = false
+	m := initialModel(99, 99, 1, 0, "master")
+
+	// First option is patch, which is invalid from master
+	if m.options[0].valid {
+		t.Fatal("patch option should be invalid from master")
+	}
+
+	// Select patch (invalid option) - should error
+	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = newModel.(model)
+
+	// Should error and quit
+	if m.err == nil {
+		t.Error("expected error for invalid option selection without --force")
+	}
+	if !m.quitting {
+		t.Error("expected quitting after error")
 	}
 }
 

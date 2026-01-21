@@ -216,12 +216,25 @@ func (m model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.cursor++
 		}
 	case "enter":
-		m.selected = m.options[m.cursor].value
+		selectedOpt := m.options[m.cursor]
+		m.selected = selectedOpt.value
 		if m.selected == "custom" {
 			m.stage = stageCustom
 			m.textInput.Focus()
 			return m, textinput.Blink
 		}
+
+		// Check if selecting an invalid option (e.g., patch from master)
+		if !selectedOpt.valid {
+			if forceMode {
+				m.warnings = append(m.warnings, selectedOpt.validMsg)
+			} else {
+				m.err = fmt.Errorf("%s", selectedOpt.validMsg)
+				m.quitting = true
+				return m, tea.Quit
+			}
+		}
+
 		// Clear and collect warnings during version calculation
 		collectedWarnings = nil
 		newVer, mkBranch, err := calculateVersion(m.selected, m.major, m.minor, m.patch, m.rc, m.branch)
@@ -232,7 +245,8 @@ func (m model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.newVersion = newVer
 		m.mkBranch = mkBranch
-		m.warnings = collectedWarnings
+		// Merge collected warnings with any existing warnings (e.g., invalid option with --force)
+		m.warnings = append(m.warnings, collectedWarnings...)
 
 		// Preflight: check if creating RC when stable version already exists
 		if strings.Contains(m.newVersion, "-rc") {
