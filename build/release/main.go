@@ -18,10 +18,12 @@ import (
 )
 
 var (
-	version         string
-	protectedBranch string
-	forceMode       bool
-	dryRun          bool
+	version          string
+	protectedBranch  string
+	forceMode        bool
+	dryRun           bool
+	collectWarnings  bool     // collect warnings instead of printing (TUI mode)
+	collectedWarnings []string // warnings collected during TUI operations
 )
 
 // Environment variable names for configuration defaults
@@ -82,6 +84,7 @@ type model struct {
 	patch       int
 	rc          int
 	branch      string
+	warnings    []string // collected warnings to show before confirmation
 }
 
 func initialModel(major, minor, patch, rc int, branch string) model {
@@ -218,7 +221,8 @@ func (m model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.textInput.Focus()
 			return m, textinput.Blink
 		}
-		// Calculate version (skip branch validation errors in force mode)
+		// Clear and collect warnings during version calculation
+		collectedWarnings = nil
 		newVer, mkBranch, err := calculateVersion(m.selected, m.major, m.minor, m.patch, m.rc, m.branch)
 		if err != nil && !forceMode {
 			m.err = err
@@ -227,22 +231,31 @@ func (m model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.newVersion = newVer
 		m.mkBranch = mkBranch
+		m.warnings = collectedWarnings
 
 		// Preflight: check if tag already exists (skip in force mode)
-		if !forceMode && tagExists("v" + m.newVersion) {
-			m.err = fmt.Errorf("tag v%s already exists", m.newVersion)
-			m.quitting = true
-			return m, tea.Quit
+		if tagExists("v" + m.newVersion) {
+			if forceMode {
+				m.warnings = append(m.warnings, fmt.Sprintf("tag v%s already exists", m.newVersion))
+			} else {
+				m.err = fmt.Errorf("tag v%s already exists", m.newVersion)
+				m.quitting = true
+				return m, tea.Quit
+			}
 		}
 
 		// Preflight: check if release branch already exists (skip in force mode)
 		if mkBranch != "" {
 			exists, _ := branchExists(mkBranch)
 			if exists {
-				if !forceMode && strings.Contains(m.selected, "rc") {
-					m.err = fmt.Errorf("release branch %s already exists, can't start new RC cycle", mkBranch)
-					m.quitting = true
-					return m, tea.Quit
+				if strings.Contains(m.selected, "rc") {
+					if forceMode {
+						m.warnings = append(m.warnings, fmt.Sprintf("release branch %s already exists", mkBranch))
+					} else {
+						m.err = fmt.Errorf("release branch %s already exists, can't start new RC cycle", mkBranch)
+						m.quitting = true
+						return m, tea.Quit
+					}
 				}
 				m.mkBranch = "" // Skip branch creation for non-RC
 			}
@@ -264,6 +277,7 @@ func (m model) updateCustom(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.newVersion = strings.TrimPrefix(ver, "v")
+		m.warnings = nil // clear any previous warnings
 
 		// Validate semver format
 		if !isValidSemver(m.newVersion) {
@@ -275,22 +289,30 @@ func (m model) updateCustom(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Validate and determine if we need a release branch
 		newMajor, newMinor, newPatch, newRC := parseVersion("v" + m.newVersion)
 
-		// Check for version regression (scoped to target release line, skip in force mode)
-		if !forceMode {
-			if newMajor == m.major && newMinor == m.minor {
-				// Same release line - compare against current (global latest)
-				if compareVersions(newMajor, newMinor, newPatch, newRC, m.major, m.minor, m.patch, m.rc) <= 0 {
-					m.err = fmt.Errorf("new version v%s must be greater than current version v%d.%d.%d", m.newVersion, m.major, m.minor, m.patch)
+		// Check for version regression (scoped to target release line)
+		if newMajor == m.major && newMinor == m.minor {
+			// Same release line - compare against current (global latest)
+			if compareVersions(newMajor, newMinor, newPatch, newRC, m.major, m.minor, m.patch, m.rc) <= 0 {
+				msg := fmt.Sprintf("new version v%s must be greater than current version v%d.%d.%d", m.newVersion, m.major, m.minor, m.patch)
+				if forceMode {
+					m.warnings = append(m.warnings, msg)
+				} else {
+					m.err = fmt.Errorf("%s", msg)
 					m.quitting = true
 					return m, tea.Quit
 				}
-			} else {
-				// Different release line - compare against latest in that line
-				lineLatest := getLatestVersionForLine(newMajor, newMinor)
-				if lineLatest != "" {
-					lineMajor, lineMinor, linePatch, lineRC := parseVersion(lineLatest)
-					if compareVersions(newMajor, newMinor, newPatch, newRC, lineMajor, lineMinor, linePatch, lineRC) <= 0 {
-						m.err = fmt.Errorf("new version v%s must be greater than %s (latest in %d.%d.x line)", m.newVersion, lineLatest, newMajor, newMinor)
+			}
+		} else {
+			// Different release line - compare against latest in that line
+			lineLatest := getLatestVersionForLine(newMajor, newMinor)
+			if lineLatest != "" {
+				lineMajor, lineMinor, linePatch, lineRC := parseVersion(lineLatest)
+				if compareVersions(newMajor, newMinor, newPatch, newRC, lineMajor, lineMinor, linePatch, lineRC) <= 0 {
+					msg := fmt.Sprintf("new version v%s must be greater than %s (latest in %d.%d.x line)", m.newVersion, lineLatest, newMajor, newMinor)
+					if forceMode {
+						m.warnings = append(m.warnings, msg)
+					} else {
+						m.err = fmt.Errorf("%s", msg)
 						m.quitting = true
 						return m, tea.Quit
 					}
@@ -301,28 +323,43 @@ func (m model) updateCustom(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			// Minor/major bump - requires main/master or target release branch
 			targetBranch := fmt.Sprintf("release-%d.%d", newMajor, newMinor)
 			onValidBranch := m.branch == protectedBranch || m.branch == targetBranch
-			if !forceMode && !onValidBranch {
-				m.err = fmt.Errorf("version %s is a minor/major bump, requires %s or %s", m.newVersion, protectedBranch, targetBranch)
-				m.quitting = true
-				return m, tea.Quit
+			if !onValidBranch {
+				msg := fmt.Sprintf("version %s is a minor/major bump, requires %s or %s", m.newVersion, protectedBranch, targetBranch)
+				if forceMode {
+					m.warnings = append(m.warnings, msg)
+				} else {
+					m.err = fmt.Errorf("%s", msg)
+					m.quitting = true
+					return m, tea.Quit
+				}
 			}
 			m.mkBranch = targetBranch
 		} else if strings.HasPrefix(m.branch, "release-") {
 			// Patch bump on release branch - validate branch matches target version
 			branchVer := strings.TrimPrefix(m.branch, "release-")
 			expectedVer := fmt.Sprintf("%d.%d", newMajor, newMinor)
-			if !forceMode && branchVer != expectedVer {
-				m.err = fmt.Errorf("branch %s doesn't match version %s", m.branch, expectedVer)
-				m.quitting = true
-				return m, tea.Quit
+			if branchVer != expectedVer {
+				msg := fmt.Sprintf("branch %s doesn't match version %s", m.branch, expectedVer)
+				if forceMode {
+					m.warnings = append(m.warnings, msg)
+				} else {
+					m.err = fmt.Errorf("%s", msg)
+					m.quitting = true
+					return m, tea.Quit
+				}
 			}
 		}
 
-		// Preflight: check if tag already exists (skip in force mode)
-		if !forceMode && tagExists("v" + m.newVersion) {
-			m.err = fmt.Errorf("tag v%s already exists", m.newVersion)
-			m.quitting = true
-			return m, tea.Quit
+		// Preflight: check if tag already exists
+		if tagExists("v" + m.newVersion) {
+			msg := fmt.Sprintf("tag v%s already exists", m.newVersion)
+			if forceMode {
+				m.warnings = append(m.warnings, msg)
+			} else {
+				m.err = fmt.Errorf("%s", msg)
+				m.quitting = true
+				return m, tea.Quit
+			}
 		}
 
 		// Preflight: check if release branch already exists
@@ -408,6 +445,13 @@ func (m model) View() string {
 		s.WriteString(dimStyle.Render("\n\n[enter to confirm, esc to go back]\n"))
 
 	case stageConfirm:
+		// Display any warnings collected during validation
+		if len(m.warnings) > 0 {
+			for _, w := range m.warnings {
+				s.WriteString(warnStyle.Render("Warning: "+w) + "\n")
+			}
+			s.WriteString("\n")
+		}
 		msg := fmt.Sprintf("v%s", m.newVersion)
 		if m.mkBranch != "" {
 			msg += fmt.Sprintf(" (%s branch recommended for patches)", m.mkBranch)
@@ -569,9 +613,11 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		// Interactive mode with bubbletea
+		collectWarnings = true // collect warnings to display in TUI
 		m := initialModel(major, minor, patch, rc, branch)
 		p := tea.NewProgram(m)
 		finalModel, err := p.Run()
+		collectWarnings = false
 		if err != nil {
 			return fmt.Errorf("TUI error: %w", err)
 		}
@@ -821,10 +867,15 @@ func confirm(prompt string) bool {
 }
 
 // warnOrFail returns an error if forceMode is false, otherwise prints a warning and returns nil.
-func warnOrFail(format string, args ...interface{}) error {
+// In collectWarnings mode (TUI), warnings are collected instead of printed.
+func warnOrFail(format string, args ...any) error {
 	msg := fmt.Sprintf(format, args...)
 	if forceMode {
-		fmt.Println(warnStyle.Render("Warning: " + msg))
+		if collectWarnings {
+			collectedWarnings = append(collectedWarnings, msg)
+		} else {
+			fmt.Println(warnStyle.Render("Warning: " + msg))
+		}
 		return nil
 	}
 	return fmt.Errorf("%s", msg)
