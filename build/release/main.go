@@ -696,30 +696,29 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		fmt.Println(successStyle.Render("✓") + dimStyle.Render(" on protected branch "+branch))
 	}
 
-	// Check for version regression (scoped to the target release line)
-	newMajor, newMinor, newPatch, newRC := parseVersion("v" + newVersion)
-	if newMajor == major && newMinor == minor {
-		// Same release line - compare against global latest
-		if compareVersions(newMajor, newMinor, newPatch, newRC, major, minor, patch, rc) <= 0 {
-			if err := warnOrFail("new version v%s must be greater than current version %s", newVersion, currentVersion); err != nil {
-				return err
-			}
-		}
-	} else {
-		// Different release line - compare against latest in that line
-		lineLatest := getLatestVersionForLine(newMajor, newMinor)
-		if lineLatest != "" {
-			lineMajor, lineMinor, linePatch, lineRC := parseVersion(lineLatest)
-			if compareVersions(newMajor, newMinor, newPatch, newRC, lineMajor, lineMinor, linePatch, lineRC) <= 0 {
-				if err := warnOrFail("new version v%s must be greater than %s (latest in %d.%d.x line)", newVersion, lineLatest, newMajor, newMinor); err != nil {
+	// Skip these validations if TUI mode already performed them
+	if !fromTUI {
+		// Check for version regression (scoped to the target release line)
+		newMajor, newMinor, newPatch, newRC := parseVersion("v" + newVersion)
+		if newMajor == major && newMinor == minor {
+			// Same release line - compare against global latest
+			if compareVersions(newMajor, newMinor, newPatch, newRC, major, minor, patch, rc) <= 0 {
+				if err := warnOrFail("new version v%s must be greater than current version %s", newVersion, currentVersion); err != nil {
 					return err
 				}
 			}
+		} else {
+			// Different release line - compare against latest in that line
+			lineLatest := getLatestVersionForLine(newMajor, newMinor)
+			if lineLatest != "" {
+				lineMajor, lineMinor, linePatch, lineRC := parseVersion(lineLatest)
+				if compareVersions(newMajor, newMinor, newPatch, newRC, lineMajor, lineMinor, linePatch, lineRC) <= 0 {
+					if err := warnOrFail("new version v%s must be greater than %s (latest in %d.%d.x line)", newVersion, lineLatest, newMajor, newMinor); err != nil {
+						return err
+					}
+				}
+			}
 		}
-	}
-
-	// Skip these validations if TUI mode already performed them
-	if !fromTUI {
 		// Check if release branch already exists
 		if mkBranch != "" {
 			exists, _ := branchExists(mkBranch)
