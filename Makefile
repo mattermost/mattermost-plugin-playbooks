@@ -41,211 +41,40 @@ else
 endif
 
 # ====================================================================================
-# Used for semver bumping
-PROTECTED_BRANCH := master
-APP_NAME    := $(shell basename -s .git `git config --get remote.origin.url`)
-# Get latest version tag globally (not just from current branch's history)
-CURRENT_VERSION := $(shell git tag -l 'v*' --sort=-version:refname | head -n1)
-VERSION_PARTS := $(subst ., ,$(subst v,,$(subst -rc, ,$(CURRENT_VERSION))))
-MAJOR := $(word 1,$(VERSION_PARTS))
-MINOR := $(word 2,$(VERSION_PARTS))
-PATCH := $(word 3,$(VERSION_PARTS))
-RC := $(shell echo $(CURRENT_VERSION) | grep -oE 'rc[0-9]+' | sed 's/rc//')
-# Check if current branch is protected (master or release-*)
-define check_protected_branch
-	@current_branch=$$(git rev-parse --abbrev-ref HEAD); \
-	if ! echo "$(PROTECTED_BRANCH)" | grep -wq "$$current_branch" && ! echo "$$current_branch" | grep -q "^release"; then \
-		echo "Error: Tagging is only allowed from $(PROTECTED_BRANCH) or release branches. You are on $$current_branch branch."; \
-		exit 1; \
-	fi
-endef
-# Check if current branch is master (for minor/major bumps)
-define check_master_branch
-	@current_branch=$$(git rev-parse --abbrev-ref HEAD); \
-	if [ "$$current_branch" != "$(PROTECTED_BRANCH)" ]; then \
-		echo "Error: Minor and major version bumps are only allowed from $(PROTECTED_BRANCH). You are on $$current_branch branch."; \
-		exit 1; \
-	fi
-endef
-# Check if release branch matches the version being tagged (for patch bumps)
-# Usage: $(call check_branch_matches_version,MAJOR,MINOR)
-define check_branch_matches_version
-	@current_branch=$$(git rev-parse --abbrev-ref HEAD); \
-	if echo "$$current_branch" | grep -q "^release-"; then \
-		branch_version=$$(echo "$$current_branch" | sed 's/release-//'); \
-		expected_version="$(1).$(2)"; \
-		if [ "$$branch_version" != "$$expected_version" ]; then \
-			echo "Error: Branch $$current_branch does not match version $$expected_version being tagged."; \
-			echo "       You are on release branch for version $$branch_version but trying to tag version $$expected_version.x"; \
-			exit 1; \
-		fi; \
-	fi
-endef
-# Check if release branch already exists (for RC bumps - error if exists)
-# Usage: $(call check_release_branch_not_exists,MAJOR,MINOR)
-define check_release_branch_not_exists
-	@if git show-ref --verify --quiet refs/heads/release-$(1).$(2) 2>/dev/null || \
-	    git show-ref --verify --quiet refs/remotes/origin/release-$(1).$(2) 2>/dev/null; then \
-		echo "Error: Release branch release-$(1).$(2) already exists locally or on remote."; \
-		echo "       Cannot start a new RC cycle when the release branch already exists."; \
-		exit 1; \
-	fi
-endef
-# Create release branch if it doesn't already exist (for non-RC bumps)
-# Usage: $(call create_release_branch_if_needed,MAJOR,MINOR)
-define create_release_branch_if_needed
-	@if git show-ref --verify --quiet refs/heads/release-$(1).$(2) 2>/dev/null || \
-	    git show-ref --verify --quiet refs/remotes/origin/release-$(1).$(2) 2>/dev/null; then \
-		echo "Release branch release-$(1).$(2) already exists, skipping branch creation"; \
-	else \
-		echo "Creating release branch release-$(1).$(2)"; \
-		git branch release-$(1).$(2); \
-		git push origin release-$(1).$(2); \
-	fi
-endef
-# Check if there are pending pulls
-define check_pending_pulls
-	@git fetch; \
-	current_branch=$$(git rev-parse --abbrev-ref HEAD); \
-	if [ "$$(git rev-parse HEAD)" != "$$(git rev-parse origin/$$current_branch)" ]; then \
-		echo "Error: Your branch is not up to date with upstream. Please pull the latest changes before performing a release"; \
-		exit 1; \
-	fi
-endef
-# Prompt for approval
-define prompt_approval
-	@read -p "About to bump $(APP_NAME) to version $(1), approve? (y/n) " userinput; \
-	if [ "$$userinput" != "y" ]; then \
-		echo "Bump aborted."; \
-		exit 1; \
-	fi
-endef
+# Semver release tagging
+# Usage: make tag-release [bump-type] [DRY_RUN=1] [FORCE=1] [VERSION=X.Y.Z] [RELEASE_ARGS="..."]
+# Examples:
+#   make tag-release                    # Interactive mode
+#   make tag-release patch              # Bump patch version
+#   make tag-release minor-rc           # Start minor RC cycle
+#   make tag-release rc-finalize        # Finalize RC to stable
+#   DRY_RUN=1 make tag-release patch    # Dry run
+#   FORCE=1 make tag-release patch      # Force (skip validation errors)
+#   VERSION=2.6.2 make tag-release      # Explicit version
+#   make tag-release RELEASE_ARGS="--version=2.6.2"  # Explicit version (alternative)
+TAG_RELEASE_BUMP := $(word 2,$(MAKECMDGOALS))
+ifneq ($(filter tag-release,$(MAKECMDGOALS)),)
+  ifneq ($(TAG_RELEASE_BUMP),)
+    $(eval $(TAG_RELEASE_BUMP):;@:)
+  endif
+endif
+RELEASE_ARGS ?=
+RELEASE_FLAGS := $(RELEASE_ARGS)
+ifneq ($(DRY_RUN),)
+  RELEASE_FLAGS += --dry-run
+endif
+ifneq ($(FORCE),)
+  RELEASE_FLAGS += --force
+endif
+ifneq ($(VERSION),)
+  RELEASE_FLAGS += --version=$(VERSION)
+endif
 # ====================================================================================
 
-.PHONY: patch minor major patch-rc minor-rc major-rc tag-release
-
-patch: ## to bump patch version (semver)
-	$(call check_protected_branch)
-	$(call check_branch_matches_version,$(MAJOR),$(MINOR))
-	$(call check_pending_pulls)
-	@$(eval PATCH := $(shell echo $$(($(PATCH)+1))))
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH))
-	@echo Bumping $(APP_NAME) to Patch version $(MAJOR).$(MINOR).$(PATCH)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH) -m "Bumping $(APP_NAME) to Patch version $(MAJOR).$(MINOR).$(PATCH)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)
-	@echo Bumped $(APP_NAME) to Patch version $(MAJOR).$(MINOR).$(PATCH)
-
-minor: ## to bump minor version (semver)
-	$(call check_master_branch)
-	$(call check_pending_pulls)
-	@$(eval MINOR := $(shell echo $$(($(MINOR)+1))))
-	@$(eval PATCH := 0)
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH))
-	@echo Bumping $(APP_NAME) to Minor version $(MAJOR).$(MINOR).$(PATCH)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH) -m "Bumping $(APP_NAME) to Minor version $(MAJOR).$(MINOR).$(PATCH)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)
-	$(call create_release_branch_if_needed,$(MAJOR),$(MINOR))
-	@echo Bumped $(APP_NAME) to Minor version $(MAJOR).$(MINOR).$(PATCH)
-
-major: ## to bump major version (semver)
-	$(call check_master_branch)
-	$(call check_pending_pulls)
-	@$(eval MAJOR := $(shell echo $$(($(MAJOR)+1))))
-	@$(eval MINOR := 0)
-	@$(eval PATCH := 0)
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH))
-	@echo Bumping $(APP_NAME) to Major version $(MAJOR).$(MINOR).$(PATCH)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH) -m "Bumping $(APP_NAME) to Major version $(MAJOR).$(MINOR).$(PATCH)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)
-	$(call create_release_branch_if_needed,$(MAJOR),$(MINOR))
-	@echo Bumped $(APP_NAME) to Major version $(MAJOR).$(MINOR).$(PATCH)
-
-patch-rc: ## to bump patch release candidate version (semver)
-	$(call check_protected_branch)
-	$(call check_branch_matches_version,$(MAJOR),$(MINOR))
-	$(call check_pending_pulls)
-ifeq ($(RC),)
-	@# Current version is not an RC, so create first RC for next patch version
-	@$(eval PATCH := $(shell echo $$(($(PATCH)+1))))
-	@$(eval RC := 1)
-else
-	@# Current version is an RC, so increment the RC number
-	@$(eval RC := $(shell echo $$(($(RC)+1))))
-endif
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH)-rc$(RC))
-	@echo Bumping $(APP_NAME) to Patch RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC) -m "Bumping $(APP_NAME) to Patch RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	@echo Bumped $(APP_NAME) to Patch RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-
-minor-rc: ## to bump minor release candidate version (semver)
-	$(call check_master_branch)
-	$(call check_pending_pulls)
-	@$(eval MINOR := $(shell echo $$(($(MINOR)+1))))
-	@$(eval PATCH := 0)
-	@$(eval RC := 1)
-	$(call check_release_branch_not_exists,$(MAJOR),$(MINOR))
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH)-rc$(RC))
-	@echo Bumping $(APP_NAME) to Minor RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC) -m "Bumping $(APP_NAME) to Minor RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	@echo Creating release branch release-$(MAJOR).$(MINOR)
-	git branch release-$(MAJOR).$(MINOR)
-	git push origin release-$(MAJOR).$(MINOR)
-	@echo Bumped $(APP_NAME) to Minor RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC) and created release-$(MAJOR).$(MINOR) branch
-
-major-rc: ## to bump major release candidate version (semver)
-	$(call check_master_branch)
-	$(call check_pending_pulls)
-	@$(eval MAJOR := $(shell echo $$(($(MAJOR)+1))))
-	@$(eval MINOR := 0)
-	@$(eval PATCH := 0)
-	@$(eval RC := 1)
-	$(call check_release_branch_not_exists,$(MAJOR),$(MINOR))
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH)-rc$(RC))
-	@echo Bumping $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC) -m "Bumping $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	@echo Creating release branch release-$(MAJOR).$(MINOR)
-	git branch release-$(MAJOR).$(MINOR)
-	git push origin release-$(MAJOR).$(MINOR)
-	@echo Bumped $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC) and created release-$(MAJOR).$(MINOR) branch
-
-tag-release: ## to tag a release with a specific version (e.g., make tag-release VERSION=1.2.3 or VERSION=1.2.3-rc1)
-	$(call check_protected_branch)
-	$(call check_pending_pulls)
-	@if [ -z "$(VERSION)" ]; then \
-		echo "Current version: $(CURRENT_VERSION)"; \
-		read -p "Enter new version (e.g., 1.2.3 or 1.2.3-rc1): " input_version; \
-		if [ -z "$$input_version" ]; then \
-			echo "Error: Version cannot be empty."; \
-			exit 1; \
-		fi; \
-		version="$$input_version"; \
-	else \
-		version="$(VERSION)"; \
-	fi; \
-	tag_major=$$(echo "$$version" | cut -d. -f1); \
-	tag_minor=$$(echo "$$version" | cut -d. -f2); \
-	current_branch=$$(git rev-parse --abbrev-ref HEAD); \
-	if echo "$$current_branch" | grep -q "^release-"; then \
-		branch_version=$$(echo "$$current_branch" | sed 's/release-//'); \
-		expected_version="$$tag_major.$$tag_minor"; \
-		if [ "$$branch_version" != "$$expected_version" ]; then \
-			echo "Error: Branch $$current_branch does not match version $$expected_version being tagged."; \
-			echo "       You are on release branch for version $$branch_version but trying to tag version $$expected_version.x"; \
-			exit 1; \
-		fi; \
-	fi; \
-	read -p "About to tag $(APP_NAME) as v$$version, approve? (y/n) " userinput; \
-	if [ "$$userinput" != "y" ]; then \
-		echo "Release aborted."; \
-		exit 1; \
-	fi; \
-	echo "Tagging $(APP_NAME) as v$$version"; \
-	git tag -s -a "v$$version" -m "Release $(APP_NAME) v$$version"; \
-	git push origin "v$$version"; \
-	echo "Released $(APP_NAME) v$$version"
+.PHONY: tag-release
+## Tag a semver release interactively or with bump type (DRY_RUN=1, FORCE=1)
+tag-release:
+	./build/bin/release $(TAG_RELEASE_BUMP) $(RELEASE_FLAGS)
 
 ## Checks the code style, tests, builds and bundles the plugin.
 .PHONY: all
