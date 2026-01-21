@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -600,11 +601,10 @@ func runRelease(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	// Parse current version
-	currentVersion, err := gitOutput("tag", "-l", "v*", "--sort=-version:refname")
-	if err != nil || currentVersion == "" {
+	currentVersion := getLatestVersion()
+	if currentVersion == "" {
 		return fmt.Errorf("no version tags found")
 	}
-	currentVersion = strings.Split(currentVersion, "\n")[0]
 	major, minor, patch, rc := parseVersion(currentVersion)
 
 	// Determine bump type
@@ -945,16 +945,39 @@ func branchExists(name string) (bool, error) {
 	return false, nil
 }
 
+// sortVersionTagsDesc sorts version tags in descending order (newest first)
+// using proper semver comparison where stable > RC (e.g., v2.6.0 > v2.6.0-rc1)
+func sortVersionTagsDesc(tags []string) {
+	sort.Slice(tags, func(i, j int) bool {
+		m1, mi1, p1, r1 := parseVersion(tags[i])
+		m2, mi2, p2, r2 := parseVersion(tags[j])
+		return compareVersions(m1, mi1, p1, r1, m2, mi2, p2, r2) > 0
+	})
+}
+
+// getLatestVersion returns the latest version tag using proper semver sorting.
+func getLatestVersion() string {
+	out, err := gitOutput("tag", "-l", "v*")
+	if err != nil || out == "" {
+		return ""
+	}
+	tags := strings.Split(out, "\n")
+	sortVersionTagsDesc(tags)
+	return tags[0]
+}
+
 // getLatestVersionForLine returns the latest tag for a specific major.minor line.
 // For example, getLatestVersionForLine(2, 5) returns the latest v2.5.* tag.
 // Returns empty string if no tags exist for that line.
 func getLatestVersionForLine(major, minor int) string {
 	pattern := fmt.Sprintf("v%d.%d.*", major, minor)
-	out, err := gitOutput("tag", "-l", pattern, "--sort=-version:refname")
+	out, err := gitOutput("tag", "-l", pattern)
 	if err != nil || out == "" {
 		return ""
 	}
-	return strings.Split(out, "\n")[0]
+	tags := strings.Split(out, "\n")
+	sortVersionTagsDesc(tags)
+	return tags[0]
 }
 
 func tagExists(name string) bool {

@@ -1237,6 +1237,56 @@ func TestCompareVersions(t *testing.T) {
 	}
 }
 
+func TestSortVersionTagsDesc(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "stable comes after RCs",
+			input:    []string{"v2.6.0-rc1", "v2.6.0", "v2.6.0-rc2"},
+			expected: []string{"v2.6.0", "v2.6.0-rc2", "v2.6.0-rc1"},
+		},
+		{
+			name:     "mixed versions",
+			input:    []string{"v2.5.0", "v2.6.0-rc1", "v2.6.0", "v2.5.1"},
+			expected: []string{"v2.6.0", "v2.6.0-rc1", "v2.5.1", "v2.5.0"},
+		},
+		{
+			name:     "only RCs",
+			input:    []string{"v2.6.0-rc1", "v2.6.0-rc3", "v2.6.0-rc2"},
+			expected: []string{"v2.6.0-rc3", "v2.6.0-rc2", "v2.6.0-rc1"},
+		},
+		{
+			name:     "major versions",
+			input:    []string{"v1.0.0", "v3.0.0", "v2.0.0"},
+			expected: []string{"v3.0.0", "v2.0.0", "v1.0.0"},
+		},
+		{
+			name:     "complex mix",
+			input:    []string{"v2.6.0-rc1", "v2.7.0", "v2.6.0", "v2.7.0-rc1", "v2.6.1"},
+			expected: []string{"v2.7.0", "v2.7.0-rc1", "v2.6.1", "v2.6.0", "v2.6.0-rc1"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Make a copy to avoid modifying test data
+			input := make([]string, len(tt.input))
+			copy(input, tt.input)
+
+			sortVersionTagsDesc(input)
+
+			for i, v := range input {
+				if v != tt.expected[i] {
+					t.Errorf("position %d: got %s, want %s\nfull result: %v", i, v, tt.expected[i], input)
+				}
+			}
+		})
+	}
+}
+
 // =============================================================================
 // Integration Tests with Temporary Git Repositories
 // =============================================================================
@@ -1361,13 +1411,15 @@ func (tr *testRepo) getCurrentBranch() string {
 	return tr.runGitInWork("rev-parse", "--abbrev-ref", "HEAD")
 }
 
-// getLatestTag returns the latest version tag
+// getLatestTag returns the latest version tag using proper semver sorting
 func (tr *testRepo) getLatestTag() string {
-	out, _ := tr.runGitMayFail(tr.workDir, "tag", "-l", "v*", "--sort=-version:refname")
+	out, _ := tr.runGitMayFail(tr.workDir, "tag", "-l", "v*")
 	if out == "" {
 		return ""
 	}
-	return strings.Split(out, "\n")[0]
+	tags := strings.Split(out, "\n")
+	sortVersionTagsDesc(tags)
+	return tags[0]
 }
 
 // addCommit adds a new commit to the repo and pushes to upstream
