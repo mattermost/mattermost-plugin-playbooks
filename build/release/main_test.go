@@ -1018,8 +1018,9 @@ func TestModelView_ConfirmStage(t *testing.T) {
 	if !strings.Contains(view, "v99.99.100") {
 		t.Error("confirm view should show new version")
 	}
-	if !strings.Contains(view, "y/n") {
-		t.Error("confirm view should show y/n prompt")
+	// Unified confirmation format: "Proceed? [y]es / [n]o"
+	if !strings.Contains(view, "[y]es") || !strings.Contains(view, "[n]o") {
+		t.Error("confirm view should show [y]es / [n]o prompt")
 	}
 }
 
@@ -1977,5 +1978,49 @@ func TestIntegration_GetLatestVersionForLine(t *testing.T) {
 	latest = getLatestVersionForLine(3, 0)
 	if latest != "" {
 		t.Errorf("expected empty string for non-existent 3.0.x line, got %s", latest)
+	}
+}
+
+func TestIntegration_RCAfterStableVersionBlocked(t *testing.T) {
+	tr := setupTestRepo(t)
+
+	// Create RC tag first, then stable tag
+	tr.createTag("v2.7.0-rc1", "Release 2.7.0-rc1")
+	tr.addCommit("stable release")
+	tr.createTag("v2.7.0", "Release 2.7.0")
+
+	// Change to work directory
+	origDir, _ := os.Getwd()
+	defer os.Chdir(origDir)
+	os.Chdir(tr.workDir)
+
+	// Set protected branch for test
+	protectedBranch = "master"
+
+	// Create a TUI model simulating being on v2.7.0-rc1 and selecting "rc" bump type
+	// The model should detect that v2.7.0 (stable) exists and block the RC bump
+	m := initialModel(2, 7, 0, 1, "master")
+
+	// Find the "rc" option and select it
+	for i, opt := range m.options {
+		if opt.value == "rc" {
+			m.cursor = i
+			break
+		}
+	}
+
+	// Select the RC option (which would try to create v2.7.0-rc2)
+	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = newModel.(model)
+
+	// Should error because stable v2.7.0 already exists
+	if m.err == nil {
+		t.Error("expected error when creating RC after stable version exists")
+	}
+	if m.err != nil && !strings.Contains(m.err.Error(), "stable version v2.7.0 already exists") {
+		t.Errorf("unexpected error message: %v", m.err)
+	}
+	if !m.quitting {
+		t.Error("expected model to be quitting after error")
 	}
 }

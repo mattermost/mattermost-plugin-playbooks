@@ -233,6 +233,20 @@ func (m model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mkBranch = mkBranch
 		m.warnings = collectedWarnings
 
+		// Preflight: check if creating RC when stable version already exists
+		if strings.Contains(m.newVersion, "-rc") {
+			stableVersion := strings.Split(m.newVersion, "-rc")[0]
+			if tagExists("v" + stableVersion) {
+				if forceMode {
+					m.warnings = append(m.warnings, fmt.Sprintf("stable version v%s already exists, can't create RC", stableVersion))
+				} else {
+					m.err = fmt.Errorf("stable version v%s already exists, can't create RC", stableVersion)
+					m.quitting = true
+					return m, tea.Quit
+				}
+			}
+		}
+
 		// Preflight: check if tag already exists (skip in force mode)
 		if tagExists("v" + m.newVersion) {
 			if forceMode {
@@ -350,6 +364,21 @@ func (m model) updateCustom(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+		// Preflight: check if creating RC when stable version already exists
+		if strings.Contains(m.newVersion, "-rc") {
+			stableVersion := strings.Split(m.newVersion, "-rc")[0]
+			if tagExists("v" + stableVersion) {
+				msg := fmt.Sprintf("stable version v%s already exists, can't create RC", stableVersion)
+				if forceMode {
+					m.warnings = append(m.warnings, msg)
+				} else {
+					m.err = fmt.Errorf("%s", msg)
+					m.quitting = true
+					return m, tea.Quit
+				}
+			}
+		}
+
 		// Preflight: check if tag already exists
 		if tagExists("v" + m.newVersion) {
 			msg := fmt.Sprintf("tag v%s already exists", m.newVersion)
@@ -456,8 +485,10 @@ func (m model) View() string {
 		if m.mkBranch != "" {
 			msg += fmt.Sprintf(" (%s branch recommended for patches)", m.mkBranch)
 		}
-		s.WriteString(successStyle.Render(fmt.Sprintf("Will tag: %s\n\n", msg)))
-		s.WriteString("Proceed? [y/n]\n")
+		s.WriteString(successStyle.Render("Will tag: "+msg) + "\n\n")
+		yes := dimStyle.Render("[y]es")
+		no := dimStyle.Render("[n]o")
+		fmt.Fprintf(&s, "Proceed? %s / %s ", yes, no)
 	}
 
 	return s.String()
@@ -680,6 +711,16 @@ func runRelease(cmd *cobra.Command, args []string) error {
 				}
 			}
 			mkBranch = "" // Skip branch creation for non-RC
+		}
+	}
+
+	// Check if creating RC when stable version already exists
+	if strings.Contains(newVersion, "-rc") {
+		stableVersion := strings.Split(newVersion, "-rc")[0]
+		if tagExists("v" + stableVersion) {
+			if err := warnOrFail("stable version v%s already exists, can't create RC", stableVersion); err != nil {
+				return err
+			}
 		}
 	}
 
