@@ -1,25 +1,12 @@
-import {build} from 'esbuild';
+// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import ts from 'typescript';
 import path from 'path';
 import {fileURLToPath} from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
-
-async function generateBundle() {
-    await build({
-        entryPoints: ['src/index.ts'],
-        bundle: true,
-        platform: 'node',
-        format: 'esm',
-        outfile: 'dist/index.mjs',
-        external: [
-            '@mattermost/loadtest-browser-lib',
-            '@mattermost/playwright-lib',
-            '@playwright/test',
-        ],
-    });
-}
 
 function generateTypes() {
     const configPath = path.join(rootDir, 'tsconfig.json');
@@ -47,5 +34,4 @@ function generateTypes() {
     }
 }
 
-await generateBundle();
 generateTypes();
