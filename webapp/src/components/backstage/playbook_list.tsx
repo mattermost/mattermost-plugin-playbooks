@@ -2,13 +2,14 @@
 // See LICENSE.txt for license information.
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import React, {PropsWithChildren, useRef} from 'react';
+import React, {PropsWithChildren, useEffect, useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
+import {Mark, Measure, measureAndReport} from 'src/performance_telemetry';
 import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
@@ -144,6 +145,17 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
         isLoading, totalCount, params,
         setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived, fetchPlaybooks,
     } = usePlaybooksCrud({per_page: BACKSTAGE_LIST_PER_PAGE});
+
+    useEffect(() => {
+        if (!isLoading) {
+            measureAndReport({
+                name: Measure.PlaybooksListLoad,
+                startMark: Mark.PlaybooksLHSLinkClicked,
+                canFail: true,
+            });
+            performance.clearMarks(Mark.PlaybooksLHSLinkClicked);
+        }
+    }, [isLoading]);
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal(restorePlaybook);

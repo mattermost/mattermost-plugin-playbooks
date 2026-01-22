@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -14,6 +14,8 @@ import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 import {graphql} from 'src/graphql/generated';
 
 import {pluginUrl} from 'src/browser_routing';
+
+import {Mark, mark} from 'src/performance_telemetry';
 
 import {LHSPlaybookDotMenu} from 'src/components/backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from 'src/components/backstage/lhs_run_dot_menu';
@@ -175,6 +177,11 @@ const useLHSData = (teamID: string) => {
 const ViewAllRuns = () => {
     const {formatMessage} = useIntl();
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+
+    function handleClick() {
+        mark(Mark.RunsLHSLinkClicked);
+    }
+
     return (
         <ItemContainer>
             <ViewAllNavLink
@@ -183,6 +190,7 @@ const ViewAllRuns = () => {
                 data-testid={'playbookRunsLHSButton'}
                 to={'/playbooks/runs'}
                 exact={true}
+                onClick={handleClick}
             >
                 {viewAllMessage}
             </ViewAllNavLink>
@@ -193,6 +201,11 @@ const ViewAllRuns = () => {
 const ViewAllPlaybooks = () => {
     const {formatMessage} = useIntl();
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+
+    const handleClick = useCallback(() => {
+        mark(Mark.PlaybooksLHSLinkClicked);
+    }, []);
+
     return (
         <ItemContainer key={'sidebarItem_view_all_playbooks'}>
             <ViewAllNavLink
@@ -201,6 +214,7 @@ const ViewAllPlaybooks = () => {
                 data-testid={'playbooksLHSButton'}
                 to={'/playbooks/playbooks'}
                 exact={true}
+                onClick={handleClick}
             >
                 {viewAllMessage}
             </ViewAllNavLink>
