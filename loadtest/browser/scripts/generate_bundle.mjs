@@ -13,7 +13,7 @@ async function generateBundle() {
         platform: 'node',
         
         // We need to bundle the package as ESM modules so that it can be used by the mattermost-load-test-ng/browser framework
-        // which itsself is written in ESM.
+        // which itself is written in ESM.
         format: 'esm',
         outfile: OutFile,
         external: [
