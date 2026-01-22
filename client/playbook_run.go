@@ -134,7 +134,7 @@ type PlaybookRunCreateOptions struct {
 	OwnerUserID     string `json:"owner_user_id"`
 	TeamID          string `json:"team_id"`
 	ChannelID       string `json:"channel_id"`
-	Description     string `json:"description"`
+	Summary         string `json:"summary"`
 	PostID          string `json:"post_id"`
 	PlaybookID      string `json:"playbook_id"`
 	CreatePublicRun *bool  `json:"create_public_run"`
@@ -196,10 +196,10 @@ type SortDirection string
 
 const (
 	// Desc sorts the results in descending order.
-	SortDesc SortDirection = "desc"
+	SortDesc SortDirection = "DESC"
 
 	// Asc sorts the results in ascending order.
-	SortAsc SortDirection = "asc"
+	SortAsc SortDirection = "ASC"
 )
 
 // PlaybookRunListOptions specifies the optional parameters to the
@@ -291,7 +291,8 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name *string `json:"name,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Summary     *string `json:"summary,omitempty"`
 }
 
 type RunMetricData struct {

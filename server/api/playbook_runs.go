@@ -188,7 +188,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 			TeamID:      playbookRunCreateOptions.TeamID,
 			ChannelID:   playbookRunCreateOptions.ChannelID,
 			Name:        playbookRunCreateOptions.Name,
-			Summary:     playbookRunCreateOptions.Description,
+			Summary:     playbookRunCreateOptions.Summary,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 			Type:        runType,
@@ -234,15 +234,15 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		return
 	}
 
-	// Prevent renaming finished runs
-	if oldPlaybookRun.CurrentStatus == app.StatusFinished {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot rename a finished run", app.ErrPlaybookRunNotActive)
-		return
-	}
-
 	var updates client.PlaybookRunUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	// Prevent updates on finished runs
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Summary != nil) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", app.ErrPlaybookRunNotActive)
 		return
 	}
 
@@ -253,6 +253,13 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
 			return
 		}
+	}
+
+	// If summary is being updated, apply the change (empty is allowed)
+	if updates.Summary != nil {
+		trimmedSummary := strings.TrimSpace(*updates.Summary)
+		fieldsToUpdate["Description"] = trimmedSummary
+		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 
 	// Update using GraphqlUpdate
@@ -530,6 +537,11 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
 		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
+	} else {
+		// For runs without a playbook (channel checklists), check run creation permissions on the team
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, model.PermissionRunCreate) {
+			return nil, errors.Wrap(app.ErrNoPermissions, "You do not have permission to create runs on this team")
+		}
 	}
 
 	// Check the permissions on the channel: the user must be able to create it or,

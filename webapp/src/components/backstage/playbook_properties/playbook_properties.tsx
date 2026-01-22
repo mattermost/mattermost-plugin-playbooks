@@ -3,8 +3,8 @@
 
 import React, {
     useCallback,
+    useEffect,
     useMemo,
-    useRef,
     useState,
 } from 'react';
 import {useDispatch} from 'react-redux';
@@ -45,7 +45,7 @@ import PropertyValuesInput from './property_values_input';
 import PropertyDotMenu from './property_dot_menu';
 import PropertyTypeSelector from './property_type_selector';
 import EmptyState from './empty_state';
-import PropertyNameInput, {PropertyNameInputRef} from './property_name_input';
+import PropertyNameInput from './property_name_input';
 
 interface Props {
     playbookID: string;
@@ -58,10 +58,23 @@ const PlaybookProperties = ({playbookID}: Props) => {
 
     const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
     const [deletingProperty, setDeletingProperty] = useState<PropertyField | null>(null);
-    const nameInputRefs = useRef<{[key: string]: PropertyNameInputRef | null}>({});
+    const [autoFocusPropertyId, setAutoFocusPropertyId] = useState<string | null>(null);
+    const [pendingAutoFocusName, setPendingAutoFocusName] = useState<string | null>(null);
 
     const [playbook, playbookResult] = usePlaybook(playbookID);
-    const properties = usePlaybookAttributes(playbookID) || [];
+    const propertiesFromHook = usePlaybookAttributes(playbookID);
+    const properties = useMemo(() => propertiesFromHook || [], [propertiesFromHook]);
+
+    // Convert pending auto-focus name to ID once property appears
+    useEffect(() => {
+        if (pendingAutoFocusName) {
+            const newProperty = properties.find((p) => p.name === pendingAutoFocusName);
+            if (newProperty) {
+                setAutoFocusPropertyId(newProperty.id);
+                setPendingAutoFocusName(null);
+            }
+        }
+    }, [pendingAutoFocusName, properties]);
 
     const updateProperty = useCallback(async (updatedProperty: PropertyField) => {
         const propertyFieldInput: PropertyFieldInput = {
@@ -123,22 +136,17 @@ const PlaybookProperties = ({playbookID}: Props) => {
             },
         };
 
-        await dispatch(addPlaybookPropertyFieldAction(playbookID, newPropertyField));
-
-        // Wait for the property to be added to the list and rendered
-        // Redux state will update automatically
-        setTimeout(() => {
-            // Find the newly added property by name
-            const newProperty = properties.find((p) => p.name === newPropertyField.name);
-            if (newProperty) {
-                const input = nameInputRefs.current[newProperty.id];
-                if (input) {
-                    input.focus();
-                    input.select();
-                }
-            }
-        }, 200);
-    }, [dispatch, playbookID, properties]);
+        try {
+            await dispatch(addPlaybookPropertyFieldAction(playbookID, newPropertyField));
+            setPendingAutoFocusName(newPropertyField.name);
+        } catch (error) {
+            addToast({
+                content: error instanceof Error ? error.message : 'Failed to add property field',
+                toastStyle: ToastStyle.Failure,
+                duration: 8000,
+            });
+        }
+    }, [dispatch, playbookID, properties, addToast]);
 
     const handleDragEnd = useCallback(async (result: any) => {
         if (!result.destination) {
@@ -229,12 +237,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                 target
                             )}
                             <PropertyNameInput
-                                ref={(el) => {
-                                    nameInputRefs.current[info.row.original.id] = el;
-                                }}
                                 field={info.row.original}
                                 updateField={updateProperty}
                                 existingNames={properties.map((p) => p.name)}
+                                autoFocus={info.row.original.id === autoFocusPropertyId}
                             />
                         </PropertyCellContent>
                     );
@@ -265,13 +271,7 @@ const PlaybookProperties = ({playbookID}: Props) => {
                     <PropertyDotMenu
                         field={info.row.original}
                         onRename={(field) => {
-                            setTimeout(() => {
-                                const input = nameInputRefs.current[field.id];
-                                if (input) {
-                                    input.focus();
-                                    input.select();
-                                }
-                            }, 50);
+                            setAutoFocusPropertyId(field.id);
                         }}
                         onEditType={(field) => {
                             setEditingTypeId(field.id);
@@ -294,13 +294,22 @@ const PlaybookProperties = ({playbookID}: Props) => {
                                 },
                             };
 
-                            await dispatch(addPlaybookPropertyFieldAction(playbookID, duplicatedPropertyField));
+                            try {
+                                await dispatch(addPlaybookPropertyFieldAction(playbookID, duplicatedPropertyField));
+                                setPendingAutoFocusName(duplicatedPropertyField.name);
+                            } catch (error) {
+                                addToast({
+                                    content: error instanceof Error ? error.message : 'Failed to duplicate property field',
+                                    toastStyle: ToastStyle.Failure,
+                                    duration: 8000,
+                                });
+                            }
                         }}
                     />
                 ),
             }),
         ],
-        [columnHelper, formatMessage, updateProperty, deleteProperty, properties, editingTypeId, dispatch, playbookID]
+        [columnHelper, formatMessage, updateProperty, properties, editingTypeId, dispatch, playbookID, addToast, autoFocusPropertyId]
     );
 
     const table = useReactTable({

@@ -190,6 +190,10 @@ func TestRunCreation(t *testing.T) {
 						app.DialogFieldNameKey:       "Standalone Run",
 					},
 				},
+				permissionsPrep: func() {
+					// Grant run_create permission for creating runs without a playbook ID (MM-66249)
+					e.Permissions.AddPermissionToRole(model.PermissionRunCreate.Id, model.TeamUserRoleId)
+				},
 				expected: func(t *testing.T, result *http.Response, err error) {
 					require.NoError(t, err)
 					assert.Equal(t, http.StatusCreated, result.StatusCode)
@@ -267,6 +271,31 @@ func TestRunCreation(t *testing.T) {
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
+		// Grant run_create permission to team_user role for this test
+		// (by default, only playbook members have this permission)
+		roles, _, err := e.ServerAdminClient.GetRolesByNames(context.Background(), []string{"team_user"})
+		require.NoError(t, err)
+		require.Len(t, roles, 1)
+
+		teamUserRole := roles[0]
+		originalPermissions := teamUserRole.Permissions
+
+		// Add run_create permission temporarily
+		updatedPermissions := append([]string{}, originalPermissions...)
+		updatedPermissions = append(updatedPermissions, model.PermissionRunCreate.Id)
+
+		_, _, err = e.ServerAdminClient.PatchRole(context.Background(), teamUserRole.Id, &model.RolePatch{
+			Permissions: &updatedPermissions,
+		})
+		require.NoError(t, err)
+
+		// Clean up: restore original permissions after test
+		defer func() {
+			_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), teamUserRole.Id, &model.RolePatch{
+				Permissions: &originalPermissions,
+			})
+		}()
+
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "No playbook",
 			OwnerUserID: e.RegularUser.Id,
@@ -480,13 +509,13 @@ func TestCreateInvalidRuns(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("fails if description is longer than 4096", func(t *testing.T) {
+	t.Run("fails if summary is longer than 4096", func(t *testing.T) {
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "test run",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  e.BasicPlaybook.ID,
-			Description: strings.Repeat("A", 4097),
+			Summary:     strings.Repeat("A", 4097),
 		})
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 		assert.Nil(t, run)
@@ -2348,6 +2377,138 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		require.Equal(t, originalName, updatedRun.Name)
 	})
 
+	t.Run("update run summary", func(t *testing.T) {
+		// Create a fresh run
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Test Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "", testRun.Summary) // Initially empty
+
+		oldSummaryModifiedAt := testRun.SummaryModifiedAt
+
+		newSummary := "## Incident Summary\n\nThis is a test description."
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Summary: &newSummary,
+		})
+		require.NoError(t, err)
+		require.Equal(t, newSummary, updatedRun.Summary)
+		require.Greater(t, updatedRun.SummaryModifiedAt, oldSummaryModifiedAt)
+
+		// Verify persistence
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, newSummary, run.Summary)
+	})
+
+	t.Run("update run name and summary together", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Original Name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		newName := "Updated Name"
+		newSummary := "Updated description"
+		oldSummaryModifiedAt := testRun.SummaryModifiedAt
+
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Name:    &newName,
+			Summary: &newSummary,
+		})
+		require.NoError(t, err)
+		require.Equal(t, newName, updatedRun.Name)
+		require.Equal(t, newSummary, updatedRun.Summary)
+		require.Greater(t, updatedRun.SummaryModifiedAt, oldSummaryModifiedAt)
+	})
+
+	t.Run("update run with empty summary succeeds", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Test Run",
+			Summary:     "Initial description",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "Initial description", testRun.Summary)
+
+		emptySummary := ""
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Summary: &emptySummary,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "", updatedRun.Summary)
+
+		// Verify persistence
+		run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, "", run.Summary)
+	})
+
+	t.Run("update run summary trims whitespace", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Test Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		summaryWithWhitespace := "  Test description  \n\t"
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Summary: &summaryWithWhitespace,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "Test description", updatedRun.Summary)
+	})
+
+	t.Run("update finished run summary fails", func(t *testing.T) {
+		// Create and finish a run
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run to finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), testRun.ID)
+		require.NoError(t, err)
+
+		newSummary := "Updated description for finished run"
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Summary: &newSummary,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update name only does not change SummaryModifiedAt", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Original Name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		oldSummaryModifiedAt := testRun.SummaryModifiedAt
+
+		newName := "Updated Name"
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			Name: &newName,
+		})
+		require.NoError(t, err)
+		require.Equal(t, newName, updatedRun.Name)
+		require.Equal(t, oldSummaryModifiedAt, updatedRun.SummaryModifiedAt) // Should NOT change
+	})
+
 	t.Run("no permissions to update run", func(t *testing.T) {
 		// Remove user from team to revoke permissions
 		_, err := e.ServerAdminClient.RemoveTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
@@ -2656,5 +2817,70 @@ func TestGuestCannotAccessPrivateChannelTasks(t *testing.T) {
 		// Also test direct access by run ID should fail
 		_, err = e.PlaybooksClientGuest.PlaybookRuns.Get(context.Background(), runWithDeletedChannel.ID)
 		require.Error(t, err, "Guest should not be able to directly access run with deleted channel")
+	})
+}
+
+// TestMemberCannotCreateRunWithoutPlaybookIDToBypassPermissions tests that members
+// cannot bypass run creation permissions by omitting the playbook_id.
+// MM-66249
+func TestMemberCannotCreateRunWithoutPlaybookIDToBypassPermissions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Get the default team member role
+	roles, _, err := e.ServerAdminClient.GetRolesByNames(context.Background(), []string{"team_user"})
+	require.NoError(t, err)
+	require.Len(t, roles, 1)
+
+	memberRole := roles[0]
+
+	// Store original permissions for cleanup
+	originalPermissions := memberRole.Permissions
+
+	// Remove run_create permission
+	updatedPermissions := []string{}
+	for _, perm := range memberRole.Permissions {
+		if perm != model.PermissionRunCreate.Id {
+			updatedPermissions = append(updatedPermissions, perm)
+		}
+	}
+
+	_, _, err = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
+		Permissions: &updatedPermissions,
+	})
+	require.NoError(t, err)
+
+	// Clean up: restore permissions after test
+	defer func() {
+		_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
+			Permissions: &originalPermissions,
+		})
+	}()
+
+	t.Run("member cannot create run without playbook_id when permission is removed", func(t *testing.T) {
+		// Try to create a run without a playbook_id (attempting to bypass permission check)
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run without playbook",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  "", // Empty playbook ID - attempting to bypass permission check
+		})
+
+		// Should fail
+		require.Error(t, err, "Should not be able to create run without playbook_id when run_create permission is removed")
+	})
+
+	t.Run("member CAN still create run with playbook_id if they have playbook-level permission", func(t *testing.T) {
+		// Even with team-level run_create removed, playbook-level permissions still work
+		// This is expected behavior - playbook membership grants specific permissions
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with playbook",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+
+		// Should succeed - user is a member of the playbook
+		require.NoError(t, err, "Playbook-level permissions should still allow run creation")
 	})
 }
