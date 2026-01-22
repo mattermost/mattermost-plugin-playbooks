@@ -104,7 +104,7 @@ func initialModel(major, minor, patch, rc int, branch string) model {
 	majorReleaseBranch := fmt.Sprintf("release-%d.0", major+1)
 
 	// Check if release branch exists (for validation messages)
-	releaseBranchExists, _ := branchExists(releaseBranch)
+	releaseBranchExists := branchExists(releaseBranch)
 
 	// Build validation message for patch-type releases
 	var patchValidMsg string
@@ -275,7 +275,7 @@ func (m model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		// Preflight: check if release branch already exists (skip in force mode)
 		if mkBranch != "" {
-			exists, _ := branchExists(mkBranch)
+			exists := branchExists(mkBranch)
 			if exists {
 				if strings.Contains(m.selected, "rc") {
 					if forceMode {
@@ -407,7 +407,7 @@ func (m model) updateCustom(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		// Preflight: check if release branch already exists
 		if m.mkBranch != "" {
-			exists, _ := branchExists(m.mkBranch)
+			exists := branchExists(m.mkBranch)
 			if exists {
 				m.mkBranch = "" // Skip branch creation, branch already exists
 			}
@@ -720,7 +720,7 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		}
 		// Check if release branch already exists
 		if mkBranch != "" {
-			exists, _ := branchExists(mkBranch)
+			exists := branchExists(mkBranch)
 			if exists {
 				if bumpType != "" && strings.Contains(bumpType, "rc") {
 					if err := warnOrFail("release branch %s already exists, can't start new RC cycle", mkBranch); err != nil {
@@ -765,7 +765,7 @@ func runRelease(cmd *cobra.Command, args []string) error {
 	// Only show if we're not already on the target branch and it doesn't exist
 	appName := getAppName()
 	if mkBranch != "" && branch != mkBranch {
-		exists, _ := branchExists(mkBranch)
+		exists := branchExists(mkBranch)
 		if !exists {
 			fmt.Println()
 			fmt.Println(dimStyle.Render("Note: Create " + mkBranch + " branch for future patch releases"))
@@ -953,14 +953,14 @@ func gitRun(args ...string) error {
 	return cmd.Run()
 }
 
-func branchExists(name string) (bool, error) {
+func branchExists(name string) bool {
 	if err := exec.Command("git", "show-ref", "--verify", "--quiet", "refs/heads/"+name).Run(); err == nil {
-		return true, nil
+		return true
 	}
 	if err := exec.Command("git", "show-ref", "--verify", "--quiet", "refs/remotes/origin/"+name).Run(); err == nil {
-		return true, nil
+		return true
 	}
-	return false, nil
+	return false
 }
 
 // sortVersionTagsDesc sorts version tags in descending order (newest first)
@@ -1103,7 +1103,7 @@ func detectProtectedBranch() string {
 
 	// Check if common branches exist locally or on remote
 	for _, candidate := range []string{"main", "master"} {
-		exists, _ := branchExists(candidate)
+		exists := branchExists(candidate)
 		if exists {
 			return candidate
 		}

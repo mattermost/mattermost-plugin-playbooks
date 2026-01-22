@@ -1561,12 +1561,12 @@ func TestIntegration_BranchExists(t *testing.T) {
 	// Fetch to see remote branches
 	tr.runGitInWork("fetch")
 
-	exists, _ := branchExists("release-2.6")
+	exists := branchExists("release-2.6")
 	if !exists {
 		t.Error("branchExists should return true for release-2.6")
 	}
 
-	exists, _ = branchExists("release-9.9")
+	exists = branchExists("release-9.9")
 	if exists {
 		t.Error("branchExists should return false for non-existent branch")
 	}
@@ -1687,12 +1687,12 @@ func TestIntegration_BranchOperations(t *testing.T) {
 	tr.runGitInWork("fetch")
 
 	// Verify branches exist
-	exists, _ := branchExists("release-2.5")
+	exists := branchExists("release-2.5")
 	if !exists {
 		t.Error("release-2.5 should exist")
 	}
 
-	exists, _ = branchExists("release-2.6")
+	exists = branchExists("release-2.6")
 	if !exists {
 		t.Error("release-2.6 should exist")
 	}
