@@ -178,6 +178,10 @@ export const iconSplitStyling = css`
 
 export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string, disabled?: boolean, disabledAltText?: string, 'data-testid'?: string }) => {
     const tooltipId = useUniqueId();
+    const onClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        props.onClick();
+    };
 
     if (props.disabled) {
         return (
@@ -198,7 +202,7 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
     return (
         <DropdownMenuItemStyled
             href='#'
-            onClick={props.onClick}
+            onClick={onClick}
             className={props.className}
             role={'button'}
             data-testid={props['data-testid']}
