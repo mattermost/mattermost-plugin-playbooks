@@ -5,6 +5,8 @@ import ts from 'typescript';
 import path from 'path';
 import {fileURLToPath} from 'url';
 
+const OutputFolder = 'dist';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
@@ -17,7 +19,7 @@ function generateTypes() {
         ...parsedConfig.options,
         declaration: true,
         emitDeclarationOnly: true,
-        outDir: path.join(rootDir, 'dist'),
+        outDir: path.join(rootDir, OutputFolder),
     });
 
     const emitResult = program.emit();
