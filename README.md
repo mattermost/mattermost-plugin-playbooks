@@ -51,43 +51,55 @@ When running E2E tests, the local `mattermost-server` configuration may be unexp
 
 ## How to Release
 
-To trigger a release, follow these steps:
+Run `make tag-release` to launch an interactive TUI for creating releases. The tool validates branch requirements, checks for conflicts, and creates signed tags.
 
-1. **For Patch Release:** Run the following command:
-    ```
-    make patch
-    ```
-   This will release a patch change.
+### Standard Release Flow (with RC cycle)
 
-2. **For Minor Release:** Run the following command:
-    ```
-    make minor
-    ```
-   This will release a minor change.
+The typical release process uses release candidates for testing before final release:
 
-3. **For Major Release:** Run the following command:
-    ```
-    make major
-    ```
-   This will release a major change.
+```bash
+# 1. Start RC cycle from master
+make tag-release minor-rc    # Creates v2.7.0-rc1
 
-4. **For Patch Release Candidate (RC):** Run the following command:
-    ```
-    make patch-rc
-    ```
-   This will release a patch release candidate.
+# 2. Test, fix bugs, increment RC as needed
+make tag-release rc          # Creates v2.7.0-rc2
+make tag-release rc          # Creates v2.7.0-rc3
 
-5. **For Minor Release Candidate (RC):** Run the following command:
-    ```
-    make minor-rc
-    ```
-   This will release a minor release candidate.
+# 3. Finalize when ready
+make tag-release rc-finalize # Creates v2.7.0
 
-6. **For Major Release Candidate (RC):** Run the following command:
-    ```
-    make major-rc
-    ```
-   This will release a major release candidate.
+# 4. Create release branch for future patches
+git branch release-2.7
+git push origin release-2.7
+```
+
+### Patch Releases (hotfixes)
+
+For hotfixes on existing releases, work from the release branch:
+
+```bash
+git checkout release-2.6
+# ... fix bug ...
+make tag-release patch       # Creates v2.6.2
+```
+
+### Quick Reference
+
+| Scenario | Branch | Command | Example |
+|----------|--------|---------|---------|
+| New minor | master | `minor` | v2.6.0 → v2.7.0 |
+| Start RC cycle | master | `minor-rc` | v2.6.0 → v2.7.0-rc1 |
+| Bump RC | master | `rc` | v2.7.0-rc1 → v2.7.0-rc2 |
+| Finalize RC | master | `rc-finalize` | v2.7.0-rc2 → v2.7.0 |
+| Hotfix | release-X.Y | `patch` | v2.6.1 → v2.6.2 |
+| Major release | master | `major` | v2.9.0 → v3.0.0 |
+
+### Options
+
+- **Interactive mode**: `make tag-release` (no arguments) launches a TUI menu
+- **Explicit version**: `VERSION=2.7.0 make tag-release`
+- **Dry run**: `DRY_RUN=1 make tag-release` to preview without executing
+- **Force mode**: `FORCE=1 make tag-release` to bypass validation errors (shows warnings instead)
 
 
 ## Contributing

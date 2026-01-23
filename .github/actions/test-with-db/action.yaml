@@ -45,5 +45,8 @@ runs:
       uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
       with:
         name: ${{ github.job }}-results
-        path: report.xml
+        path: |
+          report.xml
+          client/report.xml
+          build/report.xml
         retention-days: 5 ## No need to keep test results for more than 5 days
