@@ -34,6 +34,7 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook info` - Show a summary of the current playbook run. \n" +
 	"* `/playbook timeline` - Show the timeline for the current playbook run. \n" +
 	"* `/playbook todo` - Get a list of your assigned tasks. \n" +
+	"* `/playbook quicklist <post_id>` - Generate a checklist from a thread using AI. \n" +
 	"* `/playbook settings digest [on/off]` - turn daily digest on/off. \n" +
 	"* `/playbook settings weekly-digest [on/off]` - turn weekly digest on/off. \n" +
 	"\n" +
@@ -56,7 +57,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Playbook",
 		Description:      "Playbooks",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo, settings",
+		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo, quicklist, settings",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -64,7 +65,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
-		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo, settings")
+		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo, quicklist, settings")
 
 	run := model.NewAutocompleteData("run", "", "Start a new run")
 	command.AddCommand(run)
@@ -154,6 +155,11 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	digest.AddStaticListArgument("", true, digestValue)
 	settings.AddCommand(digest)
 	command.AddCommand(settings)
+
+	quicklist := model.NewAutocompleteData("quicklist", "<post_id>",
+		"Generate a checklist from a conversation thread using AI")
+	quicklist.AddTextArgument("Post ID of the thread root", "<post_id>", "")
+	command.AddCommand(quicklist)
 
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
@@ -2165,6 +2171,8 @@ func (r *Runner) Execute() error {
 		r.actionTodo()
 	case "settings":
 		r.actionSettings(parameters)
+	case "quicklist":
+		r.actionQuicklist(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":
