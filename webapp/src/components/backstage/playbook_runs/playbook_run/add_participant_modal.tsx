@@ -43,7 +43,12 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
+        // For DM/GM runs (empty team_id), search all profiles
+        // For team-based runs, filter by team membership
+        if (playbookRun.team_id) {
+            return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
+        }
+        return dispatch(searchProfiles(term));
     };
 
     const header = (

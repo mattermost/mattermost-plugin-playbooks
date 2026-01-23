@@ -435,12 +435,13 @@ func (p *PermissionsService) RunManageProperties(userID, runID string) error {
 }
 
 func (p *PermissionsService) runManagePropertiesWithPlaybookRun(userID string, run *PlaybookRun) error {
-	if !p.canViewTeam(userID, run.TeamID) {
+	// For DM/GM runs (empty TeamID), skip team check and use channel-based permissions
+	if run.TeamID != "" && !p.canViewTeam(userID, run.TeamID) {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
-	// For channelChecklists, use channel-based permissions
-	if p.isChannelChecklist(run) {
+	// For channelChecklists (including DM/GM runs), use channel-based permissions
+	if p.isChannelChecklist(run) || run.TeamID == "" {
 		// Cannot modify checklists in archived channels
 		if p.isChannelArchived(run.ChannelID) {
 			return errors.Wrap(ErrNoPermissions, "cannot modify checklist in archived channel")
@@ -476,13 +477,13 @@ func (p *PermissionsService) RunView(userID, runID string) error {
 		return errors.Wrapf(err, "Unable to get run to determine permissions, run id `%s`", runID)
 	}
 
-	if !p.canViewTeam(userID, run.TeamID) {
+	// For DM/GM runs (empty TeamID), skip team check and use channel-based permissions
+	if run.TeamID != "" && !p.canViewTeam(userID, run.TeamID) {
 		return errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 	}
 
-	// For channelChecklists, use channel-based permissions
-	if p.isChannelChecklist(run) {
-
+	// For channelChecklists (including DM/GM runs), use channel-based permissions
+	if p.isChannelChecklist(run) || run.TeamID == "" {
 		// Check if user has permission to read the channel
 		if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
 			return nil

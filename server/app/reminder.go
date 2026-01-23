@@ -136,13 +136,20 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 		return "", errors.Wrapf(err, "can't get channel - %s", playbookRun.ChannelID)
 	}
 
-	team, err := s.pluginAPI.Team.Get(channel.TeamId)
-	if err != nil {
-		return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
+	// For DM/GM channels, TeamId is empty - use a different URL format
+	var message string
+	if channel.TeamId == "" {
+		// DM/GM channel - use messages URL format
+		message = fmt.Sprintf("Status update is overdue for [%s](/messages/@%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
+			channel.DisplayName, channel.Id, playbookRun.ID, ownerUserName)
+	} else {
+		team, err := s.pluginAPI.Team.Get(channel.TeamId)
+		if err != nil {
+			return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
+		}
+		message = fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
+			channel.DisplayName, team.Name, channel.Name, playbookRun.ID, ownerUserName)
 	}
-
-	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
-		channel.DisplayName, team.Name, channel.Name, playbookRun.ID, ownerUserName)
 
 	return message, nil
 }

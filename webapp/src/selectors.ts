@@ -299,6 +299,8 @@ export const selectMyTasks = createSelector(
                     playbook_run_owner_user_id: playbookRun.owner_user_id,
                     playbook_run_participant_user_ids: playbookRun.participant_ids,
                     playbook_run_create_at: playbookRun.create_at,
+                    playbook_run_team_id: playbookRun.team_id,
+                    playbook_run_channel_id: playbookRun.channel_id,
                     checklist_title: checklist.title,
                     checklist_num: checklistNum,
                 }))
