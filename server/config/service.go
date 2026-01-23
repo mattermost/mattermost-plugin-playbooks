@@ -60,6 +60,9 @@ func NewConfigService(api *pluginapi.Client, manifest *model.Manifest) *ServiceI
 	// api.LoadPluginConfiguration never returns an error, so ignore it.
 	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
 
+	// Apply defaults for fields that need them
+	c.configuration.SetDefaults()
+
 	return c
 }
 
@@ -140,6 +143,14 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	// Load the public configuration fields from the Mattermost server configuration.
 	if err := c.api.Configuration.LoadPluginConfiguration(configuration); err != nil {
 		return errors.Wrapf(err, "failed to load plugin configuration")
+	}
+
+	// Apply defaults for fields that need them
+	configuration.SetDefaults()
+
+	// Validate configuration and log any issues (don't block loading)
+	if err := configuration.Validate(); err != nil {
+		c.api.Log.Warn("Invalid plugin configuration", "error", err.Error())
 	}
 
 	configuration.BotUserID = c.configuration.BotUserID
@@ -249,4 +260,9 @@ func (c *ServiceImpl) IsIncrementalUpdatesEnabled() bool {
 // IsExperimentalFeaturesEnabled returns true when experimental features are enabled.
 func (c *ServiceImpl) IsExperimentalFeaturesEnabled() bool {
 	return c.GetConfiguration().EnableExperimentalFeatures
+}
+
+// IsQuicklistEnabled returns true when the quicklist feature is enabled.
+func (c *ServiceImpl) IsQuicklistEnabled() bool {
+	return c.GetConfiguration().QuicklistEnabled
 }

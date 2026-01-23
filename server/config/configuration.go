@@ -3,6 +3,8 @@
 
 package config
 
+import "fmt"
+
 // Configuration captures the plugin's external configuration as exposed in the Mattermost server
 // configuration, as well as values computed from the configuration. Any public fields will be
 // deserialized from the Mattermost server configuration in OnConfigurationChange.
@@ -31,6 +33,30 @@ type Configuration struct {
 	// EnableExperimentalFeatures controls whether experimental features are enabled in the plugin.
 	// These features may have in-progress UI, bugs, and other issues.
 	EnableExperimentalFeatures bool `json:"enableexperimentalfeatures"`
+
+	// QuicklistEnabled controls whether the quicklist feature is available.
+	// When enabled, users can generate checklists from threads using AI.
+	QuicklistEnabled bool `json:"quicklistenabled"`
+
+	// QuicklistAgentBotID is the bot ID of the AI agent used for quicklist generation.
+	// Requires mattermost-plugin-agents to be installed.
+	QuicklistAgentBotID string `json:"quicklistagentbotid"`
+
+	// QuicklistMaxMessages is the maximum number of thread messages to analyze.
+	// Older messages are truncated, keeping the root post and most recent messages.
+	QuicklistMaxMessages int `json:"quicklistmaxmessages"`
+
+	// QuicklistMaxCharacters is the maximum characters to send to the AI agent.
+	// Content exceeding this limit is truncated.
+	QuicklistMaxCharacters int `json:"quicklistmaxcharacters"`
+
+	// QuicklistSystemPrompt is the system prompt for AI checklist generation.
+	// Leave empty to use the default prompt.
+	QuicklistSystemPrompt string `json:"quicklistsystemprompt"`
+
+	// QuicklistUserPrompt is the user prompt template for AI checklist generation.
+	// Use %s as placeholder for thread content. Leave empty to use the default prompt.
+	QuicklistUserPrompt string `json:"quicklistuserprompt"`
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -38,6 +64,34 @@ type Configuration struct {
 func (c *Configuration) Clone() *Configuration {
 	var clone = *c
 	return &clone
+}
+
+// Quicklist configuration defaults
+const (
+	DefaultQuicklistMaxMessages   = 50
+	DefaultQuicklistMaxCharacters = 10000
+)
+
+// SetDefaults applies default values to configuration fields that are unset or invalid.
+func (c *Configuration) SetDefaults() {
+	if c.QuicklistMaxMessages <= 0 {
+		c.QuicklistMaxMessages = DefaultQuicklistMaxMessages
+	}
+	if c.QuicklistMaxCharacters <= 0 {
+		c.QuicklistMaxCharacters = DefaultQuicklistMaxCharacters
+	}
+}
+
+// Validate checks the configuration for invalid values.
+// Returns an error describing the first invalid value found, or nil if valid.
+func (c *Configuration) Validate() error {
+	if c.QuicklistMaxMessages < 1 {
+		return fmt.Errorf("QuicklistMaxMessages must be at least 1, got %d", c.QuicklistMaxMessages)
+	}
+	if c.QuicklistMaxCharacters < 100 {
+		return fmt.Errorf("QuicklistMaxCharacters must be at least 100, got %d", c.QuicklistMaxCharacters)
+	}
+	return nil
 }
 
 func (c *Configuration) serialize() map[string]interface{} {
@@ -48,5 +102,11 @@ func (c *Configuration) serialize() map[string]interface{} {
 	ret["TeamsTabAppBotUserID"] = c.TeamsTabAppBotUserID
 	ret["EnableIncrementalUpdates"] = c.EnableIncrementalUpdates
 	ret["EnableExperimentalFeatures"] = c.EnableExperimentalFeatures
+	ret["QuicklistEnabled"] = c.QuicklistEnabled
+	ret["QuicklistAgentBotID"] = c.QuicklistAgentBotID
+	ret["QuicklistMaxMessages"] = c.QuicklistMaxMessages
+	ret["QuicklistMaxCharacters"] = c.QuicklistMaxCharacters
+	ret["QuicklistSystemPrompt"] = c.QuicklistSystemPrompt
+	ret["QuicklistUserPrompt"] = c.QuicklistUserPrompt
 	return ret
 }

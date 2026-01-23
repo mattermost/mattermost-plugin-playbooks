@@ -46,4 +46,7 @@ type Service interface {
 
 	// IsExperimentalFeaturesEnabled returns true when experimental features are enabled.
 	IsExperimentalFeaturesEnabled() bool
+
+	// IsQuicklistEnabled returns true when the quicklist feature is enabled.
+	IsQuicklistEnabled() bool
 }
