@@ -50,6 +50,7 @@ import {
     handleWebsocketPlaybookRunUpdated,
     handleWebsocketPlaybookRunUpdatedIncremental,
     handleWebsocketPostEditedOrDeleted,
+    handleWebsocketQuicklistOpenModal,
     handleWebsocketSettingsChanged,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
@@ -64,6 +65,7 @@ import {
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL,
+    WEBSOCKET_QUICKLIST_OPEN_MODAL,
     WEBSOCKET_SETTINGS_CHANGED,
 } from 'src/types/websocket_events';
 import {
@@ -255,6 +257,7 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_CREATED, handleWebsocketConditionCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_UPDATED, handleWebsocketConditionUpdated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_DELETED, handleWebsocketConditionDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_QUICKLIST_OPEN_MODAL, handleWebsocketQuicklistOpenModal(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));

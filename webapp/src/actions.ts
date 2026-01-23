@@ -11,6 +11,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
+import {makeModalDefinition as makeQuicklistModalDefinition} from 'src/components/modals/quicklist_modal';
 import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
 import {
     clientExecuteCommand,
@@ -386,6 +387,13 @@ export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFi
 
 export function openTaskActionsModal(onTaskActionsChange: (newTaskActions: TaskActionType[]) => void, taskActions?: TaskActionType[] | null) {
     return modals.openModal(makeTaskActionsModalDefinition(onTaskActionsChange, taskActions));
+}
+
+export function openQuicklistModal(postId: string, channelId: string) {
+    return modals.openModal(makeQuicklistModalDefinition({
+        postId,
+        channelId,
+    }));
 }
 
 export const closeBackstageRHS = (): CloseBackstageRHS => ({

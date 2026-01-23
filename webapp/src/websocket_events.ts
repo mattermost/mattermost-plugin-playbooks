@@ -18,6 +18,7 @@ import {
     conditionCreated,
     conditionDeleted,
     conditionUpdated,
+    openQuicklistModal,
     playbookArchived,
     playbookCreated,
     playbookRestored,
@@ -307,5 +308,27 @@ export function handleWebsocketConditionDeleted(getState: GetStateFunc, dispatch
 
         const condition = JSON.parse(msg.data.payload) as Condition;
         dispatch(conditionDeleted(condition.id, condition.playbook_id));
+    };
+}
+
+// Quicklist websocket handler
+export function handleWebsocketQuicklistOpenModal(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        let payload: { post_id: string; channel_id: string };
+        try {
+            payload = JSON.parse(msg.data.payload) as { post_id: string; channel_id: string };
+        } catch {
+            return;
+        }
+
+        if (!payload.post_id || !payload.channel_id) {
+            return;
+        }
+
+        dispatch(openQuicklistModal(payload.post_id, payload.channel_id));
     };
 }
