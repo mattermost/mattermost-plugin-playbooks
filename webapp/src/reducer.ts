@@ -10,7 +10,10 @@ import {PlaybookRun, isRun} from 'src/types/playbook_run';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
 import {Condition} from 'src/types/conditions';
 import {ChecklistItemsFilter, Playbook} from 'src/types/playbook';
+import {PropertyField} from 'src/types/properties';
 import {
+    ADDED_PLAYBOOK_PROPERTY_FIELD,
+    AddedPlaybookPropertyField,
     CLOSE_BACKSTAGE_RHS,
     CONDITION_CREATED,
     CONDITION_DELETED,
@@ -19,6 +22,8 @@ import {
     ConditionCreated,
     ConditionDeleted,
     ConditionUpdated,
+    DELETED_PLAYBOOK_PROPERTY_FIELD,
+    DeletedPlaybookPropertyField,
     HIDE_CHANNEL_ACTIONS_MODAL,
     HIDE_PLAYBOOK_ACTIONS_MODAL,
     HIDE_POST_MENU_MODAL,
@@ -34,18 +39,22 @@ import {
     PlaybookRunUpdated,
     RECEIVED_GLOBAL_SETTINGS,
     RECEIVED_PLAYBOOK_CONDITIONS,
+    RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
     RECEIVED_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUNS,
     RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS,
     RECEIVED_TOGGLE_RHS_ACTION,
     REMOVED_FROM_CHANNEL,
+    REORDERED_PLAYBOOK_PROPERTY_FIELDS,
     ReceivedGlobalSettings,
     ReceivedPlaybookConditions,
+    ReceivedPlaybookPropertyFields,
     ReceivedPlaybookRuns,
     ReceivedTeamPlaybookRunConnections,
     ReceivedTeamPlaybookRuns,
     ReceivedToggleRHSAction,
     RemovedFromChannel,
+    ReorderedPlaybookPropertyFields,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
     SET_CHECKLIST_COLLAPSED_STATE,
     SET_CHECKLIST_ITEMS_FILTER,
@@ -70,6 +79,8 @@ import {
     ShowPlaybookActionsModal,
     ShowPostMenuModal,
     ShowRunActionsModal,
+    UPDATED_PLAYBOOK_PROPERTY_FIELD,
+    UpdatedPlaybookPropertyField,
     WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
     WebsocketPlaybookRunIncrementalUpdateReceived,
 } from 'src/types/actions';
@@ -565,6 +576,81 @@ const backstageRHS = (state: backstageRHSState = initialBackstageRHSState, actio
     }
 };
 
+type TStatePropertyFields = Record<PropertyField['id'], PropertyField>;
+
+const propertyFields = (
+    state: TStatePropertyFields = {},
+    action: ReceivedPlaybookPropertyFields | AddedPlaybookPropertyField | UpdatedPlaybookPropertyField | DeletedPlaybookPropertyField
+): TStatePropertyFields => {
+    switch (action.type) {
+    case RECEIVED_PLAYBOOK_PROPERTY_FIELDS: {
+        const receivedAction = action as ReceivedPlaybookPropertyFields;
+        const newState = {...state};
+        receivedAction.propertyFields.forEach((field) => {
+            newState[field.id] = field;
+        });
+        return newState;
+    }
+    case ADDED_PLAYBOOK_PROPERTY_FIELD: {
+        const addedAction = action as AddedPlaybookPropertyField;
+        return {
+            ...state,
+            [addedAction.propertyField.id]: addedAction.propertyField,
+        };
+    }
+    case UPDATED_PLAYBOOK_PROPERTY_FIELD: {
+        const updatedAction = action as UpdatedPlaybookPropertyField;
+        return {
+            ...state,
+            [updatedAction.propertyField.id]: updatedAction.propertyField,
+        };
+    }
+    case DELETED_PLAYBOOK_PROPERTY_FIELD: {
+        const deletedAction = action as DeletedPlaybookPropertyField;
+        const newState = {...state};
+        delete newState[deletedAction.fieldId];
+        return newState;
+    }
+    default:
+        return state;
+    }
+};
+
+type TStatePropertyFieldsPerPlaybook = Record<Playbook['id'], PropertyField['id'][]>;
+
+const propertyFieldsPerPlaybook = (
+    state: TStatePropertyFieldsPerPlaybook = {},
+    action: ReceivedPlaybookPropertyFields | AddedPlaybookPropertyField | ReorderedPlaybookPropertyFields
+): TStatePropertyFieldsPerPlaybook => {
+    switch (action.type) {
+    case RECEIVED_PLAYBOOK_PROPERTY_FIELDS: {
+        const receivedAction = action as ReceivedPlaybookPropertyFields;
+        const fieldIds = receivedAction.propertyFields.map((field) => field.id);
+        return {
+            ...state,
+            [receivedAction.playbookId]: fieldIds,
+        };
+    }
+    case ADDED_PLAYBOOK_PROPERTY_FIELD: {
+        const addedAction = action as AddedPlaybookPropertyField;
+        const currentIds = state[addedAction.playbookId] || [];
+        return {
+            ...state,
+            [addedAction.playbookId]: [...currentIds, addedAction.propertyField.id],
+        };
+    }
+    case REORDERED_PLAYBOOK_PROPERTY_FIELDS: {
+        const reorderedAction = action as ReorderedPlaybookPropertyFields;
+        return {
+            ...state,
+            [reorderedAction.playbookId]: reorderedAction.reorderedFieldIds,
+        };
+    }
+    default:
+        return state;
+    }
+};
+
 const reducer = combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -573,6 +659,8 @@ const reducer = combineReducers({
     myPlaybookRunsByTeam,
     conditions,
     conditionsPerPlaybook,
+    propertyFields,
+    propertyFieldsPerPlaybook,
     globalSettings,
     postMenuModalVisibility,
     channelActionsModalVisibility,

@@ -263,7 +263,6 @@ func TestConditionRequest_ToCondition(t *testing.T) {
 				assert.Equal(t, tt.request.RunID, condition.RunID)
 				assert.Equal(t, tt.request.CreateAt, condition.CreateAt)
 				assert.Equal(t, tt.request.UpdateAt, condition.UpdateAt)
-				assert.Equal(t, tt.request.DeleteAt, condition.DeleteAt)
 
 				// Verify version handling
 				assert.Equal(t, tt.request.Version, condition.Version)

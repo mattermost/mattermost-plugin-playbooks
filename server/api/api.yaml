@@ -174,9 +174,9 @@ paths:
                   type: string
                   description: The name of the playbook run.
                   example: Server down in EU cluster
-                description:
+                summary:
                   type: string
-                  description: The description of the playbook run.
+                  description: The summary of the playbook run.
                   example: There is one server in the EU cluster that is not responding since April 12.
                 owner_user_id:
                   type: string
@@ -200,7 +200,7 @@ paths:
             curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "owner_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
+            -d '{"name": "Server down in EU cluster", "summary": "There is one server in the EU cluster that is not responding since April 12.", "owner_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
       responses:
         201:
           description: Created playbook run.
@@ -569,17 +569,21 @@ paths:
             schema:
               type: object
               properties:
-                active_stage:
-                  type: integer
-                  description: Zero-based index of the stage that will be made active.
-                  example: 2
+                name:
+                  type: string
+                  description: The new name of the playbook run. Must not be empty.
+                  example: Updated Server Down Incident
+                summary:
+                  type: string
+                  description: The new summary of the playbook run. Can be empty to clear the summary.
+                  example: "## Incident Summary\n\nResolved the server outage."
       x-codeSamples:
         - lang: curl
           source: |
             curl -X PATCH 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"active_stage": 2}'
+            -d '{"name": "Updated Server Down Incident", "summary": "## Summary\n\nResolved the server outage."}'
       responses:
         200:
           description: Playbook run successfully updated.
@@ -1004,7 +1008,7 @@ paths:
   /plugins/playbooks/api/v0/runs/{id}/checklists/{checklist}/item/{item}:
     put:
       summary: Update an item of a playbook run's checklist
-      description: Update the title and the slash command of an item in one of the playbook run's checklists.
+      description: Update the title, slash command, and description of an item in one of the playbook run's checklists.
       operationId: itemRename
       security:
         - BearerAuth: []
@@ -1047,6 +1051,10 @@ paths:
                   type: string
                   description: The new slash command of the item.
                   example: /jira update ticket
+                description:
+                  type: string
+                  description: The new description of the item, formatted with Markdown.
+                  example: Ask the customer for more information in [Zendesk](https://www.zendesk.com/).
               required:
                 - title
                 - command
@@ -1055,7 +1063,7 @@ paths:
           source: |
             curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/6t7jdgyqr7b5sk24zkauhmrb06/checklists/1/item/0' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "Gather information from server's logs.", "command": "/jira update ticket"}'
+            -d '{"title": "Gather information from server's logs.", "command": "/jira update ticket", "description": "Ask the customer for more information in [Zendesk](https://www.zendesk.com/)."}'
       responses:
         200:
           description: Item updated.
@@ -1851,6 +1859,69 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/playbooks/{id}/property_fields/reorder:
+    post:
+      summary: Reorder property fields for a playbook
+      operationId: reorderPlaybookPropertyFields
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - field_id
+                - target_position
+              properties:
+                field_id:
+                  type: string
+                  description: ID of the property field to move.
+                  example: p7fj3k2l5m8n9q1r4s6t8v0w2x
+                target_position:
+                  type: integer
+                  format: int32
+                  description: Target position index (zero-based) where the field should be moved.
+                  example: 3
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/property_fields/reorder' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e' \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "field_id": "p7fj3k2l5m8n9q1r4s6t8v0w2x",
+              "target_position": 3
+            }'
+      responses:
+        200:
+          description: Property fields reordered successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PropertyField"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
   /plugins/playbooks/api/v0/runs/{id}/property_fields:
     get:
       summary: Get property fields for a playbook run
@@ -2312,9 +2383,9 @@ components:
           type: string
           description: The name of the playbook run.
           example: Server down in EU cluster
-        description:
+        summary:
           type: string
-          description: The description of the playbook run.
+          description: The summary of the playbook run.
           example: There is one server in the EU cluster that is not responding since April 12.
         is_active:
           type: boolean

@@ -308,7 +308,6 @@ type ConditionRequest struct {
 	RunID         string          `json:"run_id,omitempty"`
 	CreateAt      int64           `json:"create_at"`
 	UpdateAt      int64           `json:"update_at"`
-	DeleteAt      int64           `json:"delete_at"`
 }
 
 // ToCondition converts a ConditionRequest to a Condition
@@ -325,7 +324,6 @@ func (cr *ConditionRequest) ToCondition() (*app.Condition, error) {
 		RunID:      cr.RunID,
 		CreateAt:   cr.CreateAt,
 		UpdateAt:   cr.UpdateAt,
-		DeleteAt:   cr.DeleteAt,
 	}
 
 	// ConditionExpr is required

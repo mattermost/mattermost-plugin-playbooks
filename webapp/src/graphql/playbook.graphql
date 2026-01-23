@@ -78,26 +78,6 @@ query Playbook($id: String!) {
 			type
 			target
 		}
-		propertyFields {
-			id
-			name
-			type
-			group_id: groupID
-			attrs {
-				visibility
-				sort_order: sortOrder
-				options {
-					id
-					name
-					color
-				}
-				parent_id: parentID
-				value_type: valueType
-			}
-			create_at: createAt
-			update_at: updateAt
-			delete_at: deleteAt
-		}
     }
 }
 

@@ -244,6 +244,21 @@ func (mr *MockPropertyServiceMockRecorder) GetRunsPropertyValues(arg0 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsPropertyValues", reflect.TypeOf((*MockPropertyService)(nil).GetRunsPropertyValues), arg0)
 }
 
+// ReorderPropertyFields mocks base method.
+func (m *MockPropertyService) ReorderPropertyFields(arg0, arg1 string, arg2 int) ([]app.PropertyField, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReorderPropertyFields", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]app.PropertyField)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReorderPropertyFields indicates an expected call of ReorderPropertyFields.
+func (mr *MockPropertyServiceMockRecorder) ReorderPropertyFields(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReorderPropertyFields", reflect.TypeOf((*MockPropertyService)(nil).ReorderPropertyFields), arg0, arg1, arg2)
+}
+
 // UpdatePropertyField mocks base method.
 func (m *MockPropertyService) UpdatePropertyField(arg0 string, arg1 app.PropertyField) (*app.PropertyField, error) {
 	m.ctrl.T.Helper()

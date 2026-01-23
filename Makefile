@@ -41,111 +41,40 @@ else
 endif
 
 # ====================================================================================
-# Used for semver bumping
-PROTECTED_BRANCH := master
-APP_NAME    := $(shell basename -s .git `git config --get remote.origin.url`)
-CURRENT_VERSION := $(shell git describe --abbrev=0 --tags)
-VERSION_PARTS := $(subst ., ,$(subst v,,$(subst -rc, ,$(CURRENT_VERSION))))
-MAJOR := $(word 1,$(VERSION_PARTS))
-MINOR := $(word 2,$(VERSION_PARTS))
-PATCH := $(word 3,$(VERSION_PARTS))
-RC := $(shell echo $(CURRENT_VERSION) | grep -oE 'rc[0-9]+' | sed 's/rc//')
-# Check if current branch is protected
-define check_protected_branch
-	@current_branch=$$(git rev-parse --abbrev-ref HEAD); \
-	if ! echo "$(PROTECTED_BRANCH)" | grep -wq "$$current_branch" && ! echo "$$current_branch" | grep -q "^release"; then \
-		echo "Error: Tagging is only allowed from $(PROTECTED_BRANCH) or release branches. You are on $$current_branch branch."; \
-		exit 1; \
-	fi
-endef
-# Check if there are pending pulls
-define check_pending_pulls
-	@git fetch; \
-	current_branch=$$(git rev-parse --abbrev-ref HEAD); \
-	if [ "$$(git rev-parse HEAD)" != "$$(git rev-parse origin/$$current_branch)" ]; then \
-		echo "Error: Your branch is not up to date with upstream. Please pull the latest changes before performing a release"; \
-		exit 1; \
-	fi
-endef
-# Prompt for approval
-define prompt_approval
-	@read -p "About to bump $(APP_NAME) to version $(1), approve? (y/n) " userinput; \
-	if [ "$$userinput" != "y" ]; then \
-		echo "Bump aborted."; \
-		exit 1; \
-	fi
-endef
+# Semver release tagging
+# Usage: make tag-release [bump-type] [DRY_RUN=1] [FORCE=1] [VERSION=X.Y.Z] [RELEASE_ARGS="..."]
+# Examples:
+#   make tag-release                    # Interactive mode
+#   make tag-release patch              # Bump patch version
+#   make tag-release minor-rc           # Start minor RC cycle
+#   make tag-release rc-finalize        # Finalize RC to stable
+#   DRY_RUN=1 make tag-release patch    # Dry run
+#   FORCE=1 make tag-release patch      # Force (skip validation errors)
+#   VERSION=2.6.2 make tag-release      # Explicit version
+#   make tag-release RELEASE_ARGS="--version=2.6.2"  # Explicit version (alternative)
+TAG_RELEASE_BUMP := $(word 2,$(MAKECMDGOALS))
+ifneq ($(filter tag-release,$(MAKECMDGOALS)),)
+  ifneq ($(TAG_RELEASE_BUMP),)
+    $(eval $(TAG_RELEASE_BUMP):;@:)
+  endif
+endif
+RELEASE_ARGS ?=
+RELEASE_FLAGS := $(RELEASE_ARGS)
+ifneq ($(DRY_RUN),)
+  RELEASE_FLAGS += --dry-run
+endif
+ifneq ($(FORCE),)
+  RELEASE_FLAGS += --force
+endif
+ifneq ($(VERSION),)
+  RELEASE_FLAGS += --version=$(VERSION)
+endif
 # ====================================================================================
 
-.PHONY: patch minor major patch-rc minor-rc major-rc
-
-patch: ## to bump patch version (semver)
-	$(call check_protected_branch)
-	$(call check_pending_pulls)
-	@$(eval PATCH := $(shell echo $$(($(PATCH)+1))))
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH))
-	@echo Bumping $(APP_NAME) to Patch version $(MAJOR).$(MINOR).$(PATCH)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH) -m "Bumping $(APP_NAME) to Patch version $(MAJOR).$(MINOR).$(PATCH)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)
-	@echo Bumped $(APP_NAME) to Patch version $(MAJOR).$(MINOR).$(PATCH)
-
-minor: ## to bump minor version (semver)
-	$(call check_protected_branch)
-	$(call check_pending_pulls)
-	@$(eval MINOR := $(shell echo $$(($(MINOR)+1))))
-	@$(eval PATCH := 0)
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH))
-	@echo Bumping $(APP_NAME) to Minor version $(MAJOR).$(MINOR).$(PATCH)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH) -m "Bumping $(APP_NAME) to Minor version $(MAJOR).$(MINOR).$(PATCH)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)
-	@echo Bumped $(APP_NAME) to Minor version $(MAJOR).$(MINOR).$(PATCH)
-
-major: ## to bump major version (semver)
-	$(call check_protected_branch)
-	$(call check_pending_pulls)
-	$(eval MAJOR := $(shell echo $$(($(MAJOR)+1))))
-	$(eval MINOR := 0)
-	$(eval PATCH := 0)
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH))
-	@echo Bumping $(APP_NAME) to Major version $(MAJOR).$(MINOR).$(PATCH)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH) -m "Bumping $(APP_NAME) to Major version $(MAJOR).$(MINOR).$(PATCH)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)
-	@echo Bumped $(APP_NAME) to Major version $(MAJOR).$(MINOR).$(PATCH)
-
-patch-rc: ## to bump patch release candidate version (semver)
-	$(call check_protected_branch)
-	$(call check_pending_pulls)
-	@$(eval RC := $(shell echo $$(($(RC)+1))))
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH)-rc$(RC))
-	@echo Bumping $(APP_NAME) to Patch RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC) -m "Bumping $(APP_NAME) to Patch RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	@echo Bumped $(APP_NAME) to Patch RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-
-minor-rc: ## to bump minor release candidate version (semver)
-	$(call check_protected_branch)
-	$(call check_pending_pulls)
-	@$(eval MINOR := $(shell echo $$(($(MINOR)+1))))
-	@$(eval PATCH := 0)
-	@$(eval RC := 1)
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH)-rc$(RC))
-	@echo Bumping $(APP_NAME) to Minor RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC) -m "Bumping $(APP_NAME) to Minor RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	@echo Bumped $(APP_NAME) to Minor RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-
-major-rc: ## to bump major release candidate version (semver)
-	$(call check_protected_branch)
-	$(call check_pending_pulls)
-	@$(eval MAJOR := $(shell echo $$(($(MAJOR)+1))))
-	@$(eval MINOR := 0)
-	@$(eval PATCH := 0)
-	@$(eval RC := 1)
-	$(call prompt_approval,$(MAJOR).$(MINOR).$(PATCH)-rc$(RC))
-	@echo Bumping $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	git tag -s -a v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC) -m "Bumping $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)"
-	git push origin v$(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
-	@echo Bumped $(APP_NAME) to Major RC version $(MAJOR).$(MINOR).$(PATCH)-rc$(RC)
+.PHONY: tag-release
+## Tag a semver release interactively or with bump type (DRY_RUN=1, FORCE=1)
+tag-release:
+	./build/bin/release $(TAG_RELEASE_BUMP) $(RELEASE_FLAGS)
 
 ## Checks the code style, tests, builds and bundles the plugin.
 .PHONY: all
@@ -189,7 +118,7 @@ ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
 	$(GO) vet ./...
 	$(GOBIN)/golangci-lint run ./...
-	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 ./...
+	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go ./...
 endif
 
 ## Fix JS file ESLint issues
@@ -372,6 +301,9 @@ endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
 endif
+	@echo "Running submodule tests..."
+	cd client && $(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
+	cd build && $(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 
 ## Creates a coverage report for the server code.
 .PHONY: coverage
@@ -425,6 +357,8 @@ enable:
 .PHONY: graphql
 graphql:
 	cd webapp && npm run graphql
+	$(GO) install github.com/jkrajniak/graphql-codegen-go@v1.2.1
+	cd server && $(GOBIN)/graphql-codegen-go -schemas api/schema.graphqls -packageName graphql -out graphql/models.go
 
 
 ## Reset the plugin, effectively disabling and re-enabling it on the server.
