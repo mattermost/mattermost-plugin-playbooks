@@ -85,6 +85,9 @@ func (c *Configuration) SetDefaults() {
 // Validate checks the configuration for invalid values.
 // Returns an error describing the first invalid value found, or nil if valid.
 func (c *Configuration) Validate() error {
+	if c.QuicklistEnabled && c.QuicklistAgentBotID == "" {
+		return fmt.Errorf("QuicklistAgentBotID is required when QuicklistEnabled is true")
+	}
 	if c.QuicklistMaxMessages < 1 {
 		return fmt.Errorf("QuicklistMaxMessages must be at least 1, got %d", c.QuicklistMaxMessages)
 	}

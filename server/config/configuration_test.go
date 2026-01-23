@@ -152,6 +152,37 @@ func TestConfiguration_Validate(t *testing.T) {
 			wantErr:   true,
 			errSubstr: "QuicklistMaxCharacters",
 		},
+		{
+			name: "invalid: QuicklistEnabled without AgentBotID",
+			config: Configuration{
+				QuicklistEnabled:       true,
+				QuicklistAgentBotID:    "",
+				QuicklistMaxMessages:   DefaultQuicklistMaxMessages,
+				QuicklistMaxCharacters: DefaultQuicklistMaxCharacters,
+			},
+			wantErr:   true,
+			errSubstr: "QuicklistAgentBotID",
+		},
+		{
+			name: "valid: QuicklistEnabled with AgentBotID",
+			config: Configuration{
+				QuicklistEnabled:       true,
+				QuicklistAgentBotID:    "bot123",
+				QuicklistMaxMessages:   DefaultQuicklistMaxMessages,
+				QuicklistMaxCharacters: DefaultQuicklistMaxCharacters,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid: QuicklistDisabled without AgentBotID",
+			config: Configuration{
+				QuicklistEnabled:       false,
+				QuicklistAgentBotID:    "",
+				QuicklistMaxMessages:   DefaultQuicklistMaxMessages,
+				QuicklistMaxCharacters: DefaultQuicklistMaxCharacters,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -169,6 +200,7 @@ func TestConfiguration_Validate(t *testing.T) {
 
 func TestConfiguration_SetDefaultsThenValidate(t *testing.T) {
 	// Verify that SetDefaults produces a valid configuration
+	// Note: QuicklistEnabled defaults to false, so no AgentBotID is required
 	config := Configuration{}
 	config.SetDefaults()
 	err := config.Validate()
