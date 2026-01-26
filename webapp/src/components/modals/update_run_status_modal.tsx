@@ -173,11 +173,11 @@ const UpdateRunStatusModal = ({
     };
 
     const onConfirm = () => {
-        if (hasPermission && message?.trim() && currentUserId && channelId && run?.teamID) {
+        if (hasPermission && message?.trim() && currentUserId && channelId) {
             postStatusUpdate(
                 playbookRunId,
                 {message, reminder, finishRun},
-                {user_id: currentUserId, channel_id: channelId, team_id: run?.teamID}
+                {user_id: currentUserId, channel_id: channelId, team_id: run?.teamID ?? ''}
             );
             onActualHide();
         }
@@ -317,7 +317,7 @@ const UpdateRunStatusModal = ({
                 onExited={() => null}
                 handleConfirm={hasPermission ? onSubmit : null}
                 autoCloseOnConfirmButton={false}
-                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.teamID && isReminderValid)}
+                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && isReminderValid)}
                 id={ID}
                 footer={footer}
                 components={{FooterContainer}}
