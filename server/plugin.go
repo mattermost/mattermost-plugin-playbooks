@@ -21,6 +21,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 
+	"github.com/mattermost/mattermost-plugin-ai/public/bridgeclient"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -54,6 +55,7 @@ type Plugin struct {
 	categoryService      app.CategoryService
 	conditionService     app.ConditionService
 	propertyService      app.PropertyService
+	aiService            *app.AIService
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
@@ -142,6 +144,11 @@ func (p *Plugin) OnActivate() error {
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.config.SetWebsocketPublisher(p.bot)
+
+	// Initialize AIService for quicklist feature
+	bridgeClient := bridgeclient.NewClient(p.API)
+	p.aiService = app.NewAIService(bridgeClient, p.config)
+
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, scheduler)
