@@ -101,7 +101,8 @@ export const inPlaybookRunChannel = createSelector(
     getCurrentChannelId,
     myPlaybookRunsByTeam,
     (teamId, channelId, playbookRunMapByTeam) => {
-        return Boolean(playbookRunMapByTeam[teamId]?.[channelId]);
+        // Check current team first, then check DM/GM runs (stored under empty team_id)
+        return Boolean(playbookRunMapByTeam[teamId]?.[channelId] || playbookRunMapByTeam['']?.[channelId]);
     },
 );
 
@@ -111,7 +112,8 @@ export const currentPlaybookRun = createSelector(
     getCurrentChannelId,
     myPlaybookRunsByTeam,
     (teamId, channelId, playbookRunMapByTeam) => {
-        return playbookRunMapByTeam[teamId]?.[channelId];
+        // Check current team first, then check DM/GM runs (stored under empty team_id)
+        return playbookRunMapByTeam[teamId]?.[channelId] || playbookRunMapByTeam['']?.[channelId];
     },
 );
 
