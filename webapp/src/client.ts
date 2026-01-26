@@ -41,6 +41,7 @@ import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
 import {Condition} from './types/conditions';
 import {PropertyField, PropertyFieldInput} from './types/properties';
+import {QuicklistGenerateResponse} from './types/quicklist';
 
 let siteURL = '';
 let basePath = '';
@@ -909,6 +910,21 @@ export async function reorderPlaybookPropertyFields(playbookId: string, fieldId:
     }));
     if (!data) {
         return [];
+    }
+    return data;
+}
+
+/**
+ * Generate a quicklist (checklist) from a thread using AI analysis.
+ * Calls the POST /api/v0/quicklist/generate endpoint.
+ */
+export async function generateQuicklist(postId: string): Promise<QuicklistGenerateResponse> {
+    const url = `${apiUrl}/quicklist/generate`;
+    const data = await doPost<QuicklistGenerateResponse>(url, JSON.stringify({
+        post_id: postId,
+    }));
+    if (!data) {
+        throw new Error('Failed to generate quicklist');
     }
     return data;
 }
