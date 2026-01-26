@@ -205,7 +205,7 @@ func (c *GenController) CreateRun(u ltuser.User, pbClient *client.Client) (res l
 		OwnerUserID:     u.Store().Id(),
 		TeamID:          team.Id,
 		ChannelID:       channelID,
-		Description:     ltcontrol.GenerateRandomSentences(1 + rand.Intn(50)),
+		Summary:         ltcontrol.GenerateRandomSentences(1 + rand.Intn(50)),
 		PlaybookID:      playbook.ID,
 		CreatePublicRun: model.NewPointer(true),
 		Type:            "playbook",
