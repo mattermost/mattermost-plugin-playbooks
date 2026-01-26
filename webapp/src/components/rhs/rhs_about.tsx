@@ -9,13 +9,16 @@ import {ChevronDownIcon, ChevronUpIcon} from '@mattermost/compass-icons/componen
 
 import {UserProfile} from '@mattermost/types/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {General} from 'mattermost-redux/constants';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
+
 import {
+    useChannel,
     useEnsureProfiles,
     useFavoriteRun,
     useParticipateInRun,
@@ -44,8 +47,14 @@ const RHSAbout = (props: Props) => {
     const collapsedFromStore = useSelector(currentRHSAboutCollapsedState(props.playbookRun.id));
     const profiles = useProfilesForRun(props.playbookRun.team_id, props.playbookRun.channel_id);
     const updateRun = useUpdateRun(props.playbookRun.id);
+    const [channel] = useChannel(props.playbookRun.channel_id);
 
     const myUserId = useSelector(getCurrentUserId);
+
+    // Detect self-DM: a DM channel where you message yourself
+    // Self-DM channel names contain the same user ID twice (e.g., "userId__userId")
+    const isSelfDM = channel?.type === General.DM_CHANNEL &&
+        channel.name.split('__').filter((id) => id === myUserId).length === 2;
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
     // Hooks for favorite and follow state
@@ -124,36 +133,38 @@ const RHSAbout = (props: Props) => {
                             readOnly={props.readOnly}
                             onReadOnlyInteract={props.onReadOnlyInteract}
                         />
-                        <Row>
-                            <OwnerSection>
-                                <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
-                                <StyledProfileSelector
-                                    testId={'owner-profile-selector'}
-                                    selectedUserId={props.playbookRun.owner_user_id}
-                                    placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
-                                    placeholderButtonClass={'NoAssignee-button'}
-                                    profileButtonClass={'Assigned-button'}
-                                    enableEdit={!isFinished && !props.readOnly}
-                                    onEditDisabledClick={props.onReadOnlyInteract}
-                                    getAllUsers={fetchUsersInTeam}
-                                    onSelectedChange={onSelectedProfileChange}
-                                    selfIsFirstOption={true}
-                                    userGroups={{
-                                        subsetUserIds: props.playbookRun.participant_ids,
-                                        defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
-                                        subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
-                                    }}
-                                />
-                            </OwnerSection>
-                            <ParticipantsSection>
-                                <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
-                                <RHSParticipants
-                                    userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
-                                    onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
-                                    setShowParticipants={props.setShowParticipants}
-                                />
-                            </ParticipantsSection>
-                        </Row>
+                        {!isSelfDM && (
+                            <Row>
+                                <OwnerSection>
+                                    <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
+                                    <StyledProfileSelector
+                                        testId={'owner-profile-selector'}
+                                        selectedUserId={props.playbookRun.owner_user_id}
+                                        placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
+                                        placeholderButtonClass={'NoAssignee-button'}
+                                        profileButtonClass={'Assigned-button'}
+                                        enableEdit={!isFinished && !props.readOnly}
+                                        onEditDisabledClick={props.onReadOnlyInteract}
+                                        getAllUsers={fetchUsersInTeam}
+                                        onSelectedChange={onSelectedProfileChange}
+                                        selfIsFirstOption={true}
+                                        userGroups={{
+                                            subsetUserIds: props.playbookRun.participant_ids,
+                                            defaultLabel: formatMessage({defaultMessage: 'NOT PARTICIPATING'}),
+                                            subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
+                                        }}
+                                    />
+                                </OwnerSection>
+                                <ParticipantsSection>
+                                    <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
+                                    <RHSParticipants
+                                        userIds={props.playbookRun.participant_ids.filter((id) => id !== props.playbookRun.owner_user_id)}
+                                        onParticipate={shouldShowParticipate ? showParticipateConfirm : undefined}
+                                        setShowParticipants={props.setShowParticipants}
+                                    />
+                                </ParticipantsSection>
+                            </Row>
+                        )}
                         <PropertiesList
                             propertyFields={props.playbookRun.property_fields}
                             propertyValues={props.playbookRun.property_values}
