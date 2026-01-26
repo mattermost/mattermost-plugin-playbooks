@@ -17,10 +17,9 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
-// QuicklistGenerateRequest mirrors the API request structure
+// testQuicklistGenerateRequest mirrors the API request structure
 type testQuicklistGenerateRequest struct {
-	PostID    string `json:"post_id"`
-	ChannelID string `json:"channel_id"`
+	PostID string `json:"post_id"`
 }
 
 // setQuicklistConfig enables or disables the quicklist feature

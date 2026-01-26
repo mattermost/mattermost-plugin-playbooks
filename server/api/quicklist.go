@@ -18,8 +18,7 @@ import (
 
 // QuicklistGenerateRequest is the request body for the generate endpoint.
 type QuicklistGenerateRequest struct {
-	PostID    string `json:"post_id"`
-	ChannelID string `json:"channel_id"`
+	PostID string `json:"post_id"`
 }
 
 // QuicklistGenerateResponse is the response body for the generate endpoint.
@@ -108,7 +107,7 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Use post's channel ID (more authoritative than request)
+	// Use post's channel ID
 	channelID := post.ChannelId
 
 	// Check user has permission to read the channel

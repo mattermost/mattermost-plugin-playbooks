@@ -249,7 +249,7 @@ func TestQuicklistGenerate_FeatureDisabled(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: "validpostid123456789012", ChannelID: "channel123"}
+	reqBody := QuicklistGenerateRequest{PostID: "validpostid123456789012"}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -279,7 +279,7 @@ func TestQuicklistGenerate_MissingPostID(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: "", ChannelID: "channel123"}
+	reqBody := QuicklistGenerateRequest{PostID: ""}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -309,7 +309,7 @@ func TestQuicklistGenerate_InvalidPostIDFormat(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: "invalid", ChannelID: "channel123"}
+	reqBody := QuicklistGenerateRequest{PostID: "invalid"}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -342,7 +342,7 @@ func TestQuicklistGenerate_PostNotFound(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: postID, ChannelID: "channel123"}
+	reqBody := QuicklistGenerateRequest{PostID: postID}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -385,7 +385,7 @@ func TestQuicklistGenerate_NoChannelAccess(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: postID, ChannelID: channelID}
+	reqBody := QuicklistGenerateRequest{PostID: postID}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -433,7 +433,7 @@ func TestQuicklistGenerate_ArchivedChannel(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: postID, ChannelID: channelID}
+	reqBody := QuicklistGenerateRequest{PostID: postID}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -482,7 +482,7 @@ func TestQuicklistGenerate_AIServiceUnavailable(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: postID, ChannelID: channelID}
+	reqBody := QuicklistGenerateRequest{PostID: postID}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -556,7 +556,7 @@ func TestQuicklistGenerate_Success(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: postID, ChannelID: channelID}
+	reqBody := QuicklistGenerateRequest{PostID: postID}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))
@@ -634,7 +634,7 @@ func TestQuicklistGenerate_ResponseIncludesAllThreadInfoFields(t *testing.T) {
 
 	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
 
-	reqBody := QuicklistGenerateRequest{PostID: postID, ChannelID: channelID}
+	reqBody := QuicklistGenerateRequest{PostID: postID}
 	body, _ := json.Marshal(reqBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/generate", bytes.NewBuffer(body))

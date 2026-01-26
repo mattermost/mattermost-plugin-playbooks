@@ -210,6 +210,7 @@ This plan outlines the phases to implement the Quicklist feature as described in
 - Added validation for invalid post ID format (returns 400) before attempting to fetch post.
 - Added check for archived channels (returns 400) to prevent generating quicklists from archived content.
 - **Security**: No channel access returns 404 (not 403) to prevent enumeration of private channels/posts.
+- **Request simplification**: Removed `channel_id` from `QuicklistGenerateRequest`. The channel is always derived from `post.ChannelId` since the design requires runs to be created in the same channel as the source thread (DESIGN Section 12.2). Accepting a user-provided channel_id would be both unused and potentially misleading.
 
 ### 2.4 Display Generated Checklist
 
