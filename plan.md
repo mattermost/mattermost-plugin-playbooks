@@ -22,7 +22,7 @@ This plan outlines the phases to implement the Quicklist feature as described in
 **Testing:**
 - [x] Unit test: Configuration defaults are applied correctly
 - [x] Unit test: Configuration validation rejects invalid values
-- [ ] Manual test: Settings appear in System Console
+- [x] Manual test: Settings appear in System Console
 
 **Implementation Notes:**
 - The `Configuration` struct is in `/server/config/configuration.go`, not `config.go`. The `config.go` file contains only the `Service` interface.
@@ -36,69 +36,98 @@ This plan outlines the phases to implement the Quicklist feature as described in
 ### 1.2 Thread Fetching
 
 **Tasks:**
-- [ ] Create `/server/app/thread.go` with `ThreadService`
-- [ ] Implement `FetchAndFormatThread(postID string) (*ThreadContent, error)`
-- [ ] Implement helper functions:
+- [x] Create `/server/app/thread.go` with `ThreadService`
+- [x] Implement `FetchAndFormatThread(postID string) (*ThreadContent, error)`
+- [x] Implement helper functions:
   - `sortPostsByTime()`
   - `keepRecentWithRoot()`
   - `countParticipants()`
   - `formatThreadContent()`
-- [ ] Handle truncation (message count and character limits)
+- [x] Handle truncation (message count and character limits)
 
 **Testing:**
-- [ ] Unit test: Thread formatting produces expected output format
-- [ ] Unit test: Truncation keeps root post and most recent messages
-- [ ] Unit test: Character limit truncation works correctly
-- [ ] Unit test: Participant counting is accurate
-- [ ] Unit test: Empty thread handling
-- [ ] Unit test: Single-post thread (no replies)
+- [x] Unit test: Thread formatting produces expected output format
+- [x] Unit test: Truncation keeps root post and most recent messages
+- [x] Unit test: Character limit truncation works correctly
+- [x] Unit test: Participant counting is accurate
+- [x] Unit test: Empty thread handling
+- [x] Unit test: Single-post thread (no replies)
+
+**Implementation Notes:**
+- Uses `plugin.API` directly instead of `pluginapi.Client`. Errors return as `*model.AppError`. Future services should be consistent with this choice.
+- **Truncation order matters**: Message count truncation happens first, then character truncation. If both limits are exceeded, the message-count notice (`[Thread truncated: X messages]`) could get cut off by character truncation. The character notice always appears at the end.
+- Participant list is built from posts *after* message truncation. Users who only appear in truncated middle messages won't be listed.
+- User cache uses individual `GetUser` calls per unique participant. Acceptable for typical threads (3-10 participants) but could be slow for 50+ unique users.
+- Channel fetch errors are silently ignored (`channel, _ := ...`) for graceful degradation. This makes debugging harder if channel fetches consistently fail.
+- **Zero config pitfall**: If `QuicklistMaxMessages` is 0 (uninitialized config), `keepRecentWithRoot` returns empty results. Code relies on `SetDefaults()` being called first.
+- All timestamps formatted as UTC regardless of user locale.
+- Character limit cuts at byte boundary, potentially mid-word. Not message-boundary aware.
 
 ### 1.3 Slash Command Skeleton
 
 **Tasks:**
-- [ ] Create `/server/command/quicklist.go`
-- [ ] Register `quicklist` subcommand in `/server/command/command.go`
-- [ ] Add autocomplete data
-- [ ] Implement basic validation:
+- [x] Create `/server/command/quicklist.go`
+- [x] Register `quicklist` subcommand in `/server/command/command.go`
+- [x] Add autocomplete data
+- [x] Implement basic validation:
   - Post ID required
   - Post exists
   - User has channel access
   - Channel is not archived
-- [ ] Send `quicklist_open_modal` WebSocket event
+- [x] Send `quicklist_open_modal` WebSocket event
 
 **Testing:**
-- [ ] Unit test: Command rejects missing post ID
-- [ ] Unit test: Command rejects invalid post ID
-- [ ] Unit test: Command checks channel permissions
-- [ ] Unit test: Command rejects archived channel
-- [ ] Integration test: WebSocket event is sent with correct payload
+- [x] Unit test: Command rejects missing post ID
+- [x] Unit test: Command rejects invalid post ID
+- [x] Unit test: Command checks channel permissions
+- [x] Unit test: Command rejects archived channel
+- [x] Unit test: WebSocket event is sent with correct payload
+
+**Implementation Notes:**
+- Validation order: feature flag -> args -> ID format -> post exists -> permission -> archived. Cheapest checks first.
+- `model.IsValidId(postID)` validates format before API calls to avoid unnecessary DB queries.
+- Command channel (`r.args.ChannelId`) may differ from post channel (`post.ChannelId`). The WebSocket event correctly uses the post's channel.
+- Test files require a full `config.Service` mock. Consider extracting to `server/config/mocks/mock_service.go` if more command tests need it.
 
 ### 1.4 Basic Modal UI
 
 **Tasks:**
-- [ ] Create `/webapp/src/components/modals/quicklist_modal.tsx`
-- [ ] Create `/webapp/src/components/quicklist/quicklist_section.tsx`
-- [ ] Create `/webapp/src/components/quicklist/quicklist_item.tsx`
-- [ ] Create `/webapp/src/components/quicklist/index.ts`
-- [ ] Create `/webapp/src/types/quicklist.ts` with TypeScript types:
-  - `GeneratedChecklist`, `Checklist`, `ChecklistItem`
+- [x] Create `/webapp/src/components/modals/quicklist_modal.tsx`
+- [x] Create `/webapp/src/components/quicklist/quicklist_section.tsx`
+- [x] Create `/webapp/src/components/quicklist/quicklist_item.tsx`
+- [x] Create `/webapp/src/components/quicklist/index.ts`
+- [x] Create `/webapp/src/types/quicklist.ts` with TypeScript types:
+  - `Checklist`, `ChecklistItem` (reused from `playbook.ts`)
   - `ThreadInfo` with fields: `truncated`, `truncated_count`, `message_count`, `participant_count`
-  - `QuicklistGenerateResponse`, `QuicklistRefineRequest`
-- [ ] Export new types from `/webapp/src/types/index.ts`
-- [ ] Register modal in `/webapp/src/index.tsx`
-- [ ] Set up WebSocket event listener in `/webapp/src/index.tsx`:
+  - `QuicklistGenerateResponse`, `QuicklistRefineRequest`, `QuicklistModalProps`
+- [x] Register modal in `/webapp/src/index.tsx`
+- [x] Set up WebSocket event listener in `/webapp/src/index.tsx`:
   - Subscribe to `quicklist_open_modal` event on plugin initialization
   - Extract `post_id` and `channel_id` from event payload
   - Open modal with extracted props
-- [ ] Display loading state
+- [x] Display loading state
 
 **Testing:**
-- [ ] Unit test: Modal renders without crashing
-- [ ] Unit test: Modal displays loading state initially
-- [ ] Unit test: Section component renders collapsed/expanded states
-- [ ] Unit test: Item component renders title, description, due date
-- [ ] Unit test: WebSocket event listener correctly parses payload
-- [ ] Manual test: Modal opens when WebSocket event received
+- [x] Unit test: Modal renders without crashing
+- [x] Unit test: Modal displays loading state initially
+- [x] Unit test: Section component renders collapsed/expanded states
+- [x] Unit test: Item component renders title, description, due date
+- [x] Unit test: WebSocket event listener correctly parses payload
+- [x] Manual test: Modal opens when WebSocket event received
+
+**Implementation Notes:**
+- Reused existing `Checklist` and `ChecklistItem` types from `/webapp/src/types/playbook.ts` instead of creating new ones.
+- No central `types/index.ts` exists in the codebase; types are imported directly from their source files.
+- WebSocket event constant added to `/webapp/src/types/websocket_events.ts` as `WEBSOCKET_QUICKLIST_OPEN_MODAL`.
+- WebSocket handler added to `/webapp/src/websocket_events.ts` as `handleWebsocketQuicklistOpenModal`.
+- Action creator `openQuicklistModal` added to `/webapp/src/actions.ts` for programmatic modal opening.
+- Modal displays loading spinner with "Analyzing thread..." text. Phase 2 will implement the actual API call.
+- **WebSocket payload case conversion**: Server sends snake_case (`post_id`, `channel_id`), handler converts to camelCase for React props. Future WebSocket events should follow this pattern.
+- **Deferred props pattern**: `postId` and `channelId` are accepted but marked with `eslint-disable` comments. Phase 2 will remove these when implementing the API call.
+- **Loading state is hardcoded**: `useState(true)` with no setter. Phase 2 must add `setLoading` and manage state based on API response.
+- **Confirm handler is empty**: Phase 3 must implement `handleCreateRun` in the modal.
+- **Test mock for webapp_globals**: Tests mock `src/webapp_globals` to provide `modals.openModal`. Future modal-related tests need this pattern.
+- **No content truncation**: `QuicklistItem` renders full title/description without truncation. Phase 4.4 should address very long AI-generated content.
 
 **Phase 1 Deliverable:** Running `/playbook quicklist <post_id>` opens a modal showing a loading state.
 
@@ -109,12 +138,17 @@ This plan outlines the phases to implement the Quicklist feature as described in
 ### 2.1 Bridge Client Dependency
 
 **Tasks:**
-- [ ] Add `github.com/mattermost/mattermost-plugin-agents/public/bridgeclient` to `go.mod`
-- [ ] Run `go mod tidy`
-- [ ] Verify import works
+- [x] Add `github.com/mattermost/mattermost-plugin-ai/public/bridgeclient` to `go.mod` (via replace directive to local `../mattermost-plugin-agents`)
+- [x] Run `go mod tidy`
+- [x] Verify import works
 
 **Testing:**
-- [ ] Build succeeds with new dependency
+- [x] Build succeeds with new dependency
+
+**Implementation Notes:**
+- The module path is `github.com/mattermost/mattermost-plugin-ai` (the repo is named `mattermost-plugin-agents` but the Go module kept the original name).
+- Using a `replace` directive for local development: `replace github.com/mattermost/mattermost-plugin-ai => ../mattermost-plugin-agents`
+- The `require` directive is added automatically by `go mod tidy` when code imports the bridgeclient package.
 
 ### 2.2 AI Service
 
