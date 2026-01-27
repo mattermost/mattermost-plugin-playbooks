@@ -15,6 +15,8 @@ import {graphql} from 'src/graphql/generated';
 
 import {pluginUrl} from 'src/browser_routing';
 
+import {Mark, mark} from 'src/performance_telemetry';
+
 import {LHSPlaybookDotMenu} from 'src/components/backstage/lhs_playbook_dot_menu';
 import {LHSRunDotMenu} from 'src/components/backstage/lhs_run_dot_menu';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -175,6 +177,11 @@ const useLHSData = (teamID: string) => {
 const ViewAllRuns = () => {
     const {formatMessage} = useIntl();
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+
+    function handleClick() {
+        mark(Mark.PlaybookRunsLHSButtonClicked);
+    }
+
     return (
         <ItemContainer>
             <ViewAllNavLink
@@ -183,6 +190,7 @@ const ViewAllRuns = () => {
                 data-testid={'playbookRunsLHSButton'}
                 to={'/playbooks/runs'}
                 exact={true}
+                onClick={handleClick}
             >
                 {viewAllMessage}
             </ViewAllNavLink>
@@ -193,6 +201,11 @@ const ViewAllRuns = () => {
 const ViewAllPlaybooks = () => {
     const {formatMessage} = useIntl();
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
+
+    function handleClick() {
+        mark(Mark.PlaybooksLHSButtonClicked);
+    }
+
     return (
         <ItemContainer key={'sidebarItem_view_all_playbooks'}>
             <ViewAllNavLink
@@ -201,6 +214,7 @@ const ViewAllPlaybooks = () => {
                 data-testid={'playbooksLHSButton'}
                 to={'/playbooks/playbooks'}
                 exact={true}
+                onClick={handleClick}
             >
                 {viewAllMessage}
             </ViewAllNavLink>
