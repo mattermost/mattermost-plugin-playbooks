@@ -32,7 +32,7 @@
   },
   "peerDependencies": {
     "@mattermost/loadtest-browser-lib": "file:../../../mattermost-load-test-ng/browser/src/lib",
-    "@mattermost/playwright-lib": "^11.3.0",
+    "@mattermost/playwright-lib": "^11.4.0",
     "@playwright/test": "^1.57.0"
   }
 }
