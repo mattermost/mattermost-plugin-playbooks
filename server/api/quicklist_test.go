@@ -91,6 +91,10 @@ type mockAIService struct {
 	lastGenerateReq      app.QuicklistGenerateRequest
 	generateCallCount    int
 	isAvailableCallCount int
+	refineResult         *app.GeneratedChecklist
+	refineError          error
+	lastRefineReq        app.QuicklistRefineRequest
+	refineCallCount      int
 }
 
 func (m *mockAIService) IsAvailable() error {
@@ -102,6 +106,12 @@ func (m *mockAIService) GenerateChecklist(req app.QuicklistGenerateRequest) (*ap
 	m.generateCallCount++
 	m.lastGenerateReq = req
 	return m.generateResult, m.generateError
+}
+
+func (m *mockAIService) RefineChecklist(req app.QuicklistRefineRequest) (*app.GeneratedChecklist, error) {
+	m.refineCallCount++
+	m.lastRefineReq = req
+	return m.refineResult, m.refineError
 }
 
 func createQuicklistTestHandler(
@@ -130,6 +140,10 @@ func createQuicklistTestHandler(
 	quicklistRouter.HandleFunc("/generate", func(w http.ResponseWriter, r *http.Request) {
 		// Use a modified generate function that uses mocks
 		testGenerate(handler, mockThreadSvc, mockAISvc, w, r)
+	}).Methods(http.MethodPost)
+	quicklistRouter.HandleFunc("/refine", func(w http.ResponseWriter, r *http.Request) {
+		// Use a modified refine function that uses mocks
+		testRefine(handler, mockThreadSvc, mockAISvc, w, r)
 	}).Methods(http.MethodPost)
 
 	return router, handler
@@ -218,6 +232,121 @@ func testGenerate(h *QuicklistHandler, mockThreadSvc *mockThreadService, mockAIS
 	})
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to generate checklist", err)
+		return
+	}
+
+	// Convert AI response to Playbooks format
+	checklists := generated.ToChecklists()
+
+	// Build response
+	response := QuicklistGenerateResponse{
+		Title:      generated.Title,
+		Checklists: checklists,
+		ThreadInfo: ThreadInfo{
+			Truncated:        threadContent.Truncated,
+			TruncatedCount:   threadContent.TruncatedCount,
+			MessageCount:     threadContent.MessageCount,
+			ParticipantCount: threadContent.ParticipantCount,
+		},
+	}
+
+	ReturnJSON(w, &response, http.StatusOK)
+}
+
+// testRefine is a test-specific version of the refine handler that uses mocks.
+func testRefine(h *QuicklistHandler, mockThreadSvc *mockThreadService, mockAISvc *mockAIService, w http.ResponseWriter, r *http.Request) {
+	logger := getLogger(r)
+	c := &Context{logger}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Check feature flag
+	if !h.config.IsQuicklistEnabled() {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "quicklist feature is not enabled", nil)
+		return
+	}
+
+	// Decode request body
+	var req QuicklistRefineRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	// Validate required fields
+	if req.PostID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "post_id is required", nil)
+		return
+	}
+
+	if req.Feedback == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "feedback is required", nil)
+		return
+	}
+
+	if len(req.CurrentChecklists) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "current_checklists is required", nil)
+		return
+	}
+
+	// Validate post ID format before making API calls
+	if !model.IsValidId(req.PostID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid post_id format", nil)
+		return
+	}
+
+	// Check if post exists
+	post, appErr := h.api.GetPost(req.PostID)
+	if appErr != nil {
+		if appErr.StatusCode == http.StatusNotFound {
+			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "post not found", appErr)
+			return
+		}
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to get post", appErr)
+		return
+	}
+
+	channelID := post.ChannelId
+
+	// Check user has permission to read the channel
+	if !h.api.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "post not found", nil)
+		return
+	}
+
+	// Check if channel is archived
+	channel, appErr := h.api.GetChannel(channelID)
+	if appErr != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to get channel", appErr)
+		return
+	}
+	if channel.DeleteAt > 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot refine quicklist from archived channel", nil)
+		return
+	}
+
+	// Check if AI service is available (using mock)
+	if err := mockAISvc.IsAvailable(); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusServiceUnavailable, "AI service is not available", err)
+		return
+	}
+
+	// Fetch and format thread (using mock)
+	threadContent, err := mockThreadSvc.FetchAndFormatThread(req.PostID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to fetch thread", err)
+		return
+	}
+
+	// Refine checklist using AI (using mock)
+	generated, err := mockAISvc.RefineChecklist(app.QuicklistRefineRequest{
+		ThreadContent:     threadContent.FormattedContent,
+		ChannelID:         channelID,
+		UserID:            userID,
+		CurrentChecklists: req.CurrentChecklists,
+		Feedback:          req.Feedback,
+	})
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to refine checklist", err)
 		return
 	}
 
@@ -665,6 +794,343 @@ func TestQuicklistGenerate_ResponseIncludesAllThreadInfoFields(t *testing.T) {
 	assert.Equal(t, float64(0), threadInfo["truncated_count"])
 	assert.Equal(t, float64(50), threadInfo["message_count"])
 	assert.Equal(t, float64(12), threadInfo["participant_count"])
+
+	mockAPI.AssertExpectations(t)
+}
+
+// --- Refine endpoint tests ---
+
+func TestQuicklistRefine_FeatureDisabled(t *testing.T) {
+	mockAPI := &plugintest.API{}
+	mockThreadSvc := &mockThreadService{}
+	mockAISvc := &mockAIService{}
+	mockConfig := &mockQuicklistConfigService{
+		quicklistEnabled: false,
+	}
+
+	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
+
+	reqBody := QuicklistRefineRequest{
+		PostID:            model.NewId(),
+		CurrentChecklists: []app.Checklist{{ID: "test", Title: "Test", Items: []app.ChecklistItem{}}},
+		Feedback:          "Add a task for testing",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/refine", bytes.NewBuffer(body))
+	req.Header.Set("Mattermost-User-ID", "user123")
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusForbidden, recorder.Code)
+
+	var response struct {
+		Error string `json:"error"`
+	}
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response.Error, "quicklist feature is not enabled")
+}
+
+func TestQuicklistRefine_MissingPostID(t *testing.T) {
+	mockAPI := &plugintest.API{}
+	mockThreadSvc := &mockThreadService{}
+	mockAISvc := &mockAIService{}
+	mockConfig := &mockQuicklistConfigService{
+		quicklistEnabled: true,
+	}
+
+	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
+
+	reqBody := QuicklistRefineRequest{
+		PostID:            "",
+		CurrentChecklists: []app.Checklist{{ID: "test", Title: "Test", Items: []app.ChecklistItem{}}},
+		Feedback:          "Add a task",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/refine", bytes.NewBuffer(body))
+	req.Header.Set("Mattermost-User-ID", "user123")
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+
+	var response struct {
+		Error string `json:"error"`
+	}
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response.Error, "post_id is required")
+}
+
+func TestQuicklistRefine_MissingFeedback(t *testing.T) {
+	mockAPI := &plugintest.API{}
+	mockThreadSvc := &mockThreadService{}
+	mockAISvc := &mockAIService{}
+	mockConfig := &mockQuicklistConfigService{
+		quicklistEnabled: true,
+	}
+
+	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
+
+	reqBody := QuicklistRefineRequest{
+		PostID:            model.NewId(),
+		CurrentChecklists: []app.Checklist{{ID: "test", Title: "Test", Items: []app.ChecklistItem{}}},
+		Feedback:          "",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/refine", bytes.NewBuffer(body))
+	req.Header.Set("Mattermost-User-ID", "user123")
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+
+	var response struct {
+		Error string `json:"error"`
+	}
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response.Error, "feedback is required")
+}
+
+func TestQuicklistRefine_MissingCurrentChecklists(t *testing.T) {
+	mockAPI := &plugintest.API{}
+	mockThreadSvc := &mockThreadService{}
+	mockAISvc := &mockAIService{}
+	mockConfig := &mockQuicklistConfigService{
+		quicklistEnabled: true,
+	}
+
+	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
+
+	reqBody := QuicklistRefineRequest{
+		PostID:            model.NewId(),
+		CurrentChecklists: []app.Checklist{},
+		Feedback:          "Add a task",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/refine", bytes.NewBuffer(body))
+	req.Header.Set("Mattermost-User-ID", "user123")
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+
+	var response struct {
+		Error string `json:"error"`
+	}
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response.Error, "current_checklists is required")
+}
+
+func TestQuicklistRefine_InvalidPostIDFormat(t *testing.T) {
+	mockAPI := &plugintest.API{}
+	mockThreadSvc := &mockThreadService{}
+	mockAISvc := &mockAIService{}
+	mockConfig := &mockQuicklistConfigService{
+		quicklistEnabled: true,
+	}
+
+	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
+
+	reqBody := QuicklistRefineRequest{
+		PostID:            "invalid",
+		CurrentChecklists: []app.Checklist{{ID: "test", Title: "Test", Items: []app.ChecklistItem{}}},
+		Feedback:          "Add a task",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/refine", bytes.NewBuffer(body))
+	req.Header.Set("Mattermost-User-ID", "user123")
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+
+	var response struct {
+		Error string `json:"error"`
+	}
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response.Error, "invalid post_id format")
+}
+
+func TestQuicklistRefine_Success(t *testing.T) {
+	postID := model.NewId()
+	channelID := model.NewId()
+	userID := model.NewId()
+
+	mockAPI := &plugintest.API{}
+	mockAPI.On("GetPost", postID).Return(&model.Post{
+		Id:        postID,
+		ChannelId: channelID,
+		Message:   "Test post",
+	}, nil)
+	mockAPI.On("HasPermissionToChannel", userID, channelID, model.PermissionReadChannel).Return(true)
+	mockAPI.On("GetChannel", channelID).Return(&model.Channel{
+		Id:       channelID,
+		DeleteAt: 0,
+	}, nil)
+
+	mockThreadSvc := &mockThreadService{
+		fetchResult: &app.ThreadContent{
+			FormattedContent: "Formatted thread content",
+			MessageCount:     10,
+			ParticipantCount: 3,
+			Truncated:        false,
+			TruncatedCount:   0,
+		},
+	}
+
+	// Existing checklist to refine
+	existingChecklist := []app.Checklist{
+		{
+			ID:    "checklist1",
+			Title: "Design Phase",
+			Items: []app.ChecklistItem{
+				{ID: "item1", Title: "Create mockups", Description: "High fidelity designs", DueDate: 1705276800000},
+			},
+			ItemsOrder: []string{"item1"},
+		},
+	}
+
+	mockAISvc := &mockAIService{
+		refineResult: &app.GeneratedChecklist{
+			Title: "Q4 Launch Plan",
+			Sections: []app.GeneratedSection{
+				{
+					Title: "Design Phase",
+					Items: []app.GeneratedItem{
+						{Title: "Create mockups", Description: "High fidelity designs", DueDate: "2024-01-15"},
+						{Title: "Review with team", Description: "Get feedback from stakeholders", DueDate: ""},
+					},
+				},
+				{
+					Title: "Testing",
+					Items: []app.GeneratedItem{
+						{Title: "QA testing", Description: "Test all features", DueDate: "2024-01-20"},
+					},
+				},
+			},
+		},
+	}
+	mockConfig := &mockQuicklistConfigService{
+		quicklistEnabled: true,
+	}
+
+	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
+
+	reqBody := QuicklistRefineRequest{
+		PostID:            postID,
+		CurrentChecklists: existingChecklist,
+		Feedback:          "Add a section for QA testing",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/refine", bytes.NewBuffer(body))
+	req.Header.Set("Mattermost-User-ID", userID)
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	var response QuicklistGenerateResponse
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	// Verify response structure
+	assert.Equal(t, "Q4 Launch Plan", response.Title)
+	assert.Len(t, response.Checklists, 2)
+	assert.Equal(t, "Design Phase", response.Checklists[0].Title)
+	assert.Len(t, response.Checklists[0].Items, 2)
+	assert.Equal(t, "Testing", response.Checklists[1].Title)
+	assert.Len(t, response.Checklists[1].Items, 1)
+	assert.Equal(t, "QA testing", response.Checklists[1].Items[0].Title)
+
+	// Verify thread_info
+	assert.False(t, response.ThreadInfo.Truncated)
+	assert.Equal(t, 0, response.ThreadInfo.TruncatedCount)
+	assert.Equal(t, 10, response.ThreadInfo.MessageCount)
+	assert.Equal(t, 3, response.ThreadInfo.ParticipantCount)
+
+	// Verify AI service was called with correct parameters
+	assert.Equal(t, 1, mockAISvc.refineCallCount)
+	assert.Equal(t, "Formatted thread content", mockAISvc.lastRefineReq.ThreadContent)
+	assert.Equal(t, channelID, mockAISvc.lastRefineReq.ChannelID)
+	assert.Equal(t, userID, mockAISvc.lastRefineReq.UserID)
+	assert.Equal(t, "Add a section for QA testing", mockAISvc.lastRefineReq.Feedback)
+	assert.Len(t, mockAISvc.lastRefineReq.CurrentChecklists, 1)
+	assert.Equal(t, "Design Phase", mockAISvc.lastRefineReq.CurrentChecklists[0].Title)
+
+	mockAPI.AssertExpectations(t)
+}
+
+func TestQuicklistRefine_AIServiceUnavailable(t *testing.T) {
+	postID := model.NewId()
+	channelID := model.NewId()
+	userID := model.NewId()
+
+	mockAPI := &plugintest.API{}
+	mockAPI.On("GetPost", postID).Return(&model.Post{
+		Id:        postID,
+		ChannelId: channelID,
+		Message:   "Test post",
+	}, nil)
+	mockAPI.On("HasPermissionToChannel", userID, channelID, model.PermissionReadChannel).Return(true)
+	mockAPI.On("GetChannel", channelID).Return(&model.Channel{
+		Id:       channelID,
+		DeleteAt: 0,
+	}, nil)
+
+	mockThreadSvc := &mockThreadService{}
+	mockAISvc := &mockAIService{
+		isAvailableError: model.NewAppError("IsAvailable", "ai.unavailable", nil, "AI service down", http.StatusServiceUnavailable),
+	}
+	mockConfig := &mockQuicklistConfigService{
+		quicklistEnabled: true,
+	}
+
+	router, _ := createQuicklistTestHandler(mockAPI, mockThreadSvc, mockAISvc, mockConfig)
+
+	reqBody := QuicklistRefineRequest{
+		PostID:            postID,
+		CurrentChecklists: []app.Checklist{{ID: "test", Title: "Test", Items: []app.ChecklistItem{}}},
+		Feedback:          "Add a task",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/quicklist/refine", bytes.NewBuffer(body))
+	req.Header.Set("Mattermost-User-ID", userID)
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)
+
+	var response struct {
+		Error string `json:"error"`
+	}
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response.Error, "AI service is not available")
 
 	mockAPI.AssertExpectations(t)
 }

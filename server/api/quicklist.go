@@ -21,6 +21,13 @@ type QuicklistGenerateRequest struct {
 	PostID string `json:"post_id"`
 }
 
+// QuicklistRefineRequest is the request body for the refine endpoint.
+type QuicklistRefineRequest struct {
+	PostID            string          `json:"post_id"`
+	CurrentChecklists []app.Checklist `json:"current_checklists"`
+	Feedback          string          `json:"feedback"`
+}
+
 // QuicklistGenerateResponse is the response body for the generate endpoint.
 type QuicklistGenerateResponse struct {
 	Title      string          `json:"title"`
@@ -63,6 +70,7 @@ func NewQuicklistHandler(
 
 	quicklistRouter := router.PathPrefix("/quicklist").Subrouter()
 	quicklistRouter.HandleFunc("/generate", withContext(handler.generate)).Methods(http.MethodPost)
+	quicklistRouter.HandleFunc("/refine", withContext(handler.refine)).Methods(http.MethodPost)
 
 	return handler
 }
@@ -149,6 +157,121 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 	})
 	if err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to generate checklist", err)
+		return
+	}
+
+	// Convert AI response to Playbooks format
+	checklists := generated.ToChecklists()
+
+	// Build response
+	response := QuicklistGenerateResponse{
+		Title:      generated.Title,
+		Checklists: checklists,
+		ThreadInfo: ThreadInfo{
+			Truncated:        threadContent.Truncated,
+			TruncatedCount:   threadContent.TruncatedCount,
+			MessageCount:     threadContent.MessageCount,
+			ParticipantCount: threadContent.ParticipantCount,
+		},
+	}
+
+	ReturnJSON(w, &response, http.StatusOK)
+}
+
+// refine handles POST /api/v0/quicklist/refine
+func (h *QuicklistHandler) refine(c *Context, w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	// Check feature flag
+	if !h.config.IsQuicklistEnabled() {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "quicklist feature is not enabled", nil)
+		return
+	}
+
+	// Decode request body
+	var req QuicklistRefineRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	// Validate required fields
+	if req.PostID == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "post_id is required", nil)
+		return
+	}
+
+	if req.Feedback == "" {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "feedback is required", nil)
+		return
+	}
+
+	if len(req.CurrentChecklists) == 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "current_checklists is required", nil)
+		return
+	}
+
+	// Validate post ID format before making API calls
+	if !model.IsValidId(req.PostID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid post_id format", nil)
+		return
+	}
+
+	// Check if post exists
+	post, appErr := h.api.GetPost(req.PostID)
+	if appErr != nil {
+		if appErr.StatusCode == http.StatusNotFound {
+			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "post not found", appErr)
+			return
+		}
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to get post", appErr)
+		return
+	}
+
+	// Use post's channel ID
+	channelID := post.ChannelId
+
+	// Check user has permission to read the channel
+	// Return 404 instead of 403 to prevent enumeration of private channels/posts
+	if !h.api.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "post not found", nil)
+		return
+	}
+
+	// Check if channel is archived
+	channel, appErr := h.api.GetChannel(channelID)
+	if appErr != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to get channel", appErr)
+		return
+	}
+	if channel.DeleteAt > 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot refine quicklist from archived channel", nil)
+		return
+	}
+
+	// Check if AI service is available
+	if err := h.aiService.IsAvailable(); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusServiceUnavailable, "AI service is not available", err)
+		return
+	}
+
+	// Fetch and format thread (for context)
+	threadContent, err := h.threadService.FetchAndFormatThread(req.PostID)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to fetch thread", err)
+		return
+	}
+
+	// Refine checklist using AI
+	generated, err := h.aiService.RefineChecklist(app.QuicklistRefineRequest{
+		ThreadContent:     threadContent.FormattedContent,
+		ChannelID:         channelID,
+		UserID:            userID,
+		CurrentChecklists: req.CurrentChecklists,
+		Feedback:          req.Feedback,
+	})
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "failed to refine checklist", err)
 		return
 	}
 

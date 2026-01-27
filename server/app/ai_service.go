@@ -59,6 +59,15 @@ type QuicklistGenerateRequest struct {
 	UserID        string
 }
 
+// QuicklistRefineRequest represents a request to refine an existing checklist based on feedback.
+type QuicklistRefineRequest struct {
+	ThreadContent     string
+	ChannelID         string
+	UserID            string
+	CurrentChecklists []Checklist
+	Feedback          string
+}
+
 // GeneratedChecklist is the AI response structure containing a title and sections.
 type GeneratedChecklist struct {
 	Title    string             `json:"title"`
@@ -203,4 +212,106 @@ func stripMarkdownCodeFences(s string) string {
 	// Strip trailing ```
 	s = strings.TrimSuffix(s, "```")
 	return strings.TrimSpace(s)
+}
+
+// Default refinement prompt template.
+const defaultQuicklistRefinePrompt = `The user has provided feedback on the checklist. Please update the checklist based on their feedback.
+
+User feedback: %s
+
+Return the updated checklist in the same JSON format. Only modify what the user requested. Keep all other items unchanged unless they conflict with the feedback.`
+
+// RefineChecklist refines an existing checklist based on user feedback using AI.
+func (s *AIService) RefineChecklist(req QuicklistRefineRequest) (*GeneratedChecklist, error) {
+	cfg := s.config.GetConfiguration()
+
+	if cfg.QuicklistAgentBotID == "" {
+		return nil, fmt.Errorf("quicklist agent not configured")
+	}
+
+	// Use configured prompts or fall back to defaults
+	systemPrompt := cfg.QuicklistSystemPrompt
+	if systemPrompt == "" {
+		systemPrompt = defaultQuicklistSystemPrompt
+	}
+
+	userPrompt := cfg.QuicklistUserPrompt
+	if userPrompt == "" {
+		userPrompt = defaultQuicklistUserPrompt
+	}
+
+	// Convert current checklists to AI format for context
+	previousResponse := checklistsToGeneratedJSON(req.CurrentChecklists)
+
+	// Build refinement prompt
+	refinementPrompt := fmt.Sprintf(defaultQuicklistRefinePrompt, req.Feedback)
+
+	// Build conversation with context: system, original request, previous response, feedback
+	response, err := s.bridgeClient.AgentCompletion(cfg.QuicklistAgentBotID, bridgeclient.CompletionRequest{
+		UserID:    req.UserID,
+		ChannelID: req.ChannelID,
+		Posts: []bridgeclient.Post{
+			{Role: "system", Message: systemPrompt},
+			{Role: "user", Message: fmt.Sprintf(userPrompt, req.ThreadContent)},
+			{Role: "assistant", Message: previousResponse},
+			{Role: "user", Message: refinementPrompt},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("AI completion failed: %w", err)
+	}
+
+	var checklist GeneratedChecklist
+	cleanedResponse := stripMarkdownCodeFences(response)
+	if err := json.Unmarshal([]byte(cleanedResponse), &checklist); err != nil {
+		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+	}
+
+	return &checklist, nil
+}
+
+// checklistsToGeneratedJSON converts Playbooks checklists back to the AI response format for context.
+func checklistsToGeneratedJSON(checklists []Checklist) string {
+	generated := GeneratedChecklist{
+		Title:    "", // Title will be inferred from context
+		Sections: make([]GeneratedSection, 0, len(checklists)),
+	}
+
+	for _, cl := range checklists {
+		section := GeneratedSection{
+			Title: cl.Title,
+			Items: make([]GeneratedItem, 0, len(cl.Items)),
+		}
+
+		for _, item := range cl.Items {
+			genItem := GeneratedItem{
+				Title:       item.Title,
+				Description: item.Description,
+				DueDate:     formatDueDate(item.DueDate),
+			}
+			section.Items = append(section.Items, genItem)
+		}
+
+		generated.Sections = append(generated.Sections, section)
+	}
+
+	// Marshal to JSON for AI context
+	jsonBytes, err := json.Marshal(generated)
+	if err != nil {
+		// Return empty JSON on error - AI will regenerate from thread
+		return "{}"
+	}
+
+	return string(jsonBytes)
+}
+
+// formatDueDate converts Unix timestamp in milliseconds back to ISO 8601 date string.
+// Returns empty string if timestamp is 0.
+func formatDueDate(timestamp int64) string {
+	if timestamp == 0 {
+		return ""
+	}
+
+	t := time.UnixMilli(timestamp)
+	return t.Format("2006-01-02")
 }
