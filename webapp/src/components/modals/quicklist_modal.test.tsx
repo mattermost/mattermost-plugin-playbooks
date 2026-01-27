@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {act} from 'react-test-renderer';
 import {IntlProvider} from 'react-intl';
 import {ClientError} from '@mattermost/client';
 
 import {QuicklistGenerateResponse} from 'src/types/quicklist';
 import {useQuicklistGenerate} from 'src/hooks';
+import {refineQuicklist} from 'src/client';
 
 import QuicklistModal, {makeModalDefinition} from './quicklist_modal';
 
@@ -42,7 +43,13 @@ jest.mock('src/hooks', () => ({
     useQuicklistGenerate: jest.fn(),
 }));
 
+// Mock the refineQuicklist client function
+jest.mock('src/client', () => ({
+    refineQuicklist: jest.fn(),
+}));
+
 const mockUseQuicklistGenerate = useQuicklistGenerate as jest.MockedFunction<typeof useQuicklistGenerate>;
+const mockRefineQuicklist = refineQuicklist as jest.MockedFunction<typeof refineQuicklist>;
 
 const mockResponse: QuicklistGenerateResponse = {
     title: 'Test Quicklist Title',
@@ -63,6 +70,9 @@ const mockResponse: QuicklistGenerateResponse = {
                     command_last_run: 0,
                     due_date: 1705363200000,
                     task_actions: [],
+                    condition_id: '',
+                    condition_action: '',
+                    condition_reason: '',
                 },
                 {
                     id: 'item-2',
@@ -76,6 +86,9 @@ const mockResponse: QuicklistGenerateResponse = {
                     command_last_run: 0,
                     due_date: 0,
                     task_actions: [],
+                    condition_id: '',
+                    condition_action: '',
+                    condition_reason: '',
                 },
             ],
             items_order: ['item-1', 'item-2'],
@@ -96,6 +109,9 @@ const mockResponse: QuicklistGenerateResponse = {
                     command_last_run: 0,
                     due_date: 0,
                     task_actions: [],
+                    condition_id: '',
+                    condition_action: '',
+                    condition_reason: '',
                 },
             ],
             items_order: ['item-3'],
@@ -363,7 +379,279 @@ describe('QuicklistModal', () => {
             expect(treeStr).toMatch(/isConfirmDisabled[^}]*true/);
         });
     });
+
+    describe('feedback UI', () => {
+        beforeEach(() => {
+            mockUseQuicklistGenerate.mockReturnValue({
+                isLoading: false,
+                data: mockResponse,
+                error: null,
+            });
+            mockRefineQuicklist.mockReset();
+        });
+
+        it('displays feedback input when checklists exist', () => {
+            const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            const treeStr = getTreeString(component);
+
+            expect(treeStr).toContain('quicklist-feedback-section');
+            expect(treeStr).toContain('quicklist-feedback-input');
+            expect(treeStr).toContain('quicklist-feedback-send');
+        });
+
+        it('does not display feedback section when loading', () => {
+            mockUseQuicklistGenerate.mockReturnValue({
+                isLoading: true,
+                data: null,
+                error: null,
+            });
+
+            const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            const treeStr = getTreeString(component);
+
+            expect(treeStr).not.toContain('quicklist-feedback-section');
+        });
+
+        it('does not display feedback section when no checklists', () => {
+            const emptyResponse: QuicklistGenerateResponse = {
+                ...mockResponse,
+                checklists: [],
+            };
+
+            mockUseQuicklistGenerate.mockReturnValue({
+                isLoading: false,
+                data: emptyResponse,
+                error: null,
+            });
+
+            const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            const treeStr = getTreeString(component);
+
+            expect(treeStr).not.toContain('quicklist-feedback-section');
+        });
+
+        it('send button is disabled when feedback is empty', () => {
+            const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            const treeStr = getTreeString(component);
+
+            // Look for the send button having disabled attribute
+            expect(treeStr).toContain('quicklist-feedback-send');
+
+            // The button should be rendered with disabled prop when feedback is empty
+            expect(treeStr).toMatch(/quicklist-feedback-send.*disabled.*true/s);
+        });
+
+        it('shows refining overlay during refinement', async () => {
+            // Create a promise that we can control
+            let resolveRefine: (value: QuicklistGenerateResponse) => void;
+            const refinePromise = new Promise<QuicklistGenerateResponse>((resolve) => {
+                resolveRefine = resolve;
+            });
+            mockRefineQuicklist.mockReturnValue(refinePromise);
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            // Get the textarea and simulate change
+            let tree = component!.toTree();
+            const feedbackInput = findByTestId(tree, 'quicklist-feedback-input');
+
+            // Simulate typing feedback
+            await act(async () => {
+                feedbackInput.props.onChange({target: {value: 'Add more tasks'}});
+            });
+
+            // Get fresh tree and elements after state update
+            tree = component!.toTree();
+            const sendButton = findByTestId(tree, 'quicklist-feedback-send');
+
+            // Simulate clicking send - use act without await since we want to check mid-flight state
+            act(() => {
+                sendButton.props.onClick();
+            });
+
+            // Now the refining overlay should be visible
+            const treeStr = getTreeString(component!);
+            expect(treeStr).toContain('quicklist-refining');
+            expect(treeStr).toContain('Updating checklist...');
+
+            // Resolve the promise to clean up
+            await act(async () => {
+                resolveRefine!(mockResponse);
+            });
+        });
+
+        it('updates checklist after successful refinement', async () => {
+            const refinedResponse: QuicklistGenerateResponse = {
+                title: 'Refined Quicklist Title',
+                checklists: [
+                    {
+                        id: 'checklist-1',
+                        title: 'Refined Phase',
+                        items: [
+                            {
+                                id: 'item-1',
+                                title: 'Refined Task 1',
+                                description: 'Refined Description',
+                                state: '',
+                                state_modified: 0,
+                                assignee_id: '',
+                                assignee_modified: 0,
+                                command: '',
+                                command_last_run: 0,
+                                due_date: 0,
+                                task_actions: [],
+                                condition_id: '',
+                                condition_action: '',
+                                condition_reason: '',
+                            },
+                        ],
+                        items_order: ['item-1'],
+                    },
+                ],
+                thread_info: mockResponse.thread_info,
+            };
+
+            mockRefineQuicklist.mockResolvedValue(refinedResponse);
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            let tree = component!.toTree();
+            const feedbackInput = findByTestId(tree, 'quicklist-feedback-input');
+
+            // Simulate typing feedback
+            await act(async () => {
+                feedbackInput.props.onChange({target: {value: 'Add more tasks'}});
+            });
+
+            // Get fresh tree after state update
+            tree = component!.toTree();
+            const sendButton = findByTestId(tree, 'quicklist-feedback-send');
+
+            // Simulate clicking send and wait for the async operation
+            await act(async () => {
+                sendButton.props.onClick();
+
+                // Wait for the mock promise to resolve and state to update
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            });
+
+            // The title should be updated
+            const treeStr = getTreeString(component!);
+            expect(treeStr).toContain('Refined Quicklist Title');
+            expect(treeStr).toContain('Refined Phase');
+        });
+
+        it('clears feedback input after successful refinement', async () => {
+            mockRefineQuicklist.mockResolvedValue(mockResponse);
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            let tree = component!.toTree();
+            const feedbackInput = findByTestId(tree, 'quicklist-feedback-input');
+
+            // Simulate typing feedback
+            await act(async () => {
+                feedbackInput.props.onChange({target: {value: 'Add more tasks'}});
+            });
+
+            // Get fresh tree after state update
+            tree = component!.toTree();
+            const sendButton = findByTestId(tree, 'quicklist-feedback-send');
+
+            // Simulate clicking send and wait for the async operation
+            await act(async () => {
+                sendButton.props.onClick();
+
+                // Wait for the mock promise to resolve and state to update
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            });
+
+            // The feedback input should be cleared
+            const updatedTree = component!.toTree();
+            const updatedFeedbackInput = findByTestId(updatedTree, 'quicklist-feedback-input');
+            expect(updatedFeedbackInput.props.value).toBe('');
+        });
+
+        it('displays error when refinement fails', async () => {
+            const error = new ClientError('test-url', {
+                message: 'Failed to refine checklist',
+                status_code: 500,
+                url: '/api/v0/quicklist/refine',
+            });
+
+            mockRefineQuicklist.mockRejectedValue(error);
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            let tree = component!.toTree();
+            const feedbackInput = findByTestId(tree, 'quicklist-feedback-input');
+
+            // Simulate typing feedback
+            await act(async () => {
+                feedbackInput.props.onChange({target: {value: 'Add more tasks'}});
+            });
+
+            // Get fresh tree after state update
+            tree = component!.toTree();
+            const sendButton = findByTestId(tree, 'quicklist-feedback-send');
+
+            // Simulate clicking send and wait for the async operation to fail
+            await act(async () => {
+                sendButton.props.onClick();
+
+                // Wait for the mock promise to reject and state to update
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            });
+
+            // The error should be displayed
+            const treeStr = getTreeString(component!);
+            expect(treeStr).toContain('quicklist-error');
+            expect(treeStr).toContain('Failed to refine checklist');
+        });
+    });
 });
+
+// Helper function to find component by test id
+function findByTestId(tree: renderer.ReactTestRendererTree | null, testId: string): any {
+    if (!tree) {
+        return null;
+    }
+
+    if (tree.props && tree.props['data-testid'] === testId) {
+        return tree;
+    }
+
+    if (tree.rendered) {
+        if (Array.isArray(tree.rendered)) {
+            for (const child of tree.rendered) {
+                const found = findByTestId(child as renderer.ReactTestRendererTree, testId);
+                if (found) {
+                    return found;
+                }
+            }
+        } else {
+            return findByTestId(tree.rendered as renderer.ReactTestRendererTree, testId);
+        }
+    }
+
+    return null;
+}
 
 describe('makeModalDefinition', () => {
     it('returns correct modal definition', () => {

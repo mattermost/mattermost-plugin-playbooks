@@ -255,33 +255,47 @@ This plan outlines the phases to implement the Quicklist feature as described in
 ### 3.1 Refine API Endpoint
 
 **Tasks:**
-- [ ] Implement `POST /api/v0/quicklist/refine` handler
-- [ ] Accept current checklists + feedback text
-- [ ] Call AI with refinement prompt including current state and feedback
-- [ ] Return updated checklist structure
+- [x] Implement `POST /api/v0/quicklist/refine` handler
+- [x] Accept current checklists + feedback text
+- [x] Call AI with refinement prompt including current state and feedback
+- [x] Return updated checklist structure
 
 **Testing:**
-- [ ] Unit test: Refine endpoint validates required fields
-- [ ] Unit test: Refine request includes current checklist state
-- [ ] Unit test: AI prompt includes user feedback
+- [x] Unit test: Refine endpoint validates required fields
+- [x] Unit test: Refine request includes current checklist state
+- [x] Unit test: AI prompt includes user feedback
 - [ ] Integration test: Refinement modifies checklist based on feedback
+
+**Implementation Notes:**
+- `QuicklistRefineRequest` in `api/quicklist.go` accepts `post_id`, `current_checklists`, and `feedback`.
+- `RefineChecklist` method in `app/ai_service.go` builds a 4-message conversation: system prompt, original thread (user), previous checklist as JSON (assistant), feedback request (user).
+- `checklistsToGeneratedJSON()` converts Playbooks checklists back to AI format for context.
+- `formatDueDate()` converts Unix milliseconds back to ISO 8601 date strings.
+- Uses same validation and permission checks as generate endpoint (feature flag, post exists, channel access, archived check, AI availability).
 
 ### 3.2 Feedback UI
 
 **Tasks:**
-- [ ] Add feedback input field to modal
-- [ ] Add "Send" button for feedback submission
-- [ ] Implement `handleFeedbackSubmit` to call refine API
-- [ ] Show "Updating checklist..." loading state during refinement
-- [ ] Update displayed checklist with refined results
-- [ ] Clear feedback input after successful refinement
+- [x] Add feedback input field to modal
+- [x] Add "Send" button for feedback submission
+- [x] Implement `handleFeedbackSubmit` to call refine API
+- [x] Show "Updating checklist..." loading state during refinement
+- [x] Update displayed checklist with refined results
+- [x] Clear feedback input after successful refinement
 
 **Testing:**
-- [ ] Unit test: Feedback input is controlled component
-- [ ] Unit test: Send button disabled when feedback empty
-- [ ] Unit test: Loading state shown during refinement
-- [ ] Unit test: Checklist updates after successful refinement
+- [x] Unit test: Feedback input is controlled component
+- [x] Unit test: Send button disabled when feedback empty
+- [x] Unit test: Loading state shown during refinement
+- [x] Unit test: Checklist updates after successful refinement
 - [ ] Manual test: Multiple refinement cycles work correctly
+
+**Implementation Notes:**
+- `refineQuicklist` client function added to `client.ts`. Accepts `post_id`, `current_checklists`, and `feedback` (no `channel_id` needed per Phase 2.3 simplification).
+- Modal maintains local state for refined data via `currentData` useState. Falls back to initial `useQuicklistGenerate` data when not refined.
+- Feedback input uses controlled textarea with Enter to submit (Shift+Enter for newline).
+- Refining overlay displayed over checklists container with semi-transparent background.
+- Errors from refinement are displayed using the same error UI as generation errors (uses `refineError` state).
 
 ### 3.3 Run Creation
 

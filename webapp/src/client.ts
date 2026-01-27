@@ -41,7 +41,7 @@ import {Category} from './types/category';
 import {InsightsResponse} from './types/insights';
 import {Condition} from './types/conditions';
 import {PropertyField, PropertyFieldInput} from './types/properties';
-import {QuicklistGenerateResponse} from './types/quicklist';
+import {QuicklistGenerateResponse, QuicklistRefineRequest} from './types/quicklist';
 
 let siteURL = '';
 let basePath = '';
@@ -925,6 +925,23 @@ export async function generateQuicklist(postId: string): Promise<QuicklistGenera
     }));
     if (!data) {
         throw new Error('Failed to generate quicklist');
+    }
+    return data;
+}
+
+/**
+ * Refine a quicklist (checklist) based on user feedback.
+ * Calls the POST /api/v0/quicklist/refine endpoint.
+ */
+export async function refineQuicklist(request: Omit<QuicklistRefineRequest, 'channel_id'>): Promise<QuicklistGenerateResponse> {
+    const url = `${apiUrl}/quicklist/refine`;
+    const data = await doPost<QuicklistGenerateResponse>(url, JSON.stringify({
+        post_id: request.post_id,
+        current_checklists: request.current_checklists,
+        feedback: request.feedback,
+    }));
+    if (!data) {
+        throw new Error('Failed to refine quicklist');
     }
     return data;
 }
