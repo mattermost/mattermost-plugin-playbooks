@@ -251,6 +251,19 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 		}
 	}
 
+	// Check if team is being changed
+	if oldPlaybook.TeamID != playbook.TeamID {
+		// Require ManageMembers permission (since changing teams effectively removes members not in destination team)
+		if err := p.PlaybookManageMembers(userID, oldPlaybook); err != nil {
+			return errors.Wrap(err, "attempted to change playbook team without manage members permission")
+		}
+
+		// Verify user has access to destination team
+		if !p.canViewTeam(userID, playbook.TeamID) {
+			return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to destination team `%s`", userID, playbook.TeamID)
+		}
+	}
+
 	// Check if we have done a public conversion
 	if oldPlaybook.Public != playbook.Public {
 		if oldPlaybook.Public {

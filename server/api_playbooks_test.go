@@ -1106,6 +1106,67 @@ func TestPlaybooksPermissions(t *testing.T) {
 		})
 	})
 
+	t.Run("user without manage members permission cannot change playbook team", func(t *testing.T) {
+		// Ensure permissions are restored before starting
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		}()
+		// Ensure manage properties permission is present
+		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+		// Explicitly remove manage members permission
+		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+
+		// Get the playbook
+		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		originalTeamID := playbook.TeamID
+
+		// Try to change team_id to a different team (BasicTeam2)
+		playbook.TeamID = e.BasicTeam2.Id
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *playbook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		// Verify playbook team_id was not changed
+		playbookAfter, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		assert.Equal(t, originalTeamID, playbookAfter.TeamID, "Team ID should not have changed")
+	})
+
+	t.Run("user without access to destination team cannot change playbook team", func(t *testing.T) {
+		// Ensure permissions are restored before starting
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		}()
+		// Ensure manage members permission is present
+		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+
+		// Create a team that RegularUser is not a member of
+		teamNotMember, _, err := e.ServerAdminClient.CreateTeam(context.Background(), &model.Team{
+			DisplayName: "team not member",
+			Name:        "team-not-member",
+			Email:       "success+playbooks@simulator.amazonses.com",
+			Type:        model.TeamOpen,
+		})
+		require.NoError(t, err)
+
+		// Get the playbook
+		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		originalTeamID := playbook.TeamID
+
+		// Try to change team_id to a team the user is not a member of
+		playbook.TeamID = teamNotMember.Id
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *playbook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		// Verify playbook team_id was not changed
+		playbookAfter, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		assert.Equal(t, originalTeamID, playbookAfter.TeamID, "Team ID should not have changed")
+	})
+
 }
 
 func TestPlaybooksConversions(t *testing.T) {
