@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect} from 'react';
+import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -179,7 +179,7 @@ const ViewAllRuns = () => {
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
 
     function handleClick() {
-        mark(Mark.RunsLHSLinkClicked);
+        mark(Mark.PlaybookRunsLHSButtonClicked);
     }
 
     return (
@@ -202,9 +202,9 @@ const ViewAllPlaybooks = () => {
     const {formatMessage} = useIntl();
     const viewAllMessage = formatMessage({defaultMessage: 'View all...'});
 
-    const handleClick = useCallback(() => {
-        mark(Mark.PlaybooksLHSLinkClicked);
-    }, []);
+    function handleClick() {
+        mark(Mark.PlaybooksLHSButtonClicked);
+    }
 
     return (
         <ItemContainer key={'sidebarItem_view_all_playbooks'}>

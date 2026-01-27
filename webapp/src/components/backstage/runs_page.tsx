@@ -76,11 +76,11 @@ const RunsPage = () => {
     useEffect(() => {
         if (showNoPlaybookRuns !== null) {
             measureAndReport({
-                name: Measure.RunsListLoad,
-                startMark: Mark.RunsLHSLinkClicked,
+                name: Measure.PlaybookRunsListLoad,
+                startMark: Mark.PlaybookRunsLHSButtonClicked,
                 canFail: true,
             });
-            performance.clearMarks(Mark.RunsLHSLinkClicked);
+            performance.clearMarks(Mark.PlaybookRunsLHSButtonClicked);
         }
     }, [showNoPlaybookRuns]);
 

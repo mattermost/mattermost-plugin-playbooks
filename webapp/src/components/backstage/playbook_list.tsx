@@ -150,10 +150,10 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
         if (!isLoading) {
             measureAndReport({
                 name: Measure.PlaybooksListLoad,
-                startMark: Mark.PlaybooksLHSLinkClicked,
+                startMark: Mark.PlaybooksLHSButtonClicked,
                 canFail: true,
             });
-            performance.clearMarks(Mark.PlaybooksLHSLinkClicked);
+            performance.clearMarks(Mark.PlaybooksLHSButtonClicked);
         }
     }, [isLoading]);
 

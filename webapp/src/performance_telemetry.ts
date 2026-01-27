@@ -2,28 +2,39 @@
 // See LICENSE.txt for license information.
 
 /**
+ * The single metric name sent to the server for all plugin performance measures.
+ * The actual action being measured is sent via labels.action.
+ * This allows the server to handle all plugin metrics with a single known metric type.
+ */
+const PLUGIN_PERF_METRIC = 'plugin_webapp_perf';
+
+/**
+ * Plugin identifier sent with all metrics to distinguish playbooks from other plugins.
+ */
+const PLUGIN_ID = 'playbooks';
+
+/**
  * Mark names for playbooks performance telemetry.
  * Marks are used to record a point in time (e.g., when a user clicks a link).
  */
-export const enum Mark {
-    PlaybooksLHSLinkClicked = 'PlaybooksLHS#playbooksLinkClicked',
-    RunsLHSLinkClicked = 'PlaybooksLHS#runsLinkClicked',
-}
+export const Mark = {
+    PlaybooksLHSButtonClicked: 'PlaybooksLHS#buttonClicked',
+    PlaybookRunsLHSButtonClicked: 'PlaybookRunsLHS#buttonClicked',
+};
 
 /**
  * Measure names for playbooks performance telemetry.
  * Measures record durations between two marks or from a mark to now.
+ * These values are sent as labels.plugin_metric_label in the metric.
  */
-export const enum Measure {
-    PlaybooksListLoad = 'playbooks_list_load',
-    RunsListLoad = 'playbooks_runs_list_load',
-}
+export const Measure = {
+    PlaybooksListLoad: 'playbooks_list_load',
+    PlaybookRunsListLoad: 'playbook_runs_list_load',
+};
 
 /**
  * Creates a performance mark that will be reported to the server.
  * The mark will be caught by Mattermost's webapp PerformanceObserver.
- *
- * This is exact copy of function defined in mattermost/webapp/src/performance_telemetry.ts
  */
 export function mark(name: string): PerformanceMark {
     return performance.mark(name, {
@@ -34,13 +45,15 @@ export function mark(name: string): PerformanceMark {
 }
 
 /**
- * Measures the duration between two performance marks, further it will be reported to the server
- * by Mattermost's webapp PerformanceObserver.
+ * Measures the duration between two performance marks and reports it to the server
+ * via Mattermost's Webapp Performance Observer.
+ *
+ * The metric is sent as "plugin_webapp_perf" with labels:
+ *   - plugin_id: "playbooks"
+ *   - plugin_metric_label: the name parameter (e.g., "list_load", "runs_list_load")
  *
  * If endMark is omitted, the measure will measure the duration until now.
  * If the start mark does not exist and canFail is false, an error will be logged.
- *
- * This is exact copy of function defined in mattermost/webapp/src/performance_telemetry.ts
  */
 export function measureAndReport({
     name,
@@ -58,15 +71,19 @@ export function measureAndReport({
         end: endMark,
         detail: {
             report: true,
+            labels: {
+                plugin_id: PLUGIN_ID,
+                plugin_metric_label: name,
+            },
         },
     };
 
     try {
-        return performance.measure(name, options);
+        return performance.measure(PLUGIN_PERF_METRIC, options);
     } catch (e) {
         if (!canFail) {
             // eslint-disable-next-line no-console
-            console.error('Unable to measure ' + name, e);
+            console.error('Playbooks: Unable to measure ' + name, e);
         }
 
         return undefined;
