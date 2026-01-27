@@ -267,7 +267,7 @@ This plan outlines the phases to implement the Quicklist feature as described in
 - [ ] Integration test: Refinement modifies checklist based on feedback
 
 **Implementation Notes:**
-- `QuicklistRefineRequest` in `api/quicklist.go` accepts `post_id`, `current_checklists`, and `feedback`.
+- `QuicklistRefineRequest` in `api/quicklist.go` accepts `post_id`, `current_checklists`, and `feedback`. No `channel_id` parameter - same reasoning as Phase 2.3: channel is derived from the post, preventing misuse and reducing API surface.
 - `RefineChecklist` method in `app/ai_service.go` builds a 4-message conversation: system prompt, original thread (user), previous checklist as JSON (assistant), feedback request (user).
 - `checklistsToGeneratedJSON()` converts Playbooks checklists back to AI format for context.
 - `formatDueDate()` converts Unix milliseconds back to ISO 8601 date strings.
@@ -300,22 +300,31 @@ This plan outlines the phases to implement the Quicklist feature as described in
 ### 3.3 Run Creation
 
 **Tasks:**
-- [ ] Implement `handleCreateRun` in modal:
+- [x] Implement `handleCreateRun` in modal:
   1. Create run via `POST /api/v0/runs`
   2. Rename default checklist to first section title
   3. Add items to first checklist
   4. For each additional section: create checklist, add items
-- [ ] Add "Create Run" button with loading state
-- [ ] Navigate to run view after successful creation
-- [ ] Close modal after navigation
+- [x] Add "Create Run" button with loading state
+- [x] Navigate to run view after successful creation
+- [x] Close modal after navigation
 
 **Testing:**
-- [ ] Unit test: Run creation calls correct sequence of APIs
-- [ ] Unit test: All sections are created as checklists
-- [ ] Unit test: All items are added to correct checklists
-- [ ] Unit test: Due dates are passed correctly
+- [x] Unit test: Run creation calls correct sequence of APIs
+- [x] Unit test: All sections are created as checklists
+- [x] Unit test: All items are added to correct checklists
+- [x] Unit test: Due dates are passed correctly
 - [ ] Integration test: Created run has expected structure
 - [ ] E2E test: Full flow from command to navigating to new run
+
+**Implementation Notes:**
+- Modal uses Redux selectors (`getCurrentUserId`, `getCurrentTeamId`) to get current user and team context.
+- Run is created with empty `playbook_id` to create a `RunTypeChannelChecklist` (channel checklist type).
+- The default "Tasks" checklist at index 0 is renamed to the first section title, then additional checklists are created for subsequent sections.
+- Items are added sequentially to each checklist using `clientAddChecklistItem`.
+- Navigation uses `navigateToPluginUrl` with `/runs/{id}?from=quicklist` to redirect to the new run.
+- Error handling displays errors via the modal's error UI (same pattern as generation/refinement errors).
+- `isCreatingRun` state disables the confirm button and shows "Creating..." text during run creation.
 
 **Phase 3 Deliverable:** Users can refine checklist via feedback and create a playbook run.
 

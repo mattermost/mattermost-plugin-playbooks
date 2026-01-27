@@ -4,6 +4,9 @@
 import React, {ComponentProps, useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {ClientError} from '@mattermost/client';
 
@@ -11,7 +14,14 @@ import GenericModal from 'src/components/widgets/generic_modal';
 import {QuicklistGenerateResponse, QuicklistModalProps} from 'src/types/quicklist';
 import {useQuicklistGenerate} from 'src/hooks';
 import QuicklistSection from 'src/components/quicklist/quicklist_section';
-import {refineQuicklist} from 'src/client';
+import {
+    clientAddChecklist,
+    clientAddChecklistItem,
+    clientRenameChecklist,
+    createPlaybookRun,
+    refineQuicklist,
+} from 'src/client';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 const ID = 'playbooks_quicklist_modal';
 
@@ -34,6 +44,8 @@ const QuicklistModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
+    const currentUserId = useSelector(getCurrentUserId);
+    const currentTeamId = useSelector(getCurrentTeamId);
     const {isLoading, data: initialData, error: generateError} = useQuicklistGenerate(postId);
 
     // Local state for the current checklist data (can be updated via refinement)
@@ -41,12 +53,89 @@ const QuicklistModal = ({
     const [feedback, setFeedback] = useState('');
     const [isRefining, setIsRefining] = useState(false);
     const [refineError, setRefineError] = useState<ClientError | null>(null);
+    const [isCreatingRun, setIsCreatingRun] = useState(false);
+    const [createError, setCreateError] = useState<ClientError | null>(null);
 
     // Use currentData if we've refined, otherwise use initial data
     const data = currentData || initialData;
-    const error = refineError || generateError;
+    const error = createError || refineError || generateError;
 
     const hasChecklists = data && data.checklists && data.checklists.length > 0;
+
+    /**
+     * Creates a playbook run from the generated checklist.
+     * Strategy:
+     * 1. Create run with empty playbook_id (creates RunTypeChannelChecklist with default "Tasks" checklist)
+     * 2. Rename default checklist at index 0 to first section title
+     * 3. Add items to first checklist
+     * 4. For each additional section: create new checklist, add items
+     * 5. Navigate to run view
+     */
+    const handleCreateRun = async () => {
+        if (!data || !hasChecklists) {
+            return;
+        }
+
+        setIsCreatingRun(true);
+        setCreateError(null);
+
+        try {
+            // Step 1: Create the run without playbook_id (channel checklist type)
+            const run = await createPlaybookRun(
+                '', // empty playbook_id = RunTypeChannelChecklist
+                currentUserId,
+                currentTeamId,
+                data.title,
+                '', // summary
+                channelId,
+            );
+
+            // Step 2-4: Populate checklists (sequential execution required)
+            // eslint-disable-next-line no-await-in-loop
+            for (let i = 0; i < data.checklists.length; i++) {
+                const checklist = data.checklists[i];
+
+                if (i === 0) {
+                    // Rename the default "Tasks" checklist to first section title
+                    // eslint-disable-next-line no-await-in-loop
+                    await clientRenameChecklist(run.id, 0, checklist.title);
+                } else {
+                    // Create additional checklists for subsequent sections
+                    // eslint-disable-next-line no-await-in-loop
+                    await clientAddChecklist(run.id, {
+                        title: checklist.title,
+                        items: [],
+                    });
+                }
+
+                // Add items to this checklist
+                for (const item of checklist.items) {
+                    // eslint-disable-next-line no-await-in-loop
+                    await clientAddChecklistItem(run.id, i, item);
+                }
+            }
+
+            // Step 5: Navigate to run view and close modal
+            navigateToPluginUrl(`/runs/${run.id}?from=quicklist`);
+
+            // Close modal via the onHide prop
+            if (modalProps.onHide) {
+                modalProps.onHide();
+            }
+        } catch (err) {
+            if (err instanceof ClientError) {
+                setCreateError(err);
+            } else {
+                setCreateError(new ClientError('', {
+                    message: err instanceof Error ? err.message : 'Failed to create run',
+                    status_code: 0,
+                    url: '',
+                }));
+            }
+        } finally {
+            setIsCreatingRun(false);
+        }
+    };
 
     const handleFeedbackSubmit = async () => {
         if (!feedback.trim() || !data?.checklists) {
@@ -92,13 +181,11 @@ const QuicklistModal = ({
             modalHeaderText={formatMessage({defaultMessage: 'Create Run from Thread'})}
             showCancel={true}
             cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-            confirmButtonText={formatMessage({defaultMessage: 'Create Run'})}
-            isConfirmDisabled={isLoading || !hasChecklists}
-            handleConfirm={() => {
-                // Phase 3: Will implement run creation using channelId and data
-                // eslint-disable-next-line no-console
-                console.log('Create run in channel:', channelId, 'with data:', data);
-            }}
+            confirmButtonText={isCreatingRun ?
+                formatMessage({defaultMessage: 'Creating...'}) :
+                formatMessage({defaultMessage: 'Create Run'})}
+            isConfirmDisabled={isLoading || isCreatingRun || !hasChecklists}
+            handleConfirm={handleCreateRun}
             {...modalProps}
         >
             <Body>
