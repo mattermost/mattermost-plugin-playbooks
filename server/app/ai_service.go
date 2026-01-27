@@ -6,6 +6,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -181,9 +182,25 @@ func (s *AIService) GenerateChecklist(req QuicklistGenerateRequest) (*GeneratedC
 	}
 
 	var checklist GeneratedChecklist
-	if err := json.Unmarshal([]byte(response), &checklist); err != nil {
+	cleanedResponse := stripMarkdownCodeFences(response)
+	if err := json.Unmarshal([]byte(cleanedResponse), &checklist); err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}
 
 	return &checklist, nil
+}
+
+// stripMarkdownCodeFences removes markdown code fence wrappers from AI responses.
+// LLMs often wrap JSON in ```json ... ``` even when asked not to.
+func stripMarkdownCodeFences(s string) string {
+	s = strings.TrimSpace(s)
+	// Strip ```json or ``` prefix
+	if after, found := strings.CutPrefix(s, "```json"); found {
+		s = after
+	} else if after, found := strings.CutPrefix(s, "```"); found {
+		s = after
+	}
+	// Strip trailing ```
+	s = strings.TrimSuffix(s, "```")
+	return strings.TrimSpace(s)
 }

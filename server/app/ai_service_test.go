@@ -70,6 +70,38 @@ func TestParseDueDate(t *testing.T) {
 	})
 }
 
+func TestStripMarkdownCodeFences(t *testing.T) {
+	t.Run("returns plain JSON unchanged", func(t *testing.T) {
+		input := `{"title": "Test"}`
+		result := stripMarkdownCodeFences(input)
+		assert.Equal(t, `{"title": "Test"}`, result)
+	})
+
+	t.Run("strips json code fence", func(t *testing.T) {
+		input := "```json\n{\"title\": \"Test\"}\n```"
+		result := stripMarkdownCodeFences(input)
+		assert.Equal(t, `{"title": "Test"}`, result)
+	})
+
+	t.Run("strips plain code fence", func(t *testing.T) {
+		input := "```\n{\"title\": \"Test\"}\n```"
+		result := stripMarkdownCodeFences(input)
+		assert.Equal(t, `{"title": "Test"}`, result)
+	})
+
+	t.Run("handles whitespace around fences", func(t *testing.T) {
+		input := "  ```json\n{\"title\": \"Test\"}\n```  "
+		result := stripMarkdownCodeFences(input)
+		assert.Equal(t, `{"title": "Test"}`, result)
+	})
+
+	t.Run("handles only opening fence", func(t *testing.T) {
+		input := "```json\n{\"title\": \"Test\"}"
+		result := stripMarkdownCodeFences(input)
+		assert.Equal(t, `{"title": "Test"}`, result)
+	})
+}
+
 func TestGeneratedChecklist_ToChecklists(t *testing.T) {
 	t.Run("converts empty checklist", func(t *testing.T) {
 		g := &GeneratedChecklist{

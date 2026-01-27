@@ -177,6 +177,7 @@ This plan outlines the phases to implement the Quicklist feature as described in
 - **BridgeClient interface**: Added `BridgeClient` interface for testability (not in original design). This allows mocking the bridge client in tests without network calls.
 - **NewAIService signature change**: Design showed `NewAIService(pluginAPI *pluginapi.Client, config)` but implementation uses `NewAIService(bridgeClient BridgeClient, config)`. The `plugin.go` creates the real `bridgeclient.NewClient(p.API)` and passes it in.
 - **Shared test mocks**: `mockConfigService` is defined in `server/app/thread_test.go` and shared across all `app` package tests (including `ai_service_test.go`).
+- **Markdown code fence stripping**: LLMs often wrap JSON responses in markdown code fences (`` ```json ... ``` ``) even when instructed not to. `stripMarkdownCodeFences()` removes these wrappers before JSON parsing. Handles both ```` ```json ```` and plain ```` ``` ```` prefixes.
 
 ### 2.3 Generate API Endpoint
 
@@ -215,29 +216,35 @@ This plan outlines the phases to implement the Quicklist feature as described in
 ### 2.4 Display Generated Checklist
 
 **Tasks:**
-- [ ] Create `/webapp/src/client/quicklist.ts` with REST client functions:
-  - Follow existing Playbooks client patterns (see `/webapp/src/client/`)
-  - Use `doFetch` or similar helper for base URL and auth headers
-  - Export `generateQuicklist(postId, channelId)` function
-  - Export `refineQuicklist(postId, channelId, checklists, feedback)` function
-- [ ] Create `/webapp/src/hooks/use_quicklist.ts` with `useQuicklistGenerate` hook
-- [ ] Update modal to call generate API on mount
-- [ ] Display AI-suggested run title (read-only, users refine via feedback)
-- [ ] Display generated checklist (sections and items)
-- [ ] Display thread_info:
+- [x] Create REST client function for generate endpoint:
+  - Added `generateQuicklist(postId)` to `/webapp/src/client.ts` (follows existing pattern)
+  - `channelId` removed from signature per Phase 2.3 simplification
+  - `refineQuicklist` deferred to Phase 3.1
+- [x] Create `/webapp/src/hooks/use_quicklist.ts` with `useQuicklistGenerate` hook
+- [x] Update modal to call generate API on mount
+- [x] Display AI-suggested run title (read-only, users refine via feedback)
+- [x] Display generated checklist (sections and items)
+- [x] Display thread_info:
   - Show truncation warning banner when `truncated` is true
   - Include count: "X messages not analyzed"
   - Show participant count in thread summary
-- [ ] Handle and display errors
+- [x] Handle and display errors
 
 **Testing:**
-- [ ] Unit test: Hook handles loading/success/error states
-- [ ] Unit test: Modal displays AI-suggested title
-- [ ] Unit test: Modal displays checklist sections correctly
-- [ ] Unit test: Modal displays truncation warning when `thread_info.truncated` is true
-- [ ] Unit test: Modal displays correct truncated message count
-- [ ] Unit test: Modal displays error message on failure
+- [x] Unit test: Hook handles loading/success/error states
+- [x] Unit test: Modal displays AI-suggested title
+- [x] Unit test: Modal displays checklist sections correctly
+- [x] Unit test: Modal displays truncation warning when `thread_info.truncated` is true
+- [x] Unit test: Modal displays correct truncated message count
+- [x] Unit test: Modal displays error message on failure
 - [ ] E2E test: Full flow from command to displayed checklist
+
+**Implementation Notes:**
+- Client function added to existing `client.ts` rather than creating separate file, following codebase convention.
+- Hook wraps all errors as `ClientError` for consistent consumer handling. `status_code: 0` indicates non-HTTP error.
+- Hook uses cancellation flag to prevent state updates after unmount.
+- Modal tests mock the hook (`useQuicklistGenerate`), not the client, for proper test isolation.
+- Added empty state handling when AI returns no checklists.
 
 **Phase 2 Deliverable:** Running `/playbook quicklist <post_id>` shows AI-generated checklist in modal.
 
