@@ -335,34 +335,51 @@ This plan outlines the phases to implement the Quicklist feature as described in
 ### 4.1 Error Handling
 
 **Tasks:**
-- [ ] Add retry button for transient errors (AI unavailable, network issues)
-- [ ] Improve error messages (see Section 11.1 in design doc)
-- [ ] Add error boundaries in React components
-- [ ] Log errors server-side for debugging
-- [ ] Implement `quicklist_generation_failed` WebSocket event:
+- [x] Add retry button for transient errors (AI unavailable, network issues)
+- [x] Improve error messages (see Section 11.1 in design doc)
+- [x] Add error boundaries in React components
+- [x] Log errors server-side for debugging
+- [x] Implement `quicklist_generation_failed` WebSocket event:
   - Server sends event when async generation fails
   - Include error type and user-friendly message in payload
   - Webapp listens for event and displays error in modal (if open) or toast notification
 
 **Testing:**
-- [ ] Unit test: Retry button triggers new API call
-- [ ] Unit test: Error boundary catches component errors
-- [ ] Unit test: `quicklist_generation_failed` event displays error correctly
+- [x] Unit test: Retry button triggers new API call
+- [x] Unit test: Error boundary catches component errors
+- [x] Unit test: `quicklist_generation_failed` event displays error correctly
 - [ ] Manual test: All error cases show appropriate messages
+
+**Implementation Notes:**
+- **Error Classification Pattern**: All 5xx errors classified as `ServiceUnavailable`. Transient errors (retryable) include: 5xx, status 0 (network), timeout messages. Permanent errors: 4xx (except timeout-related).
+- **React Error Boundaries**: Must be class components - `getDerivedStateFromError` and `componentDidCatch` have no hooks equivalent.
+- **Hook Retry Pattern**: Uses `retryCount` state with `useCallback` to trigger re-fetch via `useEffect` dependency. Avoids exposing fetch function directly.
+- **WebSocket Event**: `publishGenerationFailedEvent` is infrastructure only - not wired to error paths. Current flow is synchronous. Would be needed for async/background generation.
+- **Linting Gotchas**: `import-newlines/enforce` (>3 elements), `sort-imports` (alphabetical), `no-empty-function` (needs disable for empty promises), `formatjs/no-literal-string-in-jsx`, `lines-around-comment`.
+- **Testing**: Project uses `react-test-renderer` not `@testing-library/react`. Use `renderer.create()`, `toJSON()`, `toTree()` for assertions.
+- **Mock Updates**: When hooks add new return values (like `retry`), all test mocks must include them.
+- **Server Logging**: Build logger context incrementally with `logger.WithField()` through the handler for traceable logs.
 
 ### 4.2 Loading States & UX
 
 **Tasks:**
-- [ ] Add skeleton loading state for checklist
-- [ ] Add progress indicator for run creation (multiple API calls)
-- [ ] Disable form inputs during loading/creation
-- [ ] Add confirmation before closing modal with unsaved changes
+- [x] Add skeleton loading state for checklist
+- [x] Add progress indicator for run creation (multiple API calls)
+- [x] Disable form inputs during loading/creation
+- [x] Add confirmation before closing modal with unsaved changes
 
 **Testing:**
-- [ ] Unit test: Skeleton renders during loading
-- [ ] Unit test: Inputs disabled during appropriate states
-- [ ] Unit test: Close confirmation shown when checklists modified
+- [x] Unit test: Skeleton renders during loading
+- [x] Unit test: Inputs disabled during appropriate states
+- [x] Unit test: Close confirmation shown when checklists modified
 - [ ] Manual test: UX feels responsive and clear
+
+**Implementation Notes:**
+- Created `QuicklistSkeleton` component (`quicklist_skeleton.tsx`) with animated skeleton bars matching the section/item structure.
+- Progress indicator shows percentage and step count (e.g., "Creating... (75%)" and "5 of 8 steps complete").
+- All form inputs (feedback textarea, send button) disabled during loading, refining, and creating states via `isFormDisabled` flag.
+- `UnsavedChangesModal` shows when user tries to cancel after refinement. Uses `hasUnsavedChanges` state set after successful refinement.
+- Modal's `autoCloseOnCancelButton` set to `false` to intercept cancel and show confirmation when needed.
 
 ### 4.3 Feature Flag & Permissions
 

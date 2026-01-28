@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useState} from 'react';
+import React, {ComponentProps, useCallback, useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
@@ -11,9 +11,10 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {ClientError} from '@mattermost/client';
 
 import GenericModal from 'src/components/widgets/generic_modal';
+import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 import {QuicklistGenerateResponse, QuicklistModalProps} from 'src/types/quicklist';
 import {useQuicklistGenerate} from 'src/hooks';
-import {QuicklistErrorBoundary, QuicklistSection} from 'src/components/quicklist';
+import {QuicklistErrorBoundary, QuicklistSection, QuicklistSkeleton} from 'src/components/quicklist';
 import {
     clientAddChecklist,
     clientAddChecklistItem,
@@ -57,11 +58,31 @@ const QuicklistModal = ({
     const [isCreatingRun, setIsCreatingRun] = useState(false);
     const [createError, setCreateError] = useState<ClientError | null>(null);
 
+    // Progress tracking for run creation
+    const [creationProgress, setCreationProgress] = useState({current: 0, total: 0});
+
+    // Unsaved changes confirmation
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
     // Use currentData if we've refined, otherwise use initial data
     const data = currentData || initialData;
     const error = createError || refineError || generateError;
 
     const hasChecklists = data && data.checklists && data.checklists.length > 0;
+
+    /**
+     * Calculates total steps for progress tracking.
+     * Steps: 1 create run + 1 rename/create per checklist + 1 per item
+     */
+    const calculateTotalSteps = useCallback(() => {
+        if (!data?.checklists) {
+            return 0;
+        }
+        const checklistSteps = data.checklists.length;
+        const itemSteps = data.checklists.reduce((sum, cl) => sum + cl.items.length, 0);
+        return 1 + checklistSteps + itemSteps; // +1 for initial run creation
+    }, [data]);
 
     /**
      * Creates a playbook run from the generated checklist.
@@ -80,6 +101,10 @@ const QuicklistModal = ({
         setIsCreatingRun(true);
         setCreateError(null);
 
+        const totalSteps = calculateTotalSteps();
+        let completedSteps = 0;
+        setCreationProgress({current: 0, total: totalSteps});
+
         try {
             // Step 1: Create the run without playbook_id (channel checklist type)
             const run = await createPlaybookRun(
@@ -90,6 +115,8 @@ const QuicklistModal = ({
                 '', // summary
                 channelId,
             );
+            completedSteps++;
+            setCreationProgress({current: completedSteps, total: totalSteps});
 
             // Step 2-4: Populate checklists (sequential execution required)
             // eslint-disable-next-line no-await-in-loop
@@ -108,13 +135,20 @@ const QuicklistModal = ({
                         items: [],
                     });
                 }
+                completedSteps++;
+                setCreationProgress({current: completedSteps, total: totalSteps});
 
                 // Add items to this checklist
                 for (const item of checklist.items) {
                     // eslint-disable-next-line no-await-in-loop
                     await clientAddChecklistItem(run.id, i, item);
+                    completedSteps++;
+                    setCreationProgress({current: completedSteps, total: totalSteps});
                 }
             }
+
+            // Mark changes as saved before navigating
+            setHasUnsavedChanges(false);
 
             // Step 5: Navigate to run view and close modal
             navigateToPluginUrl(`/runs/${run.id}?from=quicklist`);
@@ -135,6 +169,7 @@ const QuicklistModal = ({
             }
         } finally {
             setIsCreatingRun(false);
+            setCreationProgress({current: 0, total: 0});
         }
     };
 
@@ -154,6 +189,7 @@ const QuicklistModal = ({
             });
             setCurrentData(result);
             setFeedback('');
+            setHasUnsavedChanges(true); // Mark as having unsaved changes after refinement
         } catch (err) {
             if (err instanceof ClientError) {
                 setRefineError(err);
@@ -176,135 +212,223 @@ const QuicklistModal = ({
         }
     };
 
+    /**
+     * Handles the cancel button click. Shows confirmation if there are unsaved changes.
+     */
+    const handleCancel = useCallback(() => {
+        if (hasUnsavedChanges && !isCreatingRun) {
+            setShowUnsavedModal(true);
+        } else {
+            modalProps.onHide?.();
+        }
+    }, [hasUnsavedChanges, isCreatingRun, modalProps]);
+
+    /**
+     * Confirms discarding unsaved changes and closes the modal.
+     */
+    const handleConfirmDiscard = useCallback(() => {
+        setShowUnsavedModal(false);
+        modalProps.onHide?.();
+    }, [modalProps]);
+
+    /**
+     * Cancels the discard action and keeps the modal open.
+     */
+    const handleCancelDiscard = useCallback(() => {
+        setShowUnsavedModal(false);
+    }, []);
+
+    // Determine if all form inputs should be disabled
+    const isFormDisabled = isLoading || isCreatingRun || isRefining;
+
+    // Calculate progress percentage for the progress bar
+    const progressPercentage = creationProgress.total > 0 ?
+        Math.round((creationProgress.current / creationProgress.total) * 100) :
+        0;
+
+    // Dynamic confirm button text with progress
+    const getConfirmButtonText = () => {
+        if (isCreatingRun) {
+            if (creationProgress.total > 0) {
+                return formatMessage(
+                    {defaultMessage: 'Creating... ({progress}%)'},
+                    {progress: progressPercentage}
+                );
+            }
+            return formatMessage({defaultMessage: 'Creating...'});
+        }
+        return formatMessage({defaultMessage: 'Create Run'});
+    };
+
     return (
-        <StyledGenericModal
-            id={ID}
-            modalHeaderText={formatMessage({defaultMessage: 'Create Run from Thread'})}
-            showCancel={true}
-            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
-            confirmButtonText={isCreatingRun ?
-                formatMessage({defaultMessage: 'Creating...'}) :
-                formatMessage({defaultMessage: 'Create Run'})}
-            isConfirmDisabled={isLoading || isCreatingRun || !hasChecklists}
-            handleConfirm={handleCreateRun}
-            {...modalProps}
-        >
-            <QuicklistErrorBoundary onReset={retryGenerate}>
-                <Body>
-                    {isLoading && (
-                        <LoadingContainer data-testid='quicklist-loading'>
-                            <Spinner/>
-                            <LoadingText>
-                                {formatMessage({defaultMessage: 'Analyzing thread...'})}
-                            </LoadingText>
-                        </LoadingContainer>
-                    )}
-
-                    {error && (
-                        <ErrorContainer
-                            data-testid='quicklist-error'
-                            role='alert'
-                        >
-                            <ErrorIcon className='icon-alert-circle-outline icon-24'/>
-                            <ErrorText>
-                                {getUserFriendlyErrorMessage(error)}
-                            </ErrorText>
-                            {isTransientError(error) && (
-                                <RetryButton
-                                    data-testid='quicklist-retry-button'
-                                    onClick={retryGenerate}
-                                    disabled={isLoading}
-                                >
-                                    {formatMessage({defaultMessage: 'Try Again'})}
-                                </RetryButton>
-                            )}
-                        </ErrorContainer>
-                    )}
-
-                    {!isLoading && !error && data && (
-                        <>
-                            {data.thread_info?.truncated && (
-                                <TruncationWarning data-testid='quicklist-truncation-warning'>
-                                    <WarningIcon className='icon-alert-outline icon-16'/>
-                                    <FormattedMessage
-                                        defaultMessage='Thread was truncated ({count} messages not analyzed)'
-                                        values={{count: data.thread_info.truncated_count}}
-                                    />
-                                </TruncationWarning>
-                            )}
-
-                            <ThreadInfoBar data-testid='quicklist-thread-info'>
-                                <FormattedMessage
-                                    defaultMessage='{messageCount} messages analyzed from {participantCount} participants'
-                                    values={{
-                                        messageCount: data.thread_info?.message_count ?? 0,
-                                        participantCount: data.thread_info?.participant_count ?? 0,
-                                    }}
+        <>
+            <StyledGenericModal
+                id={ID}
+                modalHeaderText={formatMessage({defaultMessage: 'Create Run from Thread'})}
+                showCancel={true}
+                cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
+                confirmButtonText={getConfirmButtonText()}
+                isConfirmDisabled={isLoading || isCreatingRun || !hasChecklists}
+                handleConfirm={handleCreateRun}
+                handleCancel={handleCancel}
+                autoCloseOnCancelButton={false}
+                {...modalProps}
+            >
+                <QuicklistErrorBoundary onReset={retryGenerate}>
+                    <Body>
+                        {isLoading && (
+                            <LoadingContainer data-testid='quicklist-loading'>
+                                <LoadingHeader>
+                                    <Spinner/>
+                                    <LoadingText>
+                                        {formatMessage({defaultMessage: 'Analyzing thread...'})}
+                                    </LoadingText>
+                                </LoadingHeader>
+                                <QuicklistSkeleton
+                                    sectionCount={2}
+                                    itemsPerSection={3}
                                 />
-                            </ThreadInfoBar>
+                            </LoadingContainer>
+                        )}
 
-                            <RunTitle data-testid='quicklist-title'>
-                                {data.title}
-                            </RunTitle>
+                        {error && (
+                            <ErrorContainer
+                                data-testid='quicklist-error'
+                                role='alert'
+                            >
+                                <ErrorIcon className='icon-alert-circle-outline icon-24'/>
+                                <ErrorText>
+                                    {getUserFriendlyErrorMessage(error)}
+                                </ErrorText>
+                                {isTransientError(error) && (
+                                    <RetryButton
+                                        data-testid='quicklist-retry-button'
+                                        onClick={retryGenerate}
+                                        disabled={isLoading}
+                                    >
+                                        {formatMessage({defaultMessage: 'Try Again'})}
+                                    </RetryButton>
+                                )}
+                            </ErrorContainer>
+                        )}
 
-                            {hasChecklists ? (
-                                <ChecklistsContainer data-testid='quicklist-checklists'>
-                                    {isRefining && (
-                                        <RefiningOverlay data-testid='quicklist-refining'>
-                                            <Spinner/>
-                                            <RefiningText>
-                                                {formatMessage({defaultMessage: 'Updating checklist...'})}
-                                            </RefiningText>
-                                        </RefiningOverlay>
-                                    )}
-                                    {data.checklists.map((checklist, index) => (
-                                        <QuicklistSection
-                                            key={checklist.id || `section-${index}`}
-                                            checklist={checklist}
-                                        />
-                                    ))}
-                                </ChecklistsContainer>
-                            ) : (
-                                <EmptyState data-testid='quicklist-empty'>
-                                    <FormattedMessage
-                                        defaultMessage='No action items could be identified in this thread.'
-                                    />
-                                </EmptyState>
-                            )}
-
-                            {hasChecklists && (
-                                <FeedbackSection data-testid='quicklist-feedback-section'>
-                                    <FeedbackInputContainer>
-                                        <FeedbackInput
-                                            data-testid='quicklist-feedback-input'
-                                            placeholder={formatMessage({defaultMessage: 'Describe changes you want to make...'})}
-                                            value={feedback}
-                                            onChange={(e) => setFeedback(e.target.value)}
-                                            onKeyDown={handleFeedbackKeyDown}
-                                            disabled={isRefining}
-                                            rows={1}
-                                        />
-                                        <SendButton
-                                            data-testid='quicklist-feedback-send'
-                                            onClick={handleFeedbackSubmit}
-                                            disabled={!feedback.trim() || isRefining}
-                                            aria-label={formatMessage({defaultMessage: 'Send feedback'})}
-                                        >
-                                            <i className='icon-send icon-16'/>
-                                        </SendButton>
-                                    </FeedbackInputContainer>
-                                    <FeedbackHint>
+                        {!isLoading && !error && data && (
+                            <>
+                                {data.thread_info?.truncated && (
+                                    <TruncationWarning data-testid='quicklist-truncation-warning'>
+                                        <WarningIcon className='icon-alert-outline icon-16'/>
                                         <FormattedMessage
-                                            defaultMessage='Press Enter to send, Shift+Enter for new line'
+                                            defaultMessage='Thread was truncated ({count} messages not analyzed)'
+                                            values={{count: data.thread_info.truncated_count}}
                                         />
-                                    </FeedbackHint>
-                                </FeedbackSection>
-                            )}
-                        </>
-                    )}
-                </Body>
-            </QuicklistErrorBoundary>
-        </StyledGenericModal>
+                                    </TruncationWarning>
+                                )}
+
+                                <ThreadInfoBar data-testid='quicklist-thread-info'>
+                                    <FormattedMessage
+                                        defaultMessage='{messageCount} messages analyzed from {participantCount} participants'
+                                        values={{
+                                            messageCount: data.thread_info?.message_count ?? 0,
+                                            participantCount: data.thread_info?.participant_count ?? 0,
+                                        }}
+                                    />
+                                </ThreadInfoBar>
+
+                                <RunTitle data-testid='quicklist-title'>
+                                    {data.title}
+                                </RunTitle>
+
+                                {hasChecklists ? (
+                                    <ChecklistsContainer data-testid='quicklist-checklists'>
+                                        {isRefining && (
+                                            <RefiningOverlay data-testid='quicklist-refining'>
+                                                <Spinner/>
+                                                <RefiningText>
+                                                    {formatMessage({defaultMessage: 'Updating checklist...'})}
+                                                </RefiningText>
+                                            </RefiningOverlay>
+                                        )}
+                                        {data.checklists.map((checklist, index) => (
+                                            <QuicklistSection
+                                                key={checklist.id || `section-${index}`}
+                                                checklist={checklist}
+                                            />
+                                        ))}
+                                    </ChecklistsContainer>
+                                ) : (
+                                    <EmptyState data-testid='quicklist-empty'>
+                                        <FormattedMessage
+                                            defaultMessage='No action items could be identified in this thread.'
+                                        />
+                                    </EmptyState>
+                                )}
+
+                                {hasChecklists && (
+                                    <FeedbackSection data-testid='quicklist-feedback-section'>
+                                        <FeedbackInputContainer>
+                                            <FeedbackInput
+                                                data-testid='quicklist-feedback-input'
+                                                placeholder={formatMessage({defaultMessage: 'Describe changes you want to make...'})}
+                                                value={feedback}
+                                                onChange={(e) => setFeedback(e.target.value)}
+                                                onKeyDown={handleFeedbackKeyDown}
+                                                disabled={isFormDisabled}
+                                                rows={1}
+                                            />
+                                            <SendButton
+                                                data-testid='quicklist-feedback-send'
+                                                onClick={handleFeedbackSubmit}
+                                                disabled={!feedback.trim() || isFormDisabled}
+                                                aria-label={formatMessage({defaultMessage: 'Send feedback'})}
+                                            >
+                                                <i className='icon-send icon-16'/>
+                                            </SendButton>
+                                        </FeedbackInputContainer>
+                                        <FeedbackHint>
+                                            <FormattedMessage
+                                                defaultMessage='Press Enter to send, Shift+Enter for new line'
+                                            />
+                                        </FeedbackHint>
+                                    </FeedbackSection>
+                                )}
+                            </>
+                        )}
+
+                        {/* Progress bar during run creation */}
+                        {isCreatingRun && creationProgress.total > 0 && (
+                            <ProgressContainer data-testid='quicklist-progress'>
+                                <ProgressBar
+                                    $progress={progressPercentage}
+                                    role='progressbar'
+                                    aria-valuenow={progressPercentage}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                />
+                                <ProgressText>
+                                    <FormattedMessage
+                                        defaultMessage='{current} of {total} steps complete'
+                                        values={{
+                                            current: creationProgress.current,
+                                            total: creationProgress.total,
+                                        }}
+                                    />
+                                </ProgressText>
+                            </ProgressContainer>
+                        )}
+                    </Body>
+                </QuicklistErrorBoundary>
+            </StyledGenericModal>
+
+            {/* Unsaved changes confirmation modal */}
+            <UnsavedChangesModal
+                show={showUnsavedModal}
+                title={formatMessage({defaultMessage: 'Discard changes?'})}
+                message={formatMessage({defaultMessage: 'You have refined the checklist. These changes will be lost if you close without creating a run.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Discard'})}
+                onConfirm={handleConfirmDiscard}
+                onCancel={handleCancelDiscard}
+            />
+        </>
     );
 };
 
@@ -342,10 +466,16 @@ const Body = styled.div`
 const LoadingContainer = styled.div`
     display: flex;
     flex-direction: column;
+    gap: 24px;
+`;
+
+const LoadingHeader = styled.div`
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    gap: 16px;
+    padding: 20px;
+    gap: 12px;
 `;
 
 const Spinner = styled.div`
@@ -572,6 +702,43 @@ const FeedbackHint = styled.div`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
     margin-top: 4px;
+`;
+
+const ProgressContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+`;
+
+const ProgressBar = styled.div<{$progress: number}>`
+    height: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+
+    &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: ${(props) => props.$progress}%;
+        background: var(--button-bg);
+        border-radius: 2px;
+        transition: width 0.2s ease-out;
+    }
+`;
+
+const ProgressText = styled.div`
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    text-align: center;
 `;
 
 export default QuicklistModal;

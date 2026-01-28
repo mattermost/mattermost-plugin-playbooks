@@ -32,7 +32,7 @@ export function isTransientError(error: ClientError | null): boolean {
         return false;
     }
 
-    const statusCode = error.status_code;
+    const statusCode = error.status_code ?? 0;
 
     // Network errors (status 0) or server errors (5xx) are typically transient
     if (statusCode === 0 || statusCode === 503 || statusCode === 504 || statusCode >= 500) {
@@ -56,7 +56,7 @@ export function classifyError(error: ClientError | null): QuicklistErrorType {
         return QuicklistErrorType.Unknown;
     }
 
-    const statusCode = error.status_code;
+    const statusCode = error.status_code ?? 0;
     const message = error.message?.toLowerCase() || '';
 
     // Network/timeout errors

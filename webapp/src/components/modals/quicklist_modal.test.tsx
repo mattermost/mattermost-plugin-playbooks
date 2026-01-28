@@ -45,6 +45,23 @@ jest.mock('src/components/quicklist/quicklist_section', () => {
     };
 });
 
+// Mock the QuicklistSkeleton component
+jest.mock('src/components/quicklist/quicklist_skeleton', () => {
+    return function MockQuicklistSkeleton() {
+        return <div data-testid='quicklist-skeleton'/>;
+    };
+});
+
+// Mock the UnsavedChangesModal component
+jest.mock('src/components/widgets/unsaved_changes_modal', () => {
+    return function MockUnsavedChangesModal({show}: any) {
+        if (!show) {
+            return null;
+        }
+        return <div data-testid='unsaved-changes-modal'/>;
+    };
+});
+
 // Mock react-redux useSelector
 jest.mock('react-redux', () => ({
     ...jest.requireActual('react-redux'),
@@ -193,6 +210,7 @@ describe('QuicklistModal', () => {
                 isLoading: true,
                 data: null,
                 error: null,
+                retry: jest.fn(),
             });
         });
 
@@ -224,6 +242,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: mockResponse,
                 error: null,
+                retry: jest.fn(),
             });
         });
 
@@ -284,6 +303,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: truncatedResponse,
                 error: null,
+                retry: jest.fn(),
             });
         });
 
@@ -358,6 +378,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: null,
                 error,
+                retry: jest.fn(),
             });
 
             const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
@@ -384,6 +405,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: emptyResponse,
                 error: null,
+                retry: jest.fn(),
             });
 
             const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
@@ -409,6 +431,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: emptyResponse,
                 error: null,
+                retry: jest.fn(),
             });
 
             const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
@@ -424,6 +447,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: mockResponse,
                 error: null,
+                retry: jest.fn(),
             });
             mockRefineQuicklist.mockReset();
         });
@@ -442,6 +466,7 @@ describe('QuicklistModal', () => {
                 isLoading: true,
                 data: null,
                 error: null,
+                retry: jest.fn(),
             });
 
             const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
@@ -460,6 +485,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: emptyResponse,
                 error: null,
+                retry: jest.fn(),
             });
 
             const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
@@ -673,6 +699,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: mockResponse,
                 error: null,
+                retry: jest.fn(),
             });
             mockOnHide.mockReset();
             mockCreatePlaybookRun.mockReset();
@@ -813,6 +840,75 @@ describe('QuicklistModal', () => {
             expect(treeStr).toContain('Test Quicklist Title');
         });
     });
+
+    describe('skeleton loading', () => {
+        beforeEach(() => {
+            mockUseQuicklistGenerate.mockReturnValue({
+                isLoading: true,
+                data: null,
+                error: null,
+                retry: jest.fn(),
+            });
+        });
+
+        it('displays skeleton component during loading', () => {
+            const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            const treeStr = getTreeString(component);
+
+            expect(treeStr).toContain('quicklist-skeleton');
+        });
+    });
+
+    describe('unsaved changes modal', () => {
+        beforeEach(() => {
+            mockUseQuicklistGenerate.mockReturnValue({
+                isLoading: false,
+                data: mockResponse,
+                error: null,
+                retry: jest.fn(),
+            });
+        });
+
+        it('does not show unsaved changes modal initially', () => {
+            const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            const treeStr = getTreeString(component);
+
+            expect(treeStr).not.toContain('unsaved-changes-modal');
+        });
+
+        it('modal has autoCloseOnCancelButton set to false', () => {
+            const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            const tree = component.toTree();
+            const modal = findByTestId(tree, 'mock-generic-modal');
+            const modalProps = JSON.parse(modal.props['data-props']);
+
+            expect(modalProps.autoCloseOnCancelButton).toBe(false);
+        });
+    });
+
+    describe('form disabled state', () => {
+        beforeEach(() => {
+            mockUseQuicklistGenerate.mockReturnValue({
+                isLoading: false,
+                data: mockResponse,
+                error: null,
+                retry: jest.fn(),
+            });
+        });
+
+        it('feedback input is enabled when not loading/refining', async () => {
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            const tree = component!.toTree();
+            const feedbackInput = findByTestId(tree, 'quicklist-feedback-input');
+
+            expect(feedbackInput.props.disabled).toBe(false);
+        });
+    });
 });
 
 // Helper function to find component by test id
@@ -848,6 +944,7 @@ describe('makeModalDefinition', () => {
             isLoading: true,
             data: null,
             error: null,
+            retry: jest.fn(),
         });
 
         const props = {
