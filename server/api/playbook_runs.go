@@ -497,7 +497,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.Wrapf(err, "failed to get channel")
 		}
 
-		if playbookRun.TeamID == "" {
+		// For DM/GM channels, TeamID is always empty - override any provided value
+		if channel.IsGroupOrDirect() {
+			playbookRun.TeamID = ""
+		} else if playbookRun.TeamID == "" {
 			playbookRun.TeamID = channel.TeamId
 		} else if channel.TeamId != playbookRun.TeamID {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team")
@@ -539,7 +542,8 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
 	} else {
 		// For runs without a playbook (channel checklists), check run creation permissions on the team
-		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, model.PermissionRunCreate) {
+		// For DM/GM channels, skip team permission check since they have no team - channel permission is checked later
+		if playbookRun.TeamID != "" && !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, model.PermissionRunCreate) {
 			return nil, errors.Wrap(app.ErrNoPermissions, "You do not have permission to create runs on this team")
 		}
 	}

@@ -13,7 +13,7 @@ import {Placement} from '@floating-ui/react';
 import {OVERLAY_DELAY} from 'src/constants';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
-import {useProfilesInTeam} from 'src/hooks';
+import {useProfilesForRun} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
@@ -25,11 +25,13 @@ interface AssignedToProps {
     onSelectedChange?: (user?: UserProfile) => void;
     onOpenChange?: (isOpen: boolean) => void;
     isEditing?: boolean;
+    teamId?: string;
+    channelId?: string;
 }
 
 const AssignTo = (props: AssignedToProps) => {
     const {formatMessage} = useIntl();
-    const profilesInTeam = useProfilesInTeam();
+    const profiles = useProfilesForRun(props.teamId, props.channelId);
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
     const resetAssignee = () => {
@@ -55,7 +57,7 @@ const AssignTo = (props: AssignedToProps) => {
                     subsetLabel: formatMessage({defaultMessage: 'PARTICIPANTS'}),
                 }}
                 getAllUsers={async () => {
-                    return profilesInTeam;
+                    return profiles;
                 }}
                 onSelectedChange={props.onSelectedChange}
                 selfIsFirstOption={true}
@@ -104,7 +106,7 @@ const AssignTo = (props: AssignedToProps) => {
                 profileButtonClass={'Assigned-button'}
                 enableEdit={props.editable}
                 getAllUsers={async () => {
-                    return profilesInTeam;
+                    return profiles;
                 }}
                 onSelectedChange={props.onSelectedChange}
                 selfIsFirstOption={true}

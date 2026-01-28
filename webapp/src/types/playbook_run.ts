@@ -161,6 +161,8 @@ export interface PlaybookRunChecklistItem extends ChecklistItem {
     playbook_run_owner_user_id: string;
     playbook_run_participant_user_ids: string[];
     playbook_run_create_at: number;
+    playbook_run_team_id: string;
+    playbook_run_channel_id: string;
     checklist_title: string;
     checklist_num: number;
 }

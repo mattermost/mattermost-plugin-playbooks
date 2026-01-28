@@ -21,7 +21,6 @@ import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-import {General} from 'mattermost-redux/constants';
 
 import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
 
@@ -126,7 +125,6 @@ const RHSRunList = (props: Props) => {
     };
     const currentChannel = useSelector(getCurrentChannel);
     const currentChannelName = currentChannel?.display_name;
-    const isDirectOrGroupMessage = currentChannel?.type === General.DM_CHANNEL || currentChannel?.type === General.GM_CHANNEL;
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
 
@@ -189,7 +187,7 @@ const RHSRunList = (props: Props) => {
                 </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
-                {!isDirectOrGroupMessage && (
+                {(
                     <Header>
                         <DotMenu
                             dotMenuButton={TitleButton}
@@ -292,7 +290,6 @@ const RHSRunList = (props: Props) => {
                                 numFinished={props.numFinished}
                                 setOptions={props.setOptions}
                                 onCreateChecklistClicked={handleCreateBlankChecklist}
-                                isDirectOrGroupMessage={isDirectOrGroupMessage}
                             />
                         </NoRunsWrapper>
                         <PoweredByPlaybooksFooter/>
@@ -871,7 +868,6 @@ interface NoRunsProps {
     numFinished: number;
     onCreateChecklistClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
-    isDirectOrGroupMessage: boolean;
 }
 
 const NoRuns = (props: NoRunsProps) => {
@@ -879,9 +875,8 @@ const NoRuns = (props: NoRunsProps) => {
 
     let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
 
-    if (props.isDirectOrGroupMessage) {
-        text = formatMessage({defaultMessage: "Checklists aren't available for direct or group messages"});
-    } else if (props.active && props.numFinished > 0) {
+    // DM/GM channels now support checklists, so use the same messaging
+    if (props.active && props.numFinished > 0) {
         text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
     } else if (!props.active) {
         text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
@@ -893,19 +888,13 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            {props.isDirectOrGroupMessage ? (
-                <NoRunsSubtext>
-                    <FormattedMessage defaultMessage='Open a channel to create and run checklists.'/>
-                </NoRunsSubtext>
-            ) : (
-                <PrimaryButton
-                    onClick={props.onCreateChecklistClicked}
-                    data-testid='create-blank-checklist'
-                >
-                    <PlusIcon size={18}/>
-                    <FormattedMessage defaultMessage={'New checklist'}/>
-                </PrimaryButton>
-            )}
+            <PrimaryButton
+                onClick={props.onCreateChecklistClicked}
+                data-testid='create-blank-checklist'
+            >
+                <PlusIcon size={18}/>
+                <FormattedMessage defaultMessage={'New checklist'}/>
+            </PrimaryButton>
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
@@ -937,12 +926,6 @@ const NoRunsText = styled.div`
     ${SemiBoldHeading}
     font-size: 20px;
     line-height: 28px;
-    text-align: center;
-`;
-const NoRunsSubtext = styled.div`
-    color: var(--center-channel-color);
-    font-size: 14px;
-    line-height: 20px;
     text-align: center;
 `;
 const ViewOtherRunsButton = styled(TertiaryButton)`

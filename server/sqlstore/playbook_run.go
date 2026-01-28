@@ -1087,6 +1087,18 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sql
 		  	  		  AND tm.UserId = ?)
 		`, tableName), info.UserID)
 
+	// For DM/GM channels, TeamID is NULL or empty. These runs are filtered by
+	// channel membership in buildPermissionsExpr, so we allow them to pass through
+	// the team limit check. This uses channel membership for DM/GM runs instead
+	// of team membership (which doesn't exist for DM/GM channels).
+	isDMGMRun := sq.Expr(fmt.Sprintf(`(%s.TeamID IS NULL OR %s.TeamID = '')`, tableName, tableName))
+	dmgmChannelMembership := sq.Expr(fmt.Sprintf(`
+		EXISTS(SELECT 1
+					FROM ChannelMembers as cm
+					WHERE cm.ChannelId = %s.ChannelID
+					  AND cm.UserId = ?)
+		`, tableName), info.UserID)
+
 	if info.IsAdmin {
 		if teamID != "" {
 			return filterToSelectedTeam
@@ -1101,8 +1113,13 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableName string) sq.Sql
 		}
 	}
 
-	return onlyTeamsUserIsAMember
-
+	// When no specific team is requested, include runs where:
+	// 1. User is a member of the run's team (for team-based runs), OR
+	// 2. User is a member of the channel (for DM/GM runs with no team)
+	return sq.Or{
+		onlyTeamsUserIsAMember,
+		sq.And{isDMGMRun, dmgmChannelMembership},
+	}
 }
 
 func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.PlaybookRun, error) {
