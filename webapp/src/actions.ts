@@ -59,6 +59,8 @@ import {
     PlaybookRunCreated,
     PlaybookRunUpdated,
     PublishTemplates,
+    QUICKLIST_GENERATION_FAILED,
+    QuicklistGenerationFailed,
     RECEIVED_GLOBAL_SETTINGS,
     RECEIVED_PLAYBOOK_CONDITIONS,
     RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
@@ -395,6 +397,19 @@ export function openQuicklistModal(postId: string, channelId: string) {
         channelId,
     }));
 }
+
+export const quicklistGenerationFailed = (
+    postId: string,
+    channelId: string,
+    errorType: string,
+    errorMessage: string,
+): QuicklistGenerationFailed => ({
+    type: QUICKLIST_GENERATION_FAILED,
+    postId,
+    channelId,
+    errorType,
+    errorMessage,
+});
 
 export const closeBackstageRHS = (): CloseBackstageRHS => ({
     type: CLOSE_BACKSTAGE_RHS,

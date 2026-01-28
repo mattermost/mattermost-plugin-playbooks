@@ -164,4 +164,73 @@ describe('useQuicklistGenerate', () => {
 
         // No error should be thrown (would happen if trying to set state on unmounted)
     });
+
+    it('exposes retry function', () => {
+        // eslint-disable-next-line no-empty-function
+        mockGenerateQuicklist.mockImplementation(() => new Promise(() => {}));
+
+        const {result} = renderHook(() => useQuicklistGenerate('post-123'));
+
+        expect(result.current.retry).toBeDefined();
+        expect(typeof result.current.retry).toBe('function');
+    });
+
+    it('retry triggers new fetch after error', async () => {
+        const clientError = new ClientError('test-url', {
+            message: 'Service unavailable',
+            status_code: 503,
+            url: '/api/v0/quicklist/generate',
+        });
+
+        mockGenerateQuicklist.mockRejectedValueOnce(clientError);
+        mockGenerateQuicklist.mockResolvedValueOnce(mockResponse);
+
+        const {result, waitForNextUpdate} = renderHook(() => useQuicklistGenerate('post-123'));
+
+        // Wait for first (failed) fetch
+        await waitForNextUpdate();
+        expect(result.current.error).toBe(clientError);
+        expect(result.current.data).toBeNull();
+
+        // Call retry
+        act(() => {
+            result.current.retry();
+        });
+
+        // Should be loading again
+        expect(result.current.isLoading).toBe(true);
+
+        // Wait for second (successful) fetch
+        await waitForNextUpdate();
+        expect(result.current.error).toBeNull();
+        expect(result.current.data).toEqual(mockResponse);
+        expect(mockGenerateQuicklist).toHaveBeenCalledTimes(2);
+    });
+
+    it('retry clears previous error', async () => {
+        const clientError = new ClientError('test-url', {
+            message: 'Service unavailable',
+            status_code: 503,
+            url: '/api/v0/quicklist/generate',
+        });
+
+        mockGenerateQuicklist.mockRejectedValueOnce(clientError);
+
+        // eslint-disable-next-line no-empty-function
+        mockGenerateQuicklist.mockImplementation(() => new Promise(() => {}));
+
+        const {result, waitForNextUpdate} = renderHook(() => useQuicklistGenerate('post-123'));
+
+        await waitForNextUpdate();
+        expect(result.current.error).toBe(clientError);
+
+        // Call retry
+        act(() => {
+            result.current.retry();
+        });
+
+        // Error should be cleared, loading should be true
+        expect(result.current.error).toBeNull();
+        expect(result.current.isLoading).toBe(true);
+    });
 });

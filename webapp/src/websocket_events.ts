@@ -24,6 +24,7 @@ import {
     playbookRestored,
     playbookRunCreated,
     playbookRunUpdated,
+    quicklistGenerationFailed,
     receivedTeamPlaybookRuns,
     removedFromPlaybookRunChannel,
     websocketPlaybookRunIncrementalUpdateReceived,
@@ -40,7 +41,7 @@ import {
     globalSettings,
     myPlaybookRunsMap,
 } from 'src/selectors';
-import {PlaybookRunUpdate} from 'src/types/websocket_events';
+import {PlaybookRunUpdate, QuicklistGenerationFailedPayload} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
@@ -311,7 +312,7 @@ export function handleWebsocketConditionDeleted(getState: GetStateFunc, dispatch
     };
 }
 
-// Quicklist websocket handler
+// Quicklist websocket handlers
 export function handleWebsocketQuicklistOpenModal(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
@@ -330,5 +331,33 @@ export function handleWebsocketQuicklistOpenModal(getState: GetStateFunc, dispat
         }
 
         dispatch(openQuicklistModal(payload.post_id, payload.channel_id));
+    };
+}
+
+export function handleWebsocketQuicklistGenerationFailed(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        let payload: QuicklistGenerationFailedPayload;
+        try {
+            payload = JSON.parse(msg.data.payload) as QuicklistGenerationFailedPayload;
+        } catch {
+            // eslint-disable-next-line no-console
+            console.error('Failed to parse quicklist_generation_failed WebSocket payload');
+            return;
+        }
+
+        if (!payload.post_id || !payload.channel_id) {
+            return;
+        }
+
+        dispatch(quicklistGenerationFailed(
+            payload.post_id,
+            payload.channel_id,
+            payload.error_type || 'unknown',
+            payload.error_message || 'Quicklist generation failed',
+        ));
     };
 }

@@ -305,9 +305,9 @@ describe('QuicklistModal', () => {
     });
 
     describe('error state', () => {
-        it('displays error message on failure', () => {
+        it('displays user-friendly error message on 5xx failure', () => {
             const error = new ClientError('test-url', {
-                message: 'Failed to generate checklist',
+                message: 'Internal server error',
                 status_code: 500,
                 url: '/api/v0/quicklist/generate',
             });
@@ -316,19 +316,20 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: null,
                 error,
+                retry: jest.fn(),
             });
 
             const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
             const treeStr = getTreeString(component);
 
             expect(treeStr).toContain('quicklist-error');
-            expect(treeStr).toContain('Failed to generate checklist');
+            expect(treeStr).toContain('AI service is temporarily unavailable');
         });
 
-        it('displays default error message when error has no message', () => {
+        it('displays default error message for unknown errors', () => {
             const error = new ClientError('test-url', {
                 message: '',
-                status_code: 500,
+                status_code: 418,
                 url: '/api/v0/quicklist/generate',
             });
 
@@ -336,6 +337,7 @@ describe('QuicklistModal', () => {
                 isLoading: false,
                 data: null,
                 error,
+                retry: jest.fn(),
             });
 
             const component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
@@ -655,10 +657,11 @@ describe('QuicklistModal', () => {
                 await new Promise((resolve) => setTimeout(resolve, 0));
             });
 
-            // The error should be displayed
+            // The error should be displayed with user-friendly message
+            // (500 errors are classified as service unavailable)
             const treeStr = getTreeString(component!);
             expect(treeStr).toContain('quicklist-error');
-            expect(treeStr).toContain('Failed to refine checklist');
+            expect(treeStr).toContain('AI service is temporarily unavailable');
         });
     });
 

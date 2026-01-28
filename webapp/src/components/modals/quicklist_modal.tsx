@@ -13,7 +13,7 @@ import {ClientError} from '@mattermost/client';
 import GenericModal from 'src/components/widgets/generic_modal';
 import {QuicklistGenerateResponse, QuicklistModalProps} from 'src/types/quicklist';
 import {useQuicklistGenerate} from 'src/hooks';
-import QuicklistSection from 'src/components/quicklist/quicklist_section';
+import {QuicklistErrorBoundary, QuicklistSection} from 'src/components/quicklist';
 import {
     clientAddChecklist,
     clientAddChecklistItem,
@@ -22,6 +22,7 @@ import {
     refineQuicklist,
 } from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
+import {getUserFriendlyErrorMessage, isTransientError} from 'src/utils/quicklist_errors';
 
 const ID = 'playbooks_quicklist_modal';
 
@@ -46,7 +47,7 @@ const QuicklistModal = ({
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const currentTeamId = useSelector(getCurrentTeamId);
-    const {isLoading, data: initialData, error: generateError} = useQuicklistGenerate(postId);
+    const {isLoading, data: initialData, error: generateError, retry: retryGenerate} = useQuicklistGenerate(postId);
 
     // Local state for the current checklist data (can be updated via refinement)
     const [currentData, setCurrentData] = useState<QuicklistGenerateResponse | null>(null);
@@ -188,107 +189,121 @@ const QuicklistModal = ({
             handleConfirm={handleCreateRun}
             {...modalProps}
         >
-            <Body>
-                {isLoading && (
-                    <LoadingContainer data-testid='quicklist-loading'>
-                        <Spinner/>
-                        <LoadingText>
-                            {formatMessage({defaultMessage: 'Analyzing thread...'})}
-                        </LoadingText>
-                    </LoadingContainer>
-                )}
+            <QuicklistErrorBoundary onReset={retryGenerate}>
+                <Body>
+                    {isLoading && (
+                        <LoadingContainer data-testid='quicklist-loading'>
+                            <Spinner/>
+                            <LoadingText>
+                                {formatMessage({defaultMessage: 'Analyzing thread...'})}
+                            </LoadingText>
+                        </LoadingContainer>
+                    )}
 
-                {error && (
-                    <ErrorContainer data-testid='quicklist-error'>
-                        <ErrorIcon className='icon-alert-circle-outline icon-24'/>
-                        <ErrorText>
-                            {error.message || formatMessage({defaultMessage: 'Failed to generate checklist. Please try again.'})}
-                        </ErrorText>
-                    </ErrorContainer>
-                )}
+                    {error && (
+                        <ErrorContainer
+                            data-testid='quicklist-error'
+                            role='alert'
+                        >
+                            <ErrorIcon className='icon-alert-circle-outline icon-24'/>
+                            <ErrorText>
+                                {getUserFriendlyErrorMessage(error)}
+                            </ErrorText>
+                            {isTransientError(error) && (
+                                <RetryButton
+                                    data-testid='quicklist-retry-button'
+                                    onClick={retryGenerate}
+                                    disabled={isLoading}
+                                >
+                                    {formatMessage({defaultMessage: 'Try Again'})}
+                                </RetryButton>
+                            )}
+                        </ErrorContainer>
+                    )}
 
-                {!isLoading && !error && data && (
-                    <>
-                        {data.thread_info?.truncated && (
-                            <TruncationWarning data-testid='quicklist-truncation-warning'>
-                                <WarningIcon className='icon-alert-outline icon-16'/>
-                                <FormattedMessage
-                                    defaultMessage='Thread was truncated ({count} messages not analyzed)'
-                                    values={{count: data.thread_info.truncated_count}}
-                                />
-                            </TruncationWarning>
-                        )}
-
-                        <ThreadInfoBar data-testid='quicklist-thread-info'>
-                            <FormattedMessage
-                                defaultMessage='{messageCount} messages analyzed from {participantCount} participants'
-                                values={{
-                                    messageCount: data.thread_info?.message_count ?? 0,
-                                    participantCount: data.thread_info?.participant_count ?? 0,
-                                }}
-                            />
-                        </ThreadInfoBar>
-
-                        <RunTitle data-testid='quicklist-title'>
-                            {data.title}
-                        </RunTitle>
-
-                        {hasChecklists ? (
-                            <ChecklistsContainer data-testid='quicklist-checklists'>
-                                {isRefining && (
-                                    <RefiningOverlay data-testid='quicklist-refining'>
-                                        <Spinner/>
-                                        <RefiningText>
-                                            {formatMessage({defaultMessage: 'Updating checklist...'})}
-                                        </RefiningText>
-                                    </RefiningOverlay>
-                                )}
-                                {data.checklists.map((checklist, index) => (
-                                    <QuicklistSection
-                                        key={checklist.id || `section-${index}`}
-                                        checklist={checklist}
-                                    />
-                                ))}
-                            </ChecklistsContainer>
-                        ) : (
-                            <EmptyState data-testid='quicklist-empty'>
-                                <FormattedMessage
-                                    defaultMessage='No action items could be identified in this thread.'
-                                />
-                            </EmptyState>
-                        )}
-
-                        {hasChecklists && (
-                            <FeedbackSection data-testid='quicklist-feedback-section'>
-                                <FeedbackInputContainer>
-                                    <FeedbackInput
-                                        data-testid='quicklist-feedback-input'
-                                        placeholder={formatMessage({defaultMessage: 'Describe changes you want to make...'})}
-                                        value={feedback}
-                                        onChange={(e) => setFeedback(e.target.value)}
-                                        onKeyDown={handleFeedbackKeyDown}
-                                        disabled={isRefining}
-                                        rows={1}
-                                    />
-                                    <SendButton
-                                        data-testid='quicklist-feedback-send'
-                                        onClick={handleFeedbackSubmit}
-                                        disabled={!feedback.trim() || isRefining}
-                                        aria-label={formatMessage({defaultMessage: 'Send feedback'})}
-                                    >
-                                        <i className='icon-send icon-16'/>
-                                    </SendButton>
-                                </FeedbackInputContainer>
-                                <FeedbackHint>
+                    {!isLoading && !error && data && (
+                        <>
+                            {data.thread_info?.truncated && (
+                                <TruncationWarning data-testid='quicklist-truncation-warning'>
+                                    <WarningIcon className='icon-alert-outline icon-16'/>
                                     <FormattedMessage
-                                        defaultMessage='Press Enter to send, Shift+Enter for new line'
+                                        defaultMessage='Thread was truncated ({count} messages not analyzed)'
+                                        values={{count: data.thread_info.truncated_count}}
                                     />
-                                </FeedbackHint>
-                            </FeedbackSection>
-                        )}
-                    </>
-                )}
-            </Body>
+                                </TruncationWarning>
+                            )}
+
+                            <ThreadInfoBar data-testid='quicklist-thread-info'>
+                                <FormattedMessage
+                                    defaultMessage='{messageCount} messages analyzed from {participantCount} participants'
+                                    values={{
+                                        messageCount: data.thread_info?.message_count ?? 0,
+                                        participantCount: data.thread_info?.participant_count ?? 0,
+                                    }}
+                                />
+                            </ThreadInfoBar>
+
+                            <RunTitle data-testid='quicklist-title'>
+                                {data.title}
+                            </RunTitle>
+
+                            {hasChecklists ? (
+                                <ChecklistsContainer data-testid='quicklist-checklists'>
+                                    {isRefining && (
+                                        <RefiningOverlay data-testid='quicklist-refining'>
+                                            <Spinner/>
+                                            <RefiningText>
+                                                {formatMessage({defaultMessage: 'Updating checklist...'})}
+                                            </RefiningText>
+                                        </RefiningOverlay>
+                                    )}
+                                    {data.checklists.map((checklist, index) => (
+                                        <QuicklistSection
+                                            key={checklist.id || `section-${index}`}
+                                            checklist={checklist}
+                                        />
+                                    ))}
+                                </ChecklistsContainer>
+                            ) : (
+                                <EmptyState data-testid='quicklist-empty'>
+                                    <FormattedMessage
+                                        defaultMessage='No action items could be identified in this thread.'
+                                    />
+                                </EmptyState>
+                            )}
+
+                            {hasChecklists && (
+                                <FeedbackSection data-testid='quicklist-feedback-section'>
+                                    <FeedbackInputContainer>
+                                        <FeedbackInput
+                                            data-testid='quicklist-feedback-input'
+                                            placeholder={formatMessage({defaultMessage: 'Describe changes you want to make...'})}
+                                            value={feedback}
+                                            onChange={(e) => setFeedback(e.target.value)}
+                                            onKeyDown={handleFeedbackKeyDown}
+                                            disabled={isRefining}
+                                            rows={1}
+                                        />
+                                        <SendButton
+                                            data-testid='quicklist-feedback-send'
+                                            onClick={handleFeedbackSubmit}
+                                            disabled={!feedback.trim() || isRefining}
+                                            aria-label={formatMessage({defaultMessage: 'Send feedback'})}
+                                        >
+                                            <i className='icon-send icon-16'/>
+                                        </SendButton>
+                                    </FeedbackInputContainer>
+                                    <FeedbackHint>
+                                        <FormattedMessage
+                                            defaultMessage='Press Enter to send, Shift+Enter for new line'
+                                        />
+                                    </FeedbackHint>
+                                </FeedbackSection>
+                            )}
+                        </>
+                    )}
+                </Body>
+            </QuicklistErrorBoundary>
         </StyledGenericModal>
     );
 };
@@ -374,6 +389,31 @@ const ErrorText = styled.div`
     line-height: 20px;
     color: var(--error-text);
     text-align: center;
+`;
+
+const RetryButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border: 1px solid var(--button-bg);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--button-bg);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+        background: rgba(var(--button-bg-rgb), 0.08);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 `;
 
 const TruncationWarning = styled.div`
