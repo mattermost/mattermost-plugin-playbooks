@@ -91,8 +91,16 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	ret := make([]*PlaybookResolver, 0, len(playbookResults.Items))
-	for _, pb := range playbookResults.Items {
+	// Filter out playbooks the user doesn't have permission to view
+	filteredItems := []app.Playbook{}
+	for _, playbook := range playbookResults.Items {
+		if err := c.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
+			filteredItems = append(filteredItems, playbook)
+		}
+	}
+
+	ret := make([]*PlaybookResolver, 0, len(filteredItems))
+	for _, pb := range filteredItems {
 		ret = append(ret, &PlaybookResolver{pb})
 	}
 

@@ -278,7 +278,15 @@ func (r *Runner) actionRun(args []string) {
 		return
 	}
 
-	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items); err != nil {
+	// Filter out playbooks the user doesn't have permission to view
+	filteredItems := []app.Playbook{}
+	for _, playbook := range playbooksResults.Items {
+		if err := r.permissions.PlaybookViewWithPlaybook(r.args.UserId, playbook); err == nil {
+			filteredItems = append(filteredItems, playbook)
+		}
+	}
+
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, filteredItems); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
@@ -315,8 +323,16 @@ func (r *Runner) actionRunPlaybook(args []string) {
 		return
 	}
 
+	// Filter out playbooks the user doesn't have permission to view
+	filteredItems := []app.Playbook{}
+	for _, playbook := range playbooksResults.Items {
+		if err := r.permissions.PlaybookViewWithPlaybook(r.args.UserId, playbook); err == nil {
+			filteredItems = append(filteredItems, playbook)
+		}
+	}
+
 	var playbook []app.Playbook
-	for _, pb := range playbooksResults.Items {
+	for _, pb := range filteredItems {
 		if pb.ID == playbookID {
 			playbook = append(playbook, pb)
 			break
@@ -1868,8 +1884,16 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 		return
 	}
 
+	// Filter out playbooks the user doesn't have permission to view
+	filteredItems := []app.Playbook{}
+	for _, playbook := range playbooksResult.Items {
+		if err := r.permissions.PlaybookViewWithPlaybook(r.args.UserId, playbook); err == nil {
+			filteredItems = append(filteredItems, playbook)
+		}
+	}
+
 	var playbooks []app.Playbook
-	if len(playbooksResult.Items) == 0 {
+	if len(filteredItems) == 0 {
 		for _, dummyPlaybook := range dummyListPlaybooks {
 			dummyPlaybook.TeamID = r.args.TeamId
 			dummyPlaybook.Members = []app.PlaybookMember{
@@ -1893,8 +1917,8 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			playbooks = append(playbooks, newPlaybook)
 		}
 	} else {
-		playbooks = make([]app.Playbook, 0, len(playbooksResult.Items))
-		for _, thePlaybook := range playbooksResult.Items {
+		playbooks = make([]app.Playbook, 0, len(filteredItems))
+		for _, thePlaybook := range filteredItems {
 			wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
 			if err != nil {
 				r.warnUserAndLogErrorf("Error getting playbook: %v", err)
