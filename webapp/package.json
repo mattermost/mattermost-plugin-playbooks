@@ -22,7 +22,7 @@
     "debounce": "1.2.1",
     "graphql": "16.9.0",
     "js-trim-multiline-string": "^1.0.8",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "luxon": "3.6.1",
     "mattermost-redux": "10.9.0",
     "parse-duration": "2.1.4",
