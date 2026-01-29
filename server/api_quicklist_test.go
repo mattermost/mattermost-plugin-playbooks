@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,11 @@ import (
 // testQuicklistGenerateRequest mirrors the API request structure
 type testQuicklistGenerateRequest struct {
 	PostID string `json:"post_id"`
+}
+
+// testErrorResponse is the error response structure returned by the plugin API
+type testErrorResponse struct {
+	Error string `json:"error"`
 }
 
 // setQuicklistConfig enables or disables the quicklist feature
@@ -49,72 +55,78 @@ func TestQuicklistGenerate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	// Helper to make quicklist API calls
-	doQuicklistGenerate := func(client *model.Client4, req testQuicklistGenerateRequest) (*http.Response, []byte) {
+	// Helper to make quicklist API calls using raw HTTP requests
+	// Returns status code, response body, and error message (if any)
+	doQuicklistGenerate := func(mmClient *model.Client4, req testQuicklistGenerateRequest) (int, string, string) {
 		body, _ := json.Marshal(req)
-		resp, err := client.DoAPIRequestWithHeaders(
-			context.Background(),
+
+		httpReq, err := http.NewRequest(
 			http.MethodPost,
-			client.URL+"/plugins/playbooks/api/v0/quicklist/generate",
-			string(body),
-			nil,
+			mmClient.URL+"/plugins/playbooks/api/v0/quicklist/generate",
+			strings.NewReader(string(body)),
 		)
-		if err != nil {
-			// Read error response body
-			if resp != nil && resp.Body != nil {
-				bodyBytes, _ := io.ReadAll(resp.Body)
-				resp.Body.Close()
-				return resp, bodyBytes
-			}
-			return resp, nil
-		}
+		require.NoError(t, err)
+
+		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set("Authorization", "Bearer "+mmClient.AuthToken)
+
+		resp, err := http.DefaultClient.Do(httpReq)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		return resp, bodyBytes
+
+		// Extract error message from JSON response if present
+		var errResp testErrorResponse
+		if err := json.Unmarshal(bodyBytes, &errResp); err == nil && errResp.Error != "" {
+			return resp.StatusCode, string(bodyBytes), errResp.Error
+		}
+
+		return resp.StatusCode, string(bodyBytes), ""
 	}
 
 	t.Run("feature disabled returns 403", func(t *testing.T) {
 		setQuicklistConfig(t, e, false, "")
 
-		resp, body := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
+		statusCode, _, errMsg := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
 			PostID: e.BasicPublicChannelPost.Id,
 		})
 
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-		assert.Contains(t, string(body), "quicklist feature is not enabled")
+		assert.Equal(t, http.StatusForbidden, statusCode)
+		assert.Contains(t, errMsg, "quicklist feature is not enabled")
 	})
 
 	t.Run("missing post_id returns 400", func(t *testing.T) {
 		setQuicklistConfig(t, e, true, "fake-bot-id")
 
-		resp, body := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
+		statusCode, _, errMsg := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
 			PostID: "",
 		})
 
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		assert.Contains(t, string(body), "post_id is required")
+		assert.Equal(t, http.StatusBadRequest, statusCode)
+		assert.Contains(t, errMsg, "post_id is required")
 	})
 
 	t.Run("invalid post_id format returns 400", func(t *testing.T) {
 		setQuicklistConfig(t, e, true, "fake-bot-id")
 
-		resp, body := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
+		statusCode, _, errMsg := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
 			PostID: "invalid-id",
 		})
 
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		assert.Contains(t, string(body), "invalid post_id format")
+		assert.Equal(t, http.StatusBadRequest, statusCode)
+		assert.Contains(t, errMsg, "invalid post_id format")
 	})
 
 	t.Run("non-existent post returns 404", func(t *testing.T) {
 		setQuicklistConfig(t, e, true, "fake-bot-id")
 
-		resp, body := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
+		statusCode, _, errMsg := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
 			PostID: model.NewId(), // Valid format but doesn't exist
 		})
 
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		assert.Contains(t, string(body), "post not found")
+		assert.Equal(t, http.StatusNotFound, statusCode)
+		assert.Contains(t, errMsg, "post not found")
 	})
 
 	t.Run("no channel access returns 404 to prevent enumeration", func(t *testing.T) {
@@ -142,12 +154,12 @@ func TestQuicklistGenerate(t *testing.T) {
 
 		// Try to access a post in the private channel
 		// Returns 404 instead of 403 to prevent enumeration of private channels/posts
-		resp, body := doQuicklistGenerate(newUserClient, testQuicklistGenerateRequest{
+		statusCode, _, errMsg := doQuicklistGenerate(newUserClient, testQuicklistGenerateRequest{
 			PostID: e.BasicPrivateChannelPost.Id,
 		})
 
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		assert.Contains(t, string(body), "post not found")
+		assert.Equal(t, http.StatusNotFound, statusCode)
+		assert.Contains(t, errMsg, "post not found")
 	})
 
 	t.Run("archived channel returns 400", func(t *testing.T) {
@@ -172,32 +184,60 @@ func TestQuicklistGenerate(t *testing.T) {
 		_, err = e.ServerAdminClient.DeleteChannel(context.Background(), archivedChannel.Id)
 		require.NoError(t, err)
 
-		resp, body := doQuicklistGenerate(e.ServerAdminClient, testQuicklistGenerateRequest{
+		statusCode, _, errMsg := doQuicklistGenerate(e.ServerAdminClient, testQuicklistGenerateRequest{
 			PostID: post.Id,
 		})
 
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		assert.Contains(t, string(body), "cannot generate quicklist from archived channel")
+		assert.Equal(t, http.StatusBadRequest, statusCode)
+		assert.Contains(t, errMsg, "cannot generate quicklist from archived channel")
 	})
 
 	t.Run("AI service unavailable returns 503", func(t *testing.T) {
 		// Enable quicklist with a fake bot ID - the AI plugin won't be running
 		setQuicklistConfig(t, e, true, "fake-bot-id-that-does-not-exist")
 
-		resp, body := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
+		statusCode, _, errMsg := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
 			PostID: e.BasicPublicChannelPost.Id,
 		})
 
 		// Since the AI plugin (mattermost-plugin-agents) is not running in tests,
 		// this should return 503 Service Unavailable
-		assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
-		assert.Contains(t, string(body), "AI service is not available")
+		assert.Equal(t, http.StatusServiceUnavailable, statusCode)
+		assert.Contains(t, errMsg, "AI service is not available")
 	})
 }
 
 func TestQuicklistGenerateWithThread(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
+
+	// Helper to make quicklist API calls using raw HTTP requests
+	doQuicklistGenerate := func(mmClient *model.Client4, req testQuicklistGenerateRequest) (int, string, string) {
+		body, _ := json.Marshal(req)
+
+		httpReq, err := http.NewRequest(
+			http.MethodPost,
+			mmClient.URL+"/plugins/playbooks/api/v0/quicklist/generate",
+			strings.NewReader(string(body)),
+		)
+		require.NoError(t, err)
+
+		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set("Authorization", "Bearer "+mmClient.AuthToken)
+
+		resp, err := http.DefaultClient.Do(httpReq)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		bodyBytes, _ := io.ReadAll(resp.Body)
+
+		var errResp testErrorResponse
+		if err := json.Unmarshal(bodyBytes, &errResp); err == nil && errResp.Error != "" {
+			return resp.StatusCode, string(bodyBytes), errResp.Error
+		}
+
+		return resp.StatusCode, string(bodyBytes), ""
+	}
 
 	t.Run("generates from thread with multiple messages", func(t *testing.T) {
 		setQuicklistConfig(t, e, true, "fake-bot-id")
@@ -224,29 +264,17 @@ func TestQuicklistGenerateWithThread(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		body, _ := json.Marshal(testQuicklistGenerateRequest{
-			PostID: rootPost.Id,
-		})
-
-		resp, _ := e.ServerClient.DoAPIRequestWithHeaders(
-			context.Background(),
-			http.MethodPost,
-			e.ServerClient.URL+"/plugins/playbooks/api/v0/quicklist/generate",
-			string(body),
-			nil,
-		)
-
 		// Since AI plugin is not running, we expect 503
 		// But this test validates that the thread fetching works correctly
 		// before reaching the AI service
-		require.NotNil(t, resp)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		statusCode, _, errMsg := doQuicklistGenerate(e.ServerClient, testQuicklistGenerateRequest{
+			PostID: rootPost.Id,
+		})
 
 		// We expect 503 because AI plugin isn't running
 		// In a real environment with AI plugin, this would return 200
-		assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
-		assert.Contains(t, string(bodyBytes), "AI service is not available")
+		assert.Equal(t, http.StatusServiceUnavailable, statusCode)
+		assert.Contains(t, errMsg, "AI service is not available")
 	})
 }
 
@@ -254,52 +282,51 @@ func TestQuicklistGenerateRequestBody(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
+	// Helper to make raw API request with custom body
+	doQuicklistGenerateRaw := func(mmClient *model.Client4, body string) (int, string) {
+		httpReq, err := http.NewRequest(
+			http.MethodPost,
+			mmClient.URL+"/plugins/playbooks/api/v0/quicklist/generate",
+			strings.NewReader(body),
+		)
+		require.NoError(t, err)
+
+		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set("Authorization", "Bearer "+mmClient.AuthToken)
+
+		resp, err := http.DefaultClient.Do(httpReq)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		bodyBytes, _ := io.ReadAll(resp.Body)
+
+		var errResp testErrorResponse
+		if err := json.Unmarshal(bodyBytes, &errResp); err == nil && errResp.Error != "" {
+			return resp.StatusCode, errResp.Error
+		}
+
+		return resp.StatusCode, string(bodyBytes)
+	}
+
 	t.Run("malformed JSON returns 400", func(t *testing.T) {
 		setQuicklistConfig(t, e, true, "fake-bot-id")
 
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(
-			context.Background(),
-			http.MethodPost,
-			e.ServerClient.URL+"/plugins/playbooks/api/v0/quicklist/generate",
-			`{invalid json`,
-			nil,
-		)
+		statusCode, errMsg := doQuicklistGenerateRaw(e.ServerClient, `{invalid json`)
 
-		if resp != nil {
-			bodyBytes, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
-
-			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-			assert.Contains(t, string(bodyBytes), "unable to decode request body")
-		} else {
-			// If resp is nil, we still got an error which is expected
-			assert.Error(t, err)
-		}
+		assert.Equal(t, http.StatusBadRequest, statusCode)
+		assert.Contains(t, errMsg, "unable to decode request body")
 	})
 
 	t.Run("empty body returns 400", func(t *testing.T) {
 		setQuicklistConfig(t, e, true, "fake-bot-id")
 
-		resp, err := e.ServerClient.DoAPIRequestWithHeaders(
-			context.Background(),
-			http.MethodPost,
-			e.ServerClient.URL+"/plugins/playbooks/api/v0/quicklist/generate",
-			``,
-			nil,
-		)
+		statusCode, errMsg := doQuicklistGenerateRaw(e.ServerClient, ``)
 
-		if resp != nil {
-			bodyBytes, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
-
-			// Empty body will either fail to decode or have empty post_id
-			assert.True(t, resp.StatusCode == http.StatusBadRequest)
-			// Either "unable to decode" or "post_id is required"
-			assert.True(t,
-				bytes.Contains(bodyBytes, []byte("unable to decode")) ||
-					bytes.Contains(bodyBytes, []byte("post_id is required")))
-		} else {
-			assert.Error(t, err)
-		}
+		// Empty body will either fail to decode or have empty post_id
+		assert.Equal(t, http.StatusBadRequest, statusCode)
+		// Either "unable to decode" or "post_id is required"
+		assert.True(t,
+			bytes.Contains([]byte(errMsg), []byte("unable to decode")) ||
+				bytes.Contains([]byte(errMsg), []byte("post_id is required")))
 	})
 }
