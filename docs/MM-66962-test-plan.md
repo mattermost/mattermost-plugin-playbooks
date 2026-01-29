@@ -64,6 +64,7 @@ This document outlines test cases for verifying DM/GM channel checklist support.
 | `rhs_about.tsx` | Self-DM detection | Hides Owner/Participants | Verify UI for self-DM |
 | `rhs_info_overview.tsx` | Self-DM detection | Hides Owner/Participants/Followers | Verify UI for self-DM |
 | `update_run_status_modal.tsx` | TeamID validation | Removed TeamID requirement | Verify modal works for DM/GM |
+| `add_participant_modal.tsx` | Participant selection | DM/GM: only channel members selectable | Verify only channel members shown |
 
 ### 8. Redux Selectors (`webapp/src/selectors.ts`)
 
@@ -189,6 +190,25 @@ This document outlines test cases for verifying DM/GM channel checklist support.
 - Assignee dropdown shows channel members (not team members)
 - Task can be assigned to channel participant
 - No errors when assigning
+
+---
+
+### TC7b: Add Participants in DM/GM Checklist
+
+**Preconditions:** Checklist in GM with 3+ users
+
+**Steps:**
+1. Open checklist participants panel
+2. Click "Add" button to add participants
+3. Verify only channel members appear in selection
+4. Verify "add to channel" checkbox is NOT shown
+5. Add a participant from the list
+
+**Expected Results:**
+- Only GM channel members shown in participant selector
+- No option to "add to channel" (not possible for DM/GM)
+- Participant added successfully
+- Placeholder text shows "Select channel members"
 
 ---
 
@@ -345,6 +365,8 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 | `webapp/src/index.tsx` | Enable channel header button for DM/GM |
 | `webapp/src/components/rhs/rhs_run_list.tsx` | Remove DM/GM blocking message |
 | `webapp/src/selectors.ts` | Check DM/GM runs (empty team_id) in selectors |
+| `webapp/src/components/backstage/.../add_participant_modal.tsx` | Restrict to channel members for DM/GM |
+| `webapp/src/components/backstage/profile_autocomplete.tsx` | Accept Promise-based fetch functions |
 
 ---
 
@@ -357,6 +379,7 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 - [ ] TC5: Broadcast channels work
 - [ ] TC6: Sidebar visibility (document limitation)
 - [ ] TC7: Task assignment uses channel members
+- [ ] TC7b: Add participants restricted to channel members
 - [ ] TC8: Favorites work
 - [ ] TC9: Following works
 - [ ] TC10: Cross-type linking blocked
