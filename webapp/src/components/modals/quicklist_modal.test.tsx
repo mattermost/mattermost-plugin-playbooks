@@ -21,13 +21,23 @@ import QuicklistModal, {makeModalDefinition} from './quicklist_modal';
 
 // Mock the GenericModal to simplify testing
 jest.mock('src/components/widgets/generic_modal', () => {
-    return function MockGenericModal({children, isConfirmDisabled, ...props}: any) {
+    return function MockGenericModal({children, isConfirmDisabled, handleConfirm, handleCancel, ...props}: any) {
         return (
             <div
                 data-testid='mock-generic-modal'
                 data-props={JSON.stringify({...props, isConfirmDisabled})}
             >
                 {children}
+                {/* Expose handlers for testing */}
+                <button
+                    data-testid='mock-confirm-button'
+                    onClick={handleConfirm}
+                    disabled={isConfirmDisabled}
+                />
+                <button
+                    data-testid='mock-cancel-button'
+                    onClick={handleCancel}
+                />
             </div>
         );
     };
@@ -839,6 +849,88 @@ describe('QuicklistModal', () => {
             // Since GenericModal is mocked, verify initial state is correct
             expect(treeStr).toContain('Test Quicklist Title');
         });
+
+        it('displays progress bar during run creation', async () => {
+            // Create a promise that we can control to keep creation in progress
+            let resolveCreate: (value: any) => void;
+            const createPromise = new Promise((resolve) => {
+                resolveCreate = resolve;
+            });
+            mockCreatePlaybookRun.mockReturnValue(createPromise);
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            // Initially no progress bar
+            let treeStr = getTreeString(component!);
+            expect(treeStr).not.toContain('quicklist-progress');
+
+            // Click the confirm button to start creation
+            const tree = component!.toTree();
+            const confirmButton = findByTestId(tree, 'mock-confirm-button');
+
+            act(() => {
+                confirmButton.props.onClick();
+            });
+
+            // Now the progress bar should be visible
+            treeStr = getTreeString(component!);
+            expect(treeStr).toContain('quicklist-progress');
+            expect(treeStr).toContain('steps complete');
+
+            // Clean up: resolve the promise
+            await act(async () => {
+                resolveCreate!({id: 'run-id'});
+            });
+        });
+
+        it('updates progress percentage during run creation', async () => {
+            // Mock run creation to resolve immediately
+            mockCreatePlaybookRun.mockResolvedValue({id: 'new-run-id'} as any);
+
+            // Mock checklist operations to resolve with delays
+            let renameResolve: () => void;
+            const renamePromise = new Promise<void>((resolve) => {
+                renameResolve = resolve;
+            });
+            mockClientRenameChecklist.mockReturnValue(renamePromise);
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            // Click the confirm button to start creation
+            const tree = component!.toTree();
+            const confirmButton = findByTestId(tree, 'mock-confirm-button');
+
+            // Start creation
+            act(() => {
+                confirmButton.props.onClick();
+            });
+
+            // After createPlaybookRun resolves but before renameChecklist resolves,
+            // the progress should show some completion
+            await act(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            });
+
+            // Progress bar should be visible
+            const treeStr = getTreeString(component!);
+            expect(treeStr).toContain('quicklist-progress');
+
+            // Clean up: resolve remaining promises
+            await act(async () => {
+                renameResolve!();
+                mockClientAddChecklist.mockResolvedValue(undefined);
+                mockClientAddChecklistItem.mockResolvedValue(undefined);
+                await new Promise((resolve) => setTimeout(resolve, 10));
+            });
+        });
     });
 
     describe('skeleton loading', () => {
@@ -867,6 +959,7 @@ describe('QuicklistModal', () => {
                 error: null,
                 retry: jest.fn(),
             });
+            mockRefineQuicklist.mockReset();
         });
 
         it('does not show unsaved changes modal initially', () => {
@@ -883,6 +976,81 @@ describe('QuicklistModal', () => {
             const modalProps = JSON.parse(modal.props['data-props']);
 
             expect(modalProps.autoCloseOnCancelButton).toBe(false);
+        });
+
+        it('shows unsaved changes modal when cancelling after refinement', async () => {
+            const refinedResponse: QuicklistGenerateResponse = {
+                ...mockResponse,
+                title: 'Refined Title',
+            };
+            mockRefineQuicklist.mockResolvedValue(refinedResponse);
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(<QuicklistModal {...defaultProps}/>);
+            });
+
+            // Type feedback and submit to trigger refinement
+            let tree = component!.toTree();
+            const feedbackInput = findByTestId(tree, 'quicklist-feedback-input');
+
+            await act(async () => {
+                feedbackInput.props.onChange({target: {value: 'Add more tasks'}});
+            });
+
+            tree = component!.toTree();
+            const sendButton = findByTestId(tree, 'quicklist-feedback-send');
+
+            // Submit feedback and wait for refinement to complete
+            await act(async () => {
+                sendButton.props.onClick();
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            });
+
+            // Verify refinement completed (title changed)
+            let treeStr = getTreeString(component!);
+            expect(treeStr).toContain('Refined Title');
+
+            // Now click cancel - should show unsaved changes modal
+            tree = component!.toTree();
+            const cancelButton = findByTestId(tree, 'mock-cancel-button');
+
+            await act(async () => {
+                cancelButton.props.onClick();
+            });
+
+            // The unsaved changes modal should now be visible
+            treeStr = getTreeString(component!);
+            expect(treeStr).toContain('unsaved-changes-modal');
+        });
+
+        it('does not show unsaved changes modal when cancelling without refinement', async () => {
+            const mockOnHide = jest.fn();
+
+            let component: renderer.ReactTestRenderer;
+
+            await act(async () => {
+                component = renderWithIntl(
+                    <QuicklistModal
+                        {...defaultProps}
+                        onHide={mockOnHide}
+                    />
+                );
+            });
+
+            // Click cancel without any refinement
+            const tree = component!.toTree();
+            const cancelButton = findByTestId(tree, 'mock-cancel-button');
+
+            await act(async () => {
+                cancelButton.props.onClick();
+            });
+
+            // Should NOT show unsaved changes modal, should call onHide directly
+            const treeStr = getTreeString(component!);
+            expect(treeStr).not.toContain('unsaved-changes-modal');
+            expect(mockOnHide).toHaveBeenCalled();
         });
     });
 
