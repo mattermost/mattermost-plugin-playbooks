@@ -17,7 +17,12 @@ import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
 import PlaybookRunPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
 
-import {addToTimeline, showPostMenuModal, startPlaybookRun} from 'src/actions';
+import {
+    addToTimeline,
+    openQuicklistModal,
+    showPostMenuModal,
+    startPlaybookRun,
+} from 'src/actions';
 
 import {useAllowAddMessageToTimelineInCurrentTeam} from 'src/hooks';
 import {isProfessionalLicensedOrDevelopment} from 'src/license';
@@ -85,6 +90,32 @@ export function makeAttachToPlaybookRunAction(store: Store) {
             } else {
                 store.dispatch(showPostMenuModal() as any);
             }
+        },
+        filter: (postId: string) => {
+            return shouldShowPostMenuForPost(store, postId);
+        },
+    };
+}
+
+export const QuicklistPostMenuText = () => {
+    return (
+        <>
+            <PlaybookRunPostMenuIcon/>
+            <FormattedMessage defaultMessage='Generate checklist with AI'/>
+        </>
+    );
+};
+
+export function makeQuicklistPostAction(store: Store) {
+    return {
+        text: QuicklistPostMenuText,
+        action: (postId: string) => {
+            const state = store.getState() as GlobalState;
+            const post = getPost(state, postId);
+            if (!post) {
+                return;
+            }
+            store.dispatch(openQuicklistModal(postId, post.channel_id) as any);
         },
         filter: (postId: string) => {
             return shouldShowPostMenuForPost(store, postId);
