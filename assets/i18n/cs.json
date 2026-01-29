@@ -109,7 +109,7 @@
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "Dokončit běh"
+        "translation": "Dokončit"
     },
     {
         "id": "app.user.run.add_to_timeline.summary.placeholder",
@@ -122,9 +122,9 @@
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Je tu **{{.Count}} nesplněný úkol**. Opravdu chcete dokončit běh *{{.RunName}}* pro všechny účastníky?",
-            "few": "Je tu **{{.Count}} nesplněných úkolů**. Opravdu chcete dokončit běh *{{.RunName}}* pro všechny účastníky?",
-            "other": "Jsou tu **{{.Count}} nesplněné úkoly**. Opravdu chcete dokončit běh *{{.RunName}}* pro všechny účastníky?"
+            "one": "Existuje {{.Count}} nevyřízený úkol. Opravdu chcete dokončit *{{.RunName}} pro všechny účastníky?",
+            "few": "Existují **{{.Count}} nevyřízené úkoly**. Opravdu chcete dokončit *{{.RunName}}* pro všechny účastníky?",
+            "other": "Existuje **{{.Count}} nevyřízených úkoly**. Opravdu chcete dokončit *{{.RunName}}* pro všechny účastníky?"
         }
     },
     {
@@ -189,7 +189,7 @@
     },
     {
         "id": "app.user.run.confirm_finish.title",
-        "translation": "Potvrdit dokončení běhu"
+        "translation": "Potvrdit dokončení"
     },
     {
         "id": "app.user.run.update_status.change_since_last_update",
@@ -209,10 +209,14 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Aktualizovat stav"
+        "translation": "Příspěvek"
     },
     {
         "id": "app.user.run.update_status.title",
         "translation": "Aktualizace stavu"
+    },
+    {
+        "id": "playbooks.checklist.condition.reason.modified",
+        "translation": "zobrazeno, protože úkol byl upraven"
     }
 ]
