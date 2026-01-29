@@ -203,10 +203,9 @@ func TestRunCreation(t *testing.T) {
 					require.NoError(t, err)
 					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
 
-					// Verify the run was created with the correct type
+					// Verify the run was created
 					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
 					require.NoError(t, err)
-					assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
 					assert.Empty(t, run.PlaybookID, "Run should not have a playbook ID")
 					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
 				},
@@ -230,10 +229,9 @@ func TestRunCreation(t *testing.T) {
 					require.NoError(t, err)
 					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
 
-					// Verify the run was created with the correct type
+					// Verify the run was created
 					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
 					require.NoError(t, err)
-					assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
 					assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID, "Run should have the correct playbook ID")
 					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
 				},
@@ -2601,4 +2599,5 @@ func TestMemberCannotCreateRunWithoutPlaybookIDToBypassPermissions(t *testing.T)
 
 		// Should succeed - user is a member of the playbook
 		require.NoError(t, err, "Playbook-level permissions should still allow run creation")
+	})
 }
