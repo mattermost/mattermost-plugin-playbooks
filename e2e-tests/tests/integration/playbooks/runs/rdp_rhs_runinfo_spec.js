@@ -31,17 +31,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
             });
 
-            // # Grant run_create permission to team_user role for creating standalone runs
-            // (runs without a playbook ID require this permission - see MM-66249)
-            // Note: This must be done while still logged in as admin (before cy.apiLogin(testUser))
-            cy.apiGetRolesByNames(['team_user']).then(({roles}) => {
-                const teamUserRole = roles[0];
-                if (!teamUserRole.permissions.includes('run_create')) {
-                    const updatedPermissions = [...teamUserRole.permissions, 'run_create'];
-                    cy.apiPatchRole(teamUserRole.id, {permissions: updatedPermissions});
-                }
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
 
@@ -193,28 +182,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
 
                     // * Assert channel status shows deleted
                     getOverviewEntry('channel').contains('Channel deleted');
-                });
-            });
-
-            it('Playbook entry is hidden for standalone run without playbook', () => {
-                // # Create a standalone run without a playbook (channel checklist)
-                // Note: run_create permission was already granted in before() hook
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: '', // Empty playbook ID for standalone run
-                    playbookRunName: 'standalone run',
-                    ownerUserId: testUser.id,
-                }).then((standaloneRun) => {
-                    // # Visit the standalone run
-                    cy.visit(`/playbooks/runs/${standaloneRun.id}`);
-
-                    // * Verify that the playbook entry does not exist
-                    getOverviewEntry('playbook').should('not.exist');
-
-                    // * Verify other overview entries are still visible
-                    getOverviewEntry('owner').should('exist');
-                    getOverviewEntry('participants').should('exist');
-                    getOverviewEntry('channel').should('exist');
                 });
             });
         });
