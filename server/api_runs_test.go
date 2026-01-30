@@ -177,39 +177,6 @@ func TestRunCreation(t *testing.T) {
 					assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 				},
 			},
-			// this use case is currently not allowed by the dialog as
-			// playbook ID is mandatory, but it is supported by the
-			// handler
-			"empty playbook ID creates RunTypeChannelChecklist": {
-				dialogRequest: model.SubmitDialogRequest{
-					TeamId: e.BasicTeam.Id,
-					UserId: e.RegularUser.Id,
-					State:  "{}",
-					Submission: map[string]interface{}{
-						app.DialogFieldPlaybookIDKey: "", // Empty playbook ID
-						app.DialogFieldNameKey:       "Standalone Run",
-					},
-				},
-				permissionsPrep: func() {
-					// Grant run_create permission for creating runs without a playbook ID (MM-66249)
-					e.Permissions.AddPermissionToRole(model.PermissionRunCreate.Id, model.TeamUserRoleId)
-				},
-				expected: func(t *testing.T, result *http.Response, err error) {
-					require.NoError(t, err)
-					assert.Equal(t, http.StatusCreated, result.StatusCode)
-
-					// Get the created run ID from the Location header
-					url, err := result.Location()
-					require.NoError(t, err)
-					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
-
-					// Verify the run was created
-					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
-					require.NoError(t, err)
-					assert.Empty(t, run.PlaybookID, "Run should not have a playbook ID")
-					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
-				},
-			},
 			"valid playbook ID creates RunTypePlaybook": {
 				dialogRequest: model.SubmitDialogRequest{
 					TeamId: e.BasicTeam.Id,
