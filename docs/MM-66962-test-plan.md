@@ -93,6 +93,18 @@ This document outlines test cases for verifying DM/GM channel checklist support.
 - Checklist appears in channel RHS
 - No errors in server logs
 
+#### TC1b: Move Checklist DM to DM
+
+**Steps:**
+1. From TC1 checklist, open context menu
+2. Select "Move to a different channel"
+3. Select a different DM channel
+4. Verify checklist moves successfully
+
+**Expected Results:**
+- Checklist moves to new DM channel
+- Checklist no longer appears in original DM
+
 ---
 
 ### TC2: Create Checklist in GM Channel
@@ -108,6 +120,46 @@ This document outlines test cases for verifying DM/GM channel checklist support.
 - Checklist created successfully
 - All GM members can see and interact with checklist
 - `team_id` is empty in database
+
+#### TC2b: Move Checklist GM to GM
+
+**Steps:**
+1. From TC2 checklist, open context menu
+2. Select "Move to a different channel"
+3. Select a different GM channel
+4. Verify checklist moves successfully
+
+**Expected Results:**
+- Checklist moves to new GM channel
+- Checklist no longer appears in original GM
+
+---
+
+### TC2c: Channel Type Move Matrix
+
+Test moving checklists between all channel type combinations.
+
+| From \ To | DM | GM | Private | Public |
+|-----------|----|----|---------|--------|
+| **DM**      | 🚧 | 🚧 | ❓ | ❓ |
+| **GM**      | 🚧 | 🚧 | ❓ | ❓ |
+| **Private** | 🚧 | 🚧 | N/A | N/A |
+| **Public**  | 🚧 | 🚧 | N/A | N/A |
+
+**Legend:** ✅ Works, 🚫 Blocked (by design), 🚧 Blocked (TODO), ❓ Untested, ❌ Error
+
+**Note:** Moving TO DM/GM is currently blocked because the channel selector doesn't support DM/GM channels (see Known Limitations #4).
+
+**Test each combination:**
+1. Create checklist in source channel type
+2. Attempt to move to target channel type
+3. Record result in matrix
+
+**Expected Results (once selector is fixed):**
+- DM/GM → DM/GM: Should work (same permission model)
+- DM/GM → Private/Public: Should be blocked (different permission model)
+- Private/Public → DM/GM: Should be blocked (different permission model)
+- Private/Public → Private/Public: Existing behavior (out of scope)
 
 ---
 
@@ -342,6 +394,13 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 1. **Sidebar visibility:** DM/GM checklists don't appear in team-scoped sidebar
 2. **Favorites display:** Favorites stored with empty teamID may not display in UI
 3. **Playbook templates:** Cannot create runs from playbooks in DM/GM (by design)
+4. **TODO: Move channel selector:** The "Move to a different channel" modal channel selector (`ChannelSelector`) doesn't list or support DMs/GMs—only public and private channels. Additionally, the current channel value shows "Unknown Channel" for DM/GM channels. Fix requires updating the redux selector to include DMs and GMs.
+5. **TODO: Broadcast channel selector:** In Run Actions modal, "Broadcast update to selected channels" shows no channels when searching/selecting for DM/GM runs. The `BroadcastChannelSelector` uses team-scoped channel fetching which returns empty for DM/GM runs (empty team_id). Fix requires updating to fetch channels differently when team_id is empty.
+6. **TODO: Task assignee in DM:** In DMs, if the other channel member is not a checklist participant, they don't appear in assignee options. For DM/GM checklists, all channel members should be assignable since they have channel access. The `AssignTo` component filters by `participantUserIds` but should include all channel members for DM/GM runs.
+7. **TODO: Add participants default options:** In Add Participants modal for DM/GM, channel members should appear as default options when input is focused (without requiring search). Currently `ProfileAutocomplete` has `defaultOptions={!props.isMultiMode}` which disables defaults for multi-select. For DM/GM, should show channel members immediately.
+8. **TODO: Channel link in backstage:** Cannot click on channel link from checklist in Playbooks backstage for DM/GM runs. Link is likely constructed using team context which doesn't exist for DM/GM channels. Need to use a different URL format for DM/GM channel navigation.
+9. **TODO: Update post reminders:** Not receiving update post reminders for DM/GM checklists. Need to investigate reminder scheduling/delivery for runs with empty team_id.
+10. **TODO: Bot message channel links:** Digest and other bot message links to channels don't support DM/GM channel links. URL structure is different for DM/GM (`/messages/@username` or `/messages/channelid`) vs team channels (`/team/channels/name`). Need to update link generation for DM/GM.
 
 ---
 
@@ -373,7 +432,10 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 ## Verification Checklist
 
 - [ ] TC1: Create checklist in DM
+- [ ] TC1b: Move checklist DM to DM
 - [ ] TC2: Create checklist in GM
+- [ ] TC2b: Move checklist GM to GM
+- [ ] TC2c: Channel type move matrix (all combinations)
 - [ ] TC3: Self-DM UI handling
 - [ ] TC4: Status updates work
 - [ ] TC5: Broadcast channels work
