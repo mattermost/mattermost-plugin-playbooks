@@ -34,6 +34,12 @@ const AssignTo = (props: AssignedToProps) => {
     const profiles = useProfilesForRun(props.teamId, props.channelId);
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
+    // For DM/GM runs (empty teamId), profiles are loaded async from channel membership.
+    // Use a key to force ProfileSelector to re-fetch when profiles become available.
+    // TODO: Consider adding a refreshTrigger prop to ProfileSelector for cleaner cache invalidation.
+    const isDMGM = !props.teamId && props.channelId;
+    const profilesKey = isDMGM ? `dmgm-${profiles.length}` : 'team';
+
     const resetAssignee = () => {
         props.onSelectedChange?.();
         setProfileSelectorToggle(!profileSelectorToggle);
@@ -42,6 +48,7 @@ const AssignTo = (props: AssignedToProps) => {
     if (props.inHoverMenu) {
         return (
             <ProfileSelector
+                key={profilesKey}
                 selectedUserId={props.assignee_id}
                 onlyPlaceholder={true}
                 placeholder={
@@ -80,6 +87,7 @@ const AssignTo = (props: AssignedToProps) => {
     let assignToButton = (
         <AssignToContainer>
             <StyledProfileSelector
+                key={profilesKey}
                 testId={'assignee-profile-selector'}
                 selectedUserId={props.assignee_id}
                 userGroups={{

@@ -396,8 +396,8 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 3. **Playbook templates:** Cannot create runs from playbooks in DM/GM (by design)
 4. **TODO: Move channel selector:** The "Move to a different channel" modal channel selector (`ChannelSelector`) doesn't list or support DMs/GMs—only public and private channels. Additionally, the current channel value shows "Unknown Channel" for DM/GM channels. Fix requires updating the redux selector to include DMs and GMs.
 5. **TODO: Broadcast channel selector:** In Run Actions modal, "Broadcast update to selected channels" shows no channels when searching/selecting for DM/GM runs. The `BroadcastChannelSelector` uses team-scoped channel fetching which returns empty for DM/GM runs (empty team_id). Fix requires updating to fetch channels differently when team_id is empty.
-6. **TODO: Task assignee in DM:** In DMs, if the other channel member is not a checklist participant, they don't appear in assignee options. For DM/GM checklists, all channel members should be assignable since they have channel access. The `AssignTo` component filters by `participantUserIds` but should include all channel members for DM/GM runs.
-7. **TODO: Add participants default options:** In Add Participants modal for DM/GM, channel members should appear as default options when input is focused (without requiring search). Currently `ProfileAutocomplete` has `defaultOptions={!props.isMultiMode}` which disables defaults for multi-select. For DM/GM, should show channel members immediately.
+6. **DONE: Task assignee in DM:** Fixed by adding `key` prop to `ProfileSelector` in `AssignTo` that forces re-fetch when channel profiles load. Now all channel members appear in assignee options for DM/GM.
+7. **DONE: Add participants default options:** Added `showDefaultOptions` prop to `ProfileAutocomplete`. For DM/GM, channel members now appear immediately when input is focused.
 8. **TODO: Channel link in backstage:** Cannot click on channel link from checklist in Playbooks backstage for DM/GM runs. Link is likely constructed using team context which doesn't exist for DM/GM channels. Need to use a different URL format for DM/GM channel navigation.
 9. **TODO: Update post reminders:** Not receiving update post reminders for DM/GM checklists. Need to investigate reminder scheduling/delivery for runs with empty team_id.
 10. **TODO: Bot message channel links:** Digest and other bot message links to channels don't support DM/GM channel links. URL structure is different for DM/GM (`/messages/@username` or `/messages/channelid`) vs team channels (`/team/channels/name`). Need to update link generation for DM/GM.
@@ -420,12 +420,12 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 | `webapp/src/components/backstage/.../rhs_info_overview.tsx` | Self-DM UI handling |
 | `webapp/src/components/modals/update_run_status_modal.tsx` | Remove TeamID requirement |
 | `webapp/src/hooks/general.ts` | Profile fetching for DM/GM |
-| `webapp/src/components/checklist_item/assign_to.tsx` | Profile source for DM/GM |
+| `webapp/src/components/checklist_item/assign_to.tsx` | Profile source for DM/GM, key prop for refresh |
 | `webapp/src/index.tsx` | Enable channel header button for DM/GM |
 | `webapp/src/components/rhs/rhs_run_list.tsx` | Remove DM/GM blocking message |
 | `webapp/src/selectors.ts` | Check DM/GM runs (empty team_id) in selectors |
-| `webapp/src/components/backstage/.../add_participant_modal.tsx` | Restrict to channel members for DM/GM |
-| `webapp/src/components/backstage/profile_autocomplete.tsx` | Accept Promise-based fetch functions |
+| `webapp/src/components/backstage/.../add_participant_modal.tsx` | Restrict to channel members for DM/GM, show defaults |
+| `webapp/src/components/backstage/profile_autocomplete.tsx` | Accept Promise-based fetch, `showDefaultOptions` prop |
 
 ---
 

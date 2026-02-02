@@ -159,6 +159,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 userIds={playbookRun.participant_ids}
                 isDisabled={false}
                 isMultiMode={true}
+                showDefaultOptions={isDMGM}
                 customSelectStyles={selectStyles}
                 setValues={setProfiles}
                 placeholder={isDMGM ?
