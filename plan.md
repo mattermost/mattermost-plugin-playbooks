@@ -381,33 +381,70 @@ This plan outlines the phases to implement the Quicklist feature as described in
 - `UnsavedChangesModal` shows when user tries to cancel after refinement. Uses `hasUnsavedChanges` state set after successful refinement.
 - Modal's `autoCloseOnCancelButton` set to `false` to intercept cancel and show confirmation when needed.
 
-### 4.3 Feature Flag & Permissions
+### 4.3 Post Menu Action
 
 **Tasks:**
-- [ ] Check `QuicklistEnabled` in command handler
-- [ ] Check `QuicklistEnabled` in API endpoints
-- [ ] Return appropriate error when feature disabled
-- [ ] Add permission check for creating runs (if applicable)
+- [x] Add `QuicklistPostMenuText` component to `/webapp/src/components/post_menu.tsx`
+- [x] Add `makeQuicklistPostAction` function to `/webapp/src/components/post_menu.tsx`
+- [x] Register post menu action in `/webapp/src/index.tsx`
+- [x] Import `openQuicklistModal` action in `post_menu.tsx`
 
 **Testing:**
-- [ ] Unit test: Command returns error when feature disabled
-- [ ] Unit test: API returns 403 when feature disabled
+- [x] Unit test: Post menu action calls `openQuicklistModal` with correct postId and channelId
+- [x] Unit test: Post menu action is filtered out for system messages
+- [ ] Manual test: Menu item appears in post dropdown menu
+- [ ] Manual test: Clicking menu item opens quicklist modal
+
+**Implementation Notes:**
+- Uses existing `shouldShowPostMenuForPost` filter (shows on all non-system posts)
+- Uses existing `PlaybookRunPostMenuIcon` for consistency with other playbook actions
+- Label: "Generate checklist with AI"
+- Opens the same `QuicklistModal` used by the slash command
+
+### 4.4 Feature Flag & Permissions
+
+**Tasks:**
+- [x] Check `QuicklistEnabled` in command handler
+- [x] Check `QuicklistEnabled` in API endpoints
+- [x] Return appropriate error when feature disabled
+- [x] Add permission check for creating runs (if applicable)
+
+**Testing:**
+- [x] Unit test: Command returns error when feature disabled
+- [x] Unit test: API returns 403 when feature disabled
 - [ ] Integration test: Feature toggle works end-to-end
 
-### 4.4 Edge Cases
+**Implementation Notes:**
+- Command handler checks feature flag at `server/command/quicklist.go:17-21`. Returns user-friendly message when disabled.
+- API endpoints (`generate` and `refine`) check feature flag at `server/api/quicklist.go:121-124` and `:245-248`. Return HTTP 403 when disabled.
+- Permission check for creating runs is NOT NEEDED as a separate implementation. The existing run creation API (`POST /api/v0/runs` in `playbook_runs.go`) already validates:
+  - `PermissionRunCreate` on the team for channel checklist runs
+  - `PermissionCreatePost` for posting in the target channel
+  - Quicklist endpoints already validate `PermissionReadChannel` for the source thread
+- Unit tests exist in `server/command/quicklist_test.go` (`TestActionQuicklist_FeatureDisabled`) and `server/api/quicklist_test.go` (`TestQuicklistGenerate_FeatureDisabled`, `TestQuicklistRefine_FeatureDisabled`).
+
+### 4.5 Edge Cases
 
 **Tasks:**
-- [ ] Handle empty thread (single post with no actionable items)
-- [ ] Handle AI returning empty checklist
-- [ ] Handle AI returning malformed JSON
-- [ ] Handle very long section/item titles (truncate for display)
-- [ ] Handle special characters in content
+- [x] Handle empty thread (single post with no actionable items)
+- [x] Handle AI returning empty checklist
+- [x] Handle AI returning malformed JSON
+- [x] Handle very long section/item titles (truncate for display)
+- [x] Handle special characters in content
 
 **Testing:**
-- [ ] Unit test: Empty checklist shows helpful message
-- [ ] Unit test: Malformed AI response shows retry option
-- [ ] Unit test: Long titles are truncated with ellipsis
-- [ ] Unit test: Special characters don't break rendering
+- [x] Unit test: Empty checklist shows helpful message
+- [x] Unit test: Malformed AI response shows retry option
+- [x] Unit test: Long titles are truncated with ellipsis
+- [x] Unit test: Special characters don't break rendering
+
+**Implementation Notes:**
+- **Server-side validation**: Added `Validate()` method to `GeneratedChecklist` in `ai_service.go`. Filters out items with empty titles, sections with no valid items, and provides default titles when missing.
+- **Sentinel errors**: Added `ErrEmptyChecklist` and `ErrMalformedResponse` for specific error handling. `ErrEmptyChecklist` is returned when AI finds no actionable items.
+- **CSS truncation**: Section titles use single-line ellipsis (`text-overflow: ellipsis`). Item titles use 2-line clamp, descriptions use 3-line clamp via `-webkit-line-clamp`.
+- **Long strings**: Uses `overflow-wrap: anywhere` to break long unbroken strings (URLs, code) at any point.
+- **Empty sections**: `QuicklistSection` component returns `null` for sections with empty/undefined items array.
+- **Special characters**: React handles HTML escaping automatically. No additional sanitization needed at display layer.
 
 **Phase 4 Deliverable:** Production-ready feature with robust error handling.
 
@@ -418,10 +455,15 @@ This plan outlines the phases to implement the Quicklist feature as described in
 ### 5.1 Documentation
 
 **Tasks:**
-- [ ] Add admin documentation for configuration
-- [ ] Add user documentation for `/playbook quicklist` command
-- [ ] Document required mattermost-plugin-agents setup
-- [ ] Add troubleshooting guide
+- [x] Add admin documentation for configuration
+- [x] Add user documentation for `/playbook quicklist` command
+- [x] Document required mattermost-plugin-agents setup
+- [x] Add troubleshooting guide
+
+**Implementation Notes:**
+- Documentation created at `docs/quicklists.md` with combined user and admin sections
+- README.md updated with Features section linking to the documentation
+- Agents plugin setup documented as a prerequisite with reference to the plugin's own documentation
 
 ### 5.2 Release Checklist
 
@@ -443,8 +485,8 @@ This plan outlines the phases to implement the Quicklist feature as described in
 | Phase 1 | ~15 | 1 | 0 | 2 |
 | Phase 2 | ~12 | 2 | 1 | 0 |
 | Phase 3 | ~8 | 2 | 1 | 1 |
-| Phase 4 | ~8 | 1 | 0 | 2 |
-| **Total** | **~43** | **6** | **2** | **5** |
+| Phase 4 | ~10 | 1 | 0 | 4 |
+| **Total** | **~45** | **6** | **2** | **7** |
 
 ---
 
