@@ -488,8 +488,7 @@ func TestAIService_GenerateChecklist(t *testing.T) {
 		})
 
 		assert.Nil(t, result)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to parse AI response")
+		assert.ErrorIs(t, err, ErrMalformedResponse)
 	})
 
 	t.Run("successfully generates checklist", func(t *testing.T) {
@@ -712,8 +711,7 @@ func TestAIService_RefineChecklist(t *testing.T) {
 		})
 
 		assert.Nil(t, result)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to parse AI response")
+		assert.ErrorIs(t, err, ErrMalformedResponse)
 	})
 
 	t.Run("successfully refines checklist", func(t *testing.T) {

@@ -246,7 +246,7 @@ func (s *AIService) GenerateChecklist(req QuicklistGenerateRequest) (*GeneratedC
 	var checklist GeneratedChecklist
 	cleanedResponse := stripMarkdownCodeFences(response)
 	if err := json.Unmarshal([]byte(cleanedResponse), &checklist); err != nil {
-		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+		return nil, ErrMalformedResponse
 	}
 
 	// Validate and sanitize the generated checklist
@@ -322,7 +322,7 @@ func (s *AIService) RefineChecklist(req QuicklistRefineRequest) (*GeneratedCheck
 	var checklist GeneratedChecklist
 	cleanedResponse := stripMarkdownCodeFences(response)
 	if err := json.Unmarshal([]byte(cleanedResponse), &checklist); err != nil {
-		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+		return nil, ErrMalformedResponse
 	}
 
 	// Validate and sanitize the generated checklist
