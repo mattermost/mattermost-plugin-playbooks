@@ -142,4 +142,75 @@ describe('QuicklistSection', () => {
         expect(treeStr).toContain('Item 2');
         expect(treeStr).toContain('Item 3');
     });
+
+    it('returns null for sections with empty items array', () => {
+        const emptyChecklist: Checklist = {
+            id: 'empty-checklist',
+            title: 'Empty Section',
+            items: [],
+        };
+        const component = renderWithIntl(
+            <QuicklistSection checklist={emptyChecklist}/>
+        );
+        const tree = component.toJSON();
+
+        expect(tree).toBeNull();
+    });
+
+    it('returns null for sections with undefined items', () => {
+        const undefinedItemsChecklist: Checklist = {
+            id: 'undefined-items',
+            title: 'Section with undefined items',
+            items: undefined as unknown as Checklist['items'],
+        };
+        const component = renderWithIntl(
+            <QuicklistSection checklist={undefinedItemsChecklist}/>
+        );
+        const tree = component.toJSON();
+
+        expect(tree).toBeNull();
+    });
+
+    it('renders special characters in section title correctly', () => {
+        const checklist: Checklist = {
+            id: 'special-chars',
+            title: 'Test <script>alert("xss")</script> & "quotes"',
+            items: [{
+                ...emptyChecklistItem(),
+                id: 'item-1',
+                title: 'Task 1',
+            }],
+        };
+        const component = renderWithIntl(
+            <QuicklistSection checklist={checklist}/>
+        );
+        const tree = component.toJSON();
+        const treeStr = JSON.stringify(tree);
+
+        // Special characters should be rendered (React escapes them automatically)
+        // Note: JSON.stringify escapes quotes, so we check for escaped version
+        expect(treeStr).toContain('Test <script>alert');
+        expect(treeStr).toContain('& \\"quotes\\"');
+    });
+
+    it('renders long section titles without breaking', () => {
+        const longTitle = 'A'.repeat(200);
+        const checklist: Checklist = {
+            id: 'long-title',
+            title: longTitle,
+            items: [{
+                ...emptyChecklistItem(),
+                id: 'item-1',
+                title: 'Task 1',
+            }],
+        };
+        const component = renderWithIntl(
+            <QuicklistSection checklist={checklist}/>
+        );
+        const tree = component.toJSON();
+
+        expect(tree).toBeTruthy();
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain(longTitle);
+    });
 });

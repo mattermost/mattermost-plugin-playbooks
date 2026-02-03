@@ -19,10 +19,15 @@ interface Props {
  * Collapsible section component for displaying a group of quicklist items.
  * Each section corresponds to one checklist/section from the AI-generated result.
  */
-const QuicklistSection = ({checklist, defaultCollapsed = false}: Props): React.ReactElement => {
+const QuicklistSection = ({checklist, defaultCollapsed = false}: Props): React.ReactElement | null => {
     const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
     const toggleCollapsed = () => setCollapsed(!collapsed);
+
+    // Handle edge case: sections with no items should not render
+    if (!checklist.items || checklist.items.length === 0) {
+        return null;
+    }
 
     const itemCount = checklist.items.length;
 
@@ -95,6 +100,10 @@ const SectionTitle = styled.div`
     line-height: 20px;
     color: var(--center-channel-color);
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
 const ItemCount = styled.div`

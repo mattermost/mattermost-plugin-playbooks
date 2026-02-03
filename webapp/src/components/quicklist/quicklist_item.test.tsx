@@ -139,4 +139,84 @@ describe('QuicklistItem', () => {
         expect(treeStr).toContain('Mar');
         expect(treeStr).toContain('20');
     });
+
+    it('renders special characters in title correctly', () => {
+        const item = createItem({
+            title: 'Test <script>alert("xss")</script> & "quotes"',
+        });
+        const component = renderWithIntl(
+            <QuicklistItem item={item}/>
+        );
+        const tree = component.toJSON();
+        const treeStr = JSON.stringify(tree);
+
+        // React automatically escapes special characters, verify they are present
+        // Note: JSON.stringify escapes quotes, so we check for escaped version
+        expect(treeStr).toContain('Test <script>alert');
+        expect(treeStr).toContain('& \\"quotes\\"');
+    });
+
+    it('renders special characters in description correctly', () => {
+        const item = createItem({
+            title: 'Test Task',
+            description: 'Description with <html> tags & special "chars"',
+        });
+        const component = renderWithIntl(
+            <QuicklistItem item={item}/>
+        );
+        const tree = component.toJSON();
+        const treeStr = JSON.stringify(tree);
+
+        // Note: JSON.stringify escapes quotes, so we check for escaped version
+        expect(treeStr).toContain('Description with <html> tags');
+        expect(treeStr).toContain('& special \\"chars\\"');
+    });
+
+    it('renders long titles without breaking', () => {
+        const longTitle = 'A'.repeat(500);
+        const item = createItem({
+            title: longTitle,
+        });
+        const component = renderWithIntl(
+            <QuicklistItem item={item}/>
+        );
+        const tree = component.toJSON();
+
+        expect(tree).toBeTruthy();
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain(longTitle);
+    });
+
+    it('renders long descriptions without breaking', () => {
+        const longDescription = 'B'.repeat(1000);
+        const item = createItem({
+            title: 'Test Task',
+            description: longDescription,
+        });
+        const component = renderWithIntl(
+            <QuicklistItem item={item}/>
+        );
+        const tree = component.toJSON();
+
+        expect(tree).toBeTruthy();
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain(longDescription);
+    });
+
+    it('renders unbroken long strings (no spaces) without breaking', () => {
+        // Simulate a very long URL or code snippet with no spaces
+        const unbrokenString = 'https://example.com/' + 'a'.repeat(300) + '/path/to/resource';
+        const item = createItem({
+            title: 'Task with long URL',
+            description: unbrokenString,
+        });
+        const component = renderWithIntl(
+            <QuicklistItem item={item}/>
+        );
+        const tree = component.toJSON();
+
+        expect(tree).toBeTruthy();
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain(unbrokenString);
+    });
 });

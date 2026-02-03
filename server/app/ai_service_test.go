@@ -234,6 +234,163 @@ func TestGeneratedChecklist_ToChecklists(t *testing.T) {
 	})
 }
 
+func TestGeneratedChecklist_Validate(t *testing.T) {
+	t.Run("returns ErrEmptyChecklist for nil sections", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title:    "Test",
+			Sections: nil,
+		}
+
+		err := g.Validate()
+
+		assert.ErrorIs(t, err, ErrEmptyChecklist)
+	})
+
+	t.Run("returns ErrEmptyChecklist for empty sections array", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title:    "Test",
+			Sections: []GeneratedSection{},
+		}
+
+		err := g.Validate()
+
+		assert.ErrorIs(t, err, ErrEmptyChecklist)
+	})
+
+	t.Run("returns ErrEmptyChecklist when all items have empty titles", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title: "Test",
+			Sections: []GeneratedSection{
+				{
+					Title: "Section",
+					Items: []GeneratedItem{
+						{Title: "", Description: "Has desc but no title"},
+						{Title: "   ", Description: "Whitespace only title"},
+					},
+				},
+			},
+		}
+
+		err := g.Validate()
+
+		assert.ErrorIs(t, err, ErrEmptyChecklist)
+	})
+
+	t.Run("filters out items with empty titles", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title: "Test",
+			Sections: []GeneratedSection{
+				{
+					Title: "Section",
+					Items: []GeneratedItem{
+						{Title: "Valid Task", Description: "desc"},
+						{Title: "", Description: "Should be removed"},
+						{Title: "Another Valid", Description: ""},
+					},
+				},
+			},
+		}
+
+		err := g.Validate()
+
+		require.NoError(t, err)
+		require.Len(t, g.Sections, 1)
+		require.Len(t, g.Sections[0].Items, 2)
+		assert.Equal(t, "Valid Task", g.Sections[0].Items[0].Title)
+		assert.Equal(t, "Another Valid", g.Sections[0].Items[1].Title)
+	})
+
+	t.Run("filters out sections with no valid items", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title: "Test",
+			Sections: []GeneratedSection{
+				{Title: "Valid Section", Items: []GeneratedItem{{Title: "Task 1"}}},
+				{Title: "Empty Section", Items: []GeneratedItem{}},
+				{Title: "Invalid Items Only", Items: []GeneratedItem{{Title: ""}, {Title: "  "}}},
+			},
+		}
+
+		err := g.Validate()
+
+		require.NoError(t, err)
+		require.Len(t, g.Sections, 1)
+		assert.Equal(t, "Valid Section", g.Sections[0].Title)
+	})
+
+	t.Run("provides default title when missing", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title: "",
+			Sections: []GeneratedSection{
+				{Title: "Section", Items: []GeneratedItem{{Title: "Task"}}},
+			},
+		}
+
+		err := g.Validate()
+
+		require.NoError(t, err)
+		assert.Equal(t, "Checklist from Thread", g.Title)
+	})
+
+	t.Run("provides default section title when missing", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title: "Test",
+			Sections: []GeneratedSection{
+				{Title: "", Items: []GeneratedItem{{Title: "Task"}}},
+			},
+		}
+
+		err := g.Validate()
+
+		require.NoError(t, err)
+		assert.Equal(t, "Tasks", g.Sections[0].Title)
+	})
+
+	t.Run("preserves valid checklist unchanged", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title: "My Checklist",
+			Sections: []GeneratedSection{
+				{
+					Title: "Section 1",
+					Items: []GeneratedItem{
+						{Title: "Task 1", Description: "Desc 1", DueDate: "2024-01-15"},
+						{Title: "Task 2", Description: "", DueDate: ""},
+					},
+				},
+			},
+		}
+
+		err := g.Validate()
+
+		require.NoError(t, err)
+		assert.Equal(t, "My Checklist", g.Title)
+		require.Len(t, g.Sections, 1)
+		assert.Equal(t, "Section 1", g.Sections[0].Title)
+		require.Len(t, g.Sections[0].Items, 2)
+	})
+
+	t.Run("handles special characters in titles", func(t *testing.T) {
+		g := &GeneratedChecklist{
+			Title: "Test <script>alert('xss')</script>",
+			Sections: []GeneratedSection{
+				{
+					Title: "Section & \"quotes\"",
+					Items: []GeneratedItem{
+						{Title: "Task with <html> tags", Description: "Desc & more"},
+					},
+				},
+			},
+		}
+
+		err := g.Validate()
+
+		require.NoError(t, err)
+		// Special characters should be preserved (sanitization happens at display layer)
+		assert.Equal(t, "Test <script>alert('xss')</script>", g.Title)
+		assert.Equal(t, "Section & \"quotes\"", g.Sections[0].Title)
+		assert.Equal(t, "Task with <html> tags", g.Sections[0].Items[0].Title)
+	})
+}
+
 func TestAIService_IsAvailable(t *testing.T) {
 	t.Run("returns nil when plugin is available", func(t *testing.T) {
 		mockClient := &mockBridgeClient{
@@ -377,7 +534,7 @@ func TestAIService_GenerateChecklist(t *testing.T) {
 	t.Run("uses default prompts when not configured", func(t *testing.T) {
 		mockClient := &mockBridgeClient{
 			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
-				return `{"title": "Test", "sections": []}`, nil
+				return `{"title": "Test", "sections": [{"title": "Tasks", "items": [{"title": "Task 1"}]}]}`, nil
 			},
 		}
 		mockCfg := &mockConfigService{
@@ -408,7 +565,7 @@ func TestAIService_GenerateChecklist(t *testing.T) {
 	t.Run("uses custom prompts when configured", func(t *testing.T) {
 		mockClient := &mockBridgeClient{
 			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
-				return `{"title": "Test", "sections": []}`, nil
+				return `{"title": "Test", "sections": [{"title": "Tasks", "items": [{"title": "Task 1"}]}]}`, nil
 			},
 		}
 		mockCfg := &mockConfigService{
@@ -437,7 +594,7 @@ func TestAIService_GenerateChecklist(t *testing.T) {
 	t.Run("passes correct agent ID and request parameters", func(t *testing.T) {
 		mockClient := &mockBridgeClient{
 			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
-				return `{"title": "Test", "sections": []}`, nil
+				return `{"title": "Test", "sections": [{"title": "Tasks", "items": [{"title": "Task 1"}]}]}`, nil
 			},
 		}
 		mockCfg := &mockConfigService{
@@ -458,6 +615,29 @@ func TestAIService_GenerateChecklist(t *testing.T) {
 		assert.Equal(t, "my-agent-bot", mockClient.lastCompletionAgent)
 		assert.Equal(t, "ch123", mockClient.lastCompletionReq.ChannelID)
 		assert.Equal(t, "usr456", mockClient.lastCompletionReq.UserID)
+	})
+
+	t.Run("returns ErrEmptyChecklist when AI returns no actionable items", func(t *testing.T) {
+		mockClient := &mockBridgeClient{
+			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
+				return `{"title": "Test", "sections": []}`, nil
+			},
+		}
+		mockCfg := &mockConfigService{
+			config: &config.Configuration{
+				QuicklistAgentBotID: "bot123",
+			},
+		}
+		service := NewAIService(mockClient, mockCfg)
+
+		result, err := service.GenerateChecklist(QuicklistGenerateRequest{
+			ThreadContent: "no actionable content",
+			ChannelID:     "channel123",
+			UserID:        "user123",
+		})
+
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, ErrEmptyChecklist)
 	})
 }
 
@@ -584,7 +764,7 @@ func TestAIService_RefineChecklist(t *testing.T) {
 	t.Run("includes current checklist state in AI request", func(t *testing.T) {
 		mockClient := &mockBridgeClient{
 			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
-				return `{"title": "Test", "sections": []}`, nil
+				return `{"title": "Test", "sections": [{"title": "Tasks", "items": [{"title": "Task 1"}]}]}`, nil
 			},
 		}
 		mockCfg := &mockConfigService{
@@ -626,7 +806,7 @@ func TestAIService_RefineChecklist(t *testing.T) {
 	t.Run("passes correct agent ID and channel/user IDs", func(t *testing.T) {
 		mockClient := &mockBridgeClient{
 			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
-				return `{"title": "Test", "sections": []}`, nil
+				return `{"title": "Test", "sections": [{"title": "Tasks", "items": [{"title": "Task 1"}]}]}`, nil
 			},
 		}
 		mockCfg := &mockConfigService{
@@ -649,6 +829,31 @@ func TestAIService_RefineChecklist(t *testing.T) {
 		assert.Equal(t, "refine-agent-bot", mockClient.lastCompletionAgent)
 		assert.Equal(t, "channel-xyz", mockClient.lastCompletionReq.ChannelID)
 		assert.Equal(t, "user-abc", mockClient.lastCompletionReq.UserID)
+	})
+
+	t.Run("returns ErrEmptyChecklist when AI refine returns no actionable items", func(t *testing.T) {
+		mockClient := &mockBridgeClient{
+			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
+				return `{"title": "Test", "sections": []}`, nil
+			},
+		}
+		mockCfg := &mockConfigService{
+			config: &config.Configuration{
+				QuicklistAgentBotID: "bot123",
+			},
+		}
+		service := NewAIService(mockClient, mockCfg)
+
+		result, err := service.RefineChecklist(QuicklistRefineRequest{
+			ThreadContent:     "content",
+			ChannelID:         "channel123",
+			UserID:            "user123",
+			CurrentChecklists: []Checklist{{ID: "cl1", Title: "Tasks"}},
+			Feedback:          "remove everything",
+		})
+
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, ErrEmptyChecklist)
 	})
 }
 

@@ -97,7 +97,11 @@ const ItemTitle = styled.div`
     font-weight: 600;
     line-height: 20px;
     color: var(--center-channel-color);
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 `;
 
 const ItemDescription = styled.div`
@@ -106,7 +110,11 @@ const ItemDescription = styled.div`
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     margin-top: 4px;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 `;
 
 const DueDateContainer = styled.div`

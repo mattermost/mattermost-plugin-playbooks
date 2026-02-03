@@ -115,6 +115,59 @@ func (g *GeneratedChecklist) ToChecklists() []Checklist {
 	return checklists
 }
 
+// ErrEmptyChecklist indicates the AI returned no actionable items.
+var ErrEmptyChecklist = fmt.Errorf("no action items could be identified in the thread")
+
+// ErrMalformedResponse indicates the AI returned invalid or incomplete data.
+var ErrMalformedResponse = fmt.Errorf("AI returned malformed response")
+
+// Validate checks the generated checklist for completeness and correctness.
+// Returns ErrEmptyChecklist if no actionable items were found.
+// Returns ErrMalformedResponse if the response is structurally invalid.
+func (g *GeneratedChecklist) Validate() error {
+	// Check for completely empty response
+	if g == nil {
+		return ErrMalformedResponse
+	}
+
+	// Filter out sections with no valid items
+	validSections := make([]GeneratedSection, 0, len(g.Sections))
+	for _, section := range g.Sections {
+		// Filter items with empty titles
+		validItems := make([]GeneratedItem, 0, len(section.Items))
+		for _, item := range section.Items {
+			if strings.TrimSpace(item.Title) != "" {
+				validItems = append(validItems, item)
+			}
+		}
+
+		// Only include section if it has valid items
+		if len(validItems) > 0 {
+			section.Items = validItems
+			// Use section title or provide default if missing
+			if strings.TrimSpace(section.Title) == "" {
+				section.Title = "Tasks"
+			}
+			validSections = append(validSections, section)
+		}
+	}
+
+	// Update sections to only valid ones
+	g.Sections = validSections
+
+	// If no valid sections remain, the checklist is empty
+	if len(g.Sections) == 0 {
+		return ErrEmptyChecklist
+	}
+
+	// Provide default title if missing
+	if strings.TrimSpace(g.Title) == "" {
+		g.Title = "Checklist from Thread"
+	}
+
+	return nil
+}
+
 // parseDueDate converts an ISO 8601 date string (YYYY-MM-DD) to Unix timestamp in milliseconds.
 // Returns 0 if dateStr is empty or invalid.
 func parseDueDate(dateStr string) int64 {
@@ -196,6 +249,11 @@ func (s *AIService) GenerateChecklist(req QuicklistGenerateRequest) (*GeneratedC
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}
 
+	// Validate and sanitize the generated checklist
+	if err := checklist.Validate(); err != nil {
+		return nil, err
+	}
+
 	return &checklist, nil
 }
 
@@ -265,6 +323,11 @@ func (s *AIService) RefineChecklist(req QuicklistRefineRequest) (*GeneratedCheck
 	cleanedResponse := stripMarkdownCodeFences(response)
 	if err := json.Unmarshal([]byte(cleanedResponse), &checklist); err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+	}
+
+	// Validate and sanitize the generated checklist
+	if err := checklist.Validate(); err != nil {
+		return nil, err
 	}
 
 	return &checklist, nil
