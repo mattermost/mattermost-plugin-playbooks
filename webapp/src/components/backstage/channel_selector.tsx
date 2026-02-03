@@ -7,12 +7,24 @@ import {useDispatch, useSelector} from 'react-redux';
 import {createSelector} from 'mattermost-redux/selectors/create_selector';
 import styled from 'styled-components';
 
-import {getAllChannels, getChannelsInTeam, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
+import {
+    getAllChannels,
+    getChannelsInTeam,
+    getMyChannelMemberships,
+    getMyChannels,
+} from 'mattermost-redux/selectors/entities/channels';
 import {IDMappedObjects, RelationOneToManyUnique, RelationOneToOne} from '@mattermost/types/utilities';
-import {GlobeIcon, LockIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountMultipleOutlineIcon,
+    AccountOutlineIcon,
+    GlobeIcon,
+    LockIcon,
+} from '@mattermost/compass-icons/components';
 import General from 'mattermost-redux/constants/general';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {Channel, ChannelMembership} from '@mattermost/types/channels';
 import {Team} from '@mattermost/types/teams';
+import {GlobalState} from '@mattermost/types/store';
 import {fetchChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
@@ -70,6 +82,13 @@ const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
     },
 );
 
+// Selector for DM/GM channels (used when teamId is empty for DM/GM runs)
+const getMyDMAndGMChannels = (state: GlobalState): Channel[] => {
+    return getMyChannels(state).filter((channel) =>
+        (channel.type === General.DM_CHANNEL || channel.type === General.GM_CHANNEL) && channel.delete_at === 0
+    );
+};
+
 const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
     if (!channelIDs || !channels) {
         return [];
@@ -95,14 +114,22 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
 const ChannelSelector = (props: Props & {className?: string}) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(props.teamId));
-    const allPublicChannels = useSelector(getAllPublicChannelsInTeam(props.teamId));
+    const currentTeamId = useSelector(getCurrentTeamId);
+
+    // Get team channels - use run's team if available, otherwise current team
+    const effectiveTeamId = props.teamId || currentTeamId;
+    const teamChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(effectiveTeamId));
+    const dmgmChannels = useSelector(getMyDMAndGMChannels);
+
+    // Combine team channels and DM/GM channels for unified selection
+    const selectableChannels = [...teamChannels, ...dmgmChannels];
+    const allPublicChannels = useSelector(getAllPublicChannelsInTeam(effectiveTeamId));
 
     useEffect(() => {
-        if (props.teamId !== '' && selectableChannels.length === 0) {
-            dispatch(fetchChannelsAndMembers(props.teamId));
+        if (effectiveTeamId && teamChannels.length === 0) {
+            dispatch(fetchChannelsAndMembers(effectiveTeamId));
         }
-    }, [props.teamId]);
+    }, [effectiveTeamId, teamChannels.length, dispatch]);
 
     useEffect(() => {
         // Create a map with all channels in the store, keyed by channel ID
@@ -115,7 +142,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
                 dispatch(getChannel(channelID));
             }
         });
-    }, []);
+    }, [allPublicChannels, selectableChannels, props.channelIds, dispatch]);
 
     const onChangeMulti = (channels: Channel[], {action}: {action: string}) => {
         props.onChannelsSelected?.(action === 'clear' ? [] : channels.map((c) => c.id));
@@ -128,11 +155,26 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         return channel.id;
     };
 
+    const getChannelIcon = (channel: Channel) => {
+        switch (channel.type) {
+        case General.OPEN_CHANNEL:
+            return <GlobeIcon size={12}/>;
+        case General.PRIVATE_CHANNEL:
+            return <LockIcon size={12}/>;
+        case General.DM_CHANNEL:
+            return <AccountOutlineIcon size={12}/>;
+        case General.GM_CHANNEL:
+            return <AccountMultipleOutlineIcon size={12}/>;
+        default:
+            return <GlobeIcon size={12}/>;
+        }
+    };
+
     const formatOptionLabel = (channel: Channel) => {
         return (
             <ChannelContainer>
                 <ChanneIcon>
-                    {channel.type === 'O' ? <GlobeIcon size={12}/> : <LockIcon size={12}/>}
+                    {getChannelIcon(channel)}
                 </ChanneIcon>
                 <ChannelDisplay>{channel.display_name || formatMessage({defaultMessage: 'Unknown Channel'})}</ChannelDisplay>
             </ChannelContainer>

@@ -389,12 +389,12 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 
 ---
 
-## Known Limitations (Out of Scope)
+## Known Limitations
 
 1. **Sidebar visibility:** DM/GM checklists don't appear in team-scoped sidebar
 2. **Favorites display:** Favorites stored with empty teamID may not display in UI
 3. **Playbook templates:** Cannot create runs from playbooks in DM/GM (by design)
-4. **TODO: Move channel selector:** The "Move to a different channel" modal channel selector (`ChannelSelector`) doesn't list or support DMs/GMs—only public and private channels. Additionally, the current channel value shows "Unknown Channel" for DM/GM channels. Fix requires updating the redux selector to include DMs and GMs.
+4. **DONE: Move channel selector:** Fixed two issues: (1) `rhs_run_list.tsx` was passing current team instead of run's team to the modal - now uses `props.teamID`. (2) `ChannelSelector` now shows unified list of all channels (team + DM/GM) with appropriate icons. Checklists can now move between any channel type.
 5. **TODO: Broadcast channel selector:** In Run Actions modal, "Broadcast update to selected channels" shows no channels when searching/selecting for DM/GM runs. The `BroadcastChannelSelector` uses team-scoped channel fetching which returns empty for DM/GM runs (empty team_id). Fix requires updating to fetch channels differently when team_id is empty.
 6. **DONE: Task assignee in DM:** Fixed by adding `key` prop to `ProfileSelector` in `AssignTo` that forces re-fetch when channel profiles load. Now all channel members appear in assignee options for DM/GM.
 7. **DONE: Add participants default options:** Added `showDefaultOptions` prop to `ProfileAutocomplete`. For DM/GM, channel members now appear immediately when input is focused.
@@ -426,6 +426,7 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 | `webapp/src/selectors.ts` | Check DM/GM runs (empty team_id) in selectors |
 | `webapp/src/components/backstage/.../add_participant_modal.tsx` | Restrict to channel members for DM/GM, show defaults |
 | `webapp/src/components/backstage/profile_autocomplete.tsx` | Accept Promise-based fetch, `showDefaultOptions` prop |
+| `webapp/src/components/backstage/channel_selector.tsx` | DM/GM channel support in move channel selector |
 
 ---
 

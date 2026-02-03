@@ -579,7 +579,6 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
     const [removed, setRemoved] = useState(false);
     const {add: addToastMessage} = useToaster();
-    const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
 
     // Create a minimal run object with only the fields needed for permission checking
@@ -630,7 +629,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         playbookID={props.playbookID}
                         playbookTitle={props.playbook?.title || ''}
                         playbookRunID={props.id}
-                        teamID={teamId}
+                        teamID={props.teamID}
                         canSeePlaybook={Boolean(props.playbook?.title)}
                         canEditRun={canEditRun}
                         onClick={props.onClick}
