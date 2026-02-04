@@ -837,5 +837,19 @@
     "9M92On": "Odaberi kanale",
     "N7Ln74": "Ponovi",
     "8oPf1o": "Kontaktiraj odjel prodaje",
-    "AkyGP2": "Kanal izbrisan"
+    "AkyGP2": "Kanal izbrisan",
+    "2O2sfp": "Završi",
+    "W++skp": "Potvrdi završavanje",
+    "WGSprq": "Ukloni uvjete",
+    "X5Q310": "Sakrij detalje",
+    "WNzPW7": "POKREĆE{productName}",
+    "WUwxYi": "{name} je izbrisao/la {property}",
+    "+RhnH+": "Prazno",
+    "U+7ZLW": "{name} je postavio/la {property} na {value}",
+    "cx5CGf": "Odaberi jedno svojstvo",
+    "dx+O3r": "{name} je aktualizirao/la {property} s {oldValue} na {newValue}",
+    "+xTpT1": "Atributi",
+    "/PxBNo": "Maks. dozvoljen broj atributa: {limit}",
+    "3Adhq6": "Dupliciraj atribut",
+    "z5FBbG": "Stvarno želiš izbrisati atribut „{propertyName}”? Ovo je nepovratna radnja."
 }

@@ -18,6 +18,71 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// withIsolatedGitRepo runs a test function within an isolated temporary git repo.
+// This prevents unit tests from interacting with the real repository's tags and branches.
+func withIsolatedGitRepo(t *testing.T, fn func()) {
+	t.Helper()
+
+	// Save original working directory
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get current directory: %v", err)
+	}
+
+	// Create temp directory
+	tmpDir := t.TempDir()
+
+	// Initialize git repo
+	cmd := exec.Command("git", "init", "--initial-branch=master")
+	cmd.Dir = tmpDir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git init failed: %v\n%s", err, out)
+	}
+
+	// Configure git user
+	for _, args := range [][]string{
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "Test User"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = tmpDir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v\n%s", args, err, out)
+		}
+	}
+
+	// Create initial commit
+	readmePath := tmpDir + "/README.md"
+	if err := os.WriteFile(readmePath, []byte("# Test\n"), 0644); err != nil {
+		t.Fatalf("failed to create README: %v", err)
+	}
+	for _, args := range [][]string{
+		{"add", "."},
+		{"commit", "-m", "Initial commit"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = tmpDir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v\n%s", args, err, out)
+		}
+	}
+
+	// Change to temp directory
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
+
+	// Restore original directory when done
+	defer func() {
+		if err := os.Chdir(origDir); err != nil {
+			t.Errorf("failed to restore directory: %v", err)
+		}
+	}()
+
+	// Run the test
+	fn()
+}
+
 func TestParseVersion(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -473,763 +538,812 @@ func TestGetAppName(t *testing.T) {
 // Integration tests for the TUI model
 
 func TestInitialModel(t *testing.T) {
-	tests := []struct {
-		name           string
-		major          int
-		minor          int
-		patch          int
-		rc             int
-		branch         string
-		expectedOpts   int
-		hasRCOption    bool
-	}{
-		{
-			name:         "standard version on master",
-			major:        2,
-			minor:        6,
-			patch:        1,
-			rc:           0,
-			branch:       "master",
-			expectedOpts: 7, // patch, patch-rc, minor, minor-rc, major, major-rc, custom
-			hasRCOption:  false,
-		},
-		{
-			name:         "RC version shows rc and rc-finalize options",
-			major:        2,
-			minor:        6,
-			patch:        1,
-			rc:           1,
-			branch:       "release-2.6",
-			expectedOpts: 9, // patch, patch-rc, minor, minor-rc, major, major-rc, rc, rc-finalize, custom
-			hasRCOption:  true,
-		},
-		{
-			name:         "high RC number",
-			major:        2,
-			minor:        6,
-			patch:        1,
-			rc:           5,
-			branch:       "release-2.6",
-			expectedOpts: 9, // includes rc and rc-finalize
-			hasRCOption:  true,
-		},
-	}
+	withIsolatedGitRepo(t, func() {
+		tests := []struct {
+			name           string
+			major          int
+			minor          int
+			patch          int
+			rc             int
+			branch         string
+			expectedOpts   int
+			hasRCOption    bool
+		}{
+			{
+				name:         "standard version on master",
+				major:        2,
+				minor:        6,
+				patch:        1,
+				rc:           0,
+				branch:       "master",
+				expectedOpts: 7, // patch, patch-rc, minor, minor-rc, major, major-rc, custom
+				hasRCOption:  false,
+			},
+			{
+				name:         "RC version shows rc and rc-finalize options",
+				major:        2,
+				minor:        6,
+				patch:        1,
+				rc:           1,
+				branch:       "release-2.6",
+				expectedOpts: 9, // patch, patch-rc, minor, minor-rc, major, major-rc, rc, rc-finalize, custom
+				hasRCOption:  true,
+			},
+			{
+				name:         "high RC number",
+				major:        2,
+				minor:        6,
+				patch:        1,
+				rc:           5,
+				branch:       "release-2.6",
+				expectedOpts: 9, // includes rc and rc-finalize
+				hasRCOption:  true,
+			},
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := initialModel(tt.major, tt.minor, tt.patch, tt.rc, tt.branch)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				m := initialModel(tt.major, tt.minor, tt.patch, tt.rc, tt.branch)
 
-			if len(m.options) != tt.expectedOpts {
-				t.Errorf("options count: got %d, want %d", len(m.options), tt.expectedOpts)
-			}
-
-			if m.stage != stageSelect {
-				t.Errorf("initial stage: got %d, want %d", m.stage, stageSelect)
-			}
-
-			if m.cursor != 0 {
-				t.Errorf("initial cursor: got %d, want 0", m.cursor)
-			}
-
-			// Check for rc option presence
-			hasRC := false
-			for _, opt := range m.options {
-				if opt.value == "rc" {
-					hasRC = true
-					break
+				if len(m.options) != tt.expectedOpts {
+					t.Errorf("options count: got %d, want %d", len(m.options), tt.expectedOpts)
 				}
-			}
-			if hasRC != tt.hasRCOption {
-				t.Errorf("has RC option: got %v, want %v", hasRC, tt.hasRCOption)
-			}
 
-			// Verify stored values
-			if m.major != tt.major || m.minor != tt.minor || m.patch != tt.patch || m.rc != tt.rc {
-				t.Error("model did not store version components correctly")
-			}
-			if m.branch != tt.branch {
-				t.Errorf("branch: got %s, want %s", m.branch, tt.branch)
-			}
-		})
-	}
+				if m.stage != stageSelect {
+					t.Errorf("initial stage: got %d, want %d", m.stage, stageSelect)
+				}
+
+				if m.cursor != 0 {
+					t.Errorf("initial cursor: got %d, want 0", m.cursor)
+				}
+
+				// Check for rc option presence
+				hasRC := false
+				for _, opt := range m.options {
+					if opt.value == "rc" {
+						hasRC = true
+						break
+					}
+				}
+				if hasRC != tt.hasRCOption {
+					t.Errorf("has RC option: got %v, want %v", hasRC, tt.hasRCOption)
+				}
+
+				// Verify stored values
+				if m.major != tt.major || m.minor != tt.minor || m.patch != tt.patch || m.rc != tt.rc {
+					t.Error("model did not store version components correctly")
+				}
+				if m.branch != tt.branch {
+					t.Errorf("branch: got %s, want %s", m.branch, tt.branch)
+				}
+			})
+		}
+	})
 }
 
 func TestModelOptionPreviews(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
 
-	expectedPreviews := map[string]string{
-		"patch":    "2.6.2",
-		"patch-rc": "2.6.2-rc1",
-		"minor":    "2.7.0",
-		"minor-rc": "2.7.0-rc1",
-		"major":    "3.0.0",
-		"major-rc": "3.0.0-rc1",
-		"custom":   "enter version",
-	}
+		expectedPreviews := map[string]string{
+			"patch":    "2.6.2",
+			"patch-rc": "2.6.2-rc1",
+			"minor":    "2.7.0",
+			"minor-rc": "2.7.0-rc1",
+			"major":    "3.0.0",
+			"major-rc": "3.0.0-rc1",
+			"custom":   "enter version",
+		}
 
-	for _, opt := range m.options {
-		expected, ok := expectedPreviews[opt.value]
-		if !ok {
-			t.Errorf("unexpected option: %s", opt.value)
-			continue
+		for _, opt := range m.options {
+			expected, ok := expectedPreviews[opt.value]
+			if !ok {
+				t.Errorf("unexpected option: %s", opt.value)
+				continue
+			}
+			if opt.preview != expected {
+				t.Errorf("preview for %s: got %s, want %s", opt.value, opt.preview, expected)
+			}
 		}
-		if opt.preview != expected {
-			t.Errorf("preview for %s: got %s, want %s", opt.value, opt.preview, expected)
-		}
-	}
+	})
 }
 
 func TestModelOptionPreviewsWithRC(t *testing.T) {
-	m := initialModel(2, 6, 1, 3, "release-2.6")
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 3, "release-2.6")
 
-	// Find the rc option and verify its preview
-	for _, opt := range m.options {
-		if opt.value == "rc" {
-			expected := "2.6.1-rc4"
-			if opt.preview != expected {
-				t.Errorf("rc preview: got %s, want %s", opt.preview, expected)
+		// Find the rc option and verify its preview
+		for _, opt := range m.options {
+			if opt.value == "rc" {
+				expected := "2.6.1-rc4"
+				if opt.preview != expected {
+					t.Errorf("rc preview: got %s, want %s", opt.preview, expected)
+				}
+				return
 			}
-			return
 		}
-	}
-	t.Error("rc option not found")
+		t.Error("rc option not found")
+	})
 }
 
 func TestModelRCOptionsAtBeginning(t *testing.T) {
-	// When on an RC version, rc and rc-finalize should be first
-	m := initialModel(2, 6, 1, 3, "release-2.6")
+	withIsolatedGitRepo(t, func() {
+		// When on an RC version, rc and rc-finalize should be first
+		m := initialModel(2, 6, 1, 3, "release-2.6")
 
-	if len(m.options) < 2 {
-		t.Fatal("expected at least 2 options")
-	}
+		if len(m.options) < 2 {
+			t.Fatal("expected at least 2 options")
+		}
 
-	// First option should be rc
-	if m.options[0].value != "rc" {
-		t.Errorf("first option when on RC: got %s, want rc", m.options[0].value)
-	}
+		// First option should be rc
+		if m.options[0].value != "rc" {
+			t.Errorf("first option when on RC: got %s, want rc", m.options[0].value)
+		}
 
-	// Second option should be rc-finalize
-	if m.options[1].value != "rc-finalize" {
-		t.Errorf("second option when on RC: got %s, want rc-finalize", m.options[1].value)
-	}
+		// Second option should be rc-finalize
+		if m.options[1].value != "rc-finalize" {
+			t.Errorf("second option when on RC: got %s, want rc-finalize", m.options[1].value)
+		}
 
-	// Third option should be patch (the normal first option)
-	if m.options[2].value != "patch" {
-		t.Errorf("third option when on RC: got %s, want patch", m.options[2].value)
-	}
+		// Third option should be patch (the normal first option)
+		if m.options[2].value != "patch" {
+			t.Errorf("third option when on RC: got %s, want patch", m.options[2].value)
+		}
+	})
 }
 
 func TestModelNonRCOptionsOrder(t *testing.T) {
-	// When not on an RC version, patch should be first (no rc/rc-finalize at start)
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		// When not on an RC version, patch should be first (no rc/rc-finalize at start)
+		m := initialModel(2, 6, 1, 0, "master")
 
-	if len(m.options) < 1 {
-		t.Fatal("expected at least 1 option")
-	}
-
-	// First option should be patch (not rc)
-	if m.options[0].value != "patch" {
-		t.Errorf("first option when not on RC: got %s, want patch", m.options[0].value)
-	}
-
-	// Verify rc and rc-finalize are NOT in the options when not on an RC
-	for _, opt := range m.options {
-		if opt.value == "rc" || opt.value == "rc-finalize" {
-			t.Errorf("option %s should not appear when not on an RC version", opt.value)
+		if len(m.options) < 1 {
+			t.Fatal("expected at least 1 option")
 		}
-	}
+
+		// First option should be patch (not rc)
+		if m.options[0].value != "patch" {
+			t.Errorf("first option when not on RC: got %s, want patch", m.options[0].value)
+		}
+
+		// Verify rc and rc-finalize are NOT in the options when not on an RC
+		for _, opt := range m.options {
+			if opt.value == "rc" || opt.value == "rc-finalize" {
+				t.Errorf("option %s should not appear when not on an RC version", opt.value)
+			}
+		}
+	})
 }
 
 func TestModelOptionValidation(t *testing.T) {
-	// Test validation messages when on protected branch (master)
-	t.Run("on protected branch", func(t *testing.T) {
-		m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		// Test validation messages when on protected branch (master)
+		t.Run("on protected branch", func(t *testing.T) {
+			m := initialModel(2, 6, 1, 0, "master")
 
-		for _, opt := range m.options {
-			switch opt.value {
-			case "patch", "patch-rc":
-				// Patch releases need release branch, not master
-				if opt.valid {
-					t.Errorf("option %s should NOT be valid from master", opt.value)
-				}
-				if opt.validMsg == "" {
-					t.Errorf("option %s should have validation message", opt.value)
-				}
-			case "minor", "minor-rc", "major", "major-rc":
-				// Minor/major releases are valid from master
-				if !opt.valid {
-					t.Errorf("option %s should be valid from master", opt.value)
-				}
-			case "custom":
-				if !opt.valid {
-					t.Errorf("custom option should always be valid")
-				}
-			}
-		}
-	})
-
-	// Test validation messages when on release branch
-	t.Run("on release branch for patch", func(t *testing.T) {
-		m := initialModel(2, 6, 1, 0, "release-2.6")
-
-		for _, opt := range m.options {
-			switch opt.value {
-			case "patch", "patch-rc":
-				// Patch releases are valid from matching release branch
-				if !opt.valid {
-					t.Errorf("option %s should be valid from release-2.6", opt.value)
-				}
-			case "minor", "minor-rc":
-				// Minor releases need master or release-2.7 (the target), not release-2.6
-				if opt.valid {
-					t.Errorf("option %s should NOT be valid from release-2.6 (needs release-2.7)", opt.value)
-				}
-			case "major", "major-rc":
-				// Major releases need master or release-3.0 (the target), not release-2.6
-				if opt.valid {
-					t.Errorf("option %s should NOT be valid from release-2.6 (needs release-3.0)", opt.value)
+			for _, opt := range m.options {
+				switch opt.value {
+				case "patch", "patch-rc":
+					// Patch releases need release branch, not master
+					if opt.valid {
+						t.Errorf("option %s should NOT be valid from master", opt.value)
+					}
+					if opt.validMsg == "" {
+						t.Errorf("option %s should have validation message", opt.value)
+					}
+				case "minor", "minor-rc", "major", "major-rc":
+					// Minor/major releases are valid from master
+					if !opt.valid {
+						t.Errorf("option %s should be valid from master", opt.value)
+					}
+				case "custom":
+					if !opt.valid {
+						t.Errorf("custom option should always be valid")
+					}
 				}
 			}
-		}
-	})
+		})
 
-	// Test that minor/major are valid from their TARGET release branch
-	t.Run("minor from target release branch", func(t *testing.T) {
-		// Minor bump 2.6.x → 2.7.0 is valid from release-2.7
-		m := initialModel(2, 6, 1, 0, "release-2.7")
+		// Test validation messages when on release branch
+		t.Run("on release branch for patch", func(t *testing.T) {
+			m := initialModel(2, 6, 1, 0, "release-2.6")
 
-		for _, opt := range m.options {
-			if opt.value == "minor" || opt.value == "minor-rc" {
-				if !opt.valid {
-					t.Errorf("option %s should be valid from release-2.7 (target branch)", opt.value)
+			for _, opt := range m.options {
+				switch opt.value {
+				case "patch", "patch-rc":
+					// Patch releases are valid from matching release branch
+					if !opt.valid {
+						t.Errorf("option %s should be valid from release-2.6", opt.value)
+					}
+				case "minor", "minor-rc":
+					// Minor releases need master or release-2.7 (the target), not release-2.6
+					if opt.valid {
+						t.Errorf("option %s should NOT be valid from release-2.6 (needs release-2.7)", opt.value)
+					}
+				case "major", "major-rc":
+					// Major releases need master or release-3.0 (the target), not release-2.6
+					if opt.valid {
+						t.Errorf("option %s should NOT be valid from release-2.6 (needs release-3.0)", opt.value)
+					}
 				}
 			}
-		}
-	})
+		})
 
-	// Test validation when on patch RC version (release branch)
-	t.Run("on patch RC version", func(t *testing.T) {
-		// Patch RC (v2.6.1-rc3) on release branch
-		m := initialModel(2, 6, 1, 3, "release-2.6")
+		// Test that minor/major are valid from their TARGET release branch
+		t.Run("minor from target release branch", func(t *testing.T) {
+			// Minor bump 2.6.x → 2.7.0 is valid from release-2.7
+			m := initialModel(2, 6, 1, 0, "release-2.7")
 
-		// rc and rc-finalize should be valid from matching release branch
-		for _, opt := range m.options {
-			if opt.value == "rc" || opt.value == "rc-finalize" {
-				if !opt.valid {
-					t.Errorf("option %s should be valid from release-2.6 when on patch RC", opt.value)
+			for _, opt := range m.options {
+				if opt.value == "minor" || opt.value == "minor-rc" {
+					if !opt.valid {
+						t.Errorf("option %s should be valid from release-2.7 (target branch)", opt.value)
+					}
 				}
 			}
-		}
-	})
+		})
 
-	// Test validation when on minor/major RC version (master)
-	t.Run("on minor RC version from master", func(t *testing.T) {
-		// Minor RC (v2.7.0-rc1) on master - patch is 0
-		m := initialModel(2, 7, 0, 1, "master")
+		// Test validation when on patch RC version (release branch)
+		t.Run("on patch RC version", func(t *testing.T) {
+			// Patch RC (v2.6.1-rc3) on release branch
+			m := initialModel(2, 6, 1, 3, "release-2.6")
 
-		// rc and rc-finalize should be valid from master when patch == 0
-		for _, opt := range m.options {
-			if opt.value == "rc" || opt.value == "rc-finalize" {
-				if !opt.valid {
-					t.Errorf("option %s should be valid from master when on minor/major RC (patch==0)", opt.value)
+			// rc and rc-finalize should be valid from matching release branch
+			for _, opt := range m.options {
+				if opt.value == "rc" || opt.value == "rc-finalize" {
+					if !opt.valid {
+						t.Errorf("option %s should be valid from release-2.6 when on patch RC", opt.value)
+					}
 				}
 			}
-		}
-	})
+		})
 
-	// Test validation when minor/major RC from release branch (should work now)
-	t.Run("on minor RC version from matching release branch", func(t *testing.T) {
-		// Minor RC (v2.7.0-rc1) on release-2.7 branch (matching)
-		m := initialModel(2, 7, 0, 1, "release-2.7")
+		// Test validation when on minor/major RC version (master)
+		t.Run("on minor RC version from master", func(t *testing.T) {
+			// Minor RC (v2.7.0-rc1) on master - patch is 0
+			m := initialModel(2, 7, 0, 1, "master")
 
-		// rc and rc-finalize should be valid from matching release branch when patch == 0
-		for _, opt := range m.options {
-			if opt.value == "rc" || opt.value == "rc-finalize" {
-				if !opt.valid {
-					t.Errorf("option %s should be valid from release-2.7 when on v2.7.0-rc1", opt.value)
+			// rc and rc-finalize should be valid from master when patch == 0
+			for _, opt := range m.options {
+				if opt.value == "rc" || opt.value == "rc-finalize" {
+					if !opt.valid {
+						t.Errorf("option %s should be valid from master when on minor/major RC (patch==0)", opt.value)
+					}
 				}
 			}
-		}
-	})
+		})
 
-	t.Run("on minor RC version from wrong release branch", func(t *testing.T) {
-		// Minor RC (v2.7.0-rc1) on release-2.6 branch (wrong)
-		m := initialModel(2, 7, 0, 1, "release-2.6")
+		// Test validation when minor/major RC from release branch (should work now)
+		t.Run("on minor RC version from matching release branch", func(t *testing.T) {
+			// Minor RC (v2.7.0-rc1) on release-2.7 branch (matching)
+			m := initialModel(2, 7, 0, 1, "release-2.7")
 
-		// rc and rc-finalize should NOT be valid from wrong release branch
-		for _, opt := range m.options {
-			if opt.value == "rc" || opt.value == "rc-finalize" {
-				if opt.valid {
-					t.Errorf("option %s should NOT be valid from release-2.6 when on v2.7.0-rc1", opt.value)
+			// rc and rc-finalize should be valid from matching release branch when patch == 0
+			for _, opt := range m.options {
+				if opt.value == "rc" || opt.value == "rc-finalize" {
+					if !opt.valid {
+						t.Errorf("option %s should be valid from release-2.7 when on v2.7.0-rc1", opt.value)
+					}
 				}
 			}
-		}
-	})
+		})
 
-	// Test validation when on feature branch (should fail for all)
-	t.Run("on feature branch", func(t *testing.T) {
-		m := initialModel(2, 6, 1, 0, "feature-branch")
+		t.Run("on minor RC version from wrong release branch", func(t *testing.T) {
+			// Minor RC (v2.7.0-rc1) on release-2.6 branch (wrong)
+			m := initialModel(2, 7, 0, 1, "release-2.6")
 
-		for _, opt := range m.options {
-			switch opt.value {
-			case "patch", "patch-rc":
-				if opt.valid {
-					t.Errorf("option %s should NOT be valid from feature branch", opt.value)
-				}
-			case "minor", "minor-rc", "major", "major-rc":
-				if opt.valid {
-					t.Errorf("option %s should NOT be valid from feature branch", opt.value)
-				}
-			case "custom":
-				if !opt.valid {
-					t.Errorf("custom option should always be valid")
+			// rc and rc-finalize should NOT be valid from wrong release branch
+			for _, opt := range m.options {
+				if opt.value == "rc" || opt.value == "rc-finalize" {
+					if opt.valid {
+						t.Errorf("option %s should NOT be valid from release-2.6 when on v2.7.0-rc1", opt.value)
+					}
 				}
 			}
-		}
+		})
+
+		// Test validation when on feature branch (should fail for all)
+		t.Run("on feature branch", func(t *testing.T) {
+			m := initialModel(2, 6, 1, 0, "feature-branch")
+
+			for _, opt := range m.options {
+				switch opt.value {
+				case "patch", "patch-rc":
+					if opt.valid {
+						t.Errorf("option %s should NOT be valid from feature branch", opt.value)
+					}
+				case "minor", "minor-rc", "major", "major-rc":
+					if opt.valid {
+						t.Errorf("option %s should NOT be valid from feature branch", opt.value)
+					}
+				case "custom":
+					if !opt.valid {
+						t.Errorf("custom option should always be valid")
+					}
+				}
+			}
+		})
 	})
 }
 
 func TestModelUpdate_Navigation(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
 
-	// Test down navigation
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyDown})
-	m = newModel.(model)
-	if m.cursor != 1 {
-		t.Errorf("cursor after down: got %d, want 1", m.cursor)
-	}
+		// Test down navigation
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyDown})
+		m = newModel.(model)
+		if m.cursor != 1 {
+			t.Errorf("cursor after down: got %d, want 1", m.cursor)
+		}
 
-	// Test up navigation
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})
-	m = newModel.(model)
-	if m.cursor != 0 {
-		t.Errorf("cursor after up: got %d, want 0", m.cursor)
-	}
+		// Test up navigation
+		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})
+		m = newModel.(model)
+		if m.cursor != 0 {
+			t.Errorf("cursor after up: got %d, want 0", m.cursor)
+		}
 
-	// Test j/k vim-style navigation
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-	m = newModel.(model)
-	if m.cursor != 1 {
-		t.Errorf("cursor after j: got %d, want 1", m.cursor)
-	}
+		// Test j/k vim-style navigation
+		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+		m = newModel.(model)
+		if m.cursor != 1 {
+			t.Errorf("cursor after j: got %d, want 1", m.cursor)
+		}
 
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-	m = newModel.(model)
-	if m.cursor != 0 {
-		t.Errorf("cursor after k: got %d, want 0", m.cursor)
-	}
+		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+		m = newModel.(model)
+		if m.cursor != 0 {
+			t.Errorf("cursor after k: got %d, want 0", m.cursor)
+		}
+	})
 }
 
 func TestModelUpdate_NavigationBounds(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
 
-	// Test can't go above first option
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyUp})
-	m = newModel.(model)
-	if m.cursor != 0 {
-		t.Errorf("cursor should stay at 0: got %d", m.cursor)
-	}
+		// Test can't go above first option
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyUp})
+		m = newModel.(model)
+		if m.cursor != 0 {
+			t.Errorf("cursor should stay at 0: got %d", m.cursor)
+		}
 
-	// Navigate to last option
-	for i := 0; i < len(m.options)-1; i++ {
+		// Navigate to last option
+		for i := 0; i < len(m.options)-1; i++ {
+			newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
+			m = newModel.(model)
+		}
+		lastIdx := len(m.options) - 1
+		if m.cursor != lastIdx {
+			t.Errorf("cursor should be at last: got %d, want %d", m.cursor, lastIdx)
+		}
+
+		// Test can't go below last option
 		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
 		m = newModel.(model)
-	}
-	lastIdx := len(m.options) - 1
-	if m.cursor != lastIdx {
-		t.Errorf("cursor should be at last: got %d, want %d", m.cursor, lastIdx)
-	}
-
-	// Test can't go below last option
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
-	m = newModel.(model)
-	if m.cursor != lastIdx {
-		t.Errorf("cursor should stay at last: got %d, want %d", m.cursor, lastIdx)
-	}
+		if m.cursor != lastIdx {
+			t.Errorf("cursor should stay at last: got %d, want %d", m.cursor, lastIdx)
+		}
+	})
 }
 
 func TestModelUpdate_SelectOption(t *testing.T) {
-	// Use version 99.99.99 on matching release branch to avoid validation errors
-	m := initialModel(99, 99, 99, 0, "release-99.99")
+	withIsolatedGitRepo(t, func() {
+		// Use version 99.99.99 on matching release branch to avoid validation errors
+		m := initialModel(99, 99, 99, 0, "release-99.99")
 
-	// Select patch (first option) - valid from release branch
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		// Select patch (first option) - valid from release branch
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	if m.stage != stageConfirm {
-		t.Errorf("stage after select: got %d, want %d", m.stage, stageConfirm)
-	}
-	if m.newVersion != "99.99.100" {
-		t.Errorf("newVersion: got %s, want 99.99.100", m.newVersion)
-	}
-	if m.selected != "patch" {
-		t.Errorf("selected: got %s, want patch", m.selected)
-	}
+		if m.stage != stageConfirm {
+			t.Errorf("stage after select: got %d, want %d", m.stage, stageConfirm)
+		}
+		if m.newVersion != "99.99.100" {
+			t.Errorf("newVersion: got %s, want 99.99.100", m.newVersion)
+		}
+		if m.selected != "patch" {
+			t.Errorf("selected: got %s, want patch", m.selected)
+		}
+	})
 }
 
 func TestModelUpdate_SelectCustom(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
 
-	// Navigate to custom option (last one)
-	for i := 0; i < len(m.options)-1; i++ {
-		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyDown})
+		// Navigate to custom option (last one)
+		for i := 0; i < len(m.options)-1; i++ {
+			newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyDown})
+			m = newModel.(model)
+		}
+
+		// Select custom
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		m = newModel.(model)
-	}
 
-	// Select custom
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
-
-	if m.stage != stageCustom {
-		t.Errorf("stage after selecting custom: got %d, want %d", m.stage, stageCustom)
-	}
-	if m.selected != "custom" {
-		t.Errorf("selected: got %s, want custom", m.selected)
-	}
+		if m.stage != stageCustom {
+			t.Errorf("stage after selecting custom: got %d, want %d", m.stage, stageCustom)
+		}
+		if m.selected != "custom" {
+			t.Errorf("selected: got %s, want custom", m.selected)
+		}
+	})
 }
 
 func TestModelUpdate_Quit(t *testing.T) {
-	tests := []struct {
-		name string
-		key  tea.KeyMsg
-	}{
-		{"ctrl+c", tea.KeyMsg{Type: tea.KeyCtrlC}},
-		{"esc", tea.KeyMsg{Type: tea.KeyEsc}},
-		{"q", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}},
-	}
+	withIsolatedGitRepo(t, func() {
+		tests := []struct {
+			name string
+			key  tea.KeyMsg
+		}{
+			{"ctrl+c", tea.KeyMsg{Type: tea.KeyCtrlC}},
+			{"esc", tea.KeyMsg{Type: tea.KeyEsc}},
+			{"q", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}},
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := initialModel(2, 6, 1, 0, "master")
-			newModel, _ := m.Update(tt.key)
-			m = newModel.(model)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				m := initialModel(2, 6, 1, 0, "master")
+				newModel, _ := m.Update(tt.key)
+				m = newModel.(model)
 
-			if !m.quitting {
-				t.Error("expected quitting to be true")
-			}
-		})
-	}
+				if !m.quitting {
+					t.Error("expected quitting to be true")
+				}
+			})
+		}
+	})
 }
 
 func TestModelUpdate_ConfirmStage(t *testing.T) {
-	// Use version 99.99.99 on matching release branch to avoid validation errors
-	m := initialModel(99, 99, 99, 0, "release-99.99")
+	withIsolatedGitRepo(t, func() {
+		// Use version 99.99.99 on matching release branch to avoid validation errors
+		m := initialModel(99, 99, 99, 0, "release-99.99")
 
-	// Select patch to get to confirm stage
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		// Select patch to get to confirm stage
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	// Test confirm with 'y'
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
-	m = newModel.(model)
+		// Test confirm with 'y'
+		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+		m = newModel.(model)
 
-	if !m.confirmed {
-		t.Error("expected confirmed to be true after 'y'")
-	}
+		if !m.confirmed {
+			t.Error("expected confirmed to be true after 'y'")
+		}
+	})
 }
 
 func TestModelUpdate_ConfirmStageReject(t *testing.T) {
-	// Use version 99.99.99 on matching release branch to avoid validation errors
-	m := initialModel(99, 99, 99, 0, "release-99.99")
+	withIsolatedGitRepo(t, func() {
+		// Use version 99.99.99 on matching release branch to avoid validation errors
+		m := initialModel(99, 99, 99, 0, "release-99.99")
 
-	// Select patch to get to confirm stage
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		// Select patch to get to confirm stage
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	// Test reject with 'n'
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-	m = newModel.(model)
+		// Test reject with 'n'
+		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+		m = newModel.(model)
 
-	if !m.quitting {
-		t.Error("expected quitting to be true after 'n'")
-	}
-	if m.confirmed {
-		t.Error("expected confirmed to be false after 'n'")
-	}
+		if !m.quitting {
+			t.Error("expected quitting to be true after 'n'")
+		}
+		if m.confirmed {
+			t.Error("expected confirmed to be false after 'n'")
+		}
+	})
 }
 
 func TestModelUpdate_MinorFromTargetReleaseBranch(t *testing.T) {
-	// Minor bump to 2.7.0 is valid from release-2.7 (the target branch)
-	m := initialModel(2, 6, 1, 0, "release-2.7")
+	withIsolatedGitRepo(t, func() {
+		// Minor bump to 99.100.0 is valid from release-99.100 (the target branch)
+		m := initialModel(99, 99, 1, 0, "release-99.100")
 
-	// Find and select minor
-	for i, opt := range m.options {
-		if opt.value == "minor" {
-			m.cursor = i
-			break
+		// Find and select minor
+		for i, opt := range m.options {
+			if opt.value == "minor" {
+				m.cursor = i
+				break
+			}
 		}
-	}
 
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	// Minor bumps from target release branch should succeed
-	if m.err != nil {
-		t.Errorf("expected no error when selecting minor from release-2.7, got: %v", m.err)
-	}
-	if m.stage != stageConfirm {
-		t.Errorf("expected stage to be confirm, got: %v", m.stage)
-	}
-	if m.newVersion != "2.7.0" {
-		t.Errorf("expected version 2.7.0, got: %s", m.newVersion)
-	}
+		// Minor bumps from target release branch should succeed
+		if m.err != nil {
+			t.Errorf("expected no error when selecting minor from release-99.100, got: %v", m.err)
+		}
+		if m.stage != stageConfirm {
+			t.Errorf("expected stage to be confirm, got: %v", m.stage)
+		}
+		if m.newVersion != "99.100.0" {
+			t.Errorf("expected version 99.100.0, got: %s", m.newVersion)
+		}
+	})
 }
 
 func TestModelView_SelectStage(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
-	view := m.View()
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
+		view := m.View()
 
-	// Check header shows current version
-	if !strings.Contains(view, "v2.6.1") {
-		t.Error("view should contain current version")
-	}
+		// Check header shows current version
+		if !strings.Contains(view, "v2.6.1") {
+			t.Error("view should contain current version")
+		}
 
-	// Check it shows branch
-	if !strings.Contains(view, "master") {
-		t.Error("view should contain branch name")
-	}
+		// Check it shows branch
+		if !strings.Contains(view, "master") {
+			t.Error("view should contain branch name")
+		}
 
-	// Check it shows options
-	if !strings.Contains(view, "patch") {
-		t.Error("view should contain patch option")
-	}
+		// Check it shows options
+		if !strings.Contains(view, "patch") {
+			t.Error("view should contain patch option")
+		}
 
-	// Check cursor indicator
-	if !strings.Contains(view, ">") {
-		t.Error("view should contain cursor indicator")
-	}
+		// Check cursor indicator
+		if !strings.Contains(view, ">") {
+			t.Error("view should contain cursor indicator")
+		}
 
-	// Check help text
-	if !strings.Contains(view, "arrows") || !strings.Contains(view, "enter") {
-		t.Error("view should contain help text")
-	}
+		// Check help text
+		if !strings.Contains(view, "arrows") || !strings.Contains(view, "enter") {
+			t.Error("view should contain help text")
+		}
+	})
 }
 
 func TestModelView_ConfirmStage(t *testing.T) {
-	// Use version 99.99.99 on matching release branch to avoid validation errors
-	m := initialModel(99, 99, 99, 0, "release-99.99")
+	withIsolatedGitRepo(t, func() {
+		// Use version 99.99.99 on matching release branch to avoid validation errors
+		m := initialModel(99, 99, 99, 0, "release-99.99")
 
-	// Select patch to get to confirm
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		// Select patch to get to confirm
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	view := m.View()
+		view := m.View()
 
-	if !strings.Contains(view, "v99.99.100") {
-		t.Error("confirm view should show new version")
-	}
-	// Unified confirmation format: "Proceed? [y]es / [n]o"
-	if !strings.Contains(view, "[y]es") || !strings.Contains(view, "[n]o") {
-		t.Error("confirm view should show [y]es / [n]o prompt")
-	}
+		if !strings.Contains(view, "v99.99.100") {
+			t.Error("confirm view should show new version")
+		}
+		// Unified confirmation format: "Proceed? [y]es / [n]o"
+		if !strings.Contains(view, "[y]es") || !strings.Contains(view, "[n]o") {
+			t.Error("confirm view should show [y]es / [n]o prompt")
+		}
+	})
 }
 
 func TestModelView_ConfirmStageWithBranch(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		// Use high version numbers to avoid conflicts with real tags
+		m := initialModel(99, 98, 1, 0, "master")
 
-	// Navigate to minor and select
-	for i, opt := range m.options {
-		if opt.value == "minor" {
-			m.cursor = i
-			break
+		// Navigate to minor and select
+		for i, opt := range m.options {
+			if opt.value == "minor" {
+				m.cursor = i
+				break
+			}
 		}
-	}
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	view := m.View()
+		view := m.View()
 
-	if !strings.Contains(view, "v2.7.0") {
-		t.Error("confirm view should show new version")
-	}
-	if !strings.Contains(view, "release-2.7") {
-		t.Error("confirm view should show branch to be created")
-	}
+		if !strings.Contains(view, "v99.99.0") {
+			t.Error("confirm view should show new version")
+		}
+		if !strings.Contains(view, "release-99.99") {
+			t.Error("confirm view should show branch to be created")
+		}
+	})
 }
 
 func TestModelView_CustomStage(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
 
-	// Navigate to custom and select
-	for i, opt := range m.options {
-		if opt.value == "custom" {
-			m.cursor = i
-			break
+		// Navigate to custom and select
+		for i, opt := range m.options {
+			if opt.value == "custom" {
+				m.cursor = i
+				break
+			}
 		}
-	}
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	view := m.View()
+		view := m.View()
 
-	if !strings.Contains(view, "custom version") {
-		t.Error("custom view should prompt for version input")
-	}
-	if !strings.Contains(view, "esc") {
-		t.Error("custom view should show esc to go back")
-	}
+		if !strings.Contains(view, "custom version") {
+			t.Error("custom view should prompt for version input")
+		}
+		if !strings.Contains(view, "esc") {
+			t.Error("custom view should show esc to go back")
+		}
+	})
 }
 
 func TestModelView_Quitting(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
 
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
-	m = newModel.(model)
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+		m = newModel.(model)
 
-	view := m.View()
+		view := m.View()
 
-	if !strings.Contains(view, "Aborted") {
-		t.Error("quitting view should show aborted message")
-	}
+		if !strings.Contains(view, "Aborted") {
+			t.Error("quitting view should show aborted message")
+		}
+	})
 }
 
 func TestModelView_Error(t *testing.T) {
-	// Test error view when selecting patch from master (requires release branch)
-	m := initialModel(2, 6, 1, 0, "master")
+	withIsolatedGitRepo(t, func() {
+		// Test error view when selecting patch from master (requires release branch)
+		m := initialModel(2, 6, 1, 0, "master")
 
-	// Try to select patch from master (should error - patch needs release branch)
-	for i, opt := range m.options {
-		if opt.value == "patch" {
-			m.cursor = i
-			break
+		// Try to select patch from master (should error - patch needs release branch)
+		for i, opt := range m.options {
+			if opt.value == "patch" {
+				m.cursor = i
+				break
+			}
 		}
-	}
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	// Model should have error set and be quitting
-	if m.err == nil {
-		t.Error("expected error to be set")
-	}
-	if !m.quitting {
-		t.Error("expected quitting to be true")
-	}
+		// Model should have error set and be quitting
+		if m.err == nil {
+			t.Error("expected error to be set")
+		}
+		if !m.quitting {
+			t.Error("expected quitting to be true")
+		}
 
-	// View returns empty string when there's an error (cobra handles display)
-	view := m.View()
-	if view != "" {
-		t.Errorf("expected empty view on error, got: %s", view)
-	}
+		// View returns empty string when there's an error (cobra handles display)
+		view := m.View()
+		if view != "" {
+			t.Errorf("expected empty view on error, got: %s", view)
+		}
+	})
 }
 
 func TestModelInit(t *testing.T) {
-	m := initialModel(2, 6, 1, 0, "master")
-	cmd := m.Init()
+	withIsolatedGitRepo(t, func() {
+		m := initialModel(2, 6, 1, 0, "master")
+		cmd := m.Init()
 
-	if cmd != nil {
-		t.Error("Init should return nil command")
-	}
+		if cmd != nil {
+			t.Error("Init should return nil command")
+		}
+	})
 }
 
 func TestModelUpdate_InvalidOptionWithForce(t *testing.T) {
-	// Save and restore forceMode
-	originalForce := forceMode
-	defer func() { forceMode = originalForce }()
+	withIsolatedGitRepo(t, func() {
+		// Save and restore forceMode
+		originalForce := forceMode
+		defer func() { forceMode = originalForce }()
 
-	// Test selecting invalid option (patch from master) WITH force mode
-	// Use high version number to avoid conflicts with real tags
-	forceMode = true
-	m := initialModel(99, 99, 1, 0, "master")
+		// Test selecting invalid option (patch from master) WITH force mode
+		// Use high version number to avoid conflicts with real tags
+		forceMode = true
+		m := initialModel(99, 99, 1, 0, "master")
 
-	// First option is patch, which is invalid from master
-	if m.options[0].valid {
-		t.Fatal("patch option should be invalid from master")
-	}
-
-	// Select patch (invalid option) - should proceed with warning
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
-
-	// Should proceed to confirm stage with warning
-	if m.stage != stageConfirm {
-		t.Errorf("expected stage confirm, got %d", m.stage)
-	}
-	if len(m.warnings) == 0 {
-		t.Error("expected warning for invalid option selection with --force")
-	}
-	// Verify warning message mentions the branch requirement
-	found := false
-	for _, w := range m.warnings {
-		if strings.Contains(w, "release-99.99") || strings.Contains(w, "switch to") {
-			found = true
-			break
+		// First option is patch, which is invalid from master
+		if m.options[0].valid {
+			t.Fatal("patch option should be invalid from master")
 		}
-	}
-	if !found {
-		t.Errorf("expected warning about release branch, got: %v", m.warnings)
-	}
+
+		// Select patch (invalid option) - should proceed with warning
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
+
+		// Should proceed to confirm stage with warning
+		if m.stage != stageConfirm {
+			t.Errorf("expected stage confirm, got %d", m.stage)
+		}
+		if len(m.warnings) == 0 {
+			t.Error("expected warning for invalid option selection with --force")
+		}
+		// Verify warning message mentions the branch requirement
+		found := false
+		for _, w := range m.warnings {
+			if strings.Contains(w, "release-99.99") || strings.Contains(w, "switch to") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected warning about release branch, got: %v", m.warnings)
+		}
+	})
 }
 
 func TestModelUpdate_InvalidOptionWithoutForce(t *testing.T) {
-	// Save and restore forceMode
-	originalForce := forceMode
-	defer func() { forceMode = originalForce }()
+	withIsolatedGitRepo(t, func() {
+		// Save and restore forceMode
+		originalForce := forceMode
+		defer func() { forceMode = originalForce }()
 
-	// Test selecting invalid option (patch from master) WITHOUT force mode
-	// Use high version number to avoid conflicts with real tags
-	forceMode = false
-	m := initialModel(99, 99, 1, 0, "master")
+		// Test selecting invalid option (patch from master) WITHOUT force mode
+		// Use high version number to avoid conflicts with real tags
+		forceMode = false
+		m := initialModel(99, 99, 1, 0, "master")
 
-	// First option is patch, which is invalid from master
-	if m.options[0].valid {
-		t.Fatal("patch option should be invalid from master")
-	}
+		// First option is patch, which is invalid from master
+		if m.options[0].valid {
+			t.Fatal("patch option should be invalid from master")
+		}
 
-	// Select patch (invalid option) - should error
-	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	m = newModel.(model)
+		// Select patch (invalid option) - should error
+		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = newModel.(model)
 
-	// Should error and quit
-	if m.err == nil {
-		t.Error("expected error for invalid option selection without --force")
-	}
-	if !m.quitting {
-		t.Error("expected quitting after error")
-	}
+		// Should error and quit
+		if m.err == nil {
+			t.Error("expected error for invalid option selection without --force")
+		}
+		if !m.quitting {
+			t.Error("expected quitting after error")
+		}
+	})
 }
 
 // Test version preview calculations
 
 func TestVersionPreviewCalculations(t *testing.T) {
-	tests := []struct {
-		name     string
-		major    int
-		minor    int
-		patch    int
-		rc       int
-		optValue string
-		expected string
-	}{
-		{"patch from 2.6.1", 2, 6, 1, 0, "patch", "2.6.2"},
-		{"patch from 2.6.0", 2, 6, 0, 0, "patch", "2.6.1"},
-		{"patch-rc from 2.6.1", 2, 6, 1, 0, "patch-rc", "2.6.2-rc1"},
-		{"minor from 2.6.1", 2, 6, 1, 0, "minor", "2.7.0"},
-		{"minor-rc from 2.6.1", 2, 6, 1, 0, "minor-rc", "2.7.0-rc1"},
-		{"major from 2.6.1", 2, 6, 1, 0, "major", "3.0.0"},
-		{"major-rc from 2.6.1", 2, 6, 1, 0, "major-rc", "3.0.0-rc1"},
-		{"rc from 2.6.1-rc1", 2, 6, 1, 1, "rc", "2.6.1-rc2"},
-		{"rc from 2.6.1-rc9", 2, 6, 1, 9, "rc", "2.6.1-rc10"},
-	}
+	withIsolatedGitRepo(t, func() {
+		tests := []struct {
+			name     string
+			major    int
+			minor    int
+			patch    int
+			rc       int
+			optValue string
+			expected string
+		}{
+			{"patch from 2.6.1", 2, 6, 1, 0, "patch", "2.6.2"},
+			{"patch from 2.6.0", 2, 6, 0, 0, "patch", "2.6.1"},
+			{"patch-rc from 2.6.1", 2, 6, 1, 0, "patch-rc", "2.6.2-rc1"},
+			{"minor from 2.6.1", 2, 6, 1, 0, "minor", "2.7.0"},
+			{"minor-rc from 2.6.1", 2, 6, 1, 0, "minor-rc", "2.7.0-rc1"},
+			{"major from 2.6.1", 2, 6, 1, 0, "major", "3.0.0"},
+			{"major-rc from 2.6.1", 2, 6, 1, 0, "major-rc", "3.0.0-rc1"},
+			{"rc from 2.6.1-rc1", 2, 6, 1, 1, "rc", "2.6.1-rc2"},
+			{"rc from 2.6.1-rc9", 2, 6, 1, 9, "rc", "2.6.1-rc10"},
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := initialModel(tt.major, tt.minor, tt.patch, tt.rc, "master")
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				m := initialModel(tt.major, tt.minor, tt.patch, tt.rc, "master")
 
-			for _, opt := range m.options {
-				if opt.value == tt.optValue {
-					if opt.preview != tt.expected {
-						t.Errorf("preview for %s: got %s, want %s", tt.optValue, opt.preview, tt.expected)
+				for _, opt := range m.options {
+					if opt.value == tt.optValue {
+						if opt.preview != tt.expected {
+							t.Errorf("preview for %s: got %s, want %s", tt.optValue, opt.preview, tt.expected)
+						}
+						return
 					}
-					return
 				}
-			}
-			// rc option only present when rc > 0
-			if tt.optValue == "rc" && tt.rc == 0 {
-				return // expected not to find it
-			}
-			t.Errorf("option %s not found", tt.optValue)
-		})
-	}
+				// rc option only present when rc > 0
+				if tt.optValue == "rc" && tt.rc == 0 {
+					return // expected not to find it
+				}
+				t.Errorf("option %s not found", tt.optValue)
+			})
+		}
+	})
 }
 
 func TestIsValidSemver(t *testing.T) {

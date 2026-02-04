@@ -167,13 +167,13 @@ func TestActionCreation(t *testing.T) {
 		// Create a brand new channel
 		channel := createNewChannel(t, "create-action-forbidden")
 
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
 
 		// Tweak the permissions so that the user is no longer channel admin
-		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
 
 		// Attempt to create the action without those permissions
 		_, err := e.PlaybooksClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
@@ -194,13 +194,13 @@ func TestActionCreation(t *testing.T) {
 		// Create a brand new channel
 		channel := createNewChannel(t, "create-action-allowed")
 
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
 
 		// Tweak the permissions so that the user is no longer channel admin
-		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
 
 		// Attempt to create the action as a sysadmin without being a channel admin
 		actionID, err := e.PlaybooksAdminClient.Actions.Create(context.Background(), channel.Id, client.ChannelActionCreateOptions{
@@ -296,13 +296,13 @@ func TestActionList(t *testing.T) {
 	})
 
 	t.Run("view list forbidden", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
 
 		// Tweak the permissions so that the user is no longer channel admin
-		e.Permissions.RemovePermissionFromRole(model.PermissionReadChannel.Id, model.ChannelUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionReadChannel.Id, model.ChannelUserRoleId)
 
 		// Attempt to list the actions
 		_, err := e.PlaybooksClient.Actions.List(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionListOptions{})
@@ -478,13 +478,13 @@ func TestActionUpdate(t *testing.T) {
 	})
 
 	t.Run("update action forbidden - not channel admin", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
 
 		// Tweak the permissions so that the user is no longer channel admin
-		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)
 
 		// Make a valid modification
 		action.Enabled = false

@@ -140,7 +140,7 @@ func TestRunCreation(t *testing.T) {
 					},
 				},
 				permissionsPrep: func() {
-					e.Permissions.RemovePermissionFromRole(model.PermissionCreatePrivateChannel.Id, model.TeamUserRoleId)
+					e.Permissions.RemovePermissionFromRole(t, model.PermissionCreatePrivateChannel.Id, model.TeamUserRoleId)
 				},
 				expected: func(t *testing.T, result *http.Response, err error) {
 					require.Error(t, err)
@@ -192,7 +192,7 @@ func TestRunCreation(t *testing.T) {
 				},
 				permissionsPrep: func() {
 					// Grant run_create permission for creating runs without a playbook ID (MM-66249)
-					e.Permissions.AddPermissionToRole(model.PermissionRunCreate.Id, model.TeamUserRoleId)
+					e.Permissions.AddPermissionToRole(t, model.PermissionRunCreate.Id, model.TeamUserRoleId)
 				},
 				expected: func(t *testing.T, result *http.Response, err error) {
 					require.NoError(t, err)
@@ -244,9 +244,9 @@ func TestRunCreation(t *testing.T) {
 				require.NoError(t, err)
 
 				if tc.permissionsPrep != nil {
-					defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+					defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 					defer func() {
-						e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+						e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 					}()
 					tc.permissionsPrep()
 				}
