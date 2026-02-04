@@ -211,9 +211,9 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 	}
 
 	logger.WithFields(map[string]any{
-		"title":          generated.Title,
-		"section_count":  len(generated.Sections),
-		"operation":      "generate_complete",
+		"title":         generated.Title,
+		"section_count": len(generated.Sections),
+		"operation":     "generate_complete",
 	}).Info("quicklist generated successfully")
 
 	// Convert AI response to Playbooks format

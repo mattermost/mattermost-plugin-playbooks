@@ -856,7 +856,7 @@ describe('QuicklistModal', () => {
             const createPromise = new Promise((resolve) => {
                 resolveCreate = resolve;
             });
-            mockCreatePlaybookRun.mockReturnValue(createPromise);
+            mockCreatePlaybookRun.mockReturnValue(createPromise as any);
 
             let component: renderer.ReactTestRenderer;
 
