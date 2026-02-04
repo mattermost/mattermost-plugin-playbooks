@@ -43,19 +43,6 @@ type ThreadInfo struct {
 	ParticipantCount int  `json:"participant_count"`
 }
 
-// WebSocket event names for quicklist operations
-const (
-	quicklistGenerationFailedEvent = "quicklist_generation_failed"
-)
-
-// QuicklistGenerationFailedPayload is the payload for the quicklist_generation_failed WebSocket event.
-type QuicklistGenerationFailedPayload struct {
-	PostID       string `json:"post_id"`
-	ChannelID    string `json:"channel_id"`
-	ErrorType    string `json:"error_type"`
-	ErrorMessage string `json:"error_message"`
-}
-
 // QuicklistHandler handles quicklist-related API endpoints.
 type QuicklistHandler struct {
 	*ErrorHandler
@@ -63,28 +50,6 @@ type QuicklistHandler struct {
 	threadService *app.ThreadService
 	aiService     *app.AIService
 	config        config.Service
-}
-
-// publishGenerationFailedEvent sends a WebSocket event to notify the user of a generation failure.
-// This can be used to notify all of a user's browser tabs/devices about a failure.
-func (h *QuicklistHandler) publishGenerationFailedEvent(userID, postID, channelID, errorType, errorMessage string) {
-	payload := QuicklistGenerationFailedPayload{
-		PostID:       postID,
-		ChannelID:    channelID,
-		ErrorType:    errorType,
-		ErrorMessage: errorMessage,
-	}
-
-	payloadJSON, err := json.Marshal(payload)
-	if err != nil {
-		return
-	}
-
-	h.api.PublishWebSocketEvent(quicklistGenerationFailedEvent, map[string]any{
-		"payload": string(payloadJSON),
-	}, &model.WebsocketBroadcast{
-		UserId: userID,
-	})
 }
 
 // NewQuicklistHandler creates a new QuicklistHandler and registers routes.
