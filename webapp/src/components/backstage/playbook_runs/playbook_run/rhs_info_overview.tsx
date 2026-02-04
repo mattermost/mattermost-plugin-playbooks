@@ -7,7 +7,8 @@ import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {GlobalState} from '@mattermost/types/store';
+import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
 import {General} from 'mattermost-redux/constants';
 
 import {
@@ -21,6 +22,8 @@ import {
     ProductChannelsIcon,
 } from '@mattermost/compass-icons/components';
 import {UserProfile} from '@mattermost/types/users';
+
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 import FollowButton from 'src/components/backstage/follow_button';
@@ -259,6 +262,70 @@ const Item = (props: ItemProps) => {
     );
 };
 
+interface ChannelRowProps {
+    channel: Channel | undefined | null;
+    channelDeleted: boolean;
+    runMetadata?: Metadata;
+    role: Role;
+    onClickRequestJoin: () => void;
+}
+
+const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJoin}: ChannelRowProps) => {
+    const {formatMessage} = useIntl();
+    const currentTeam = useSelector(getCurrentTeam);
+
+    // For DM channels, get the teammate to build @username path
+    const teammate = useSelector((state: GlobalState) => {
+        if (channel?.teammate_id) {
+            return getUser(state, channel.teammate_id);
+        }
+        return null;
+    });
+
+    if (channelDeleted) {
+        return (
+            <ItemDisabledContent>
+                {formatMessage({defaultMessage: 'Channel deleted'})}
+            </ItemDisabledContent>
+        );
+    }
+
+    if (channel && runMetadata) {
+        // Use current team as fallback when run's team_name is empty (DM/GM runs)
+        const teamName = runMetadata.team_name || currentTeam?.name || '';
+
+        let channelPath = `channels/${channel.name}`;
+        const displayName = channel.display_name;
+
+        // DM channels use @username path format
+        if (channel.type === General.DM_CHANNEL && teammate) {
+            channelPath = `messages/@${teammate.username}`;
+        }
+
+        return (
+            <ItemLink
+                to={`/${teamName}/${channelPath}`}
+                data-testid='runinfo-channel-link'
+            >
+                <ItemContent>
+                    {displayName}
+                </ItemContent>
+                <OpenInNewIcon
+                    size={14}
+                    color={'var(--button-bg)'}
+                />
+            </ItemLink>
+        );
+    }
+
+    return (
+        <ItemDisabledContent>
+            {role === Role.Participant ? <RequestJoinButton onClick={onClickRequestJoin}>{formatMessage({defaultMessage: 'Request to Join'})}</RequestJoinButton> : null}
+            <LockOutlineIcon size={20}/> {formatMessage({defaultMessage: 'Private'})}
+        </ItemDisabledContent>
+    );
+};
+
 const ItemLink = styled(Link)`
     display: flex;
     flex-direction: row;
@@ -330,47 +397,3 @@ const ParticipantsContainer = styled.div`
     flex-direction: row;
     align-items: center;
 `;
-
-interface ChannelRowProps {
-    channel: Channel | undefined | null;
-    channelDeleted: boolean;
-    runMetadata?: Metadata;
-    role: Role;
-    onClickRequestJoin: () => void;
-}
-
-const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJoin}: ChannelRowProps) => {
-    const {formatMessage} = useIntl();
-
-    if (channelDeleted) {
-        return (
-            <ItemDisabledContent>
-                {formatMessage({defaultMessage: 'Channel deleted'})}
-            </ItemDisabledContent>
-        );
-    }
-
-    if (channel && runMetadata) {
-        return (
-            <ItemLink
-                to={`/${runMetadata.team_name}/channels/${channel.name}`}
-                data-testid='runinfo-channel-link'
-            >
-                <ItemContent>
-                    {channel.display_name}
-                </ItemContent>
-                <OpenInNewIcon
-                    size={14}
-                    color={'var(--button-bg)'}
-                />
-            </ItemLink>
-        );
-    }
-
-    return (
-        <ItemDisabledContent>
-            {role === Role.Participant ? <RequestJoinButton onClick={onClickRequestJoin}>{formatMessage({defaultMessage: 'Request to Join'})}</RequestJoinButton> : null}
-            <LockOutlineIcon size={20}/> {formatMessage({defaultMessage: 'Private'})}
-        </ItemDisabledContent>
-    );
-};
