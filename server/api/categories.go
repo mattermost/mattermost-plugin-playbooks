@@ -25,15 +25,17 @@ type CategoryHandler struct {
 	categoryService    app.CategoryService
 	playbookService    app.PlaybookService
 	playbookRunService app.PlaybookRunService
+	permissions        *app.PermissionsService
 }
 
-func NewCategoryHandler(router *mux.Router, api *pluginapi.Client, categoryService app.CategoryService, playbookService app.PlaybookService, playbookRunService app.PlaybookRunService) *CategoryHandler {
+func NewCategoryHandler(router *mux.Router, api *pluginapi.Client, categoryService app.CategoryService, playbookService app.PlaybookService, playbookRunService app.PlaybookRunService, permissions *app.PermissionsService) *CategoryHandler {
 	handler := &CategoryHandler{
 		ErrorHandler:       &ErrorHandler{},
 		api:                api,
 		categoryService:    categoryService,
 		playbookService:    playbookService,
 		playbookRunService: playbookRunService,
+		permissions:        permissions,
 	}
 
 	categoriesRouter := router.PathPrefix("/my_categories").Subrouter()
@@ -305,8 +307,16 @@ func (h *CategoryHandler) getPlaybooksCategory(teamID, userID string) (app.Categ
 		return app.Category{}, errors.Wrap(err, "can't get playbooks for team")
 	}
 
-	playbookCategoryItems := []app.CategoryItem{}
+	// Filter out playbooks the user doesn't have permission to view
+	filteredItems := []app.Playbook{}
 	for _, playbook := range playbooks.Items {
+		if err := h.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
+			filteredItems = append(filteredItems, playbook)
+		}
+	}
+
+	playbookCategoryItems := []app.CategoryItem{}
+	for _, playbook := range filteredItems {
 		playbookCategoryItems = append(playbookCategoryItems, app.CategoryItem{
 			ItemID: playbook.ID,
 			Type:   app.PlaybookItemType,

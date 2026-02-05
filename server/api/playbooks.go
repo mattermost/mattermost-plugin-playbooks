@@ -406,6 +406,23 @@ func (h *PlaybookHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Filter out playbooks the user doesn't have permission to view
+	filteredItems := []app.Playbook{}
+	for _, playbook := range playbookResults.Items {
+		if err := h.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
+			filteredItems = append(filteredItems, playbook)
+		}
+	}
+
+	// Update results with filtered items
+	playbookResults.Items = filteredItems
+	// Note: TotalCount from DB represents total before permission filtering.
+	// We keep it as an upper bound since recalculating would require re-querying.
+	// HasMore is set conservatively: if we got fewer items than requested, there's no more.
+	if opts.PerPage > 0 && len(filteredItems) < opts.PerPage {
+		playbookResults.HasMore = false
+	}
+
 	ReturnJSON(w, playbookResults, http.StatusOK)
 }
 
@@ -434,9 +451,17 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(c *Context, w http.ResponseWr
 		return
 	}
 
+	// Filter out playbooks the user doesn't have permission to view
+	filteredItems := []app.Playbook{}
+	for _, playbook := range playbooksResult.Items {
+		if err := h.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
+			filteredItems = append(filteredItems, playbook)
+		}
+	}
+
 	list := make([]model.AutocompleteListItem, 0)
 
-	for _, playbook := range playbooksResult.Items {
+	for _, playbook := range filteredItems {
 		list = append(list, model.AutocompleteListItem{
 			Item:     playbook.ID,
 			HelpText: playbook.Title,
