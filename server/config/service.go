@@ -263,6 +263,8 @@ func (c *ServiceImpl) IsExperimentalFeaturesEnabled() bool {
 }
 
 // IsQuicklistEnabled returns true when the quicklist feature is enabled.
+// Requires both EnableExperimentalFeatures and QuicklistEnabled to be true.
 func (c *ServiceImpl) IsQuicklistEnabled() bool {
-	return c.GetConfiguration().QuicklistEnabled
+	cfg := c.GetConfiguration()
+	return cfg.EnableExperimentalFeatures && cfg.QuicklistEnabled
 }
