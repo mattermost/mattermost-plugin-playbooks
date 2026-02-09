@@ -37,6 +37,8 @@ func setQuicklistConfig(t *testing.T, e *TestEnvironment, enabled bool, agentBot
 	if cfg.PluginSettings.Plugins["playbooks"] == nil {
 		cfg.PluginSettings.Plugins["playbooks"] = make(map[string]any)
 	}
+	// Quicklist requires EnableExperimentalFeatures to be true
+	cfg.PluginSettings.Plugins["playbooks"]["EnableExperimentalFeatures"] = enabled
 	cfg.PluginSettings.Plugins["playbooks"]["QuicklistEnabled"] = enabled
 	cfg.PluginSettings.Plugins["playbooks"]["QuicklistAgentBotID"] = agentBotID
 
