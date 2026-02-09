@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
@@ -75,6 +76,62 @@ func NewQuicklistHandler(
 	return handler
 }
 
+func (h *QuicklistHandler) validateQuicklistPostID(c *Context, w http.ResponseWriter, userID, postID string) (logrus.FieldLogger, bool) {
+	logger := c.logger.WithField("user_id", userID).WithField("post_id", postID)
+
+	// Validate required fields
+	if postID == "" {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "post_id is required", nil)
+		return logger, false
+	}
+
+	// Validate post ID format before making API calls
+	if !model.IsValidId(postID) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid post_id format", nil)
+		return logger, false
+	}
+
+	return logger, true
+}
+
+func (h *QuicklistHandler) validateQuicklistAccess(logger logrus.FieldLogger, w http.ResponseWriter, userID, postID, archivedErr string) (logrus.FieldLogger, string, bool) {
+	// Check if post exists
+	post, appErr := h.api.GetPost(postID)
+	if appErr != nil {
+		if appErr.StatusCode == http.StatusNotFound {
+			h.HandleErrorWithCode(w, logger, http.StatusNotFound, "post not found", appErr)
+			return logger, "", false
+		}
+		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "failed to get post", appErr)
+		return logger, "", false
+	}
+
+	// Use post's channel ID
+	channelID := post.ChannelId
+	logger = logger.WithField("channel_id", channelID)
+
+	// Check user has permission to read the channel
+	// Return 404 instead of 403 to prevent enumeration of private channels/posts
+	if !h.api.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		logger.Warn("user lacks permission to channel")
+		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "post not found", nil)
+		return logger, "", false
+	}
+
+	// Check if channel is archived
+	channel, appErr := h.api.GetChannel(channelID)
+	if appErr != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "failed to get channel", appErr)
+		return logger, "", false
+	}
+	if channel.DeleteAt > 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, archivedErr, nil)
+		return logger, "", false
+	}
+
+	return logger, channelID, true
+}
+
 // generate handles POST /api/v0/quicklist/generate
 func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -88,6 +145,13 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Check if AI service is available
+	if err := h.aiService.IsAvailable(); err != nil {
+		logger.WithError(err).Warn("AI service unavailable during quicklist generation")
+		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
+		return
+	}
+
 	// Decode request body
 	var req QuicklistGenerateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -95,59 +159,19 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Add post_id to logger context after decoding
-	logger = logger.WithField("post_id", req.PostID)
-
-	// Validate required fields
-	if req.PostID == "" {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "post_id is required", nil)
+	logger, ok := h.validateQuicklistPostID(c, w, userID, req.PostID)
+	if !ok {
 		return
 	}
 
-	// Validate post ID format before making API calls
-	if !model.IsValidId(req.PostID) {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid post_id format", nil)
-		return
-	}
-
-	// Check if post exists
-	post, appErr := h.api.GetPost(req.PostID)
-	if appErr != nil {
-		if appErr.StatusCode == http.StatusNotFound {
-			h.HandleErrorWithCode(w, logger, http.StatusNotFound, "post not found", appErr)
-			return
-		}
-		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "failed to get post", appErr)
-		return
-	}
-
-	// Use post's channel ID
-	channelID := post.ChannelId
-	logger = logger.WithField("channel_id", channelID)
-
-	// Check user has permission to read the channel
-	// Return 404 instead of 403 to prevent enumeration of private channels/posts
-	if !h.api.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
-		logger.Warn("user lacks permission to channel")
-		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "post not found", nil)
-		return
-	}
-
-	// Check if channel is archived
-	channel, appErr := h.api.GetChannel(channelID)
-	if appErr != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "failed to get channel", appErr)
-		return
-	}
-	if channel.DeleteAt > 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "cannot generate quicklist from archived channel", nil)
-		return
-	}
-
-	// Check if AI service is available
-	if err := h.aiService.IsAvailable(); err != nil {
-		logger.WithError(err).Warn("AI service unavailable during quicklist generation")
-		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
+	logger, channelID, ok := h.validateQuicklistAccess(
+		logger,
+		w,
+		userID,
+		req.PostID,
+		"cannot generate quicklist from archived channel",
+	)
+	if !ok {
 		return
 	}
 
@@ -212,6 +236,13 @@ func (h *QuicklistHandler) refine(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Check if AI service is available
+	if err := h.aiService.IsAvailable(); err != nil {
+		logger.WithError(err).Warn("AI service unavailable during quicklist refinement")
+		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
+		return
+	}
+
 	// Decode request body
 	var req QuicklistRefineRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -219,15 +250,12 @@ func (h *QuicklistHandler) refine(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Add post_id to logger context after decoding
-	logger = logger.WithField("post_id", req.PostID)
-
-	// Validate required fields
-	if req.PostID == "" {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "post_id is required", nil)
+	logger, ok := h.validateQuicklistPostID(c, w, userID, req.PostID)
+	if !ok {
 		return
 	}
 
+	// Validate required fields
 	if req.Feedback == "" {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "feedback is required", nil)
 		return
@@ -238,50 +266,14 @@ func (h *QuicklistHandler) refine(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Validate post ID format before making API calls
-	if !model.IsValidId(req.PostID) {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid post_id format", nil)
-		return
-	}
-
-	// Check if post exists
-	post, appErr := h.api.GetPost(req.PostID)
-	if appErr != nil {
-		if appErr.StatusCode == http.StatusNotFound {
-			h.HandleErrorWithCode(w, logger, http.StatusNotFound, "post not found", appErr)
-			return
-		}
-		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "failed to get post", appErr)
-		return
-	}
-
-	// Use post's channel ID
-	channelID := post.ChannelId
-	logger = logger.WithField("channel_id", channelID)
-
-	// Check user has permission to read the channel
-	// Return 404 instead of 403 to prevent enumeration of private channels/posts
-	if !h.api.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
-		logger.Warn("user lacks permission to channel")
-		h.HandleErrorWithCode(w, logger, http.StatusNotFound, "post not found", nil)
-		return
-	}
-
-	// Check if channel is archived
-	channel, appErr := h.api.GetChannel(channelID)
-	if appErr != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusInternalServerError, "failed to get channel", appErr)
-		return
-	}
-	if channel.DeleteAt > 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "cannot refine quicklist from archived channel", nil)
-		return
-	}
-
-	// Check if AI service is available
-	if err := h.aiService.IsAvailable(); err != nil {
-		logger.WithError(err).Warn("AI service unavailable during quicklist refinement")
-		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
+	logger, channelID, ok := h.validateQuicklistAccess(
+		logger,
+		w,
+		userID,
+		req.PostID,
+		"cannot refine quicklist from archived channel",
+	)
+	if !ok {
 		return
 	}
 
