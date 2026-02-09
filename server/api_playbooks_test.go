@@ -1114,8 +1114,9 @@ func TestPlaybooksPermissions(t *testing.T) {
 		}()
 		// Ensure manage properties permission is present
 		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
-		// Explicitly remove manage members permission
+		// Explicitly remove manage members permission from both playbook and team levels
 		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageMembers.Id, model.TeamUserRoleId)
 
 		// Get the playbook
 		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
