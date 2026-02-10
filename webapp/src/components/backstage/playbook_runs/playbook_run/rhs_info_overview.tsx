@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
@@ -42,6 +42,8 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
+import {useTextOverflow} from 'src/hooks';
+import Tooltip from 'src/components/widgets/tooltip';
 
 import {FollowState} from './rhs_info';
 
@@ -273,6 +275,8 @@ interface ChannelRowProps {
 const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJoin}: ChannelRowProps) => {
     const {formatMessage} = useIntl();
     const currentTeam = useSelector(getCurrentTeam);
+    const channelNameRef = useRef<HTMLSpanElement>(null);
+    const isChannelNameOverflowing = useTextOverflow(channelNameRef);
 
     // For DM channels, get the teammate to build @username path
     const teammate = useSelector((state: GlobalState) => {
@@ -302,12 +306,12 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
             channelPath = `messages/@${teammate.username}`;
         }
 
-        return (
+        const linkContent = (
             <ItemLink
                 to={`/${teamName}/${channelPath}`}
                 data-testid='runinfo-channel-link'
             >
-                <ItemContent>
+                <ItemContent ref={channelNameRef}>
                     {displayName}
                 </ItemContent>
                 <OpenInNewIcon
@@ -316,6 +320,19 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
                 />
             </ItemLink>
         );
+
+        if (isChannelNameOverflowing) {
+            return (
+                <Tooltip
+                    id={`channel-name-tooltip-${channel.id}`}
+                    content={displayName}
+                >
+                    {linkContent}
+                </Tooltip>
+            );
+        }
+
+        return linkContent;
     }
 
     return (
@@ -336,11 +353,10 @@ const ItemLink = styled(Link)`
     }
 `;
 
-const ItemContent = styled.div`
-    display: inline-flex;
+const ItemContent = styled.span`
     overflow: hidden;
     max-width: 230px;
-    align-items: center;
+    min-width: 0;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;
@@ -351,21 +367,6 @@ const ItemDisabledContent = styled(ItemContent)`
     }
 
     color: rgba(var(--center-channel-color-rgb), 0.64);
-`;
-
-const OverviewRow = styled.div<{ onClick?: () => void }>`
-    padding: 10px 24px;
-    height: 44px;
-    display: flex;
-    justify-content: space-between;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-
-    ${({onClick}) => onClick && css`
-        cursor: pointer;
-    `}
 `;
 
 const OverviewItemName = styled.div`
@@ -396,4 +397,19 @@ const ParticipantsContainer = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
+`;
+
+const OverviewRow = styled.div<{ onClick?: () => void }>`
+    padding: 10px 24px;
+    height: 44px;
+    display: flex;
+    justify-content: space-between;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    ${({onClick}) => onClick && css`
+        cursor: pointer;
+    `};
 `;
