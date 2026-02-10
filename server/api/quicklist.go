@@ -137,7 +137,7 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	// Create logger with request context for all logging in this handler
-	logger := c.logger.WithField("user_id", userID)
+	var logger logrus.FieldLogger = c.logger.WithField("user_id", userID)
 
 	// Check feature flag
 	if !h.config.IsQuicklistEnabled() {
@@ -228,7 +228,7 @@ func (h *QuicklistHandler) refine(c *Context, w http.ResponseWriter, r *http.Req
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	// Create logger with request context for all logging in this handler
-	logger := c.logger.WithField("user_id", userID)
+	var logger logrus.FieldLogger = c.logger.WithField("user_id", userID)
 
 	// Check feature flag
 	if !h.config.IsQuicklistEnabled() {
