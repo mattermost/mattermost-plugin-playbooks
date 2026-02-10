@@ -228,11 +228,11 @@ func TestActionQuicklist_NoChannelPermission(t *testing.T) {
 
 	pluginAPIClient := pluginapi.NewClient(api, nil)
 
-	// Expect ephemeral post about no permission
+	// Expect generic not found to avoid leaking private channel/post existence
 	mockPoster.EXPECT().
 		EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any()).
 		Do(func(userID, channelID string, post *model.Post) {
-			assert.Contains(t, post.Message, "don't have access")
+			assert.Contains(t, post.Message, "Could not find")
 		})
 
 	runner := &Runner{

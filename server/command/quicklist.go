@@ -28,6 +28,8 @@ func (r *Runner) actionQuicklist(args []string) {
 
 	postID := args[0]
 
+	notFoundMessage := "Could not find the specified post. Please check the post ID and try again."
+
 	// Validate post ID format
 	if !model.IsValidId(postID) {
 		r.postCommandResponse("Invalid post ID format. Please provide a valid post ID.")
@@ -37,13 +39,14 @@ func (r *Runner) actionQuicklist(args []string) {
 	// Get the post to validate it exists
 	post, appErr := r.pluginAPI.Post.GetPost(postID)
 	if appErr != nil {
-		r.postCommandResponse("Could not find the specified post. Please check the post ID and try again.")
+		r.postCommandResponse(notFoundMessage)
 		return
 	}
 
 	// Check if user has permission to read the channel
 	if !r.pluginAPI.User.HasPermissionToChannel(r.args.UserId, post.ChannelId, model.PermissionReadChannel) {
-		r.postCommandResponse("You don't have access to this channel.")
+		// Return a generic not-found message to avoid leaking private channel/post existence.
+		r.postCommandResponse(notFoundMessage)
 		return
 	}
 
