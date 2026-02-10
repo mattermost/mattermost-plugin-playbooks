@@ -72,6 +72,7 @@ export function useQuicklistGenerate(postId: string): UseQuicklistGenerateResult
     }, [postId]);
 
     useEffect(() => {
+        // `retry` bumps `retryCount`, which retriggers this effect to call `fetchData`.
         fetchData();
 
         return () => {
