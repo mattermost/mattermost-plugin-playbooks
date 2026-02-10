@@ -124,6 +124,7 @@ When customizing the User Prompt Template, include `%s` where the thread content
 ### "Quicklist feature is not enabled"
 
 The feature is disabled in plugin settings. Ask your system administrator to enable it in **System Console > Plugins > Playbooks**.
+Quicklist also requires experimental features to be enabled in the system settings.
 
 ### "AI plugin is not available"
 
