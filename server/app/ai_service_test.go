@@ -13,6 +13,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-ai/public/bridgeclient"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 )
 
 // mockBridgeClient is a mock implementation of BridgeClient for testing.
@@ -911,19 +912,19 @@ func TestChecklistsToGeneratedJSON(t *testing.T) {
 
 func TestFormatDueDate(t *testing.T) {
 	t.Run("returns empty string for zero timestamp", func(t *testing.T) {
-		result := formatDueDate(0)
+		result := timeutils.FormatDateFromMillis(0)
 		assert.Equal(t, "", result)
 	})
 
 	t.Run("formats valid timestamp to ISO date", func(t *testing.T) {
 		// 2024-01-15 00:00:00 UTC in milliseconds
-		result := formatDueDate(1705276800000)
+		result := timeutils.FormatDateFromMillis(1705276800000)
 		assert.Equal(t, "2024-01-15", result)
 	})
 
 	t.Run("formats another valid timestamp", func(t *testing.T) {
 		// 2023-12-25 00:00:00 UTC in milliseconds
-		result := formatDueDate(1703462400000)
+		result := timeutils.FormatDateFromMillis(1703462400000)
 		assert.Equal(t, "2023-12-25", result)
 	})
 }

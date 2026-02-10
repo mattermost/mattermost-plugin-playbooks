@@ -15,6 +15,16 @@ func GetTimeForMillis(unixMillis int64) time.Time {
 	return time.Unix(0, unixMillis*int64(1000000))
 }
 
+// FormatDateFromMillis converts Unix timestamp in milliseconds to ISO 8601 date string (YYYY-MM-DD).
+// Returns empty string if timestamp is 0.
+func FormatDateFromMillis(timestamp int64) string {
+	if timestamp == 0 {
+		return ""
+	}
+
+	return time.UnixMilli(timestamp).Format("2006-01-02")
+}
+
 func DurationString(start, end time.Time) string {
 	duration := end.Sub(start).Round(time.Second)
 

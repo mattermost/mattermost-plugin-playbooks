@@ -13,6 +13,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-ai/public/bridgeclient"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 )
 
 // Default prompts for quicklist generation.
@@ -350,7 +351,7 @@ func checklistsToGeneratedJSON(checklists []Checklist) string {
 			genItem := GeneratedItem{
 				Title:       item.Title,
 				Description: item.Description,
-				DueDate:     formatDueDate(item.DueDate),
+				DueDate:     timeutils.FormatDateFromMillis(item.DueDate),
 			}
 			section.Items = append(section.Items, genItem)
 		}
@@ -368,13 +369,3 @@ func checklistsToGeneratedJSON(checklists []Checklist) string {
 	return string(jsonBytes)
 }
 
-// formatDueDate converts Unix timestamp in milliseconds back to ISO 8601 date string.
-// Returns empty string if timestamp is 0.
-func formatDueDate(timestamp int64) string {
-	if timestamp == 0 {
-		return ""
-	}
-
-	t := time.UnixMilli(timestamp)
-	return t.Format("2006-01-02")
-}
