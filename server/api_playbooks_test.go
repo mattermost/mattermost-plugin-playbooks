@@ -1108,7 +1108,7 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 	t.Run("user without manage members permission cannot change playbook team", func(t *testing.T) {
 		// Ensure permissions are restored before starting
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
 			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
 		}()
