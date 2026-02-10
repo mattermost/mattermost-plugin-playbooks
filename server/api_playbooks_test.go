@@ -1110,13 +1110,13 @@ func TestPlaybooksPermissions(t *testing.T) {
 		// Ensure permissions are restored before starting
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
 		// Ensure manage properties permission is present
-		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+		e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
 		// Explicitly remove manage members permission from both playbook and team levels
-		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
-		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.TeamUserRoleId)
 
 		// Get the playbook
 		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
@@ -1136,12 +1136,12 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 	t.Run("user without access to destination team cannot change playbook team", func(t *testing.T) {
 		// Ensure permissions are restored before starting
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
 		// Ensure manage members permission is present
-		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+		e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
 
 		// Create a team that RegularUser is not a member of
 		teamNotMember, _, err := e.ServerAdminClient.CreateTeam(context.Background(), &model.Team{
