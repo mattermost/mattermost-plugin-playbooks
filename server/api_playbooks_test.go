@@ -901,12 +901,12 @@ func TestPlaybooksPermissions(t *testing.T) {
 	e.CreateBasic()
 
 	t.Run("test no permissions to create", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
-		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookCreate.Id, model.TeamUserRoleId)
-		e.Permissions.RemovePermissionFromRole(model.PermissionPrivatePlaybookCreate.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookCreate.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPrivatePlaybookCreate.Id, model.TeamUserRoleId)
 
 		resultPublic, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test1",
@@ -983,22 +983,22 @@ func TestPlaybooksPermissions(t *testing.T) {
 		})
 
 		t.Run("public with no permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		})
 
 		t.Run("public with permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			assert.NoError(t, err)
@@ -1006,22 +1006,22 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 		e.BasicPrivatePlaybook.Description = "updated"
 		t.Run("private with no permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.RemovePermissionFromRole(model.PermissionPrivatePlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.RemovePermissionFromRole(t, model.PermissionPrivatePlaybookManageProperties.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPrivatePlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		})
 
 		t.Run("private with permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.AddPermissionToRole(model.PermissionPrivatePlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPrivatePlaybookManageProperties.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPrivatePlaybook)
 			assert.NoError(t, err)
@@ -1035,24 +1035,24 @@ func TestPlaybooksPermissions(t *testing.T) {
 		e.BasicPlaybook.Members = append(e.BasicPlaybook.Members, client.PlaybookMember{UserID: "testuser", Roles: []string{model.PlaybookMemberRoleId}})
 
 		t.Run("without permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
-			e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		})
 
 		t.Run("with permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			assert.NoError(t, err)
@@ -1060,12 +1060,12 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 		e.BasicPlaybook.Members = []client.PlaybookMember{}
 		t.Run("with permissions removal", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			assert.NoError(t, err)
@@ -1080,26 +1080,26 @@ func TestPlaybooksPermissions(t *testing.T) {
 		e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles = append(e.BasicPlaybook.Members[len(e.BasicPlaybook.Members)-1].Roles, model.PlaybookAdminRoleId)
 
 		t.Run("without permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
-			e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookManageRoles.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+			e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageRoles.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		})
 
 		t.Run("with permissions", func(t *testing.T) {
-			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 			defer func() {
-				e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+				e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			}()
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
-			e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookManageRoles.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+			e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageRoles.Id, model.PlaybookMemberRoleId)
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			assert.NoError(t, err)
@@ -1175,35 +1175,35 @@ func TestPlaybooksConversions(t *testing.T) {
 	e.CreateBasic()
 
 	t.Run("public to private conversion", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 			e.SetEnterpriseLicence()
 		}()
-		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
 		e.BasicPlaybook.Public = false
 		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 
-		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
+		e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
 	})
 
 	t.Run("private to public conversion", func(t *testing.T) {
-		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
-			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
-		e.Permissions.RemovePermissionFromRole(model.PermissionPrivatePlaybookMakePublic.Id, model.PlaybookMemberRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPrivatePlaybookMakePublic.Id, model.PlaybookMemberRoleId)
 
 		e.BasicPlaybook.Public = true
 		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 
-		e.Permissions.AddPermissionToRole(model.PermissionPrivatePlaybookMakePublic.Id, model.PlaybookMemberRoleId)
+		e.Permissions.AddPermissionToRole(t, model.PermissionPrivatePlaybookMakePublic.Id, model.PlaybookMemberRoleId)
 
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)

@@ -211,14 +211,14 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 	e.CreateBasic()
 
 	// Save default permissions to restore them after the test
-	defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+	defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 	defer func() {
-		e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 	}()
 
 	// Ensure the user has permission to manage both public and private channels
-	e.Permissions.AddPermissionToRole(model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
-	e.Permissions.AddPermissionToRole(model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
+	e.Permissions.AddPermissionToRole(t, model.PermissionManagePublicChannelMembers.Id, model.TeamUserRoleId)
+	e.Permissions.AddPermissionToRole(t, model.PermissionManagePrivateChannelMembers.Id, model.TeamUserRoleId)
 
 	user3, _, err := e.ServerAdminClient.CreateUser(context.Background(), &model.User{
 		Email:    "thirduser@example.com",
