@@ -254,6 +254,7 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	// Check if team is being changed
 	if oldPlaybook.TeamID != playbook.TeamID {
 		// Require ManageMembers permission (since changing teams effectively removes members not in destination team)
+		// This is the fix for MM-66474 - prevents privilege escalation when users only have "Manage Playbook Configurations"
 		if err := p.PlaybookManageMembers(userID, oldPlaybook); err != nil {
 			return errors.Wrap(err, "attempted to change playbook team without manage members permission")
 		}

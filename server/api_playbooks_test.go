@@ -1107,31 +1107,54 @@ func TestPlaybooksPermissions(t *testing.T) {
 	})
 
 	t.Run("user without manage members permission cannot change playbook team", func(t *testing.T) {
-		// Ensure permissions are restored before starting
+		// This test replicates the security issue described in MM-66474
+
+		// Step 1: Admin sets up permissions - restore defaults first
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
 		defer func() {
 			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
 		}()
-		// Ensure manage properties permission is present
-		e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
-		// Explicitly remove manage members permission from both playbook and team levels
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
-		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.TeamUserRoleId)
 
-		// Get the playbook
+		// Step 2: Configure permissions so "All Members" can only "Manage Playbook Configurations"
+		// This is the "Manage Playbook Configurations" permission for both public and private
+		e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+		e.Permissions.AddPermissionToRole(t, model.PermissionPrivatePlaybookManageProperties.Id, model.PlaybookMemberRoleId)
+
+		// Step 3: Ensure "Manage Playbook Members" permission is NOT granted
+		// Remove it from playbook member role (if it was there by default)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPrivatePlaybookManageMembers.Id, model.PlaybookMemberRoleId)
+
+		// Step 4: Also remove from team_user role (the role RegularUser has by default)
+		// This is necessary because hasPermissionsToPlaybook cascades to HasPermissionToTeam,
+		// which checks all roles the user has on the team.
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookManageMembers.Id, model.TeamUserRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPrivatePlaybookManageMembers.Id, model.TeamUserRoleId)
+
+		// Step 5: Get the playbook (as admin would, to save the response)
+		// In the real scenario, admin would GET /plugins/playbooks/api/v0/playbooks/{PLAYBOOK_ID}
 		playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
 		require.NoError(t, err)
 		originalTeamID := playbook.TeamID
+		require.Equal(t, e.BasicTeam.Id, originalTeamID, "Playbook should initially be in BasicTeam (Team A)")
 
-		// Try to change team_id to a different team (BasicTeam2)
+		// Step 6: As regular user, try to change team_id to a different team (Team B)
+		// This replicates: PUT /plugins/playbooks/api/v0/playbooks/{PLAYBOOK_ID} with team_id = Team B
 		playbook.TeamID = e.BasicTeam2.Id
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *playbook)
+
+		// Step 7: Verify we got the expected 403 Forbidden error
+		// Without the fix (MM-66474), this would succeed and the playbook would move to Team B
+		// With the fix, this should fail because changing team_id requires "Manage Playbook Members" permission
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 
-		// Verify playbook team_id was not changed
+		// Step 8: Verify playbook team_id was not changed (security check)
+		// The playbook should still be in the original team
 		playbookAfter, err := e.PlaybooksClient.Playbooks.Get(context.Background(), e.BasicPlaybook.ID)
 		require.NoError(t, err)
-		assert.Equal(t, originalTeamID, playbookAfter.TeamID, "Team ID should not have changed")
+		assert.Equal(t, originalTeamID, playbookAfter.TeamID,
+			"Team ID should not have changed. Without the fix, this would have moved to Team B (security vulnerability).")
+		assert.Equal(t, e.BasicTeam.Id, playbookAfter.TeamID, "Playbook should still be in BasicTeam (Team A)")
 	})
 
 	t.Run("user without access to destination team cannot change playbook team", func(t *testing.T) {
