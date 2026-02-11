@@ -368,4 +368,3 @@ func checklistsToGeneratedJSON(checklists []Checklist) string {
 
 	return string(jsonBytes)
 }
-
