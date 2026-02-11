@@ -145,13 +145,6 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Check if AI service is available
-	if err := h.aiService.IsAvailable(); err != nil {
-		logger.WithError(err).Warn("AI service unavailable during quicklist generation")
-		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
-		return
-	}
-
 	// Decode request body
 	var req QuicklistGenerateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -172,6 +165,13 @@ func (h *QuicklistHandler) generate(c *Context, w http.ResponseWriter, r *http.R
 		"cannot generate quicklist from archived channel",
 	)
 	if !ok {
+		return
+	}
+
+	// Check if AI service is available
+	if err := h.aiService.IsAvailable(); err != nil {
+		logger.WithError(err).Warn("AI service unavailable during quicklist generation")
+		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
 		return
 	}
 
@@ -236,13 +236,6 @@ func (h *QuicklistHandler) refine(c *Context, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Check if AI service is available
-	if err := h.aiService.IsAvailable(); err != nil {
-		logger.WithError(err).Warn("AI service unavailable during quicklist refinement")
-		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
-		return
-	}
-
 	// Decode request body
 	var req QuicklistRefineRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -274,6 +267,13 @@ func (h *QuicklistHandler) refine(c *Context, w http.ResponseWriter, r *http.Req
 		"cannot refine quicklist from archived channel",
 	)
 	if !ok {
+		return
+	}
+
+	// Check if AI service is available
+	if err := h.aiService.IsAvailable(); err != nil {
+		logger.WithError(err).Warn("AI service unavailable during quicklist refinement")
+		h.HandleErrorWithCode(w, logger, http.StatusServiceUnavailable, "AI service is not available", err)
 		return
 	}
 
