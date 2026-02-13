@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -43,6 +43,7 @@ import {ToastStyle} from 'src/components/backstage/toast';
 import Tooltip from 'src/components/widgets/tooltip';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {useTextOverflow} from 'src/hooks';
 import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 
 import {UserList} from './rhs_participants';
@@ -584,6 +585,8 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {add: addToastMessage} = useToaster();
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
+    const titleRef = useRef<HTMLDivElement>(null);
+    const isTitleOverflowing = useTextOverflow(titleRef);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -626,7 +629,16 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                     <IconWrapper $margin='6px'>
                         {icon}
                     </IconWrapper>
-                    <TitleRow>{props.name}</TitleRow>
+                    {isTitleOverflowing ? (
+                        <Tooltip
+                            id={`run-title-tooltip-${props.id}`}
+                            content={props.name}
+                        >
+                            <TitleRow ref={titleRef}>{props.name}</TitleRow>
+                        </Tooltip>
+                    ) : (
+                        <TitleRow ref={titleRef}>{props.name}</TitleRow>
+                    )}
                     <Spacer/>
                     <ContextMenu
                         runType={props.type}

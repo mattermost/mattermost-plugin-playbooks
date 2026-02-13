@@ -55,6 +55,10 @@ type Client struct {
 	PlaybookConditions *PlaybookConditionsService
 	// RunConditions is a collection of methods used to interact with run conditions.
 	RunConditions *RunConditionsService
+	// Bot is a collection of methods used to interact with the Playbooks bot.
+	Bot *BotService
+	// Bot is a collection of methods used to interact with categories.
+	Categories *CategoriesService
 }
 
 // New creates a new instance of Client using the configuration from the given Mattermost Client.
@@ -84,6 +88,8 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c.TabApp = &TabAppService{c}
 	c.PlaybookConditions = &PlaybookConditionsService{c}
 	c.RunConditions = &RunConditionsService{c}
+	c.Bot = &BotService{c}
+	c.Categories = &CategoriesService{c}
 	return c, nil
 }
 

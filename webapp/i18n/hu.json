@@ -837,5 +837,19 @@
     "cpGAhx": "Biztos, hogy le akarja tiltani az állapotfrissítéseket ehhez a futáshoz?",
     "qxYWTy": "Az összes feladat megjelenítése a saját futásaimból",
     "zSOvI0": "Szűrők",
-    "Bgt0C8": "Ez a frissítés a <i>{runName}</i> futáshoz a {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {egy csatorna} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {egy közvetlen üzenet} other {{followersChannelCount, number} közvetlen üzenetek}}</FollowersTooltip>} other {}}."
+    "Bgt0C8": "Ez a frissítés a <i>{runName}</i> futáshoz a {hasChannels, select, true {<OverviewLink><ChannelsTooltip>{broadcastChannelCount, plural, =1 {egy csatorna} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip></OverviewLink>} other {}}{hasFollowersAndChannels, select, true { and } other {}}{hasFollowers, select, true {<FollowersTooltip>{followersChannelCount, plural, =1 {egy közvetlen üzenet} other {{followersChannelCount, number} közvetlen üzenetek}}</FollowersTooltip>} other {}}.",
+    "+4cyEF": "Ha",
+    "+RhnH+": "Üres",
+    "+xTpT1": "Attribútumok",
+    "/PxBNo": "Maximum {limit} attribútum engedélyezett",
+    "/mYUy/": "Ehhez a csatornához nincs kapcsolódó befejezett ellenőrzőlista",
+    "/pSioa": "A feltétel már nem teljesül, de a feladat megjelenik, mert módosították",
+    "2O2sfp": "Befejezés",
+    "3Adhq6": "Attribútum duplikálása",
+    "3y9DGg": "Folytatás",
+    "5fGYe2": "Még nincs attribútum",
+    "5kK+j9": "Újraindítás",
+    "6qFGE1": "Az ellenőrzőlisták nem érhetők el közvetlen vagy csoportos üzenetekhez",
+    "8JP4EK": "Automata követés",
+    "8kS2BY": "Mentés mint forgatókönyv"
 }
