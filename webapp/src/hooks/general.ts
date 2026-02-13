@@ -625,3 +625,35 @@ export const useReservedCategoryTitleMapper = () => {
         }
     };
 };
+
+/**
+ * Hook that detects if text in a referenced element is overflowing (truncated with ellipsis).
+ * Returns true when scrollWidth > clientWidth, indicating the text is being clipped.
+ */
+export function useTextOverflow(ref: MutableRefObject<HTMLElement | null>) {
+    const [isOverflowing, setIsOverflowing] = useState(false);
+
+    useEffect(() => {
+        const checkOverflow = () => {
+            if (ref.current) {
+                setIsOverflowing(ref.current.scrollWidth > ref.current.clientWidth);
+            }
+        };
+
+        checkOverflow();
+
+        const resizeObserver = new ResizeObserver(checkOverflow);
+        if (ref.current) {
+            resizeObserver.observe(ref.current);
+        }
+
+        window.addEventListener('resize', checkOverflow);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener('resize', checkOverflow);
+        };
+    }, [ref]);
+
+    return isOverflowing;
+}

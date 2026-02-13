@@ -3,18 +3,21 @@
 
 import styled from 'styled-components';
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {useTextOverflow} from 'src/hooks';
 import {useCanModifyRun} from 'src/hooks/run_permissions';
+import Tooltip from 'src/components/widgets/tooltip';
+import Dropdown from 'src/components/dropdown';
+import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {navigateToUrl, pluginUrl} from 'src/browser_routing';
 import {PlaybookRun} from 'src/types/playbook_run';
-import DotMenu, {TitleButton} from 'src/components/dot_menu';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {useManageRunMembership} from 'src/graphql/hooks';
 import {useToaster} from 'src/components/backstage/toast_banner';
@@ -66,6 +69,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const [showExportModal, setShowExportModal] = useState(false);
     const showRunActionsFromRedux = useSelector(isRunActionsModalVisible);
     const [showRunActionsFromMenu, setShowRunActionsFromMenu] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const titleTextRef = useRef<HTMLSpanElement>(null);
+    const isTitleOverflowing = useTextOverflow(titleTextRef);
 
     // Show modal if either Redux state or local state is true
     const showRunActionsModal = showRunActionsFromRedux || showRunActionsFromMenu;
@@ -75,72 +81,105 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const isPlaybookRun = playbookRun.type === PlaybookRunType.Playbook;
     const icon = isPlaybookRun ? <PlayOutlineIcon size={18}/> : <CheckAllIcon size={18}/>;
 
+    const titleButton = (
+        <TitleButton
+            $isActive={isMenuOpen}
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsMenuOpen(!isMenuOpen);
+            }}
+            tabIndex={0}
+            role='button'
+            data-testid='menuButton'
+        >
+            <Title>
+                <IconWrapper>
+                    {icon}
+                </IconWrapper>
+                <TitleText ref={titleTextRef}>{playbookRun.name}</TitleText>
+            </Title>
+            <i
+                className='icon icon-chevron-down'
+                data-testid='runDropdown'
+            />
+        </TitleButton>
+    );
+
+    const menuButton = (
+        <MenuButtonWrapper>
+            {isTitleOverflowing ? (
+                <Tooltip
+                    id={`run-title-tooltip-${playbookRun.id}`}
+                    content={playbookRun.name}
+                >
+                    {titleButton}
+                </Tooltip>
+            ) : titleButton}
+        </MenuButtonWrapper>
+    );
+
     return (
         <>
-            <DotMenu
-                dotMenuButton={TitleButton}
+            <Dropdown
+                isOpen={isMenuOpen}
+                onOpenChange={setIsMenuOpen}
+                target={menuButton}
                 placement='bottom-start'
-                icon={
-                    <>
-                        <Title>
-                            <IconWrapper>
-                                {icon}
-                            </IconWrapper>
-                            <TitleText>{playbookRun.name}</TitleText>
-                        </Title>
-                        <i
-                            className={'icon icon-chevron-down'}
-                            data-testid='runDropdown'
-                        />
-                    </>
-                }
             >
-
-                <FavoriteRunMenuItem
-                    isFavoriteRun={isFavoriteRun}
-                    toggleFavorite={toggleFavorite}
-                />
-                <CopyRunLinkMenuItem
-                    playbookRunId={playbookRun.id}
-                />
-                <RenameRunItem
-                    playbookRun={playbookRun}
-                    role={role}
-                    onClick={onRenameClick}
-                />
-                <Separator/>
-                <RunActionsMenuItem
-                    onClick={() => setShowRunActionsFromMenu(true)}
-                    playbookRun={playbookRun}
-                    role={role}
-                />
-                <ExportChannelLogsMenuItem
-                    channelId={playbookRun.channel_id}
-                    setShowModal={setShowExportModal}
-                />
-                <SaveAsPlaybookMenuItem
-                    playbookRun={playbookRun}
-                />
-                <FinishRunMenuItem
-                    playbookRun={playbookRun}
-                    role={role}
-                    location={location}
-                />
-                <RestoreRunMenuItem
-                    playbookRun={playbookRun}
-                    role={role}
-                    location={location}
-                />
-                <ToggleRunStatusUpdateMenuItem
-                    playbookRun={playbookRun}
-                    role={role}
-                />
-                <LeaveRunMenuItem
-                    isFollowing={isFollowing}
-                    role={role}
-                    showLeaveRunConfirm={showLeaveRunConfirm}
-                />
-            </DotMenu>
+                <DropdownMenu
+                    data-testid='dropdownmenu'
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMenuOpen(false);
+                    }}
+                >
+                    <FavoriteRunMenuItem
+                        isFavoriteRun={isFavoriteRun}
+                        toggleFavorite={toggleFavorite}
+                    />
+                    <CopyRunLinkMenuItem
+                        playbookRunId={playbookRun.id}
+                    />
+                    <RenameRunItem
+                        playbookRun={playbookRun}
+                        role={role}
+                        onClick={onRenameClick}
+                    />
+                    <Separator/>
+                    <RunActionsMenuItem
+                        onClick={() => setShowRunActionsFromMenu(true)}
+                        playbookRun={playbookRun}
+                        role={role}
+                    />
+                    <ExportChannelLogsMenuItem
+                        channelId={playbookRun.channel_id}
+                        setShowModal={setShowExportModal}
+                    />
+                    <SaveAsPlaybookMenuItem
+                        playbookRun={playbookRun}
+                    />
+                    <FinishRunMenuItem
+                        playbookRun={playbookRun}
+                        role={role}
+                        location={location}
+                    />
+                    <RestoreRunMenuItem
+                        playbookRun={playbookRun}
+                        role={role}
+                        location={location}
+                    />
+                    <ToggleRunStatusUpdateMenuItem
+                        playbookRun={playbookRun}
+                        role={role}
+                    />
+                    <LeaveRunMenuItem
+                        isFollowing={isFollowing}
+                        role={role}
+                        showLeaveRunConfirm={showLeaveRunConfirm}
+                    />
+                </DropdownMenu>
+            </Dropdown>
             <UpgradeModal
                 messageType={AdminNotificationType.EXPORT_CHANNEL}
                 show={showExportModal}
@@ -243,5 +282,11 @@ const IconWrapper = styled.div`
     display: flex;
     align-items: center;
     flex-shrink: 0;
+`;
+
+const MenuButtonWrapper = styled.div`
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
 `;
 
