@@ -47,13 +47,7 @@ func graphQLPlaybooksLoader[V *app.Playbook](ctx context.Context, keys []playboo
 		return populateResultWithError(err, result)
 	}
 
-	// Filter out playbooks the user doesn't have permission to view
-	filteredItems := []app.Playbook{}
-	for _, playbook := range playbookResult.Items {
-		if err := c.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
-			filteredItems = append(filteredItems, playbook)
-		}
-	}
+	filteredItems := c.permissions.FilterPlaybooksByViewPermission(userID, playbookResult.Items)
 
 	playbooksByID := make(map[string]*app.Playbook)
 	for i := range filteredItems {

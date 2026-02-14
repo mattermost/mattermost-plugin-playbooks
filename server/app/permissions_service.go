@@ -401,6 +401,17 @@ func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Pl
 	return noAccessErr
 }
 
+// FilterPlaybooksByViewPermission returns only the playbooks the user has permission to view.
+func (p *PermissionsService) FilterPlaybooksByViewPermission(userID string, playbooks []Playbook) []Playbook {
+	filtered := make([]Playbook, 0, len(playbooks))
+	for _, playbook := range playbooks {
+		if p.PlaybookViewWithPlaybook(userID, playbook) == nil {
+			filtered = append(filtered, playbook)
+		}
+	}
+	return filtered
+}
+
 func (p *PermissionsService) PlaybookMakePrivate(userID string, playbook Playbook) error {
 	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPublicPlaybookMakePrivate) {
 		return nil

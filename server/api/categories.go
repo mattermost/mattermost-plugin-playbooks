@@ -307,13 +307,7 @@ func (h *CategoryHandler) getPlaybooksCategory(teamID, userID string) (app.Categ
 		return app.Category{}, errors.Wrap(err, "can't get playbooks for team")
 	}
 
-	// Filter out playbooks the user doesn't have permission to view
-	filteredItems := []app.Playbook{}
-	for _, playbook := range playbooks.Items {
-		if err := h.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
-			filteredItems = append(filteredItems, playbook)
-		}
-	}
+	filteredItems := h.permissions.FilterPlaybooksByViewPermission(userID, playbooks.Items)
 
 	playbookCategoryItems := []app.CategoryItem{}
 	for _, playbook := range filteredItems {

@@ -278,13 +278,7 @@ func (r *Runner) actionRun(args []string) {
 		return
 	}
 
-	// Filter out playbooks the user doesn't have permission to view
-	filteredItems := []app.Playbook{}
-	for _, playbook := range playbooksResults.Items {
-		if err := r.permissions.PlaybookViewWithPlaybook(r.args.UserId, playbook); err == nil {
-			filteredItems = append(filteredItems, playbook)
-		}
-	}
+	filteredItems := r.permissions.FilterPlaybooksByViewPermission(r.args.UserId, playbooksResults.Items)
 
 	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, filteredItems); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
@@ -323,13 +317,7 @@ func (r *Runner) actionRunPlaybook(args []string) {
 		return
 	}
 
-	// Filter out playbooks the user doesn't have permission to view
-	filteredItems := []app.Playbook{}
-	for _, playbook := range playbooksResults.Items {
-		if err := r.permissions.PlaybookViewWithPlaybook(r.args.UserId, playbook); err == nil {
-			filteredItems = append(filteredItems, playbook)
-		}
-	}
+	filteredItems := r.permissions.FilterPlaybooksByViewPermission(r.args.UserId, playbooksResults.Items)
 
 	var playbook []app.Playbook
 	for _, pb := range filteredItems {
@@ -1884,13 +1872,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 		return
 	}
 
-	// Filter out playbooks the user doesn't have permission to view
-	filteredItems := []app.Playbook{}
-	for _, playbook := range playbooksResult.Items {
-		if err := r.permissions.PlaybookViewWithPlaybook(r.args.UserId, playbook); err == nil {
-			filteredItems = append(filteredItems, playbook)
-		}
-	}
+	filteredItems := r.permissions.FilterPlaybooksByViewPermission(r.args.UserId, playbooksResult.Items)
 
 	var playbooks []app.Playbook
 	if len(filteredItems) == 0 {

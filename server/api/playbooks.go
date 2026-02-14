@@ -406,20 +406,17 @@ func (h *PlaybookHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
-	// Filter out playbooks the user doesn't have permission to view
-	filteredItems := []app.Playbook{}
-	for _, playbook := range playbookResults.Items {
-		if err := h.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
-			filteredItems = append(filteredItems, playbook)
-		}
-	}
+	filteredItems := h.permissions.FilterPlaybooksByViewPermission(userID, playbookResults.Items)
+	preFilterCount := len(playbookResults.Items)
 
 	// Update results with filtered items
 	playbookResults.Items = filteredItems
 	// Note: TotalCount from DB represents total before permission filtering.
 	// We keep it as an upper bound since recalculating would require re-querying.
-	// HasMore is set conservatively: if we got fewer items than requested, there's no more.
-	if opts.PerPage > 0 && len(filteredItems) < opts.PerPage {
+	// HasMore is based on pre-filter count: if the DB returned a full page, there may be more
+	// (client can request next page; worst case it's empty). Using post-filter count would
+	// set HasMore = false as soon as one item is filtered out, stopping pagination too early.
+	if opts.PerPage > 0 && preFilterCount < opts.PerPage {
 		playbookResults.HasMore = false
 	}
 
@@ -451,13 +448,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(c *Context, w http.ResponseWr
 		return
 	}
 
-	// Filter out playbooks the user doesn't have permission to view
-	filteredItems := []app.Playbook{}
-	for _, playbook := range playbooksResult.Items {
-		if err := h.permissions.PlaybookViewWithPlaybook(userID, playbook); err == nil {
-			filteredItems = append(filteredItems, playbook)
-		}
-	}
+	filteredItems := h.permissions.FilterPlaybooksByViewPermission(userID, playbooksResult.Items)
 
 	list := make([]model.AutocompleteListItem, 0)
 
