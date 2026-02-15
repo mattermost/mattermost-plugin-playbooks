@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {type Page} from "@playwright/test";
-import type {Logger} from "@mattermost/loadtest-browser-lib";
+import {type Logger} from "@mattermost/loadtest-browser-lib";
 
 export async function createNewPlaybook(
   page: Page,
@@ -33,6 +33,7 @@ export async function createNewPlaybook(
     const playbookNameInput = page.getByLabel("Playbook name");
     await playbookNameInput.fill(getRandomPlaybookName());
 
+    // # Click on create playbook button
     const createPlaybookButton = page.getByTestId("modal-confirm-button");
     await createPlaybookButton.click();
 
