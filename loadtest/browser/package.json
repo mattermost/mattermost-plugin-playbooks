@@ -15,6 +15,7 @@
     "dist"
   ],
   "scripts": {
+    "package": "npm pack --pack-destination ./pack",
     "prepack": "npm run build",
     "build": "npm run build:bundle && npm run types:generate",
     "build:bundle": "node scripts/generate_bundle.mjs",
