@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {type Page} from "@playwright/test";
-import type {Logger} from "@mattermost/loadtest-browser-lib";
+import {type Logger} from "@mattermost/loadtest-browser-lib";
 
 type ExtraArgs = {
   scrollDistance?: number;
