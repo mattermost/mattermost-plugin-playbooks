@@ -21,6 +21,8 @@ import {pluginUrl} from 'src/browser_routing';
 
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 
+import {Mark, Measure, measureAndReport} from 'src/performance_telemetry';
+
 import RunList from './runs_list/runs_list';
 import NoContentPage from './runs_page_no_content';
 
@@ -70,6 +72,17 @@ const RunsPage = () => {
 
         checkForPlaybookRuns();
     }, [currentTeamId]);
+
+    useEffect(() => {
+        if (showNoPlaybookRuns !== null) {
+            measureAndReport({
+                name: Measure.PlaybookRunsListLoadDurationMs,
+                startMark: Mark.PlaybookRunsLHSButtonClicked,
+                canFail: true,
+            });
+            performance.clearMarks(Mark.PlaybookRunsLHSButtonClicked);
+        }
+    }, [showNoPlaybookRuns]);
 
     if (showNoPlaybookRuns == null || noPlaybooks == null) {
         return null;
