@@ -76,7 +76,7 @@ const RunsPage = () => {
     useEffect(() => {
         if (showNoPlaybookRuns !== null) {
             measureAndReport({
-                name: Measure.PlaybookRunsListLoad,
+                name: Measure.PlaybookRunsListLoadDurationMs,
                 startMark: Mark.PlaybookRunsLHSButtonClicked,
                 canFail: true,
             });

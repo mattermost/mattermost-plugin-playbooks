@@ -28,8 +28,8 @@ export const Mark = {
  * These values are sent as labels.plugin_metric_label in the metric.
  */
 export const Measure = {
-    PlaybooksListLoad: 'playbooks_list_load',
-    PlaybookRunsListLoad: 'playbook_runs_list_load',
+    PlaybooksListLoadDurationMs: 'playbooks_list_load_duration_ms',
+    PlaybookRunsListLoadDurationMs: 'playbook_runs_list_load_duration_ms',
 };
 
 /**

@@ -149,7 +149,7 @@ const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
     useEffect(() => {
         if (!isLoading) {
             measureAndReport({
-                name: Measure.PlaybooksListLoad,
+                name: Measure.PlaybooksListLoadDurationMs,
                 startMark: Mark.PlaybooksLHSButtonClicked,
                 canFail: true,
             });
