@@ -52,8 +52,11 @@ func (s *ThreadService) FetchAndFormatThread(postID string) (*ThreadContent, err
 		return nil, fmt.Errorf("failed to get thread: %s", appErr.Error())
 	}
 
-	// Get channel info for context (ignore errors, channel is optional)
-	channel, _ := s.api.GetChannel(rootPost.ChannelId)
+	// Get channel info for context
+	channel, appErr := s.api.GetChannel(rootPost.ChannelId)
+	if appErr != nil {
+		return nil, fmt.Errorf("failed to get channel: %s", appErr.Error())
+	}
 
 	// Sort posts by create time (ascending - oldest first)
 	posts := sortPostsByTime(thread.Posts)

@@ -105,6 +105,26 @@ export function classifyError(error: ClientError | null): QuicklistErrorType {
  * Returns a user-friendly error message based on the error type and original error.
  * Messages are designed to be helpful without exposing technical details.
  */
+export function toClientError(error: unknown, fallbackMessage: string): ClientError {
+    if (error instanceof ClientError) {
+        return error;
+    }
+
+    if (error instanceof Error) {
+        return new ClientError('', {
+            message: error.message || fallbackMessage,
+            status_code: 0,
+            url: '',
+        });
+    }
+
+    return new ClientError('', {
+        message: fallbackMessage,
+        status_code: 0,
+        url: '',
+    });
+}
+
 export function getUserFriendlyErrorMessage(error: ClientError | null): string {
     if (!error) {
         return 'An unexpected error occurred. Please try again.';

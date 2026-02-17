@@ -591,6 +591,56 @@ func TestAIService_GenerateChecklist(t *testing.T) {
 		assert.Equal(t, "Custom user prompt: my thread", mockClient.lastCompletionReq.Posts[1].Message)
 	})
 
+	t.Run("supports placeholder-based custom prompts", func(t *testing.T) {
+		mockClient := &mockBridgeClient{
+			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
+				return `{"title": "Test", "sections": [{"title": "Tasks", "items": [{"title": "Task 1"}]}]}`, nil
+			},
+		}
+		mockCfg := &mockConfigService{
+			config: &config.Configuration{
+				QuicklistAgentBotID: "bot123",
+				QuicklistUserPrompt: "Prompt start\n\n{{THREAD_CONTENT}}\n\nPrompt end",
+			},
+		}
+		service := NewAIService(mockClient, mockCfg)
+
+		_, err := service.GenerateChecklist(QuicklistGenerateRequest{
+			ThreadContent: "thread context",
+			ChannelID:     "channel123",
+			UserID:        "user123",
+		})
+
+		require.NoError(t, err)
+		require.Len(t, mockClient.lastCompletionReq.Posts, 2)
+		assert.Equal(t, "Prompt start\n\nthread context\n\nPrompt end", mockClient.lastCompletionReq.Posts[1].Message)
+	})
+
+	t.Run("does not interpret additional format directives in legacy template", func(t *testing.T) {
+		mockClient := &mockBridgeClient{
+			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {
+				return `{"title": "Test", "sections": [{"title": "Tasks", "items": [{"title": "Task 1"}]}]}`, nil
+			},
+		}
+		mockCfg := &mockConfigService{
+			config: &config.Configuration{
+				QuicklistAgentBotID: "bot123",
+				QuicklistUserPrompt: "Legacy template: %s %d",
+			},
+		}
+		service := NewAIService(mockClient, mockCfg)
+
+		_, err := service.GenerateChecklist(QuicklistGenerateRequest{
+			ThreadContent: "thread context",
+			ChannelID:     "channel123",
+			UserID:        "user123",
+		})
+
+		require.NoError(t, err)
+		require.Len(t, mockClient.lastCompletionReq.Posts, 2)
+		assert.Equal(t, "Legacy template: thread context %d", mockClient.lastCompletionReq.Posts[1].Message)
+	})
+
 	t.Run("passes correct agent ID and request parameters", func(t *testing.T) {
 		mockClient := &mockBridgeClient{
 			agentCompletionFunc: func(agent string, request bridgeclient.CompletionRequest) (string, error) {

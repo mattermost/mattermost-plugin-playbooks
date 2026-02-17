@@ -47,9 +47,12 @@ Guidelines:
 - If a question is asked that needs resolution, that's a task
 - Limit to 20 items total to keep the checklist manageable`
 
+const threadContentPlaceholder = "{{THREAD_CONTENT}}"
+const feedbackPlaceholder = "{{FEEDBACK}}"
+
 const defaultQuicklistUserPrompt = `Analyze the following thread and extract all actionable tasks into a structured checklist.
 
-%s
+{{THREAD_CONTENT}}
 
 Return only valid JSON, no additional text.`
 
@@ -232,12 +235,14 @@ func (s *AIService) GenerateChecklist(req QuicklistGenerateRequest) (*GeneratedC
 		userPrompt = defaultQuicklistUserPrompt
 	}
 
+	userMessage := applyPromptTemplate(userPrompt, threadContentPlaceholder, req.ThreadContent)
+
 	response, err := s.bridgeClient.AgentCompletion(cfg.QuicklistAgentBotID, bridgeclient.CompletionRequest{
 		UserID:    req.UserID,
 		ChannelID: req.ChannelID,
 		Posts: []bridgeclient.Post{
 			{Role: "system", Message: systemPrompt},
-			{Role: "user", Message: fmt.Sprintf(userPrompt, req.ThreadContent)},
+			{Role: "user", Message: userMessage},
 		},
 	})
 	if err != nil {
@@ -273,10 +278,23 @@ func stripMarkdownCodeFences(s string) string {
 	return strings.TrimSpace(s)
 }
 
+func applyPromptTemplate(template, placeholder, value string) string {
+	if strings.Contains(template, placeholder) {
+		return strings.Replace(template, placeholder, value, 1)
+	}
+
+	// Backward compatibility with existing `%s`-based templates configured by admins.
+	if strings.Contains(template, "%s") {
+		return strings.Replace(template, "%s", value, 1)
+	}
+
+	return template + "\n\n" + value
+}
+
 // Default refinement prompt template.
 const defaultQuicklistRefinePrompt = `The user has provided feedback on the checklist. Please update the checklist based on their feedback.
 
-User feedback: %s
+User feedback: {{FEEDBACK}}
 
 Return the updated checklist in the same JSON format. Only modify what the user requested. Keep all other items unchanged unless they conflict with the feedback.`
 
@@ -303,7 +321,8 @@ func (s *AIService) RefineChecklist(req QuicklistRefineRequest) (*GeneratedCheck
 	previousResponse := checklistsToGeneratedJSON(req.CurrentChecklists)
 
 	// Build refinement prompt
-	refinementPrompt := fmt.Sprintf(defaultQuicklistRefinePrompt, req.Feedback)
+	refinementPrompt := applyPromptTemplate(defaultQuicklistRefinePrompt, feedbackPlaceholder, req.Feedback)
+	userMessage := applyPromptTemplate(userPrompt, threadContentPlaceholder, req.ThreadContent)
 
 	// Build conversation with context: system, original request, previous response, feedback
 	response, err := s.bridgeClient.AgentCompletion(cfg.QuicklistAgentBotID, bridgeclient.CompletionRequest{
@@ -311,7 +330,7 @@ func (s *AIService) RefineChecklist(req QuicklistRefineRequest) (*GeneratedCheck
 		ChannelID: req.ChannelID,
 		Posts: []bridgeclient.Post{
 			{Role: "system", Message: systemPrompt},
-			{Role: "user", Message: fmt.Sprintf(userPrompt, req.ThreadContent)},
+			{Role: "user", Message: userMessage},
 			{Role: "assistant", Message: previousResponse},
 			{Role: "user", Message: refinementPrompt},
 		},

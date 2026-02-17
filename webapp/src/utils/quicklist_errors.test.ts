@@ -8,6 +8,7 @@ import {
     classifyError,
     getUserFriendlyErrorMessage,
     isTransientError,
+    toClientError,
 } from './quicklist_errors';
 
 describe('quicklist_errors', () => {
@@ -164,6 +165,35 @@ describe('quicklist_errors', () => {
                 url: '',
             });
             expect(classifyError(error)).toBe(QuicklistErrorType.BadRequest);
+        });
+    });
+
+    describe('toClientError', () => {
+        it('returns same instance when error is already ClientError', () => {
+            const error = new ClientError('', {
+                message: 'Existing client error',
+                status_code: 400,
+                url: '',
+            });
+
+            expect(toClientError(error, 'Fallback')).toBe(error);
+        });
+
+        it('maps Error to ClientError with status 0', () => {
+            const error = new Error('Boom');
+            const result = toClientError(error, 'Fallback');
+
+            expect(result).toBeInstanceOf(ClientError);
+            expect(result.message).toBe('Boom');
+            expect(result.status_code).toBe(0);
+        });
+
+        it('uses fallback when value is not an Error', () => {
+            const result = toClientError('unexpected', 'Fallback message');
+
+            expect(result).toBeInstanceOf(ClientError);
+            expect(result.message).toBe('Fallback message');
+            expect(result.status_code).toBe(0);
         });
     });
 

@@ -4,11 +4,13 @@
 export interface GlobalSettings {
     link_run_to_existing_channel_enabled: boolean;
     enable_experimental_features: boolean;
+    quicklist_enabled: boolean;
 }
 
 const defaults: GlobalSettings = {
     link_run_to_existing_channel_enabled: false,
     enable_experimental_features: false,
+    quicklist_enabled: false,
 };
 
 export function globalSettingsSetDefaults(

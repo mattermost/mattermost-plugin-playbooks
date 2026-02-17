@@ -10,7 +10,6 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -601,7 +600,7 @@ func TestFetchAndFormatThread(t *testing.T) {
 		api.AssertExpectations(t)
 	})
 
-	t.Run("handles channel fetch error gracefully", func(t *testing.T) {
+	t.Run("returns error when channel fetch fails", func(t *testing.T) {
 		api := &plugintest.API{}
 		cfg := &mockConfigService{
 			config: &config.Configuration{
@@ -623,18 +622,15 @@ func TestFetchAndFormatThread(t *testing.T) {
 			Posts: map[string]*model.Post{"root": rootPost},
 		}
 
-		user := &model.User{Id: "user1", Username: "alice"}
-
 		api.On("GetPost", "root").Return(rootPost, nil)
 		api.On("GetPostThread", "root").Return(thread, nil)
 		api.On("GetChannel", "ch1").Return(nil, model.NewAppError("GetChannel", "channel.not_found", nil, "", 404))
-		api.On("GetUser", mock.Anything).Return(user, nil)
 
 		result, err := service.FetchAndFormatThread("root")
 
-		require.NoError(t, err)
-		// Should use "unknown" for channel name
-		assert.Contains(t, result.FormattedContent, "Thread from channel: #unknown")
+		assert.Nil(t, result)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to get channel")
 
 		api.AssertExpectations(t)
 	})

@@ -7,6 +7,7 @@ import {IntlProvider} from 'react-intl';
 import configureStore from 'redux-mock-store';
 
 import {openQuicklistModal} from 'src/actions';
+import manifest from 'src/manifest';
 
 import {QuicklistPostMenuText, makeQuicklistPostAction} from './post_menu';
 
@@ -84,21 +85,28 @@ describe('makeQuicklistPostAction', () => {
         type: 'system_join_channel',
     };
 
+    const makeState = (posts: Record<string, unknown>, quicklistEnabled = true) => ({
+        entities: {
+            posts: {
+                posts,
+            },
+        },
+        [`plugins-${manifest.id}`]: {
+            globalSettings: {
+                enable_experimental_features: quicklistEnabled,
+                quicklist_enabled: quicklistEnabled,
+                link_run_to_existing_channel_enabled: false,
+            },
+        },
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
     describe('action', () => {
         it('calls openQuicklistModal with correct postId and channelId', () => {
-            const store = mockStore({
-                entities: {
-                    posts: {
-                        posts: {
-                            'post-123': regularPost,
-                        },
-                    },
-                },
-            });
+            const store = mockStore(makeState({'post-123': regularPost}));
 
             const action = makeQuicklistPostAction(store);
             action.action('post-123');
@@ -109,13 +117,7 @@ describe('makeQuicklistPostAction', () => {
         });
 
         it('does nothing when post is not found', () => {
-            const store = mockStore({
-                entities: {
-                    posts: {
-                        posts: {},
-                    },
-                },
-            });
+            const store = mockStore(makeState({}));
 
             const action = makeQuicklistPostAction(store);
             action.action('non-existent-post');
@@ -126,16 +128,8 @@ describe('makeQuicklistPostAction', () => {
     });
 
     describe('filter', () => {
-        it('returns true for regular posts', () => {
-            const store = mockStore({
-                entities: {
-                    posts: {
-                        posts: {
-                            'post-123': regularPost,
-                        },
-                    },
-                },
-            });
+        it('returns true for regular posts when quicklist is enabled', () => {
+            const store = mockStore(makeState({'post-123': regularPost}));
 
             const action = makeQuicklistPostAction(store);
             const result = action.filter('post-123');
@@ -144,15 +138,7 @@ describe('makeQuicklistPostAction', () => {
         });
 
         it('returns false for system messages', () => {
-            const store = mockStore({
-                entities: {
-                    posts: {
-                        posts: {
-                            'system-post-123': systemPost,
-                        },
-                    },
-                },
-            });
+            const store = mockStore(makeState({'system-post-123': systemPost}));
 
             const action = makeQuicklistPostAction(store);
             const result = action.filter('system-post-123');
@@ -161,16 +147,19 @@ describe('makeQuicklistPostAction', () => {
         });
 
         it('returns false for non-existent posts', () => {
-            const store = mockStore({
-                entities: {
-                    posts: {
-                        posts: {},
-                    },
-                },
-            });
+            const store = mockStore(makeState({}));
 
             const action = makeQuicklistPostAction(store);
             const result = action.filter('non-existent-post');
+
+            expect(result).toBe(false);
+        });
+
+        it('returns false when quicklist feature is disabled', () => {
+            const store = mockStore(makeState({'post-123': regularPost}, false));
+
+            const action = makeQuicklistPostAction(store);
+            const result = action.filter('post-123');
 
             expect(result).toBe(false);
         });

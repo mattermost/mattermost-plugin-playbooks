@@ -23,6 +23,7 @@ import {
     showPostMenuModal,
     startPlaybookRun,
 } from 'src/actions';
+import {globalSettings as getGlobalSettings} from 'src/selectors';
 
 import {useAllowAddMessageToTimelineInCurrentTeam} from 'src/hooks';
 import {isProfessionalLicensedOrDevelopment} from 'src/license';
@@ -31,6 +32,11 @@ function shouldShowPostMenuForPost(store: Store, postId: string) {
     const state = store.getState() as GlobalState;
     const post = getPost(state, postId);
     return Boolean(post) && !isSystemMessage(post);
+}
+
+function isQuicklistFeatureEnabled(state: GlobalState): boolean {
+    const settings = getGlobalSettings(state);
+    return Boolean(settings?.enable_experimental_features && settings?.quicklist_enabled);
 }
 
 export const StartPlaybookRunPostMenuText = () => {
@@ -118,7 +124,8 @@ export function makeQuicklistPostAction(store: Store) {
             store.dispatch(openQuicklistModal(postId, post.channel_id) as any);
         },
         filter: (postId: string) => {
-            return shouldShowPostMenuForPost(store, postId);
+            const state = store.getState() as GlobalState;
+            return isQuicklistFeatureEnabled(state) && shouldShowPostMenuForPost(store, postId);
         },
     };
 }

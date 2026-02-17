@@ -163,6 +163,12 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 		if oldConfig.EnableExperimentalFeatures != configuration.EnableExperimentalFeatures {
 			settingsPayload["enable_experimental_features"] = configuration.EnableExperimentalFeatures
 		}
+
+		oldQuicklistEnabled := oldConfig.EnableExperimentalFeatures && oldConfig.QuicklistEnabled
+		newQuicklistEnabled := configuration.EnableExperimentalFeatures && configuration.QuicklistEnabled
+		if oldQuicklistEnabled != newQuicklistEnabled {
+			settingsPayload["quicklist_enabled"] = newQuicklistEnabled
+		}
 	}
 
 	if c.websocketPublisher != nil && len(settingsPayload) > 0 {

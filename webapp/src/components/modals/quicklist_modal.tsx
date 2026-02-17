@@ -23,7 +23,7 @@ import {
     refineQuicklist,
 } from 'src/client';
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {getUserFriendlyErrorMessage, isTransientError} from 'src/utils/quicklist_errors';
+import {getUserFriendlyErrorMessage, isTransientError, toClientError} from 'src/utils/quicklist_errors';
 
 const ID = 'playbooks_quicklist_modal';
 
@@ -158,15 +158,7 @@ const QuicklistModal = ({
                 modalProps.onHide();
             }
         } catch (err) {
-            if (err instanceof ClientError) {
-                setCreateError(err);
-            } else {
-                setCreateError(new ClientError('', {
-                    message: err instanceof Error ? err.message : 'Failed to create run',
-                    status_code: 0,
-                    url: '',
-                }));
-            }
+            setCreateError(toClientError(err, 'Failed to create run'));
         } finally {
             setIsCreatingRun(false);
             setCreationProgress({current: 0, total: 0});
@@ -191,15 +183,7 @@ const QuicklistModal = ({
             setFeedback('');
             setHasUnsavedChanges(true); // Mark as having unsaved changes after refinement
         } catch (err) {
-            if (err instanceof ClientError) {
-                setRefineError(err);
-            } else {
-                setRefineError(new ClientError('', {
-                    message: err instanceof Error ? err.message : 'An unexpected error occurred',
-                    status_code: 0,
-                    url: '',
-                }));
-            }
+            setRefineError(toClientError(err, 'An unexpected error occurred'));
         } finally {
             setIsRefining(false);
         }
