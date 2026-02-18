@@ -31,17 +31,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 cy.apiAddUserToTeam(testTeam.id, testViewerUser.id);
             });
 
-            // # Grant run_create permission to team_user role for creating standalone runs
-            // (runs without a playbook ID require this permission - see MM-66249)
-            // Note: This must be done while still logged in as admin (before cy.apiLogin(testUser))
-            cy.apiGetRolesByNames(['team_user']).then(({roles}) => {
-                const teamUserRole = roles[0];
-                if (!teamUserRole.permissions.includes('run_create')) {
-                    const updatedPermissions = [...teamUserRole.permissions, 'run_create'];
-                    cy.apiPatchRole(teamUserRole.id, {permissions: updatedPermissions});
-                }
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
 
@@ -201,7 +190,6 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
 
             it('Playbook entry is hidden for standalone run without playbook', () => {
                 // # Create a standalone run without a playbook (channel checklist)
-                // Note: run_create permission was already granted in before() hook
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: '', // Empty playbook ID for standalone run

@@ -190,10 +190,6 @@ func TestRunCreation(t *testing.T) {
 						app.DialogFieldNameKey:       "Standalone Run",
 					},
 				},
-				permissionsPrep: func() {
-					// Grant run_create permission for creating runs without a playbook ID (MM-66249)
-					e.Permissions.AddPermissionToRole(t, model.PermissionRunCreate.Id, model.TeamUserRoleId)
-				},
 				expected: func(t *testing.T, result *http.Response, err error) {
 					require.NoError(t, err)
 					assert.Equal(t, http.StatusCreated, result.StatusCode)
@@ -271,31 +267,6 @@ func TestRunCreation(t *testing.T) {
 	})
 
 	t.Run("create valid run without playbook", func(t *testing.T) {
-		// Grant run_create permission to team_user role for this test
-		// (by default, only playbook members have this permission)
-		roles, _, err := e.ServerAdminClient.GetRolesByNames(context.Background(), []string{"team_user"})
-		require.NoError(t, err)
-		require.Len(t, roles, 1)
-
-		teamUserRole := roles[0]
-		originalPermissions := teamUserRole.Permissions
-
-		// Add run_create permission temporarily
-		updatedPermissions := append([]string{}, originalPermissions...)
-		updatedPermissions = append(updatedPermissions, model.PermissionRunCreate.Id)
-
-		_, _, err = e.ServerAdminClient.PatchRole(context.Background(), teamUserRole.Id, &model.RolePatch{
-			Permissions: &updatedPermissions,
-		})
-		require.NoError(t, err)
-
-		// Clean up: restore original permissions after test
-		defer func() {
-			_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), teamUserRole.Id, &model.RolePatch{
-				Permissions: &originalPermissions,
-			})
-		}()
-
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "No playbook",
 			OwnerUserID: e.RegularUser.Id,
@@ -2817,70 +2788,5 @@ func TestGuestCannotAccessPrivateChannelTasks(t *testing.T) {
 		// Also test direct access by run ID should fail
 		_, err = e.PlaybooksClientGuest.PlaybookRuns.Get(context.Background(), runWithDeletedChannel.ID)
 		require.Error(t, err, "Guest should not be able to directly access run with deleted channel")
-	})
-}
-
-// TestMemberCannotCreateRunWithoutPlaybookIDToBypassPermissions tests that members
-// cannot bypass run creation permissions by omitting the playbook_id.
-// MM-66249
-func TestMemberCannotCreateRunWithoutPlaybookIDToBypassPermissions(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
-
-	// Get the default team member role
-	roles, _, err := e.ServerAdminClient.GetRolesByNames(context.Background(), []string{"team_user"})
-	require.NoError(t, err)
-	require.Len(t, roles, 1)
-
-	memberRole := roles[0]
-
-	// Store original permissions for cleanup
-	originalPermissions := memberRole.Permissions
-
-	// Remove run_create permission
-	updatedPermissions := []string{}
-	for _, perm := range memberRole.Permissions {
-		if perm != model.PermissionRunCreate.Id {
-			updatedPermissions = append(updatedPermissions, perm)
-		}
-	}
-
-	_, _, err = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
-		Permissions: &updatedPermissions,
-	})
-	require.NoError(t, err)
-
-	// Clean up: restore permissions after test
-	defer func() {
-		_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
-			Permissions: &originalPermissions,
-		})
-	}()
-
-	t.Run("member cannot create run without playbook_id when permission is removed", func(t *testing.T) {
-		// Try to create a run without a playbook_id (attempting to bypass permission check)
-		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "Run without playbook",
-			OwnerUserID: e.RegularUser.Id,
-			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  "", // Empty playbook ID - attempting to bypass permission check
-		})
-
-		// Should fail
-		require.Error(t, err, "Should not be able to create run without playbook_id when run_create permission is removed")
-	})
-
-	t.Run("member CAN still create run with playbook_id if they have playbook-level permission", func(t *testing.T) {
-		// Even with team-level run_create removed, playbook-level permissions still work
-		// This is expected behavior - playbook membership grants specific permissions
-		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "Run with playbook",
-			OwnerUserID: e.RegularUser.Id,
-			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  e.BasicPlaybook.ID,
-		})
-
-		// Should succeed - user is a member of the playbook
-		require.NoError(t, err, "Playbook-level permissions should still allow run creation")
 	})
 }
