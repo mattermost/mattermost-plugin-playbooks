@@ -541,7 +541,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
 	} else {
 		// For checklists, verify a channel ID and verify user has permission to post in the channel below.
-		if playbookRun.ChannelID == "" {
+		if channel == nil {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel ID is required for checklists")
 		}
 	}
