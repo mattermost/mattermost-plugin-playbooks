@@ -26,20 +26,9 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
     let privateRunChannelName;
 
     before(() => {
-        cy.apiInitSetup().then(({team, user}) => {
+        cy.apiInitSetup().then(({team, user, channel}) => {
             testTeam = team;
             testUser = user;
-
-            // # Grant run_create permission to team_user role for creating standalone runs
-            // (runs without a playbook ID require this permission - see MM-66249)
-            // Note: This must be done while still logged in as admin (before cy.apiLogin(testUser))
-            cy.apiGetRolesByNames(['team_user']).then(({roles}) => {
-                const teamUserRole = roles[0];
-                if (!teamUserRole.permissions.includes('run_create')) {
-                    const updatedPermissions = [...teamUserRole.permissions, 'run_create'];
-                    cy.apiPatchRole(teamUserRole.id, {permissions: updatedPermissions});
-                }
-            });
 
             cy.apiLogin(testUser);
 
@@ -51,7 +40,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             }).then((playbook) => {
                 testPlaybook = playbook;
 
-                // # Create a standalone run without a playbook (channel checklist)
+                // # Create a standalone run without a playbook (channel checklist) in existing channel (MM-67648)
                 const now = Date.now();
                 const standaloneRunName = 'Standalone Run (' + now + ')';
                 standaloneRunChannelName = 'standalone-run-' + now;
@@ -60,6 +49,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
                     playbookId: '', // Empty playbook ID for standalone run
                     playbookRunName: standaloneRunName,
                     ownerUserId: testUser.id,
+                    channelId: channel.id,
                 }).then((run) => {
                     standaloneRun = run;
                 });
@@ -284,7 +274,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             cy.wait(TIMEOUTS.HALF_SEC);
 
             // # Click on the checklist dropdown in the RHS header
-            cy.findByTestId('menuButton').click();
+            cy.get('#rhsContainer').findByTestId('menuButton').should('be.visible').click();
 
             // * Verify "Rename" option exists for active checklists
             cy.findByTestId('dropdownmenu').within(() => {
@@ -300,11 +290,15 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # Wait for the page to load
             cy.wait(TIMEOUTS.HALF_SEC);
 
-            // # Finish the checklist
+            // # Finish the checklist (RHS will switch to list view with "In progress" empty)
             cy.apiFinishRun(standaloneRun.id);
 
-            // # Click on the title menu
-            cy.findByTestId('menuButton').click();
+            // # Switch to "Finished" and open the run details (RHS auto-deselects when run finishes)
+            cy.get('#rhsContainer').findByText('View finished').click();
+            cy.get('#rhsContainer').findByTestId('run-list-card').click();
+
+            // # Click on the title menu in the RHS header
+            cy.get('#rhsContainer').findByTestId('menuButton').should('be.visible').click();
 
             // * Verify "Rename" option does not exist for finished checklists
             cy.findByTestId('dropdownmenu').within(() => {
