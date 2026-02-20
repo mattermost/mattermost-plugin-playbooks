@@ -6,13 +6,33 @@ import configureStore, {MockStoreEnhanced} from 'redux-mock-store';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {WebSocketMessage} from '@mattermost/client';
 
-import {handleReconnect, handleWebsocketPlaybookRunUpdatedIncremental} from './websocket_events';
-import {WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
+import {
+    handleReconnect,
+    handleWebsocketPlaybookRunUpdatedIncremental,
+    handleWebsocketQuicklistGenerationFailed,
+    handleWebsocketQuicklistOpenModal,
+} from './websocket_events';
+import {QUICKLIST_GENERATION_FAILED, WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
 
 import {PlaybookRun, PlaybookRunStatus} from './types/playbook_run';
 import {ChecklistUpdate, PlaybookRunUpdate} from './types/websocket_events';
 import {TimelineEvent, TimelineEventType} from './types/rhs';
 import {PlaybookRunType} from './graphql/generated/graphql';
+
+// Mock webapp_globals to provide modals.openModal
+jest.mock('src/webapp_globals', () => ({
+    modals: {
+        openModal: jest.fn((modalDefinition) => ({
+            type: 'MODAL_OPEN',
+            modalId: modalDefinition.modalId,
+            dialogType: modalDefinition.dialogType,
+            dialogProps: modalDefinition.dialogProps,
+        })),
+    },
+    browserHistory: {
+        push: jest.fn(),
+    },
+}));
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
 
@@ -1663,5 +1683,340 @@ describe('incremental updates', () => {
                 expect(testDispatch).toHaveBeenCalledTimes(1);
             });
         });
+    });
+});
+
+describe('handleWebsocketQuicklistOpenModal', () => {
+    let testDispatch: jest.Mock;
+    let testGetState: jest.Mock;
+
+    beforeEach(() => {
+        testDispatch = jest.fn();
+        testGetState = jest.fn(() => ({} as any));
+    });
+
+    it('dispatches action when payload contains post_id and channel_id', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const payload = {
+            post_id: 'test-post-id',
+            channel_id: 'test-channel-id',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).toHaveBeenCalledTimes(1);
+
+        // Verify the dispatched action contains the modal definition
+        const dispatchedAction = testDispatch.mock.calls[0][0];
+        expect(dispatchedAction).toBeDefined();
+        expect(dispatchedAction.type).toBe('MODAL_OPEN');
+        expect(dispatchedAction.modalId).toBe('playbooks_quicklist_modal');
+        expect(dispatchedAction.dialogProps.postId).toBe('test-post-id');
+        expect(dispatchedAction.dialogProps.channelId).toBe('test-channel-id');
+    });
+
+    it('does nothing when payload is missing', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const msg = {
+            data: {},
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when payload is empty string', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const msg = {
+            data: {
+                payload: '',
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when post_id is missing', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const payload = {
+            channel_id: 'test-channel-id',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when channel_id is missing', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const payload = {
+            post_id: 'test-post-id',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when post_id is empty string', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const payload = {
+            post_id: '',
+            channel_id: 'test-channel-id',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when channel_id is empty string', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const payload = {
+            post_id: 'test-post-id',
+            channel_id: '',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('handles malformed JSON gracefully', () => {
+        const handler = handleWebsocketQuicklistOpenModal(testGetState, testDispatch);
+
+        const msg = {
+            data: {
+                payload: 'invalid json {[',
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        expect(() => handler(msg)).not.toThrow();
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+});
+
+describe('handleWebsocketQuicklistGenerationFailed', () => {
+    let testDispatch: jest.Mock;
+    let testGetState: jest.Mock;
+
+    beforeEach(() => {
+        testDispatch = jest.fn();
+        testGetState = jest.fn(() => ({} as any));
+    });
+
+    it('dispatches action when payload contains all required fields', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const payload = {
+            post_id: 'test-post-id',
+            channel_id: 'test-channel-id',
+            error_type: 'service_unavailable',
+            error_message: 'AI service is unavailable',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).toHaveBeenCalledTimes(1);
+
+        const dispatchedAction = testDispatch.mock.calls[0][0];
+        expect(dispatchedAction.type).toBe(QUICKLIST_GENERATION_FAILED);
+        expect(dispatchedAction.postId).toBe('test-post-id');
+        expect(dispatchedAction.channelId).toBe('test-channel-id');
+        expect(dispatchedAction.errorType).toBe('service_unavailable');
+        expect(dispatchedAction.errorMessage).toBe('AI service is unavailable');
+    });
+
+    it('uses default values for optional fields', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const payload = {
+            post_id: 'test-post-id',
+            channel_id: 'test-channel-id',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).toHaveBeenCalledTimes(1);
+
+        const dispatchedAction = testDispatch.mock.calls[0][0];
+        expect(dispatchedAction.type).toBe(QUICKLIST_GENERATION_FAILED);
+        expect(dispatchedAction.postId).toBe('test-post-id');
+        expect(dispatchedAction.channelId).toBe('test-channel-id');
+        expect(dispatchedAction.errorType).toBe('unknown');
+        expect(dispatchedAction.errorMessage).toBe('Quicklist generation failed');
+    });
+
+    it('does nothing when payload is missing', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const msg = {
+            data: {},
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when payload is empty string', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const msg = {
+            data: {
+                payload: '',
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when post_id is missing', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const payload = {
+            channel_id: 'test-channel-id',
+            error_type: 'network_error',
+            error_message: 'Network failure',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when channel_id is missing', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const payload = {
+            post_id: 'test-post-id',
+            error_type: 'network_error',
+            error_message: 'Network failure',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when post_id is empty string', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const payload = {
+            post_id: '',
+            channel_id: 'test-channel-id',
+            error_type: 'timeout',
+            error_message: 'Request timed out',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when channel_id is empty string', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const payload = {
+            post_id: 'test-post-id',
+            channel_id: '',
+            error_type: 'timeout',
+            error_message: 'Request timed out',
+        };
+
+        const msg = {
+            data: {
+                payload: JSON.stringify(payload),
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        handler(msg);
+
+        expect(testDispatch).not.toHaveBeenCalled();
+    });
+
+    it('handles malformed JSON gracefully', () => {
+        const handler = handleWebsocketQuicklistGenerationFailed(testGetState, testDispatch);
+
+        const msg = {
+            data: {
+                payload: 'invalid json {[',
+            },
+        } as WebSocketMessage<{payload: string}>;
+
+        expect(() => handler(msg)).not.toThrow();
+        expect(testDispatch).not.toHaveBeenCalled();
     });
 });

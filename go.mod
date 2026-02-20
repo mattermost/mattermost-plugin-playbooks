@@ -28,6 +28,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-load-test-ng v1.31.1-0.20260126111505-259c9598ea05
+	github.com/mattermost/mattermost-plugin-ai v1.5.0
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.8.0
 	github.com/mattermost/mattermost/server/public v0.1.22-0.20260113165922-8e4cadbc88ee
 	github.com/mattermost/mattermost/server/v8 v8.0.0-20260113162330-9e1d4c2072c0
@@ -129,7 +130,6 @@ require (
 	github.com/mattermost/gosaml2 v0.10.0 // indirect
 	github.com/mattermost/ldap v3.0.4+incompatible // indirect
 	github.com/mattermost/logr/v2 v2.0.22 // indirect
-	github.com/mattermost/mattermost-plugin-ai v1.5.0 // indirect
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0 // indirect
 	github.com/mattermost/squirrel v0.5.0 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect

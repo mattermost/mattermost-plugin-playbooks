@@ -48,6 +48,48 @@
         "display_name": "Enable Incremental Updates",
         "help_text": "When enabled, sends incremental WebSocket updates instead of full playbook run objects for better performance.",
         "default": false
+      },
+      {
+        "key": "quicklistenabled",
+        "type": "bool",
+        "display_name": "Enable Quicklist Feature (requires Experimental)",
+        "help_text": "Allow users to generate checklists from threads using AI. Requires 'Enable Experimental Features' to be enabled.",
+        "default": false
+      },
+      {
+        "key": "quicklistagentbotid",
+        "type": "text",
+        "display_name": "Quicklist Agent Bot ID",
+        "help_text": "The Bot ID of the AI agent to use for quicklist generation. Requires mattermost-plugin-agents.",
+        "default": ""
+      },
+      {
+        "key": "quicklistmaxmessages",
+        "type": "number",
+        "display_name": "Maximum Thread Messages",
+        "help_text": "Maximum number of messages to include when analyzing a thread.",
+        "default": 50
+      },
+      {
+        "key": "quicklistmaxcharacters",
+        "type": "number",
+        "display_name": "Maximum Thread Characters",
+        "help_text": "Maximum characters to send to the AI agent.",
+        "default": 10000
+      },
+      {
+        "key": "quicklistsystemprompt",
+        "type": "longtext",
+        "display_name": "System Prompt",
+        "help_text": "Custom system prompt for AI checklist generation. Leave empty to use default.",
+        "default": ""
+      },
+      {
+        "key": "quicklistuserprompt",
+        "type": "longtext",
+        "display_name": "User Prompt Template",
+        "help_text": "Custom user prompt template. Use %s as placeholder for thread content. Leave empty to use default.",
+        "default": ""
       }
     ]
   }

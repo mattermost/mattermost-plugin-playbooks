@@ -2341,6 +2341,86 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /plugins/playbooks/api/v0/quicklist/generate:
+    post:
+      summary: Generate quicklist
+      description: Generate a checklist from a thread using AI.
+      operationId: generateQuicklist
+      security:
+        - BearerAuth: []
+      tags:
+        - Quicklist
+      requestBody:
+        description: Quicklist generate request payload.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuicklistGenerateRequest"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/quicklist/generate' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -H 'Content-Type: application/json'\
+            -d '{"post_id": "b2ntfcrl4ujivl456ab4b3aago"}'
+      responses:
+        200:
+          description: Generated quicklist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuicklistGenerateResponse"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+        503:
+          $ref: "#/components/responses/503"
+
+  /plugins/playbooks/api/v0/quicklist/refine:
+    post:
+      summary: Refine quicklist
+      description: Refine a quicklist from a thread using feedback.
+      operationId: refineQuicklist
+      security:
+        - BearerAuth: []
+      tags:
+        - Quicklist
+      requestBody:
+        description: Quicklist refine request payload.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuicklistRefineRequest"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/quicklist/refine' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -H 'Content-Type: application/json'\
+            -d '{"post_id": "b2ntfcrl4ujivl456ab4b3aago", "feedback": "Add a validation step and shorten the checklist", "current_checklists": [{"id": "6f6nsgxzoq84fqh1dnlyivgafd", "title": "Triage issue", "items": []}] }'
+      responses:
+        200:
+          description: Refined quicklist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuicklistGenerateResponse"
+        400:
+          $ref: "#/components/responses/400"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+        503:
+          $ref: "#/components/responses/503"
+
 components:
   securitySchemes:
     BearerAuth:
@@ -2371,6 +2451,12 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
       description: There was an internal error in the server.
+    503:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: The service is temporarily unavailable.
   schemas:
     PlaybookRun:
       type: object
@@ -2706,6 +2792,68 @@ components:
           type: string
           description: A string representation of the condition that affects this checklist item. Empty string if no condition is associated with this item.
           example: "Severity is Critical AND Status is not Closed"
+    QuicklistGenerateRequest:
+      type: object
+      required:
+        - post_id
+      properties:
+        post_id:
+          type: string
+          description: The root post ID of the thread to analyze.
+          example: b2ntfcrl4ujivl456ab4b3aago
+    QuicklistRefineRequest:
+      type: object
+      required:
+        - post_id
+        - current_checklists
+        - feedback
+      properties:
+        post_id:
+          type: string
+          description: The root post ID of the thread to analyze.
+          example: b2ntfcrl4ujivl456ab4b3aago
+        current_checklists:
+          type: array
+          description: The current quicklist checklists to refine.
+          items:
+            $ref: "#/components/schemas/Checklist"
+        feedback:
+          type: string
+          description: Feedback text describing how to refine the quicklist.
+          example: Add a validation step and shorten the checklist.
+    QuicklistGenerateResponse:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The generated quicklist title.
+          example: Incident triage
+        checklists:
+          type: array
+          description: The generated quicklist checklists.
+          items:
+            $ref: "#/components/schemas/Checklist"
+        thread_info:
+          $ref: "#/components/schemas/ThreadInfo"
+    ThreadInfo:
+      type: object
+      properties:
+        truncated:
+          type: boolean
+          description: Whether the analyzed thread was truncated.
+          example: false
+        truncated_count:
+          type: integer
+          description: The number of messages truncated from the thread.
+          example: 5
+        message_count:
+          type: integer
+          description: Total number of messages analyzed.
+          example: 18
+        participant_count:
+          type: integer
+          description: Total number of participants in the thread.
+          example: 7
     Error:
       type: object
       required:

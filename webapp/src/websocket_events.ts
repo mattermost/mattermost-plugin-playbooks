@@ -18,11 +18,13 @@ import {
     conditionCreated,
     conditionDeleted,
     conditionUpdated,
+    openQuicklistModal,
     playbookArchived,
     playbookCreated,
     playbookRestored,
     playbookRunCreated,
     playbookRunUpdated,
+    quicklistGenerationFailed,
     receivedTeamPlaybookRuns,
     removedFromPlaybookRunChannel,
     websocketPlaybookRunIncrementalUpdateReceived,
@@ -39,7 +41,7 @@ import {
     globalSettings,
     myPlaybookRunsMap,
 } from 'src/selectors';
-import {PlaybookRunUpdate} from 'src/types/websocket_events';
+import {PlaybookRunUpdate, QuicklistGenerationFailedPayload} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
@@ -307,5 +309,55 @@ export function handleWebsocketConditionDeleted(getState: GetStateFunc, dispatch
 
         const condition = JSON.parse(msg.data.payload) as Condition;
         dispatch(conditionDeleted(condition.id, condition.playbook_id));
+    };
+}
+
+// Quicklist websocket handlers
+export function handleWebsocketQuicklistOpenModal(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        let payload: { post_id: string; channel_id: string };
+        try {
+            payload = JSON.parse(msg.data.payload) as { post_id: string; channel_id: string };
+        } catch {
+            return;
+        }
+
+        if (!payload.post_id || !payload.channel_id) {
+            return;
+        }
+
+        dispatch(openQuicklistModal(payload.post_id, payload.channel_id));
+    };
+}
+
+export function handleWebsocketQuicklistGenerationFailed(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        let payload: QuicklistGenerationFailedPayload;
+        try {
+            payload = JSON.parse(msg.data.payload) as QuicklistGenerationFailedPayload;
+        } catch {
+            // eslint-disable-next-line no-console
+            console.error('Failed to parse quicklist_generation_failed WebSocket payload');
+            return;
+        }
+
+        if (!payload.post_id || !payload.channel_id) {
+            return;
+        }
+
+        dispatch(quicklistGenerationFailed(
+            payload.post_id,
+            payload.channel_id,
+            payload.error_type || 'unknown',
+            payload.error_message || 'Quicklist generation failed',
+        ));
     };
 }

@@ -6,6 +6,12 @@ Mattermost Playbooks allows your team to create and run playbooks from within Ma
 
 ![Mattermost Playbooks](assets/incident_response.png)
 
+## Features
+
+### Quicklists (AI-Powered Checklist Generation)
+
+Generate structured checklists from conversation threads using AI. See the [Quicklists documentation](docs/quicklists.md) for user and administrator guides.
+
 ## Development Builds
 In your `mattermost-server` configuration (`config/config.json`), set the following values:
 

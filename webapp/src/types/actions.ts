@@ -51,6 +51,9 @@ export const CONDITION_CREATED = manifest.id + '_condition_created';
 export const CONDITION_UPDATED = manifest.id + '_condition_updated';
 export const CONDITION_DELETED = manifest.id + '_condition_deleted';
 
+// Quicklist action types
+export const QUICKLIST_GENERATION_FAILED = manifest.id + '_quicklist_generation_failed';
+
 // Backstage RHS related action types
 // Note That this is not the same as channel RHS management
 // TODO: make a refactor with some naming change now we have multiple RHS
@@ -238,6 +241,14 @@ export interface OpenBackstageRHS {
 
 export interface CloseBackstageRHS {
     type: typeof CLOSE_BACKSTAGE_RHS;
+}
+
+export interface QuicklistGenerationFailed {
+    type: typeof QUICKLIST_GENERATION_FAILED;
+    postId: string;
+    channelId: string;
+    errorType: string;
+    errorMessage: string;
 }
 
 export interface WebsocketPlaybookRunIncrementalUpdateReceived {

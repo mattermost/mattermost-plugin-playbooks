@@ -21,6 +21,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 
+	"github.com/mattermost/mattermost-plugin-ai/public/bridgeclient"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -54,6 +55,8 @@ type Plugin struct {
 	categoryService      app.CategoryService
 	conditionService     app.ConditionService
 	propertyService      app.PropertyService
+	aiService            *app.AIService
+	threadService        *app.ThreadService
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
@@ -142,6 +145,12 @@ func (p *Plugin) OnActivate() error {
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.config.SetWebsocketPublisher(p.bot)
+
+	// Initialize AIService and ThreadService for quicklist feature
+	bridgeClient := bridgeclient.NewClient(p.API)
+	p.aiService = app.NewAIService(bridgeClient, p.config)
+	p.threadService = app.NewThreadService(p.API, p.config)
+
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, scheduler)
@@ -252,6 +261,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
 	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
 	api.NewConditionHandler(p.handler.APIRouter, p.conditionService, p.playbookService, p.playbookRunService, p.propertyService, p.permissions, pluginAPIClient)
+	api.NewQuicklistHandler(p.handler.APIRouter, p.API, p.threadService, p.aiService, p.config)
 	api.NewTabAppHandler(
 		p.handler,
 		p.playbookRunService,

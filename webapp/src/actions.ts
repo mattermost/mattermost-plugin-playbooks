@@ -11,6 +11,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {makeModalDefinition as makeUpdateRunNameModalDefinition} from 'src/components/modals/run_update_name';
 import {makeModalDefinition as makeUpdateRunChannelModalDefinition} from 'src/components/modals/run_update_channel';
 import {makeModalDefinition as makePlaybookRunModalDefinition} from 'src/components/modals/run_playbook_modal';
+import {makeModalDefinition as makeQuicklistModalDefinition} from 'src/components/modals/quicklist_modal';
 import {PlaybookRun, PlaybookRunConnection} from 'src/types/playbook_run';
 import {
     clientExecuteCommand,
@@ -58,6 +59,8 @@ import {
     PlaybookRunCreated,
     PlaybookRunUpdated,
     PublishTemplates,
+    QUICKLIST_GENERATION_FAILED,
+    QuicklistGenerationFailed,
     RECEIVED_GLOBAL_SETTINGS,
     RECEIVED_PLAYBOOK_CONDITIONS,
     RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
@@ -387,6 +390,26 @@ export const setChecklistItemsFilter = (key: string, nextState: ChecklistItemsFi
 export function openTaskActionsModal(onTaskActionsChange: (newTaskActions: TaskActionType[]) => void, taskActions?: TaskActionType[] | null) {
     return modals.openModal(makeTaskActionsModalDefinition(onTaskActionsChange, taskActions));
 }
+
+export function openQuicklistModal(postId: string, channelId: string) {
+    return modals.openModal(makeQuicklistModalDefinition({
+        postId,
+        channelId,
+    }));
+}
+
+export const quicklistGenerationFailed = (
+    postId: string,
+    channelId: string,
+    errorType: string,
+    errorMessage: string,
+): QuicklistGenerationFailed => ({
+    type: QUICKLIST_GENERATION_FAILED,
+    postId,
+    channelId,
+    errorType,
+    errorMessage,
+});
 
 export const closeBackstageRHS = (): CloseBackstageRHS => ({
     type: CLOSE_BACKSTAGE_RHS,

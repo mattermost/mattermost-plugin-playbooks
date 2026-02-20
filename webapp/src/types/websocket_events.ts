@@ -21,6 +21,18 @@ export const WEBSOCKET_CONDITION_CREATED = `custom_${manifest.id}_condition_crea
 export const WEBSOCKET_CONDITION_UPDATED = `custom_${manifest.id}_condition_updated`;
 export const WEBSOCKET_CONDITION_DELETED = `custom_${manifest.id}_condition_deleted`;
 
+// Quicklist WebSocket events
+export const WEBSOCKET_QUICKLIST_OPEN_MODAL = `custom_${manifest.id}_quicklist_open_modal`;
+export const WEBSOCKET_QUICKLIST_GENERATION_FAILED = `custom_${manifest.id}_quicklist_generation_failed`;
+
+// Payload types for quicklist WebSocket events
+export interface QuicklistGenerationFailedPayload {
+    post_id: string;
+    channel_id: string;
+    error_type: string;
+    error_message: string;
+}
+
 // Interfaces for incremental updates
 export interface PlaybookRunUpdate {
     id: string;

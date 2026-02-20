@@ -26,7 +26,7 @@ import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/
 import manifest from 'src/manifest';
 import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
-import {makeAttachToPlaybookRunAction, makeStartPlaybookRunAction} from 'src/components/post_menu';
+import {makeAttachToPlaybookRunAction, makeQuicklistPostAction, makeStartPlaybookRunAction} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
 import ChannelActionsModal from 'src/components/channel_actions_modal';
@@ -50,6 +50,8 @@ import {
     handleWebsocketPlaybookRunUpdated,
     handleWebsocketPlaybookRunUpdatedIncremental,
     handleWebsocketPostEditedOrDeleted,
+    handleWebsocketQuicklistGenerationFailed,
+    handleWebsocketQuicklistOpenModal,
     handleWebsocketSettingsChanged,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
@@ -64,6 +66,8 @@ import {
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
     WEBSOCKET_PLAYBOOK_RUN_UPDATED_INCREMENTAL,
+    WEBSOCKET_QUICKLIST_GENERATION_FAILED,
+    WEBSOCKET_QUICKLIST_OPEN_MODAL,
     WEBSOCKET_SETTINGS_CHANGED,
 } from 'src/types/websocket_events';
 import {
@@ -212,6 +216,7 @@ export default class Plugin {
         registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showChannelActionsModal()), shouldRender);
         registry.registerPostDropdownMenuAction(makeStartPlaybookRunAction(store));
         registry.registerPostDropdownMenuAction(makeAttachToPlaybookRunAction(store));
+        registry.registerPostDropdownMenuAction(makeQuicklistPostAction(store));
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
         registry.registerRootComponent(LoginHook);
@@ -255,6 +260,8 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_CREATED, handleWebsocketConditionCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_UPDATED, handleWebsocketConditionUpdated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_DELETED, handleWebsocketConditionDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_QUICKLIST_OPEN_MODAL, handleWebsocketQuicklistOpenModal(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_QUICKLIST_GENERATION_FAILED, handleWebsocketQuicklistGenerationFailed(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
