@@ -274,7 +274,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             cy.wait(TIMEOUTS.HALF_SEC);
 
             // # Click on the checklist dropdown in the RHS header
-            cy.findByTestId('menuButton').click();
+            cy.get('#rhsContainer').findByTestId('menuButton').should('be.visible').click();
 
             // * Verify "Rename" option exists for active checklists
             cy.findByTestId('dropdownmenu').within(() => {
@@ -290,11 +290,15 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # Wait for the page to load
             cy.wait(TIMEOUTS.HALF_SEC);
 
-            // # Finish the checklist
+            // # Finish the checklist (RHS will switch to list view with "In progress" empty)
             cy.apiFinishRun(standaloneRun.id);
 
-            // # Click on the title menu
-            cy.findByTestId('menuButton').click();
+            // # Switch to "Finished" and open the run details (RHS auto-deselects when run finishes)
+            cy.get('#rhsContainer').findByText('View finished').click();
+            cy.get('#rhsContainer').findByTestId('run-list-card').click();
+
+            // # Click on the title menu in the RHS header
+            cy.get('#rhsContainer').findByTestId('menuButton').should('be.visible').click();
 
             // * Verify "Rename" option does not exist for finished checklists
             cy.findByTestId('dropdownmenu').within(() => {
