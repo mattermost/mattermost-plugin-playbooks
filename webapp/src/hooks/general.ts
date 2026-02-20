@@ -19,7 +19,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
 import {getProfilesInCurrentTeam, getUser} from 'mattermost-redux/selectors/entities/users';
 import {getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
-import {getProfilesByIds, getProfilesInTeam} from 'mattermost-redux/actions/users';
+import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from '@mattermost/types/users';
@@ -216,6 +216,60 @@ export function useProfilesInTeam() {
     }, [currentTeamId, profilesInTeam]);
 
     return profilesInTeam;
+}
+
+// useProfilesForRun returns profiles appropriate for a playbook run context.
+// For team-based runs, it returns profiles in the current team.
+// For DM/GM runs (empty teamId), it returns profiles in the channel.
+export function useProfilesForRun(teamId?: string, channelId?: string) {
+    const dispatch = useDispatch();
+    const [channelProfiles, setChannelProfiles] = useState<UserProfile[]>([]);
+    const profilesInTeam = useSelector(getProfilesInCurrentTeam);
+    const currentTeamId = useSelector(getCurrentTeamId);
+
+    // For team-based runs, use the existing team profiles logic
+    useEffect(() => {
+        if (teamId) {
+            if (profilesInTeam.length > 0) {
+                lockProfilesInTeamFetch.delete(currentTeamId);
+                return;
+            }
+
+            if (lockProfilesInTeamFetch.has(currentTeamId)) {
+                return;
+            }
+            lockProfilesInTeamFetch.add(currentTeamId);
+
+            dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
+        }
+    }, [teamId, currentTeamId, profilesInTeam, dispatch]);
+
+    // For DM/GM runs (empty teamId), fetch profiles from channel
+    useEffect(() => {
+        if (!teamId && channelId) {
+            if (lockProfilesInChannelFetch.has(channelId)) {
+                return;
+            }
+            lockProfilesInChannelFetch.add(channelId);
+
+            dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE) as any)
+                .then((result: {data?: UserProfile[]}) => {
+                    lockProfilesInChannelFetch.delete(channelId);
+                    if (result?.data) {
+                        setChannelProfiles(result.data);
+                    }
+                })
+                .catch(() => {
+                    lockProfilesInChannelFetch.delete(channelId);
+                });
+        }
+    }, [teamId, channelId, dispatch]);
+
+    // Return appropriate profiles based on run type
+    if (teamId) {
+        return profilesInTeam;
+    }
+    return channelProfiles;
 }
 
 /**

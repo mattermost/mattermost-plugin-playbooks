@@ -18,6 +18,10 @@ import {
 
 import Profile, {ProfileImage, ProfileName} from 'src/components/profile/profile';
 
+// Type for profile fetching functions - can be either a Redux thunk or a Promise-based function
+// Both should resolve to {data: UserProfile[]}
+type ProfileFetchFunc<T extends unknown[] = []> = (...args: T) => ActionFuncAsync | PromiseLike<{data: UserProfile[]}>;
+
 export const StyledAsyncSelect = styled(AsyncSelect)`
     flex-grow: 1;
     background-color: var(--center-channel-bg);
@@ -76,8 +80,8 @@ interface Props {
     userIds: string[];
     onAddUser?: (userid: string) => void; // for single select
     setValues?: (values: UserProfile[]) => void; // for multi select
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles?: () => ActionFuncAsync;
+    searchProfiles: ProfileFetchFunc<[string]>;
+    getProfiles?: ProfileFetchFunc;
     isDisabled?: boolean;
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;

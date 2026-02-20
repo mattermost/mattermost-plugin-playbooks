@@ -4,8 +4,11 @@
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {General} from 'mattermost-redux/constants';
 
 import {
     AccountMultipleOutlineIcon,
@@ -97,6 +100,12 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
     const addToast = useToaster().add;
     const refreshLHS = useLHSRefresh();
     const {RequestJoinModal, showRequestJoinConfirm} = useRequestJoinChannel(run.id);
+    const currentUserId = useSelector(getCurrentUserId);
+
+    // Detect self-DM: a DM channel where you message yourself
+    // Self-DM channel names contain the same user ID twice (e.g., "userId__userId")
+    const isSelfDM = channel?.type === General.DM_CHANNEL &&
+        channel.name.split('__').filter((id) => id === currentUserId).length === 2;
 
     const setOwner = async (userID: string) => {
         try {
@@ -146,54 +155,62 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
                     <ItemLink to={pluginUrl(`/playbooks/${run.playbook_id}`)}>{playbook.title}</ItemLink>
                 </Item>
             )}
-            <Item
-                id='runinfo-owner'
-                icon={AccountOutlineIcon}
-                name={formatMessage({defaultMessage: 'Owner'})}
-            >
-                <AssignTo
-                    assignee_id={run.owner_user_id}
-                    editable={editable}
-                    onSelectedChange={onOwnerChange}
-                    participantUserIds={run.participant_ids}
-                    placement={'bottom-end'}
-                />
-            </Item>
-            <Item
-                id='runinfo-participants'
-                icon={AccountMultipleOutlineIcon}
-                name={formatMessage({defaultMessage: 'Participants'})}
-                onClick={onViewParticipants}
-            >
-                <ParticipantsContainer>
-                    <Participants>
-                        <UserList
-                            userIds={run.participant_ids}
-                            sizeInPx={20}
+            {!isSelfDM && (
+                <Item
+                    id='runinfo-owner'
+                    icon={AccountOutlineIcon}
+                    name={formatMessage({defaultMessage: 'Owner'})}
+                >
+                    <AssignTo
+                        assignee_id={run.owner_user_id}
+                        editable={editable}
+                        onSelectedChange={onOwnerChange}
+                        participantUserIds={run.participant_ids}
+                        placement={'bottom-end'}
+                        teamId={run.team_id}
+                        channelId={run.channel_id}
+                    />
+                </Item>
+            )}
+            {!isSelfDM && (
+                <Item
+                    id='runinfo-participants'
+                    icon={AccountMultipleOutlineIcon}
+                    name={formatMessage({defaultMessage: 'Participants'})}
+                    onClick={onViewParticipants}
+                >
+                    <ParticipantsContainer>
+                        <Participants>
+                            <UserList
+                                userIds={run.participant_ids}
+                                sizeInPx={20}
+                            />
+                        </Participants>
+                        <StyledArrowIcon
+                            size={12}
+                            color={'rgba(var(--center-channel-color-rgb), 0.56)'}
                         />
-                    </Participants>
-                    <StyledArrowIcon
-                        size={12}
-                        color={'rgba(var(--center-channel-color-rgb), 0.56)'}
-                    />
-                </ParticipantsContainer>
-            </Item>
-            <Item
-                id='runinfo-following'
-                icon={BullhornOutlineIcon}
-                name={formatMessage({defaultMessage: 'Followers'})}
-            >
-                <FollowersWrapper>
-                    <FollowButton
-                        runID={run.id}
-                        followState={followState}
-                    />
-                    <Following
-                        userIds={followState.followers}
-                        maxUsers={4}
-                    />
-                </FollowersWrapper>
-            </Item>
+                    </ParticipantsContainer>
+                </Item>
+            )}
+            {!isSelfDM && (
+                <Item
+                    id='runinfo-following'
+                    icon={BullhornOutlineIcon}
+                    name={formatMessage({defaultMessage: 'Followers'})}
+                >
+                    <FollowersWrapper>
+                        <FollowButton
+                            runID={run.id}
+                            followState={followState}
+                        />
+                        <Following
+                            userIds={followState.followers}
+                            maxUsers={4}
+                        />
+                    </FollowersWrapper>
+                </Item>
+            )}
             <Item
                 id='runinfo-channel'
                 icon={ProductChannelsIcon}

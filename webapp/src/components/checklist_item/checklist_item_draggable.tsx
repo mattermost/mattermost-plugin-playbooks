@@ -55,6 +55,8 @@ const DraggableChecklistItem = (props: Props) => {
                     itemNum={props.itemIndex}
                     playbookRunId={props.playbookRun?.id}
                     playbookId={props.playbookId}
+                    teamId={props.playbookRun?.team_id}
+                    channelId={props.playbookRun?.channel_id}
                     participantUserIds={props.playbookRun?.participant_ids ?? []}
                     onChange={(newState: ChecklistItemState) => {
                         return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState, props.item.id);
