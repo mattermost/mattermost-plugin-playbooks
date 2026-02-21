@@ -206,6 +206,7 @@ type PropertyService interface {
 	DeletePropertyField(playbookID string, propertyID string) error
 	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
 	CopyPlaybookPropertiesToRun(playbookID, runID string) (*PropertyCopyResult, error)
+	CopyPlaybookPropertiesToPlaybook(sourcePlaybookID, targetPlaybookID string) (*PropertyCopyResult, error)
 	UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
 
 	// Bulk methods for retrieving properties for multiple runs

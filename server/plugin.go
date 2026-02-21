@@ -166,10 +166,10 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.propertyService = propertyService
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, p.API, p.metricsService, propertyService)
-
 	auditorService := app.NewAuditorService(p.API)
 	p.conditionService = app.NewConditionService(conditionStore, propertyService, p.bot, auditorService)
+
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, pluginAPIClient, auditorService, p.metricsService, propertyService, p.conditionService)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
