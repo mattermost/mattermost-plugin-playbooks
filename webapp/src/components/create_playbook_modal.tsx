@@ -82,8 +82,9 @@ const PlaybookCreateModal = ({startingName, startingTemplate, startingDescriptio
                     setPlaybookPublic={setMakePublic}
                     disableOtherOption={hasCreationRestrictions}
                 />
-                <InlineLabel>{formatMessage({defaultMessage: 'Playbook name'})}</InlineLabel>
+                <InlineLabel htmlFor='playbook-name-input'>{formatMessage({defaultMessage: 'Playbook name'})}</InlineLabel>
                 <BaseInput
+                    id='playbook-name-input'
                     autoFocus={true}
                     type={'text'}
                     value={name}
