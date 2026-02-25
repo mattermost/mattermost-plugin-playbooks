@@ -139,20 +139,21 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI        *pluginapi.Client
-	httpClient       *http.Client
-	configService    config.Service
-	store            PlaybookRunStore
-	poster           bot.Poster
-	scheduler        JobOnceScheduler
-	api              plugin.API
-	playbookService  PlaybookService
-	actionService    ChannelActionService
-	permissions      *PermissionsService
-	licenseChecker   LicenseChecker
-	metricsService   *metrics.Metrics
-	propertyService  PropertyService
-	conditionService ConditionService
+	pluginAPI            *pluginapi.Client
+	httpClient           *http.Client
+	configService        config.Service
+	store                PlaybookRunStore
+	poster               bot.Poster
+	scheduler            JobOnceScheduler
+	api                  plugin.API
+	playbookService      PlaybookService
+	actionService        ChannelActionService
+	permissions          *PermissionsService
+	licenseChecker       LicenseChecker
+	metricsService       *metrics.Metrics
+	propertyService      PropertyService
+	conditionService     ConditionService
+	incomingWebhookStore IncomingWebhookStore
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -204,21 +205,23 @@ func NewPlaybookRunService(
 	metricsService *metrics.Metrics,
 	propertyService PropertyService,
 	conditionService ConditionService,
+	incomingWebhookStore IncomingWebhookStore,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
-		pluginAPI:        pluginAPI,
-		store:            store,
-		poster:           poster,
-		configService:    configService,
-		scheduler:        scheduler,
-		httpClient:       httptools.MakeClient(pluginAPI),
-		api:              api,
-		playbookService:  playbookService,
-		actionService:    channelActionService,
-		licenseChecker:   licenseChecker,
-		metricsService:   metricsService,
-		propertyService:  propertyService,
-		conditionService: conditionService,
+		pluginAPI:            pluginAPI,
+		store:                store,
+		poster:               poster,
+		configService:        configService,
+		scheduler:            scheduler,
+		httpClient:           httptools.MakeClient(pluginAPI),
+		api:                  api,
+		playbookService:      playbookService,
+		actionService:        channelActionService,
+		licenseChecker:       licenseChecker,
+		metricsService:       metricsService,
+		propertyService:      propertyService,
+		conditionService:     conditionService,
+		incomingWebhookStore: incomingWebhookStore,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -1268,6 +1271,12 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
+
+	// Clean up run-scoped incoming webhooks
+	if err = s.incomingWebhookStore.DeleteByPlaybookRunID(playbookRunID); err != nil {
+		logger.WithError(err).Error("failed to delete incoming webhooks on run finish")
+		// Non-fatal: log and continue. The run still finishes successfully.
+	}
 
 	// We are resolving the playbook run. Send the reminder to fill out the retrospective
 	// Also start the recurring reminder if enabled.

@@ -155,6 +155,18 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	settings.AddCommand(digest)
 	command.AddCommand(settings)
 
+	webhook := model.NewAutocompleteData("webhook", "[command]", "Manage incoming webhooks")
+	webhookCreate := model.NewAutocompleteData("create", "--name [name]", "Create a new incoming webhook")
+	webhookCreate.AddTextArgument("Webhook name (required), use --name <name>. Scope with --playbook <id> or --run <id>.", "--name [name]", "")
+	webhook.AddCommand(webhookCreate)
+	webhookList := model.NewAutocompleteData("list", "", "List incoming webhooks")
+	webhookList.AddTextArgument("Optional: --playbook <id> or --run <id>", "[flags]", "")
+	webhook.AddCommand(webhookList)
+	webhookDelete := model.NewAutocompleteData("delete", "[webhook-id]", "Delete an incoming webhook")
+	webhookDelete.AddTextArgument("Webhook ID to delete", "[webhook-id]", "")
+	webhook.AddCommand(webhookDelete)
+	command.AddCommand(webhook)
+
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
 
@@ -190,16 +202,17 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 
 // Runner handles commands.
 type Runner struct {
-	context            *plugin.Context
-	args               *model.CommandArgs
-	pluginAPI          *pluginapi.Client
-	poster             bot.Poster
-	playbookRunService app.PlaybookRunService
-	playbookService    app.PlaybookService
-	propertyService    app.PropertyService
-	configService      config.Service
-	userInfoStore      app.UserInfoStore
-	permissions        *app.PermissionsService
+	context              *plugin.Context
+	args                 *model.CommandArgs
+	pluginAPI            *pluginapi.Client
+	poster               bot.Poster
+	playbookRunService   app.PlaybookRunService
+	playbookService      app.PlaybookService
+	propertyService      app.PropertyService
+	configService        config.Service
+	userInfoStore        app.UserInfoStore
+	permissions          *app.PermissionsService
+	incomingWebhookStore app.IncomingWebhookStore
 }
 
 // NewCommandRunner creates a command runner.
@@ -213,18 +226,20 @@ func NewCommandRunner(ctx *plugin.Context,
 	configService config.Service,
 	userInfoStore app.UserInfoStore,
 	permissions *app.PermissionsService,
+	incomingWebhookStore app.IncomingWebhookStore,
 ) *Runner {
 	return &Runner{
-		context:            ctx,
-		args:               args,
-		pluginAPI:          api,
-		poster:             poster,
-		playbookRunService: playbookRunService,
-		playbookService:    playbookService,
-		propertyService:    propertyService,
-		configService:      configService,
-		userInfoStore:      userInfoStore,
-		permissions:        permissions,
+		context:              ctx,
+		args:                 args,
+		pluginAPI:            api,
+		poster:               poster,
+		playbookRunService:   playbookRunService,
+		playbookService:      playbookService,
+		propertyService:      propertyService,
+		configService:        configService,
+		userInfoStore:        userInfoStore,
+		permissions:          permissions,
+		incomingWebhookStore: incomingWebhookStore,
 	}
 }
 
@@ -2175,6 +2190,8 @@ func (r *Runner) Execute() error {
 		r.actionNukeDB(parameters)
 	case "test":
 		r.actionTest(parameters)
+	case "webhook":
+		r.actionWebhook(parameters)
 	default:
 		r.postCommandResponse(helpText)
 	}

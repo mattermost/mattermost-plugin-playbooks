@@ -57,6 +57,7 @@ type Plugin struct {
 	bot                  *bot.Bot
 	pluginAPI            *pluginapi.Client
 	userInfoStore        app.UserInfoStore
+	incomingWebhookStore app.IncomingWebhookStore
 	licenseChecker       app.LicenseChecker
 	metricsService       *metrics.Metrics
 
@@ -156,6 +157,7 @@ func (p *Plugin) OnActivate() error {
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, sqlStore)
 	categoryStore := sqlstore.NewCategoryStore(apiClient, sqlStore)
 	conditionStore := sqlstore.NewConditionStore(apiClient, sqlStore)
+	p.incomingWebhookStore = sqlstore.NewIncomingWebhookStore(sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config)
 
@@ -189,6 +191,7 @@ func (p *Plugin) OnActivate() error {
 		p.metricsService,
 		p.propertyService,
 		p.conditionService,
+		p.incomingWebhookStore,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -261,6 +264,13 @@ func (p *Plugin) OnActivate() error {
 			return p.tabAppJWTKeyFunc
 		},
 	)
+	api.NewIncomingWebhookHandler(
+		p.handler,
+		p.incomingWebhookStore,
+		p.playbookRunService,
+		p.permissions,
+		p.propertyService,
+	)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -303,7 +313,7 @@ func (p *Plugin) OnConfigurationChange() error {
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot,
-		p.playbookRunService, p.playbookService, p.propertyService, p.config, p.userInfoStore, p.permissions)
+		p.playbookRunService, p.playbookService, p.propertyService, p.config, p.userInfoStore, p.permissions, p.incomingWebhookStore)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)

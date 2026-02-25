@@ -1742,4 +1742,35 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.67.0"),
+		toVersion:   semver.MustParse("0.68.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_IncomingWebhook (
+					ID            TEXT PRIMARY KEY,
+					Name          TEXT NOT NULL,
+					CreatorID     TEXT NOT NULL,
+					TeamID        TEXT NOT NULL,
+					PlaybookID    TEXT DEFAULT '',
+					PlaybookRunID TEXT DEFAULT '',
+					CreateAt      BIGINT NOT NULL DEFAULT 0,
+					UpdateAt      BIGINT NOT NULL DEFAULT 0,
+					DeleteAt      BIGINT NOT NULL DEFAULT 0
+				);
+			`); err != nil {
+				return errors.Wrapf(err, "failed creating table IR_IncomingWebhook")
+			}
+
+			if _, err := e.Exec(`CREATE INDEX IF NOT EXISTS idx_ir_incoming_webhook_playbook ON IR_IncomingWebhook (PlaybookID) WHERE DeleteAt = 0`); err != nil {
+				return errors.Wrapf(err, "failed creating index idx_ir_incoming_webhook_playbook")
+			}
+
+			if _, err := e.Exec(`CREATE INDEX IF NOT EXISTS idx_ir_incoming_webhook_run ON IR_IncomingWebhook (PlaybookRunID) WHERE DeleteAt = 0`); err != nil {
+				return errors.Wrapf(err, "failed creating index idx_ir_incoming_webhook_run")
+			}
+
+			return nil
+		},
+	},
 }
