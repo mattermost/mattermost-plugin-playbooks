@@ -613,8 +613,8 @@ resolves to the run's actual ID.
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Run metadata variables — `builtinRunVariables` helper + unit tests | Not started |
-| 2 | Wire run metadata variables into `RunChecklistItemSlashCommand` | Not started |
-| 3 | Property field variables — `normalizeFieldName`, `builtinPropertyVariables` + unit tests | Not started |
-| 4 | Wire property variables into `RunChecklistItemSlashCommand` | Not started |
-| 5 | Integration tests (run metadata + property variables) | Not started |
+| 1 | Run metadata variables — `builtinRunVariables` helper + unit tests | ✅ Done |
+| 2 | Wire run metadata variables into `RunChecklistItemSlashCommand` | ✅ Done |
+| 3 | Property field variables — `normalizeFieldName`, `builtinPropertyVariables` + unit tests | ✅ Done |
+| 4 | Wire property variables into `RunChecklistItemSlashCommand` | ✅ Done |
+| 5 | Integration tests (run metadata + property variables) | ✅ Done |

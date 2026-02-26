@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -2283,8 +2284,31 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	// parse playbook summary for variables and values
 	varsAndVals := parseVariablesAndValues(playbookRun.Summary)
 
-	// parse slash command for variables
+	// inject property field variables
+	propertyFields, err := s.propertyService.GetRunPropertyFields(playbookRunID)
+	if err != nil {
+		logrus.WithError(err).Warn("failed to fetch property fields for variable substitution")
+	}
+	propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)
+	if err != nil {
+		logrus.WithError(err).Warn("failed to fetch property values for variable substitution")
+	}
+	for k, v := range builtinPropertyVariables(propertyFields, propertyValues, &s.pluginAPI.User) {
+		varsAndVals[k] = v
+	}
+
+	// inject built-in run metadata variables (these take precedence over
+	// property variables and user-defined variables)
+	for k, v := range builtinRunVariables(playbookRun) {
+		varsAndVals[k] = v
+	}
+
+	// parse slash command for variables — sort longest-first so that e.g.
+	// $PB_Severity_ID is replaced before $PB_Severity (preventing partial replacement).
 	varsInCmd := parseVariables(itemToRun.Command)
+	sort.Slice(varsInCmd, func(i, j int) bool {
+		return len(varsInCmd[i]) > len(varsInCmd[j])
+	})
 
 	command := itemToRun.Command
 	for _, v := range varsInCmd {
