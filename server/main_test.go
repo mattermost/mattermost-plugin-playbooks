@@ -87,6 +87,7 @@ type TestEnvironment struct {
 	ServerAdminClient        *model.Client4
 	PlaybooksAdminClient     *client.Client
 	ServerClient             *model.Client4
+	ServerClient2            *model.Client4
 	PlaybooksClient          *client.Client
 	PlaybooksClient2         *client.Client
 	PlaybooksClientNotInTeam *client.Client
@@ -455,6 +456,7 @@ func (e *TestEnvironment) CreateClients() {
 		require.NoError(e.T, err)
 
 		e.ServerClient = serverClient
+		e.ServerClient2 = serverClient2
 		e.PlaybooksClient = playbooksClient
 		e.PlaybooksClient2 = playbooksClient2
 		e.UnauthenticatedPlaybooksClient = unauthClient

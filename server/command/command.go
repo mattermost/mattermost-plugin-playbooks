@@ -155,6 +155,20 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	settings.AddCommand(digest)
 	command.AddCommand(settings)
 
+	attribute := model.NewAutocompleteData("attribute", "[list|get|set]",
+		"Manage property values on a playbook run")
+	attributeList := model.NewAutocompleteData("list", "--run <id>",
+		"List all property fields and their current values")
+	attribute.AddCommand(attributeList)
+	attributeGet := model.NewAutocompleteData("get", "<field> --run <id>",
+		"Get the current value of a property field")
+	attribute.AddCommand(attributeGet)
+	attributeSet := model.NewAutocompleteData("set",
+		"<field> --value <value> --run <id>",
+		"Set the value of a property field")
+	attribute.AddCommand(attributeSet)
+	command.AddCommand(attribute)
+
 	webhook := model.NewAutocompleteData("webhook", "[command]", "Manage incoming webhooks")
 	webhookCreate := model.NewAutocompleteData("create", "--name [name]", "Create a new incoming webhook")
 	webhookCreate.AddTextArgument("Webhook name (required), use --name <name>. Scope with --playbook <id> or --run <id>.", "--name [name]", "")
@@ -2192,6 +2206,8 @@ func (r *Runner) Execute() error {
 		r.actionTest(parameters)
 	case "webhook":
 		r.actionWebhook(parameters)
+	case "attribute":
+		r.actionAttribute(parameters)
 	default:
 		r.postCommandResponse(helpText)
 	}
