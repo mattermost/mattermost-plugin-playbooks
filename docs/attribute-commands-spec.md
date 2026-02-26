@@ -356,3 +356,218 @@ No new dependencies are needed. The command runner already has:
   — set multiple fields in one command.
 - **`unset` subcommand:** Explicitly clear a field value (alternative to
   `--value ""`).
+
+## 10. Built-in Variables for Slash Command Substitution
+
+### 10.1 Problem
+
+When a slash command is executed from a checklist item (via
+`RunChecklistItemSlashCommand`), the command has no automatic access to the
+playbook run's context. The existing variable substitution system (see
+`server/app/variables.go`) only resolves variables defined manually in the run
+summary. There is no way to reference the run ID, property values, or other
+run metadata without the user explicitly defining them.
+
+### 10.2 Run Metadata Variables
+
+A set of built-in variables prefixed with `$PB_` are injected into the variable
+map before user-defined variables are resolved. These are always available in
+checklist item slash commands.
+
+| Variable | Source | Description |
+|----------|--------|-------------|
+| `$PB_RUN_ID` | `run.ID` | The playbook run ID |
+| `$PB_RUN_NAME` | `run.Name` | The playbook run name |
+| `$PB_CHANNEL_ID` | `run.ChannelID` | The run's channel ID |
+| `$PB_TEAM_ID` | `run.TeamID` | The run's team ID |
+| `$PB_OWNER_USER_ID` | `run.OwnerUserID` | The run owner's user ID |
+| `$PB_PLAYBOOK_ID` | `run.PlaybookID` | The playbook ID |
+
+Built-in variables take precedence over user-defined variables with the same
+name. The `$PB_` prefix is reserved for built-in variables.
+
+### 10.3 Property Field Variables
+
+In addition to run metadata, variables are generated from the run's property
+fields and their current values. This allows slash commands to reference
+attribute values dynamically — e.g., a command template can include
+`$PB_Severity` and it will be replaced with the current value of the
+"Severity" field at execution time.
+
+#### 10.3.1 Variable Naming
+
+Each property field produces variables using **both** its name and its ID as
+the key, so that either can be used interchangeably in command templates.
+
+Given a field with name `DEFCON` and ID `abc123def456ghi789jkl012mn`:
+- `$PB_DEFCON` and `$PB_abc123def456ghi789jkl012mn` resolve to the same value.
+
+**Name normalization:** Field names are converted to valid variable names by
+replacing any character that is not `[a-zA-Z0-9_]` with `_`. For example:
+- `Build Status` → `$PB_Build_Status`
+- `my-field` → `$PB_my_field`
+- `Tags (v2)` → `$PB_Tags__v2_`
+
+Field IDs, being 26-character alphanumeric Mattermost IDs, are always valid
+without normalization.
+
+#### 10.3.2 Variables by Field Type
+
+**`text` fields:**
+
+| Variable | Value |
+|----------|-------|
+| `$PB_FIELDNAME` / `$PB_FIELDID` | The raw text value. Empty string if not set. |
+
+**`select` fields:**
+
+| Variable | Value |
+|----------|-------|
+| `$PB_FIELDNAME` / `$PB_FIELDID` | The option **name** (human-readable). Empty string if not set. |
+| `$PB_FIELDNAME_ID` / `$PB_FIELDID_ID` | The option **ID**. Empty string if not set. |
+
+**`multiselect` fields (first iteration):**
+
+Only the **first** selected option is exposed:
+
+| Variable | Value |
+|----------|-------|
+| `$PB_FIELDNAME` / `$PB_FIELDID` | The **name** of the first selected option. Empty string if none selected. |
+| `$PB_FIELDNAME_ID` / `$PB_FIELDID_ID` | The **ID** of the first selected option. Empty string if none selected. |
+
+**`user` fields:**
+
+| Variable | Value |
+|----------|-------|
+| `$PB_FIELDNAME` / `$PB_FIELDID` | The **username** (e.g. `johndoe`). Empty string if not set. |
+| `$PB_FIELDNAME_FULLNAME` / `$PB_FIELDID_FULLNAME` | The user's full name (`FirstName LastName`). Empty string if not set. |
+| `$PB_FIELDNAME_ID` / `$PB_FIELDID_ID` | The **user ID**. Empty string if not set. |
+
+**`multiuser` fields (first iteration):**
+
+Only the **first** user is exposed:
+
+| Variable | Value |
+|----------|-------|
+| `$PB_FIELDNAME` / `$PB_FIELDID` | The **username** of the first user. Empty string if none set. |
+| `$PB_FIELDNAME_FULLNAME` / `$PB_FIELDID_FULLNAME` | The full name of the first user. Empty string if none set. |
+| `$PB_FIELDNAME_ID` / `$PB_FIELDID_ID` | The **user ID** of the first user. Empty string if none set. |
+
+**`date` fields:**
+
+| Variable | Value |
+|----------|-------|
+| `$PB_FIELDNAME` / `$PB_FIELDID` | The raw stored value (timestamp as string). Empty string if not set. |
+
+#### 10.3.3 Unset Fields
+
+When a property field has no value set (null, empty, or missing from the
+values list), all its variables resolve to an empty string `""`. Because the
+existing substitution loop rejects empty variables with an error, a command
+that references an unset field will fail with:
+`"Found undefined or empty variable in slash command: $PB_Severity"`
+
+This is intentional — it prevents commands from silently executing with
+missing data and gives the user a clear signal that the field must be set
+before the command can run.
+
+#### 10.3.4 Precedence
+
+1. **Built-in run metadata variables** (`$PB_RUN_ID`, etc.) — highest priority.
+2. **Property field variables** (`$PB_Severity`, etc.).
+3. **User-defined variables** from the run summary (`$myVar=foo`) — lowest
+   priority.
+
+If a property field is named `RUN_ID`, the variable `$PB_RUN_ID` still
+resolves to the run metadata, not the property value. The property is still
+accessible via its field ID: `$PB_<fieldID>`.
+
+### 10.4 Examples
+
+Given a run with:
+- ID: `r1a2b3c4d5e6f7g8h9i0j1k2l3`
+- Field "Severity" (select, ID `f1a2b3c4d5e6f7g8h9i0j1k2l3`), value: "High" (option ID `o1a2...`)
+- Field "Assignee" (user, ID `f2b3c4d5e6f7g8h9i0j1k2l3m4`), value: user `janedoe` (ID `u1a2...`, full name "Jane Doe")
+- Field "Build Status" (text), value: `passed`
+
+The following command templates:
+
+```
+/notify --severity $PB_Severity --run $PB_RUN_ID
+/assign --user $PB_Assignee_ID --name $PB_Assignee
+/deploy --status $PB_Build_Status --assignee-name $PB_Assignee_FULLNAME
+```
+
+Would be substituted to:
+
+```
+/notify --severity High --run r1a2b3c4d5e6f7g8h9i0j1k2l3
+/assign --user u1a2... --name janedoe
+/deploy --status passed --assignee-name Jane Doe
+```
+
+Note: `$PB_Assignee_FULLNAME` expands to `Jane Doe` (with a space). This is
+the same risk as any user-defined variable — raw `strings.ReplaceAll` does not
+escape values. Users should be mindful of spaces in values used as flag
+arguments.
+
+### 10.5 Known Limitations and Future Improvements
+
+The following are known limitations of the first implementation. They are
+documented here for awareness but are **not in scope for the MVP**.
+
+#### 10.5.1 Namespace collision between run metadata and property fields
+
+Run metadata variables and property field variables share the `$PB_` prefix.
+If a property field is named `RUN_ID`, `CHANNEL_ID`, `TEAM_ID`, etc., its
+name-based variable (`$PB_RUN_ID`) collides with the run metadata variable of
+the same name. The run metadata variable wins (see §10.3.4), and the property
+is only accessible via its field-ID-based variable (`$PB_<fieldID>`).
+
+A future improvement could use a separate prefix for attribute variables, e.g.
+`$PB_ATTRS_` (so the field would be `$PB_ATTRS_RUN_ID`), eliminating any
+possibility of collision with run metadata. This would make the two namespaces
+fully independent:
+
+| Namespace | Prefix | Example |
+|-----------|--------|---------|
+| Run metadata | `$PB_` | `$PB_RUN_ID`, `$PB_CHANNEL_ID` |
+| Property fields | `$PB_ATTRS_` | `$PB_ATTRS_Severity`, `$PB_ATTRS_Severity_ID` |
+
+This change should be evaluated before the variable system stabilizes and
+users start depending on the `$PB_` prefix for attributes.
+
+#### 10.5.2 Field name collisions after normalization
+
+The current name normalization (§10.3.1) replaces all non-`[a-zA-Z0-9_]`
+characters with `_`. This means distinct field names can produce the same
+variable name. For example, a playbook with all three of these fields:
+
+- `Security Level` → `$PB_Security_Level`
+- `Security-Level` → `$PB_Security_Level`
+- `Security_Level` → `$PB_Security_Level`
+
+All three normalize to the same variable. Only one value can be stored under
+that key (last-one-wins), making the name-based variable unreliable when
+collisions exist. The field-ID-based variable (`$PB_<fieldID>`) is always
+unambiguous and should be used in these cases.
+
+A future improvement could support a brace syntax for variable names that
+preserves the original field name, e.g.:
+
+```
+/notify --level ${PB_Security Level}
+```
+
+This would require changes to the variable regex (`reVars`) and the
+substitution loop to recognize `${...}` in addition to `$name`. It would
+fully solve the collision problem and also allow field names with special
+characters to be referenced directly, without relying on IDs.
+
+The MVP should include **test cases** that document this collision behavior:
+- Fields with spaces in the name (e.g. `Build Status`) are accessible via the
+  normalized name (`$PB_Build_Status`) and via the field ID.
+- Fields with hyphens (e.g. `my-field`) are accessible via `$PB_my_field` and
+  via the field ID.
+- When multiple fields normalize to the same variable name, the field-ID-based
+  variables remain correct and distinct.
