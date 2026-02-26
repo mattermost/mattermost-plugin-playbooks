@@ -15,8 +15,10 @@ import (
 )
 
 var varsReStr = `(\$[a-zA-Z0-9_]+)`
+var bracedVarsReStr = `(\$\{[^}]+\})`
+var combinedVarsReStr = bracedVarsReStr + `|` + varsReStr
 
-var reVars = regexp.MustCompile(varsReStr)
+var reVars = regexp.MustCompile(combinedVarsReStr)
 
 // reVarsAndVals is the regex use to match variables and their values.
 var reVarsAndVals = regexp.MustCompile(`^\s*` + varsReStr + `=(.+)\s*$`)
@@ -37,9 +39,20 @@ func parseVariablesAndValues(input string) map[string]string {
 	return vars
 }
 
-// parseVariables returns the variable names in the given input string.
+// parseVariables returns the variable references in the given input string.
+// It matches both unbraced ($PB_Severity) and braced (${PB_Security Level})
+// forms. Results are deduplicated while preserving order.
 func parseVariables(input string) []string {
-	return reVars.FindAllString(input, -1)
+	matches := reVars.FindAllString(input, -1)
+	seen := make(map[string]struct{}, len(matches))
+	result := make([]string, 0, len(matches))
+	for _, m := range matches {
+		if _, ok := seen[m]; !ok {
+			seen[m] = struct{}{}
+			result = append(result, m)
+		}
+	}
+	return result
 }
 
 // builtinRunVariables returns the built-in variables derived from a playbook
@@ -73,6 +86,32 @@ func normalizeFieldName(name string) string {
 	return reNonVarChar.ReplaceAllString(name, "_")
 }
 
+// needsBraces returns true if the name contains characters that are not
+// valid in unbraced variable names ([a-zA-Z0-9_]). Fields with such names
+// must use the ${...} brace syntax to be referenced in commands.
+func needsBraces(name string) bool {
+	return reNonVarChar.MatchString(name)
+}
+
+// lookupVar looks up a matched variable reference in the variable map.
+// It first tries a direct lookup (handles both braced keys like
+// "${PB_Security Level}" and unbraced keys like "$PB_Severity"), then for
+// braced references falls back to the unbraced form. This allows
+// ${PB_Severity} to find the key $PB_Severity, while ${PB_Security Level}
+// finds ${PB_Security Level}.
+func lookupVar(varsAndVals map[string]string, matched string) (string, bool) {
+	if val, ok := varsAndVals[matched]; ok {
+		return val, true
+	}
+	if strings.HasPrefix(matched, "${") && strings.HasSuffix(matched, "}") {
+		unbracedKey := "$" + matched[2:len(matched)-1]
+		if val, ok := varsAndVals[unbracedKey]; ok {
+			return val, true
+		}
+	}
+	return "", false
+}
+
 // UserResolver looks up a user by ID. In production this is backed by
 // pluginAPI; in tests it can be a simple map.
 type UserResolver interface {
@@ -100,15 +139,21 @@ func builtinPropertyVariables(
 	}
 
 	for _, field := range fields {
-		namePrefix := "$PB_" + normalizeFieldName(field.Name)
 		idPrefix := "$PB_" + field.ID
+		braced := needsBraces(field.Name)
 
 		rawValue := valuesByFieldID[field.ID]
 
-		// Generate variables for both prefixes
+		// Generate variables keyed by both field name and field ID
 		fieldVars := propertyFieldVariables(field, rawValue, userResolver)
 		for suffix, val := range fieldVars {
-			vars[namePrefix+suffix] = val
+			// Name-based key: braced if name has special chars, unbraced otherwise
+			if braced {
+				vars["${PB_"+field.Name+suffix+"}"] = val
+			} else {
+				vars["$PB_"+field.Name+suffix] = val
+			}
+			// ID-based key: always unbraced
 			vars[idPrefix+suffix] = val
 		}
 	}
@@ -296,10 +341,11 @@ func substituteVariables(
 		return len(varsInCmd[i]) > len(varsInCmd[j])
 	})
 	for _, v := range varsInCmd {
-		if val, ok := varsAndVals[v]; !ok || val == "" {
+		val, ok := lookupVar(varsAndVals, v)
+		if !ok || val == "" {
 			return "", fmt.Errorf("Found undefined or empty variable in slash command: %s", v)
 		}
-		command = strings.ReplaceAll(command, v, varsAndVals[v])
+		command = strings.ReplaceAll(command, v, val)
 	}
 
 	return command, nil

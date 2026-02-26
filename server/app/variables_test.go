@@ -166,8 +166,10 @@ func TestBuiltinPropertyVariables_TextField(t *testing.T) {
 
 	vars := builtinPropertyVariables(fields, values, nil)
 
-	// Name-based key
-	assert.Equal(t, "passed", vars["$PB_Build_Status"])
+	// Name-based key (braced, because name has a space)
+	assert.Equal(t, "passed", vars["${PB_Build Status}"])
+	// Normalized key should NOT exist
+	assert.Empty(t, vars["$PB_Build_Status"])
 	// ID-based key
 	assert.Equal(t, "passed", vars["$PB_"+fieldID])
 }
@@ -411,8 +413,6 @@ func TestBuiltinPropertyVariableNamesMatchRegex(t *testing.T) {
 		matches := parseVariables(varName)
 		require.NotEmpty(t, matches,
 			"built-in property variable %s should be matched by the variable regex", varName)
-		// The regex might match sub-parts if there were non-var chars, but since
-		// all our variable names only contain valid chars, the full name should match.
 		assert.Contains(t, matches, varName,
 			"built-in property variable %s should be matched by the variable regex", varName)
 	}
@@ -508,7 +508,7 @@ func TestSubstituteVariables_TextFieldSubstitution(t *testing.T) {
 	}
 
 	result, err := substituteVariables(
-		"/echo $PB_Build_Status",
+		"/echo ${PB_Build Status}",
 		run, fields, values, nil,
 	)
 	require.NoError(t, err)
@@ -736,7 +736,7 @@ func TestSubstituteVariables_UserDefinedAndPropertyAndRunMetadata(t *testing.T) 
 	}
 
 	result, err := substituteVariables(
-		"/deploy --env $ENV --status $PB_Build_Status --run $PB_RUN_ID",
+		"/deploy --env $ENV --status ${PB_Build Status} --run $PB_RUN_ID",
 		run, fields, values, nil,
 	)
 	require.NoError(t, err)
@@ -770,4 +770,486 @@ func TestSubstituteVariables_DateFieldSubstitution(t *testing.T) {
 	)
 	require.NoError(t, err)
 	assert.Equal(t, "/schedule --date 2026-02-26", result)
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6: needsBraces, lookupVar, brace-syntax parsing
+// ---------------------------------------------------------------------------
+
+func TestNeedsBraces(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		expect bool
+	}{
+		{"simple alphanum", "Severity", false},
+		{"with underscore", "Build_Status", false},
+		{"with space", "Security Level", true},
+		{"with hyphen", "Security-Level", true},
+		{"with dot", "v2.1", true},
+		{"with parens", "Tags (v2)", true},
+		{"empty", "", false},
+		{"digits only", "123", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expect, needsBraces(tc.input))
+		})
+	}
+}
+
+func TestLookupVar(t *testing.T) {
+	vars := map[string]string{
+		"$PB_Severity":           "High",
+		"$PB_Severity_ID":        "opt1",
+		"${PB_Security Level}":   "Critical",
+		"${PB_Security Level_ID}": "opt2",
+		"$PB_Security":           "low",
+		"$PB_RUN_ID":             "run-abc",
+		"$ENV":                   "production",
+	}
+
+	tests := []struct {
+		name    string
+		matched string
+		value   string
+		found   bool
+	}{
+		// Direct matches
+		{"unbraced direct", "$PB_Severity", "High", true},
+		{"unbraced ID direct", "$PB_Severity_ID", "opt1", true},
+		{"braced direct (spaced key)", "${PB_Security Level}", "Critical", true},
+		{"braced direct (spaced key ID)", "${PB_Security Level_ID}", "opt2", true},
+		{"unbraced Security direct", "$PB_Security", "low", true},
+		{"unbraced run metadata", "$PB_RUN_ID", "run-abc", true},
+		{"unbraced user-defined", "$ENV", "production", true},
+		// Braced fallback to unbraced
+		{"braced fallback to unbraced", "${PB_Severity}", "High", true},
+		{"braced fallback to unbraced ID", "${PB_Severity_ID}", "opt1", true},
+		{"braced fallback to unbraced run metadata", "${PB_RUN_ID}", "run-abc", true},
+		{"braced fallback to unbraced user-defined", "${ENV}", "production", true},
+		// Misses
+		{"miss normalized Security_Level", "$PB_Security_Level", "", false},
+		{"miss unknown", "$PB_UNKNOWN", "", false},
+		{"miss braced unknown", "${PB_UNKNOWN}", "", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			val, ok := lookupVar(vars, tc.matched)
+			assert.Equal(t, tc.found, ok)
+			assert.Equal(t, tc.value, val)
+		})
+	}
+}
+
+func TestParseVariables_BraceSyntax(t *testing.T) {
+	t.Run("braced variable", func(t *testing.T) {
+		result := parseVariables(`/echo ${PB_Security Level}`)
+		assert.Equal(t, []string{"${PB_Security Level}"}, result)
+	})
+
+	t.Run("unbraced variable", func(t *testing.T) {
+		result := parseVariables(`/echo $PB_Severity`)
+		assert.Equal(t, []string{"$PB_Severity"}, result)
+	})
+
+	t.Run("mixed braced and unbraced", func(t *testing.T) {
+		result := parseVariables(`/echo $PB_Severity ${PB_Security Level}`)
+		assert.Equal(t, []string{"$PB_Severity", "${PB_Security Level}"}, result)
+	})
+
+	t.Run("braced with hyphen", func(t *testing.T) {
+		result := parseVariables(`/echo ${PB_Security-Level}`)
+		assert.Equal(t, []string{"${PB_Security-Level}"}, result)
+	})
+
+	t.Run("unbraced stops at hyphen", func(t *testing.T) {
+		result := parseVariables(`/echo $PB_Security-Level`)
+		assert.Equal(t, []string{"$PB_Security"}, result)
+	})
+
+	t.Run("unbraced stops at space", func(t *testing.T) {
+		result := parseVariables(`/echo $PB_Security Level`)
+		assert.Equal(t, []string{"$PB_Security"}, result)
+	})
+
+	t.Run("deduplication", func(t *testing.T) {
+		result := parseVariables(`/echo $PB_Severity $PB_Severity`)
+		assert.Equal(t, []string{"$PB_Severity"}, result)
+	})
+
+	t.Run("deduplication braced", func(t *testing.T) {
+		result := parseVariables(`/echo ${PB_Security Level} ${PB_Security Level}`)
+		assert.Equal(t, []string{"${PB_Security Level}"}, result)
+	})
+
+	t.Run("no match inside braces leaves them for later", func(t *testing.T) {
+		// Braces can contain anything except '}'
+		result := parseVariables(`/echo ${PB_Foo Bar_FULLNAME}`)
+		assert.Equal(t, []string{"${PB_Foo Bar_FULLNAME}"}, result)
+	})
+
+	t.Run("braced suffix ID with space", func(t *testing.T) {
+		result := parseVariables(`/echo ${PB_Security Level_ID}`)
+		assert.Equal(t, []string{"${PB_Security Level_ID}"}, result)
+	})
+}
+
+func TestBracedVariableNamesMatchRegex(t *testing.T) {
+	// Braced keys generated by builtinPropertyVariables should be parsed correctly
+	fieldID := "fld1abcdefghijklmnopqrstuv"
+	fields := []PropertyField{
+		makeTestField(fieldID, "Security Level", model.PropertyFieldTypeSelect,
+			model.NewPluginPropertyOption("opt1abcdefghijklmnopqrstuv", "Critical"),
+		),
+	}
+	values := []PropertyValue{
+		makeTestValue(fieldID, json.RawMessage(`"opt1abcdefghijklmnopqrstuv"`)),
+	}
+
+	vars := builtinPropertyVariables(fields, values, nil)
+
+	for varName := range vars {
+		matches := parseVariables(varName)
+		require.NotEmpty(t, matches,
+			"braced property variable %s should be matched by the variable regex", varName)
+		assert.Contains(t, matches, varName,
+			"braced property variable %s should be matched by the variable regex", varName)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Phase 7: End-to-end truth table tests
+// ---------------------------------------------------------------------------
+
+// truthTableFixture returns the fields, values, run, and user resolver
+// matching the truth table setup in §6.2.6 of the architecture doc.
+//
+// Fields:
+//
+//	Severity       — select, simple name, option "High" (ID optSev)
+//	Security Level — select, name has space, option "Critical" (ID optSecLvl)
+//	Security       — text, simple name, value "low"
+//	Security-Level — text, name has hyphen, value "beta"
+//	Team Lead      — user, name has space, user janedoe (ID userJane)
+//	Assignee       — user, simple name, user bobsmith (ID userBob)
+//
+// Run: ID "run-abc", summary "$ENV=production"
+func truthTableFixture() (
+	run *PlaybookRun,
+	fields []PropertyField,
+	values []PropertyValue,
+	resolver *mockUserResolver,
+) {
+	const (
+		fldSev    = "fldSevabcdefghijklmnopqrst"
+		fldSecLvl = "fldSecLvlabcdefghijklmnopq"
+		fldSec    = "fldSecabcdefghijklmnopqrst"
+		fldSecHyp = "fldSecHypabcdefghijklmnopq"
+		fldLead   = "fldLeadabcdefghijklmnopqrs"
+		fldAssign = "fldAssignabcdefghijklmnopq"
+		optSev    = "optSevabcdefghijklmnopqrst"
+		optSecLvl = "optSecLvlabcdefghijklmnopq"
+		userJane  = "userJaneabcdefghijklmnopqr"
+		userBob   = "userBobabcdefghijklmnopqrs"
+	)
+
+	run = &PlaybookRun{
+		ID:      "run-abc",
+		Summary: "$ENV=production",
+	}
+
+	fields = []PropertyField{
+		makeTestField(fldSev, "Severity", model.PropertyFieldTypeSelect,
+			model.NewPluginPropertyOption(optSev, "High"),
+		),
+		makeTestField(fldSecLvl, "Security Level", model.PropertyFieldTypeSelect,
+			model.NewPluginPropertyOption(optSecLvl, "Critical"),
+		),
+		makeTestField(fldSec, "Security", model.PropertyFieldTypeText),
+		makeTestField(fldSecHyp, "Security-Level", model.PropertyFieldTypeText),
+		makeTestField(fldLead, "Team Lead", model.PropertyFieldTypeUser),
+		makeTestField(fldAssign, "Assignee", model.PropertyFieldTypeUser),
+	}
+
+	values = []PropertyValue{
+		makeTestValue(fldSev, json.RawMessage(`"`+optSev+`"`)),
+		makeTestValue(fldSecLvl, json.RawMessage(`"`+optSecLvl+`"`)),
+		makeTestValue(fldSec, json.RawMessage(`"low"`)),
+		makeTestValue(fldSecHyp, json.RawMessage(`"beta"`)),
+		makeTestValue(fldLead, json.RawMessage(`"`+userJane+`"`)),
+		makeTestValue(fldAssign, json.RawMessage(`"`+userBob+`"`)),
+	}
+
+	resolver = &mockUserResolver{
+		users: map[string]*model.User{
+			userJane: {Username: "janedoe", FirstName: "Jane", LastName: "Doe"},
+			userBob:  {Username: "bobsmith", FirstName: "Bob", LastName: "Smith"},
+		},
+	}
+
+	return run, fields, values, resolver
+}
+
+func TestSubstituteVariables_TruthTable(t *testing.T) {
+	run, fields, values, resolver := truthTableFixture()
+
+	const (
+		fldSecLvl = "fldSecLvlabcdefghijklmnopq"
+		optSev    = "optSevabcdefghijklmnopqrst"
+		optSecLvl = "optSecLvlabcdefghijklmnopq"
+		userJane  = "userJaneabcdefghijklmnopqr"
+		userBob   = "userBobabcdefghijklmnopqrs"
+	)
+
+	// --- Simple field (unbraced and braced) ---
+
+	t.Run("simple field unbraced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $PB_Severity`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo High", result)
+	})
+
+	t.Run("simple field braced fallback", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Severity}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo High", result)
+	})
+
+	// --- Field with space ---
+
+	t.Run("field with space braced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Security Level}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo Critical", result)
+	})
+
+	t.Run("field with space unbraced truncates at space", func(t *testing.T) {
+		// $PB_Security is parsed as the variable; " Level" is literal text
+		result, err := substituteVariables(`/echo $PB_Security Level`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo low Level", result)
+	})
+
+	// --- Field with hyphen ---
+
+	t.Run("field with hyphen braced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Security-Level}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo beta", result)
+	})
+
+	t.Run("field with hyphen unbraced truncates at hyphen", func(t *testing.T) {
+		// $PB_Security is parsed as the variable; "-Level" is literal text
+		result, err := substituteVariables(`/echo $PB_Security-Level`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo low-Level", result)
+	})
+
+	// --- Normalized name does NOT match ---
+
+	t.Run("normalized name does not match", func(t *testing.T) {
+		// $PB_Security_Level is a valid unbraced token but no field has that exact name
+		_, err := substituteVariables(`/echo $PB_Security_Level`, run, fields, values, resolver)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "$PB_Security_Level")
+	})
+
+	// --- Suffix _ID ---
+
+	t.Run("unbraced suffix ID", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $PB_Severity_ID`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo "+optSev, result)
+	})
+
+	t.Run("braced suffix ID fallback", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Severity_ID}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo "+optSev, result)
+	})
+
+	t.Run("braced suffix ID with space in name", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Security Level_ID}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo "+optSecLvl, result)
+	})
+
+	// --- Suffix _FULLNAME ---
+
+	t.Run("braced FULLNAME with space in name", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Team Lead_FULLNAME}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo Jane Doe", result)
+	})
+
+	t.Run("unbraced FULLNAME", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $PB_Assignee_FULLNAME`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo Bob Smith", result)
+	})
+
+	// --- Run metadata ---
+
+	t.Run("run metadata unbraced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $PB_RUN_ID`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo run-abc", result)
+	})
+
+	t.Run("run metadata braced fallback", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_RUN_ID}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo run-abc", result)
+	})
+
+	// --- User-defined ---
+
+	t.Run("user-defined unbraced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $ENV`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo production", result)
+	})
+
+	t.Run("user-defined braced fallback", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${ENV}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo production", result)
+	})
+
+	// --- Field ID access ---
+
+	t.Run("field ID unbraced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $PB_`+fldSecLvl, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo Critical", result)
+	})
+
+	t.Run("field ID braced fallback", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_`+fldSecLvl+`}`, run, fields, values, resolver)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo Critical", result)
+	})
+
+	// --- Mixed sources in same command ---
+
+	t.Run("mixed sources in same command", func(t *testing.T) {
+		result, err := substituteVariables(
+			`/echo $PB_RUN_ID ${PB_Security Level} $ENV`,
+			run, fields, values, resolver,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo run-abc Critical production", result)
+	})
+
+	// --- Braced and unbraced in same command for same field ---
+
+	t.Run("both forms for same simple field", func(t *testing.T) {
+		result, err := substituteVariables(
+			`/echo $PB_Severity ${PB_Severity}`,
+			run, fields, values, resolver,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo High High", result)
+	})
+
+	// --- Braced base + braced suffix in same command ---
+
+	t.Run("braced base and braced suffix for spaced field", func(t *testing.T) {
+		result, err := substituteVariables(
+			`/echo ${PB_Security Level} ${PB_Security Level_ID}`,
+			run, fields, values, resolver,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo Critical "+optSecLvl, result)
+	})
+
+	// --- User field with space: all three suffixes ---
+
+	t.Run("braced user field all suffixes", func(t *testing.T) {
+		result, err := substituteVariables(
+			`/assign ${PB_Team Lead} ${PB_Team Lead_FULLNAME} ${PB_Team Lead_ID}`,
+			run, fields, values, resolver,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "/assign janedoe Jane Doe "+userJane, result)
+	})
+
+	// --- Simple user field: all three suffixes ---
+
+	t.Run("unbraced user field all suffixes", func(t *testing.T) {
+		result, err := substituteVariables(
+			`/assign $PB_Assignee $PB_Assignee_FULLNAME $PB_Assignee_ID`,
+			run, fields, values, resolver,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "/assign bobsmith Bob Smith "+userBob, result)
+	})
+
+	// --- Unknown variable errors ---
+
+	t.Run("unknown unbraced variable error", func(t *testing.T) {
+		_, err := substituteVariables(`/echo $PB_UNKNOWN`, run, fields, values, resolver)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "$PB_UNKNOWN")
+	})
+
+	t.Run("unknown braced variable error", func(t *testing.T) {
+		_, err := substituteVariables(`/echo ${PB_UNKNOWN}`, run, fields, values, resolver)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "${PB_UNKNOWN}")
+	})
+}
+
+// TestSubstituteVariables_DisambiguateCollidingFields tests four similarly-named
+// fields that would all normalize to $PB_Security_Level under the old scheme.
+func TestSubstituteVariables_DisambiguateCollidingFields(t *testing.T) {
+	run := &PlaybookRun{ID: "run1"}
+
+	fields := []PropertyField{
+		makeTestField("fld1abcdefghijklmnopqrstuv", "Security Level", model.PropertyFieldTypeText),
+		makeTestField("fld2abcdefghijklmnopqrstuv", "Security-Level", model.PropertyFieldTypeText),
+		makeTestField("fld3abcdefghijklmnopqrstuv", "Security_Level", model.PropertyFieldTypeText),
+		makeTestField("fld4abcdefghijklmnopqrstuv", "Security", model.PropertyFieldTypeText),
+	}
+	values := []PropertyValue{
+		makeTestValue("fld1abcdefghijklmnopqrstuv", json.RawMessage(`"alpha"`)),
+		makeTestValue("fld2abcdefghijklmnopqrstuv", json.RawMessage(`"beta"`)),
+		makeTestValue("fld3abcdefghijklmnopqrstuv", json.RawMessage(`"gamma"`)),
+		makeTestValue("fld4abcdefghijklmnopqrstuv", json.RawMessage(`"delta"`)),
+	}
+
+	t.Run("Security Level via braces", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Security Level}`, run, fields, values, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo alpha", result)
+	})
+
+	t.Run("Security-Level via braces", func(t *testing.T) {
+		result, err := substituteVariables(`/echo ${PB_Security-Level}`, run, fields, values, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo beta", result)
+	})
+
+	t.Run("Security_Level unbraced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $PB_Security_Level`, run, fields, values, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo gamma", result)
+	})
+
+	t.Run("Security unbraced", func(t *testing.T) {
+		result, err := substituteVariables(`/echo $PB_Security`, run, fields, values, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo delta", result)
+	})
+
+	t.Run("all four in same command", func(t *testing.T) {
+		result, err := substituteVariables(
+			`/echo ${PB_Security Level} ${PB_Security-Level} $PB_Security_Level $PB_Security`,
+			run, fields, values, nil,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "/echo alpha beta gamma delta", result)
+	})
 }

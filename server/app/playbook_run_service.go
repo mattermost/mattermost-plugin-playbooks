@@ -2312,11 +2312,12 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 
 	command := itemToRun.Command
 	for _, v := range varsInCmd {
-		if val, ok := varsAndVals[v]; !ok || val == "" {
+		val, ok := lookupVar(varsAndVals, v)
+		if !ok || val == "" {
 			s.poster.EphemeralPost(userID, playbookRun.ChannelID, &model.Post{Message: fmt.Sprintf("Found undefined or empty variable in slash command: %s", v)})
 			return "", errors.Errorf("Found undefined or empty variable in slash command: %s", v)
 		}
-		command = strings.ReplaceAll(command, v, varsAndVals[v])
+		command = strings.ReplaceAll(command, v, val)
 	}
 
 	cmdResponse, err := s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{

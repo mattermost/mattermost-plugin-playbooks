@@ -122,12 +122,12 @@ func TestBuiltinVariableNamesMatchRegex(t *testing.T) {
 
 ### Acceptance Criteria
 
-- [ ] `builtinRunVariables` returns a map with all six `$PB_` variables.
-- [ ] Each variable maps to the correct `PlaybookRun` field.
-- [ ] When merged into a user-defined variable map, built-ins override
+- [x] `builtinRunVariables` returns a map with all six `$PB_` variables.
+- [x] Each variable maps to the correct `PlaybookRun` field.
+- [x] When merged into a user-defined variable map, built-ins override
       user-defined variables with the same name.
-- [ ] All `$PB_` variable names are matched by the existing `reVars` regex.
-- [ ] All unit tests pass.
+- [x] All `$PB_` variable names are matched by the existing `reVars` regex.
+- [x] All unit tests pass.
 
 ---
 
@@ -194,16 +194,16 @@ creation — all remain identical.
 
 ### Acceptance Criteria
 
-- [ ] A checklist item command containing `$PB_RUN_ID` is substituted with the
+- [x] A checklist item command containing `$PB_RUN_ID` is substituted with the
       actual run ID before execution.
-- [ ] A checklist item command containing `$PB_CHANNEL_ID`, `$PB_TEAM_ID`,
+- [x] A checklist item command containing `$PB_CHANNEL_ID`, `$PB_TEAM_ID`,
       `$PB_OWNER_USER_ID`, `$PB_PLAYBOOK_ID`, or `$PB_RUN_NAME` is substituted
       correctly.
-- [ ] A command with no `$PB_` variables behaves identically to before (no
+- [x] A command with no `$PB_` variables behaves identically to before (no
       regression).
-- [ ] A command mixing user-defined and built-in variables substitutes both
+- [x] A command mixing user-defined and built-in variables substitutes both
       correctly.
-- [ ] If a user defines `$PB_RUN_ID=custom` in the summary, the built-in value
+- [x] If a user defines `$PB_RUN_ID=custom` in the summary, the built-in value
       (the actual run ID) takes precedence.
 
 ---
@@ -243,11 +243,14 @@ small interface rather than depending on `pluginapi.Client` directly:
 
 ```go
 // UserResolver looks up a user by ID. In production this is backed by
-// pluginAPI.User.Get; in tests it can be a simple map.
+// pluginAPI; in tests it can be a simple map.
 type UserResolver interface {
-    GetUser(userID string) (*model.User, error)
+    Get(userID string) (*model.User, error)
 }
 ```
+
+The method is named `Get` (not `GetUser`) so that `*pluginapi.UserService`
+satisfies the interface directly, without needing an adapter.
 
 ### 3.3 Property variable builder in `server/app/variables.go`
 
@@ -350,19 +353,19 @@ All generated variable keys match the `reVars` regex.
 
 ### Acceptance Criteria
 
-- [ ] `normalizeFieldName` replaces non-`[a-zA-Z0-9_]` characters with `_`.
-- [ ] `builtinPropertyVariables` generates correct variables for `text` fields.
-- [ ] `builtinPropertyVariables` generates `PREFIX` and `PREFIX_ID` for
+- [x] `normalizeFieldName` replaces non-`[a-zA-Z0-9_]` characters with `_`.
+- [x] `builtinPropertyVariables` generates correct variables for `text` fields.
+- [x] `builtinPropertyVariables` generates `PREFIX` and `PREFIX_ID` for
       `select` fields, with name and option ID respectively.
-- [ ] `builtinPropertyVariables` uses only the first option for `multiselect`.
-- [ ] `builtinPropertyVariables` generates `PREFIX`, `PREFIX_FULLNAME`, and
+- [x] `builtinPropertyVariables` uses only the first option for `multiselect`.
+- [x] `builtinPropertyVariables` generates `PREFIX`, `PREFIX_FULLNAME`, and
       `PREFIX_ID` for `user` fields.
-- [ ] `builtinPropertyVariables` uses only the first user for `multiuser`.
-- [ ] `builtinPropertyVariables` generates raw value for `date` fields.
-- [ ] Unset fields produce empty string variables.
-- [ ] Both field-name-based and field-ID-based keys are registered.
-- [ ] All generated variable names match the `reVars` regex.
-- [ ] All unit tests pass.
+- [x] `builtinPropertyVariables` uses only the first user for `multiuser`.
+- [x] `builtinPropertyVariables` generates raw value for `date` fields.
+- [x] Unset fields produce empty string variables.
+- [x] Both field-name-based and field-ID-based keys are registered.
+- [x] All generated variable names match the `reVars` regex.
+- [x] All unit tests pass.
 
 ---
 
@@ -392,7 +395,7 @@ propertyValues, err := s.propertyService.GetRunPropertyValues(playbookRunID)  //
 if err != nil {                                                 // NEW
     logrus.WithError(err).Warn("failed to fetch property values for variable substitution")  // NEW
 }                                                               // NEW
-for k, v := range builtinPropertyVariables(propertyFields, propertyValues, s.pluginAPI.User) {  // NEW
+for k, v := range builtinPropertyVariables(propertyFields, propertyValues, &s.pluginAPI.User) {  // NEW
     varsAndVals[k] = v                                          // NEW
 }                                                               // NEW
 
@@ -423,138 +426,120 @@ field's value remains accessible via `$PB_<fieldID>`.
 any property variables. If it does, those variables will be missing and the
 existing undefined-variable error will fire.
 
-### 4.2 `UserResolver` adapter
+### 4.2 `UserResolver` — no adapter needed
 
-`s.pluginAPI.User` is of type `pluginapi.UserService`, which has a
-`Get(userID string) (*model.User, error)` method. The `UserResolver` interface
-from Phase 3 needs a `GetUser(userID string)` method.
-
-Add a thin adapter (in `server/app/variables.go`):
-
-```go
-// pluginAPIUserResolver adapts pluginapi.UserService to the UserResolver
-// interface.
-type pluginAPIUserResolver struct {
-    userService interface {
-        Get(userID string) (*model.User, error)
-    }
-}
-
-func (r *pluginAPIUserResolver) GetUser(userID string) (*model.User, error) {
-    return r.userService.Get(userID)
-}
-```
-
-In `RunChecklistItemSlashCommand`, pass `&pluginAPIUserResolver{s.pluginAPI.User}`
-as the `UserResolver`. Alternatively, since `pluginapi.UserService.Get` already
-matches the signature, the interface can be defined to match it directly:
-
-```go
-type UserResolver interface {
-    Get(userID string) (*model.User, error)
-}
-```
-
-Then `s.pluginAPI.User` satisfies `UserResolver` without an adapter.
+The `UserResolver` interface (Phase 3.2) defines `Get(userID string)` to match
+`pluginapi.UserService.Get` exactly. Since `Get` is defined with a pointer
+receiver (`func (u *UserService) Get(...)`), we pass `&s.pluginAPI.User`
+(a `*pluginapi.UserService`) which satisfies `UserResolver` directly — no
+adapter is needed.
 
 ### Acceptance Criteria
 
-- [ ] A command containing `$PB_Severity` is substituted with the field's
+- [x] A command containing `$PB_Severity` is substituted with the field's
       current option name.
-- [ ] A command containing `$PB_Severity_ID` is substituted with the option ID.
-- [ ] A command containing `$PB_Assignee` is substituted with the username.
-- [ ] A command containing `$PB_Assignee_FULLNAME` is substituted with the
+- [x] A command containing `$PB_Severity_ID` is substituted with the option ID.
+- [x] A command containing `$PB_Assignee` is substituted with the username.
+- [x] A command containing `$PB_Assignee_FULLNAME` is substituted with the
       full name.
-- [ ] A command containing `$PB_Assignee_ID` is substituted with the user ID.
-- [ ] A command using `$PB_<fieldID>` resolves the same as `$PB_<fieldName>`.
-- [ ] Unset property fields cause the expected "undefined or empty variable"
+- [x] A command containing `$PB_Assignee_ID` is substituted with the user ID.
+- [x] A command using `$PB_<fieldID>` resolves the same as `$PB_<fieldName>`.
+- [x] Unset property fields cause the expected "undefined or empty variable"
       error.
-- [ ] Property fetch failure is logged but doesn't abort the command if no
+- [x] Property fetch failure is logged but doesn't abort the command if no
       property variables are referenced.
-- [ ] Run metadata variables (`$PB_RUN_ID`) still take precedence over a
+- [x] Run metadata variables (`$PB_RUN_ID`) still take precedence over a
       property field named `RUN_ID`.
 
 ---
 
-## Phase 5: Integration Tests
+## Phase 5: Substitution Pipeline Tests
 
-**Goal:** End-to-end validation of both run metadata and property field
-variable substitution, using the plugin's test infrastructure.
+**Goal:** Validate the full variable substitution pipeline for both run
+metadata and property field variables.
+
+These tests use `substituteVariables`, a helper function in
+`server/app/variables.go` that replicates the substitution pipeline from
+`RunChecklistItemSlashCommand` (parse user vars from summary → inject property
+vars → inject run metadata vars → resolve and replace). This allows testing
+the full pipeline as a pure function without needing a running plugin instance.
 
 ### 5.1 Run metadata variable tests
 
-**Test: `$PB_RUN_ID` is substituted in the executed command**
+**Test: `$PB_RUN_ID` is substituted**
 
-Set up a playbook run with a checklist item whose command is
-`/playbook attribute list --run $PB_RUN_ID`. Execute
-`RunChecklistItemSlashCommand`. Verify the command that reached
-`SlashCommand.Execute` contains the literal run ID, not the variable.
+Call `substituteVariables` with command
+`/playbook attribute list --run $PB_RUN_ID` and a `PlaybookRun` with a known
+ID. Verify the returned command contains the literal run ID.
 
 **Test: command with no variables still works**
 
-Set up a checklist item with command `/echo hello`. Execute
-`RunChecklistItemSlashCommand`. Verify it executes without error (regression
-check).
+Call `substituteVariables` with command `/echo hello`. Verify it returns the
+command unchanged (regression check).
 
 **Test: mixed user-defined and built-in variables**
 
-Set up a run with summary containing `$ENV=production`. Set up a checklist item
-with command `/deploy --env $ENV --run $PB_RUN_ID`. Execute
-`RunChecklistItemSlashCommand`. Verify both variables are substituted.
+Set up a run with summary containing `$ENV=production`. Call
+`substituteVariables` with command `/deploy --env $ENV --run $PB_RUN_ID`.
+Verify both variables are substituted.
 
 **Test: built-in overrides user-defined**
 
-Set up a run with summary containing `$PB_RUN_ID=fake-id`. Set up a checklist
-item with command `/echo $PB_RUN_ID`. Execute
-`RunChecklistItemSlashCommand`. Verify the substituted value is the actual run
-ID, not `fake-id`.
+Set up a run with summary containing `$PB_RUN_ID=fake-id`. Call
+`substituteVariables` with command `/echo $PB_RUN_ID`. Verify the substituted
+value is the actual run ID, not `fake-id`.
 
 ### 5.2 Property field variable tests
 
 **Test: text field variable substitution**
 
-Create a run with a text field "Build Status" set to `"passed"`. Set up a
-checklist item with command `/echo $PB_Build_Status`. Verify substitution.
+Create a text field "Build Status" with value `"passed"`. Call
+`substituteVariables` with `/echo ${PB_Build Status}`. Verify substitution.
 
 **Test: select field name and ID variables**
 
-Create a run with a select field "Severity" set to option "High". Set up a
-command using both `$PB_Severity` and `$PB_Severity_ID`. Verify the name
-resolves to `"High"` and the ID resolves to the option ID.
+Create a select field "Severity" with option "High". Call
+`substituteVariables` with a command using both `$PB_Severity` and
+`$PB_Severity_ID`. Verify the name resolves to `"High"` and the ID resolves
+to the option ID.
 
 **Test: user field username, fullname, and ID variables**
 
-Create a run with a user field "Assignee" set to a known user. Verify
-`$PB_Assignee`, `$PB_Assignee_FULLNAME`, and `$PB_Assignee_ID` are all
+Create a user field "Assignee" with a mock `UserResolver`. Call
+`substituteVariables` with a command using `$PB_Assignee`,
+`$PB_Assignee_FULLNAME`, and `$PB_Assignee_ID`. Verify all three are
 substituted correctly.
 
 **Test: field-ID-based variable matches field-name-based**
 
-Use `$PB_<fieldID>` in a command. Verify it resolves to the same value as
-`$PB_<normalizedFieldName>`.
+Call `substituteVariables` with `$PB_<fieldID>` in a command. Verify it
+resolves to the same value as the field's name-based variable
+(`$PB_<fieldName>` or `${PB_<fieldName>}`).
 
 **Test: unset property field causes error**
 
-Create a run with a field that has no value. Use `$PB_<fieldName>` in a
-command. Verify the "undefined or empty variable" error fires.
+Create a field with no value. Call `substituteVariables` with
+`$PB_<fieldName>` in the command. Verify the "undefined or empty variable"
+error fires.
 
 **Test: run metadata takes precedence over property named RUN_ID**
 
-Create a property field literally named `RUN_ID`. Verify `$PB_RUN_ID` still
-resolves to the run's actual ID.
+Create a property field literally named `RUN_ID`. Call
+`substituteVariables` with `$PB_RUN_ID`. Verify it resolves to the run's
+actual ID, not the property field's value.
 
 ### Acceptance Criteria
 
-- [ ] Integration test for `$PB_RUN_ID` substitution passes.
-- [ ] Regression test for commands without variables passes.
-- [ ] Test for mixed user-defined and built-in variables passes.
-- [ ] Test for built-in override precedence passes.
-- [ ] Test for text field variable substitution passes.
-- [ ] Test for select field name/ID variable substitution passes.
-- [ ] Test for user field username/fullname/ID substitution passes.
-- [ ] Test for field-ID-based variables passes.
-- [ ] Test for unset property field error passes.
-- [ ] Test for run metadata precedence over equally-named property passes.
+- [x] Integration test for `$PB_RUN_ID` substitution passes.
+- [x] Regression test for commands without variables passes.
+- [x] Test for mixed user-defined and built-in variables passes.
+- [x] Test for built-in override precedence passes.
+- [x] Test for text field variable substitution passes.
+- [x] Test for select field name/ID variable substitution passes.
+- [x] Test for user field username/fullname/ID substitution passes.
+- [x] Test for field-ID-based variables passes.
+- [x] Test for unset property field error passes.
+- [x] Test for run metadata precedence over equally-named property passes.
 
 ---
 
@@ -601,7 +586,7 @@ resolves to the run's actual ID.
 |------|------------|
 | User defines `$PB_RUN_ID` in summary, expects their value | Built-ins take precedence. Document that `$PB_` prefix is reserved. |
 | `$PB_RUN_NAME` or `$PB_FIELDNAME_FULLNAME` contains spaces, breaking command parsing | Same risk as any user-defined variable. Document that values with spaces should be used carefully in flag positions. |
-| Two fields normalize to the same variable name (e.g. `Build Status` and `Build-Status` both → `$PB_Build_Status`) | Last-one-wins in the map. Both are also accessible via their unique `$PB_<fieldID>` key, which is always unambiguous. |
+| Two fields normalize to the same variable name (e.g. `Build Status` and `Build-Status` both → `$PB_Build_Status`) | **Eliminated by Phase 7.** Raw-name keys with brace syntax make each field's variable unique: `${PB_Build Status}` vs `${PB_Build-Status}`. Fields are also accessible via their unique `$PB_<fieldID>` key. |
 | Property field named `RUN_ID` collides with `$PB_RUN_ID` | Run metadata variables are injected last and take precedence. The property is still accessible via `$PB_<fieldID>`. |
 | User lookup fails for `user`/`multiuser` fields | Log a warning, set the user variables to empty strings. The command will fail with "undefined or empty variable" only if it references those variables. |
 | Timeline event shows the substituted command (with raw IDs) | Existing behavior for all variables. No change. |
@@ -617,9 +602,9 @@ resolves to the run's actual ID.
 | 2 | Wire run metadata variables into `RunChecklistItemSlashCommand` | ✅ Done |
 | 3 | Property field variables — `normalizeFieldName`, `builtinPropertyVariables` + unit tests | ✅ Done |
 | 4 | Wire property variables into `RunChecklistItemSlashCommand` | ✅ Done |
-| 5 | Integration tests (run metadata + property variables) | ✅ Done |
-| 6 | Brace syntax `${...}` — parser extension + unit tests | Not started |
-| 7 | Replace normalized keys with raw-name keys, update tests + integration tests | Not started |
+| 5 | Substitution pipeline tests (run metadata + property variables) | ✅ Done |
+| 6 | Brace syntax `${...}` — parser extension + unit tests | ✅ Done |
+| 7 | Replace normalized keys with raw-name keys, update tests + integration tests | ✅ Done |
 
 ---
 
@@ -1191,25 +1176,25 @@ Re-run existing `TestParseVariables` cases — they must all pass unchanged.
 
 ### Acceptance Criteria
 
-- [ ] `needsBraces` correctly identifies names with special characters.
-- [ ] `lookupVar` finds unbraced keys directly.
-- [ ] `lookupVar` finds unbraced keys via braced-to-unbraced fallback
+- [x] `needsBraces` correctly identifies names with special characters.
+- [x] `lookupVar` finds unbraced keys directly.
+- [x] `lookupVar` finds unbraced keys via braced-to-unbraced fallback
       (e.g., `${PB_Severity}` → `$PB_Severity`).
-- [ ] `lookupVar` finds braced keys directly (e.g., `${PB_Security Level}`).
-- [ ] `lookupVar` does NOT find braced-only keys via unbraced references
+- [x] `lookupVar` finds braced keys directly (e.g., `${PB_Security Level}`).
+- [x] `lookupVar` does NOT find braced-only keys via unbraced references
       (e.g., `$PB_Security` does not find `${PB_Security Level}`).
-- [ ] `lookupVar` does NOT find a normalized key like `$PB_Security_Level`
+- [x] `lookupVar` does NOT find a normalized key like `$PB_Security_Level`
       when only `$PB_Security` and `${PB_Security Level}` exist.
-- [ ] `parseVariables` matches `${...}` references in command strings.
-- [ ] `parseVariables` still matches `$name` references (backward compat).
-- [ ] Both braced and unbraced forms are returned when both appear.
-- [ ] Braced variables with spaces, hyphens, parentheses are matched.
-- [ ] Unbraced `$PB_Security Level` is parsed as `$PB_Security` + literal.
-- [ ] Unbraced `$PB_Security-Level` is parsed as `$PB_Security` + literal.
-- [ ] Unbraced `$PB_Security_Level` is parsed as a single token (underscore
+- [x] `parseVariables` matches `${...}` references in command strings.
+- [x] `parseVariables` still matches `$name` references (backward compat).
+- [x] Both braced and unbraced forms are returned when both appear.
+- [x] Braced variables with spaces, hyphens, parentheses are matched.
+- [x] Unbraced `$PB_Security Level` is parsed as `$PB_Security` + literal.
+- [x] Unbraced `$PB_Security-Level` is parsed as `$PB_Security` + literal.
+- [x] Unbraced `$PB_Security_Level` is parsed as a single token (underscore
       is valid in unbraced names).
-- [ ] All existing `TestParseVariables` tests pass unchanged.
-- [ ] All unit tests pass.
+- [x] All existing `TestParseVariables` tests pass unchanged.
+- [x] All unit tests pass.
 
 ---
 
@@ -1281,6 +1266,11 @@ for suffix, val := range fieldVars {
 
 The `normalizeFieldName` function is no longer called in
 `builtinPropertyVariables` (it can be kept as a utility or removed).
+
+The function's docstring must also be updated — it previously said "keyed by
+both its normalized name and its ID", which should now read "keyed by both its
+original name (using brace syntax for names with special characters) and its
+ID."
 
 **Consequences:**
 
@@ -1678,29 +1668,29 @@ if !ok || val == "" {
 
 ### Acceptance Criteria
 
-- [ ] `builtinPropertyVariables` registers braced keys for fields with special
+- [x] `builtinPropertyVariables` registers braced keys for fields with special
       characters and unbraced keys for simple fields. No normalized keys.
-- [ ] `${PB_Security Level}` resolves to the correct value for a field named
+- [x] `${PB_Security Level}` resolves to the correct value for a field named
       "Security Level".
-- [ ] `${PB_Security Level_ID}` resolves to the option ID for a select field.
-- [ ] `$PB_Severity` and `${PB_Severity}` resolve to the same value (for
+- [x] `${PB_Security Level_ID}` resolves to the option ID for a select field.
+- [x] `$PB_Severity` and `${PB_Severity}` resolve to the same value (for
       simple field names that contain only `[a-zA-Z0-9_]`).
-- [ ] `$PB_Build_Status` does **not** resolve for a field named
+- [x] `$PB_Build_Status` does **not** resolve for a field named
       "Build Status" — the normalized form is no longer registered.
-- [ ] `$PB_Security_Level` does **not** resolve for a field named
+- [x] `$PB_Security_Level` does **not** resolve for a field named
       "Security Level" — even though underscores are valid in variable names.
-- [ ] `$PB_Security Level` resolves `$PB_Security` (field "Security") and
+- [x] `$PB_Security Level` resolves `$PB_Security` (field "Security") and
       leaves ` Level` as literal text.
-- [ ] Braced and unbraced variables can be mixed in the same command.
-- [ ] Braced syntax disambiguates fields that would have collided after
+- [x] Braced and unbraced variables can be mixed in the same command.
+- [x] Braced syntax disambiguates fields that would have collided after
       normalization (e.g., `Security Level` vs `Security-Level` vs
       `Security_Level` vs `Security` are all distinct).
-- [ ] Braced suffix forms work: `${PB_Security Level_ID}`,
+- [x] Braced suffix forms work: `${PB_Security Level_ID}`,
       `${PB_Team Lead_FULLNAME}`.
-- [ ] Field ID access works in both forms: `$PB_fldXXX` and `${PB_fldXXX}`.
-- [ ] Every row of the truth tables in §6.2.6 has a passing test.
-- [ ] Updated Phase 3/5 tests pass with raw-name keys.
-- [ ] All unit and integration tests pass.
+- [x] Field ID access works in both forms: `$PB_fldXXX` and `${PB_fldXXX}`.
+- [x] Every row of the truth tables in §6.2.6 has a passing test.
+- [x] Updated Phase 3/5 tests pass with raw-name keys.
+- [x] All unit and integration tests pass.
 
 ---
 
