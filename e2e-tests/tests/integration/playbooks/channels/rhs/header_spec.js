@@ -297,12 +297,14 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             // # Wait for the RHS to open (standalone runs may not auto-open)
             cy.get('#rhsContainer').should('exist');
 
-            // # Finish the checklist and wait for RHS to re-render
+            // # Finish the checklist and wait for RHS to reflect finished state
             cy.apiFinishRun(standaloneRun.id);
-            cy.wait(TIMEOUTS.TWO_SEC);
-            cy.get('#rhsContainer').should('exist');
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText('Finished').should('be.visible');
+                cy.findByRole('button', {name: 'Done'}).should('be.visible');
+            });
 
-            // # Click on the title menu in the RHS header (RHS stays on run detail after finishing)
+            // # Click on the title menu in the RHS header
             cy.get('#rhsContainer').findByTestId('menuButton').should('be.visible').click();
 
             // * Verify "Rename" option does not exist for finished checklists
