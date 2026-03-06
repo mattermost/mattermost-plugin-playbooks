@@ -18,7 +18,6 @@ import {isConfiguredForDevelopment} from 'src/license';
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 import GlobalHeaderRight from 'src/components/global_header_right';
 import LoginHook from 'src/components/login_hook';
-import ChecklistsRebrandTour from 'src/components/tutorial/checklists_rebrand_tour';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeWelcomeMessagePoster} from 'src/welcome_message_poster';
 import {makeSlashCommandHook} from 'src/slash_command';
@@ -215,7 +214,6 @@ export default class Plugin {
         registry.registerRootComponent(PostMenuModal);
         registry.registerRootComponent(ChannelActionsModal);
         registry.registerRootComponent(LoginHook);
-        registry.registerRootComponent(ChecklistsRebrandTour);
 
         // App Bar icon
         if (registry.registerAppBarComponent) {
