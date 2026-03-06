@@ -511,6 +511,8 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	}
 
 	var playbook *app.Playbook
+	// For runs off of a playbook, verify playbook as well as user having run_create
+	// for this playbook (via playbook membership).
 	if playbookRun.PlaybookID != "" {
 		var pb app.Playbook
 		pb, err = h.playbookService.Get(playbookRun.PlaybookID)
@@ -538,9 +540,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.SetChecklistFromPlaybook(*playbook)
 		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
 	} else {
-		// For runs without a playbook (channel checklists), check run creation permissions on the team
-		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, model.PermissionRunCreate) {
-			return nil, errors.Wrap(app.ErrNoPermissions, "You do not have permission to create runs on this team")
+		// For checklists, verify a channel ID and verify user has permission to post in the channel below.
+		if channel == nil {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel ID is required for checklists")
 		}
 	}
 
