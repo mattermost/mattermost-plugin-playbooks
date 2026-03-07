@@ -189,11 +189,11 @@
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "Futás befejezése"
+        "translation": "Befejezés"
     },
     {
         "id": "app.user.run.confirm_finish.title",
-        "translation": "Futás befejezésének jóváhagyása"
+        "translation": "Befejezés jóváhagyása"
     },
     {
         "id": "app.user.run.update_status.change_since_last_update",
@@ -213,7 +213,7 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Állapot frissítése"
+        "translation": "Küldés"
     },
     {
         "id": "app.user.run.update_status.title",
@@ -222,5 +222,9 @@
     {
         "id": "app.user.new_run.playbook",
         "translation": "Forgatókönyv"
+    },
+    {
+        "id": "playbooks.checklist.condition.reason.modified",
+        "translation": "megjelenítve mert a feladat módosult"
     }
 ]
