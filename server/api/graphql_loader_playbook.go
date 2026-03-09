@@ -46,9 +46,12 @@ func graphQLPlaybooksLoader[V *app.Playbook](ctx context.Context, keys []playboo
 	if err != nil {
 		return populateResultWithError(err, result)
 	}
+
+	filteredItems := c.permissions.FilterPlaybooksByViewPermission(userID, playbookResult.Items)
+
 	playbooksByID := make(map[string]*app.Playbook)
-	for i := range playbookResult.Items {
-		playbooksByID[playbookResult.Items[i].ID] = &playbookResult.Items[i]
+	for i := range filteredItems {
+		playbooksByID[filteredItems[i].ID] = &filteredItems[i]
 	}
 
 	for i, playbookInfo := range keys {
