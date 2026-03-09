@@ -91,8 +91,10 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	ret := make([]*PlaybookResolver, 0, len(playbookResults.Items))
-	for _, pb := range playbookResults.Items {
+	filteredItems := c.permissions.FilterPlaybooksByViewPermission(userID, playbookResults.Items)
+
+	ret := make([]*PlaybookResolver, 0, len(filteredItems))
+	for _, pb := range filteredItems {
 		ret = append(ret, &PlaybookResolver{pb})
 	}
 

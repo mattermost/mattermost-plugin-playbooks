@@ -1106,6 +1106,105 @@ func TestPlaybooksPermissions(t *testing.T) {
 		})
 	})
 
+	t.Run("list playbooks filters by view permissions", func(t *testing.T) {
+		// Create a public playbook
+		publicPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Public Playbook - View Permission Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		// Create another public playbook
+		publicPlaybook2ID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Public Playbook 2 - View Permission Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		// Verify RegularUser can see both playbooks initially
+		playbookResults, err := e.PlaybooksClient.Playbooks.List(context.Background(), e.BasicTeam.Id, 0, 100, client.PlaybookListOptions{})
+		require.NoError(t, err)
+		playbookIDs := getPlaybookIDsList(playbookResults.Items)
+		assert.Contains(t, playbookIDs, publicPlaybookID, "RegularUser should see public playbook with view permission")
+		assert.Contains(t, playbookIDs, publicPlaybook2ID, "RegularUser should see second public playbook with view permission")
+
+		// Remove view permissions from playbook_member role.
+		// SaveDefaultRolePermissions does not cover playbook_member, so we save/restore it manually.
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		playbookMemberRole, _, err := e.ServerAdminClient.GetRoleByName(context.Background(), model.PlaybookMemberRoleId)
+		require.NoError(t, err)
+		playbookMemberPerms := append([]string{}, playbookMemberRole.Permissions...)
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+			_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), playbookMemberRole.Id, &model.RolePatch{
+				Permissions: &playbookMemberPerms,
+			})
+		}()
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookView.Id, model.PlaybookMemberRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPrivatePlaybookView.Id, model.PlaybookMemberRoleId)
+
+		// Verify RegularUser can no longer see public playbooks in list
+		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), e.BasicTeam.Id, 0, 100, client.PlaybookListOptions{})
+		require.NoError(t, err)
+		playbookIDs = getPlaybookIDsList(playbookResults.Items)
+		assert.NotContains(t, playbookIDs, publicPlaybookID, "RegularUser should not see public playbook without view permission")
+		assert.NotContains(t, playbookIDs, publicPlaybook2ID, "RegularUser should not see second public playbook without view permission")
+
+		// Verify RegularUser still cannot access individual playbook
+		_, err = e.PlaybooksClient.Playbooks.Get(context.Background(), publicPlaybookID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("member without view permissions cannot see playbook in list", func(t *testing.T) {
+		// SaveDefaultRolePermissions does not cover playbook_member, so we save/restore it manually.
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		playbookMemberRole, _, err := e.ServerAdminClient.GetRoleByName(context.Background(), model.PlaybookMemberRoleId)
+		require.NoError(t, err)
+		playbookMemberPerms := append([]string{}, playbookMemberRole.Permissions...)
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+			_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), playbookMemberRole.Id, &model.RolePatch{
+				Permissions: &playbookMemberPerms,
+			})
+		}()
+		// Ensure view permissions are present initially
+		e.Permissions.AddPermissionToRole(t, model.PermissionPrivatePlaybookView.Id, model.PlaybookMemberRoleId)
+		e.Permissions.AddPermissionToRole(t, model.PermissionPublicPlaybookView.Id, model.PlaybookMemberRoleId)
+
+		// Create a private playbook with RegularUser as a member
+		privatePlaybookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Private Playbook - Member Without View",
+			TeamID: e.BasicTeam.Id,
+			Public: false,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{model.PlaybookMemberRoleId}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Verify RegularUser can see the playbook initially (as a member)
+		playbookResults, err := e.PlaybooksClient.Playbooks.List(context.Background(), e.BasicTeam.Id, 0, 100, client.PlaybookListOptions{})
+		require.NoError(t, err)
+		playbookIDs := getPlaybookIDsList(playbookResults.Items)
+		assert.Contains(t, playbookIDs, privatePlaybookID, "RegularUser should see playbook they are a member of")
+
+		// Remove playbook_private_view permission from playbook_member role
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPrivatePlaybookView.Id, model.PlaybookMemberRoleId)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionPublicPlaybookView.Id, model.PlaybookMemberRoleId)
+
+		// Verify RegularUser can no longer see the playbook in list (even though they're a member)
+		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), e.BasicTeam.Id, 0, 100, client.PlaybookListOptions{})
+		require.NoError(t, err)
+		playbookIDs = getPlaybookIDsList(playbookResults.Items)
+		assert.NotContains(t, playbookIDs, privatePlaybookID, "RegularUser should not see playbook without view permission, even as a member")
+
+		// Verify RegularUser still cannot access individual playbook
+		_, err = e.PlaybooksClient.Playbooks.Get(context.Background(), privatePlaybookID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
 	t.Run("user without manage members permission cannot change playbook team", func(t *testing.T) {
 		// This test replicates the security issue described in MM-66474
 
