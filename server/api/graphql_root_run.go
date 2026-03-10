@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 
@@ -264,33 +263,7 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	// Resolve group members into user IDs
 	allUserIDs := make([]string, len(args.UserIDs))
 	copy(allUserIDs, args.UserIDs)
-
-	for _, groupID := range args.GroupIDs {
-		group, groupErr := c.pluginAPI.Group.Get(groupID)
-		if groupErr != nil {
-			logrus.WithError(groupErr).WithField("group_id", groupID).Warn("failed to resolve group for run participants")
-			continue
-		}
-		if !group.AllowReference {
-			logrus.WithField("group_id", groupID).Warn("skipping group that does not allow reference")
-			continue
-		}
-
-		perPage := 1000
-		for page := 0; ; page++ {
-			users, groupErr := c.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
-			if groupErr != nil {
-				logrus.WithError(groupErr).WithField("group_id", groupID).Warn("failed to get group members")
-				break
-			}
-			for _, user := range users {
-				allUserIDs = append(allUserIDs, user.Id)
-			}
-			if len(users) < perPage {
-				break
-			}
-		}
-	}
+	allUserIDs = append(allUserIDs, app.ResolveGroupMembers(args.GroupIDs, c.pluginAPI, c.logger)...)
 
 	// Deduplicate user IDs
 	seen := make(map[string]struct{}, len(allUserIDs))

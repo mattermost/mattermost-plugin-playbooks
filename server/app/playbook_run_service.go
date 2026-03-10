@@ -523,39 +523,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	invitedUserIDs := playbookRun.InvitedUserIDs
-
-	for _, groupID := range playbookRun.InvitedGroupIDs {
-		groupLogger := logger.WithField("group_id", groupID)
-
-		var group *model.Group
-		group, err = s.pluginAPI.Group.Get(groupID)
-		if err != nil {
-			groupLogger.WithError(err).Error("failed to query group")
-			continue
-		}
-
-		if !group.AllowReference {
-			groupLogger.Warn("group that does not allow references")
-			continue
-		}
-
-		perPage := 1000
-		for page := 0; ; page++ {
-			var users []*model.User
-			users, err = s.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
-			if err != nil {
-				groupLogger.WithError(err).Error("failed to query group")
-				break
-			}
-			for _, user := range users {
-				invitedUserIDs = append(invitedUserIDs, user.Id)
-			}
-
-			if len(users) < perPage {
-				break
-			}
-		}
-	}
+	invitedUserIDs = append(invitedUserIDs, ResolveGroupMembers(playbookRun.InvitedGroupIDs, s.pluginAPI, logger)...)
 
 	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
 	if err != nil {

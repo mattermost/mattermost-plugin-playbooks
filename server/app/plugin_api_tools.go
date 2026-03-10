@@ -5,6 +5,7 @@ package app
 
 import (
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
@@ -35,4 +36,40 @@ func IsChannelActiveInTeam(channelID string, expectedTeamID string, pluginAPI *p
 	}
 
 	return nil
+}
+
+// ResolveGroupMembers expands group IDs into user IDs by fetching members of
+// each group. Only groups with AllowReference enabled are expanded. Errors are
+// logged and the group is skipped rather than failing the whole operation.
+func ResolveGroupMembers(groupIDs []string, pluginAPI *pluginapi.Client, logger logrus.FieldLogger) []string {
+	var userIDs []string
+	for _, groupID := range groupIDs {
+		groupLogger := logger.WithField("group_id", groupID)
+
+		group, err := pluginAPI.Group.Get(groupID)
+		if err != nil {
+			groupLogger.WithError(err).Warn("failed to resolve group")
+			continue
+		}
+		if !group.AllowReference {
+			groupLogger.Warn("skipping group that does not allow reference")
+			continue
+		}
+
+		perPage := 1000
+		for page := 0; ; page++ {
+			users, err := pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
+			if err != nil {
+				groupLogger.WithError(err).Warn("failed to get group members")
+				break
+			}
+			for _, user := range users {
+				userIDs = append(userIDs, user.Id)
+			}
+			if len(users) < perPage {
+				break
+			}
+		}
+	}
+	return userIDs
 }
