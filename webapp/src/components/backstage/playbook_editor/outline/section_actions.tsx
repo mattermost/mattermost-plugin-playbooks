@@ -75,6 +75,21 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         });
     };
 
+    const handleAddGroupInvited = (groupId: string) => {
+        if (!playbook.invited_group_ids.includes(groupId)) {
+            updatePlaybook({
+                invitedGroupIDs: [...playbook.invited_group_ids, groupId],
+            });
+        }
+    };
+
+    const handleRemoveGroupInvited = (groupId: string) => {
+        const idx = playbook.invited_group_ids.indexOf(groupId);
+        updatePlaybook({
+            invitedGroupIDs: [...playbook.invited_group_ids.slice(0, idx), ...playbook.invited_group_ids.slice(idx + 1)],
+        });
+    };
+
     const handleRemovePreAssignedUserInvited = (userId: string) => {
         // Iterate all checklists and their tasks and unassign the given user from all tasks
         const checklists = playbook.checklists.map((cl) => ({
@@ -177,9 +192,12 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
                         userIds={playbook.invited_user_ids}
+                        groupIds={playbook.invited_group_ids}
                         preAssignedUserIds={preAssignees}
                         onAddUser={handleAddUserInvited}
                         onRemoveUser={handleRemoveUserInvited}
+                        onAddGroup={handleAddGroupInvited}
+                        onRemoveGroup={handleRemoveGroupInvited}
                         onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
                         onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
