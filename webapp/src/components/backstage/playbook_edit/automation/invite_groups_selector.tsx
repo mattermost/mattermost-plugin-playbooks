@@ -156,6 +156,9 @@ const GroupLabel = (props: GroupLabelProps) => {
             <GroupInfo>
                 <GroupIcon className='icon icon-account-multiple-outline'/>
                 <GroupName>{props.group.display_name}</GroupName>
+                {props.group.source === 'ldap' && (
+                    <LinkedIcon className='icon icon-link-variant'/>
+                )}
                 {props.group.member_count !== undefined && (
                     <MemberCount>
                         <FormattedMessage
@@ -188,6 +191,12 @@ const GroupName = styled.span`
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
+`;
+
+const LinkedIcon = styled.i`
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 14px;
+    flex-shrink: 0;
 `;
 
 const MemberCount = styled.span`
