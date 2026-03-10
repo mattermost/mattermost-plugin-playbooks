@@ -251,7 +251,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	RunID             string
 	UserIDs           []string
-	GroupIDs          *[]string
+	GroupIDs          []string
 	ForceAddToChannel bool
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -264,28 +264,26 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	allUserIDs := make([]string, len(args.UserIDs))
 	copy(allUserIDs, args.UserIDs)
 
-	if args.GroupIDs != nil {
-		for _, groupID := range *args.GroupIDs {
-			group, groupErr := c.pluginAPI.Group.Get(groupID)
-			if groupErr != nil {
-				continue
-			}
-			if !group.AllowReference {
-				continue
-			}
+	for _, groupID := range args.GroupIDs {
+		group, groupErr := c.pluginAPI.Group.Get(groupID)
+		if groupErr != nil {
+			continue
+		}
+		if !group.AllowReference {
+			continue
+		}
 
-			perPage := 1000
-			for page := 0; ; page++ {
-				users, groupErr := c.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
-				if groupErr != nil {
-					break
-				}
-				for _, user := range users {
-					allUserIDs = append(allUserIDs, user.Id)
-				}
-				if len(users) < perPage {
-					break
-				}
+		perPage := 1000
+		for page := 0; ; page++ {
+			users, groupErr := c.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
+			if groupErr != nil {
+				break
+			}
+			for _, user := range users {
+				allUserIDs = append(allUserIDs, user.Id)
+			}
+			if len(users) < perPage {
+				break
 			}
 		}
 	}
