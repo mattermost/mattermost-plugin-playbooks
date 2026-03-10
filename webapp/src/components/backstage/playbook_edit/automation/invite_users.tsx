@@ -8,10 +8,12 @@ import {type ActionResult} from 'mattermost-redux/types/actions';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import type {UserProfile} from '@mattermost/types/users';
+import styled from 'styled-components';
 
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import InviteUsersSelector from 'src/components/backstage/playbook_edit/automation/invite_users_selector';
+import InviteGroupsSelector from 'src/components/backstage/playbook_edit/automation/invite_groups_selector';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 interface Props {
@@ -21,9 +23,12 @@ interface Props {
     searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
     getProfiles: () => Promise<ActionResult<UserProfile[]>>;
     userIds: string[];
+    groupIds: string[];
     preAssignedUserIds: string[];
     onAddUser: (userId: string) => void;
     onRemoveUser: (userId: string) => void;
+    onAddGroup: (groupId: string) => void;
+    onRemoveGroup: (groupId: string) => void;
     onRemovePreAssignedUser: (userId: string) => void;
     onRemovePreAssignedUsers: () => void;
 }
@@ -66,16 +71,26 @@ export const InviteUsers = (props: Props) => {
                         <FormattedMessage defaultMessage='Invite participants'/>
                     </Toggle>
                 </AutomationTitle>
-                <SelectorWrapper>
-                    <InviteUsersSelector
-                        isDisabled={props.disabled || !props.enabled}
-                        onAddUser={props.onAddUser}
-                        onRemoveUser={handleRemoveUser}
-                        userIds={props.userIds}
-                        searchProfiles={props.searchProfiles}
-                        getProfiles={props.getProfiles}
-                    />
-                </SelectorWrapper>
+                <SelectorsColumn>
+                    <SelectorWrapper>
+                        <InviteUsersSelector
+                            isDisabled={props.disabled || !props.enabled}
+                            onAddUser={props.onAddUser}
+                            onRemoveUser={handleRemoveUser}
+                            userIds={props.userIds}
+                            searchProfiles={props.searchProfiles}
+                            getProfiles={props.getProfiles}
+                        />
+                    </SelectorWrapper>
+                    <SelectorWrapper>
+                        <InviteGroupsSelector
+                            isDisabled={props.disabled || !props.enabled}
+                            onAddGroup={props.onAddGroup}
+                            onRemoveGroup={props.onRemoveGroup}
+                            groupIds={props.groupIds}
+                        />
+                    </SelectorWrapper>
+                </SelectorsColumn>
             </AutomationHeader>
             <ConfirmModal
                 show={showRemovePreAssigneeModal}
@@ -110,3 +125,9 @@ export const InviteUsers = (props: Props) => {
         </>
     );
 };
+
+const SelectorsColumn = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+`;
