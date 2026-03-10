@@ -293,11 +293,11 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	}
 
 	// Deduplicate user IDs
-	seen := make(map[string]bool, len(allUserIDs))
+	seen := make(map[string]struct{}, len(allUserIDs))
 	unique := make([]string, 0, len(allUserIDs))
 	for _, uid := range allUserIDs {
-		if !seen[uid] {
-			seen[uid] = true
+		if _, ok := seen[uid]; !ok {
+			seen[uid] = struct{}{}
 			unique = append(unique, uid)
 		}
 	}

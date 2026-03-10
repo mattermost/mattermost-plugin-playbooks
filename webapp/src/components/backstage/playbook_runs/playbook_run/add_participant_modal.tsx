@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {searchProfiles} from 'mattermost-redux/actions/users';
 import {UserProfile} from '@mattermost/types/users';
-import {Group, GroupSearchParams} from '@mattermost/types/groups';
+import {Group} from '@mattermost/types/groups';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {OptionTypeBase, StylesConfig} from 'react-select';
 import {General} from 'mattermost-redux/constants';
@@ -63,7 +63,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                     page: 0,
                     per_page: 20,
                     include_member_count: true,
-                } as GroupSearchParams);
+                });
                 setGroupSearchResults(groups || []);
             } catch {
                 setGroupSearchResults([]);
