@@ -251,6 +251,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	RunID             string
 	UserIDs           []string
+	GroupIDs          *[]string
 	ForceAddToChannel bool
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -259,8 +260,38 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
+	// Resolve group members into user IDs
+	allUserIDs := make([]string, len(args.UserIDs))
+	copy(allUserIDs, args.UserIDs)
+
+	if args.GroupIDs != nil {
+		for _, groupID := range *args.GroupIDs {
+			group, groupErr := c.pluginAPI.Group.Get(groupID)
+			if groupErr != nil {
+				continue
+			}
+			if !group.AllowReference {
+				continue
+			}
+
+			perPage := 1000
+			for page := 0; ; page++ {
+				users, groupErr := c.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
+				if groupErr != nil {
+					break
+				}
+				for _, user := range users {
+					allUserIDs = append(allUserIDs, user.Id)
+				}
+				if len(users) < perPage {
+					break
+				}
+			}
+		}
+	}
+
 	// When user is joining run RunView permission is enough, otherwise user need manage permissions
-	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
+	if updatesOnlyRequesterMembership(userID, allUserIDs) {
 		if err := c.permissions.RunView(userID, args.RunID); err != nil {
 			return "", errors.Wrap(err, "attempted to join run without permissions")
 		}
@@ -270,7 +301,7 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		}
 	}
 
-	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel, true); err != nil {
+	if err := c.playbookRunService.AddParticipants(args.RunID, allUserIDs, userID, args.ForceAddToChannel, true); err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 
