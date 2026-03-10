@@ -5,7 +5,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import ReactSelect, {ControlProps, GroupType} from 'react-select';
 
 import styled from 'styled-components';
-import {Group, GroupSearchParams} from '@mattermost/types/groups';
+import {Group} from '@mattermost/types/groups';
 import {Client4} from 'mattermost-redux/client';
 
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -52,7 +52,7 @@ const InviteGroupsSelector = (props: Props) => {
                     page: 0,
                     per_page: 60,
                     include_member_count: true,
-                } as GroupSearchParams);
+                });
                 setSearchedGroups(groups || []);
             } catch {
                 setSearchedGroups([]);
