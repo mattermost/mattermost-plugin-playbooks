@@ -1,14 +1,15 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import ReactSelect, {ControlProps, GroupType} from 'react-select';
 
 import styled from 'styled-components';
-import {Group} from '@mattermost/types/groups';
+import {Group, GroupSearchParams} from '@mattermost/types/groups';
 import {Client4} from 'mattermost-redux/client';
 
 import {FormattedMessage, useIntl} from 'react-intl';
+import debounce from 'debounce';
 
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
@@ -22,23 +23,19 @@ interface Props {
 const InviteGroupsSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSetSearchTerm = useMemo(() => debounce(setSearchTerm, 300), []);
     const [invitedGroups, setInvitedGroups] = useState<Group[]>([]);
     const [searchedGroups, setSearchedGroups] = useState<Group[]>([]);
 
     // Fetch invited groups by their IDs
     useEffect(() => {
         const fetchInvitedGroups = async () => {
-            const groups: Group[] = [];
-            for (const groupId of props.groupIds) {
-                try {
-                    const group = await Client4.getGroup(groupId, true);
-                    if (group) {
-                        groups.push(group);
-                    }
-                } catch {
-                    // Group may have been deleted
-                }
-            }
+            const results = await Promise.allSettled(
+                props.groupIds.map((groupId) => Client4.getGroup(groupId, true)),
+            );
+            const groups = results
+                .filter((r): r is PromiseFulfilledResult<Group> => r.status === 'fulfilled' && r.value != null)
+                .map((r) => r.value);
             setInvitedGroups(groups);
         };
 
@@ -49,13 +46,13 @@ const InviteGroupsSelector = (props: Props) => {
     useEffect(() => {
         const searchGroups = async () => {
             try {
-                const groups = await Client4.getGroups({
+                const groups = await Client4.searchGroups({
                     q: searchTerm,
                     filter_allow_reference: true,
                     page: 0,
                     per_page: 60,
                     include_member_count: true,
-                } as any);
+                } as GroupSearchParams);
                 setSearchedGroups(groups || []);
             } catch {
                 setSearchedGroups([]);
@@ -105,7 +102,7 @@ const InviteGroupsSelector = (props: Props) => {
         <StyledReactSelect
             badgeContent={badgeContent}
             closeMenuOnSelect={false}
-            onInputChange={setSearchTerm}
+            onInputChange={debouncedSetSearchTerm}
             options={options}
             filterOption={() => true}
             isDisabled={props.isDisabled}

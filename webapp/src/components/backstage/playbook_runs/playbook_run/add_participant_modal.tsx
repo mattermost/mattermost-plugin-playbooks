@@ -1,18 +1,19 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Modal} from 'react-bootstrap';
 import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {searchProfiles} from 'mattermost-redux/actions/users';
 import {UserProfile} from '@mattermost/types/users';
-import {Group} from '@mattermost/types/groups';
+import {Group, GroupSearchParams} from '@mattermost/types/groups';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {OptionTypeBase, StylesConfig} from 'react-select';
 import {General} from 'mattermost-redux/constants';
 import {Client4} from 'mattermost-redux/client';
+import debounce from 'debounce';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -40,6 +41,8 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const [selectedGroups, setSelectedGroups] = useState<Group[]>([]);
     const [groupSearchTerm, setGroupSearchTerm] = useState('');
+    const [debouncedGroupSearchTerm, setDebouncedGroupSearchTerm] = useState('');
+    const debouncedSetGroupSearchTerm = useMemo(() => debounce(setDebouncedGroupSearchTerm, 300), []);
     const [groupSearchResults, setGroupSearchResults] = useState<Group[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
     const [forceAddToChannel, setForceAddToChannel] = useState(false);
@@ -54,13 +57,13 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     useEffect(() => {
         const searchGroups = async () => {
             try {
-                const groups = await Client4.getGroups({
-                    q: groupSearchTerm,
+                const groups = await Client4.searchGroups({
+                    q: debouncedGroupSearchTerm,
                     filter_allow_reference: true,
                     page: 0,
                     per_page: 20,
                     include_member_count: true,
-                } as any);
+                } as GroupSearchParams);
                 setGroupSearchResults(groups || []);
             } catch {
                 setGroupSearchResults([]);
@@ -70,7 +73,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
         if (show) {
             searchGroups();
         }
-    }, [groupSearchTerm, show]);
+    }, [debouncedGroupSearchTerm, show]);
 
     const handleAddGroup = useCallback((group: Group) => {
         if (!selectedGroups.find((g) => g.id === group.id)) {
@@ -140,6 +143,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 setSelectedGroups([]);
                 setForceAddToChannel(false);
                 setGroupSearchTerm('');
+                setDebouncedGroupSearchTerm('');
             }}
 
             isConfirmDestructive={false}
@@ -171,7 +175,10 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                 type='text'
                 placeholder={formatMessage({defaultMessage: 'Search for groups'})}
                 value={groupSearchTerm}
-                onChange={(e) => setGroupSearchTerm(e.target.value)}
+                onChange={(e) => {
+                    setGroupSearchTerm(e.target.value);
+                    debouncedSetGroupSearchTerm(e.target.value);
+                }}
             />
             {selectedGroups.length > 0 && (
                 <SelectedGroupsList>

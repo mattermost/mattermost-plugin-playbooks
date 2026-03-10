@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 
@@ -267,9 +268,11 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	for _, groupID := range args.GroupIDs {
 		group, groupErr := c.pluginAPI.Group.Get(groupID)
 		if groupErr != nil {
+			logrus.WithError(groupErr).WithField("group_id", groupID).Warn("failed to resolve group for run participants")
 			continue
 		}
 		if !group.AllowReference {
+			logrus.WithField("group_id", groupID).Warn("skipping group that does not allow reference")
 			continue
 		}
 
@@ -277,6 +280,7 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		for page := 0; ; page++ {
 			users, groupErr := c.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
 			if groupErr != nil {
+				logrus.WithError(groupErr).WithField("group_id", groupID).Warn("failed to get group members")
 				break
 			}
 			for _, user := range users {
@@ -287,6 +291,17 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 			}
 		}
 	}
+
+	// Deduplicate user IDs
+	seen := make(map[string]bool, len(allUserIDs))
+	unique := make([]string, 0, len(allUserIDs))
+	for _, uid := range allUserIDs {
+		if !seen[uid] {
+			seen[uid] = true
+			unique = append(unique, uid)
+		}
+	}
+	allUserIDs = unique
 
 	// When user is joining run RunView permission is enough, otherwise user need manage permissions
 	if updatesOnlyRequesterMembership(userID, allUserIDs) {
