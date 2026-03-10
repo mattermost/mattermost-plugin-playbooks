@@ -45,6 +45,7 @@ type Mutation {
 
 	setRunFavorite(id: String!, fav: Boolean!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	updateRun(id: String!, updates: RunUpdates!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	# TODO: migrate groupIDs support to a REST endpoint when the GraphQL API is removed
 	addRunParticipants(runID: String!, userIDs: [String!]!, groupIDs: [String!]! = [], forceAddToChannel: Boolean = false): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	changeRunOwner(runID: String!, ownerID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
