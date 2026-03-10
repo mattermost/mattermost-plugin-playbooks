@@ -226,6 +226,9 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                         <SelectedGroupChip key={group.id}>
                             <i className='icon icon-account-multiple-outline'/>
                             <span>{group.display_name}</span>
+                            {group.source === 'ldap' && (
+                                <LinkedIcon className='icon icon-link-variant'/>
+                            )}
                             {group.member_count !== undefined && (
                                 <GroupMemberCount>
                                     <FormattedMessage
@@ -252,6 +255,9 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                             >
                                 <i className='icon icon-account-multiple-outline'/>
                                 <GroupResultName>{group.display_name}</GroupResultName>
+                                {group.source === 'ldap' && (
+                                    <LinkedIcon className='icon icon-link-variant'/>
+                                )}
                                 {group.member_count !== undefined && (
                                     <GroupResultMemberCount>
                                         <FormattedMessage
@@ -313,6 +319,12 @@ const GroupSearchInput = styled.input`
     &::placeholder {
         color: rgba(var(--center-channel-color-rgb), 0.56);
     }
+`;
+
+const LinkedIcon = styled.i`
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 14px;
+    flex-shrink: 0;
 `;
 
 const SelectedGroupsList = styled.div`
