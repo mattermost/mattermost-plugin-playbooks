@@ -139,7 +139,7 @@ export default InviteGroupsSelector;
 interface GroupLabelProps {
     onRemove: () => void;
     group: Group;
-    invitedGroups: Group[];
+    invitedGroups: readonly Group[];
 }
 
 const GroupLabel = (props: GroupLabelProps) => {
