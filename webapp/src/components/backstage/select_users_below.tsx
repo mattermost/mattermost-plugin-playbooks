@@ -46,6 +46,8 @@ const UserLineContainer = styled.div`
 `;
 
 const UserList = styled.div`
+    overflow-y: auto;
+    max-height: 340px;
     margin: 12px 0;
 `;
 
