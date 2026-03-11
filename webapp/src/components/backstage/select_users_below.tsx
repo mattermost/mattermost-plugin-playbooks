@@ -47,7 +47,7 @@ const UserLineContainer = styled.div`
 
 const UserList = styled.div`
     overflow-y: auto;
-    max-height: 340px;
+    max-height: 420px;
     margin: 12px 0;
 `;
 
@@ -58,7 +58,8 @@ const BelowLineProfile = styled(Profile)`
 
 const IconWrapper = styled.div`
     display: inline-flex;
-    padding: 10px 5px 10px 8px;
+    align-items: center;
+    gap: 2px;
 `;
 
 export interface SelectUsersBelowProps {
@@ -137,15 +138,24 @@ interface UserLineProps {
     onMakeMember: (userid: string) => void;
 }
 
-const MemberButton = styled.button`
+const MemberButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
-    border-radius: 4px;
-    color: var(--link-color);
-    fill: var(--link-color);
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 12px;
+    background: ${({$isActive}) => ($isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+    color: ${({$isActive}) => ($isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 18px;
+    cursor: pointer;
+    white-space: nowrap;
 
     &:hover {
-       background: rgba(var(--center-channel-color-rgb), 0.08);
-       color: rgba(var(--center-channel-color-rgb), 0.72);
+        background: rgba(var(--button-bg-rgb), 0.08);
+        border-color: rgba(var(--button-bg-rgb), 0.24);
+        color: var(--button-bg);
     }
 `;
 
