@@ -5,39 +5,40 @@
 # with many users.
 #
 # Usage:
-#   ./scripts/seed_playbook_members.sh <playbook_id> [count] [server_url]
+#   ./scripts/seed_playbook_members.sh <playbook_id> [count]
 #
 # Arguments:
 #   playbook_id  - ID of the playbook to add members to (required)
 #   count        - Number of users to create and add (default: 30)
-#   server_url   - Mattermost server URL (default: http://localhost:8065)
 #
 # Environment:
-#   MM_ADMIN_TOKEN - Admin auth token (required). Generate one via:
-#     System Console > Integrations > Bot Accounts, or use the API:
-#     curl -d '{"login_id":"admin","password":"admin"}' <server>/api/v4/users/login
-#   MM_TEAM_ID     - Team ID to add users to (required)
+#   MM_SERVICESETTINGS_SITEURL - Mattermost server URL (required)
+#   MM_ADMIN_TOKEN             - Admin auth token (required)
+#   MM_TEAM_ID                 - Team ID to add users to (required)
 
 set -euo pipefail
 
-PLAYBOOK_ID="${1:?Usage: $0 <playbook_id> [count] [server_url]}"
+PLAYBOOK_ID="${1:?Usage: $0 <playbook_id> [count]}"
 USER_COUNT="${2:-30}"
-SERVER_URL="${3:-http://localhost:8065}"
+
+if [ -z "${MM_SERVICESETTINGS_SITEURL:-}" ]; then
+    echo "Error: MM_SERVICESETTINGS_SITEURL environment variable is required."
+    exit 1
+fi
 
 if [ -z "${MM_ADMIN_TOKEN:-}" ]; then
     echo "Error: MM_ADMIN_TOKEN environment variable is required."
-    echo "Get one by logging in:"
-    echo "  curl -i -d '{\"login_id\":\"sysadmin\",\"password\":\"Sys@dmin-sample1\"}' $SERVER_URL/api/v4/users/login"
-    echo "Then export the Token header value as MM_ADMIN_TOKEN."
     exit 1
 fi
 
 if [ -z "${MM_TEAM_ID:-}" ]; then
     echo "Error: MM_TEAM_ID environment variable is required."
     echo "Get it via:"
-    echo "  curl -H 'Authorization: Bearer \$MM_ADMIN_TOKEN' $SERVER_URL/api/v4/teams"
+    echo "  curl -H 'Authorization: Bearer \$MM_ADMIN_TOKEN' $MM_SERVICESETTINGS_SITEURL/api/v4/teams"
     exit 1
 fi
+
+SERVER_URL="$MM_SERVICESETTINGS_SITEURL"
 
 AUTH="Authorization: Bearer $MM_ADMIN_TOKEN"
 API="$SERVER_URL/api/v4"
