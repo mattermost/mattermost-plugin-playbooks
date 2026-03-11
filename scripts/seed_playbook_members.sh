@@ -100,7 +100,7 @@ echo ""
 
 for i in $(seq 1 "$USER_COUNT"); do
     USERNAME="testuser_pb_$(printf '%03d' "$i")"
-    EMAIL="${USERNAME}@example.com"
+    EMAIL="${USERNAME}@mattermost.network"
     PASSWORD="TestPass123!@#"
 
     # Create the user
