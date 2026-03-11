@@ -73,6 +73,7 @@ PB_RESPONSE=$(curl -sL -w "\n%{http_code}" -X POST "$PLUGIN_API/playbooks" \
         \"team_id\": \"$MM_TEAM_ID\",
         \"public\": false,
         \"create_public_playbook_run\": true,
+        \"reminder_timer_default_seconds\": 86400,
         \"checklists\": [{\"title\": \"Default\", \"items\": [{\"title\": \"Sample task\"}]}]
     }")
 
