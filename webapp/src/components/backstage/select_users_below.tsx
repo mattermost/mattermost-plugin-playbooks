@@ -141,20 +141,18 @@ interface UserLineProps {
 const MemberButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 12px;
-    background: ${({$isActive}) => ($isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
-    color: ${({$isActive}) => ($isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.72)')};
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 18px;
+    padding: 4px 2px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: ${({$isActive}) => ($isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
     cursor: pointer;
     white-space: nowrap;
 
     &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        border-color: rgba(var(--button-bg-rgb), 0.24);
         color: var(--button-bg);
     }
 `;
