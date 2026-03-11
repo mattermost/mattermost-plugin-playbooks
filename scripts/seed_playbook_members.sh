@@ -44,6 +44,21 @@ AUTH="Authorization: Bearer $MM_ADMIN_TOKEN"
 API="$SERVER_URL/api/v4"
 PLUGIN_API="$SERVER_URL/plugins/playbooks/api/v0"
 
+echo "=== Configuration ==="
+echo "  Server URL:   $SERVER_URL"
+echo "  API base:     $API"
+echo "  Plugin API:   $PLUGIN_API"
+echo "  Team ID:      $MM_TEAM_ID"
+echo "  Playbook ID:  $PLAYBOOK_ID"
+echo "  User count:   $USER_COUNT"
+echo ""
+
+# Quick connectivity check
+echo "Checking server connectivity..."
+CHECK=$(curl -sL -o /dev/null -w "%{http_code} (redirected to %{url_effective})" "$API/system/ping")
+echo "  GET $API/system/ping -> $CHECK"
+echo ""
+
 echo "Creating $USER_COUNT users and adding them to playbook $PLAYBOOK_ID..."
 echo ""
 
@@ -53,7 +68,8 @@ for i in $(seq 1 "$USER_COUNT"); do
     PASSWORD="TestPass123!@#"
 
     # Create the user
-    RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API/users" \
+    echo "[$i/$USER_COUNT] POST $API/users (username=$USERNAME)"
+    RESPONSE=$(curl -sL -w "\n%{http_code}" -X POST "$API/users" \
         -H "$AUTH" \
         -H "Content-Type: application/json" \
         -d "{
@@ -69,26 +85,31 @@ for i in $(seq 1 "$USER_COUNT"); do
 
     if [ "$HTTP_CODE" = "201" ]; then
         USER_ID=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])" 2>/dev/null)
-        echo "[$i/$USER_COUNT] Created user $USERNAME ($USER_ID)"
+        echo "  Created user $USERNAME ($USER_ID)"
     elif [ "$HTTP_CODE" = "400" ]; then
         # User likely already exists — look them up
-        USER_ID=$(curl -s -X GET "$API/users/username/$USERNAME" \
-            -H "$AUTH" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])" 2>/dev/null)
-        echo "[$i/$USER_COUNT] User $USERNAME already exists ($USER_ID)"
+        echo "  User may already exist (HTTP 400), looking up by username..."
+        LOOKUP=$(curl -sL "$API/users/username/$USERNAME" -H "$AUTH")
+        USER_ID=$(echo "$LOOKUP" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])" 2>/dev/null)
+        echo "  Found existing user $USERNAME ($USER_ID)"
     else
-        echo "[$i/$USER_COUNT] Failed to create user $USERNAME (HTTP $HTTP_CODE)"
-        echo "  $BODY"
+        echo "  FAILED to create user $USERNAME (HTTP $HTTP_CODE)"
+        echo "  Response body: $BODY"
         continue
     fi
 
     # Add user to team
-    curl -s -o /dev/null -X POST "$API/teams/$MM_TEAM_ID/members" \
+    echo "  POST $API/teams/$MM_TEAM_ID/members (user_id=$USER_ID)"
+    TEAM_RESP=$(curl -sL -w "\n%{http_code}" -X POST "$API/teams/$MM_TEAM_ID/members" \
         -H "$AUTH" \
         -H "Content-Type: application/json" \
-        -d "{\"team_id\": \"$MM_TEAM_ID\", \"user_id\": \"$USER_ID\"}"
+        -d "{\"team_id\": \"$MM_TEAM_ID\", \"user_id\": \"$USER_ID\"}")
+    TEAM_CODE=$(echo "$TEAM_RESP" | tail -1)
+    echo "  -> Team add response: HTTP $TEAM_CODE"
 
     # Add user to playbook via GraphQL
-    GQL_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$PLUGIN_API/query" \
+    echo "  POST $PLUGIN_API/query (addPlaybookMember)"
+    GQL_RESPONSE=$(curl -sL -w "\n%{http_code}" -X POST "$PLUGIN_API/query" \
         -H "$AUTH" \
         -H "Content-Type: application/json" \
         -d "{
@@ -103,10 +124,11 @@ for i in $(seq 1 "$USER_COUNT"); do
     if [ "$GQL_CODE" = "200" ] && echo "$GQL_BODY" | grep -q '"data"'; then
         echo "  -> Added to playbook"
     else
-        echo "  -> Failed to add to playbook (HTTP $GQL_CODE): $GQL_BODY"
+        echo "  -> FAILED to add to playbook (HTTP $GQL_CODE)"
+        echo "  Response body: $GQL_BODY"
     fi
+    echo ""
 done
 
-echo ""
 echo "Done. $USER_COUNT users processed for playbook $PLAYBOOK_ID."
 echo "Open the Playbooks Access modal to verify the scrolling behavior."
