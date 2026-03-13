@@ -37,6 +37,7 @@ export const makePlaybookAccessModalDefinition = (props: Props) => ({
 
 const SizedGenericModal = styled(GenericModal)`
     width: 960px;
+    max-width: calc(100vw - 32px);
 `;
 
 const HorizontalBlock = styled.div`
