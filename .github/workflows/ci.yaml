@@ -69,7 +69,7 @@ jobs:
           NODE_ENV: development
         run: |
           cd e2e-tests
-          npm install --ignore-scripts --no-save
+          npm install --ignore-scripts --no-save --legacy-peer-deps
 
       - name: ci/checking-code-style
         run: make check-style

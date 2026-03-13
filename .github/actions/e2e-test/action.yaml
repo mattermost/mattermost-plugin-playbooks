@@ -59,9 +59,9 @@ runs:
         NODE_ENV: development
       run: |
         cd webapp
-        npm install --ignore-scripts --no-save
+        npm install --ignore-scripts --no-save --legacy-peer-deps
         cd ../e2e-tests
-        npm install --ignore-scripts --no-save
+        npm install --ignore-scripts --no-save --legacy-peer-deps
 
     - name: ci/installing-cypress-deps
       shell: bash
