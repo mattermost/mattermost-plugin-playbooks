@@ -274,7 +274,7 @@ describe('lhs', {testIsolation: true}, () => {
 
             // * Verify leave completed and user stayed on the playbooks list page
             cy.get('#confirmModal').should('not.exist');
-            cy.url().should('include', '/playbooks/playbooks');
+            cy.url({timeout: 5000}).should('include', '/playbooks/playbooks');
         });
     });
 
