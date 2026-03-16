@@ -16,6 +16,8 @@ var (
 	ErrChannelNotInExpectedTeam = errors.Errorf("channel in different team")
 )
 
+// IsChannelActiveInTeam verifies that the channel exists, is not archived, and
+// belongs to the expected team.
 func IsChannelActiveInTeam(channelID string, expectedTeamID string, pluginAPI *pluginapi.Client) error {
 	channel, err := pluginAPI.Channel.Get(channelID)
 	if err != nil {
@@ -56,20 +58,24 @@ func ResolveGroupMembers(groupIDs []string, pluginAPI *pluginapi.Client, logger 
 			continue
 		}
 
+		groupUserIDs := make([]string, 0)
 		perPage := 1000
 		for page := 0; ; page++ {
 			users, err := pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
 			if err != nil {
 				groupLogger.WithError(err).Warn("failed to get group members")
+				groupUserIDs = nil
 				break
 			}
 			for _, user := range users {
-				userIDs = append(userIDs, user.Id)
+				groupUserIDs = append(groupUserIDs, user.Id)
 			}
 			if len(users) < perPage {
 				break
 			}
 		}
+
+		userIDs = append(userIDs, groupUserIDs...)
 	}
 	return userIDs
 }

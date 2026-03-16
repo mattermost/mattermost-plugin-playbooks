@@ -152,6 +152,23 @@ func TestResolveGroupMembers(t *testing.T) {
 		api.AssertExpectations(t)
 	})
 
+	t.Run("error on later page discards partial members for that group", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+		page0Users := make([]*model.User, 1000)
+		for i := range page0Users {
+			page0Users[i] = newUser("u1")
+		}
+
+		api.On("GetGroup", "g1").Return(newGroup("g1", true), nil)
+		api.On("GetGroupMemberUsers", "g1", 0, 1000).Return(page0Users, nil)
+		api.On("GetGroupMemberUsers", "g1", 1, 1000).Return(nil, model.NewAppError("", "", nil, "", 500))
+
+		result := ResolveGroupMembers([]string{"g1"}, client, logger)
+		assert.Nil(t, result)
+		api.AssertExpectations(t)
+	})
+
 	t.Run("empty group returns no users", func(t *testing.T) {
 		api := &plugintest.API{}
 		client := pluginapi.NewClient(api, nil)

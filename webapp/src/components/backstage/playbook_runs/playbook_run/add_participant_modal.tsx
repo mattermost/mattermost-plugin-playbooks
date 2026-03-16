@@ -81,10 +81,14 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     }, [debouncedGroupSearchTerm, show]);
 
     const handleAddGroup = useCallback((group: Group) => {
-        if (!selectedGroups.find((g) => g.id === group.id)) {
-            setSelectedGroups((prev) => [...prev, group]);
-        }
-    }, [selectedGroups]);
+        setSelectedGroups((prev) => {
+            if (prev.find((existingGroup) => existingGroup.id === group.id)) {
+                return prev;
+            }
+
+            return [...prev, group];
+        });
+    }, []);
 
     const handleRemoveGroup = useCallback((groupId: string) => {
         setSelectedGroups((prev) => prev.filter((g) => g.id !== groupId));
@@ -202,7 +206,14 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                                     />
                                 </GroupMemberCount>
                             )}
-                            <RemoveButton onClick={() => handleRemoveGroup(group.id)}>
+                            <RemoveButton
+                                type='button'
+                                onClick={() => handleRemoveGroup(group.id)}
+                                aria-label={formatMessage(
+                                    {defaultMessage: 'Remove group {groupName}'},
+                                    {groupName: group.display_name},
+                                )}
+                            >
                                 <i className='icon icon-close'/>
                             </RemoveButton>
                         </SelectedGroupChip>
@@ -216,7 +227,12 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                         .map((group) => (
                             <GroupResultItem
                                 key={group.id}
+                                type='button'
                                 onClick={() => handleAddGroup(group)}
+                                aria-label={formatMessage(
+                                    {defaultMessage: 'Add group {groupName}'},
+                                    {groupName: group.display_name},
+                                )}
                             >
                                 <i className='icon icon-account-multiple-outline'/>
                                 <GroupResultName>{group.display_name}</GroupResultName>
@@ -351,11 +367,15 @@ const GroupResultsList = styled.div`
     overflow-y: auto;
 `;
 
-const GroupResultItem = styled.div`
+const GroupResultItem = styled.button`
     display: flex;
+    width: 100%;
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
+    border: none;
+    background: transparent;
+    text-align: left;
     cursor: pointer;
 
     .icon {

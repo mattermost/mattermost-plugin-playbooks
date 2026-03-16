@@ -522,8 +522,19 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, err
 	}
 
-	invitedUserIDs := playbookRun.InvitedUserIDs
+	invitedUserIDs := append([]string{}, playbookRun.InvitedUserIDs...)
 	invitedUserIDs = append(invitedUserIDs, ResolveGroupMembers(playbookRun.InvitedGroupIDs, s.pluginAPI, logger)...)
+	seenInvitedUsers := make(map[string]struct{}, len(invitedUserIDs))
+	uniqueInvitedUserIDs := make([]string, 0, len(invitedUserIDs))
+	for _, invitedUserID := range invitedUserIDs {
+		if _, ok := seenInvitedUsers[invitedUserID]; ok {
+			continue
+		}
+
+		seenInvitedUsers[invitedUserID] = struct{}{}
+		uniqueInvitedUserIDs = append(uniqueInvitedUserIDs, invitedUserID)
+	}
+	invitedUserIDs = uniqueInvitedUserIDs
 
 	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
 	if err != nil {

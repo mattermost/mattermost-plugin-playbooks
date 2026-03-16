@@ -47,6 +47,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
             channelId: update.channel_id,
         });
     }, [updatePlaybook]));
+    const [invitedGroupIDsLocal, setInvitedGroupIDsLocal] = useProxyState<string[]>(playbook.invited_group_ids, useCallback((invitedGroupIDs) => {
+        updatePlaybook({
+            invitedGroupIDs,
+        });
+    }, [updatePlaybook]), 0);
 
     const preAssignees = useMemo(() => {
         return getDistinctAssignees(playbook.checklists);
@@ -76,17 +81,23 @@ const LegacyActionsEdit = ({playbook}: Props) => {
     };
 
     const handleAddGroupInvited = (groupId: string) => {
-        if (!playbook.invited_group_ids.includes(groupId)) {
-            updatePlaybook({
-                invitedGroupIDs: [...playbook.invited_group_ids, groupId],
-            });
-        }
+        setInvitedGroupIDsLocal((currentGroupIDs) => {
+            if (currentGroupIDs.includes(groupId)) {
+                return currentGroupIDs;
+            }
+
+            return [...currentGroupIDs, groupId];
+        });
     };
 
     const handleRemoveGroupInvited = (groupId: string) => {
-        const idx = playbook.invited_group_ids.indexOf(groupId);
-        updatePlaybook({
-            invitedGroupIDs: [...playbook.invited_group_ids.slice(0, idx), ...playbook.invited_group_ids.slice(idx + 1)],
+        setInvitedGroupIDsLocal((currentGroupIDs) => {
+            const idx = currentGroupIDs.indexOf(groupId);
+            if (idx < 0) {
+                return currentGroupIDs;
+            }
+
+            return [...currentGroupIDs.slice(0, idx), ...currentGroupIDs.slice(idx + 1)];
         });
     };
 
@@ -192,7 +203,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
                         userIds={playbook.invited_user_ids}
-                        groupIds={playbook.invited_group_ids}
+                        groupIds={invitedGroupIDsLocal}
                         preAssignedUserIds={preAssignees}
                         onAddUser={handleAddUserInvited}
                         onRemoveUser={handleRemoveUserInvited}
