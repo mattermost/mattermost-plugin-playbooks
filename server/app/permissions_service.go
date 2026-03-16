@@ -442,12 +442,18 @@ func (p *PermissionsService) PlaybookMakePublic(userID string, playbook Playbook
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to make playbook `%s` public", userID, playbook.ID)
 }
 
-func (p *PermissionsService) RunCreate(userID string, playbook Playbook) error {
-	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionRunCreate) {
-		return nil
+func (p *PermissionsService) RunCreate(userID string, playbook Playbook, targetTeamID string) error {
+	if !p.hasPermissionsToPlaybook(userID, playbook, model.PermissionRunCreate) {
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to run playbook `%s`", userID, playbook.ID)
 	}
 
-	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to run playbook `%s`", userID, playbook.ID)
+	if targetTeamID != "" && targetTeamID != playbook.TeamID {
+		if !p.pluginAPI.User.HasPermissionToTeam(userID, targetTeamID, model.PermissionRunCreate) {
+			return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create a run in team `%s`", userID, targetTeamID)
+		}
+	}
+
+	return nil
 }
 
 func (p *PermissionsService) RunManageProperties(userID, runID string) error {
