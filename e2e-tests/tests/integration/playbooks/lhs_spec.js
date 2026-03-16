@@ -272,9 +272,8 @@ describe('lhs', {testIsolation: true}, () => {
                 cy.get('#confirmModalButton').click();
             });
 
-            // * Verify that user stayed on the playbooks list page (wait to catch delayed nav)
-            cy.url().should('include', '/playbooks/playbooks');
-            cy.wait(HALF_SEC);
+            // * Verify leave completed and user stayed on the playbooks list page
+            cy.get('#confirmModal').should('not.exist');
             cy.url().should('include', '/playbooks/playbooks');
         });
     });
