@@ -581,7 +581,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {
-		if err := s.permissions.RunCreate(requesterID, playbook); err == nil {
+		if err := s.permissions.RunCreate(requesterID, playbook, ""); err == nil {
 			filteredPlaybooks = append(filteredPlaybooks, playbook)
 		}
 	}
