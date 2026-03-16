@@ -180,7 +180,7 @@ export const StyledModal = styled(Modal)`
         }
 
         .modal-dialog {
-            max-width: 100%;
+            max-width: calc(100vw - 32px);
             margin: 0 !important;
             grid-row: 2;
         }
