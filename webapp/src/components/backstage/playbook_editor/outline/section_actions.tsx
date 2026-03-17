@@ -234,6 +234,11 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
         return dispatch(getProfilesInTeam(playbook.team_id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
+    const [invitedGroupIDs, setInvitedGroupIDs] = useProxyState<string[]>(
+        playbook.invited_group_ids,
+        useCallback((ids) => updatePlaybook({invitedGroupIDs: ids}), [updatePlaybook]),
+    );
+
     const handleAddUserInvited = (userId: string) => {
         if (!playbook.invited_user_ids.includes(userId)) {
             updatePlaybook({
@@ -250,18 +255,13 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
     };
 
     const handleAddGroupInvited = (groupId: string) => {
-        if (!playbook.invited_group_ids.includes(groupId)) {
-            updatePlaybook({
-                invitedGroupIDs: [...playbook.invited_group_ids, groupId],
-            });
+        if (!invitedGroupIDs.includes(groupId)) {
+            setInvitedGroupIDs([...invitedGroupIDs, groupId]);
         }
     };
 
     const handleRemoveGroupInvited = (groupId: string) => {
-        const idx = playbook.invited_group_ids.indexOf(groupId);
-        updatePlaybook({
-            invitedGroupIDs: [...playbook.invited_group_ids.slice(0, idx), ...playbook.invited_group_ids.slice(idx + 1)],
-        });
+        setInvitedGroupIDs(invitedGroupIDs.filter((id) => id !== groupId));
     };
 
     const handleRemovePreAssignedUserInvited = (userId: string) => {
@@ -365,7 +365,7 @@ const LegacyActionsEdit = ({playbook, canEdit = true, newChannelOnly = false, on
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
                         userIds={playbook.invited_user_ids}
-                        groupIds={playbook.invited_group_ids}
+                        groupIds={invitedGroupIDs}
                         preAssignedUserIds={preAssignees}
                         onAddUser={handleAddUserInvited}
                         onRemoveUser={handleRemoveUserInvited}
