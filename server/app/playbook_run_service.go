@@ -525,6 +525,17 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	invitedUserIDs := playbookRun.InvitedUserIDs
 	invitedUserIDs = append(invitedUserIDs, ResolveGroupMembers(playbookRun.InvitedGroupIDs, s.pluginAPI, logger)...)
 
+	// Deduplicate so AddParticipants doesn't process the same user twice.
+	seen := make(map[string]struct{}, len(invitedUserIDs))
+	unique := make([]string, 0, len(invitedUserIDs))
+	for _, uid := range invitedUserIDs {
+		if _, ok := seen[uid]; !ok {
+			seen[uid] = struct{}{}
+			unique = append(unique, uid)
+		}
+	}
+	invitedUserIDs = unique
+
 	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
 	if err != nil {
 		logrus.WithError(err).WithFields(map[string]any{

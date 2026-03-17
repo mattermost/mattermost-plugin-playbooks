@@ -145,7 +145,18 @@ interface GroupLabelProps {
 const GroupLabel = (props: GroupLabelProps) => {
     let icon = <PlusIcon/>;
     if (props.invitedGroups.find((g: Group) => g.id === props.group.id)) {
-        icon = <Remove onClick={props.onRemove}><FormattedMessage defaultMessage='Remove'/></Remove>;
+        icon = (
+            <RemoveButton
+                type='button'
+                onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    props.onRemove();
+                }}
+            >
+                <FormattedMessage defaultMessage='Remove'/>
+            </RemoveButton>
+        );
     }
 
     return (
@@ -202,16 +213,16 @@ const MemberCount = styled.span`
     white-space: nowrap;
 `;
 
-const Remove = styled.span`
+const RemoveButton = styled.button`
     display: inline-block;
+    padding: 0;
+    border: none;
+    background: none;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    cursor: pointer;
     font-size: 12px;
     font-weight: 600;
     line-height: 9px;
-
-    &:hover {
-        cursor: pointer;
-    }
 `;
 
 const PlusIcon = styled.i`

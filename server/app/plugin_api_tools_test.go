@@ -152,6 +152,31 @@ func TestResolveGroupMembers(t *testing.T) {
 		api.AssertExpectations(t)
 	})
 
+	t.Run("mid-pagination error discards partial members for that group", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		// g1: page 0 succeeds, page 1 fails — should discard all g1 members
+		api.On("GetGroup", "g1").Return(newGroup("g1", true), nil)
+		page0Users := make([]*model.User, 1000)
+		for i := range page0Users {
+			page0Users[i] = newUser("g1-u" + string(rune('0'+i%10)))
+		}
+		api.On("GetGroupMemberUsers", "g1", 0, 1000).Return(page0Users, nil)
+		api.On("GetGroupMemberUsers", "g1", 1, 1000).Return(nil, model.NewAppError("", "", nil, "", 500))
+
+		// g2: succeeds normally
+		api.On("GetGroup", "g2").Return(newGroup("g2", true), nil)
+		api.On("GetGroupMemberUsers", "g2", 0, 1000).Return([]*model.User{
+			newUser("g2-u1"),
+		}, nil)
+
+		result := ResolveGroupMembers([]string{"g1", "g2"}, client, logger)
+		// g1 members should be entirely discarded; only g2 members returned
+		assert.Equal(t, []string{"g2-u1"}, result)
+		api.AssertExpectations(t)
+	})
+
 	t.Run("empty group returns no users", func(t *testing.T) {
 		api := &plugintest.API{}
 		client := pluginapi.NewClient(api, nil)

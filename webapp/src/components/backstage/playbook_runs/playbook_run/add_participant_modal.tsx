@@ -81,10 +81,13 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     }, [debouncedGroupSearchTerm, show]);
 
     const handleAddGroup = useCallback((group: Group) => {
-        if (!selectedGroups.find((g) => g.id === group.id)) {
-            setSelectedGroups((prev) => [...prev, group]);
-        }
-    }, [selectedGroups]);
+        setSelectedGroups((prev) => {
+            if (prev.find((g) => g.id === group.id)) {
+                return prev;
+            }
+            return [...prev, group];
+        });
+    }, []);
 
     const handleRemoveGroup = useCallback((groupId: string) => {
         setSelectedGroups((prev) => prev.filter((g) => g.id !== groupId));
@@ -216,6 +219,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                         .map((group) => (
                             <GroupResultItem
                                 key={group.id}
+                                type='button'
                                 onClick={() => handleAddGroup(group)}
                             >
                                 <i className='icon icon-account-multiple-outline'/>
@@ -351,19 +355,26 @@ const GroupResultsList = styled.div`
     overflow-y: auto;
 `;
 
-const GroupResultItem = styled.div`
+const GroupResultItem = styled.button`
     display: flex;
     align-items: center;
     gap: 8px;
+    width: 100%;
     padding: 8px 12px;
+    border: none;
+    background: none;
+    color: inherit;
     cursor: pointer;
+    font: inherit;
+    text-align: left;
 
     .icon {
         color: rgba(var(--center-channel-color-rgb), 0.56);
         font-size: 16px;
     }
 
-    &:hover {
+    &:hover,
+    &:focus {
         background: rgba(var(--button-bg-rgb), 0.04);
     }
 `;

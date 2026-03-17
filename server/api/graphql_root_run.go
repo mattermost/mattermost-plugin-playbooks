@@ -260,6 +260,20 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
+	// Gate permissions before expensive group resolution. Any request that
+	// includes group IDs or adds other users requires RunManageProperties;
+	// a self-join only needs RunView.
+	hasGroups := len(args.GroupIDs) > 0
+	if hasGroups || !updatesOnlyRequesterMembership(userID, args.UserIDs) {
+		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+			return "", errors.Wrap(err, "attempted to modify participants without permissions")
+		}
+	} else {
+		if err := c.permissions.RunView(userID, args.RunID); err != nil {
+			return "", errors.Wrap(err, "attempted to join run without permissions")
+		}
+	}
+
 	// Resolve group members into user IDs
 	allUserIDs := make([]string, len(args.UserIDs))
 	copy(allUserIDs, args.UserIDs)
@@ -275,17 +289,6 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		}
 	}
 	allUserIDs = unique
-
-	// When user is joining run RunView permission is enough, otherwise user need manage permissions
-	if updatesOnlyRequesterMembership(userID, allUserIDs) {
-		if err := c.permissions.RunView(userID, args.RunID); err != nil {
-			return "", errors.Wrap(err, "attempted to join run without permissions")
-		}
-	} else {
-		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-			return "", errors.Wrap(err, "attempted to modify participants without permissions")
-		}
-	}
 
 	if err := c.playbookRunService.AddParticipants(args.RunID, allUserIDs, userID, args.ForceAddToChannel, true); err != nil {
 		return "", errors.Wrap(err, "failed to add participant from run")

@@ -56,19 +56,25 @@ func ResolveGroupMembers(groupIDs []string, pluginAPI *pluginapi.Client, logger 
 			continue
 		}
 
+		var groupUserIDs []string
 		perPage := 1000
+		fetchErr := false
 		for page := 0; ; page++ {
 			users, err := pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
 			if err != nil {
 				groupLogger.WithError(err).Warn("failed to get group members")
+				fetchErr = true
 				break
 			}
 			for _, user := range users {
-				userIDs = append(userIDs, user.Id)
+				groupUserIDs = append(groupUserIDs, user.Id)
 			}
 			if len(users) < perPage {
 				break
 			}
+		}
+		if !fetchErr {
+			userIDs = append(userIDs, groupUserIDs...)
 		}
 	}
 	return userIDs
