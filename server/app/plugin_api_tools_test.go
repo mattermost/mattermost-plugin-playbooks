@@ -39,10 +39,10 @@ func TestResolveGroupMembers(t *testing.T) {
 		client := pluginapi.NewClient(api, nil)
 
 		result := ResolveGroupMembers(nil, client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 
 		result = ResolveGroupMembers([]string{}, client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 	})
 
 	t.Run("single group with members", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestResolveGroupMembers(t *testing.T) {
 		api.On("GetGroup", "bad").Return(nil, model.NewAppError("", "", nil, "", 404))
 
 		result := ResolveGroupMembers([]string{"bad"}, client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 		api.AssertExpectations(t)
 	})
 
@@ -78,7 +78,7 @@ func TestResolveGroupMembers(t *testing.T) {
 		api.On("GetGroup", "g1").Return(newGroup("g1", false), nil)
 
 		result := ResolveGroupMembers([]string{"g1"}, client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 		api.AssertExpectations(t)
 	})
 
@@ -131,6 +131,10 @@ func TestResolveGroupMembers(t *testing.T) {
 
 		result := ResolveGroupMembers([]string{"g1"}, client, logger)
 		assert.Len(t, result, 1002)
+		assert.Equal(t, "u0", result[0])
+		assert.Equal(t, "u999", result[999])
+		assert.Equal(t, "extra1", result[1000])
+		assert.Equal(t, "extra2", result[1001])
 		api.AssertExpectations(t)
 	})
 
@@ -186,7 +190,7 @@ func TestResolveGroupMembers(t *testing.T) {
 		api.On("GetGroupMemberUsers", "g1", 0, 1000).Return([]*model.User{}, nil)
 
 		result := ResolveGroupMembers([]string{"g1"}, client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 		api.AssertExpectations(t)
 	})
 }
@@ -211,10 +215,10 @@ func TestFilterAuthorizedGroupIDs(t *testing.T) {
 		client := pluginapi.NewClient(api, nil)
 
 		result := FilterAuthorizedGroupIDs(nil, "user1", client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 
 		result = FilterAuthorizedGroupIDs([]string{}, "user1", client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 	})
 
 	t.Run("custom group with AllowReference passes without permission check", func(t *testing.T) {
@@ -236,7 +240,7 @@ func TestFilterAuthorizedGroupIDs(t *testing.T) {
 		api.On("HasPermissionTo", "user1", model.PermissionSysconsoleReadUserManagementGroups).Return(false)
 
 		result := FilterAuthorizedGroupIDs([]string{"g1"}, "user1", client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 		api.AssertExpectations(t)
 	})
 
@@ -270,7 +274,7 @@ func TestFilterAuthorizedGroupIDs(t *testing.T) {
 		api.On("GetGroup", "bad").Return(nil, model.NewAppError("", "", nil, "", 404))
 
 		result := FilterAuthorizedGroupIDs([]string{"bad"}, "user1", client, logger)
-		assert.Nil(t, result)
+		assert.Empty(t, result)
 		api.AssertExpectations(t)
 	})
 
