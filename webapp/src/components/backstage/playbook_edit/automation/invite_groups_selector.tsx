@@ -24,6 +24,9 @@ const InviteGroupsSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSetSearchTerm = useMemo(() => debounce(setSearchTerm, 300), []);
+    useEffect(() => {
+        return () => debouncedSetSearchTerm.clear();
+    }, [debouncedSetSearchTerm]);
     const [invitedGroups, setInvitedGroups] = useState<Group[]>([]);
     const [searchedGroups, setSearchedGroups] = useState<Group[]>([]);
 
@@ -103,13 +106,13 @@ const InviteGroupsSelector = (props: Props) => {
     const numInvitedGroups = props.groupIds.length;
     if (numInvitedGroups > 0) {
         badgeContent = formatMessage(
-            {defaultMessage: '{count, plural, one {# selected} other {# selected}}'},
+            {defaultMessage: '{count} selected'},
             {count: numInvitedGroups},
         );
     }
 
     const isGroup = (option: Group | GroupType<Group>): option is GroupType<Group> => (
-        (option as GroupType<Group>).label !== undefined && typeof (option as GroupType<Group>).label === 'string' && 'options' in (option as GroupType<Group>)
+        'label' in option && 'options' in option
     );
 
     return (
@@ -157,11 +160,13 @@ interface GroupLabelProps {
 }
 
 const GroupLabel = (props: GroupLabelProps) => {
+    const {formatMessage} = useIntl();
     let icon = <PlusIcon/>;
     if (props.invitedGroups.find((g: Group) => g.id === props.group.id)) {
         icon = (
             <RemoveButton
                 type='button'
+                aria-label={formatMessage({defaultMessage: 'Remove group {name}'}, {name: props.group.display_name})}
                 onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();

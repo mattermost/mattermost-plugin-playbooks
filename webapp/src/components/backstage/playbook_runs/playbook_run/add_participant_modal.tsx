@@ -99,6 +99,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     };
 
     useEffect(() => {
+        let cancelled = false;
         const searchGroups = async () => {
             try {
                 const groups = await Client4.searchGroups({
@@ -108,15 +109,24 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                     per_page: 20,
                     include_member_count: true,
                 });
-                setGroupSearchResults(groups || []);
+                if (!cancelled) {
+                    setGroupSearchResults(groups || []);
+                }
             } catch {
-                setGroupSearchResults([]);
+                if (!cancelled) {
+                    setGroupSearchResults([]);
+                }
             }
         };
 
         if (show) {
             searchGroups();
+        } else {
+            setGroupSearchResults([]);
         }
+        return () => {
+            cancelled = true;
+        };
     }, [debouncedGroupSearchTerm, show]);
 
     const handleAddGroup = useCallback((group: Group) => {
@@ -226,10 +236,14 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                     formatMessage({defaultMessage: 'Search for people'})
                 }
             />
-            <SectionLabel>
+            <SectionLabel
+                as='label'
+                htmlFor='group-search'
+            >
                 <FormattedMessage defaultMessage='Groups'/>
             </SectionLabel>
             <GroupSearchInput
+                id='group-search'
                 type='text'
                 placeholder={formatMessage({defaultMessage: 'Search for groups'})}
                 value={groupSearchTerm}
