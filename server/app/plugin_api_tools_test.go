@@ -189,3 +189,106 @@ func TestResolveGroupMembers(t *testing.T) {
 		api.AssertExpectations(t)
 	})
 }
+
+func TestFilterAuthorizedGroupIDs(t *testing.T) {
+	newGroup := func(id string, source model.GroupSource, allowRef bool) *model.Group {
+		name := "group-" + id
+		return &model.Group{
+			Id:             id,
+			Name:           &name,
+			DisplayName:    "Group " + id,
+			Source:         source,
+			AllowReference: allowRef,
+		}
+	}
+
+	logger := logrus.New()
+	logger.SetLevel(logrus.PanicLevel)
+
+	t.Run("empty input returns nil", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		result := FilterAuthorizedGroupIDs(nil, "user1", client, logger)
+		assert.Nil(t, result)
+
+		result = FilterAuthorizedGroupIDs([]string{}, "user1", client, logger)
+		assert.Nil(t, result)
+	})
+
+	t.Run("custom group with AllowReference passes without permission check", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		api.On("GetGroup", "g1").Return(newGroup("g1", model.GroupSourceCustom, true), nil)
+
+		result := FilterAuthorizedGroupIDs([]string{"g1"}, "user1", client, logger)
+		assert.Equal(t, []string{"g1"}, result)
+		api.AssertExpectations(t)
+	})
+
+	t.Run("syncable group without AllowReference blocked for non-admin", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		api.On("GetGroup", "g1").Return(newGroup("g1", model.GroupSourceLdap, false), nil)
+		api.On("HasPermissionTo", "user1", model.PermissionSysconsoleReadUserManagementGroups).Return(false)
+
+		result := FilterAuthorizedGroupIDs([]string{"g1"}, "user1", client, logger)
+		assert.Nil(t, result)
+		api.AssertExpectations(t)
+	})
+
+	t.Run("syncable group without AllowReference allowed for admin", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		api.On("GetGroup", "g1").Return(newGroup("g1", model.GroupSourceLdap, false), nil)
+		api.On("HasPermissionTo", "admin1", model.PermissionSysconsoleReadUserManagementGroups).Return(true)
+
+		result := FilterAuthorizedGroupIDs([]string{"g1"}, "admin1", client, logger)
+		assert.Equal(t, []string{"g1"}, result)
+		api.AssertExpectations(t)
+	})
+
+	t.Run("syncable group with AllowReference passes without permission check", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		api.On("GetGroup", "g1").Return(newGroup("g1", model.GroupSourceLdap, true), nil)
+
+		result := FilterAuthorizedGroupIDs([]string{"g1"}, "user1", client, logger)
+		assert.Equal(t, []string{"g1"}, result)
+		api.AssertExpectations(t)
+	})
+
+	t.Run("group not found is dropped", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		api.On("GetGroup", "bad").Return(nil, model.NewAppError("", "", nil, "", 404))
+
+		result := FilterAuthorizedGroupIDs([]string{"bad"}, "user1", client, logger)
+		assert.Nil(t, result)
+		api.AssertExpectations(t)
+	})
+
+	t.Run("mixed groups filter correctly", func(t *testing.T) {
+		api := &plugintest.API{}
+		client := pluginapi.NewClient(api, nil)
+
+		// g1: custom, AllowReference — allowed
+		api.On("GetGroup", "g1").Return(newGroup("g1", model.GroupSourceCustom, true), nil)
+		// g2: ldap, no AllowReference, user lacks permission — blocked
+		api.On("GetGroup", "g2").Return(newGroup("g2", model.GroupSourceLdap, false), nil)
+		api.On("HasPermissionTo", "user1", model.PermissionSysconsoleReadUserManagementGroups).Return(false)
+		// g3: not found — dropped
+		api.On("GetGroup", "g3").Return(nil, model.NewAppError("", "", nil, "", 404))
+		// g4: ldap, AllowReference — allowed
+		api.On("GetGroup", "g4").Return(newGroup("g4", model.GroupSourceLdap, true), nil)
+
+		result := FilterAuthorizedGroupIDs([]string{"g1", "g2", "g3", "g4"}, "user1", client, logger)
+		assert.Equal(t, []string{"g1", "g4"}, result)
+		api.AssertExpectations(t)
+	})
+}

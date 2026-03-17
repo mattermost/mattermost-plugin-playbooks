@@ -274,10 +274,12 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 		}
 	}
 
-	// Resolve group members into user IDs
+	// Filter group IDs to only those the requesting user is authorized to view,
+	// then resolve their members into user IDs.
+	authorizedGroupIDs := app.FilterAuthorizedGroupIDs(args.GroupIDs, userID, c.pluginAPI, c.logger)
 	allUserIDs := make([]string, len(args.UserIDs))
 	copy(allUserIDs, args.UserIDs)
-	allUserIDs = append(allUserIDs, app.ResolveGroupMembers(args.GroupIDs, c.pluginAPI, c.logger)...)
+	allUserIDs = append(allUserIDs, app.ResolveGroupMembers(authorizedGroupIDs, c.pluginAPI, c.logger)...)
 
 	// Deduplicate user IDs
 	seen := make(map[string]struct{}, len(allUserIDs))

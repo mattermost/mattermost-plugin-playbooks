@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
@@ -36,6 +37,34 @@ func IsChannelActiveInTeam(channelID string, expectedTeamID string, pluginAPI *p
 	}
 
 	return nil
+}
+
+// FilterAuthorizedGroupIDs returns only the group IDs that the given user is
+// authorized to view. This mirrors the Mattermost REST API permission model:
+// syncable groups (LDAP/plugin) without AllowReference require the
+// SysconsoleReadUserManagementGroups permission; groups with AllowReference are
+// viewable by any authenticated user. Groups that don't exist are silently
+// dropped.
+func FilterAuthorizedGroupIDs(groupIDs []string, userID string, pluginAPI *pluginapi.Client, logger logrus.FieldLogger) []string {
+	var authorized []string
+	for _, groupID := range groupIDs {
+		group, err := pluginAPI.Group.Get(groupID)
+		if err != nil {
+			logger.WithField("group_id", groupID).WithError(err).Warn("skipping group: unable to fetch")
+			continue
+		}
+
+		// Syncable groups without AllowReference require admin permission.
+		if group.IsSyncable() && !group.AllowReference {
+			if !pluginAPI.User.HasPermissionTo(userID, model.PermissionSysconsoleReadUserManagementGroups) {
+				logger.WithField("group_id", groupID).Warn("skipping group: user lacks permission to view syncable group")
+				continue
+			}
+		}
+
+		authorized = append(authorized, groupID)
+	}
+	return authorized
 }
 
 // ResolveGroupMembers expands group IDs into user IDs by fetching members of
