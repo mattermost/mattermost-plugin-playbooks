@@ -47,7 +47,9 @@ const InviteGroupsSelector = (props: Props) => {
         };
 
         fetchInvitedGroups();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [props.groupIds]);
 
     // Search groups when search term changes
@@ -73,7 +75,9 @@ const InviteGroupsSelector = (props: Props) => {
         };
 
         searchGroups();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [searchTerm]);
 
     let invitedGroupsList: Group[] = [];
