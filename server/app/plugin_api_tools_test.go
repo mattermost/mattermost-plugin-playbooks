@@ -4,6 +4,7 @@
 package app
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -118,7 +119,7 @@ func TestResolveGroupMembers(t *testing.T) {
 		// First page: full (1000 users)
 		page0Users := make([]*model.User, 1000)
 		for i := range page0Users {
-			page0Users[i] = newUser("u" + string(rune('a'+i%26)))
+			page0Users[i] = newUser(fmt.Sprintf("u%d", i))
 		}
 		api.On("GetGroupMemberUsers", "g1", 0, 1000).Return(page0Users, nil)
 
@@ -160,7 +161,7 @@ func TestResolveGroupMembers(t *testing.T) {
 		api.On("GetGroup", "g1").Return(newGroup("g1", true), nil)
 		page0Users := make([]*model.User, 1000)
 		for i := range page0Users {
-			page0Users[i] = newUser("g1-u" + string(rune('0'+i%10)))
+			page0Users[i] = newUser(fmt.Sprintf("g1-u%d", i))
 		}
 		api.On("GetGroupMemberUsers", "g1", 0, 1000).Return(page0Users, nil)
 		api.On("GetGroupMemberUsers", "g1", 1, 1000).Return(nil, model.NewAppError("", "", nil, "", 500))

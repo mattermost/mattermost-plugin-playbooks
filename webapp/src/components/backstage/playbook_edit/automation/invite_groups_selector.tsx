@@ -29,10 +29,14 @@ const InviteGroupsSelector = (props: Props) => {
 
     // Fetch invited groups by their IDs
     useEffect(() => {
+        let cancelled = false;
         const fetchInvitedGroups = async () => {
             const results = await Promise.allSettled(
                 props.groupIds.map((groupId) => Client4.getGroup(groupId, true)),
             );
+            if (cancelled) {
+                return;
+            }
             const groups = results
                 .filter((r): r is PromiseFulfilledResult<Group> => r.status === 'fulfilled' && r.value != null)
                 .map((r) => r.value);
@@ -40,10 +44,12 @@ const InviteGroupsSelector = (props: Props) => {
         };
 
         fetchInvitedGroups();
+        return () => { cancelled = true; };
     }, [props.groupIds]);
 
     // Search groups when search term changes
     useEffect(() => {
+        let cancelled = false;
         const searchGroups = async () => {
             try {
                 const groups = await Client4.searchGroups({
@@ -53,13 +59,18 @@ const InviteGroupsSelector = (props: Props) => {
                     per_page: 60,
                     include_member_count: true,
                 });
-                setSearchedGroups(groups || []);
+                if (!cancelled) {
+                    setSearchedGroups(groups || []);
+                }
             } catch {
-                setSearchedGroups([]);
+                if (!cancelled) {
+                    setSearchedGroups([]);
+                }
             }
         };
 
         searchGroups();
+        return () => { cancelled = true; };
     }, [searchTerm]);
 
     let invitedGroupsList: Group[] = [];
@@ -83,15 +94,18 @@ const InviteGroupsSelector = (props: Props) => {
     let options: Group[] | GroupType<Group>[] = nonInvitedGroups;
     if (invitedGroupsList.length !== 0) {
         options = [
-            {label: 'SELECTED', options: invitedGroupsList},
-            {label: 'ALL', options: nonInvitedGroups},
+            {label: formatMessage({defaultMessage: 'SELECTED'}), options: invitedGroupsList},
+            {label: formatMessage({defaultMessage: 'ALL'}), options: nonInvitedGroups},
         ];
     }
 
     let badgeContent = '';
     const numInvitedGroups = props.groupIds.length;
     if (numInvitedGroups > 0) {
-        badgeContent = `${numInvitedGroups} SELECTED`;
+        badgeContent = formatMessage(
+            {defaultMessage: '{count, plural, one {# selected} other {# selected}}'},
+            {count: numInvitedGroups},
+        );
     }
 
     const isGroup = (option: Group | GroupType<Group>): option is GroupType<Group> => (
@@ -314,7 +328,7 @@ const StyledReactSelect = styled(ReactSelect)`
 
             /* Light / 8% Center Channel Text */
             background: rgba(var(--center-channel-color-rgb), 0.08);
-            content: '${(selectProps) => !selectProps.isDisabled && selectProps.badgeContent}';
+            content: ${(selectProps) => (selectProps.badgeContent && !selectProps.isDisabled ? `'${selectProps.badgeContent}'` : 'none')};
             font-size: 10px;
             font-weight: 600;
             line-height: 16px;

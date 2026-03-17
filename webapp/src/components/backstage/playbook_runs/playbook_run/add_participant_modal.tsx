@@ -5,6 +5,7 @@ import React, {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -47,7 +48,8 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const [selectedGroups, setSelectedGroups] = useState<Group[]>([]);
     const [groupSearchTerm, setGroupSearchTerm] = useState('');
     const [debouncedGroupSearchTerm, setDebouncedGroupSearchTerm] = useState('');
-    const debouncedSetGroupSearchTerm = useMemo(() => debounce(setDebouncedGroupSearchTerm, 300), []);
+    const debouncedSetGroupSearchTermRef = useRef(debounce(setDebouncedGroupSearchTerm, 300));
+    const debouncedSetGroupSearchTerm = debouncedSetGroupSearchTermRef.current;
     const [groupSearchResults, setGroupSearchResults] = useState<Group[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
     const [forceAddToChannel, setForceAddToChannel] = useState(false);
@@ -147,6 +149,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             isConfirmDisabled={!hasSelections}
 
             onExited={() => {
+                debouncedSetGroupSearchTermRef.current.clear();
                 setProfiles([]);
                 setSelectedGroups([]);
                 setForceAddToChannel(false);
@@ -205,7 +208,10 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                                     />
                                 </GroupMemberCount>
                             )}
-                            <RemoveButton onClick={() => handleRemoveGroup(group.id)}>
+                            <RemoveButton
+                                onClick={() => handleRemoveGroup(group.id)}
+                                aria-label={formatMessage({defaultMessage: 'Remove group {name}'}, {name: group.display_name})}
+                            >
                                 <i className='icon icon-close'/>
                             </RemoveButton>
                         </SelectedGroupChip>
