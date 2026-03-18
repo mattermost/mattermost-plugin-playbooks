@@ -2900,3 +2900,85 @@ func TestMemberCannotCreateRunWithoutPlaybookIDToBypassPermissions(t *testing.T)
 		require.Error(t, err, "creating a checklist in a channel where the user cannot post should fail")
 	})
 }
+
+// TestCrossTeamRunCreationPermission verifies that a user cannot bypass team-level
+// run_create permissions by referencing a playbook from a different team.
+// MM-67867
+func TestCrossTeamRunCreationPermission(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Remove run_create from the default team_user role so that team-level
+	// permission is absent; only playbook-level membership grants run_create.
+	roles, _, err := e.ServerAdminClient.GetRolesByNames(context.Background(), []string{model.TeamUserRoleId})
+	require.NoError(t, err)
+	require.Len(t, roles, 1)
+	memberRole := roles[0]
+	originalPermissions := memberRole.Permissions
+
+	updatedPermissions := []string{}
+	for _, perm := range memberRole.Permissions {
+		if perm != model.PermissionRunCreate.Id {
+			updatedPermissions = append(updatedPermissions, perm)
+		}
+	}
+	_, _, err = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
+		Permissions: &updatedPermissions,
+	})
+	require.NoError(t, err)
+	defer func() {
+		_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
+			Permissions: &originalPermissions,
+		})
+	}()
+
+	t.Run("same-team run creation still works via playbook membership", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Same-team run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+	})
+
+	t.Run("cross-team run creation is blocked without target team permission", func(t *testing.T) {
+		// BasicPlaybook belongs to BasicTeam. RegularUser has playbook-level
+		// run_create via membership. But BasicTeam2 has no team-level run_create
+		// (removed above) and no playbook-level grant, so this must fail.
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Cross-team run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam2.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.Error(t, err, "should not be able to create a run in a team where user lacks run_create permission")
+	})
+}
+
+// TestCrossTeamRunCreationWithPermission verifies that cross-team run creation
+// succeeds when the user has run_create permission in the target team.
+// By default team_user does not have run_create (it lives on playbook_member),
+// so we grant it before any run creation to avoid role-cache timing issues.
+// MM-67867
+func TestCrossTeamRunCreationWithPermission(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Grant run_create at the team level before any run operations so the
+	// server's role cache is primed before the plugin checks permissions.
+	defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+	defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+	e.Permissions.AddPermissionToRole(t, model.PermissionRunCreate.Id, model.TeamUserRoleId)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Cross-team run with team-level permission",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam2.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err, "cross-team run creation should succeed when user has run_create in the target team")
+	require.NotNil(t, run)
+	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
+}
