@@ -1,6 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// Note: Adapted from mattermost/webapp/channels/src/utils/performance_telemetry/index.ts.
+// The Mattermost repo doesn't expose this functionality to plugins, so it's duplicated here.
+// If it becomes available as a public import, this file can be removed.
+
 /**
  * The single metric name sent to the server for all plugin performance measures.
  * The actual action being measured is sent via labels.action.
