@@ -45,6 +45,7 @@ export interface Props {
     placeholder?: string;
     teamId: string;
     isMulti: boolean;
+    excludeDMGM?: boolean;
 }
 
 const getAllPublicChannelsInTeam = (teamId: string) => createSelector(
@@ -83,11 +84,15 @@ const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
 );
 
 // Selector for DM/GM channels (used when teamId is empty for DM/GM runs)
-const getMyDMAndGMChannels = (state: GlobalState): Channel[] => {
-    return getMyChannels(state).filter((channel) =>
-        (channel.type === General.DM_CHANNEL || channel.type === General.GM_CHANNEL) && channel.delete_at === 0
-    );
-};
+const getMyDMAndGMChannels = createSelector(
+    'getMyDMAndGMChannels',
+    getMyChannels,
+    (channels: Channel[]): Channel[] => {
+        return channels.filter((channel) =>
+            (channel.type === General.DM_CHANNEL || channel.type === General.GM_CHANNEL) && channel.delete_at === 0
+        );
+    },
+);
 
 const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
     if (!channelIDs || !channels) {
@@ -122,7 +127,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
     const dmgmChannels = useSelector(getMyDMAndGMChannels);
 
     // Combine team channels and DM/GM channels for unified selection
-    const selectableChannels = [...teamChannels, ...dmgmChannels];
+    const selectableChannels = props.excludeDMGM ? teamChannels : [...teamChannels, ...dmgmChannels];
     const allPublicChannels = useSelector(getAllPublicChannelsInTeam(effectiveTeamId));
 
     useEffect(() => {
