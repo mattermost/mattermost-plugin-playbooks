@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+pack/
+
+# TypeScript cache
+*.tsbuildinfo

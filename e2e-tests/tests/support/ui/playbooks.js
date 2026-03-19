@@ -265,9 +265,10 @@ Cypress.Commands.add('getFirstPostId', () => {
 });
 
 Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) => {
-    cy.findByTestId('lhs-navigation').should('be.visible').within(() => {
-        cy.contains('Playbooks').should('be.visible');
-        cy.contains('Runs').should('be.visible');
+    // LHS uses position:fixed — use 'exist' to avoid Cypress 15 strict visibility checks
+    cy.findByTestId('lhs-navigation').should('exist').within(() => {
+        cy.contains('Playbooks').should('exist');
+        cy.contains('Runs').should('exist');
     });
     cy.get('#playbooks-sidebar-right').should('be.visible').within(() => {
         cy.findByTestId('assignee-profile-selector').should('contain', expectedRunOwner);

@@ -514,6 +514,8 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	}
 
 	var playbook *app.Playbook
+	// For runs off of a playbook, verify playbook as well as user having run_create
+	// for this playbook (via playbook membership).
 	if playbookRun.PlaybookID != "" {
 		var pb app.Playbook
 		pb, err = h.playbookService.Get(playbookRun.PlaybookID)
@@ -526,7 +528,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
 		}
 
-		if err = h.permissions.RunCreate(userID, *playbook); err != nil {
+		if err = h.permissions.RunCreate(userID, *playbook, playbookRun.TeamID); err != nil {
 			return nil, err
 		}
 
@@ -541,6 +543,11 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.SetChecklistFromPlaybook(*playbook)
 		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
 	} else {
+		// For checklists, verify a channel ID and verify user has permission to post in the channel below.
+		if channel == nil {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel ID is required for checklists")
+		}
+
 		// For runs without a playbook (channel checklists), check run creation permissions on the team
 		// For DM/GM channels, skip team permission check since they have no team - channel permission is checked later
 		if playbookRun.TeamID != "" && !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, model.PermissionRunCreate) {

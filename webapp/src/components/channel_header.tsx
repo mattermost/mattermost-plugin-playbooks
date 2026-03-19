@@ -27,8 +27,9 @@ export const ChannelHeaderButton = () => {
 export const ChannelHeaderText = () => {
     return (
         <span>
+            {/* product name; don't translate */}
             {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-            {'Checklists'}
+            {'Playbooks'}
         </span>
     );
 };

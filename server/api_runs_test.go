@@ -177,10 +177,8 @@ func TestRunCreation(t *testing.T) {
 					assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 				},
 			},
-			// this use case is currently not allowed by the dialog as
-			// playbook ID is mandatory, but it is supported by the
-			// handler
-			"empty playbook ID creates RunTypeChannelChecklist": {
+			// Dialog with empty playbook and no channel fails (channel required for runs without playbook - MM-67648/MM-66249)
+			"empty playbook ID without channel fails": {
 				dialogRequest: model.SubmitDialogRequest{
 					TeamId: e.BasicTeam.Id,
 					UserId: e.RegularUser.Id,
@@ -190,25 +188,11 @@ func TestRunCreation(t *testing.T) {
 						app.DialogFieldNameKey:       "Standalone Run",
 					},
 				},
-				permissionsPrep: func() {
-					// Grant run_create permission for creating runs without a playbook ID (MM-66249)
-					e.Permissions.AddPermissionToRole(t, model.PermissionRunCreate.Id, model.TeamUserRoleId)
-				},
 				expected: func(t *testing.T, result *http.Response, err error) {
-					require.NoError(t, err)
-					assert.Equal(t, http.StatusCreated, result.StatusCode)
-
-					// Get the created run ID from the Location header
-					url, err := result.Location()
-					require.NoError(t, err)
-					runID := url.Path[strings.LastIndex(url.Path, "/")+1:]
-
-					// Verify the run was created with the correct type
-					run, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), runID)
-					require.NoError(t, err)
-					assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
-					assert.Empty(t, run.PlaybookID, "Run should not have a playbook ID")
-					assert.NotEmpty(t, run.ChannelID, "Run should have a channel ID")
+					// Client returns error for 4xx; no channel in dialog yields 403 (RunCreate) or 400 (Option A)
+					require.Error(t, err)
+					require.NotNil(t, result)
+					assert.True(t, result.StatusCode == http.StatusForbidden || result.StatusCode == http.StatusBadRequest, "expected 403 or 400")
 				},
 			},
 			"valid playbook ID creates RunTypePlaybook": {
@@ -257,6 +241,44 @@ func TestRunCreation(t *testing.T) {
 		}
 	})
 
+	// Checklist creation: run_create is not required; gate is permission to post in channel.
+	// Remove run_create from team_user so these tests validate that behavior.
+	t.Run("checklist creation without run_create", func(t *testing.T) {
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+		defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+		e.Permissions.RemovePermissionFromRole(t, model.PermissionRunCreate.Id, model.TeamUserRoleId)
+
+		t.Run("create run without playbook with ChannelID", func(t *testing.T) {
+			run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+				Name:        "Channel checklist",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+				ChannelID:   e.BasicPublicChannel.Id,
+				PlaybookID:  "",
+			})
+			require.NoError(t, err)
+			require.NotNil(t, run)
+			assert.Equal(t, app.RunTypeChannelChecklist, run.Type)
+			assert.Empty(t, run.PlaybookID)
+			assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
+		})
+
+		t.Run("create valid run without playbook", func(t *testing.T) {
+			run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+				Name:        "No playbook",
+				OwnerUserID: e.RegularUser.Id,
+				TeamID:      e.BasicTeam.Id,
+				ChannelID:   e.BasicPublicChannel.Id,
+				PlaybookID:  "",
+			})
+			require.NoError(t, err)
+			require.NotNil(t, run)
+			assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
+			assert.Empty(t, run.PlaybookID)
+			assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
+		})
+	})
+
 	t.Run("create valid run", func(t *testing.T) {
 		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Basic create",
@@ -268,43 +290,6 @@ func TestRunCreation(t *testing.T) {
 		assert.NotNil(t, run)
 		assert.Equal(t, app.RunTypePlaybook, run.Type, "Run with playbook ID should have RunTypePlaybook")
 		assert.Equal(t, e.BasicPlaybook.ID, run.PlaybookID)
-	})
-
-	t.Run("create valid run without playbook", func(t *testing.T) {
-		// Grant run_create permission to team_user role for this test
-		// (by default, only playbook members have this permission)
-		roles, _, err := e.ServerAdminClient.GetRolesByNames(context.Background(), []string{"team_user"})
-		require.NoError(t, err)
-		require.Len(t, roles, 1)
-
-		teamUserRole := roles[0]
-		originalPermissions := teamUserRole.Permissions
-
-		// Add run_create permission temporarily
-		updatedPermissions := append([]string{}, originalPermissions...)
-		updatedPermissions = append(updatedPermissions, model.PermissionRunCreate.Id)
-
-		_, _, err = e.ServerAdminClient.PatchRole(context.Background(), teamUserRole.Id, &model.RolePatch{
-			Permissions: &updatedPermissions,
-		})
-		require.NoError(t, err)
-
-		// Clean up: restore original permissions after test
-		defer func() {
-			_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), teamUserRole.Id, &model.RolePatch{
-				Permissions: &originalPermissions,
-			})
-		}()
-
-		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
-			Name:        "No playbook",
-			OwnerUserID: e.RegularUser.Id,
-			TeamID:      e.BasicTeam.Id,
-		})
-		assert.NoError(t, err)
-		assert.NotNil(t, run)
-		assert.Equal(t, app.RunTypeChannelChecklist, run.Type, "Run without playbook ID should have RunTypeChannelChecklist")
-		assert.Empty(t, run.PlaybookID)
 	})
 
 	t.Run("can't without owner", func(t *testing.T) {
@@ -2857,30 +2842,143 @@ func TestMemberCannotCreateRunWithoutPlaybookIDToBypassPermissions(t *testing.T)
 		})
 	}()
 
-	t.Run("member cannot create run without playbook_id when permission is removed", func(t *testing.T) {
-		// Try to create a run without a playbook_id (attempting to bypass permission check)
+	t.Run("member cannot create run without playbook_id and without channel_id", func(t *testing.T) {
+		// No playbook and no channel: blocked (MM-66249 - no orphan runs; MM-67648 Option A requires channel)
 		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Run without playbook",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
-			PlaybookID:  "", // Empty playbook ID - attempting to bypass permission check
+			PlaybookID:  "",
+			// No ChannelID - should fail with 403 (current) or 400 (Option A)
 		})
-
-		// Should fail
-		require.Error(t, err, "Should not be able to create run without playbook_id when run_create permission is removed")
+		require.Error(t, err)
 	})
 
 	t.Run("member CAN still create run with playbook_id if they have playbook-level permission", func(t *testing.T) {
 		// Even with team-level run_create removed, playbook-level permissions still work
-		// This is expected behavior - playbook membership grants specific permissions
 		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Run with playbook",
 			OwnerUserID: e.RegularUser.Id,
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  e.BasicPlaybook.ID,
 		})
-
-		// Should succeed - user is a member of the playbook
 		require.NoError(t, err, "Playbook-level permissions should still allow run creation")
 	})
+
+	t.Run("member CAN create run without playbook when providing ChannelID", func(t *testing.T) {
+		// MM-67648: With ChannelID, channel permissions gate access; no run_create needed
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Channel checklist",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			ChannelID:   e.BasicPublicChannel.Id,
+			PlaybookID:  "",
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		assert.Equal(t, app.RunTypeChannelChecklist, run.Type)
+		assert.Equal(t, e.BasicPublicChannel.Id, run.ChannelID)
+	})
+
+	t.Run("member cannot create checklist in channel where they cannot post", func(t *testing.T) {
+		// Create a channel but do not add RegularUser; they won't have CreatePost there.
+		channel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "No-post channel",
+			Name:        "no-post-channel-" + model.NewId(),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam.Id,
+		})
+		require.NoError(t, err)
+		// Do not add RegularUser to the channel.
+		_, err = e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Checklist in channel I cannot post to",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			ChannelID:   channel.Id,
+			PlaybookID:  "",
+		})
+		require.Error(t, err, "creating a checklist in a channel where the user cannot post should fail")
+	})
+}
+
+// TestCrossTeamRunCreationPermission verifies that a user cannot bypass team-level
+// run_create permissions by referencing a playbook from a different team.
+// MM-67867
+func TestCrossTeamRunCreationPermission(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Remove run_create from the default team_user role so that team-level
+	// permission is absent; only playbook-level membership grants run_create.
+	roles, _, err := e.ServerAdminClient.GetRolesByNames(context.Background(), []string{model.TeamUserRoleId})
+	require.NoError(t, err)
+	require.Len(t, roles, 1)
+	memberRole := roles[0]
+	originalPermissions := memberRole.Permissions
+
+	updatedPermissions := []string{}
+	for _, perm := range memberRole.Permissions {
+		if perm != model.PermissionRunCreate.Id {
+			updatedPermissions = append(updatedPermissions, perm)
+		}
+	}
+	_, _, err = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
+		Permissions: &updatedPermissions,
+	})
+	require.NoError(t, err)
+	defer func() {
+		_, _, _ = e.ServerAdminClient.PatchRole(context.Background(), memberRole.Id, &model.RolePatch{
+			Permissions: &originalPermissions,
+		})
+	}()
+
+	t.Run("same-team run creation still works via playbook membership", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Same-team run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+	})
+
+	t.Run("cross-team run creation is blocked without target team permission", func(t *testing.T) {
+		// BasicPlaybook belongs to BasicTeam. RegularUser has playbook-level
+		// run_create via membership. But BasicTeam2 has no team-level run_create
+		// (removed above) and no playbook-level grant, so this must fail.
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Cross-team run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam2.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.Error(t, err, "should not be able to create a run in a team where user lacks run_create permission")
+	})
+}
+
+// TestCrossTeamRunCreationWithPermission verifies that cross-team run creation
+// succeeds when the user has run_create permission in the target team.
+// By default team_user does not have run_create (it lives on playbook_member),
+// so we grant it before any run creation to avoid role-cache timing issues.
+// MM-67867
+func TestCrossTeamRunCreationWithPermission(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Grant run_create at the team level before any run operations so the
+	// server's role cache is primed before the plugin checks permissions.
+	defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions(t)
+	defer e.Permissions.RestoreDefaultRolePermissions(t, defaultRolePermissions)
+	e.Permissions.AddPermissionToRole(t, model.PermissionRunCreate.Id, model.TeamUserRoleId)
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Cross-team run with team-level permission",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam2.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(t, err, "cross-team run creation should succeed when user has run_create in the target team")
+	require.NotNil(t, run)
+	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
 }

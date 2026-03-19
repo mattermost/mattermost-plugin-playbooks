@@ -402,7 +402,7 @@ describe('channels > rhs', {testIsolation: true}, () => {
 
             // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Checklists').should('exist');
+                cy.findByText('Playbooks').should('exist');
             });
 
             // # Click the icon

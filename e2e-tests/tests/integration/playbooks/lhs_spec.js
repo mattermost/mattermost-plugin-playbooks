@@ -261,16 +261,20 @@ describe('lhs', {testIsolation: true}, () => {
             // # Visit playbooks list page
             cy.visit('/playbooks/playbooks');
 
-            // # Click on leave menu item
-            getRunDropdownItemByText('Runs', playbookRun.name, 'Leave and unfollow').click();
+            // # Open dot menu without clicking the run item (which would navigate to RDP)
+            cy.findByTestId('Runs').findByTestId(playbookRun.name).trigger('mouseover');
+            cy.findByTestId('Runs').findByTestId(playbookRun.name).findByTestId('menuButton').click({force: true});
+            cy.findByTestId('dropdownmenu').should('be.visible');
+            cy.findByTestId('dropdownmenu').findByText('Leave and unfollow').should('be.visible').click();
 
             // # confirm modal
             cy.get('#confirmModal').should('be.visible').within(() => {
                 cy.get('#confirmModalButton').click();
             });
 
-            // * Verify that user was not redirected to the run list page
-            cy.url().should('not.include', 'playbooks/runs?sort=');
+            // * Verify leave completed and user stayed on the playbooks list page
+            cy.get('#confirmModal').should('not.exist');
+            cy.url({timeout: 5000}).should('include', '/playbooks/playbooks');
         });
     });
 

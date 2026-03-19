@@ -15,15 +15,13 @@ import {
     PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
-
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
-import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
-
+import appBarIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {createPlaybookRun} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
@@ -46,6 +44,7 @@ import {useTextOverflow} from 'src/hooks';
 import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 
 import {UserList} from './rhs_participants';
+import {RHSTitleText} from './rhs_title_common';
 
 interface PlaybookToDisplay {
     title: string
@@ -90,26 +89,6 @@ interface Props {
     numInProgress: number;
     numFinished: number;
 }
-
-const PoweredByPlaybooksFooter = () => (
-    <PoweredByFooter>
-        <PoweredByText>
-            <FormattedMessage
-                defaultMessage='POWERED BY{productName}'
-                values={{
-                    productName: (
-                        <ProductName>
-                            <PlaybooksProductIcon/>
-                            {/* product name; don't translate */}
-                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                            {'PLAYBOOKS'}
-                        </ProductName>
-                    ),
-                }}
-            />
-        </PoweredByText>
-    </PoweredByFooter>
-);
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
@@ -175,12 +154,12 @@ const RHSRunList = (props: Props) => {
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <TitleIcon src={CheckLogoIcon}/>
-                    <>
-                        {/* static title; don't translate */}
+                    <TitleIcon src={appBarIcon}/>
+                    <RHSTitleText>
+                        {/* product name; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                        {'Checklists'}
-                    </>
+                        {'Playbooks'}
+                    </RHSTitleText>
                     <VerticalLine/>
                     <ChannelNameText>
                         {currentChannelName}
@@ -283,18 +262,15 @@ const RHSRunList = (props: Props) => {
                     </Header>
                 )}
                 {showNoRuns &&
-                    <>
-                        <NoRunsWrapper>
-                            <NoRuns
-                                active={props.options.filter === FilterType.InProgress}
-                                numInProgress={props.numInProgress}
-                                numFinished={props.numFinished}
-                                setOptions={props.setOptions}
-                                onCreateChecklistClicked={handleCreateBlankChecklist}
-                            />
-                        </NoRunsWrapper>
-                        <PoweredByPlaybooksFooter/>
-                    </>
+                    <NoRunsWrapper>
+                        <NoRuns
+                            active={props.options.filter === FilterType.InProgress}
+                            numInProgress={props.numInProgress}
+                            numFinished={props.numFinished}
+                            setOptions={props.setOptions}
+                            onCreateChecklistClicked={handleCreateBlankChecklist}
+                        />
+                    </NoRunsWrapper>
                 }
                 {!showNoRuns &&
                     <Scrollbars
@@ -321,39 +297,12 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
-                        <PoweredByPlaybooksFooter/>
                     </Scrollbars>
                 }
             </Container>
         </>
     );
 };
-
-const PoweredByFooter = styled.div`
-    padding: 0 16px;
-    margin-top: 10px;
-    margin-bottom: 30px;
-    text-align: center;
-`;
-
-const PoweredByText = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    line-height: 16px;
-`;
-
-const ProductName = styled.span`
-    i {
-        font-size: 16px;
-        display: inline-block;
-    }
-`;
 
 const Container = styled.div`
     display: flex;
@@ -426,8 +375,6 @@ const TitleIcon = styled.img`
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(var(--button-bg-rgb), 0.08);
-    color: var(--button-bg);
 `;
 
 const SegmentedButtonContainer = styled.div`
