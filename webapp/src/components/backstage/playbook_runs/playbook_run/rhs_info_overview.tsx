@@ -298,17 +298,21 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
         // Use current team as fallback when run's team_name is empty (DM/GM runs)
         const teamName = runMetadata.team_name || currentTeam?.name || '';
 
-        let channelPath = `channels/${channel.name}`;
         const displayName = channel.display_name;
 
-        // DM channels use @username path format
+        // Build the full URL path. DM/GM channels are teamless.
+        let channelPath: string;
         if (channel.type === General.DM_CHANNEL && teammate) {
-            channelPath = `messages/@${teammate.username}`;
+            channelPath = `/messages/@${teammate.username}`;
+        } else if (channel.type === General.GM_CHANNEL) {
+            channelPath = `/messages/${channel.id}`;
+        } else {
+            channelPath = `/${teamName}/channels/${channel.name}`;
         }
 
         const linkContent = (
             <ItemLink
-                to={`/${teamName}/${channelPath}`}
+                to={channelPath}
                 data-testid='runinfo-channel-link'
             >
                 <ItemContent ref={channelNameRef}>
