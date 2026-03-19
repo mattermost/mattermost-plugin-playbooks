@@ -140,7 +140,7 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 	var message string
 	if channel.TeamId == "" {
 		// DM/GM channel - use messages URL format
-		message = fmt.Sprintf("Status update is overdue for [%s](/messages/@%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
+		message = fmt.Sprintf("Status update is overdue for [%s](/messages/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
 			channel.DisplayName, channel.Id, playbookRun.ID, ownerUserName)
 	} else {
 		team, err := s.pluginAPI.Team.Get(channel.TeamId)

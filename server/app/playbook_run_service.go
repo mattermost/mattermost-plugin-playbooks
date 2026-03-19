@@ -326,7 +326,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	var channelURL string
 	if playbookRun.TeamID == "" {
 		// DM/GM channel - use channel ID-based URL
-		channelURL = fmt.Sprintf("%s/messages/@%s", *siteURL, channel.Id)
+		channelURL = fmt.Sprintf("%s/messages/%s", *siteURL, channel.Id)
 	} else {
 		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 		if err != nil {
@@ -1024,7 +1024,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 	var channelURL string
 	if playbookRun.TeamID == "" {
 		// DM/GM channel - use channel ID-based URL
-		channelURL = fmt.Sprintf("%s/messages/@%s", *siteURL, channel.Id)
+		channelURL = fmt.Sprintf("%s/messages/%s", *siteURL, channel.Id)
 	} else {
 		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 		if err != nil {
