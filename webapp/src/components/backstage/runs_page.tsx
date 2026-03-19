@@ -74,7 +74,7 @@ const RunsPage = () => {
     }, [currentTeamId]);
 
     useEffect(() => {
-        if (showNoPlaybookRuns !== null) {
+        if (showNoPlaybookRuns !== null && noPlaybooks !== null) {
             measureAndReport({
                 name: Measure.PlaybookRunsListLoadDurationMs,
                 startMark: Mark.PlaybookRunsLHSButtonClicked,
@@ -82,7 +82,7 @@ const RunsPage = () => {
             });
             performance.clearMarks(Mark.PlaybookRunsLHSButtonClicked);
         }
-    }, [showNoPlaybookRuns]);
+    }, [showNoPlaybookRuns, noPlaybooks]);
 
     if (showNoPlaybookRuns == null || noPlaybooks == null) {
         return null;
