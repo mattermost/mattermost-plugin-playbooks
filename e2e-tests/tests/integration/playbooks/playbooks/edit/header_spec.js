@@ -46,7 +46,9 @@ describe('playbooks > edit', {testIsolation: true}, () => {
             cy.reload();
 
             // * Verify the modified name persists
-            cy.findByRole('button', {name: /renamed playbook/i}).should('exist');
+            cy.findByTestId('playbook-editor-header').within(() => {
+                cy.findByRole('button', {name: /renamed playbook/i}).should('exist');
+            });
         });
     });
 

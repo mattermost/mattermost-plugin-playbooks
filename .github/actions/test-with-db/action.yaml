@@ -7,7 +7,7 @@ runs:
   steps:
     - name: ci/cache-node-modules
       id: cache-node-modules
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
         path: |
           webapp/node_modules
@@ -42,7 +42,7 @@ runs:
 
     - name: ci/upload-test-results
       if: always()
-      uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: ${{ github.job }}-results
         path: |
