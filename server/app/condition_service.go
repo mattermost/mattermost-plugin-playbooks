@@ -91,6 +91,56 @@ func (s *conditionService) CopyPlaybookConditionsToRun(playbookID, runID string,
 	return conditionMapping, nil
 }
 
+func (s *conditionService) CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error) {
+	sourceConditions, err := s.store.GetPlaybookConditions(sourcePlaybookID, 0, MaxConditionsPerPlaybook)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get source playbook conditions")
+	}
+
+	conditionMapping := make(map[string]*Condition)
+	if len(sourceConditions) == 0 {
+		return conditionMapping, nil
+	}
+
+	for _, condition := range sourceConditions {
+		targetCondition := condition
+		targetCondition.ID = ""
+		targetCondition.PlaybookID = targetPlaybookID
+		targetCondition.RunID = ""
+		targetCondition.CreateAt = model.GetMillis()
+		targetCondition.UpdateAt = targetCondition.CreateAt
+
+		if err := targetCondition.ConditionExpr.SwapPropertyIDs(propertyMappings); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"condition_id":       condition.ID,
+				"source_playbook_id": sourcePlaybookID,
+				"target_playbook_id": targetPlaybookID,
+			}).Warn("failed to translate field IDs in condition, skipping")
+			continue
+		}
+
+		createdCondition, err := s.store.CreateCondition(targetPlaybookID, targetCondition)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"condition_id":       condition.ID,
+				"source_playbook_id": sourcePlaybookID,
+				"target_playbook_id": targetPlaybookID,
+			}).Warn("failed to create playbook condition, skipping")
+			continue
+		}
+
+		conditionMapping[condition.ID] = createdCondition
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"source_playbook_id": sourcePlaybookID,
+		"target_playbook_id": targetPlaybookID,
+		"conditions_copied":  len(conditionMapping),
+	}).Info("copied playbook conditions to playbook")
+
+	return conditionMapping, nil
+}
+
 // CreatePlaybookCondition creates a new stored condition for a playbook
 func (s *conditionService) CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
 	auditRec := s.auditor.MakeAuditRecord("createCondition", model.AuditStatusFail)
