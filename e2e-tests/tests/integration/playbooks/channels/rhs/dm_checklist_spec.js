@@ -189,10 +189,10 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
 
                 // # Open the create dropdown — the chevron is the sibling button
                 // next to the "New checklist" primary action button
-                cy.get('[data-testid="create-blank-checklist"]')
-                    .parent()
-                    .find('.icon-chevron-down')
-                    .click({force: true});
+                cy.get('[data-testid="create-blank-checklist"]').
+                    parent().
+                    find('.icon-chevron-down').
+                    click({force: true});
 
                 // * Verify "Run a playbook" IS in the dropdown
                 // (DM/GM gating happens in the run modal's channel selector, not in the dropdown)

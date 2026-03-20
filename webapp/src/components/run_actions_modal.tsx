@@ -4,7 +4,11 @@
 import React, {useState} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {useIntl} from 'react-intl';
+import {useSelector} from 'react-redux';
 import styled from 'styled-components';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {General} from 'mattermost-redux/constants';
+import {GlobalState} from '@mattermost/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {useUpdateRun} from 'src/graphql/hooks';
@@ -24,6 +28,10 @@ interface Props {
 const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
     const {formatMessage} = useIntl();
     const teamId = playbookRun.team_id || '';
+
+    // DM/GM channels can't have members added/removed, so participant channel actions are disabled
+    const linkedChannel = useSelector((state: GlobalState) => getChannel(state, playbookRun.channel_id));
+    const isDMGM = linkedChannel?.type === General.DM_CHANNEL || linkedChannel?.type === General.GM_CHANNEL;
 
     const [broadcastToChannelsEnabled, setBroadcastToChannelsEnabled] = useState(playbookRun.status_update_broadcast_channels_enabled);
     const [sendOutgoingWebhookEnabled, setSendOutgoingWebhookEnabled] = useState(playbookRun.status_update_broadcast_webhooks_enabled);
@@ -134,11 +142,16 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
-                            enabled={createChannelMemberEnabled}
+                            enabled={isDMGM ? false : createChannelMemberEnabled}
                             title={formatMessage({defaultMessage: 'Add them to the run channel'})}
-                            editable={!readOnly}
+                            editable={!readOnly && !isDMGM}
                             onToggle={() => setCreateChannelMemberEnabled(!createChannelMemberEnabled)}
                         />
+                        {isDMGM && (
+                            <DisabledHint>
+                                {formatMessage({defaultMessage: 'Not available for direct and group message channels'})}
+                            </DisabledHint>
+                        )}
                     </ActionsContainer>
                 </Trigger>
 
@@ -147,17 +160,29 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
-                            enabled={removeChannelMemberEnabled}
+                            enabled={isDMGM ? false : removeChannelMemberEnabled}
                             title={formatMessage({defaultMessage: 'Remove them from the run channel'})}
-                            editable={!readOnly}
+                            editable={!readOnly && !isDMGM}
                             onToggle={() => setRemoveChannelMemberEnabled(!removeChannelMemberEnabled)}
                         />
+                        {isDMGM && (
+                            <DisabledHint>
+                                {formatMessage({defaultMessage: 'Not available for direct and group message channels'})}
+                            </DisabledHint>
+                        )}
                     </ActionsContainer>
                 </Trigger>
             </TriggersContainer>
         </ActionsModal>
     );
 };
+
+const DisabledHint = styled.div`
+    margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 12px;
+    font-style: italic;
+`;
 
 const HelpText = styled.div`
     margin-top: 4px;

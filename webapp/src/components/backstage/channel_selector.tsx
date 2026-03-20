@@ -24,7 +24,6 @@ import General from 'mattermost-redux/constants/general';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {Channel, ChannelMembership} from '@mattermost/types/channels';
 import {Team} from '@mattermost/types/teams';
-import {GlobalState} from '@mattermost/types/store';
 import {fetchChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';

@@ -4020,16 +4020,19 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 		return
 	}
 
-	// Don't do anything if the user not a channel member
-	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
-	if member == nil {
-		return
-	}
-
-	// Get channel to check type
+	// DM/GM channels can't have members removed — skip the action
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("leaveActions: failed to get channel")
+		return
+	}
+	if channel.IsGroupOrDirect() {
+		return
+	}
+
+	// Don't do anything if the user not a channel member
+	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
+	if member == nil {
 		return
 	}
 
@@ -4226,6 +4229,11 @@ func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string
 func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User, forceAddToChannel bool) {
 
 	if !playbookRun.CreateChannelMemberOnNewParticipant && !forceAddToChannel {
+		return
+	}
+
+	// DM/GM channels can't have members added — skip the action
+	if channel.IsGroupOrDirect() {
 		return
 	}
 
