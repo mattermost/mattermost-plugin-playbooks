@@ -190,7 +190,6 @@ describe('api > runs', {testIsolation: true}, () => {
     describe('channel permission checks', () => {
         let otherUser;
         let privateChannel;
-        let privateChannelRun;
 
         before(() => {
             // # Login as admin to create users
@@ -210,9 +209,7 @@ describe('api > runs', {testIsolation: true}, () => {
                         ownerUserId: testUser.id,
                         channelId: privateChannel.id,
                         playbookId: testPlaybook.id,
-                    }, {expectedStatusCode: 201}).then((run) => {
-                        privateChannelRun = run;
-                    });
+                    }, {expectedStatusCode: 201});
                 });
             });
         });
