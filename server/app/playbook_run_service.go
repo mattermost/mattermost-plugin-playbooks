@@ -3950,6 +3950,14 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	canManageMembers := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID) == nil
+	if !canManageMembers && playbookRun.RemoveChannelMemberOnRemovedParticipant {
+		logrus.WithFields(logrus.Fields{
+			"user_id":    requesterUserID,
+			"channel_id": playbookRun.ChannelID,
+		}).Warn("leaveActions: user does not have permission to manage channel members")
+	}
+
 	users := make([]*model.User, 0)
 	for _, userID := range userIDs {
 		user := requesterUser
@@ -3960,7 +3968,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 			}
 		}
 		users = append(users, user)
-		s.leaveActions(playbookRun, userID, requesterUserID)
+		s.leaveActions(playbookRun, userID, canManageMembers)
 	}
 
 	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "left")
@@ -3986,7 +3994,7 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string, requesterID string) {
+func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string, canManageMembers bool) {
 	if !playbookRun.RemoveChannelMemberOnRemovedParticipant {
 		return
 	}
@@ -3997,11 +4005,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 		return
 	}
 
-	if err := s.permissions.ChannelManageMembers(requesterID, playbookRun.ChannelID); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"user_id":    requesterID,
-			"channel_id": playbookRun.ChannelID,
-		}).Warn("leaveActions: user does not have permission to manage channel members")
+	if !canManageMembers {
 		return
 	}
 
@@ -4070,6 +4074,14 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	canManageMembers := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID) == nil
+	if !canManageMembers && (playbookRun.CreateChannelMemberOnNewParticipant || forceAddToChannel) {
+		logrus.WithFields(logrus.Fields{
+			"user_id":    requesterUserID,
+			"channel_id": playbookRun.ChannelID,
+		}).Warn("participateActions: user does not have permission to manage channel members")
+	}
+
 	users := make([]*model.User, 0)
 	for _, userID := range usersToInvite {
 		user := requesterUser
@@ -4082,7 +4094,7 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		users = append(users, user)
 
 		// Configured actions
-		s.participateActions(playbookRun, user, requesterUser, forceAddToChannel)
+		s.participateActions(playbookRun, user, forceAddToChannel, canManageMembers)
 
 		// Participate implies following the run
 		if err = s.Follow(playbookRunID, userID); err != nil {
@@ -4170,8 +4182,7 @@ func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, user *model.User, requesterUser *model.User, forceAddToChannel bool) {
-
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, user *model.User, forceAddToChannel bool, canManageMembers bool) {
 	if !playbookRun.CreateChannelMemberOnNewParticipant && !forceAddToChannel {
 		return
 	}
@@ -4182,11 +4193,7 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, us
 		return
 	}
 
-	if err := s.permissions.ChannelManageMembers(requesterUser.Id, playbookRun.ChannelID); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"user_id":    requesterUser.Id,
-			"channel_id": playbookRun.ChannelID,
-		}).Warn("participateActions: user does not have permission to manage channel members")
+	if !canManageMembers {
 		return
 	}
 
