@@ -364,6 +364,64 @@ describe('runs > permissions', {testIsolation: true}, () => {
         });
     });
 
+    describe('unfollow permission check', () => {
+        let playbook;
+        let run;
+
+        before(() => {
+            cy.apiLogin(testUser);
+
+            // # Create a private playbook with a private channel run
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook (Unfollow Test)',
+                makePublic: false,
+                memberIDs: [testUser.id, playbookMember.id],
+                createPublicPlaybookRun: false,
+            }).then((createdPlaybook) => {
+                playbook = createdPlaybook;
+
+                cy.apiLogin(playbookMember);
+
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: getRandomId(),
+                    ownerUserId: testUser.id,
+                }).then((createdRun) => {
+                    run = createdRun;
+
+                    // # Have the playbook member follow the run so they can unfollow via UI
+                    cy.apiFollowPlaybookRun(run.id);
+                });
+            });
+        });
+
+        it('user without RunView cannot reach the run page', () => {
+            // # Login as teamMember who has no access to a private playbook run
+            cy.apiLogin(teamMember);
+
+            assertRunOverviewIsNotVisible(run);
+        });
+
+        it('playbook member can unfollow via the run details page', () => {
+            // # Login as playbookMember who has view access
+            cy.apiLogin(playbookMember);
+
+            // # Navigate to the run details page
+            cy.visit(`/playbooks/runs/${run.id}`);
+
+            // * Verify the run loaded
+            cy.findByTestId('run-header-section').get('h1').contains(run.name);
+
+            // # Find the following section and click the Following button to unfollow
+            cy.findByRole('button', {name: /Following/}).click({force: true});
+
+            // * Verify it now says Follow (unfollowed successfully)
+            cy.findByRole('button', {name: /^Follow$/}).should('exist');
+        });
+    });
+
     describe('run with public channel from a private playbook', () => {
         let playbook;
         let run;
