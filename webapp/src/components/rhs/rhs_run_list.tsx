@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
@@ -15,16 +15,14 @@ import {
     PlusIcon,
     SortAscendingIcon,
 } from '@mattermost/compass-icons/components';
-
 import Scrollbars from 'react-custom-scrollbars';
 import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
-import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+import {General} from 'mattermost-redux/constants';
 
-import CheckLogoIcon from 'src/components/assets/app-bar-icon-check.svg';
-
+import appBarIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {createPlaybookRun} from 'src/client';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
@@ -43,9 +41,11 @@ import {ToastStyle} from 'src/components/backstage/toast';
 import Tooltip from 'src/components/widgets/tooltip';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
+import {useTextOverflow} from 'src/hooks';
 import {RunPermissionFields, useCanModifyRun} from 'src/hooks/run_permissions';
 
 import {UserList} from './rhs_participants';
+import {RHSTitleText} from './rhs_title_common';
 
 interface PlaybookToDisplay {
     title: string
@@ -91,28 +91,6 @@ interface Props {
     numFinished: number;
 }
 
-const getCurrentChannelName = (state: GlobalState) => getCurrentChannel(state)?.display_name;
-
-const PoweredByPlaybooksFooter = () => (
-    <PoweredByFooter>
-        <PoweredByText>
-            <FormattedMessage
-                defaultMessage='POWERED BY{productName}'
-                values={{
-                    productName: (
-                        <ProductName>
-                            <PlaybooksProductIcon/>
-                            {/* product name; don't translate */}
-                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                            {'PLAYBOOKS'}
-                        </ProductName>
-                    ),
-                }}
-            />
-        </PoweredByText>
-    </PoweredByFooter>
-);
-
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
@@ -126,7 +104,9 @@ const RHSRunList = (props: Props) => {
         await props.getMore();
         debouncedSetLoadingMore(false);
     };
-    const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
+    const currentChannel = useSelector(getCurrentChannel);
+    const currentChannelName = currentChannel?.display_name;
+    const isDirectOrGroupMessage = currentChannel?.type === General.DM_CHANNEL || currentChannel?.type === General.GM_CHANNEL;
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
 
@@ -176,12 +156,12 @@ const RHSRunList = (props: Props) => {
         <>
             <RHSTitleRemoteRender>
                 <TitleContainer>
-                    <TitleIcon src={CheckLogoIcon}/>
-                    <>
-                        {/* static title; don't translate */}
+                    <TitleIcon src={appBarIcon}/>
+                    <RHSTitleText>
+                        {/* product name; don't translate */}
                         {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
-                        {'Checklists'}
-                    </>
+                        {'Playbooks'}
+                    </RHSTitleText>
                     <VerticalLine/>
                     <ChannelNameText>
                         {currentChannelName}
@@ -189,111 +169,111 @@ const RHSRunList = (props: Props) => {
                 </TitleContainer>
             </RHSTitleRemoteRender>
             <Container>
-                <Header>
-                    <DotMenu
-                        dotMenuButton={TitleButton}
-                        placement='bottom-start'
-                        icon={
-                            <FilterMenuTitle data-testid='rhs-runs-filter-menu'>
-                                {filterMenuTitleText}
-                                <i className={'icon icon-chevron-down'}/>
-                            </FilterMenuTitle>
-                        }
-                    >
-                        <FilterMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
-                        >
-                            {formatMessage({defaultMessage: 'In progress'})}
-                            <FilterMenuNumericValue>
-                                {props.numInProgress}
-                            </FilterMenuNumericValue>
-                        </FilterMenuItem>
-                        <FilterMenuItem
-                            onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
-                        >
-                            {formatMessage({defaultMessage: 'Finished'})}
-                            <FilterMenuNumericValue>
-                                {props.numFinished}
-                            </FilterMenuNumericValue>
-                        </FilterMenuItem>
-                    </DotMenu>
-                    <Spacer/>
-                    <SegmentedButtonContainer>
-                        <PrimaryActionButton
-                            onClick={handleCreateBlankChecklist}
-                            data-testid='create-blank-checklist'
-                        >
-                            <PlusIcon size={18}/>
-                            {formatMessage({defaultMessage: 'New checklist'})}
-                        </PrimaryActionButton>
+                {!isDirectOrGroupMessage && (
+                    <Header>
                         <DotMenu
-                            dotMenuButton={DropdownTriggerButton}
+                            dotMenuButton={TitleButton}
                             placement='bottom-start'
-                            icon={<i className={'icon icon-chevron-down'}/>}
+                            icon={
+                                <FilterMenuTitle data-testid='rhs-runs-filter-menu'>
+                                    {filterMenuTitleText}
+                                    <i className={'icon icon-chevron-down'}/>
+                                </FilterMenuTitle>
+                            }
                         >
-                            <CreateChecklistMenuItem
-                                onClick={handleStartRun}
-                                data-testid='create-from-playbook'
+                            <FilterMenuItem
+                                onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.InProgress}))}
                             >
-                                <MenuItemIcon>
-                                    <PlayOutlineIcon size={18}/>
-                                </MenuItemIcon>
-                                <FormattedMessage defaultMessage='Run a playbook'/>
-                            </CreateChecklistMenuItem>
-                            <Separator/>
-                            <CreateChecklistMenuItem
-                                onClick={handleGoToPlaybooks}
-                                data-testid='go-to-playbooks'
+                                {formatMessage({defaultMessage: 'In progress'})}
+                                <FilterMenuNumericValue>
+                                    {props.numInProgress}
+                                </FilterMenuNumericValue>
+                            </FilterMenuItem>
+                            <FilterMenuItem
+                                onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
                             >
-                                <MenuItemIcon>
-                                    <PlaybooksProductIcon/>
-                                </MenuItemIcon>
-                                <FormattedMessage defaultMessage='Go to Playbooks'/>
-                            </CreateChecklistMenuItem>
+                                {formatMessage({defaultMessage: 'Finished'})}
+                                <FilterMenuNumericValue>
+                                    {props.numFinished}
+                                </FilterMenuNumericValue>
+                            </FilterMenuItem>
                         </DotMenu>
-                    </SegmentedButtonContainer>
-                    <DotMenu
-                        dotMenuButton={SortDotMenuButton}
-                        placement='bottom-start'
-                        icon={<SortAscendingIcon size={18}/>}
-                    >
-                        <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
-                        <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Recently created'})}
-                            sortItem={'create_at'}
-                            sortDirection={'DESC'}
-                            options={props.options}
-                            setOptions={props.setOptions}
-                        />
-                        <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Last status update'})}
-                            sortItem={'last_status_update_at'}
-                            sortDirection={'DESC'}
-                            options={props.options}
-                            setOptions={props.setOptions}
-                        />
-                        <SortMenuItem
-                            label={formatMessage({defaultMessage: 'Alphabetically'})}
-                            sortItem={'name'}
-                            sortDirection={'ASC'}
-                            options={props.options}
-                            setOptions={props.setOptions}
-                        />
-                    </DotMenu>
-                </Header>
-                {showNoRuns &&
-                    <>
-                        <NoRunsWrapper>
-                            <NoRuns
-                                active={props.options.filter === FilterType.InProgress}
-                                numInProgress={props.numInProgress}
-                                numFinished={props.numFinished}
+                        <Spacer/>
+                        <SegmentedButtonContainer>
+                            <PrimaryActionButton
+                                onClick={handleCreateBlankChecklist}
+                                data-testid='create-blank-checklist'
+                            >
+                                <PlusIcon size={18}/>
+                                {formatMessage({defaultMessage: 'New checklist'})}
+                            </PrimaryActionButton>
+                            <DotMenu
+                                dotMenuButton={DropdownTriggerButton}
+                                placement='bottom-start'
+                                icon={<i className={'icon icon-chevron-down'}/>}
+                            >
+                                <CreateChecklistMenuItem
+                                    onClick={handleStartRun}
+                                    data-testid='create-from-playbook'
+                                >
+                                    <MenuItemIcon>
+                                        <PlayOutlineIcon size={18}/>
+                                    </MenuItemIcon>
+                                    <FormattedMessage defaultMessage='Run a playbook'/>
+                                </CreateChecklistMenuItem>
+                                <Separator/>
+                                <CreateChecklistMenuItem
+                                    onClick={handleGoToPlaybooks}
+                                    data-testid='go-to-playbooks'
+                                >
+                                    <MenuItemIcon>
+                                        <PlaybooksProductIcon/>
+                                    </MenuItemIcon>
+                                    <FormattedMessage defaultMessage='Go to Playbooks'/>
+                                </CreateChecklistMenuItem>
+                            </DotMenu>
+                        </SegmentedButtonContainer>
+                        <DotMenu
+                            dotMenuButton={SortDotMenuButton}
+                            placement='bottom-start'
+                            icon={<SortAscendingIcon size={18}/>}
+                        >
+                            <SortMenuTitle>{formatMessage({defaultMessage: 'Sort by'})}</SortMenuTitle>
+                            <SortMenuItem
+                                label={formatMessage({defaultMessage: 'Recently created'})}
+                                sortItem={'create_at'}
+                                sortDirection={'DESC'}
+                                options={props.options}
                                 setOptions={props.setOptions}
-                                onCreateChecklistClicked={handleCreateBlankChecklist}
                             />
-                        </NoRunsWrapper>
-                        <PoweredByPlaybooksFooter/>
-                    </>
+                            <SortMenuItem
+                                label={formatMessage({defaultMessage: 'Last status update'})}
+                                sortItem={'last_status_update_at'}
+                                sortDirection={'DESC'}
+                                options={props.options}
+                                setOptions={props.setOptions}
+                            />
+                            <SortMenuItem
+                                label={formatMessage({defaultMessage: 'Alphabetically'})}
+                                sortItem={'name'}
+                                sortDirection={'ASC'}
+                                options={props.options}
+                                setOptions={props.setOptions}
+                            />
+                        </DotMenu>
+                    </Header>
+                )}
+                {showNoRuns &&
+                    <NoRunsWrapper>
+                        <NoRuns
+                            active={props.options.filter === FilterType.InProgress}
+                            numInProgress={props.numInProgress}
+                            numFinished={props.numFinished}
+                            setOptions={props.setOptions}
+                            onCreateChecklistClicked={handleCreateBlankChecklist}
+                            isDirectOrGroupMessage={isDirectOrGroupMessage}
+                        />
+                    </NoRunsWrapper>
                 }
                 {!showNoRuns &&
                     <Scrollbars
@@ -320,38 +300,12 @@ const RHSRunList = (props: Props) => {
                                 <StyledLoadingSpinner/>
                             }
                         </RunsList>
-                        <PoweredByPlaybooksFooter/>
                     </Scrollbars>
                 }
             </Container>
         </>
     );
 };
-
-const PoweredByFooter = styled.div`
-    padding: 0 16px;
-    margin-top: 10px;
-    margin-bottom: 30px;
-    text-align: center;
-`;
-
-const PoweredByText = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    line-height: 16px;
-`;
-
-const ProductName = styled.span`
-    i {
-        font-size: 16px;
-    }
-`;
 
 const Container = styled.div`
     display: flex;
@@ -424,8 +378,6 @@ const TitleIcon = styled.img`
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(var(--button-bg-rgb), 0.08);
-    color: var(--button-bg);
 `;
 
 const SegmentedButtonContainer = styled.div`
@@ -580,6 +532,8 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {add: addToastMessage} = useToaster();
     const teamId = useSelector(getCurrentTeamId);
     const currentUserId = useSelector(getCurrentUserId);
+    const titleRef = useRef<HTMLDivElement>(null);
+    const isTitleOverflowing = useTextOverflow(titleRef);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -622,7 +576,16 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                     <IconWrapper $margin='6px'>
                         {icon}
                     </IconWrapper>
-                    <TitleRow>{props.name}</TitleRow>
+                    {isTitleOverflowing ? (
+                        <Tooltip
+                            id={`run-title-tooltip-${props.id}`}
+                            content={props.name}
+                        >
+                            <TitleRow ref={titleRef}>{props.name}</TitleRow>
+                        </Tooltip>
+                    ) : (
+                        <TitleRow ref={titleRef}>{props.name}</TitleRow>
+                    )}
                     <Spacer/>
                     <ContextMenu
                         runType={props.type}
@@ -867,6 +830,7 @@ interface NoRunsProps {
     numFinished: number;
     onCreateChecklistClicked: () => void;
     setOptions: React.Dispatch<React.SetStateAction<RunListOptions>>
+    isDirectOrGroupMessage: boolean;
 }
 
 const NoRuns = (props: NoRunsProps) => {
@@ -874,7 +838,9 @@ const NoRuns = (props: NoRunsProps) => {
 
     let text = formatMessage({defaultMessage: 'Get started with a checklist for this channel'});
 
-    if (props.active && props.numFinished > 0) {
+    if (props.isDirectOrGroupMessage) {
+        text = formatMessage({defaultMessage: "Checklists aren't available for direct or group messages"});
+    } else if (props.active && props.numFinished > 0) {
         text = formatMessage({defaultMessage: 'There are no in progress checklists in this channel'});
     } else if (!props.active) {
         text = formatMessage({defaultMessage: 'There are no finished checklists linked to this channel'});
@@ -886,13 +852,19 @@ const NoRuns = (props: NoRunsProps) => {
             <NoRunsText>
                 {text}
             </NoRunsText>
-            <PrimaryButton
-                onClick={props.onCreateChecklistClicked}
-                data-testid='create-blank-checklist'
-            >
-                <PlusIcon size={18}/>
-                <FormattedMessage defaultMessage={'New checklist'}/>
-            </PrimaryButton>
+            {props.isDirectOrGroupMessage ? (
+                <NoRunsSubtext>
+                    <FormattedMessage defaultMessage='Open a channel to create and run checklists.'/>
+                </NoRunsSubtext>
+            ) : (
+                <PrimaryButton
+                    onClick={props.onCreateChecklistClicked}
+                    data-testid='create-blank-checklist'
+                >
+                    <PlusIcon size={18}/>
+                    <FormattedMessage defaultMessage={'New checklist'}/>
+                </PrimaryButton>
+            )}
             {props.active && props.numFinished > 0 &&
                 <ViewOtherRunsButton
                     onClick={() => props.setOptions((oldOptions) => ({...oldOptions, filter: FilterType.Finished}))}
@@ -924,6 +896,12 @@ const NoRunsText = styled.div`
     ${SemiBoldHeading}
     font-size: 20px;
     line-height: 28px;
+    text-align: center;
+`;
+const NoRunsSubtext = styled.div`
+    color: var(--center-channel-color);
+    font-size: 14px;
+    line-height: 20px;
     text-align: center;
 `;
 const ViewOtherRunsButton = styled(TertiaryButton)`

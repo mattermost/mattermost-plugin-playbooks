@@ -406,6 +406,20 @@ func (h *PlaybookHandler) getPlaybooks(c *Context, w http.ResponseWriter, r *htt
 		return
 	}
 
+	filteredItems := h.permissions.FilterPlaybooksByViewPermission(userID, playbookResults.Items)
+	preFilterCount := len(playbookResults.Items)
+
+	// Update results with filtered items
+	playbookResults.Items = filteredItems
+	// Note: TotalCount from DB represents total before permission filtering.
+	// We keep it as an upper bound since recalculating would require re-querying.
+	// HasMore is based on pre-filter count: if the DB returned a full page, there may be more
+	// (client can request next page; worst case it's empty). Using post-filter count would
+	// set HasMore = false as soon as one item is filtered out, stopping pagination too early.
+	if opts.PerPage > 0 && preFilterCount < opts.PerPage {
+		playbookResults.HasMore = false
+	}
+
 	ReturnJSON(w, playbookResults, http.StatusOK)
 }
 
@@ -434,9 +448,11 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(c *Context, w http.ResponseWr
 		return
 	}
 
+	filteredItems := h.permissions.FilterPlaybooksByViewPermission(userID, playbooksResult.Items)
+
 	list := make([]model.AutocompleteListItem, 0)
 
-	for _, playbook := range playbooksResult.Items {
+	for _, playbook := range filteredItems {
 		list = append(list, model.AutocompleteListItem{
 			Item:     playbook.ID,
 			HelpText: playbook.Title,

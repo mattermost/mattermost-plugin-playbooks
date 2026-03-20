@@ -251,6 +251,20 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 		}
 	}
 
+	// Check if team is being changed
+	if oldPlaybook.TeamID != playbook.TeamID {
+		// Require ManageMembers permission (since changing teams effectively removes members not in destination team)
+		// This is the fix for MM-66474 - prevents privilege escalation when users only have "Manage Playbook Configurations"
+		if err := p.PlaybookManageMembers(userID, oldPlaybook); err != nil {
+			return errors.Wrap(err, "attempted to change playbook team without manage members permission")
+		}
+
+		// Verify user has access to destination team
+		if !p.canViewTeam(userID, playbook.TeamID) {
+			return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to destination team `%s`", userID, playbook.TeamID)
+		}
+	}
+
 	// Check if we have done a public conversion
 	if oldPlaybook.Public != playbook.Public {
 		if oldPlaybook.Public {
@@ -401,6 +415,17 @@ func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Pl
 	return noAccessErr
 }
 
+// FilterPlaybooksByViewPermission returns only the playbooks the user has permission to view.
+func (p *PermissionsService) FilterPlaybooksByViewPermission(userID string, playbooks []Playbook) []Playbook {
+	filtered := make([]Playbook, 0, len(playbooks))
+	for _, playbook := range playbooks {
+		if p.PlaybookViewWithPlaybook(userID, playbook) == nil {
+			filtered = append(filtered, playbook)
+		}
+	}
+	return filtered
+}
+
 func (p *PermissionsService) PlaybookMakePrivate(userID string, playbook Playbook) error {
 	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPublicPlaybookMakePrivate) {
 		return nil
@@ -417,12 +442,18 @@ func (p *PermissionsService) PlaybookMakePublic(userID string, playbook Playbook
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to make playbook `%s` public", userID, playbook.ID)
 }
 
-func (p *PermissionsService) RunCreate(userID string, playbook Playbook) error {
-	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionRunCreate) {
-		return nil
+func (p *PermissionsService) RunCreate(userID string, playbook Playbook, targetTeamID string) error {
+	if !p.hasPermissionsToPlaybook(userID, playbook, model.PermissionRunCreate) {
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to run playbook `%s`", userID, playbook.ID)
 	}
 
-	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to run playbook `%s`", userID, playbook.ID)
+	if targetTeamID != "" && targetTeamID != playbook.TeamID {
+		if !p.pluginAPI.User.HasPermissionToTeam(userID, targetTeamID, model.PermissionRunCreate) {
+			return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create a run in team `%s`", userID, targetTeamID)
+		}
+	}
+
+	return nil
 }
 
 func (p *PermissionsService) RunManageProperties(userID, runID string) error {

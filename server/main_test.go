@@ -62,11 +62,11 @@ func TestMain(m *testing.M) {
 }
 
 type PermissionsHelper interface {
-	SaveDefaultRolePermissions() map[string][]string
-	RestoreDefaultRolePermissions(data map[string][]string)
-	RemovePermissionFromRole(permission string, roleName string)
-	AddPermissionToRole(permission string, roleName string)
-	SetupChannelScheme() *model.Scheme
+	SaveDefaultRolePermissions(t testing.TB) map[string][]string
+	RestoreDefaultRolePermissions(t testing.TB, data map[string][]string)
+	RemovePermissionFromRole(t testing.TB, permission string, roleName string)
+	AddPermissionToRole(t testing.TB, permission string, roleName string)
+	SetupChannelScheme(t testing.TB) *model.Scheme
 }
 
 type serverPermissionsWrapper struct {

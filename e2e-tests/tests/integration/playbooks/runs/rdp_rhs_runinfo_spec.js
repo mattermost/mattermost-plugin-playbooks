@@ -12,6 +12,7 @@
 describe('runs > run details page > run info', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
+    let testChannel;
     let testViewerUser;
     let testPublicPlaybook;
     let testRun;
@@ -21,9 +22,10 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
     };
 
     before(() => {
-        cy.apiInitSetup().then(({team, user}) => {
+        cy.apiInitSetup().then(({team, user, channel}) => {
             testTeam = team;
             testUser = user;
+            testChannel = channel;
 
             // Create another user in the same team
             cy.apiCreateUser().then(({user: viewer}) => {
@@ -189,12 +191,13 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
             });
 
             it('Playbook entry is hidden for standalone run without playbook', () => {
-                // # Create a standalone run without a playbook (channel checklist)
+                // # Create a standalone run without a playbook (channel checklist) in existing channel (MM-67648)
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: '', // Empty playbook ID for standalone run
                     playbookRunName: 'standalone run',
                     ownerUserId: testUser.id,
+                    channelId: testChannel.id,
                 }).then((standaloneRun) => {
                     // # Visit the standalone run
                     cy.visit(`/playbooks/runs/${standaloneRun.id}`);

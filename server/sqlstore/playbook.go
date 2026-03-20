@@ -382,14 +382,8 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 // GetPlaybooks retrieves all playbooks that are not deleted.
 // Members are not retrieved for this as the query would be large and we don't need it for this for now.
 func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
-	tx, err := p.store.db.Beginx()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not begin transaction")
-	}
-	defer p.store.finalizeTransaction(tx)
-
 	var playbooks []app.Playbook
-	err = p.store.selectBuilder(tx, &playbooks,
+	err := p.store.selectBuilder(p.store.db, &playbooks,
 		selectAllPlaybooks(p.store.builder).Where(sq.Eq{"p.DeleteAt": 0}),
 	)
 	if err == sql.ErrNoRows {
@@ -404,14 +398,8 @@ func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
 // GetPlaybooks retrieves all playbooks, even deleted ones.
 // Members are not retrieved for this as the query would be large and we don't need it for this for now.
 func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
-	tx, err := p.store.db.Beginx()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not begin transaction")
-	}
-	defer p.store.finalizeTransaction(tx)
-
 	var playbooks []app.Playbook
-	err = p.store.selectBuilder(tx, &playbooks,
+	err := p.store.selectBuilder(p.store.db, &playbooks,
 		selectAllPlaybooks(p.store.builder),
 	)
 	if err == sql.ErrNoRows {

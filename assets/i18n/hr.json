@@ -137,11 +137,11 @@
     },
     {
         "id": "app.user.run.update_status.submit_label",
-        "translation": "Aktualiziraj stanje"
+        "translation": "Objava"
     },
     {
         "id": "app.user.run.update_status.reminder_for_next_update",
-        "translation": "Podsjetnik za sljedeće slanje aktualnog stanja"
+        "translation": "Podsjetnik za sljedeće aktualiziranje"
     },
     {
         "id": "app.user.run.update_status.num_channel",
@@ -165,18 +165,18 @@
     },
     {
         "id": "app.user.run.confirm_finish.title",
-        "translation": "Potvrdi završavanje izvođenja"
+        "translation": "Potvrdi završavanje"
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "Završi izvođenje"
+        "translation": "Završi"
     },
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Postoji **{{.Count}} neobavljen zadatak**. Stvarno želiš završiti izvođenje *{{.RunName}}* za sve sudionike?",
-            "few": "Postoje **{{.Count}} neobavljena zadatka**. Stvarno želiš završiti izvođenje *{{.RunName}}* za sve sudionike?",
-            "other": "Postoji **{{.Count}} neobavljenih zadataka**. Stvarno želiš završiti izvođenje *{{.RunName}}* za sve sudionike?"
+            "one": "Postoji **{{.Count}} neobavljen zadatak**. Stvarno želiš završiti *{{.RunName}}* za sve sudionike?",
+            "few": "Postoje **{{.Count}} neobavljena zadatka**. Stvarno želiš završiti *{{.RunName}}* za sve sudionike?",
+            "other": "Postoji **{{.Count}} neobavljenih zadataka**. Stvarno želiš završiti *{{.RunName}}* za sve sudionike?"
         }
     },
     {
@@ -242,5 +242,9 @@
     {
         "id": "app.user.new_run.intro",
         "translation": "**Vlasnik** {{.Username}}"
+    },
+    {
+        "id": "playbooks.checklist.condition.reason.modified",
+        "translation": "prikazano, jer je zadatak promijenjen"
     }
 ]

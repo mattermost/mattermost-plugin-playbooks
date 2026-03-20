@@ -250,7 +250,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.playbookRunService, p.playbookService, keywordsThreadIgnorer, p.bot)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.config)
 	api.NewActionsHandler(p.handler.APIRouter, p.channelActionService, p.pluginAPI, p.permissions)
-	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService)
+	api.NewCategoryHandler(p.handler.APIRouter, pluginAPIClient, p.categoryService, p.playbookService, p.playbookRunService, p.permissions)
 	api.NewConditionHandler(p.handler.APIRouter, p.conditionService, p.playbookService, p.playbookRunService, p.propertyService, p.permissions, pluginAPIClient)
 	api.NewTabAppHandler(
 		p.handler,
