@@ -20,8 +20,6 @@ import {DateTime} from 'luxon';
 import {debounce} from 'lodash';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-import {General} from 'mattermost-redux/constants';
-
 import appBarIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
 import {createPlaybookRun} from 'src/client';
@@ -106,7 +104,6 @@ const RHSRunList = (props: Props) => {
     };
     const currentChannel = useSelector(getCurrentChannel);
     const currentChannelName = currentChannel?.display_name;
-    const isDirectOrGroupMessage = currentChannel?.type === General.DM_CHANNEL || currentChannel?.type === General.GM_CHANNEL;
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
     const showNoRuns = props.runs.length === 0;
 
@@ -212,20 +209,16 @@ const RHSRunList = (props: Props) => {
                                 placement='bottom-start'
                                 icon={<i className={'icon icon-chevron-down'}/>}
                             >
-                                {!isDirectOrGroupMessage && (
-                                    <>
-                                        <CreateChecklistMenuItem
-                                            onClick={handleStartRun}
-                                            data-testid='create-from-playbook'
-                                        >
-                                            <MenuItemIcon>
-                                                <PlayOutlineIcon size={18}/>
-                                            </MenuItemIcon>
-                                            <FormattedMessage defaultMessage='Run a playbook'/>
-                                        </CreateChecklistMenuItem>
-                                        <Separator/>
-                                    </>
-                                )}
+                                <CreateChecklistMenuItem
+                                    onClick={handleStartRun}
+                                    data-testid='create-from-playbook'
+                                >
+                                    <MenuItemIcon>
+                                        <PlayOutlineIcon size={18}/>
+                                    </MenuItemIcon>
+                                    <FormattedMessage defaultMessage='Run a playbook'/>
+                                </CreateChecklistMenuItem>
+                                <Separator/>
                                 <CreateChecklistMenuItem
                                     onClick={handleGoToPlaybooks}
                                     data-testid='go-to-playbooks'
