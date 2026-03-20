@@ -4000,6 +4000,9 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	return nil
 }
 
+// leaveActions removes the user from the run's channel. The caller must verify
+// that RemoveChannelMemberOnRemovedParticipant is enabled and that the requester
+// has ChannelManageMembers permission before calling.
 func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string) {
 	// Don't do anything if the user not a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
@@ -4185,6 +4188,9 @@ func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string
 	return nil
 }
 
+// participateActions adds the user to the run's channel. The caller must verify
+// that CreateChannelMemberOnNewParticipant (or forceAddToChannel) is enabled and
+// that the requester has ChannelManageMembers permission before calling.
 func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, user *model.User) {
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
