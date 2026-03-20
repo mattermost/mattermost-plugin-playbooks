@@ -545,6 +545,32 @@ func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create actions for channel `%s`", userID, channelID)
 }
 
+func (p *PermissionsService) ChannelView(userID, channelID string) error {
+	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		return nil
+	}
+
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to view channel `%s`", userID, channelID)
+}
+
+func (p *PermissionsService) ChannelManageMembers(userID, channelID string) error {
+	channel, err := p.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get channel `%s`", channelID)
+	}
+
+	permission := model.PermissionManagePublicChannelMembers
+	if channel.Type == model.ChannelTypePrivate {
+		permission = model.PermissionManagePrivateChannelMembers
+	}
+
+	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, permission) {
+		return nil
+	}
+
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage members of channel `%s`", userID, channelID)
+}
+
 func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
 	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
 		return nil
