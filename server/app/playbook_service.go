@@ -167,7 +167,9 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.metricsService.IncrementPlaybookArchivedCount(1)
+	if s.metricsService != nil {
+		s.metricsService.IncrementPlaybookArchivedCount(1)
+	}
 
 	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
@@ -206,7 +208,9 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 		return err
 	}
 
-	s.metricsService.IncrementPlaybookRestoredCount(1)
+	if s.metricsService != nil {
+		s.metricsService.IncrementPlaybookRestoredCount(1)
+	}
 
 	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,

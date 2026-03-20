@@ -510,6 +510,10 @@ func (cc *ComparisonCondition) SwapPropertyIDs(propertyMappings *PropertyCopyRes
 				}
 			}
 
+			if len(translatedValues) == 0 && len(arrayValue) > 0 {
+				return errors.Errorf("all option IDs failed to map for %s field %s: condition would be invalid with empty value array", targetField.Type, newFieldID)
+			}
+
 			// Marshal back to JSON
 			newValue, err := json.Marshal(translatedValues)
 			if err != nil {

@@ -1651,6 +1651,18 @@ func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"new_critical_id"}, options)
 	})
+
+	t.Run("returns error when all option IDs fail to map for select field", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "old_priority_id",
+				Value:   json.RawMessage(`["unmapped_option_1", "unmapped_option_2"]`),
+			},
+		}
+
+		err := condition.SwapPropertyIDs(propertyMappings)
+		require.ErrorContains(t, err, "all option IDs failed to map")
+	})
 }
 
 func TestConditionEvaluationResult_AnythingChanged(t *testing.T) {
