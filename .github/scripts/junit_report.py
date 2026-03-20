@@ -36,8 +36,8 @@ def parse_results(pattern="**/*.xml"):
 def build_summary(total, passed, failed, skipped, annotations):
     icon = "✅" if failed == 0 else "❌"
     lines = [
-        f"| Tests | Passed | Failed | Skipped |",
-        f"|-------|--------|--------|---------|",
+        "| Tests | Passed | Failed | Skipped |",
+        "|-------|--------|--------|---------|",
         f"| {total} | {passed} | {failed} | {skipped} |",
     ]
     if annotations:
@@ -66,13 +66,18 @@ def create_check_run(owner, repo, sha, title, summary, conclusion):
             "summary": summary,
         },
     }
-    result = subprocess.run(
-        ["gh", "api", f"repos/{owner}/{repo}/check-runs",
-         "--method", "POST",
-         "--input", "-"],
-        input=json.dumps(payload).encode(),
-        capture_output=True,
-    )
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"repos/{owner}/{repo}/check-runs",
+             "--method", "POST",
+             "--input", "-"],
+            input=json.dumps(payload).encode(),
+            capture_output=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        print("Error: timed out waiting for GitHub API", file=sys.stderr)
+        sys.exit(1)
     if result.returncode != 0:
         print(f"Error creating check run: {result.stderr.decode()}", file=sys.stderr)
         sys.exit(1)
