@@ -390,9 +390,6 @@ describe('runs > permissions', {testIsolation: true}, () => {
                     ownerUserId: testUser.id,
                 }).then((createdRun) => {
                     run = createdRun;
-
-                    // # Have the playbook member follow the run so they can unfollow via UI
-                    cy.apiFollowPlaybookRun(run.id);
                 });
             });
         });
@@ -407,6 +404,9 @@ describe('runs > permissions', {testIsolation: true}, () => {
         it('playbook member can unfollow via the run details page', () => {
             // # Login as playbookMember who has view access
             cy.apiLogin(playbookMember);
+
+            // # Follow the run so we can unfollow (re-seed on each retry)
+            cy.apiFollowPlaybookRun(run.id);
 
             // # Navigate to the run details page
             cy.visit(`/playbooks/runs/${run.id}`);

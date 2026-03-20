@@ -3950,12 +3950,16 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
-	canManageMembers := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID) == nil
-	if !canManageMembers && playbookRun.RemoveChannelMemberOnRemovedParticipant {
-		logrus.WithFields(logrus.Fields{
-			"user_id":    requesterUserID,
-			"channel_id": playbookRun.ChannelID,
-		}).Warn("leaveActions: user does not have permission to manage channel members")
+	canManageMembers := false
+	if playbookRun.RemoveChannelMemberOnRemovedParticipant {
+		if err := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"user_id":    requesterUserID,
+				"channel_id": playbookRun.ChannelID,
+			}).Warn("leaveActions: user does not have permission to manage channel members")
+		} else {
+			canManageMembers = true
+		}
 	}
 
 	users := make([]*model.User, 0)
@@ -3968,7 +3972,9 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 			}
 		}
 		users = append(users, user)
-		s.leaveActions(playbookRun, userID, canManageMembers)
+		if canManageMembers {
+			s.leaveActions(playbookRun, userID)
+		}
 	}
 
 	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "left")
@@ -3994,18 +4000,10 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string, canManageMembers bool) {
-	if !playbookRun.RemoveChannelMemberOnRemovedParticipant {
-		return
-	}
-
+func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string) {
 	// Don't do anything if the user not a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member == nil {
-		return
-	}
-
-	if !canManageMembers {
 		return
 	}
 
@@ -4074,12 +4072,16 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
-	canManageMembers := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID) == nil
-	if !canManageMembers && (playbookRun.CreateChannelMemberOnNewParticipant || forceAddToChannel) {
-		logrus.WithFields(logrus.Fields{
-			"user_id":    requesterUserID,
-			"channel_id": playbookRun.ChannelID,
-		}).Warn("participateActions: user does not have permission to manage channel members")
+	shouldAddToChannel := false
+	if playbookRun.CreateChannelMemberOnNewParticipant || forceAddToChannel {
+		if err := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"user_id":    requesterUserID,
+				"channel_id": playbookRun.ChannelID,
+			}).Warn("participateActions: user does not have permission to manage channel members")
+		} else {
+			shouldAddToChannel = true
+		}
 	}
 
 	users := make([]*model.User, 0)
@@ -4093,8 +4095,9 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		}
 		users = append(users, user)
 
-		// Configured actions
-		s.participateActions(playbookRun, user, forceAddToChannel, canManageMembers)
+		if shouldAddToChannel {
+			s.participateActions(playbookRun, user)
+		}
 
 		// Participate implies following the run
 		if err = s.Follow(playbookRunID, userID); err != nil {
@@ -4182,18 +4185,10 @@ func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, user *model.User, forceAddToChannel bool, canManageMembers bool) {
-	if !playbookRun.CreateChannelMemberOnNewParticipant && !forceAddToChannel {
-		return
-	}
-
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, user *model.User) {
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
 	if member != nil {
-		return
-	}
-
-	if !canManageMembers {
 		return
 	}
 
