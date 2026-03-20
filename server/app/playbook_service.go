@@ -292,6 +292,7 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 		auditRec.AddErrorDesc(err.Error())
 		return "", err
 	}
+	newPlaybook.ID = playbookID
 
 	// Copy property fields from the original playbook to the new playbook AFTER creating it
 	propertyMappings, err := s.propertyService.CopyPlaybookPropertiesToPlaybook(playbook.ID, playbookID)
