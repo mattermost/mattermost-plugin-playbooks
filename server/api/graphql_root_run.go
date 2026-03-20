@@ -203,12 +203,16 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 			return "", errors.Wrapf(err, "failed to get channel")
 		}
 
-		// For DM/GM runs (empty TeamID), only allow linking to DM/GM channels
-		// For team-based runs, verify the channel is in the same team
-		if playbookRun.TeamID == "" {
-			if !channel.IsGroupOrDirect() {
-				return "", errors.Wrap(app.ErrMalformedPlaybookRun, "DM/GM runs can only be linked to DM/GM channels")
-			}
+		// Channel linking validation:
+		// - DM/GM target channels are always allowed (any run can move to DM/GM)
+		// - Team channels must be in the same team as the run
+		emptyTeamID := ""
+		if channel.IsGroupOrDirect() {
+			// Moving to a DM/GM channel — update TeamID to empty
+			addToSetmap(setmap, "TeamID", &emptyTeamID)
+		} else if playbookRun.TeamID == "" {
+			// DM/GM run moving to a team channel — update TeamID to the channel's team
+			addToSetmap(setmap, "TeamID", &channel.TeamId)
 		} else if channel.TeamId != playbookRun.TeamID {
 			return "", errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team")
 		}
