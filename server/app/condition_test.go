@@ -1632,6 +1632,25 @@ func TestConditionExprV1_SwapPropertyIDs(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"new_open_id"}, statusOptions)
 	})
+
+	t.Run("skips unmapped option IDs in select fields", func(t *testing.T) {
+		condition := &ConditionExprV1{
+			Is: &ComparisonCondition{
+				FieldID: "old_priority_id",
+				Value:   json.RawMessage(`["old_critical_id", "unmapped_option_id"]`),
+			},
+		}
+
+		err := condition.SwapPropertyIDs(propertyMappings)
+		require.NoError(t, err)
+
+		require.Equal(t, "new_priority_id", condition.Is.FieldID)
+
+		var options []string
+		err = json.Unmarshal(condition.Is.Value, &options)
+		require.NoError(t, err)
+		require.Equal(t, []string{"new_critical_id"}, options)
+	})
 }
 
 func TestConditionEvaluationResult_AnythingChanged(t *testing.T) {
