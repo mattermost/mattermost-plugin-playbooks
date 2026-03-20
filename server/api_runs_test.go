@@ -2078,6 +2078,10 @@ func TestGetByChannelID(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		// Add regular user to the channel so the ChannelView check passes
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), channel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
 		// Try to get run by channel ID - should fail with not found
 		_, err = e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), channel.Id)
 		require.Error(t, err)
@@ -2153,10 +2157,10 @@ func TestGetByChannelID(t *testing.T) {
 		require.Equal(t, privateChannel.Id, run.ChannelID)
 
 		// Try to get run by channel ID with a user who doesn't have access to channel
-		// Should be able to access public playbook
-		run, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
-		require.NoError(t, err)
-		require.NotNil(t, run)
+		// ChannelView permission check should block access even if the playbook is public
+		_, err = e.PlaybooksClient2.PlaybookRuns.GetByChannelID(context.Background(), privateChannel.Id)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Not authorized")
 	})
 
 	t.Run("guest user cannot access public playbook run", func(t *testing.T) {
@@ -2171,10 +2175,10 @@ func TestGetByChannelID(t *testing.T) {
 		require.NotNil(t, run)
 
 		e.CreateGuest()
-		// Try to get run by channel ID with a guest user
+		// Try to get run by channel ID with a guest user - guest lacks ChannelView permission
 		_, err = e.PlaybooksClientGuest.PlaybookRuns.GetByChannelID(context.Background(), run.ChannelID)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "Not found")
+		require.Contains(t, err.Error(), "Not authorized")
 	})
 }
 
