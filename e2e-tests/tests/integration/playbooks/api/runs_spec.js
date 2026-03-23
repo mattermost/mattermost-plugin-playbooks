@@ -186,4 +186,178 @@ describe('api > runs', {testIsolation: true}, () => {
             });
         });
     });
+
+    describe('channel permission checks', () => {
+        let otherUser;
+        let privateChannel;
+
+        before(() => {
+            // # Login as admin to create users
+            cy.apiAdminLogin();
+
+            // # Create another user in the team
+            cy.apiCreateUser().then(({user: createdUser}) => {
+                otherUser = createdUser;
+                cy.apiAddUserToTeam(testTeam.id, otherUser.id);
+
+                // # Login as testUser and create a private channel with a run
+                cy.apiLogin(testUser);
+                cy.apiCreateChannel(testTeam.id, 'private-perm-test', 'Private Perm Test', 'P').then(({channel}) => {
+                    privateChannel = channel;
+
+                    cy.apiRunPlaybook({
+                        ownerUserId: testUser.id,
+                        channelId: privateChannel.id,
+                        playbookId: testPlaybook.id,
+                    }, {expectedStatusCode: 201});
+                });
+            });
+        });
+
+        describe('GET /runs/channel/{channel_id}', () => {
+            it('should return 403 for user without channel access', () => {
+                // # Login as otherUser who is not a member of the private channel
+                cy.apiLogin(otherUser);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/channel/${privateChannel.id}`,
+                    method: 'GET',
+                    failOnStatusCode: false,
+                }).then((response) => {
+                    expect(response.status).to.equal(403);
+                });
+            });
+
+            it('should succeed for user with channel access', () => {
+                // # Login as testUser who is a member of the private channel
+                cy.apiLogin(testUser);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/channel/${privateChannel.id}`,
+                    method: 'GET',
+                }).then((response) => {
+                    expect(response.status).to.equal(200);
+                });
+            });
+        });
+
+        describe('GET /runs/channel/{channel_id}/runs', () => {
+            it('should return 403 for user without channel access', () => {
+                // # Login as otherUser who is not a member of the private channel
+                cy.apiLogin(otherUser);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/channel/${privateChannel.id}/runs`,
+                    method: 'GET',
+                    failOnStatusCode: false,
+                }).then((response) => {
+                    expect(response.status).to.equal(403);
+                });
+            });
+
+            it('should succeed for user with channel access', () => {
+                // # Login as testUser who is a member of the private channel
+                cy.apiLogin(testUser);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/channel/${privateChannel.id}/runs`,
+                    method: 'GET',
+                }).then((response) => {
+                    expect(response.status).to.equal(200);
+                });
+            });
+        });
+
+        describe('GET /runs with channel_id filter', () => {
+            it('should return 403 for user without channel access', () => {
+                // # Login as otherUser who is not a member of the private channel
+                cy.apiLogin(otherUser);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs?channel_id=${privateChannel.id}`,
+                    method: 'GET',
+                    failOnStatusCode: false,
+                }).then((response) => {
+                    expect(response.status).to.equal(403);
+                });
+            });
+
+            it('should succeed for user with channel access', () => {
+                // # Login as testUser who is a member of the private channel
+                cy.apiLogin(testUser);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs?channel_id=${privateChannel.id}`,
+                    method: 'GET',
+                }).then((response) => {
+                    expect(response.status).to.equal(200);
+                });
+            });
+        });
+
+        describe('unfollow permission check', () => {
+            let privatePlaybook;
+            let privatePlaybookRun;
+
+            before(() => {
+                // # Create a private playbook (only testUser is a member)
+                cy.apiLogin(testUser);
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Private Playbook (Unfollow Test)',
+                    memberIDs: [testUser.id],
+                    makePublic: false,
+                    createPublicPlaybookRun: false,
+                }).then((playbook) => {
+                    privatePlaybook = playbook;
+
+                    // # Create a run from the private playbook
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: privatePlaybook.id,
+                        playbookRunName: 'Unfollow Test Run',
+                        ownerUserId: testUser.id,
+                    }).then((run) => {
+                        privatePlaybookRun = run;
+                    });
+                });
+            });
+
+            it('should return 403 for user without RunView access', () => {
+                // # Login as otherUser who is not a member of the private playbook
+                cy.apiLogin(otherUser);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/${privatePlaybookRun.id}/followers`,
+                    method: 'DELETE',
+                    failOnStatusCode: false,
+                }).then((response) => {
+                    expect(response.status).to.equal(403);
+                });
+            });
+
+            it('should succeed for user with RunView access', () => {
+                // # Login as testUser who is the owner
+                cy.apiLogin(testUser);
+
+                // # First follow the run so we can unfollow
+                cy.apiFollowPlaybookRun(privatePlaybookRun.id);
+
+                cy.request({
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    url: `/plugins/playbooks/api/v0/runs/${privatePlaybookRun.id}/followers`,
+                    method: 'DELETE',
+                }).then((response) => {
+                    expect(response.status).to.equal(200);
+                });
+            });
+        });
+    });
 });

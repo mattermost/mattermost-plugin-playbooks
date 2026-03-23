@@ -450,6 +450,85 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 	}, nil
 }
 
+func (s *propertyService) CopyPlaybookPropertiesToPlaybook(sourcePlaybookID, targetPlaybookID string) (*PropertyCopyResult, error) {
+	sourceProperties, err := s.getAllPropertyFields(PropertyTargetTypePlaybook, sourcePlaybookID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get source playbook properties")
+	}
+
+	fieldMappings := make(map[string]string)
+	optionMappings := make(map[string]string)
+	var copiedFields []PropertyField
+
+	for _, sourceProperty := range sourceProperties {
+		targetProperty, err := s.copyPropertyFieldForPlaybook(sourceProperty, targetPlaybookID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to duplicate property field %s for playbook", sourceProperty.Name)
+		}
+
+		createdFieldMM, err := s.api.Property.CreatePropertyField(targetProperty)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to create playbook property field for %s", sourceProperty.Name)
+		}
+
+		createdField, err := NewPropertyFieldFromMattermostPropertyField(createdFieldMM)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert created property field %s", sourceProperty.Name)
+		}
+
+		fieldMappings[sourceProperty.ID] = createdField.ID
+		copiedFields = append(copiedFields, *createdField)
+
+		if createdField.SupportsOptions() {
+			sourceField, err := NewPropertyFieldFromMattermostPropertyField(sourceProperty)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to convert source property field %s", sourceProperty.Name)
+			}
+
+			for i, sourceOption := range sourceField.Attrs.Options {
+				if i < len(createdField.Attrs.Options) {
+					optionMappings[sourceOption.GetID()] = createdField.Attrs.Options[i].GetID()
+				}
+			}
+		}
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"source_playbook_id": sourcePlaybookID,
+		"target_playbook_id": targetPlaybookID,
+		"fields_copied":      len(sourceProperties),
+	}).Info("copied playbook properties to playbook")
+
+	return &PropertyCopyResult{
+		FieldMappings:  fieldMappings,
+		OptionMappings: optionMappings,
+		CopiedFields:   copiedFields,
+	}, nil
+}
+
+func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.PropertyField, targetPlaybookID string) (*model.PropertyField, error) {
+	propertyField, err := NewPropertyFieldFromMattermostPropertyField(sourceProperty)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to convert source property %s", sourceProperty.Name)
+	}
+
+	propertyField.ID = ""
+	propertyField.TargetType = PropertyTargetTypePlaybook
+	propertyField.TargetID = targetPlaybookID
+
+	if propertyField.SupportsOptions() {
+		for i := range propertyField.Attrs.Options {
+			propertyField.Attrs.Options[i].SetID("")
+		}
+	}
+
+	if err := propertyField.SanitizeAndValidate(); err != nil {
+		return nil, errors.Wrapf(err, "failed to validate playbook property field for %s", sourceProperty.Name)
+	}
+
+	return propertyField.ToMattermostPropertyField(), nil
+}
+
 func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.PropertyField, runID string) (*model.PropertyField, error) {
 	propertyField, err := NewPropertyFieldFromMattermostPropertyField(playbookProperty)
 	if err != nil {

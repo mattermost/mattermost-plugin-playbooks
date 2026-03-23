@@ -519,7 +519,7 @@ jobs:
           ARTIFACT_SUFFIX: -fips
 
   report-test-results:
-    if: always()
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
     needs:
       - e2e-cypress-tests
       - e2e-cypress-tests-fips
@@ -528,11 +528,15 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       checks: write
-      pull-requests: write
     steps:
+      - name: ci/checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: ci/download-test-results
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
       - name: ci/publish-results
-        uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6.3.1
-        with:
-          report_paths: "**/*.xml"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: python3 .github/scripts/junit_report.py

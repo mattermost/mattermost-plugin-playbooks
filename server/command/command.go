@@ -570,6 +570,12 @@ func (r *Runner) actionShowOwner(args []string, playbookRuns []app.PlaybookRun) 
 	}
 
 	currentPlaybookRun := playbookRuns[run]
+
+	if err := r.permissions.RunView(r.args.UserId, currentPlaybookRun.ID); err != nil {
+		r.postCommandResponse("You do not have permission to view this run.")
+		return
+	}
+
 	ownerUser, err := r.pluginAPI.User.Get(currentPlaybookRun.OwnerUserID)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
@@ -671,6 +677,11 @@ func (r *Runner) actionInfo(args []string) {
 	playbookRun := playbookRuns[run]
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
+		return
+	}
+
+	if err := r.permissions.RunView(r.args.UserId, playbookRun.ID); err != nil {
+		r.postCommandResponse("You do not have permission to view this run.")
 		return
 	}
 
@@ -883,6 +894,11 @@ func (r *Runner) actionTimeline(args []string) {
 	playbookRun := playbookRuns[run]
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
+		return
+	}
+
+	if err := r.permissions.RunView(r.args.UserId, playbookRun.ID); err != nil {
+		r.postCommandResponse("You do not have permission to view this run.")
 		return
 	}
 

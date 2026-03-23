@@ -2275,10 +2275,6 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 		return "", err
 	}
 
-	if !s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionCreatePost) {
-		return "", errors.New("user does not have permission to channel")
-	}
-
 	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklistNumber, itemNumber) {
 		return "", errors.New("invalid checklist item indices")
 	}
@@ -3979,6 +3975,18 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	canManageMembers := false
+	if playbookRun.RemoveChannelMemberOnRemovedParticipant {
+		if err := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"user_id":    requesterUserID,
+				"channel_id": playbookRun.ChannelID,
+			}).Warn("leaveActions: user does not have permission to manage channel members")
+		} else {
+			canManageMembers = true
+		}
+	}
+
 	users := make([]*model.User, 0)
 	for _, userID := range userIDs {
 		user := requesterUser
@@ -3989,7 +3997,9 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 			}
 		}
 		users = append(users, user)
-		s.leaveActions(playbookRun, userID, requesterUserID)
+		if canManageMembers {
+			s.leaveActions(playbookRun, userID)
+		}
 	}
 
 	err = s.changeParticipantsTimeline(playbookRunID, requesterUser, users, "left")
@@ -4015,11 +4025,10 @@ func (s *PlaybookRunServiceImpl) RemoveParticipants(playbookRunID string, userID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string, requesterID string) {
-	if !playbookRun.RemoveChannelMemberOnRemovedParticipant {
-		return
-	}
-
+// leaveActions removes the user from the run's channel. The caller must verify
+// that RemoveChannelMemberOnRemovedParticipant is enabled and that the requester
+// has ChannelManageMembers permission before calling.
+func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID string) {
 	// DM/GM channels can't have members removed — skip the action
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
@@ -4029,29 +4038,13 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 	if channel.IsGroupOrDirect() {
 		return
 	}
-
 	// Don't do anything if the user not a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID)
 	if member == nil {
 		return
 	}
 
-	// Check if requester has permission to manage channel members
-	var permission *model.Permission
-	if channel.Type == model.ChannelTypePrivate {
-		permission = model.PermissionManagePrivateChannelMembers
-	} else {
-		permission = model.PermissionManagePublicChannelMembers
-	}
-
-	if !s.pluginAPI.User.HasPermissionToChannel(requesterID, channel.Id, permission) {
-		logrus.WithFields(logrus.Fields{
-			"user_id":    requesterID,
-			"channel_id": channel.Id,
-		}).Warn("leaveActions: user does not have permission to manage channel members")
-		return
-	}
-
+	// Permission check is done by the caller (consolidated in PermissionsService)
 	// To be added to the UI as an optional action
 	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
 		logrus.WithError(err).WithField("user_id", userID).Error("failed to remove user from linked channel")
@@ -4126,6 +4119,18 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		return errors.Wrap(err, "failed to get requester user")
 	}
 
+	shouldAddToChannel := false
+	if playbookRun.CreateChannelMemberOnNewParticipant || forceAddToChannel {
+		if err := s.permissions.ChannelManageMembers(requesterUserID, playbookRun.ChannelID); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"user_id":    requesterUserID,
+				"channel_id": playbookRun.ChannelID,
+			}).Warn("participateActions: user does not have permission to manage channel members")
+		} else {
+			shouldAddToChannel = true
+		}
+	}
+
 	users := make([]*model.User, 0)
 	for _, userID := range usersToInvite {
 		user := requesterUser
@@ -4137,8 +4142,9 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		}
 		users = append(users, user)
 
-		// Configured actions
-		s.participateActions(playbookRun, channel, user, requesterUser, forceAddToChannel)
+		if shouldAddToChannel {
+			s.participateActions(playbookRun, user)
+		}
 
 		// Participate implies following the run
 		if err = s.Follow(playbookRunID, userID); err != nil {
@@ -4226,35 +4232,22 @@ func (s *PlaybookRunServiceImpl) changeParticipantsTimeline(playbookRunID string
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, channel *model.Channel, user *model.User, requesterUser *model.User, forceAddToChannel bool) {
-
-	if !playbookRun.CreateChannelMemberOnNewParticipant && !forceAddToChannel {
+// participateActions adds the user to the run's channel. The caller must verify
+// that CreateChannelMemberOnNewParticipant (or forceAddToChannel) is enabled and
+// that the requester has ChannelManageMembers permission before calling.
+func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, user *model.User) {
+	// DM/GM channels can't have members added — skip the action
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("participateActions: failed to get channel")
 		return
 	}
-
-	// DM/GM channels can't have members added — skip the action
 	if channel.IsGroupOrDirect() {
 		return
 	}
-
-	// Add permission check before adding user to channel
-	permission := model.PermissionManagePublicChannelMembers
-	if channel.Type == model.ChannelTypePrivate {
-		permission = model.PermissionManagePrivateChannelMembers
-	}
-
 	// Don't do anything if the user is a channel member
 	member, _ := s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, user.Id)
 	if member != nil {
-		return
-	}
-
-	// Check if requester has permission to manage channel members
-	if !s.pluginAPI.User.HasPermissionToChannel(requesterUser.Id, playbookRun.ChannelID, permission) {
-		logrus.WithFields(logrus.Fields{
-			"user_id":    requesterUser.Id,
-			"channel_id": playbookRun.ChannelID,
-		}).Warn("participateActions: user does not have permission to manage channel members")
 		return
 	}
 

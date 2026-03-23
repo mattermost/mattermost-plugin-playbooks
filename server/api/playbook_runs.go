@@ -451,8 +451,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "no permission to post specified", nil)
+	if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, post.ChannelId)) {
 		return
 	}
 
@@ -634,9 +633,7 @@ func (h *PlaybookRunHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, 
 
 	// Add channel permission check if channel_id filter is used
 	if filterOptions.ChannelID != "" {
-		hasPermission := h.pluginAPI.User.HasPermissionToChannel(userID, filterOptions.ChannelID, model.PermissionReadChannel)
-		if !hasPermission {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "No permission to access this channel", nil)
+		if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, filterOptions.ChannelID)) {
 			return
 		}
 	}
@@ -710,6 +707,10 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, channelID)) {
+		return
+	}
 
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
@@ -1306,6 +1307,10 @@ func (h *PlaybookRunHandler) getPlaybookRunsForChannelByUser(c *Context, w http.
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, channelID)) {
+		return
+	}
 
 	playbookRuns, err := h.playbookRunService.GetPlaybookRunsForChannelByUser(channelID, userID)
 	if err != nil {
@@ -1948,6 +1953,10 @@ func (h *PlaybookRunHandler) follow(c *Context, w http.ResponseWriter, r *http.R
 func (h *PlaybookRunHandler) unfollow(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+		return
+	}
 
 	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
 		h.HandleError(w, c.logger, err)
