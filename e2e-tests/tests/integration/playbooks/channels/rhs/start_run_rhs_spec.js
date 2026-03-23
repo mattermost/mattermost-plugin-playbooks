@@ -327,4 +327,64 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
             });
         });
     });
+
+    // -----------------------------------------------------------
+    // AC6: DM/GM channels excluded from run modal channel selector
+    // -----------------------------------------------------------
+    describe('DM/GM channel exclusion in run modal', () => {
+        it('does not offer DM channels when linking an existing channel', () => {
+            // # Setup: create a DM partner and ensure the DM exists
+            cy.apiCreateUser().then(({user: dmPartner}) => {
+                cy.apiAddUserToTeam(testTeam.id, dmPartner.id);
+                cy.apiCreateDirectChannel([testUser.id, dmPartner.id]).then(({channel: dmCh}) => {
+                    // # Create 2 checklists in the DM so list view shows
+                    const ts = Date.now();
+                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'AC6-A-' + ts, ownerUserId: testUser.id, channelId: dmCh.id});
+                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'AC6-B-' + ts, ownerUserId: testUser.id, channelId: dmCh.id});
+
+                    // # Create a playbook for the run modal
+                    createPlaybook({
+                        title: 'AC6 Playbook ' + ts,
+                        channelMode: 'link_existing_channel',
+                        channelId: testChannel.id,
+                    }).then((playbook) => {
+                        // # Navigate to the DM and open RHS
+                        cy.visit(`/${testTeam.name}/messages/@${dmPartner.username}`);
+                        cy.get('#post_textbox').should('exist');
+                        cy.getPlaybooksAppBarIcon().should('exist').click();
+
+                        // * Verify list view
+                        cy.findAllByTestId('run-list-card').should('have.length.at.least', 2);
+
+                        // # Open the create dropdown and click "Run a playbook"
+                        cy.findByTestId('create-blank-checklist').
+                            parent().
+                            find('.icon-chevron-down').
+                            should('be.visible').
+                            click();
+                        cy.findByTestId('create-from-playbook').click();
+
+                        // * Verify the run modal opened and select the playbook
+                        cy.get('#root-portal.modal-open').within(() => {
+                            cy.findByText(playbook.title).should('be.visible').click();
+
+                            // # Switch to "Link to existing channel"
+                            cy.findByTestId('link-existing-channel-radio').click();
+
+                            // # Search for the DM partner in the channel selector
+                            cy.get('#link-existing-channel-selector').click().type(dmPartner.username);
+
+                            // * Verify the DM channel does NOT appear (excludeDMGM filters it)
+                            cy.get('.playbooks-rselect__menu').within(() => {
+                                cy.findByText(dmPartner.username).should('not.exist');
+                            });
+                        });
+
+                        // # Close the modal
+                        cy.get('body').type('{esc}');
+                    });
+                });
+            });
+        });
+    });
 });

@@ -198,7 +198,8 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
                 cy.get('[data-testid="create-blank-checklist"]').
                     parent().
                     find('.icon-chevron-down').
-                    click({force: true});
+                    should('be.visible').
+                    click();
 
                 // * Verify "Run a playbook" IS in the dropdown
                 // (DM/GM gating happens in the run modal's channel selector, not in the dropdown)
@@ -206,6 +207,58 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
 
                 // * Verify "Go to Playbooks" IS there (sanity check the dropdown opened)
                 cy.get('[data-testid="go-to-playbooks"]').should('exist');
+            });
+        });
+    });
+
+    // -----------------------------------------------------------
+    // AC7: Checklist move-channel modal includes DM/GM channels
+    // -----------------------------------------------------------
+    it('move-channel modal offers DM channels for checklists', () => {
+        cy.apiCreateUser().then(({user: movePartner}) => {
+            cy.apiAddUserToTeam(testTeam.id, movePartner.id);
+            cy.apiCreateUser().then(({user: targetPartner}) => {
+                cy.apiAddUserToTeam(testTeam.id, targetPartner.id);
+                cy.apiCreateDirectChannel([testUser.id, movePartner.id]).then(({channel: srcDM}) => {
+                    const ts = Date.now();
+                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'Move-A-' + ts, ownerUserId: testUser.id, channelId: srcDM.id});
+                    cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'Move-B-' + ts, ownerUserId: testUser.id, channelId: srcDM.id});
+
+                    // # Visit target DM first so it loads into Redux store
+                    cy.apiCreateDirectChannel([testUser.id, targetPartner.id]);
+                    cy.visit(`/${testTeam.name}/messages/@${targetPartner.username}`);
+                    cy.get('#post_textbox').should('exist');
+
+                    // # Navigate to the source DM and open RHS
+                    cy.visit(`/${testTeam.name}/messages/@${movePartner.username}`);
+                    cy.get('#post_textbox').should('exist');
+                    cy.getPlaybooksAppBarIcon().should('exist').click();
+
+                    // * Verify list view
+                    cy.findByTestId('rhs-runs-list').should('exist');
+                    cy.findAllByTestId('run-list-card').should('have.length.at.least', 2);
+
+                    // # Click the dot menu on the first card
+                    cy.findByTestId('rhs-runs-list').
+                        findAllByTestId('run-list-card').
+                        first().
+                        findByRole('button').
+                        click();
+
+                    // # Click "Move to a different channel"
+                    cy.findByText('Move to a different channel').click();
+
+                    // # Type the target DM partner's username in the channel selector
+                    cy.get('#link_existing_channel_selector').click().type(targetPartner.username);
+
+                    // * Verify a DM channel option appears (DM/GM channels allowed for checklists)
+                    cy.get('.playbooks-rselect__menu').should('exist').within(() => {
+                        cy.get('.playbooks-rselect__option').should('have.length.at.least', 1);
+                    });
+
+                    // # Close the modal
+                    cy.get('body').type('{esc}');
+                });
             });
         });
     });

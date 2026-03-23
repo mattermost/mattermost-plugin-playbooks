@@ -201,7 +201,8 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
                     cy.get('[data-testid="create-blank-checklist"]').
                         parent().
                         find('.icon-chevron-down').
-                        click({force: true});
+                        should('be.visible').
+                        click();
 
                     // * Verify "Run a playbook" IS available
                     cy.get('[data-testid="create-from-playbook"]').should('exist');
