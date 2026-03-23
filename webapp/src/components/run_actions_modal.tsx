@@ -97,6 +97,7 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
+                            id='action-broadcast-channels'
                             enabled={broadcastToChannelsEnabled}
                             title={formatMessage({defaultMessage: 'Broadcast update to selected channels'})}
                             editable={!readOnly}
@@ -111,6 +112,7 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                             />
                         </Action>
                         <Action
+                            id='action-outgoing-webhook'
                             enabled={sendOutgoingWebhookEnabled}
                             title={formatMessage({defaultMessage: 'Send outgoing webhook'})}
                             editable={!readOnly}
@@ -142,6 +144,7 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
+                            id='action-add-to-channel'
                             enabled={isDMGM ? false : createChannelMemberEnabled}
                             title={formatMessage({defaultMessage: 'Add them to the run channel'})}
                             editable={!readOnly && !isDMGM}
@@ -160,6 +163,7 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
                 >
                     <ActionsContainer>
                         <Action
+                            id='action-remove-from-channel'
                             enabled={isDMGM ? false : removeChannelMemberEnabled}
                             title={formatMessage({defaultMessage: 'Remove them from the run channel'})}
                             editable={!readOnly && !isDMGM}

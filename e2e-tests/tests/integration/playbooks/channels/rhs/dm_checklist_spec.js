@@ -81,10 +81,16 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
     });
 
     // -----------------------------------------------------------
-    // TC3: Create checklist in self-DM
+    // TC3: Create checklist in self-DM — owner/participants hidden
     // -----------------------------------------------------------
-    it('can create a checklist in a self-DM via the RHS', () => {
+    it('can create a checklist in a self-DM and hides owner/participants', () => {
         createChecklistInDM(testUser.username);
+
+        // * Verify the Owner section is NOT shown (self-DM has only 1 user)
+        cy.get('#rhsContainer').within(() => {
+            cy.findByTestId('owner-profile-selector').should('not.exist');
+            cy.findByText('Participants').should('not.exist');
+        });
     });
 
     // -----------------------------------------------------------
