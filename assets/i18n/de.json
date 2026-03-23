@@ -150,17 +150,17 @@
     },
     {
         "id": "app.user.run.confirm_finish.title",
-        "translation": "Beenden des Durchlaufs bestätigen"
+        "translation": "Beenden bestätigen"
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "Durchlauf beenden"
+        "translation": "Beenden"
     },
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "one": "Es gibt eine **{{.Count}} offene Aufgabe**. Bist du sicher, dass du den Durchlauf *{{.RunName}}* für alle Teilnehmer beenden willst?",
-            "other": "Es gibt **{{.Count}} offene Aufgaben**. Bist du sicher, dass du den Durchlauf *{{.RunName}}* für alle Teilnehmer beenden willst?"
+            "one": "Es gibt eine **{{.Count}} offene Aufgabe**. Bist du sicher, dass du *{{.RunName}}* für alle Teilnehmer beenden willst?",
+            "other": "Es gibt **{{.Count}} offene Aufgaben**. Bist du sicher, dass du *{{.RunName}}* für alle Teilnehmer beenden willst?"
         }
     },
     {
