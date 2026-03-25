@@ -43,6 +43,7 @@ const HorizontalBlock = styled.div`
     display: flex;
     flex-direction: row;
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    padding: 0 32px;
 
     > i {
         margin-left: -3px;
@@ -154,6 +155,7 @@ const PlaybookAccessModal = ({
                 modalHeaderText={formatMessage({defaultMessage: 'Playbook Access'})}
                 {...modalProps}
                 id={ID}
+                bodyClassName='padding--none'
             >
                 {playbook &&
                 <>

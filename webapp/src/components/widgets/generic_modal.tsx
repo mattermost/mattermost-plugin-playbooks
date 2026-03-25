@@ -35,6 +35,7 @@ type Props = {
         FooterContainer: ComponentType<{children: React.ReactNode}>;
     }>;
     adjustTop?: number;
+    bodyClassName?: string;
     children?: React.ReactNode;
 };
 
@@ -148,7 +149,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                     )}
                 </Header>
                 <>
-                    <Modal.Body>{this.props.children}</Modal.Body>
+                    <Modal.Body className={this.props.bodyClassName}>{this.props.children}</Modal.Body>
                     {showFooter ? (
                         <Modal.Footer>
                             <FooterContainer>
@@ -177,6 +178,10 @@ export const StyledModal = styled(Modal)`
         .modal-body {
             overflow: visible;
             padding: 0 32px;
+
+            &.padding--none {
+                padding: 0;
+            }
         }
 
         .modal-dialog {

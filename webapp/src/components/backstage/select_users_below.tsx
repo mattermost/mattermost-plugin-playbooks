@@ -31,6 +31,8 @@ import ProfileAutocomplete from './profile_autocomplete';
 const ProfileAutocompleteContainer = styled.div`
 	padding-top: 24px;
 	padding-bottom: 24px;
+    padding-left: 32px;
+    padding-right: 32px;
 	border-bottom: 1px solid rgba(var(--sys-center-channel-color-rgb), 0.08);
 `;
 
@@ -43,10 +45,14 @@ const UserLineContainer = styled.div`
     display: flex;
     align-items: center;
     margin: 12px 0;
+    padding: 0 24px 0 32px;
+    height: 40px;
 `;
 
 const UserList = styled.div`
-    margin: 12px 0;
+    padding: 12px 0;
+    max-height: 400px;
+    overflow-y: auto;
 `;
 
 const BelowLineProfile = styled(Profile)`
@@ -54,9 +60,15 @@ const BelowLineProfile = styled(Profile)`
     flex-grow: 1;
 `;
 
-const IconWrapper = styled.div`
+const RoleLabel = styled.div`
     display: inline-flex;
-    padding: 10px 5px 10px 8px;
+    padding: 8px 10px 8px 10px;
+    font-size: 12px;
+    user-select: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
 `;
 
 export interface SelectUsersBelowProps {
@@ -135,15 +147,26 @@ interface UserLineProps {
     onMakeMember: (userid: string) => void;
 }
 
-const MemberButton = styled.button`
+const MemberButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
     border-radius: 4px;
-    color: var(--link-color);
-    fill: var(--link-color);
+    background: ${({$isActive}) => ($isActive ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+    color: var(--button-bg);
+    font-size: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease-out;
 
-    &:hover {
-       background: rgba(var(--center-channel-color-rgb), 0.08);
-       color: rgba(var(--center-channel-color-rgb), 0.72);
+    &:hover:enabled {
+        background: rgba(var(--button-bg-rgb), 0.08);
+    }
+
+    &:active:enabled {
+        background: rgba(var(--button-bg-rgb), 0.12);
     }
 `;
 
@@ -151,9 +174,9 @@ const UserLine = (props: UserLineProps) => {
     const memberIsPlaybookAdmin = props.member.roles.includes(PlaybookRole.Admin);
 
     let text = (
-        <IconWrapper>
+        <RoleLabel>
             {roleDisplayText(props.member.roles)}
-        </IconWrapper>
+        </RoleLabel>
     );
 
     if (props.hasPermissionToManageSystem || (props.hasPermissionsToEditRoles && props.member.user_id !== props.currentUserId)) {
@@ -181,10 +204,10 @@ const UserLine = (props: UserLineProps) => {
                 dotMenuButton={MemberButton}
                 portal={false}
                 icon={
-                    <IconWrapper>
+                    <RoleLabel>
                         {roleDisplayText(props.member.roles)}
-                        <i className={'icon-chevron-down'}/>
-                    </IconWrapper>
+                        <i className={'fa fa-angle-down'}/>
+                    </RoleLabel>
                 }
             >
                 {permissionsChangeOption}
