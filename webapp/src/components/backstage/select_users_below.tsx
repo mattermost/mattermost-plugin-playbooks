@@ -29,10 +29,7 @@ import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 import ProfileAutocomplete from './profile_autocomplete';
 
 const ProfileAutocompleteContainer = styled.div`
-	padding-top: 24px;
-	padding-bottom: 24px;
-    padding-left: 32px;
-    padding-right: 32px;
+    padding: 24px 32px;
 	border-bottom: 1px solid rgba(var(--sys-center-channel-color-rgb), 0.08);
 `;
 
@@ -62,7 +59,7 @@ const BelowLineProfile = styled(Profile)`
 
 const RoleLabel = styled.div`
     display: inline-flex;
-    padding: 8px 10px 8px 10px;
+    padding: 8px 10px;
     font-size: 12px;
     user-select: none;
     align-items: center;
