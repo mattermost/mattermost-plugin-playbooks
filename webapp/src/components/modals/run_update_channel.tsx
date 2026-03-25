@@ -7,6 +7,7 @@ import {useIntl} from 'react-intl';
 
 import GenericModal, {Description, InlineLabel} from 'src/components/widgets/generic_modal';
 import {useRun} from 'src/hooks';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
@@ -16,6 +17,7 @@ const ID = 'playbook_run_update';
 type Props = {
     playbookRunId: string;
     teamId: string;
+    runType?: PlaybookRunType;
     onSubmit: (newChannelId: string, newChannelName: string) => void;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
@@ -28,6 +30,7 @@ export const makeModalDefinition = (props: Props) => ({
 const UpdateRunModal = ({
     playbookRunId,
     teamId,
+    runType,
     onSubmit,
     ...modalProps
 }: Props) => {
@@ -77,6 +80,7 @@ const UpdateRunModal = ({
                     shouldRenderValue={true}
                     teamId={teamId}
                     isMulti={false}
+                    excludeDMGM={runType === PlaybookRunType.Playbook}
                 />
             </Body>
         </StyledGenericModal>
