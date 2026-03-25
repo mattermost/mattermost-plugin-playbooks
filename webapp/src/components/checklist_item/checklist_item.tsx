@@ -89,6 +89,9 @@ interface ChecklistItemProps {
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
     isChannelChecklist?: boolean;
+    bulkEditMode?: boolean;
+    isSelected?: boolean;
+    onItemSelect?: () => void;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
@@ -393,6 +396,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 $disabled={props.readOnly || isSkipped()}
                 $hasCondition={props.hasCondition ?? false}
                 $isPlaybookEditor={isPlaybookEditor}
+                $bulkEditMode={props.bulkEditMode ?? false}
+                $isSelected={props.isSelected ?? false}
+                onClick={props.bulkEditMode && props.onItemSelect ? (e) => {
+                    e.stopPropagation();
+                    props.onItemSelect?.();
+                } : undefined}
             >
                 <CheckboxContainer>
                     {!props.readOnly && !props.dragging &&
@@ -598,7 +607,7 @@ const DraggableWrapper = styled.div`
     /* Wrapper for draggable item including condition header */
 `;
 
-const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean, $isPlaybookEditor: boolean}>`
+const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean, $isPlaybookEditor: boolean, $bulkEditMode: boolean, $isSelected: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0;
 
@@ -640,9 +649,37 @@ const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverM
         }
     `}
 
-    ${({$editing, $disabled}) => !$editing && !$disabled && css`
+    ${({$editing, $disabled, $isSelected}) => !$editing && !$disabled && !$isSelected && css`
         .checklists:not(.isDragging) &:hover {
             background: var(--center-channel-color-04);
         }
+    `}
+
+    ${({$bulkEditMode, $isSelected}) => $bulkEditMode && css`
+        cursor: pointer;
+        border-radius: 4px;
+
+        ${HoverMenu} {
+            display: none;
+        }
+
+        ${DragButton} {
+            visibility: hidden;
+        }
+
+        ${$isSelected ? css`
+            && {
+                background: var(--button-bg-08);
+                box-shadow: inset 0 0 1px 1px rgba(var(--button-bg-rgb), 0.48);
+            }
+
+            &&:hover {
+                background: var(--button-bg-08);
+            }
+        ` : css`
+            &:hover {
+                background: var(--button-bg-08);
+            }
+        `}
     `}
 `;

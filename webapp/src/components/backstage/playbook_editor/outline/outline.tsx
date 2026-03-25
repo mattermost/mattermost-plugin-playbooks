@@ -32,6 +32,7 @@ const Outline = ({playbook, refetch}: Props) => {
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
+    const [bulkEditMode, setBulkEditMode] = useState(false);
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -106,6 +107,18 @@ const Outline = ({playbook, refetch}: Props) => {
             <Section
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Tasks'})}
+                headerRight={(
+                    <BulkEditButton
+                        $active={bulkEditMode}
+                        onClick={() => setBulkEditMode(!bulkEditMode)}
+                    >
+                        <i className={bulkEditMode ? 'icon icon-close' : 'icon icon-pencil-outline'}/>
+                        {bulkEditMode ?
+                            formatMessage({defaultMessage: 'Exit bulk edit'}) :
+                            formatMessage({defaultMessage: 'Bulk edit'})
+                        }
+                    </BulkEditButton>
+                )}
             >
                 <ChecklistList
                     playbook={playbook}
@@ -113,6 +126,8 @@ const Outline = ({playbook, refetch}: Props) => {
                     checklistsCollapseState={checklistCollapseState}
                     onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
                     onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
+                    bulkEditMode={bulkEditMode}
+                    onExitBulkEdit={() => setBulkEditMode(false)}
                 />
             </Section>
             <Section
@@ -208,6 +223,29 @@ const HoverMenuContainer = styled.div`
     height: 32px;
     align-items: center;
     padding: 0 8px;
+`;
+
+const BulkEditButton = styled.button<{$active: boolean}>`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    background: ${({$active}) => ($active ? 'var(--button-bg-08)' : 'none')};
+    color: ${({$active}) => ($active ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+
+    &:hover {
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    }
+
+    i {
+        font-size: 14px;
+    }
 `;
 
 export default Outline;

@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -31,23 +31,24 @@ import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {
     clientAddChecklist,
     clientDeleteChecklist,
+    clientDeleteChecklistItem,
     clientMoveChecklist,
     clientMoveChecklistItem,
+    setDueDate as clientSetDueDate,
     deletePlaybookCondition,
+    setAssignee,
     updatePlaybookCondition,
 } from 'src/client';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
-
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
-
 import {usePlaybookAttributes, useProxyState} from 'src/hooks';
 import {usePlaybookConditions} from 'src/hooks/conditions';
-import {getDistinctAssignees} from 'src/utils';
 import {ConditionExprV1} from 'src/types/conditions';
+import {getDistinctAssignees} from 'src/utils';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
-
 import GenericChecklist, {generateKeys} from './generic_checklist';
+import MultiSelectActionBar from './multi_select_action_bar';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -78,6 +79,8 @@ interface Props {
     onReadOnlyInteract?: () => void;
     autoAddTask?: boolean;
     onTaskAdded?: () => void;
+    bulkEditMode?: boolean;
+    onExitBulkEdit?: () => void;
 }
 
 const ChecklistList = ({
@@ -92,6 +95,8 @@ const ChecklistList = ({
     onReadOnlyInteract,
     autoAddTask,
     onTaskAdded,
+    bulkEditMode,
+    onExitBulkEdit,
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -99,6 +104,28 @@ const ChecklistList = ({
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
+
+    type SelectedItemInfo = {checklistIndex: number; itemIndex: number; item: ChecklistItem};
+    const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItemInfo>>(new Map());
+
+    // Clear selections when exiting bulk edit mode
+    useEffect(() => {
+        if (!bulkEditMode) {
+            setSelectedItems(new Map());
+        }
+    }, [bulkEditMode]);
+
+    const onItemSelect = useCallback((key: string, checklistIndex: number, itemIndex: number, item: ChecklistItem) => {
+        setSelectedItems((prev) => {
+            const next = new Map(prev);
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.set(key, {checklistIndex, itemIndex, item});
+            }
+            return next;
+        });
+    }, []);
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
@@ -347,6 +374,121 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
+    const handleBulkAssign = async (userId: string) => {
+        if (playbookRun) {
+            const assignPromises: Array<ReturnType<typeof setAssignee>> = [];
+            selectedItems.forEach(({checklistIndex, itemIndex}) => {
+                assignPromises.push(setAssignee(playbookRun.id, checklistIndex, itemIndex, userId));
+            });
+            await Promise.all(assignPromises);
+
+            // Optimistically update the store
+            const newChecklists = checklists.map((cl, clIdx) => ({
+                ...cl,
+                items: cl.items.map((item, itemIdx) => {
+                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                        return {...item, assignee_id: userId};
+                    }
+                    return item;
+                }),
+            }));
+            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
+        } else if (playbook) {
+            const newChecklists = checklists.map((cl, clIdx) => ({
+                ...cl,
+                items: cl.items.map((item, itemIdx) => {
+                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                        return {...item, assignee_id: userId};
+                    }
+                    return item;
+                }),
+            }));
+            setChecklistsForPlaybook(newChecklists);
+        }
+    };
+
+    const handleBulkDueDate = async (timestamp: number) => {
+        if (playbookRun) {
+            const dueDatePromises: Array<ReturnType<typeof clientSetDueDate>> = [];
+            selectedItems.forEach(({checklistIndex, itemIndex}) => {
+                dueDatePromises.push(clientSetDueDate(playbookRun.id, checklistIndex, itemIndex, timestamp));
+            });
+            await Promise.all(dueDatePromises);
+
+            const newChecklists = checklists.map((cl, clIdx) => ({
+                ...cl,
+                items: cl.items.map((item, itemIdx) => {
+                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                        return {...item, due_date: timestamp};
+                    }
+                    return item;
+                }),
+            }));
+            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
+        } else if (playbook) {
+            const newChecklists = checklists.map((cl, clIdx) => ({
+                ...cl,
+                items: cl.items.map((item, itemIdx) => {
+                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                        return {...item, due_date: timestamp};
+                    }
+                    return item;
+                }),
+            }));
+            setChecklistsForPlaybook(newChecklists);
+        }
+    };
+
+    const handleBulkDelete = () => {
+        const selectedByChecklist = new Map<number, Set<number>>();
+        selectedItems.forEach(({checklistIndex, itemIndex}) => {
+            if (!selectedByChecklist.has(checklistIndex)) {
+                selectedByChecklist.set(checklistIndex, new Set());
+            }
+            selectedByChecklist.get(checklistIndex)!.add(itemIndex);
+        });
+
+        if (playbookRun && playbookRun.type === PlaybookRunType.ChannelChecklist) {
+            selectedByChecklist.forEach((itemIndices, checklistIndex) => {
+                const sortedIndices = [...itemIndices].sort((a, b) => b - a);
+                sortedIndices.forEach((idx) => {
+                    clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx);
+                });
+            });
+        } else {
+            const newChecklists = checklists.map((cl, clIdx) => {
+                const selectedIndices = selectedByChecklist.get(clIdx);
+                if (!selectedIndices) {
+                    return cl;
+                }
+                return {
+                    ...cl,
+                    items: cl.items.filter((_, itemIdx) => !selectedIndices.has(itemIdx)),
+                };
+            });
+
+            if (playbookRun) {
+                dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
+            } else {
+                setChecklistsForPlaybook(newChecklists);
+            }
+        }
+        setSelectedItems(new Map());
+    };
+
+    const handleBulkAddToCondition = (conditionId: string) => {
+        const newChecklists = checklists.map((cl, clIdx) => ({
+            ...cl,
+            items: cl.items.map((item, itemIdx) => {
+                if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                    return {...item, condition_id: conditionId};
+                }
+                return item;
+            }),
+        }));
+        setChecklistsForPlaybook(newChecklists);
+    };
+
     const onDragStart = () => {
         setIsDragging(true);
     };
@@ -559,6 +701,10 @@ const ChecklistList = ({
 
     const keys = generateKeys(checklists.map((checklist, index) => checklist.title + index));
 
+    const availableConditionsForBar = conditions.filter((condition) =>
+        checklists.some((cl) => cl.items.some((item) => item.condition_id === condition.id)),
+    );
+
     return (
         <>
             <DragDropContext
@@ -628,6 +774,9 @@ const ChecklistList = ({
                                                     isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
                                                     allChecklists={checklists}
                                                     onMoveItemToCondition={(itemIndex: number, conditionId: string) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
+                                                    selectedItemKeys={new Set([...selectedItems.keys()].filter((k) => k.startsWith(`${checklistIndex}-`)))}
+                                                    bulkEditMode={bulkEditMode}
+                                                    onItemSelect={onItemSelect}
                                                 />
                                             </CollapsibleChecklist>
                                         );
@@ -646,6 +795,37 @@ const ChecklistList = ({
                 </Droppable>
                 {!readOnly && addChecklist}
             </DragDropContext>
+            {bulkEditMode && selectedItems.size === 0 && (
+                <BulkEditInfoToast>
+                    <i className='icon icon-information-outline'/>
+                    {formatMessage({defaultMessage: 'Click on any task to select it. Use the action bar below to apply changes to all selected tasks.'})}
+                    <ToastCloseButton
+                        onClick={() => onExitBulkEdit?.()}
+                        aria-label={formatMessage({defaultMessage: 'Close'})}
+                    >
+                        <i className='icon icon-close'/>
+                    </ToastCloseButton>
+                </BulkEditInfoToast>
+            )}
+            {selectedItems.size > 0 && (
+                <MultiSelectActionBar
+                    selectedCount={selectedItems.size}
+                    participantUserIds={playbookRun?.participant_ids ?? []}
+                    availableConditions={playbook ? availableConditionsForBar : undefined}
+                    propertyFields={propertyFields || []}
+                    hasAnyAssignee={[...selectedItems.values()].some(({checklistIndex, itemIndex}) => Boolean(checklists[checklistIndex]?.items[itemIndex]?.assignee_id))}
+                    hasAnyDueDate={[...selectedItems.values()].some(({checklistIndex, itemIndex}) => Boolean(checklists[checklistIndex]?.items[itemIndex]?.due_date))}
+                    isPlaybookRun={Boolean(playbookRun)}
+                    onClearSelection={() => {
+                        setSelectedItems(new Map());
+                        onExitBulkEdit?.();
+                    }}
+                    onBulkAssign={handleBulkAssign}
+                    onBulkDueDate={handleBulkDueDate}
+                    onBulkDelete={handleBulkDelete}
+                    onBulkAddToCondition={playbook ? handleBulkAddToCondition : undefined}
+                />
+            )}
         </>
     );
 };
@@ -692,6 +872,58 @@ const ChecklistsContainer = styled.div`
 const IconWrapper = styled.div`
     padding: 3px 0 0 1px;
     margin: 0;
+`;
+
+const BulkEditInfoToast = styled.div`
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    height: 48px;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 4px 4px 12px;
+    background: var(--center-channel-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
+    z-index: 9999;
+    color: var(--center-channel-bg);
+    font-family: "Open Sans", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+
+    i {
+        font-size: 16px;
+        color: var(--center-channel-bg);
+        flex-shrink: 0;
+    }
+`;
+
+const ToastCloseButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--center-channel-bg-56);
+    cursor: pointer;
+    margin-left: 4px;
+
+    &:hover {
+        background: rgba(var(--center-channel-bg-rgb), 0.08);
+        color: var(--center-channel-bg);
+    }
+
+    i {
+        font-size: 16px;
+    }
 `;
 
 export default ChecklistList;
