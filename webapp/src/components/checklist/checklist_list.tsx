@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -171,6 +176,17 @@ const ChecklistList = ({
     const finished = (playbookRun !== undefined) && (playbookRun.current_status === PlaybookRunStatus.Finished);
     const archived = playbook != null && playbook.delete_at !== 0 && !playbookRun;
     const readOnly = finished || archived || isReadOnly;
+
+    // Memoized lookup sets for selected items — must be before early return
+    const selectedIndices = useMemo(() => {
+        const indices = new Set<string>();
+        selectedItems.forEach(({checklistIndex, itemIndex}) => {
+            indices.add(`${checklistIndex}-${itemIndex}`);
+        });
+        return indices;
+    }, [selectedItems]);
+
+    const selectedItemKeysSet = useMemo(() => new Set(selectedItems.keys()), [selectedItems]);
 
     if (!playbook && !playbookRun) {
         return null;
@@ -374,17 +390,8 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
-    // Build an index-based lookup set from selectedItems for efficient checklist iteration
-    const getSelectedIndices = () => {
-        const indices = new Set<string>();
-        selectedItems.forEach(({checklistIndex, itemIndex}) => {
-            indices.add(`${checklistIndex}-${itemIndex}`);
-        });
-        return indices;
-    };
-
     const isSelectedIndex = (clIdx: number, itemIdx: number) => {
-        return getSelectedIndices().has(`${clIdx}-${itemIdx}`);
+        return selectedIndices.has(`${clIdx}-${itemIdx}`);
     };
 
     const handleBulkAssign = async (userId: string) => {
@@ -471,13 +478,13 @@ const ChecklistList = ({
             }
         } else {
             const newChecklists = checklists.map((cl, clIdx) => {
-                const selectedIndices = selectedByChecklist.get(clIdx);
-                if (!selectedIndices) {
+                const deletedIndices = selectedByChecklist.get(clIdx);
+                if (!deletedIndices) {
                     return cl;
                 }
                 return {
                     ...cl,
-                    items: cl.items.filter((_, itemIdx) => !selectedIndices.has(itemIdx)),
+                    items: cl.items.filter((_, itemIdx) => !deletedIndices.has(itemIdx)),
                 };
             });
 
@@ -491,40 +498,51 @@ const ChecklistList = ({
     };
 
     const handleBulkAddToCondition = (conditionId: string) => {
-        // Process each selected item using the single-item move logic to preserve condition grouping
-        const updatedChecklists = [...checklists.map((cl) => ({...cl, items: [...cl.items]}))];
+        // Group selected items by checklist, then process in descending index order
+        // to avoid index corruption when items are moved via splice
+        const byChecklist = new Map<number, number[]>();
         selectedItems.forEach(({checklistIndex, itemIndex}) => {
-            const item = updatedChecklists[checklistIndex].items[itemIndex];
-            if (item.condition_id === conditionId) {
-                return; // Already in this condition
+            if (!byChecklist.has(checklistIndex)) {
+                byChecklist.set(checklistIndex, []);
             }
+            byChecklist.get(checklistIndex)!.push(itemIndex);
+        });
 
-            // Set condition_id on the item
-            const updatedItem = {...item, condition_id: conditionId};
+        const updatedChecklists = [...checklists.map((cl) => ({...cl, items: [...cl.items]}))];
 
-            // Find the last item in the target condition group
-            let lastConditionItemIndex = -1;
-            for (let i = updatedChecklists[checklistIndex].items.length - 1; i >= 0; i--) {
-                if (updatedChecklists[checklistIndex].items[i].condition_id === conditionId) {
-                    lastConditionItemIndex = i;
-                    break;
+        for (const [clIdx, itemIndices] of byChecklist.entries()) {
+            // Process in descending order so splices don't shift later indices
+            const sorted = [...itemIndices].sort((a, b) => b - a);
+            for (const idx of sorted) {
+                const item = updatedChecklists[clIdx].items[idx];
+                if (item.condition_id === conditionId) {
+                    continue;
+                }
+
+                const updatedItem = {...item, condition_id: conditionId};
+
+                // Find the last item in the target condition group
+                let lastConditionItemIndex = -1;
+                for (let i = updatedChecklists[clIdx].items.length - 1; i >= 0; i--) {
+                    if (updatedChecklists[clIdx].items[i].condition_id === conditionId) {
+                        lastConditionItemIndex = i;
+                        break;
+                    }
+                }
+
+                if (lastConditionItemIndex >= 0 && lastConditionItemIndex !== idx) {
+                    const newItems = [...updatedChecklists[clIdx].items];
+                    newItems.splice(idx, 1);
+                    const targetIndex = idx < lastConditionItemIndex ? lastConditionItemIndex : lastConditionItemIndex + 1;
+                    newItems.splice(targetIndex, 0, updatedItem);
+                    updatedChecklists[clIdx] = {...updatedChecklists[clIdx], items: newItems};
+                } else {
+                    const newItems = [...updatedChecklists[clIdx].items];
+                    newItems[idx] = updatedItem;
+                    updatedChecklists[clIdx] = {...updatedChecklists[clIdx], items: newItems};
                 }
             }
-
-            if (lastConditionItemIndex >= 0 && lastConditionItemIndex !== itemIndex) {
-                // Move item to be adjacent to the condition group
-                const newItems = [...updatedChecklists[checklistIndex].items];
-                newItems.splice(itemIndex, 1);
-                const targetIndex = itemIndex < lastConditionItemIndex ? lastConditionItemIndex : lastConditionItemIndex + 1;
-                newItems.splice(targetIndex, 0, updatedItem);
-                updatedChecklists[checklistIndex] = {...updatedChecklists[checklistIndex], items: newItems};
-            } else {
-                // Just update the condition_id in place
-                const newItems = [...updatedChecklists[checklistIndex].items];
-                newItems[itemIndex] = updatedItem;
-                updatedChecklists[checklistIndex] = {...updatedChecklists[checklistIndex], items: newItems};
-            }
-        });
+        }
         setChecklistsForPlaybook(updatedChecklists);
     };
 
@@ -813,7 +831,7 @@ const ChecklistList = ({
                                                     isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
                                                     allChecklists={checklists}
                                                     onMoveItemToCondition={(itemIndex: number, conditionId: string) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
-                                                    selectedItemKeys={new Set(selectedItems.keys())}
+                                                    selectedItemKeys={selectedItemKeysSet}
                                                     bulkEditMode={bulkEditMode}
                                                     onItemSelect={onItemSelect}
                                                 />
@@ -926,13 +944,13 @@ const BulkEditInfoToast = styled.div`
     background: var(--center-channel-color);
     border-radius: 4px;
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
-    z-index: 9999;
+    z-index: 100;
+    max-width: 95%;
     color: var(--center-channel-bg);
     font-family: "Open Sans", sans-serif;
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
-    white-space: nowrap;
 
     i {
         font-size: 16px;

@@ -198,7 +198,7 @@ const BarContainer = styled.div`
     background: var(--center-channel-color);
     border-radius: 4px;
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
-    z-index: 9999;
+    z-index: 100;
 `;
 
 const LeftSection = styled.div`
