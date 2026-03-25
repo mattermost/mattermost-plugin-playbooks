@@ -491,16 +491,41 @@ const ChecklistList = ({
     };
 
     const handleBulkAddToCondition = (conditionId: string) => {
-        const newChecklists = checklists.map((cl, clIdx) => ({
-            ...cl,
-            items: cl.items.map((item, itemIdx) => {
-                if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
-                    return {...item, condition_id: conditionId};
+        // Process each selected item using the single-item move logic to preserve condition grouping
+        const updatedChecklists = [...checklists.map((cl) => ({...cl, items: [...cl.items]}))];
+        selectedItems.forEach(({checklistIndex, itemIndex}) => {
+            const item = updatedChecklists[checklistIndex].items[itemIndex];
+            if (item.condition_id === conditionId) {
+                return; // Already in this condition
+            }
+
+            // Set condition_id on the item
+            const updatedItem = {...item, condition_id: conditionId};
+
+            // Find the last item in the target condition group
+            let lastConditionItemIndex = -1;
+            for (let i = updatedChecklists[checklistIndex].items.length - 1; i >= 0; i--) {
+                if (updatedChecklists[checklistIndex].items[i].condition_id === conditionId) {
+                    lastConditionItemIndex = i;
+                    break;
                 }
-                return item;
-            }),
-        }));
-        setChecklistsForPlaybook(newChecklists);
+            }
+
+            if (lastConditionItemIndex >= 0 && lastConditionItemIndex !== itemIndex) {
+                // Move item to be adjacent to the condition group
+                const newItems = [...updatedChecklists[checklistIndex].items];
+                newItems.splice(itemIndex, 1);
+                const targetIndex = itemIndex < lastConditionItemIndex ? lastConditionItemIndex : lastConditionItemIndex + 1;
+                newItems.splice(targetIndex, 0, updatedItem);
+                updatedChecklists[checklistIndex] = {...updatedChecklists[checklistIndex], items: newItems};
+            } else {
+                // Just update the condition_id in place
+                const newItems = [...updatedChecklists[checklistIndex].items];
+                newItems[itemIndex] = updatedItem;
+                updatedChecklists[checklistIndex] = {...updatedChecklists[checklistIndex], items: newItems};
+            }
+        });
+        setChecklistsForPlaybook(updatedChecklists);
     };
 
     const onDragStart = () => {

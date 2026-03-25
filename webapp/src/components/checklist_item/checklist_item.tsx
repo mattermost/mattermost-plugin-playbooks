@@ -667,7 +667,8 @@ const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverM
             visibility: hidden;
         }
 
-        ${CheckboxContainer} {
+        ${CheckboxContainer},
+        ${Row} {
             pointer-events: none;
         }
 
