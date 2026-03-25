@@ -451,7 +451,7 @@
     "91Hr5f": "Dra meg for å reorganisere",
     "95v+5O": "{actions, plural, =0 {Oppgavehandlinger} one {# handling} other {# handlinger}}",
     "BNB75h": "En Playbook inneholder sjekklister, automatiseringer og maler for alle repeterbare prosedyrer. {br} Den hjelper teamene med å redusere antall feil, opparbeide tillit hos interessentene og bli mer effektive for hver iterasjon.",
-    "CFysvS": "Opprett rullegardinmenyen Playbook",
+    "CFysvS": "Opprett rullegardinmeny for Playbook",
     "DtCplA": "{numParticipants, plural, =1 {<b>#</b> deltaker} other {<b>#</b> deltakere}}",
     "FLG4Iu": "Gjør til eier av kjøring",
     "F9LrJA": "Filtrer elementer",
@@ -629,5 +629,11 @@
     "9WyylR": "Kommando",
     "9kBCE0": "Forlat{isFollowing, select, true { og slutt å følge} other {}}",
     "A7QaWD": "Bli med for å gjøre endringer eller samhandle",
-    "C7tmYz": "Flytt til en annen kanal"
+    "C7tmYz": "Flytt til en annen kanal",
+    "55HPp9": "Lagre endringer i betingelser",
+    "8JP4EK": "Følg automatisk",
+    "CIV4Pa": "Bli med som deltaker",
+    "DWMdZC": "Fjern fra betingelse",
+    "DqbhUm": "Bekreft fortsett",
+    "EkpdpQ": "Legg til et sammendrag…"
 }
