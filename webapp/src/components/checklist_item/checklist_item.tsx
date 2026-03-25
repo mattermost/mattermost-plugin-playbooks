@@ -667,6 +667,10 @@ const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverM
             visibility: hidden;
         }
 
+        ${CheckboxContainer} {
+            pointer-events: none;
+        }
+
         ${$isSelected ? css`
             && {
                 background: var(--button-bg-08);

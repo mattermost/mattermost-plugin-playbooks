@@ -252,7 +252,7 @@ const GenericChecklist = (props: Props) => {
         const hasCondition = Boolean(checklistItem.condition_id);
         const conditionId = checklistItem.condition_id;
         const showConditionHeader = shouldShowConditionHeader(checklistItem, index) && conditionId;
-        const itemKey = `${props.checklistIndex}-${index}`;
+        const itemKey = checklistItem.id || `${props.checklistIndex}-${index}`;
 
         return (
             <DraggableChecklistItem

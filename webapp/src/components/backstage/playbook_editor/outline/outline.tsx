@@ -107,7 +107,7 @@ const Outline = ({playbook, refetch}: Props) => {
             <Section
                 id={'checklists'}
                 title={formatMessage({defaultMessage: 'Tasks'})}
-                headerRight={(
+                headerRight={archived ? undefined : (
                     <BulkEditButton
                         $active={bulkEditMode}
                         onClick={() => setBulkEditMode(!bulkEditMode)}

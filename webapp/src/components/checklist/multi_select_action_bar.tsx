@@ -440,13 +440,18 @@ const BulkAssignControlComponent = (ownProps: ControlProps<Option, boolean>) => 
     </div>
 );
 
-const ControlComponentAnchor = styled.a`
+const ControlComponentAnchor = styled.button.attrs({type: 'button'})`
     position: relative;
     top: -4px;
     display: inline-block;
+    padding: 0;
+    border: 0;
+    background: none;
     margin: 0 0 8px 12px;
     font-size: 12px;
     font-weight: 600;
+    color: var(--button-bg);
+    cursor: pointer;
 `;
 
 export default MultiSelectActionBar;

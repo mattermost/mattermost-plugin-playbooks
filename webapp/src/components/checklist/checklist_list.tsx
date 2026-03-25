@@ -374,6 +374,19 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
+    // Build an index-based lookup set from selectedItems for efficient checklist iteration
+    const getSelectedIndices = () => {
+        const indices = new Set<string>();
+        selectedItems.forEach(({checklistIndex, itemIndex}) => {
+            indices.add(`${checklistIndex}-${itemIndex}`);
+        });
+        return indices;
+    };
+
+    const isSelectedIndex = (clIdx: number, itemIdx: number) => {
+        return getSelectedIndices().has(`${clIdx}-${itemIdx}`);
+    };
+
     const handleBulkAssign = async (userId: string) => {
         if (playbookRun) {
             const assignPromises: Array<ReturnType<typeof setAssignee>> = [];
@@ -386,7 +399,7 @@ const ChecklistList = ({
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
                 items: cl.items.map((item, itemIdx) => {
-                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                    if (isSelectedIndex(clIdx, itemIdx)) {
                         return {...item, assignee_id: userId};
                     }
                     return item;
@@ -397,7 +410,7 @@ const ChecklistList = ({
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
                 items: cl.items.map((item, itemIdx) => {
-                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                    if (isSelectedIndex(clIdx, itemIdx)) {
                         return {...item, assignee_id: userId};
                     }
                     return item;
@@ -418,7 +431,7 @@ const ChecklistList = ({
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
                 items: cl.items.map((item, itemIdx) => {
-                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                    if (isSelectedIndex(clIdx, itemIdx)) {
                         return {...item, due_date: timestamp};
                     }
                     return item;
@@ -429,7 +442,7 @@ const ChecklistList = ({
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
                 items: cl.items.map((item, itemIdx) => {
-                    if (selectedItems.has(`${clIdx}-${itemIdx}`)) {
+                    if (isSelectedIndex(clIdx, itemIdx)) {
                         return {...item, due_date: timestamp};
                     }
                     return item;
@@ -439,7 +452,7 @@ const ChecklistList = ({
         }
     };
 
-    const handleBulkDelete = () => {
+    const handleBulkDelete = async () => {
         const selectedByChecklist = new Map<number, Set<number>>();
         selectedItems.forEach(({checklistIndex, itemIndex}) => {
             if (!selectedByChecklist.has(checklistIndex)) {
@@ -449,12 +462,13 @@ const ChecklistList = ({
         });
 
         if (playbookRun && playbookRun.type === PlaybookRunType.ChannelChecklist) {
-            selectedByChecklist.forEach((itemIndices, checklistIndex) => {
+            // Delete in descending index order to avoid index shifting
+            for (const [checklistIndex, itemIndices] of selectedByChecklist.entries()) {
                 const sortedIndices = [...itemIndices].sort((a, b) => b - a);
-                sortedIndices.forEach((idx) => {
-                    clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx);
-                });
-            });
+                for (const idx of sortedIndices) {
+                    await clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx); // eslint-disable-line no-await-in-loop
+                }
+            }
         } else {
             const newChecklists = checklists.map((cl, clIdx) => {
                 const selectedIndices = selectedByChecklist.get(clIdx);
@@ -774,7 +788,7 @@ const ChecklistList = ({
                                                     isChannelChecklist={playbookRun?.type === PlaybookRunType.ChannelChecklist}
                                                     allChecklists={checklists}
                                                     onMoveItemToCondition={(itemIndex: number, conditionId: string) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
-                                                    selectedItemKeys={new Set([...selectedItems.keys()].filter((k) => k.startsWith(`${checklistIndex}-`)))}
+                                                    selectedItemKeys={new Set(selectedItems.keys())}
                                                     bulkEditMode={bulkEditMode}
                                                     onItemSelect={onItemSelect}
                                                 />
