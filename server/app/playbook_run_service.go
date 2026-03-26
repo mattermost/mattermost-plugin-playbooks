@@ -4112,7 +4112,12 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		logrus.WithError(err).WithField("channel_id", playbookRun.ChannelID).Error("failed to get channel")
 	}
 
-	s.failedInvitedUserActions(usersFailedToInvite, channel)
+	// For DM/GM channels, silently skip the "failed to invite" message —
+	// invited users from the playbook config may not be channel members,
+	// and users can't be added to DM/GM channels.
+	if channel != nil && !channel.IsGroupOrDirect() {
+		s.failedInvitedUserActions(usersFailedToInvite, channel)
+	}
 
 	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
 	if err != nil {
