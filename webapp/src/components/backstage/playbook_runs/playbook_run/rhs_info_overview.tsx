@@ -9,7 +9,10 @@ import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
 import {GlobalState} from '@mattermost/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {makeGetChannel} from 'mattermost-redux/selectors/entities/channels';
 import {General} from 'mattermost-redux/constants';
+
+const getCompleteChannel = makeGetChannel();
 
 import {
     AccountMultipleOutlineIcon,
@@ -265,6 +268,11 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
     const channelNameRef = useRef<HTMLSpanElement>(null);
     const isChannelNameOverflowing = useTextOverflow(channelNameRef);
 
+    // Get channel with resolved display name (fills in DM/GM display names from profiles)
+    const completeChannel = useSelector((state: GlobalState) => {
+        return channel ? getCompleteChannel(state, channel.id) : undefined;
+    });
+
     // For DM channels, get the teammate to build @username path
     const teammate = useSelector((state: GlobalState) => {
         if (channel?.teammate_id) {
@@ -285,14 +293,18 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
         // Use current team as fallback when run's team_name is empty (DM/GM runs)
         const teamName = runMetadata.team_name || currentTeam?.name || '';
 
-        const displayName = channel.display_name;
+        // Use completeChannel for resolved display name (handles DM/GM)
+        const displayName = completeChannel?.display_name || channel.display_name;
 
-        // Build the full URL path. DM/GM channels are teamless.
+        // Build the full URL path using Mattermost routing conventions:
+        // DM: /{team}/messages/@{username}
+        // GM: /{team}/messages/{channel.name}
+        // Regular: /{team}/channels/{channel.name}
         let channelPath: string;
         if (channel.type === General.DM_CHANNEL && teammate) {
-            channelPath = `/messages/@${teammate.username}`;
+            channelPath = `/${teamName}/messages/@${teammate.username}`;
         } else if (channel.type === General.GM_CHANNEL) {
-            channelPath = `/messages/${channel.id}`;
+            channelPath = `/${teamName}/messages/${channel.name}`;
         } else {
             channelPath = `/${teamName}/channels/${channel.name}`;
         }
