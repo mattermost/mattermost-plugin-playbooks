@@ -4,9 +4,12 @@
 import React, {ComponentProps, useCallback, useMemo} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {General} from 'mattermost-redux/constants';
+import {GlobalState} from '@mattermost/types/store';
 
 import styled from 'styled-components';
 import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
@@ -35,6 +38,15 @@ const LegacyActionsEdit = ({playbook}: Props) => {
     const dispatch = useDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
+
+    // Detect if the linked channel is a DM/GM — certain actions can't work in DM/GM
+    const linkedChannel = useSelector((state: GlobalState) => {
+        if (playbook.channel_mode === 'link_existing_channel' && playbook.channel_id) {
+            return getChannel(state, playbook.channel_id);
+        }
+        return null;
+    });
+    const isLinkedToDMGM = linkedChannel?.type === General.DM_CHANNEL || linkedChannel?.type === General.GM_CHANNEL;
 
     const [
         playbookForCreateChannel,
@@ -170,9 +182,10 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='Not available when linked to a direct or group message channel'/></DMGMHint>}
                     <InviteUsers
-                        disabled={archived}
-                        enabled={playbook.invite_users_enabled}
+                        disabled={archived || isLinkedToDMGM}
+                        enabled={isLinkedToDMGM ? false : playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
@@ -185,9 +198,10 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     />
                 </Setting>
                 <Setting id={'assign-owner'}>
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='Not available when linked to a direct or group message channel'/></DMGMHint>}
                     <AutoAssignOwner
-                        disabled={archived}
-                        enabled={playbook.default_owner_enabled}
+                        disabled={archived || isLinkedToDMGM}
+                        enabled={isLinkedToDMGM ? false : playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
@@ -221,10 +235,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <FormattedMessage defaultMessage='When a participant joins the run'/>
                 </StyledSectionTitle>
                 <Setting id={'participant-joins-run'}>
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='Not available when linked to a direct or group message channel'/></DMGMHint>}
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
-                            isChecked={playbook.create_channel_member_on_new_participant}
+                            disabled={archived || isLinkedToDMGM}
+                            isChecked={isLinkedToDMGM ? false : playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
                                     createChannelMemberOnNewParticipant: !playbook.create_channel_member_on_new_participant,
@@ -243,10 +258,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <FormattedMessage defaultMessage='When a participant leaves the run'/>
                 </StyledSectionTitle>
                 <Setting id={'participant-leaves-run'}>
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='Not available when linked to a direct or group message channel'/></DMGMHint>}
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
-                            isChecked={playbook.remove_channel_member_on_removed_participant}
+                            disabled={archived || isLinkedToDMGM}
+                            isChecked={isLinkedToDMGM ? false : playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({
                                     removeChannelMemberOnRemovedParticipant: !playbook.remove_channel_member_on_removed_participant,
@@ -284,6 +300,12 @@ const StyledSectionTitle = styled(SectionTitle)`
     svg {
         color: rgba(var(--center-channel-color-rgb), 0.48);
     }
+`;
+
+const DMGMHint = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 12px;
+    font-style: italic;
 `;
 
 const Setting = styled.div`

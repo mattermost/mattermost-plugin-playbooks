@@ -164,16 +164,16 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
     });
 
     // -----------------------------------------------------------
-    // AC4: Playbook run gate — rejects via API
+    // AC4: Playbook run creation accepted in GM via API
     // -----------------------------------------------------------
-    it('rejects playbook run creation in a GM via API', () => {
+    it('allows playbook run creation in a GM via API', () => {
         cy.apiRunPlaybook({
             teamId: testTeam.id,
             playbookId: testPlaybook.id,
-            playbookRunName: 'Gated GM run ' + Date.now(),
+            playbookRunName: 'GM playbook run ' + Date.now(),
             ownerUserId: testUser.id,
             channelId: gmChannel.id,
-        }, {expectedStatusCode: 400});
+        });
     });
 
     // -----------------------------------------------------------

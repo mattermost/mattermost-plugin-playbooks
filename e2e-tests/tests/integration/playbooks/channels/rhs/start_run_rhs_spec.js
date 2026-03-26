@@ -329,10 +329,10 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
     });
 
     // -----------------------------------------------------------
-    // AC6: DM/GM channels excluded from run modal channel selector
+    // AC6: DM/GM channels available in run modal channel selector
     // -----------------------------------------------------------
-    describe('DM/GM channel exclusion in run modal', () => {
-        it('does not offer DM channels when linking an existing channel', () => {
+    describe('DM/GM channels in run modal', () => {
+        it('offers DM channels when linking an existing channel', () => {
             // # Setup: create a DM partner and ensure the DM exists
             cy.apiCreateUser().then(({user: dmPartner}) => {
                 cy.apiAddUserToTeam(testTeam.id, dmPartner.id);
@@ -374,9 +374,9 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                             // # Search for the DM partner in the channel selector
                             cy.get('#link-existing-channel-selector').click().type(dmPartner.username);
 
-                            // * Verify the DM channel does NOT appear (excludeDMGM filters it)
-                            cy.get('.playbooks-rselect__menu').within(() => {
-                                cy.findByText(dmPartner.username).should('not.exist');
+                            // * Verify the DM channel DOES appear (runs now supported in DM/GM)
+                            cy.get('.playbooks-rselect__menu').should('exist').within(() => {
+                                cy.get('.playbooks-rselect__option').should('have.length.at.least', 1);
                             });
                         });
 

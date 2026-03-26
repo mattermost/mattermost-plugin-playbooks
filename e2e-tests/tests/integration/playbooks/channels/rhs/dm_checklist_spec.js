@@ -153,17 +153,17 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
     });
 
     // -----------------------------------------------------------
-    // AC4: Playbook run gate — rejects via API
+    // AC4: Playbook run creation accepted in DM via API
     // -----------------------------------------------------------
-    it('rejects playbook run creation in a DM via API', () => {
+    it('allows playbook run creation in a DM via API', () => {
         cy.apiCreateDirectChannel([testUser.id, dmPartner.id]).then(({channel}) => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPlaybook.id,
-                playbookRunName: 'Gated DM run ' + Date.now(),
+                playbookRunName: 'DM playbook run ' + Date.now(),
                 ownerUserId: testUser.id,
                 channelId: channel.id,
-            }, {expectedStatusCode: 400});
+            });
         });
     });
 

@@ -10,7 +10,9 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
 
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {General} from 'mattermost-redux/constants';
+import {GlobalState} from '@mattermost/types/store';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {usePlaybook} from 'src/graphql/hooks';
@@ -107,6 +109,12 @@ const RunPlaybookModal = ({
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
     const isFormValid = runName !== '' && runName.length <= RUN_NAME_MAX_LENGTH && (createNewChannel || channelId !== '');
+
+    // Detect if the selected channel is DM/GM — some automations won't apply
+    const selectedChannel = useSelector((state: GlobalState) => {
+        return linkExistingChannel && channelId ? getChannel(state, channelId) : null;
+    });
+    const isLinkedToDMGM = selectedChannel?.type === General.DM_CHANNEL || selectedChannel?.type === General.GM_CHANNEL;
 
     const handleSetChannelMode = (mode: 'link_existing_channel' | 'create_new_channel') => {
         setChannelMode(mode);
@@ -209,6 +217,11 @@ const RunPlaybookModal = ({
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
                     />
+                    {isLinkedToDMGM && (
+                        <DMGMHint>
+                            <FormattedMessage defaultMessage='Some playbook automations (invite participants, assign owner, participant channel actions) are not available for direct and group message channels.'/>
+                        </DMGMHint>
+                    )}
                 </Body>
             </StyledGenericModal>
         );
@@ -383,6 +396,17 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
         </ChannelContainer>
     );
 };
+
+const DMGMHint = styled.div`
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    font-style: italic;
+    line-height: 16px;
+`;
 
 const StyledGenericModal = styled(GenericModal)`
     &&& {
