@@ -1086,7 +1086,7 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 
 	// 1. Is the user a participant of the run?
 	// 2. Is the playbook open to everyone on the team, or is the user a member of the playbook?
-	//    If so, they have permission to view the run.
+	//    Playbook runs in DM/GM are visible to playbook members (same as regular channels).
 	// 3. For channelChecklists (runs without a playbook), is the user a member of the channel?
 	return sq.Expr(`
         ((
@@ -1172,7 +1172,8 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sq
 
 	if info.IsAdmin {
 		if teamID != "" {
-			// Admin sees all runs in the selected team, plus all DM/GM runs
+			// Admin sees all runs in the selected team, plus DM/GM runs.
+			// Channel membership for DM/GM is enforced by buildPermissionsExpr.
 			if isDMGMRun != nil {
 				return sq.Or{filterToSelectedTeam, isDMGMRun}
 			}
