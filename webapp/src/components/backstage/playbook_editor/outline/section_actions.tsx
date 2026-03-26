@@ -182,7 +182,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
-                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                     <InviteUsers
                         disabled={archived}
                         enabled={playbook.invite_users_enabled}
@@ -196,9 +195,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
                         onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                 </Setting>
                 <Setting id={'assign-owner'}>
-                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                     <AutoAssignOwner
                         disabled={archived}
                         enabled={playbook.default_owner_enabled}
@@ -208,6 +207,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         ownerID={playbook.default_owner_id}
                         onAssignOwner={handleAssignDefaultOwner}
                     />
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
@@ -235,7 +235,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <FormattedMessage defaultMessage='When a participant joins the run'/>
                 </StyledSectionTitle>
                 <Setting id={'participant-joins-run'}>
-                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                     <AutomationTitle>
                         <Toggle
                             disabled={archived}
@@ -249,6 +248,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                             <FormattedMessage defaultMessage='Add them to the run channel'/>
                         </Toggle>
                     </AutomationTitle>
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                 </Setting>
             </StyledSection>
 
@@ -258,7 +258,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <FormattedMessage defaultMessage='When a participant leaves the run'/>
                 </StyledSectionTitle>
                 <Setting id={'participant-leaves-run'}>
-                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                     <AutomationTitle>
                         <Toggle
                             disabled={archived}
@@ -272,6 +271,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                             <FormattedMessage defaultMessage='Remove them from the run channel'/>
                         </Toggle>
                     </AutomationTitle>
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                 </Setting>
             </StyledSection>
         </>
