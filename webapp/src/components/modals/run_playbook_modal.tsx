@@ -219,12 +219,8 @@ const RunPlaybookModal = ({
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
+                        isLinkedToDMGM={isLinkedToDMGM}
                     />
-                    {isLinkedToDMGM && (
-                        <DMGMHint>
-                            <FormattedMessage defaultMessage='When linked to a direct or group message channel: the owner will be you (the run starter), participant invitations and adding/removing participants from the channel will not apply.'/>
-                        </DMGMHint>
-                    )}
                 </Body>
             </StyledGenericModal>
         );
@@ -314,12 +310,13 @@ type channelProps = {
     channelMode: string;
     channelId: string;
     createPublicRun: boolean;
+    isLinkedToDMGM: boolean;
     onSetCreatePublicRun: (val: boolean) => void;
     onSetChannelMode: (mode: 'link_existing_channel' | 'create_new_channel') => void;
     onSetChannelId: (channelId: string) => void;
 };
 
-const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, isLinkedToDMGM, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
     const {formatMessage} = useIntl();
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';
@@ -335,20 +332,27 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
             {linkExistingChannel && (
-                <SelectorWrapper>
-                    <StyledChannelSelector
-                        id={'link-existing-channel-selector'}
-                        onChannelSelected={(channel_id: string) => onSetChannelId(channel_id)}
-                        channelIds={channelId ? [channelId] : []}
-                        isClearable={true}
-                        selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                        isDisabled={false}
-                        captureMenuScroll={false}
-                        shouldRenderValue={true}
-                        teamId={teamId}
-                        isMulti={false}
-                    />
-                </SelectorWrapper>
+                <>
+                    <SelectorWrapper>
+                        <StyledChannelSelector
+                            id={'link-existing-channel-selector'}
+                            onChannelSelected={(channel_id: string) => onSetChannelId(channel_id)}
+                            channelIds={channelId ? [channelId] : []}
+                            isClearable={true}
+                            selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                            isDisabled={false}
+                            captureMenuScroll={false}
+                            shouldRenderValue={true}
+                            teamId={teamId}
+                            isMulti={false}
+                        />
+                    </SelectorWrapper>
+                    {isLinkedToDMGM && (
+                        <DMGMHint>
+                            <FormattedMessage defaultMessage='When linked to a direct or group message channel: the owner will be you (the run starter), participant invitations and adding/removing participants from the channel will not apply.'/>
+                        </DMGMHint>
+                    )}
+                </>
             )}
 
             <ChannelBlock >
