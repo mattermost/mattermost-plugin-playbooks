@@ -44,6 +44,8 @@ import {
     setAssignee,
     updatePlaybookCondition,
 } from 'src/client';
+import {ToastStyle} from 'src/components/backstage/toast';
+import {useToaster} from 'src/components/backstage/toast_banner';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {usePlaybookAttributes, useProxyState} from 'src/hooks';
@@ -109,6 +111,7 @@ const ChecklistList = ({
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
+    const {add: addToast} = useToaster();
 
     type SelectedItemInfo = {checklistIndex: number; itemIndex: number; item: ChecklistItem};
     const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItemInfo>>(new Map());
@@ -396,13 +399,23 @@ const ChecklistList = ({
 
     const handleBulkAssign = async (userId: string) => {
         if (playbookRun) {
-            const assignPromises: Array<ReturnType<typeof setAssignee>> = [];
-            selectedItems.forEach(({checklistIndex, itemIndex}) => {
-                assignPromises.push(setAssignee(playbookRun.id, checklistIndex, itemIndex, userId));
-            });
-            await Promise.all(assignPromises);
+            const results = await Promise.allSettled(
+                [...selectedItems.values()].map(({checklistIndex, itemIndex}) =>
+                    setAssignee(playbookRun.id, checklistIndex, itemIndex, userId),
+                ),
+            );
+            const failures = results.filter((r) => r.status === 'rejected');
+            if (failures.length > 0) {
+                addToast({
+                    content: formatMessage(
+                        {defaultMessage: 'Failed to assign {count} of {total} tasks'},
+                        {count: failures.length, total: results.length},
+                    ),
+                    toastStyle: ToastStyle.Failure,
+                });
+            }
 
-            // Optimistically update the store
+            // Update the store for all items (server state is source of truth on next sync)
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
                 items: cl.items.map((item, itemIdx) => {
@@ -429,11 +442,21 @@ const ChecklistList = ({
 
     const handleBulkDueDate = async (timestamp: number) => {
         if (playbookRun) {
-            const dueDatePromises: Array<ReturnType<typeof clientSetDueDate>> = [];
-            selectedItems.forEach(({checklistIndex, itemIndex}) => {
-                dueDatePromises.push(clientSetDueDate(playbookRun.id, checklistIndex, itemIndex, timestamp));
-            });
-            await Promise.all(dueDatePromises);
+            const results = await Promise.allSettled(
+                [...selectedItems.values()].map(({checklistIndex, itemIndex}) =>
+                    clientSetDueDate(playbookRun.id, checklistIndex, itemIndex, timestamp),
+                ),
+            );
+            const failures = results.filter((r) => r.status === 'rejected');
+            if (failures.length > 0) {
+                addToast({
+                    content: formatMessage(
+                        {defaultMessage: 'Failed to update due date for {count} of {total} tasks'},
+                        {count: failures.length, total: results.length},
+                    ),
+                    toastStyle: ToastStyle.Failure,
+                });
+            }
 
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
@@ -470,11 +493,27 @@ const ChecklistList = ({
 
         if (playbookRun && playbookRun.type === PlaybookRunType.ChannelChecklist) {
             // Delete in descending index order to avoid index shifting
+            let deleteFailures = 0;
+            let deleteTotal = 0;
             for (const [checklistIndex, itemIndices] of selectedByChecklist.entries()) {
                 const sortedIndices = [...itemIndices].sort((a, b) => b - a);
                 for (const idx of sortedIndices) {
-                    await clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx); // eslint-disable-line no-await-in-loop
+                    deleteTotal++;
+                    try {
+                        await clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx); // eslint-disable-line no-await-in-loop
+                    } catch {
+                        deleteFailures++;
+                    }
                 }
+            }
+            if (deleteFailures > 0) {
+                addToast({
+                    content: formatMessage(
+                        {defaultMessage: 'Failed to delete {count} of {total} tasks'},
+                        {count: deleteFailures, total: deleteTotal},
+                    ),
+                    toastStyle: ToastStyle.Failure,
+                });
             }
         } else {
             const newChecklists = checklists.map((cl, clIdx) => {
