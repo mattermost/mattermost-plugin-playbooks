@@ -7,7 +7,6 @@ import styled from 'styled-components';
 import ReactSelect, {StylesConfig, ValueType} from 'react-select';
 import {useSelector} from 'react-redux';
 import {getMyChannels} from 'mattermost-redux/selectors/entities/channels';
-import General from 'mattermost-redux/constants/general';
 
 import {Channel} from '@mattermost/types/channels';
 import {GlobalState} from '@mattermost/types/store';
@@ -25,8 +24,8 @@ export interface Props {
     broadcastEnabled: boolean;
 }
 
-const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
-    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL && channel.delete_at === 0,
+const getMySelectableChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
+    channel.delete_at === 0,
 );
 
 const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
@@ -66,7 +65,7 @@ const sortChannels = (allChannels: Channel[], selectedChannelIds: string[]): Cha
 
 const BroadcastChannels = (props: Props) => {
     const {formatMessage} = useIntl();
-    const selectableChannels = sortChannels(useSelector(getMyPublicAndPrivateChannels), props.channelIds);
+    const selectableChannels = sortChannels(useSelector(getMySelectableChannels), props.channelIds);
 
     const target = (
         <div >
