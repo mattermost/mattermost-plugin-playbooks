@@ -1069,7 +1069,18 @@ func (s *playbookRunStore) SetBroadcastChannelIDsToRootID(playbookRunID string, 
 
 func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqlizer {
 	if info.IsAdmin {
-		return nil
+		// Admins see all team-based runs and checklists (pre-existing behavior).
+		// For DM/GM checklists (no playbook, no team), require channel membership —
+		// admins can't access DM/GM channels they're not a member of.
+		// DM/GM playbook runs remain visible (playbook access applies).
+		return sq.Expr(`
+			(i.TeamID IS NOT NULL AND i.TeamID != '')
+			OR (i.PlaybookID != '' AND i.PlaybookID IS NOT NULL)
+			OR EXISTS(SELECT 1
+				FROM ChannelMembers as cm
+				WHERE cm.ChannelId = i.ChannelID
+				  AND cm.UserId = ?)
+		`, info.UserID)
 	}
 
 	// Guests must be participants
