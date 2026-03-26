@@ -219,7 +219,7 @@ const RunPlaybookModal = ({
                     />
                     {isLinkedToDMGM && (
                         <DMGMHint>
-                            <FormattedMessage defaultMessage='Some playbook automations (invite participants, assign owner, participant channel actions) are not available for direct and group message channels.'/>
+                            <FormattedMessage defaultMessage='Some automations will not apply when linked to a direct or group message channel: invite participants, auto-assign owner, and adding/removing participants from the channel.'/>
                         </DMGMHint>
                     )}
                 </Body>
