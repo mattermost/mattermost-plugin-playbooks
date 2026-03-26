@@ -179,10 +179,17 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
                 cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'A-' + ts, ownerUserId: testUser.id, channelId: channel.id});
                 cy.apiRunPlaybook({teamId: '', playbookId: '', playbookRunName: 'B-' + ts, ownerUserId: testUser.id, channelId: channel.id});
 
-                // # Navigate and open RHS
+                // # Navigate to the DM — RHS may auto-open since DM/GM runs
+                // are now visible in team-scoped queries
                 cy.visit(`/${testTeam.name}/messages/@${dropdownPartner.username}`);
                 cy.get('#post_textbox').should('exist');
-                cy.getPlaybooksAppBarIcon().should('exist').click();
+
+                // # Ensure the RHS is open (click app bar only if not already open)
+                cy.get('body').then(($body) => {
+                    if ($body.find('[data-testid="run-list-card"]').length === 0) {
+                        cy.getPlaybooksAppBarIcon().should('exist').click();
+                    }
+                });
 
                 // * Verify the list view is showing (multiple runs = list, not detail)
                 cy.get('[data-testid="run-list-card"]').should('have.length.at.least', 2);
@@ -223,10 +230,16 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
                     cy.visit(`/${testTeam.name}/messages/@${targetPartner.username}`);
                     cy.get('#post_textbox').should('exist');
 
-                    // # Navigate to the source DM and open RHS
+                    // # Navigate to the source DM — RHS may auto-open
                     cy.visit(`/${testTeam.name}/messages/@${movePartner.username}`);
                     cy.get('#post_textbox').should('exist');
-                    cy.getPlaybooksAppBarIcon().should('exist').click();
+
+                    // # Ensure the RHS is open
+                    cy.get('body').then(($body) => {
+                        if ($body.find('[data-testid="run-list-card"]').length === 0) {
+                            cy.getPlaybooksAppBarIcon().should('exist').click();
+                        }
+                    });
 
                     // * Verify list view
                     cy.findByTestId('rhs-runs-list').should('exist');

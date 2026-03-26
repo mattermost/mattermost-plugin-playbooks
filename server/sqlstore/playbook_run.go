@@ -1172,16 +1172,27 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sq
 
 	if info.IsAdmin {
 		if teamID != "" {
+			// Admin sees all runs in the selected team, plus all DM/GM runs
+			if isDMGMRun != nil {
+				return sq.Or{filterToSelectedTeam, isDMGMRun}
+			}
 			return filterToSelectedTeam
 		}
 		return nil
 	}
 
 	if teamID != "" {
-		return sq.And{
-			filterToSelectedTeam,
-			onlyTeamsUserIsAMember,
+		// Team-scoped view: include runs in the selected team where user is a member,
+		// plus DM/GM runs (teamless) where user is a channel member.
+		// DM/GM runs appear in every team context since they have no team affiliation.
+		teamFilter := sq.And{filterToSelectedTeam, onlyTeamsUserIsAMember}
+		if dmgmChannelMembership != nil {
+			return sq.Or{
+				teamFilter,
+				sq.And{isDMGMRun, dmgmChannelMembership},
+			}
 		}
+		return teamFilter
 	}
 
 	// When no specific team is requested, include runs where:

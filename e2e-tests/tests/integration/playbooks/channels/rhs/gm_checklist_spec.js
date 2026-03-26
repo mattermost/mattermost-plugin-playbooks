@@ -192,7 +192,13 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
 
                     cy.visit(`/${testTeam.name}/messages/${channel.name}`);
                     cy.get('#post_textbox').should('exist');
-                    cy.getPlaybooksAppBarIcon().should('exist').click();
+
+                    // # Ensure the RHS is open (may auto-open for DM/GM)
+                    cy.get('body').then(($body) => {
+                        if ($body.find('[data-testid="run-list-card"]').length === 0) {
+                            cy.getPlaybooksAppBarIcon().should('exist').click();
+                        }
+                    });
 
                     // * Verify list view
                     cy.get('[data-testid="run-list-card"]').should('have.length.at.least', 2);
