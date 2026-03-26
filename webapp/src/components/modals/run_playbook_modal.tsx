@@ -331,7 +331,6 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                         shouldRenderValue={true}
                         teamId={teamId}
                         isMulti={false}
-                        excludeDMGM={true}
                     />
                 </SelectorWrapper>
             )}

@@ -506,10 +506,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 
 		// Only checklists (no playbook) are allowed in DM/GM channels.
-		// Playbook runs in DM/GM will be supported in a future release.
-		if channel.IsGroupOrDirect() && playbookRun.PlaybookID != "" {
-			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook runs are not supported in direct or group message channels")
-		}
 	}
 
 	// Copy data from playbook if needed

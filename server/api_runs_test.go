@@ -2987,14 +2987,13 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
 }
 
-// TestDMGMChannelSupport verifies the gate that rejects playbook runs (PlaybookID != "")
-// in DM/GM channels while allowing plain checklists (PlaybookID == "") in the same channels.
-// MM-66962
+// TestDMGMChannelSupport verifies that both playbook runs and plain checklists
+// can be created in DM/GM channels. MM-66962
 func TestDMGMChannelSupport(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("playbook run rejected in DM channel", func(t *testing.T) {
+	t.Run("playbook run accepted in DM channel", func(t *testing.T) {
 		dmChannel, _, err := e.ServerAdminClient.CreateDirectChannel(context.Background(), e.RegularUser.Id, e.RegularUser2.Id)
 		require.NoError(t, err)
 
@@ -3005,8 +3004,9 @@ func TestDMGMChannelSupport(t *testing.T) {
 			PlaybookID:  e.BasicPlaybook.ID,
 			ChannelID:   dmChannel.Id,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-		assert.Nil(t, run)
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		assert.Equal(t, dmChannel.Id, run.ChannelID)
 	})
 
 	t.Run("checklist accepted in DM channel", func(t *testing.T) {
@@ -3024,7 +3024,7 @@ func TestDMGMChannelSupport(t *testing.T) {
 		assert.Equal(t, dmChannel.Id, run.ChannelID)
 	})
 
-	t.Run("playbook run rejected in GM channel", func(t *testing.T) {
+	t.Run("playbook run accepted in GM channel", func(t *testing.T) {
 		gmChannel, _, err := e.ServerAdminClient.CreateGroupChannel(context.Background(), []string{e.RegularUser.Id, e.RegularUser2.Id, e.AdminUser.Id})
 		require.NoError(t, err)
 
@@ -3035,8 +3035,9 @@ func TestDMGMChannelSupport(t *testing.T) {
 			PlaybookID:  e.BasicPlaybook.ID,
 			ChannelID:   gmChannel.Id,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-		assert.Nil(t, run)
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		assert.Equal(t, gmChannel.Id, run.ChannelID)
 	})
 
 	t.Run("checklist accepted in GM channel", func(t *testing.T) {

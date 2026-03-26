@@ -204,15 +204,12 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		}
 
 		// Channel linking validation:
-		// - Playbook runs cannot be moved to DM/GM channels (only checklists can)
-		// - Checklists can move to DM/GM (TeamID updated to empty)
+		// - Any run/checklist can move to DM/GM (TeamID updated to empty)
+		// - DM/GM runs moving to team channels get TeamID updated
 		// - Team channels must be in the same team as the run
 		emptyTeamID := ""
 		if channel.IsGroupOrDirect() {
-			if playbookRun.Type == app.RunTypePlaybook {
-				return "", errors.Wrap(app.ErrMalformedPlaybookRun, "playbook runs cannot be moved to direct or group message channels")
-			}
-			// Checklist moving to a DM/GM channel — update TeamID to empty
+			// Moving to a DM/GM channel — update TeamID to empty
 			addToSetmap(setmap, "TeamID", &emptyTeamID)
 		} else if playbookRun.TeamID == "" {
 			// DM/GM run moving to a team channel — update TeamID to the channel's team
