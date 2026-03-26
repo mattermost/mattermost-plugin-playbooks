@@ -71,10 +71,8 @@ const RunPlaybookModal = ({
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
     const currentChannelId = useSelector(getCurrentChannelId);
-    let userId = useSelector(getCurrentUserId);
-    if (playbook?.default_owner_enabled && playbook.default_owner_id) {
-        userId = playbook.default_owner_id;
-    }
+    const currentUserId = useSelector(getCurrentUserId);
+    let userId = currentUserId;
 
     useEffect(() => {
         if (playbook?.channel_mode === 'create_new_channel') {
@@ -115,6 +113,11 @@ const RunPlaybookModal = ({
         return linkExistingChannel && channelId ? getChannel(state, channelId) : null;
     });
     const isLinkedToDMGM = selectedChannel?.type === General.DM_CHANNEL || selectedChannel?.type === General.GM_CHANNEL;
+
+    // Apply default owner from playbook, unless linking to DM/GM (owner = run starter)
+    if (!isLinkedToDMGM && playbook?.default_owner_enabled && playbook.default_owner_id) {
+        userId = playbook.default_owner_id;
+    }
 
     const handleSetChannelMode = (mode: 'link_existing_channel' | 'create_new_channel') => {
         setChannelMode(mode);
@@ -219,7 +222,7 @@ const RunPlaybookModal = ({
                     />
                     {isLinkedToDMGM && (
                         <DMGMHint>
-                            <FormattedMessage defaultMessage='Adding or removing participants from the channel will not apply when linked to a direct or group message channel.'/>
+                            <FormattedMessage defaultMessage='When linked to a direct or group message channel: the owner will be you (the run starter), and adding/removing participants from the channel will not apply.'/>
                         </DMGMHint>
                     )}
                 </Body>

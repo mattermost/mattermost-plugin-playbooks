@@ -206,6 +206,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         ownerID={playbook.default_owner_id}
                         onAssignOwner={handleAssignDefaultOwner}
                     />
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='When linked to a direct or group message channel, the owner will be the user who starts the run.'/></DMGMHint>}
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
