@@ -195,6 +195,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
                         onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
+                    {isLinkedToDMGM && <DMGMHint><FormattedMessage defaultMessage='This action will not apply when a run is linked to a direct or group message channel.'/></DMGMHint>}
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner

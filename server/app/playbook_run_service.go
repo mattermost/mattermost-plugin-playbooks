@@ -528,47 +528,51 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, err
 	}
 
-	invitedUserIDs := playbookRun.InvitedUserIDs
+	// Skip invite-on-start for DM/GM channels — users can't be added to DM/GM,
+	// and the playbook's invited user list is team-scoped.
+	if !channel.IsGroupOrDirect() {
+		invitedUserIDs := playbookRun.InvitedUserIDs
 
-	for _, groupID := range playbookRun.InvitedGroupIDs {
-		groupLogger := logger.WithField("group_id", groupID)
+		for _, groupID := range playbookRun.InvitedGroupIDs {
+			groupLogger := logger.WithField("group_id", groupID)
 
-		var group *model.Group
-		group, err = s.pluginAPI.Group.Get(groupID)
-		if err != nil {
-			groupLogger.WithError(err).Error("failed to query group")
-			continue
-		}
-
-		if !group.AllowReference {
-			groupLogger.Warn("group that does not allow references")
-			continue
-		}
-
-		perPage := 1000
-		for page := 0; ; page++ {
-			var users []*model.User
-			users, err = s.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
+			var group *model.Group
+			group, err = s.pluginAPI.Group.Get(groupID)
 			if err != nil {
 				groupLogger.WithError(err).Error("failed to query group")
-				break
-			}
-			for _, user := range users {
-				invitedUserIDs = append(invitedUserIDs, user.Id)
+				continue
 			}
 
-			if len(users) < perPage {
-				break
+			if !group.AllowReference {
+				groupLogger.Warn("group that does not allow references")
+				continue
+			}
+
+			perPage := 1000
+			for page := 0; ; page++ {
+				var users []*model.User
+				users, err = s.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
+				if err != nil {
+					groupLogger.WithError(err).Error("failed to query group")
+					break
+				}
+				for _, user := range users {
+					invitedUserIDs = append(invitedUserIDs, user.Id)
+				}
+
+				if len(users) < perPage {
+					break
+				}
 			}
 		}
-	}
 
-	err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
-	if err != nil {
-		logrus.WithError(err).WithFields(map[string]any{
-			"playbookRunId":  playbookRun.ID,
-			"invitedUserIDs": invitedUserIDs,
-		}).Warn("failed to add invited users on playbook run creation")
+		err = s.AddParticipants(playbookRun.ID, invitedUserIDs, playbookRun.ReporterUserID, false, true)
+		if err != nil {
+			logrus.WithError(err).WithFields(map[string]any{
+				"playbookRunId":  playbookRun.ID,
+				"invitedUserIDs": invitedUserIDs,
+			}).Warn("failed to add invited users on playbook run creation")
+		}
 	}
 
 	var reporter *model.User

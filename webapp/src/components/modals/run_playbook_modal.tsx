@@ -222,7 +222,7 @@ const RunPlaybookModal = ({
                     />
                     {isLinkedToDMGM && (
                         <DMGMHint>
-                            <FormattedMessage defaultMessage='When linked to a direct or group message channel: the owner will be you (the run starter), and adding/removing participants from the channel will not apply.'/>
+                            <FormattedMessage defaultMessage='When linked to a direct or group message channel: the owner will be you (the run starter), participant invitations and adding/removing participants from the channel will not apply.'/>
                         </DMGMHint>
                     )}
                 </Body>
