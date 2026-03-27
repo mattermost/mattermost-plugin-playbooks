@@ -14,7 +14,9 @@ import {General} from 'mattermost-redux/constants';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {useManageRunMembership} from 'src/graphql/hooks';
+import {usePlaybook} from 'src/hooks/crud';
 
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 
@@ -42,13 +44,19 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
-    // Track if channel is DM/GM - participants are limited to channel members
-    const isDMGM = channel?.type === General.DM_CHANNEL || channel?.type === General.GM_CHANNEL;
+    // For DM/GM checklists, participants are limited to channel members.
+    // Playbook runs in DM/GM use the playbook's team for search scope.
+    const isChannelDMGM = channel?.type === General.DM_CHANNEL || channel?.type === General.GM_CHANNEL;
+    const isDMGMChecklist = isChannelDMGM && playbookRun.type === PlaybookRunType.ChannelChecklist;
     const [channelMembers, setChannelMembers] = useState<UserProfile[]>([]);
+
+    // For DM/GM playbook runs, get the playbook's team to scope member search
+    const [playbook] = usePlaybook(isChannelDMGM && playbookRun.playbook_id ? playbookRun.playbook_id : undefined);
+    const effectiveTeamId = playbookRun.team_id || playbook?.team_id || '';
 
     // For DM/GM channels, fetch channel members once
     useEffect(() => {
-        if (isDMGM && playbookRun.channel_id) {
+        if (isDMGMChecklist && playbookRun.channel_id) {
             dispatch(getProfilesInChannel(playbookRun.channel_id, 0, 100) as any)
                 .then((result: {data?: UserProfile[]}) => {
                     if (result?.data) {
@@ -56,12 +64,12 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
                     }
                 });
         }
-    }, [isDMGM, playbookRun.channel_id, dispatch]);
+    }, [isDMGMChecklist, playbookRun.channel_id, dispatch]);
 
-    // For DM/GM runs, filter channel members locally (can't add non-members to DM/GM)
-    // For team-based runs, filter by team membership via server search
+    // For DM/GM checklists, filter channel members locally (can't add non-members)
+    // For playbook runs (including DM/GM), search by team membership via server
     const searchUsers = (term: string) => {
-        if (isDMGM) {
+        if (isDMGMChecklist) {
             const lowerTerm = term.toLowerCase();
             const filtered = channelMembers.filter((user) =>
                 user.username.toLowerCase().includes(lowerTerm) ||
@@ -72,8 +80,8 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
             return Promise.resolve({data: filtered});
         }
 
-        if (playbookRun.team_id) {
-            return dispatch(searchProfiles(term, {team_id: playbookRun.team_id}));
+        if (effectiveTeamId) {
+            return dispatch(searchProfiles(term, {team_id: effectiveTeamId}));
         }
         return dispatch(searchProfiles(term));
     };
@@ -92,7 +100,7 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const renderFooter = () => {
         // For DM/GM channels, don't show "add to channel" options since
         // you can't add members to DM/GM channels
-        if (isDMGM) {
+        if (isChannelDMGM) {
             return null;
         }
         if (playbookRun.create_channel_member_on_new_participant) {
@@ -155,14 +163,14 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
         >
             <ProfileAutocomplete
                 searchProfiles={searchUsers}
-                getProfiles={isDMGM ? getChannelMembersProfiles : undefined}
+                getProfiles={isDMGMChecklist ? getChannelMembersProfiles : undefined}
                 userIds={playbookRun.participant_ids}
                 isDisabled={false}
                 isMultiMode={true}
-                showDefaultOptions={isDMGM}
+                showDefaultOptions={isDMGMChecklist}
                 customSelectStyles={selectStyles}
                 setValues={setProfiles}
-                placeholder={isDMGM ?
+                placeholder={isDMGMChecklist ?
                     formatMessage({defaultMessage: 'Select channel members'}) :
                     formatMessage({defaultMessage: 'Search for people'})
                 }

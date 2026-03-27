@@ -4087,18 +4087,31 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		originalRun = playbookRun.Clone()
 	}
 
-	// Ensure new participants are team members (for team-based runs) or channel members (for DM/GM runs)
+	// Resolve effective team ID for membership checks.
+	// DM/GM playbook runs have empty TeamID — use the playbook's team instead.
+	effectiveTeamID := playbookRun.TeamID
+	if effectiveTeamID == "" && playbookRun.PlaybookID != "" {
+		if pb, pbErr := s.playbookService.Get(playbookRun.PlaybookID); pbErr == nil {
+			effectiveTeamID = pb.TeamID
+		}
+	}
+
+	isDMGMChecklist := playbookRun.TeamID == "" && playbookRun.PlaybookID == ""
+
+	// Ensure new participants have appropriate membership:
+	// - DM/GM checklists (no playbook): channel membership required
+	// - All other runs: team membership required (resolved from playbook for DM/GM runs)
 	for _, userID := range userIDs {
-		if playbookRun.TeamID == "" {
-			// For DM/GM runs, check channel membership instead of team membership
+		if isDMGMChecklist {
+			// DM/GM checklist — check channel membership
 			if _, err = s.pluginAPI.Channel.GetMember(playbookRun.ChannelID, userID); err != nil {
 				usersFailedToInvite = append(usersFailedToInvite, userID)
 				continue
 			}
-		} else {
-			// For team-based runs, check team membership
+		} else if effectiveTeamID != "" {
+			// Team-based or DM/GM playbook run — check team membership
 			var member *model.TeamMember
-			member, err = s.pluginAPI.Team.GetMember(playbookRun.TeamID, userID)
+			member, err = s.pluginAPI.Team.GetMember(effectiveTeamID, userID)
 			if err != nil || member.DeleteAt != 0 {
 				usersFailedToInvite = append(usersFailedToInvite, userID)
 				continue
