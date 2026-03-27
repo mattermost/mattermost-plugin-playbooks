@@ -1145,6 +1145,8 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sq
 	var onlyTeamsUserIsAMember sq.Sqlizer
 	var isDMGMRun sq.Sqlizer
 	var dmgmChannelMembership sq.Sqlizer
+	var isDMGMChecklist sq.Sqlizer
+	var isDMGMPlaybookRunInTeam sq.Sqlizer
 
 	switch tableAlias {
 	case tableAliasIncident:
@@ -1163,6 +1165,13 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sq
 						WHERE cm.ChannelId = i.ChannelID
 						  AND cm.UserId = ?)
 			`, info.UserID)
+		// DM/GM checklists (no playbook) are cross-team — show in any team context
+		isDMGMChecklist = sq.Expr(`(i.PlaybookID = '' OR i.PlaybookID IS NULL)`)
+		// DM/GM playbook runs — only show in the team that owns the playbook
+		isDMGMPlaybookRunInTeam = sq.Expr(`
+			(i.PlaybookID != '' AND i.PlaybookID IS NOT NULL AND
+			EXISTS(SELECT 1 FROM IR_Playbook AS pb WHERE pb.ID = i.PlaybookID AND pb.TeamID = ?))
+			`, teamID)
 
 	case tableAliasPlaybook:
 		filterToSelectedTeam = sq.Eq{"p.TeamID": teamID}
@@ -1176,6 +1185,8 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sq
 		// Playbooks don't support DM/GM, so these are not needed
 		isDMGMRun = nil
 		dmgmChannelMembership = nil
+		isDMGMChecklist = nil
+		isDMGMPlaybookRunInTeam = nil
 
 	default:
 		panic("invalid table alias for buildTeamLimitExpr")
@@ -1183,10 +1194,13 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sq
 
 	if info.IsAdmin {
 		if teamID != "" {
-			// Admin sees all runs in the selected team, plus DM/GM runs.
-			// Channel membership for DM/GM is enforced by buildPermissionsExpr.
 			if isDMGMRun != nil {
-				return sq.Or{filterToSelectedTeam, isDMGMRun}
+				// Admin: team runs + DM/GM checklists (cross-team) + DM/GM playbook runs (same team)
+				return sq.Or{
+					filterToSelectedTeam,
+					sq.And{isDMGMRun, isDMGMChecklist},
+					sq.And{isDMGMRun, isDMGMPlaybookRunInTeam},
+				}
 			}
 			return filterToSelectedTeam
 		}
@@ -1194,14 +1208,14 @@ func buildTeamLimitExpr(info app.RequesterInfo, teamID, tableAlias string) sq.Sq
 	}
 
 	if teamID != "" {
-		// Team-scoped view: include runs in the selected team where user is a member,
-		// plus DM/GM runs (teamless) where user is a channel member.
-		// DM/GM runs appear in every team context since they have no team affiliation.
 		teamFilter := sq.And{filterToSelectedTeam, onlyTeamsUserIsAMember}
 		if dmgmChannelMembership != nil {
+			// Non-admin: team runs (member) + DM/GM checklists (channel member, cross-team)
+			// + DM/GM playbook runs (channel member, same playbook team only)
 			return sq.Or{
 				teamFilter,
-				sq.And{isDMGMRun, dmgmChannelMembership},
+				sq.And{isDMGMRun, isDMGMChecklist, dmgmChannelMembership},
+				sq.And{isDMGMRun, isDMGMPlaybookRunInTeam, dmgmChannelMembership},
 			}
 		}
 		return teamFilter
