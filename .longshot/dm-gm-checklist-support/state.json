@@ -1,0 +1,25 @@
+{
+  "feature": "dm-gm-channel-support",
+  "input": "Enable checklists AND playbook runs in DM/GM channels. Certain playbook automations are disabled or annotated for DM/GM. Backstage visibility includes DM/GM items with proper team scoping and permissions.",
+  "profile": "mattermost-plugin-playbooks",
+  "status": "in_progress",
+  "branch": "MM-66962-dm-gm-channel-support",
+  "jira": "MM-66962",
+  "current_phase": 4,
+  "current_task": null,
+  "phases": {
+    "0-setup": {"status": "complete", "timestamp": "2026-03-19T00:00:00Z"},
+    "1-requirements": {"status": "complete", "timestamp": "2026-03-19T00:00:00Z", "notes": "Spec pivoted multiple times: checklists-only → runs+checklists. Final scope in spec.md."},
+    "2-plan": {"status": "complete", "timestamp": "2026-03-19T00:00:00Z", "notes": "Original plan superseded by iterative implementation. Surface audit in findings/."},
+    "3-implement": {"status": "complete", "timestamp": "2026-03-26T19:00:00Z", "notes": "30+ commits. Full DM/GM support for runs and checklists. Backstage visibility, permissions, editor hints, URL fixes, owner auto-assign, invite skip."},
+    "4-test": {"status": "partial", "timestamp": "2026-03-26T19:00:00Z", "notes": "E2E: 15 tests (dm 8, gm 6, start_run 1). Unit: 4 Go tests. Need E2E re-run after latest changes + manual verification."},
+    "5-quality": {"status": "pending"},
+    "6-review": {"status": "pending"},
+    "7-ship": {"status": "pending"},
+    "8-post-ship": {"status": "pending"}
+  },
+  "commits": [],
+  "checkpoints": [],
+  "created": "2026-03-19T00:00:00Z",
+  "updated": "2026-03-26T19:10:00Z"
+}

@@ -393,14 +393,14 @@ func TestBroadcastFromDMGMRun(t *testing.T) {
 
 1. **Sidebar visibility:** DM/GM checklists don't appear in team-scoped sidebar
 2. **Favorites display:** Favorites stored with empty teamID may not display in UI
-3. **Playbook templates:** Cannot create runs from playbooks in DM/GM (by design)
+3. **DONE: Playbook run gate:** Playbook runs (PlaybookID != "") are rejected server-side in DM/GM channels (API gate). "Run a playbook" remains visible in the dropdown — gating is via the run modal's channel selector (`excludeDMGM` prop) which excludes DM/GM channels.
 4. **DONE: Move channel selector:** Fixed two issues: (1) `rhs_run_list.tsx` was passing current team instead of run's team to the modal - now uses `props.teamID`. (2) `ChannelSelector` now shows unified list of all channels (team + DM/GM) with appropriate icons. Checklists can now move between any channel type.
 5. **TODO: Broadcast channel selector:** In Run Actions modal, "Broadcast update to selected channels" shows no channels when searching/selecting for DM/GM runs. The `BroadcastChannelSelector` uses team-scoped channel fetching which returns empty for DM/GM runs (empty team_id). Fix requires updating to fetch channels differently when team_id is empty.
 6. **DONE: Task assignee in DM:** Fixed by adding `key` prop to `ProfileSelector` in `AssignTo` that forces re-fetch when channel profiles load. Now all channel members appear in assignee options for DM/GM.
 7. **DONE: Add participants default options:** Added `showDefaultOptions` prop to `ProfileAutocomplete`. For DM/GM, channel members now appear immediately when input is focused.
-8. **DONE: Channel link in backstage:** Fixed in `rhs_info_overview.tsx`. Now uses `/messages/{channel_id}` URL format for DM/GM channels and falls back to current team when run's team_name is empty.
-9. **TODO: Update post reminders:** Not receiving update post reminders for DM/GM checklists. Need to investigate reminder scheduling/delivery for runs with empty team_id.
-10. **TODO: Bot message channel links:** Digest and other bot message links to channels don't support DM/GM channel links. URL structure is different for DM/GM (`/messages/@username` or `/messages/channelid`) vs team channels (`/team/channels/name`). Need to update link generation for DM/GM.
+8. **DONE: Channel link in backstage:** Fixed in `rhs_info_overview.tsx`. GM channels now use `/messages/{channel.id}`. DM/GM links omit team prefix. Team-based channels retain `/{teamName}/channels/{name}`.
+9. **DONE: Bot message channel URLs:** Fixed `/messages/@{channelId}` → `/messages/{channelId}` in `reminder.go`, `playbook_run_service.go` (sendWebhooksOnCreation, sendWebhooksOnUpdateStatus). Removed erroneous `@` prefix that was only valid for usernames.
+10. **TODO: Broadcast channel selector:** In Run Actions modal, "Broadcast update to selected channels" shows no channels when searching/selecting for DM/GM runs. The `BroadcastChannelSelector` uses team-scoped channel fetching which returns empty for DM/GM runs (empty team_id). Fix requires updating to fetch channels differently when team_id is empty. (Out of scope for this PR.)
 
 ---
 
