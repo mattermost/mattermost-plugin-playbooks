@@ -15,7 +15,6 @@ import (
 func TestUpdateAt_AddChecklist(t *testing.T) {
 	t.Run("UpdateAt field is set for new checklists", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID:         "playbook1",
 			Checklists: []Checklist{},
 		}
 
@@ -46,7 +45,6 @@ func TestUpdateAt_AddChecklist(t *testing.T) {
 func TestUpdateAt_RenameChecklist(t *testing.T) {
 	t.Run("UpdateAt field is updated when renaming checklist", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -76,7 +74,6 @@ func TestUpdateAt_RenameChecklist(t *testing.T) {
 func TestUpdateAt_AddChecklistItem(t *testing.T) {
 	t.Run("Checklist UpdateAt is updated when adding a new item", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -118,7 +115,6 @@ func TestUpdateAt_AddChecklistItem(t *testing.T) {
 func TestUpdateAt_RemoveChecklistItem(t *testing.T) {
 	t.Run("Checklist UpdateAt is updated when removing an item", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -161,7 +157,6 @@ func TestUpdateAt_RemoveChecklistItem(t *testing.T) {
 func TestUpdateAt_RenameChecklistItem(t *testing.T) {
 	t.Run("Item and checklist UpdateAt fields are updated when renaming an item", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -209,7 +204,6 @@ func TestUpdateAt_MoveChecklistItem(t *testing.T) {
 		item2Timestamp := int64(3000)
 
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -256,12 +250,47 @@ func TestUpdateAt_MoveChecklistItem(t *testing.T) {
 	})
 }
 
+func TestChecklistItemStateInProgress(t *testing.T) {
+	t.Run("IsValidChecklistItemState returns true for in_progress", func(t *testing.T) {
+		require.True(t, IsValidChecklistItemState(ChecklistItemStateInProgress))
+	})
+
+	t.Run("in_progress items are counted as outstanding alongside open items", func(t *testing.T) {
+		playbookRun := PlaybookRun{
+			Checklists: []Checklist{
+				{
+					ID:    "checklist1",
+					Title: "Test Checklist",
+					Items: []ChecklistItem{
+						{ID: "item1", Title: "Open item", State: ChecklistItemStateOpen},
+						{ID: "item2", Title: "In-progress item", State: ChecklistItemStateInProgress},
+						{ID: "item3", Title: "Closed item", State: ChecklistItemStateClosed},
+						{ID: "item4", Title: "Skipped item", State: ChecklistItemStateSkipped},
+					},
+				},
+			},
+		}
+
+		// Replicate the numOutstanding logic from FinishPlaybookRun.
+		numOutstanding := 0
+		for _, c := range playbookRun.Checklists {
+			for _, item := range c.Items {
+				if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress {
+					numOutstanding++
+				}
+			}
+		}
+
+		// Only the open and in_progress items (2 of 4) are outstanding.
+		require.Equal(t, 2, numOutstanding)
+	})
+}
+
 func TestUpdateAt_PlaybookRunUpdated(t *testing.T) {
 	t.Run("PlaybookRun UpdateAt field is updated when checklist or item is modified", func(t *testing.T) {
 		// Create a playbook run with initial timestamps
 		initialTime := int64(1000)
 		playbookRun := PlaybookRun{
-			ID:       "playbook1",
 			UpdateAt: initialTime,
 			Checklists: []Checklist{
 				{

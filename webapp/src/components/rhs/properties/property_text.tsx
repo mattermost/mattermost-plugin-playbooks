@@ -1,45 +1,62 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/types/properties';
+import {PropertyComponentProps} from 'src/types/properties';
 
 import PropertyTextInput from './property_text_input';
 import EmptyState from './empty_state';
+import {PropertyDisplayContainer} from './property_styles';
 
-interface Props {
-    field: PropertyField;
-    value?: PropertyValue;
-    runID: string;
-    onValueChange: (value: string | null) => void;
+interface Props extends PropertyComponentProps {
+    onValueChange: (value: string | null) => Promise<void> | void;
 }
+
+const isSafeUrl = (url: string): boolean => {
+    const normalized = url.trim().toLowerCase();
+    return normalized.startsWith('http://') || normalized.startsWith('https://');
+};
 
 const TextProperty = (props: Props) => {
     const [isEditing, setIsEditing] = useState(false);
     const [displayValue, setDisplayValue] = useState<string | null>(
         typeof props.value?.value === 'string' ? props.value.value : null
     );
+    const isMounted = useRef(true);
+    useEffect(() => () => {
+        isMounted.current = false;
+    }, []);
 
     useUpdateEffect(() => {
         const newValue = typeof props.value?.value === 'string' ? props.value.value : null;
         setDisplayValue(newValue);
     }, [props.value?.value]);
 
-    const handleValueChange = (newValue: string | null) => {
+    const handleValueChange = useCallback((newValue: string | null) => {
+        const previousValue = displayValue;
         setDisplayValue(newValue);
-        props.onValueChange(newValue);
-    };
+        props.onValueChange(newValue)?.catch(() => {
+            if (isMounted.current) {
+                setDisplayValue((current) => (current === newValue ? previousValue : current));
+            }
+        });
+    }, [displayValue, props.onValueChange]);
 
-    const handleStartEdit = () => {
+    const handleStartEdit = useCallback(() => {
         setIsEditing(true);
-    };
+    }, []);
 
-    const handleStopEdit = () => {
+    const handleStopEdit = useCallback(() => {
         setIsEditing(false);
-    };
+    }, []);
 
     if (isEditing) {
         return (
@@ -58,7 +75,7 @@ const TextProperty = (props: Props) => {
     } else if (props.field.attrs?.value_type === 'url') {
         content = (
             <URLLink
-                href={displayValue}
+                href={isSafeUrl(displayValue) ? displayValue : '#'}
                 target='_blank'
                 rel='noopener noreferrer'
                 onClick={(e) => e.stopPropagation()}
@@ -71,31 +88,20 @@ const TextProperty = (props: Props) => {
     }
 
     return (
-        <TextDisplay
+        <PropertyDisplayContainer
             onClick={handleStartEdit}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    handleStartEdit();
+                }
+            }}
             data-testid='property-value'
         >
             {content}
-        </TextDisplay>
+        </PropertyDisplayContainer>
     );
 };
 
-const TextDisplay = styled.div`
-    flex: 1;
-    color: var(--center-channel-color);
-    font-size: 14px;
-    line-height: 20px;
-    cursor: pointer;
-    padding: 4px 0;
-    min-height: 20px;
-
-    &:hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        border-radius: 4px;
-        margin: 0 -4px;
-        padding: 4px;
-    }
-`;
 
 const URLLink = styled.a`
     color: var(--button-bg);

@@ -221,7 +221,6 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient,
 		p.config,
 		p.permissions,
-		playbookStore,
 		playbookRunStore,
 		p.licenseChecker,
 	)

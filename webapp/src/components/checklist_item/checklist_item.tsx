@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
@@ -17,16 +22,28 @@ import {
     setDueDate as clientSetDueDate,
     setAssignee,
     setChecklistItemState,
+    setGroupAssignee,
+    setPropertyUserAssignee,
+    setRoleAssignee,
 } from 'src/client';
 import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType} from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
-import {PropertyField} from 'src/types/properties';
+import {useFormattedUsernameByID} from 'src/hooks/general';
+import {PropertyField, PropertyValue} from 'src/types/properties';
 import {formatConditionExpr} from 'src/utils/condition_format';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 import {DateTimeOption} from 'src/components/datetime_selector';
 
 import {Mode} from 'src/components/datetime_input';
+
+import TaskLockdownIcon from 'src/components/checklists/task_lockdown_icon';
+
+import TaskLockdownCheckbox from 'src/components/checklists/task_lockdown_checkbox';
+
+import AssigneeDropdown from 'src/components/checklists/assignee_dropdown';
 
 import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
 import ChecklistItemDescription from './description';
@@ -84,16 +101,27 @@ interface ChecklistItemProps {
     availableConditions?: Condition[];
     conditions?: Condition[];
     propertyFields?: PropertyField[];
+    propertyValues?: PropertyValue[];
     onEditingChange?: (isEditing: boolean) => void;
     hasCondition?: boolean;
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
     isChannelChecklist?: boolean;
+    currentUserId?: string;
+    runOwnerId?: string;
+    runCreatorId?: string;
 }
 
 export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
+    const toaster = useToaster();
     const isPlaybookEditor = !props.playbookRunId;
+    const isMounted = useRef(true);
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
     const [showDescription, setShowDescription] = useState(!props.descriptionCollapsedByDefault);
 
@@ -132,8 +160,44 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [command, setCommand] = useState(props.checklistItem.command);
     const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
+    const [assigneeGroupID, setAssigneeGroupID] = useState(props.checklistItem.assignee_group_id || '');
+    const [assigneeType, setAssigneeType] = useState(props.checklistItem.assignee_type || '');
+    const [assigneePropertyFieldID, setAssigneePropertyFieldID] = useState(props.checklistItem.assignee_property_field_id || '');
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
+    const assigneeDisplayName = useFormattedUsernameByID(props.checklistItem.assignee_id);
+
+    // Merge local state into the checklistItem so child components see changes
+    // immediately rather than waiting for a WebSocket round-trip or prop update.
+    const localChecklistItem = useMemo(() => ({
+        ...props.checklistItem,
+        assignee_id: assigneeID,
+        assignee_type: assigneeType,
+        assignee_group_id: assigneeGroupID,
+        assignee_property_field_id: assigneePropertyFieldID,
+    }), [props.checklistItem, assigneeID, assigneeType, assigneeGroupID, assigneePropertyFieldID]);
+
+    const getAssigneeName = (): string | undefined => {
+        switch (assigneeType) {
+        case 'owner':
+            return formatMessage({defaultMessage: 'the Run Owner'});
+        case 'creator':
+            return formatMessage({defaultMessage: 'the Run Creator'});
+        case 'group':
+            return formatMessage({defaultMessage: 'a Group'});
+        case 'property_user': {
+            if (assigneeID) {
+                return assigneeDisplayName || undefined;
+            }
+            const field = props.propertyFields?.find((f) => f.id === assigneePropertyFieldID);
+            return field ?
+                formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) :
+                formatMessage({defaultMessage: 'Run User'});
+        }
+        default:
+            return assigneeDisplayName || undefined;
+        }
+    };
 
     // Notify parent when editing state changes
     useUpdateEffect(() => {
@@ -163,11 +227,23 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [props.checklistItem.assignee_id]);
 
     useUpdateEffect(() => {
+        setAssigneeGroupID(props.checklistItem.assignee_group_id || '');
+    }, [props.checklistItem.assignee_group_id]);
+
+    useUpdateEffect(() => {
+        setAssigneeType(props.checklistItem.assignee_type || '');
+    }, [props.checklistItem.assignee_type]);
+
+    useUpdateEffect(() => {
+        setAssigneePropertyFieldID(props.checklistItem.assignee_property_field_id || '');
+    }, [props.checklistItem.assignee_property_field_id]);
+
+    useUpdateEffect(() => {
         setDueDate(props.checklistItem.due_date);
     }, [props.checklistItem.due_date]);
 
     useUpdateEffect(() => {
-        setTaskActions(taskActions);
+        setTaskActions(props.checklistItem.task_actions);
     }, [props.checklistItem.task_actions]);
 
     const onAssigneeChange = async (user?: UserProfile) => {
@@ -179,12 +255,72 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (props.playbookRunId) {
             const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
             if (response.error) {
-                console.log(response.error); // eslint-disable-line no-console
+                toaster.add({
+                    content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
             }
         } else {
             const newItem = {...props.checklistItem};
             newItem.assignee_id = userId;
             props.onUpdateChecklistItem?.(newItem);
+        }
+    };
+
+    const handleAssigneeDropdownChange = async (updatedItem: ChecklistItemType) => {
+        setAssigneeID(updatedItem.assignee_id || '');
+        setAssigneeGroupID(updatedItem.assignee_group_id || '');
+        setAssigneeType(updatedItem.assignee_type || '');
+        setAssigneePropertyFieldID(updatedItem.assignee_property_field_id || '');
+        if (props.newItem) {
+            return;
+        }
+        if (updatedItem.assignee_type === 'group' && updatedItem.assignee_group_id) {
+            if (props.playbookRunId) {
+                const response = await setGroupAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_group_id);
+                if (response.error && isMounted.current) {
+                    toaster.add({
+                        content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                }
+            } else {
+                props.onUpdateChecklistItem?.(updatedItem);
+            }
+        } else if (updatedItem.assignee_type === 'owner' || updatedItem.assignee_type === 'creator') {
+            if (props.playbookRunId) {
+                const response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
+                if (response.error && isMounted.current) {
+                    toaster.add({
+                        content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                }
+            } else {
+                props.onUpdateChecklistItem?.(updatedItem);
+            }
+        } else if (updatedItem.assignee_type === 'property_user' && updatedItem.assignee_property_field_id) {
+            if (props.playbookRunId) {
+                const response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
+                if (response.error && isMounted.current) {
+                    toaster.add({
+                        content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                        toastStyle: ToastStyle.Failure,
+                    });
+                }
+            } else {
+                props.onUpdateChecklistItem?.(updatedItem);
+            }
+        } else if (props.playbookRunId) {
+            const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
+            if (response.error && isMounted.current) {
+                toaster.add({
+                    content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
+            }
+        } else {
+            props.onUpdateChecklistItem?.(updatedItem);
         }
     };
 
@@ -237,20 +373,59 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
+    // Renders the assignee editor above the toolbar — only when actively editing.
+    // Kept separate from renderAssignTo so the toolbar Row remains unaffected.
+    const renderAssigneeEditor = (): React.ReactNode => {
+        return (
+            <AssigneeEditorPanel>
+                <AssigneeDropdown
+                    checklistItem={localChecklistItem}
+                    editable={true}
+                    onChanged={handleAssigneeDropdownChange}
+                    participantUserIds={props.participantUserIds}
+                    runOwnerUserId={props.runOwnerId}
+                    runCreatorUserId={props.runCreatorId}
+                    mode={props.playbookRunId ? 'run' : 'template'}
+                    propertyFields={props.propertyFields}
+                />
+            </AssigneeEditorPanel>
+        );
+    };
+
     const renderAssignTo = (): null | React.ReactNode => {
-        if (!isEditing && !assigneeID) {
-            // when not editing, hide when not set
+        const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
+        const isPropertyUserAssignee = assigneeType === 'property_user';
+        const isGroupAssignee = assigneeType === 'group';
+
+        if (!assigneeID && !assigneeGroupID && !isRoleAssignee && !isPropertyUserAssignee) {
+            // hide when nothing is set
             return null;
+        }
+
+        if (isRoleAssignee || isPropertyUserAssignee || isGroupAssignee) {
+            return (
+                <AssigneeDropdown
+                    checklistItem={localChecklistItem}
+                    editable={false}
+                    onChanged={handleAssigneeDropdownChange}
+                    participantUserIds={props.participantUserIds}
+                    runOwnerUserId={props.runOwnerId}
+                    runCreatorUserId={props.runCreatorId}
+                    mode={props.playbookRunId ? 'run' : 'template'}
+                    propertyFields={props.propertyFields}
+                    propertyValues={props.propertyValues}
+                />
+            );
         }
 
         return (
             <AssignTo
                 participantUserIds={props.participantUserIds}
                 assignee_id={assigneeID || ''}
-                editable={isEditing || (!props.readOnly && !isSkipped())}
+                editable={!props.readOnly && !isSkipped()}
                 onSelectedChange={onAssigneeChange}
                 placement={'bottom-start'}
-                isEditing={isEditing}
+                isEditing={false}
             />
         );
     };
@@ -325,12 +500,16 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 command_last_run: 0,
                 due_date: dueDate,
                 assignee_id: assigneeID,
+                assignee_type: assigneeType,
                 task_actions: taskActions,
                 state_modified: 0,
                 assignee_modified: 0,
                 condition_id: '',
                 condition_action: '',
                 condition_reason: '',
+                restrict_completion_to_assignee: false,
+                assignee_group_id: assigneeGroupID,
+                assignee_property_field_id: assigneePropertyFieldID,
             };
             if (props.playbookRunId) {
                 clientAddChecklistItem(props.playbookRunId, props.checklistNum, newItem);
@@ -360,9 +539,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderRow = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
+        const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
+        const isPropertyUserAssignee = assigneeType === 'property_user';
         if (
             !isEditing &&
             !assigneeID &&
+            !assigneeGroupID &&
+            !isRoleAssignee &&
+            !isPropertyUserAssignee &&
             !command &&
             !dueDate &&
             !haveTaskActions
@@ -431,13 +615,33 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         $isVisible={!props.readOnly && !props.dragDisabled}
                         $isDragging={props.dragging}
                     />
-                    <CheckBoxButton
-                        readOnly={props.readOnly}
-                        disabled={isSkipped() || props.playbookRunId === undefined || props.newItem}
-                        item={props.checklistItem}
-                        onChange={(item: ChecklistItemState) => props.onChange?.(item)}
-                        onReadOnlyInteract={props.onReadOnlyInteract}
-                    />
+                    {props.playbookRunId ? (
+                        <TaskLockdownCheckbox
+                            item={props.checklistItem}
+                            currentUserId={props.currentUserId || ''}
+                            runOwnerId={props.runOwnerId || ''}
+                            runCreatorId={props.runCreatorId || ''}
+                            assigneeName={getAssigneeName()}
+                            onChange={(s) => props.onChange?.(s)}
+                            readOnly={props.readOnly || isSkipped() || props.newItem}
+                        />
+                    ) : (
+                        <>
+                            <CheckBoxButton
+                                readOnly={props.readOnly}
+                                disabled={isSkipped() || props.playbookRunId === undefined || props.newItem}
+                                item={props.checklistItem}
+                                onChange={(item: ChecklistItemState) => props.onChange?.(item)}
+                                onReadOnlyInteract={props.onReadOnlyInteract}
+                            />
+                            {isEditing && (assigneeID || assigneeGroupID || assigneeType === 'owner' || assigneeType === 'creator' || assigneeType === 'property_user') && (
+                                <TaskLockdownIcon
+                                    item={props.checklistItem}
+                                    onChange={(updated) => props.onUpdateChecklistItem?.(updated)}
+                                />
+                            )}
+                        </>
+                    )}
                     <ConditionIndicator
                         checklistItem={props.checklistItem}
                         tooltipMessage={getConditionTooltip(props.checklistItem)}
@@ -467,6 +671,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     title={titleValue}
                 />
                 }
+                {isEditing && renderAssigneeEditor()}
                 {renderRow()}
                 {isEditing &&
                 <CancelSaveButtons
@@ -519,7 +724,7 @@ export const CheckboxContainer = styled.div`
         margin-top: 2px;
         margin-right: 8px;
         appearance: none;
-        background: #fff;
+        background: var(--center-channel-bg);
         cursor: pointer;
     }
 
@@ -531,7 +736,7 @@ export const CheckboxContainer = styled.div`
 
     input[type="checkbox"]::before {
         position: relative;
-        color: #fff;
+        color: var(--center-channel-bg);
         content: "\f012c";
         font-family: compass-icons, mattermosticons;
         font-size: 12px;
@@ -592,6 +797,14 @@ const Row = styled.div`
     margin-right: 10px;
     margin-left: 35px;
     gap: 5px 8px;
+`;
+
+const AssigneeEditorPanel = styled.div`
+    margin: 8px 10px 0 35px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    border-radius: 4px;
+    padding: 8px;
+    background: var(--center-channel-bg);
 `;
 
 const DraggableWrapper = styled.div`

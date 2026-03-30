@@ -20,6 +20,7 @@ export const PLAYBOOK_RUN_UPDATED = manifest.id + '_playbook_run_updated';
 export const PLAYBOOK_CREATED = manifest.id + '_playbook_created';
 export const PLAYBOOK_ARCHIVED = manifest.id + '_playbook_archived';
 export const PLAYBOOK_RESTORED = manifest.id + '_playbook_restored';
+export const PLAYBOOK_UPDATED = manifest.id + '_playbook_updated';
 export const RECEIVED_PLAYBOOK_RUNS = manifest.id + '_received_playbook_runs';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = manifest.id + '_received_team_playbook_run_channels';
 export const RECEIVED_TEAM_PLAYBOOK_RUN_CONNECTIONS = manifest.id + '_received_team_playbook_run_connections';
@@ -107,6 +108,12 @@ export interface PlaybookArchived {
 export interface PlaybookRestored {
     type: typeof PLAYBOOK_RESTORED;
     teamID: string;
+}
+
+export interface PlaybookUpdated {
+    type: typeof PLAYBOOK_UPDATED;
+    teamID: string;
+    playbookID: string;
 }
 
 export interface ReceivedPlaybookRuns {

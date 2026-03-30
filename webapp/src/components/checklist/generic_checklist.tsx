@@ -13,7 +13,7 @@ import {Checklist, ChecklistItem, emptyChecklistItem} from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {Condition, ConditionExprV1} from 'src/types/conditions';
+import {Condition, ConditionActionDef, ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
 import {clientDeleteChecklistItem} from 'src/client';
 
@@ -39,6 +39,7 @@ interface Props {
     onDeleteCondition?: (conditionId: string) => void;
     onCreateCondition?: (expr: ConditionExprV1, itemIndex: number) => void;
     onUpdateCondition?: (conditionId: string, expr: ConditionExprV1) => void;
+    onUpdateConditionActions?: (conditionId: string, actions: ConditionActionDef[]) => void;
     newlyCreatedConditionIds?: Set<string>;
     autoAddTask?: boolean;
     onTaskAdded?: () => void;
@@ -261,6 +262,9 @@ const GenericChecklist = (props: Props) => {
                 item={checklistItem}
                 itemIndex={index}
                 newItem={false}
+                currentUserId={myUser.id}
+                runOwnerId={props.playbookRun?.owner_user_id}
+                runCreatorId={props.playbookRun?.reporter_user_id}
                 cancelAddingItem={() => {
                     setAddingItem(false);
                 }}
@@ -314,11 +318,15 @@ const GenericChecklist = (props: Props) => {
                         propertyFields={props.propertyFields || []}
                         checklistIndex={props.checklistIndex}
                         startEditing={props.newlyCreatedConditionIds?.has(conditionId)}
+                        actions={props.conditions?.find((c) => c.id === conditionId)?.actions}
                         onUpdate={(expr) => {
                             if (props.onUpdateCondition) {
                                 props.onUpdateCondition(conditionId, expr);
                             }
                         }}
+                        onUpdateActions={props.onUpdateConditionActions ? (actions) => {
+                            props.onUpdateConditionActions!(conditionId, actions);
+                        } : undefined}
                         onDelete={() => {
                             if (props.onDeleteCondition) {
                                 props.onDeleteCondition(conditionId);
@@ -371,6 +379,7 @@ const GenericChecklist = (props: Props) => {
                                     setAddingItem(false);
                                 }}
                                 onAddChecklistItem={onAddChecklistItem}
+                                propertyFields={props.propertyFields}
                                 itemButtonsFormat={props.itemButtonsFormat}
                                 onReadOnlyInteract={props.onReadOnlyInteract}
                                 onEditingChange={() => {

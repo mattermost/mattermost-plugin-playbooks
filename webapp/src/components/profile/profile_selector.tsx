@@ -78,7 +78,7 @@ export default function ProfileSelector(props: Props) {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
     const {formatMessage} = useIntl();
 
-    const [isOpen, setOpen] = useState(false);
+    const [isOpen, setOpen] = useState(props.controlledOpenToggle ?? false);
     const toggleOpen = () => {
         if (!isOpen) {
             fetchUsers();
@@ -149,10 +149,10 @@ export default function ProfileSelector(props: Props) {
         setUserInSubsetOptions(optionSubsetGroup);
     }
 
-    // Fill in the userOptions on mount.
+    // Fill in the userOptions on mount and whenever the user source changes.
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [props.getAllUsers]);
 
     const [selected, setSelected] = useState<Option | null>(null);
 
@@ -202,7 +202,8 @@ export default function ProfileSelector(props: Props) {
     } else if (props.placeholderButtonClass) {
         target = (
             <button
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     if (props.enableEdit) {
                         toggleOpen();
                     }
@@ -218,7 +219,8 @@ export default function ProfileSelector(props: Props) {
         target = (
             <FilterButton
                 $active={isOpen}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     if (props.enableEdit) {
                         toggleOpen();
                     }

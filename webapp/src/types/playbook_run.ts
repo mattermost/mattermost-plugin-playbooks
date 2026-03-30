@@ -60,6 +60,10 @@ export interface PlaybookRun {
     items_order: string[];
 
     type: PlaybookRunType;
+    run_number?: number;
+    sequential_id?: string;
+    task_total?: number;
+    task_completed?: number;
 
     /** Property fields associated with this run (only included when requested) */
     property_fields?: PropertyField[];
@@ -129,6 +133,8 @@ export interface FetchPlaybookRunsParams {
     active_lt?: number;
     started_gte?: number;
     started_lt?: number;
+    property_field_id?: string;
+    property_value_filter?: string;
 }
 
 export interface FetchPlaybookRunsParamsTime {

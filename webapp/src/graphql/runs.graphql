@@ -26,4 +26,3 @@ mutation SetRunPropertyValue($runID: String!, $propertyFieldID: String!, $value:
 	setRunPropertyValue(runID: $runID, propertyFieldID: $propertyFieldID, value: $value)
 }
 
-

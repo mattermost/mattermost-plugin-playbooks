@@ -40,11 +40,11 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'Low');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'High');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             verifyTaskVisible('Conditional Task');
         });
@@ -77,15 +77,15 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
                     verifyTaskHidden('AND Conditional Task');
 
-                    setPropertyValue('Priority', 'High');
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
                     verifyTaskHidden('AND Conditional Task');
 
-                    setPropertyValue('Status', 'Active');
+                    cy.playbooksSetRunPropertyViaRHS('Status', 'Active');
 
                     verifyTaskVisible('AND Conditional Task');
 
-                    setPropertyValue('Priority', 'Low');
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
                     verifyTaskHidden('AND Conditional Task');
                 });
@@ -120,15 +120,15 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
                     verifyTaskHidden('OR Conditional Task');
 
-                    setPropertyValue('Priority', 'Low');
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
                     verifyTaskHidden('OR Conditional Task');
 
-                    setPropertyValue('Priority', 'Medium');
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'Medium');
 
                     verifyTaskVisible('OR Conditional Task');
 
-                    setPropertyValue('Priority', 'High');
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
                     verifyTaskVisible('OR Conditional Task');
                 });
@@ -144,19 +144,21 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
             navigateToRun();
 
-            setPropertyValue('Priority', 'High');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             verifyTaskVisible('Conditional Task');
+
+            // # Intercept the checklist item state REST call triggered by checking the task
+            cy.playbooksInterceptChecklistItemState('checklistItemState');
 
             cy.findByText('Conditional Task').closest('[data-testid="checkbox-item-container"]').within(() => {
                 cy.get('input[type="checkbox"]').check();
             });
 
-            cy.wait(500);
+            // * Wait for the task state update to complete before changing the property
+            cy.wait('@checklistItemState');
 
-            setPropertyValue('Priority', 'Low');
-
-            cy.wait(500);
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
             verifyTaskVisible('Conditional Task');
 
@@ -174,15 +176,15 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'High');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             verifyTaskVisible('Conditional Task');
 
-            setPropertyValue('Priority', 'Medium');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'Medium');
 
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'High');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             verifyTaskVisible('Conditional Task');
         });
@@ -197,7 +199,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
             navigateToRun();
 
             // # Change property to trigger task addition
-            setPropertyValue('Priority', 'High');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             // # Navigate to the run's channel
             cy.then(() => {
@@ -249,7 +251,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
                     navigateToRun();
 
                     // # Change property to trigger task additions
-                    setPropertyValue('Priority', 'High');
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
                     // # Navigate to the run's channel
                     cy.then(() => {
@@ -432,22 +434,11 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
         });
     }
 
-    function setPropertyValue(propertyName, value) {
-        const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
-
-        cy.findByRole('complementary').within(() => {
-            cy.findByTestId(testId).within(() => {
-                cy.findByTestId('property-value').realClick();
-            });
-        });
-
-        cy.findByText(value).click();
-
-        cy.wait(500);
-    }
-
     function setTextPropertyValue(propertyName, value) {
         const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
+
+        // # Intercept the SetRunPropertyValue mutation before triggering the UI action
+        cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
 
         cy.findByRole('complementary').within(() => {
             cy.findByTestId(testId).within(() => {
@@ -458,7 +449,8 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
         cy.focused().clear().realType(value);
         cy.realPress('Tab');
 
-        cy.wait(500);
+        // * Wait for the text property value save to complete before proceeding
+        cy.wait('@SetRunPropertyValue');
     }
 
     function verifyTaskVisible(taskTitle) {

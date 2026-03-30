@@ -186,11 +186,13 @@ func (s *PlaybookRunService) RequestUpdate(ctx context.Context, playbookRunID, u
 	}
 
 	resp, err := s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("expected status code %d", http.StatusOK)
 	}
-
-	return err
+	return nil
 }
 
 func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) error {
@@ -206,6 +208,31 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 	}
 
 	return nil
+}
+
+func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) error {
+	restoreURL := fmt.Sprintf("runs/%s/restore", playbookRunID)
+	req, err := s.client.newAPIRequest(http.MethodPut, restoreURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) ChangeOwner(ctx context.Context, playbookRunID, ownerID string) error {
+	ownerURL := fmt.Sprintf("runs/%s/owner", playbookRunID)
+	body := struct {
+		OwnerID string `json:"owner_id"`
+	}{OwnerID: ownerID}
+	req, err := s.client.newAPIRequest(http.MethodPost, ownerURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
 }
 
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
@@ -295,11 +322,13 @@ func (s *PlaybookRunService) UpdateRetrospective(ctx context.Context, playbookRu
 	}
 
 	resp, err := s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("expected status code %d", http.StatusOK)
 	}
-
-	return err
+	return nil
 }
 
 // PublishRetrospective publishes the run's retrospective
@@ -311,11 +340,13 @@ func (s *PlaybookRunService) PublishRetrospective(ctx context.Context, playbookR
 	}
 
 	resp, err := s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("expected status code %d", http.StatusOK)
 	}
-
-	return err
+	return nil
 }
 
 func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, assigneeID string) error {
@@ -329,6 +360,22 @@ func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID 
 		return err
 	}
 
+	resp, err := s.client.do(ctx, req, nil)
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
+func (s *PlaybookRunService) SetItemPropertyUserAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, propertyFieldID string) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		AssigneePropertyFieldID string `json:"assignee_property_field_id"`
+	}{propertyFieldID}
+	req, err := s.client.newAPIRequest(http.MethodPut, createURL, body)
+	if err != nil {
+		return err
+	}
 	resp, err := s.client.do(ctx, req, nil)
 	if resp != nil && resp.Body != nil {
 		resp.Body.Close()

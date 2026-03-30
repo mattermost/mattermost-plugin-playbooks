@@ -9,7 +9,6 @@ import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
 import {
     AutomationHeader,
     AutomationLabel,
@@ -22,20 +21,24 @@ import {SecondaryButtonLarger} from 'src/components/backstage/playbook_editor/co
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
 import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
+import {TemplateInput} from 'src/components/backstage/playbook_edit/automation/template_input';
+import {BaseInput} from 'src/components/assets/inputs';
 
-type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at' | 'channel_mode' | 'channel_id'>;
+type PlaybookSubset = Pick<PlaybookWithChecklist, 'create_public_playbook_run' | 'channel_name_template' | 'delete_at' | 'channel_mode' | 'channel_id' | 'run_number_prefix' | 'next_run_number'>;
 
 interface Props {
     playbook: PlaybookSubset;
     setPlaybook: React.Dispatch<React.SetStateAction<PlaybookSubset>>;
     setChangesMade?: (b: boolean) => void;
+    fieldNames?: string[];
+    disabled?: boolean;
 }
 
-export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
+export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldNames, disabled: disabledProp}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const teamId = useSelector(getCurrentTeamId);
-    const archived = playbook.delete_at !== 0;
+    const disabled = disabledProp || playbook.delete_at !== 0;
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -49,6 +52,14 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
         setPlaybook({
             ...playbook,
             channel_name_template: channelNameTemplate,
+        });
+        setChangesMade?.(true);
+    };
+
+    const handleRunNumberPrefixChange = (runNumberPrefix: string) => {
+        setPlaybook({
+            ...playbook,
+            run_number_prefix: runNumberPrefix,
         });
         setChangesMade?.(true);
     };
@@ -74,10 +85,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 <AutomationTitle
                     style={{alignSelf: 'flex-start'}}
                 >
-                    <AutomationLabel disabled={archived}>
+                    <AutomationLabel disabled={disabled}>
                         <ChannelModeRadio
                             type='radio'
-                            disabled={archived}
+                            disabled={disabled}
                             checked={playbook.channel_mode === 'link_existing_channel'}
                             onChange={() => handleChannelModeChange('link_existing_channel')}
                         />
@@ -91,7 +102,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         channelIds={playbook.channel_id === '' ? [] : [playbook.channel_id]}
                         isClearable={true}
                         selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                        isDisabled={archived || playbook.channel_mode === 'create_new_channel'}
+                        isDisabled={disabled || playbook.channel_mode === 'create_new_channel'}
                         captureMenuScroll={false}
                         shouldRenderValue={true}
                         teamId={teamId}
@@ -101,10 +112,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             </AutomationHeader>
             <AutomationHeader id={'create-new-channel'}>
                 <AutomationTitle style={{alignSelf: 'flex-start'}} >
-                    <AutomationLabel disabled={archived}>
+                    <AutomationLabel disabled={disabled}>
                         <ChannelModeRadio
                             type='radio'
-                            disabled={archived}
+                            disabled={disabled}
                             checked={playbook.channel_mode === 'create_new_channel'}
                             onChange={() => handleChannelModeChange('create_new_channel')}
                         />
@@ -113,10 +124,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                 </AutomationTitle>
                 <HorizontalSplit>
                     <VerticalSplit>
-                        <ButtonLabel disabled={archived || playbook.channel_mode === 'link_existing_channel'}>
+                        <ButtonLabel disabled={disabled || playbook.channel_mode === 'link_existing_channel'}>
                             <RadioInput
                                 type='radio'
-                                disabled={archived || playbook.channel_mode === 'link_existing_channel'}
+                                disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 checked={playbook.create_public_playbook_run}
                                 onChange={() => handlePublicChange(true)}
                             />
@@ -128,10 +139,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                             <BigText>{formatMessage({defaultMessage: 'Public'})}</BigText>
                         </ButtonLabel>
                         <HorizontalSpacer $size={8}/>
-                        <ButtonLabel disabled={archived || playbook.channel_mode === 'link_existing_channel'}>
+                        <ButtonLabel disabled={disabled || playbook.channel_mode === 'link_existing_channel'}>
                             <RadioInput
                                 type='radio'
-                                disabled={archived || playbook.channel_mode === 'link_existing_channel'}
+                                disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                                 checked={!playbook.create_public_playbook_run}
                                 onChange={() => handlePublicChange(false)}
                             />
@@ -143,17 +154,29 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                             <BigText>{formatMessage({defaultMessage: 'Private'})}</BigText>
                         </ButtonLabel>
                     </VerticalSplit>
-                    <PatternedInput
-                        enabled={!archived && playbook.channel_mode === 'create_new_channel'}
-                        input={playbook.channel_name_template}
-                        onChange={handleChannelNameTemplateChange}
-                        pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters
-                        placeholderText={formatMessage({defaultMessage: 'Channel name template (optional)'})}
-                        type={'text'}
-                        errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
-                    />
+                    <RunNamingBlock>
+                        <InputLabel>{formatMessage({defaultMessage: 'Run number prefix'})}</InputLabel>
+                        <BaseInput
+                            data-testid='channel-access-run-number-prefix'
+                            type='text'
+                            disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
+                            value={playbook.run_number_prefix ?? ''}
+                            onChange={(e) => handleRunNumberPrefixChange(e.target.value)}
+                            placeholder={formatMessage({defaultMessage: 'e.g. INC-'})}
+                        />
+                        <InputLabel>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
+                        <TemplateInput
+                            enabled={!disabled && playbook.channel_mode === 'create_new_channel'}
+                            placeholderText={formatMessage({defaultMessage: 'Run name template (optional)'})}
+                            input={playbook.channel_name_template ?? ''}
+                            onChange={handleChannelNameTemplateChange}
+                            fieldNames={fieldNames ?? []}
+                            prefix={playbook.run_number_prefix ?? ''}
+                            testId='channel-access-run-name-template'
+                        />
+                    </RunNamingBlock>
                     <ChannelActionButton
-                        disabled={archived || playbook.channel_mode === 'link_existing_channel'}
+                        disabled={disabled || playbook.channel_mode === 'link_existing_channel'}
                         data-testid='playbook-channel-actions-button'
                         onClick={() => dispatch(showPlaybookActionsModal())}
                     >
@@ -235,4 +258,18 @@ export const ChannelModeRadio = styled(RadioInput)`
     && {
         margin: 0 8px;
     }
+`;
+
+const RunNamingBlock = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+`;
+
+const InputLabel = styled.div`
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    margin-top: 8px;
 `;

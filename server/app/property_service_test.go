@@ -439,7 +439,7 @@ func TestPropertyService_sanitizeAndValidatePropertyValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := s.sanitizeAndValidatePropertyValue(tt.propertyField, tt.input)
+			result, err := s.sanitizeAndValidatePropertyValue(tt.propertyField, tt.input, true)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
@@ -773,5 +773,102 @@ func TestReorderPropertyFieldsLogic(t *testing.T) {
 		_, _, err := reorderPropertyFieldsLogic(fields, "field1", 5)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "target position out of bounds")
+	})
+}
+
+// TestPropertyService_ReservedFieldName_SEQ verifies that the reserved
+// placeholder name "SEQ" (case-insensitive) cannot be used as a property
+// field name, to prevent conflicts with the built-in {SEQ} template token.
+func TestPropertyService_ReservedFieldName_SEQ(t *testing.T) {
+	tests := []struct {
+		name        string
+		fieldName   string
+		expectError bool
+	}{
+		{
+			name:        "creating field named SEQ rejected",
+			fieldName:   "SEQ",
+			expectError: true,
+		},
+		{
+			name:        "creating field named seq lowercase rejected",
+			fieldName:   "seq",
+			expectError: true,
+		},
+		{
+			name:        "creating field named Seq mixed case rejected",
+			fieldName:   "Seq",
+			expectError: true,
+		},
+		{
+			name:        "creating field named SEQUENCE allowed",
+			fieldName:   "SEQUENCE",
+			expectError: false,
+		},
+		{
+			name:        "creating field named MY-SEQ allowed",
+			fieldName:   "MY-SEQ",
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pf := PropertyField{
+				PropertyField: model.PropertyField{
+					Name: tt.fieldName,
+					Type: model.PropertyFieldTypeText,
+				},
+				Attrs: Attrs{
+					Visibility: PropertyFieldVisibilityDefault,
+				},
+			}
+
+			err := validateReservedFieldName(pf.Name)
+
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "SEQ")
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+// TestPropertyService_ReservedFieldName_SEQ_UpdateField verifies that
+// updating a property field to have the reserved name "SEQ" is also rejected.
+func TestPropertyService_ReservedFieldName_SEQ_UpdateField(t *testing.T) {
+	t.Run("updating field name to SEQ rejected", func(t *testing.T) {
+		pf := PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "existing-field-id",
+				Name: "SEQ",
+				Type: model.PropertyFieldTypeText,
+			},
+			Attrs: Attrs{
+				Visibility: PropertyFieldVisibilityDefault,
+			},
+		}
+
+		err := validateReservedFieldName(pf.Name)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "SEQ")
+	})
+
+	t.Run("updating field name to non-reserved value allowed", func(t *testing.T) {
+		pf := PropertyField{
+			PropertyField: model.PropertyField{
+				ID:   "existing-field-id",
+				Name: "ZoneName",
+				Type: model.PropertyFieldTypeText,
+			},
+			Attrs: Attrs{
+				Visibility: PropertyFieldVisibilityDefault,
+			},
+		}
+
+		err := validateReservedFieldName(pf.Name)
+		require.NoError(t, err)
 	})
 }

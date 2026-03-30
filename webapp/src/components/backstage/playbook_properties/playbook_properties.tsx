@@ -18,6 +18,9 @@ import {
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {
+    AccountMultipleOutlineIcon,
+    AccountOutlineIcon,
+    CalendarOutlineIcon,
     ChevronDownCircleOutlineIcon,
     FormatListBulletedIcon,
     LinkVariantIcon,
@@ -204,6 +207,12 @@ const PlaybookProperties = ({playbookID}: Props) => {
                             return <ChevronDownCircleOutlineIcon size={16}/>;
                         case 'multiselect':
                             return <FormatListBulletedIcon size={16}/>;
+                        case 'date':
+                            return <CalendarOutlineIcon size={16}/>;
+                        case 'user':
+                            return <AccountOutlineIcon size={16}/>;
+                        case 'multiuser':
+                            return <AccountMultipleOutlineIcon size={16}/>;
                         default:
                             return <MenuVariantIcon size={16}/>;
                         }

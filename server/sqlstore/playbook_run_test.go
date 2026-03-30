@@ -2043,3 +2043,194 @@ func TestBumpRunUpdatedAt(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, updatedRun.UpdateAt, int64(1))
 }
+
+func TestUpdatePlaybookRunOwner(t *testing.T) {
+	db := setupTestDB(t)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	playbookStore := setupPlaybookStore(t, db)
+	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
+
+	teamID := model.NewId()
+	playbook := NewPBBuilder().
+		WithTitle("Test Playbook").
+		WithTeamID(teamID).
+		ToPlaybook()
+
+	playbookID, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+
+	playbookRun := NewBuilder(t).
+		WithName("Test Run").
+		WithPlaybookID(playbookID).
+		WithTeamID(teamID).
+		ToPlaybookRun()
+
+	createdRun, err := playbookRunStore.CreatePlaybookRun(playbookRun)
+	require.NoError(t, err)
+
+	// Re-fetch to get the actual DB UpdateAt value
+	createdRun, err = playbookRunStore.GetPlaybookRun(createdRun.ID)
+	require.NoError(t, err)
+
+	t.Run("empty playbookRunID returns error", func(t *testing.T) {
+		err := playbookRunStore.UpdatePlaybookRunOwner("", model.NewId(), nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "playbookRunID cannot be empty")
+	})
+
+	t.Run("empty ownerUserID returns error", func(t *testing.T) {
+		err := playbookRunStore.UpdatePlaybookRunOwner(createdRun.ID, "", nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "ownerUserID cannot be empty")
+	})
+
+	t.Run("valid arguments update owner successfully", func(t *testing.T) {
+		newOwnerID := model.NewId()
+		err := playbookRunStore.UpdatePlaybookRunOwner(createdRun.ID, newOwnerID, nil)
+		require.NoError(t, err)
+
+		updated, err := playbookRunStore.GetPlaybookRun(createdRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, newOwnerID, updated.OwnerUserID)
+	})
+
+	t.Run("non-existent run ID returns ErrNotFound", func(t *testing.T) {
+		err := playbookRunStore.UpdatePlaybookRunOwner(model.NewId(), model.NewId(), nil)
+		require.Error(t, err)
+		require.ErrorIs(t, err, app.ErrNotFound)
+	})
+}
+
+// TestSequentialIDStoredAtCreation verifies that SequentialID is stored at run creation
+// time and is returned unchanged by GetPlaybookRun.
+func TestSequentialIDStoredAtCreation(t *testing.T) {
+	db := setupTestDB(t)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	playbookStore := setupPlaybookStore(t, db)
+	setupChannelsTable(t, db)
+
+	const prefix = "INC"
+	const runNumber = int64(7)
+
+	teamID := model.NewId()
+	playbook := NewPBBuilder().
+		WithTitle("Test Playbook With Prefix").
+		WithTeamID(teamID).
+		ToPlaybook()
+
+	playbookID, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+
+	expected := app.FormatSequentialID(prefix, runNumber)
+
+	run := NewBuilder(t).
+		WithName("Test Run").
+		WithPlaybookID(playbookID).
+		WithTeamID(teamID).
+		ToPlaybookRun()
+	run.RunNumber = runNumber
+	run.SequentialID = expected
+
+	created, err := playbookRunStore.CreatePlaybookRun(run)
+	require.NoError(t, err)
+
+	fetched, err := playbookRunStore.GetPlaybookRun(created.ID)
+	require.NoError(t, err)
+
+	require.Equal(t, expected, fetched.SequentialID,
+		"SequentialID must be persisted at creation and returned unchanged")
+}
+
+func TestTaskLockdownAndAssigneeTypeRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookRunStore := setupPlaybookRunStore(t, db)
+	store := setupSQLStore(t, db)
+	playbookStore := setupPlaybookStore(t, db)
+	setupChannelsTable(t, db)
+
+	teamID := model.NewId()
+	playbook := NewPBBuilder().
+		WithTitle("Task Lockdown Playbook").
+		WithTeamID(teamID).
+		ToPlaybook()
+
+	playbookID, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+
+	groupID := model.NewId()
+
+	run := NewBuilder(t).
+		WithName("Task Lockdown Run").
+		WithPlaybookID(playbookID).
+		WithTeamID(teamID).
+		WithChecklists([]int{3}).
+		ToPlaybookRun()
+
+	run.Checklists[0].Items[0].AssigneeType = app.AssigneeTypeOwner
+	run.Checklists[0].Items[0].RestrictCompletionToAssignee = true
+
+	run.Checklists[0].Items[1].AssigneeType = app.AssigneeTypeCreator
+	run.Checklists[0].Items[1].RestrictCompletionToAssignee = false
+
+	run.Checklists[0].Items[2].AssigneeType = app.AssigneeTypeGroup
+	run.Checklists[0].Items[2].AssigneeGroupID = groupID
+	run.Checklists[0].Items[2].RestrictCompletionToAssignee = true
+
+	t.Run("create and get preserves AssigneeType and RestrictCompletionToAssignee", func(t *testing.T) {
+		created, err := playbookRunStore.CreatePlaybookRun(run)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		fetched, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+
+		require.Len(t, fetched.Checklists, 1)
+		require.Len(t, fetched.Checklists[0].Items, 3)
+
+		item0 := fetched.Checklists[0].Items[0]
+		require.Equal(t, app.AssigneeTypeOwner, item0.AssigneeType)
+		require.Equal(t, true, item0.RestrictCompletionToAssignee)
+		require.Equal(t, "", item0.AssigneeGroupID)
+
+		item1 := fetched.Checklists[0].Items[1]
+		require.Equal(t, app.AssigneeTypeCreator, item1.AssigneeType)
+		require.Equal(t, false, item1.RestrictCompletionToAssignee)
+		require.Equal(t, "", item1.AssigneeGroupID)
+
+		item2 := fetched.Checklists[0].Items[2]
+		require.Equal(t, app.AssigneeTypeGroup, item2.AssigneeType)
+		require.Equal(t, true, item2.RestrictCompletionToAssignee)
+		require.Equal(t, groupID, item2.AssigneeGroupID)
+	})
+
+	t.Run("update changes AssigneeType from owner to creator and persists", func(t *testing.T) {
+		runToUpdate := NewBuilder(t).
+			WithName("Task Lockdown Update Run").
+			WithPlaybookID(playbookID).
+			WithTeamID(teamID).
+			WithChecklists([]int{1}).
+			ToPlaybookRun()
+
+		runToUpdate.Checklists[0].Items[0].AssigneeType = app.AssigneeTypeOwner
+		runToUpdate.Checklists[0].Items[0].RestrictCompletionToAssignee = true
+
+		created, err := playbookRunStore.CreatePlaybookRun(runToUpdate)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, created)
+
+		created.Checklists[0].Items[0].AssigneeType = app.AssigneeTypeCreator
+		created.Checklists[0].Items[0].RestrictCompletionToAssignee = false
+
+		_, err = playbookRunStore.UpdatePlaybookRun(created)
+		require.NoError(t, err)
+
+		fetched, err := playbookRunStore.GetPlaybookRun(created.ID)
+		require.NoError(t, err)
+
+		require.Len(t, fetched.Checklists[0].Items, 1)
+		updatedItem := fetched.Checklists[0].Items[0]
+		require.Equal(t, app.AssigneeTypeCreator, updatedItem.AssigneeType)
+		require.Equal(t, false, updatedItem.RestrictCompletionToAssignee)
+	})
+}

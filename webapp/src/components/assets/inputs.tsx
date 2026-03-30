@@ -3,19 +3,30 @@
 
 import styled from 'styled-components';
 
-export const BaseInput = styled.input<{$invalid?: boolean}>`
+export const BaseInput = styled.input<{$invalid?: boolean; $readOnly?: boolean}>`
     height: 40px;
     padding: 0 16px;
     border: none;
     border-radius: 4px;
-    background-color: rgba(var(--center-channel-bg-rgb));
+    background-color: ${(props) => (props.$readOnly ? 'rgba(var(--center-channel-color-rgb), 0.04)' : 'rgba(var(--center-channel-bg-rgb))')};
     box-shadow: ${(props) => (props.$invalid ? 'inset 0 0 0 2px var(--error-text)' : 'inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16)')};
+    color: ${(props) => (props.$readOnly ? 'rgba(var(--center-channel-color-rgb), 0.56)' : 'inherit')};
+    cursor: ${(props) => (props.$readOnly ? 'default' : 'text')};
     font-size: 14px;
     line-height: 40px;
     transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
 
     &:focus {
-        box-shadow: ${(props) => (props.$invalid ? 'inset 0 0 0 2px var(--error-text)' : 'inset 0 0 0 2px var(--button-bg)')};
+        box-shadow: ${(props) => {
+            if (props.$invalid) {
+                return 'inset 0 0 0 2px var(--error-text)';
+            }
+            if (props.$readOnly) {
+                return 'inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16)';
+            }
+            return 'inset 0 0 0 2px var(--button-bg)';
+        }};
+        outline: none;
     }
 `;
 

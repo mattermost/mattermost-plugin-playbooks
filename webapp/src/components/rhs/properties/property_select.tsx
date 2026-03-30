@@ -1,22 +1,24 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/types/properties';
+import {PropertyComponentProps} from 'src/types/properties';
 
 import PropertySelectInput from './property_select_input';
 
 import PropertyChip from './property_chip';
 import EmptyState from './empty_state';
 
-interface Props {
-    field: PropertyField;
-    value?: PropertyValue;
-    runID: string;
-    onValueChange: (value: string | null) => void;
+interface Props extends PropertyComponentProps {
+    onValueChange: (value: string | null) => Promise<void> | void;
 }
 
 const SelectProperty = (props: Props) => {
@@ -24,24 +26,33 @@ const SelectProperty = (props: Props) => {
     const [displayValue, setDisplayValue] = useState<string | null>(
         typeof props.value?.value === 'string' ? props.value.value : null
     );
+    const isMounted = useRef(true);
+    useEffect(() => () => {
+        isMounted.current = false;
+    }, []);
 
     useUpdateEffect(() => {
         const newValue = typeof props.value?.value === 'string' ? props.value.value : null;
         setDisplayValue(newValue);
     }, [props.value?.value]);
 
-    const handleValueChange = (newValue: string | null) => {
+    const handleValueChange = useCallback((newValue: string | null) => {
+        const previousValue = displayValue;
         setDisplayValue(newValue);
-        props.onValueChange(newValue);
-    };
+        props.onValueChange(newValue)?.catch(() => {
+            if (isMounted.current) {
+                setDisplayValue((current) => (current === newValue ? previousValue : current));
+            }
+        });
+    }, [displayValue, props.onValueChange]);
 
-    const handleStartEdit = () => {
+    const handleStartEdit = useCallback(() => {
         setIsEditing(true);
-    };
+    }, []);
 
-    const handleStopEdit = () => {
+    const handleStopEdit = useCallback(() => {
         setIsEditing(false);
-    };
+    }, []);
 
     const selectOptions = props.field.attrs?.options?.map((option) => ({
         value: option.id,
@@ -73,6 +84,13 @@ const SelectProperty = (props: Props) => {
         return (
             <EmptySelectDisplay
                 onClick={handleStartEdit}
+                role='button'
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        handleStartEdit();
+                    }
+                }}
                 data-testid='property-value'
             >
                 <EmptyState/>

@@ -58,6 +58,8 @@ const RHSRunsQuery = graphql(/* GraphQL */`
                     currentStatus
                     channelID
                     teamID
+                    run_number: runNumber
+                    sequential_id: sequentialID
                     propertyFields {
                         id
                         name

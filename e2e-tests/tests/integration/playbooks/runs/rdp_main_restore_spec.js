@@ -87,7 +87,7 @@ describe('runs > run details page > restart run', {testIsolation: true}, () => {
             cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
 
             // # Click finish run button
-            cy.findByTestId('run-finish-section').find('button').click();
+            cy.findByTestId('run-finish-section').findByRole('button', {name: /Finish/i}).click();
             cy.get('#confirmModal').get('#confirmModalButton').click();
 
             cy.wait('@routeFinish');

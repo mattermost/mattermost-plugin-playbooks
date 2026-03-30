@@ -71,14 +71,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
 
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
-                cy.wait(2000); // Wait for page to load
+                cy.findByTestId('run-checklist-section').should('be.visible');
             });
         });
 
         it('disallows no keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -105,7 +105,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
         it('allows a single keyword', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -141,14 +141,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('allows multiple keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -185,14 +185,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('allows multi-word phrases', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -228,14 +228,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('allows removing previously configured keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -283,7 +283,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action not activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
@@ -294,14 +294,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('disables when all keywords removed', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -350,13 +350,13 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action not activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
         });
 
         it('disallows a user without keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -390,7 +390,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
         it('allows a single user', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -434,7 +434,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action not activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
@@ -445,14 +445,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser.username} checked off checklist item "Test Task"`);
         });
 
         it('allows configuring multiple users', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -500,12 +500,12 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser.username} checked off checklist item "Test Task"`);
 
             // # Reset-uncheck task
             cy.apiSetChecklistItemState(testPlaybookRun.id, 0, 0, '');
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
@@ -516,14 +516,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('rejects unknown user', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -570,14 +570,14 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser.username} checked off checklist item "Test Task"`);
         });
 
         it('allows removing previously configured users', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -636,7 +636,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action NOT activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
@@ -647,7 +647,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
     });
@@ -666,7 +666,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
 
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();

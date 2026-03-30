@@ -19,12 +19,12 @@ import WebhooksInput from './inputs/webhooks_input';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    disabled?: boolean;
 }
 
-const StatusUpdates = ({playbook}: Props) => {
+const StatusUpdates = ({playbook, disabled}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
-    const archived = playbook.delete_at !== 0;
 
     if (!playbook.status_update_enabled) {
         return (
@@ -43,7 +43,7 @@ const StatusUpdates = ({playbook}: Props) => {
                     defaultMessage='A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.'
                     values={{
                         duration: () => {
-                            if (archived) {
+                            if (disabled) {
                                 return formatDuration(Duration.fromDurationLike({seconds: playbook.reminder_timer_default_seconds}), 'long');
                             }
                             return (
@@ -68,7 +68,7 @@ const StatusUpdates = ({playbook}: Props) => {
                         // if the broadcast is disabled, we broadcast update to zero channel
                         channelCount: playbook.broadcast_enabled ? playbook.broadcast_channel_ids?.length ?? 0 : 0,
                         channels: (channelCount: ReactNode) => {
-                            if (archived) {
+                            if (disabled) {
                                 return channelCount;
                             }
                             return (
@@ -100,7 +100,7 @@ const StatusUpdates = ({playbook}: Props) => {
                         // if the broadcast is disabled, we make zero webhook call
                         webhookCount: playbook.webhook_on_status_update_enabled ? playbook.webhook_on_status_update_urls?.length ?? 0 : 0,
                         webhooks: (webhookCount: ReactNode) => {
-                            if (archived) {
+                            if (disabled) {
                                 return webhookCount;
                             }
                             return (
@@ -125,7 +125,7 @@ const StatusUpdates = ({playbook}: Props) => {
             </StatusUpdatesTextContainer>
             <Template>
                 <MarkdownEdit
-                    disabled={archived}
+                    disabled={disabled}
                     placeholder={formatMessage({defaultMessage: 'Add a status update template…'})}
                     value={playbook.reminder_message_template}
                     onSave={(newMessage: string) => {

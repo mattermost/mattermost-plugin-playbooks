@@ -4,16 +4,22 @@
 import React from 'react';
 import styled from 'styled-components';
 import ReactSelect, {StylesConfig} from 'react-select';
+import {defineMessages, useIntl} from 'react-intl';
+
 import {
+    AccountMultipleOutlineIcon,
+    AccountOutlineIcon,
+    CalendarOutlineIcon,
     CheckIcon,
     ChevronDownCircleOutlineIcon,
     FormatListBulletedIcon,
     LinkVariantIcon,
     MenuVariantIcon,
 } from '@mattermost/compass-icons/components';
-
 import {FieldType} from '@mattermost/types/properties';
 
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import type {PropertyField} from 'src/types/properties';
 
 import Dropdown from 'src/components/dropdown';
@@ -22,14 +28,14 @@ import {hasOptions, supportsOptions} from './property_utils';
 
 interface Props {
     field: PropertyField;
-    updateField: (field: PropertyField) => void;
+    updateField: (field: PropertyField) => void | Promise<void>;
     onClose?: () => void;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     target: React.ReactElement;
 }
 
-type PropertyType = 'text' | 'select' | 'multiselect' | 'url';
+type PropertyType = 'text' | 'select' | 'multiselect' | 'url' | 'date' | 'user' | 'multiuser';
 
 type TypeOption = {
     value: PropertyType;
@@ -37,32 +43,29 @@ type TypeOption = {
     type: PropertyType;
 };
 
-const TYPE_OPTIONS: Array<{
+const propertyTypeMessages = defineMessages({
+    text: {id: 'playbook.property_type.text', defaultMessage: 'Text'},
+    url: {id: 'playbook.property_type.url', defaultMessage: 'URL'},
+    select: {id: 'playbook.property_type.select', defaultMessage: 'Select'},
+    multiselect: {id: 'playbook.property_type.multiselect', defaultMessage: 'Multi-select'},
+    date: {id: 'playbook.property_type.date', defaultMessage: 'Date'},
+    user: {id: 'playbook.property_type.user', defaultMessage: 'User'},
+    multiuser: {id: 'playbook.property_type.multiuser', defaultMessage: 'Multi-user'},
+    defaultOptionName: {id: 'playbook.property_type.default_option_name', defaultMessage: 'Option 1'},
+});
+
+const PROPERTY_TYPE_DEFS: Array<{
     type: PropertyType;
     icon: React.ComponentType<{size?: number}>;
-    label: string;
-}> = ([
-    {
-        type: 'text',
-        icon: MenuVariantIcon,
-        label: 'Text',
-    },
-    {
-        type: 'url',
-        icon: LinkVariantIcon,
-        label: 'URL',
-    },
-    {
-        type: 'select',
-        icon: ChevronDownCircleOutlineIcon,
-        label: 'Select',
-    },
-    {
-        type: 'multiselect',
-        icon: FormatListBulletedIcon,
-        label: 'Multi-select',
-    },
-]) as const;
+}> = [
+    {type: 'text', icon: MenuVariantIcon},
+    {type: 'url', icon: LinkVariantIcon},
+    {type: 'select', icon: ChevronDownCircleOutlineIcon},
+    {type: 'multiselect', icon: FormatListBulletedIcon},
+    {type: 'date', icon: CalendarOutlineIcon},
+    {type: 'user', icon: AccountOutlineIcon},
+    {type: 'multiuser', icon: AccountMultipleOutlineIcon},
+];
 
 const PropertyTypeSelector = ({
     field,
@@ -72,6 +75,18 @@ const PropertyTypeSelector = ({
     onOpenChange,
     target,
 }: Props) => {
+    const {formatMessage} = useIntl();
+    const addToast = useToaster().add;
+
+    const TYPE_OPTIONS: Array<{
+        type: PropertyType;
+        icon: React.ComponentType<{size?: number}>;
+        label: string;
+    }> = PROPERTY_TYPE_DEFS.map(({type, icon}) => ({
+        type,
+        icon,
+        label: formatMessage(propertyTypeMessages[type]),
+    }));
     const handleTypeSelect = (option: TypeOption | null | undefined) => {
         if (!option) {
             return;
@@ -97,9 +112,21 @@ const PropertyTypeSelector = ({
             actualType = 'multiselect';
             valueType = '';
             break;
+        case 'date':
+            actualType = 'date';
+            valueType = '';
+            break;
+        case 'user':
+            actualType = 'user';
+            valueType = '';
+            break;
+        case 'multiuser':
+            actualType = 'multiuser';
+            valueType = '';
+            break;
         }
 
-        const nextField = {...field, type: actualType, attrs: {...field.attrs, value_type: valueType}};
+        const nextField = {...field, type: actualType, attrs: {...(field.attrs || {}), value_type: valueType}};
 
         if (!supportsOptions(nextField) && hasOptions(nextField)) {
             // Remove options if not supported
@@ -111,12 +138,17 @@ const PropertyTypeSelector = ({
                 ...nextField.attrs,
                 options: [{
                     id: '',
-                    name: 'Option 1',
+                    name: formatMessage(propertyTypeMessages.defaultOptionName),
                 }],
             };
         }
 
-        updateField(nextField);
+        Promise.resolve(updateField(nextField)).catch(() => {
+            addToast({
+                content: formatMessage({defaultMessage: 'Failed to update attribute type'}),
+                toastStyle: ToastStyle.Failure,
+            });
+        });
         onClose?.();
         onOpenChange(false);
     };
@@ -167,7 +199,7 @@ const PropertyTypeSelector = ({
                 hideSelectedOptions={false}
                 menuIsOpen={true}
                 options={typeOptions}
-                placeholder='Select type'
+                placeholder={formatMessage({defaultMessage: 'Select type'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selectedOption}
@@ -200,7 +232,7 @@ const selectStyles: StylesConfig<TypeOption, false> = {
     control: (provided) => ({...provided, minWidth: 140, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
-        const hoverColor = 'rgba(20, 93, 191, 0.08)';
+        const hoverColor = 'rgba(var(--button-bg-rgb), 0.08)';
         const bgHover = state.isFocused ? hoverColor : 'transparent';
         return {
             ...provided,

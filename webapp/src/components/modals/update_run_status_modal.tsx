@@ -4,6 +4,7 @@
 import React, {
     ComponentProps,
     ReactNode,
+    useEffect,
     useMemo,
     useState,
 } from 'react';
@@ -31,11 +32,12 @@ import {
 } from 'src/components/datetime_input';
 
 import {useFormattedUsernames, usePost} from 'src/hooks';
+import {useUserDisplayNameMap} from 'src/hooks/general';
 
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
 import {pluginUrl} from 'src/browser_routing';
-import {postStatusUpdate} from 'src/client';
+import {fetchPlaybookRun, postStatusUpdate} from 'src/client';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
 
@@ -51,6 +53,8 @@ import {useFinishRunConfirmationMessage} from 'src/components/backstage/playbook
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {getFragmentData, graphql} from 'src/graphql/generated';
 import {DefaultMessageFragment, ReminderTimerFragment} from 'src/graphql/generated/graphql';
+import {TemplatePropertyField, resolveTemplatePreview} from 'src/utils/template_utils';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 const ID = 'playbooks_update_run_status_dialog';
 const NAMES_ON_TOOLTIP = 5;
@@ -90,6 +94,65 @@ const runStatusModalQueryDocument = graphql(/* GraphQL */`
     }
 `);
 
+// computeStatusMessagePreview is the pure resolution logic, extracted for testability.
+// Returns the resolved message, or '' when resolution produces no change (meaning no
+// known tokens were present, so showing a preview would add no value).
+export function computeStatusMessagePreview(
+    message: string,
+    run: PlaybookRun,
+    userMap: Record<string, string>,
+): string {
+    const fields = (run.property_fields ?? []) as TemplatePropertyField[];
+    const values: Record<string, unknown> = {};
+    for (const pv of run.property_values ?? []) {
+        if (pv.field_id && pv.value !== undefined) {
+            values[pv.field_id] = pv.value;
+        }
+    }
+
+    const seqValue = run.sequential_id || (run.run_number == null ? 'N' : String(run.run_number));
+    const ownerName = (run.owner_user_id && userMap[run.owner_user_id]) || run.owner_user_id || '';
+    const creatorName = (run.reporter_user_id && userMap[run.reporter_user_id]) || run.reporter_user_id || '';
+
+    const resolved = resolveTemplatePreview(message, fields, values, {
+        SEQ: seqValue,
+        OWNER: ownerName,
+        CREATOR: creatorName,
+    }, userMap);
+
+    // Only show preview when resolution actually changed something —
+    // if the message has {foo} that matches no known token or field,
+    // the resolved string equals the input and a preview adds no value.
+    return resolved === message ? '' : resolved;
+}
+
+// useStatusMessagePreview resolves template tokens in the current message against
+// the run's actual property values, sequential ID, owner, and creator.
+function useStatusMessagePreview(playbookRunId: string, message: string | undefined): string {
+    const [run, setRun] = useState<PlaybookRun | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        setRun(null);
+        fetchPlaybookRun(playbookRunId).then((r) => {
+            if (!cancelled) {
+                setRun(r);
+            }
+        }).catch(() => { /* ignore fetch errors */ });
+        return () => {
+            cancelled = true;
+        };
+    }, [playbookRunId]);
+
+    const userMap = useUserDisplayNameMap();
+
+    return useMemo(() => {
+        if (!message || !run) {
+            return '';
+        }
+        return computeStatusMessagePreview(message, run, userMap);
+    }, [message, run, userMap]);
+}
+
 const UpdateRunStatusModal = ({
     playbookRunId,
     channelId,
@@ -112,9 +175,11 @@ const UpdateRunStatusModal = ({
 
     const [message, setMessage] = useState(providedMessage);
     const defaultMessage = useDefaultMessage(getFragmentData(DefaultMessage, run));
-    if (message == null && defaultMessage) {
-        setMessage(defaultMessage);
-    }
+    useEffect(() => {
+        if (defaultMessage) {
+            setMessage((prev) => (prev == null ? defaultMessage : prev));
+        }
+    }, [defaultMessage]);
 
     const confirmationMessage = useFinishRunConfirmationMessage(run);
 
@@ -125,9 +190,9 @@ const UpdateRunStatusModal = ({
 
     const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), finishRun, providedReminder);
     const isReminderValid = finishRun || (reminder && reminder > 0);
-    let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
+    let warningMessage = formatMessage({id: 'playbooks.update_run_status_modal.date_in_future', defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
-        warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
+        warningMessage = formatMessage({id: 'playbooks.update_run_status_modal.specify_future_date', defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
 
     // Extract channel and follower names
@@ -154,6 +219,8 @@ const UpdateRunStatusModal = ({
             rest: total - names.length,
         }) : '';
     };
+
+    const messagePreview = useStatusMessagePreview(playbookRunId, message);
 
     const pendingChanges = !(providedMessage === message || message === defaultMessage || message === '');
 
@@ -267,6 +334,11 @@ const UpdateRunStatusModal = ({
                 setValue={setMessage}
                 channelId={channelId}
             />
+            {messagePreview && (
+                <MessagePreview data-testid='status-message-preview'>
+                    {formatMessage({id: 'playbooks.update_run_status_modal.message_preview', defaultMessage: 'Preview: {preview}'}, {preview: messagePreview})}
+                </MessagePreview>
+            )}
             <Label>
                 {formatMessage({defaultMessage: 'Timer for next update'})}
             </Label>
@@ -496,6 +568,16 @@ const WarningBlock = styled.div`
 const WarningLine = styled.p`
     margin-top: 0.6rem;
     color: var(--error-text);
+`;
+
+const MessagePreview = styled.div`
+    margin-top: 4px;
+    margin-bottom: 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    line-height: 16px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 `;
 
 const FooterContainer = styled.div`

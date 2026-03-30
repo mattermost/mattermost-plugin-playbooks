@@ -6,8 +6,10 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -41,9 +43,13 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 func (r *PlaybookRootResolver) Playbook(ctx context.Context, args struct {
 	ID string
 }) (*PlaybookResolver, error) {
-	playbookID := args.ID
-	return getGraphqlPlaybook(ctx, playbookID)
+	if args.ID == "" {
+		return nil, newGraphQLError(errors.New("playbook ID is required"))
+	}
+	return getGraphqlPlaybook(ctx, args.ID)
 }
+
+const maxPlaybooksPerPage = 10000
 
 func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 	TeamID             string
@@ -83,7 +89,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 		WithArchived:       args.WithArchived,
 		WithMembershipOnly: isGuest || args.WithMembershipOnly, // Guests can only see playbooks if they are invited to them
 		Page:               0,
-		PerPage:            10000,
+		PerPage:            maxPlaybooksPerPage,
 	}
 
 	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
@@ -122,7 +128,7 @@ func (r *RunRootResolver) UpdatePlaybookFavorite(ctx context.Context, args struc
 	}
 
 	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
+		return "", classifyAppError(app.ErrPlaybookArchived)
 	}
 
 	if args.Favorite {
@@ -190,8 +196,18 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RemoveChannelMemberOnRemovedParticipant *bool
 		ChannelID                               *string
 		ChannelMode                             *string
+		OwnerGroupOnlyActions                   *bool
+		AdminOnlyEdit                           *bool
+		NewChannelOnly                          *bool
+		AutoArchiveChannel                      *bool
+		RunNumberPrefix                         *string
+		CreationRules                           *[]CreationRuleInput
 	}
 }) (string, error) {
+	if !model.IsValidId(args.ID) {
+		return "", newGraphQLError(errors.New("invalid playbook ID"))
+	}
+
 	c, err := getContext(ctx)
 	if err != nil {
 		return "", err
@@ -203,12 +219,52 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		return "", err
+	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
+		return "", classifyAppError(err)
 	}
 
 	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
+		return "", classifyAppError(app.ErrPlaybookArchived)
+	}
+
+	// Validate governance flag changes using shared logic.
+	// Disabling AdminOnlyEdit is already gated: when AdminOnlyEdit is true, PlaybookEdit above
+	// already restricts the caller to admins only.
+	isAdmin := app.IsSystemAdmin(userID, c.pluginAPI)
+	isPbAdmin := app.IsPlaybookAdminMember(userID, currentPlaybook)
+	enableAdminOnlyEdit := args.Updates.AdminOnlyEdit != nil && *args.Updates.AdminOnlyEdit && !currentPlaybook.AdminOnlyEdit
+	toggleOwnerGroupOnlyActions := args.Updates.OwnerGroupOnlyActions != nil && *args.Updates.OwnerGroupOnlyActions != currentPlaybook.OwnerGroupOnlyActions
+	toggleNewChannelOnly := args.Updates.NewChannelOnly != nil && *args.Updates.NewChannelOnly != currentPlaybook.NewChannelOnly
+	toggleAutoArchiveChannel := args.Updates.AutoArchiveChannel != nil && *args.Updates.AutoArchiveChannel != currentPlaybook.AutoArchiveChannel
+	if err := app.ValidateGovernanceFlags(isAdmin, isPbAdmin, app.GovernanceFlagChanges{
+		EnableAdminOnlyEdit:         enableAdminOnlyEdit,
+		ToggleOwnerGroupOnlyActions: toggleOwnerGroupOnlyActions,
+		ToggleNewChannelOnly:        toggleNewChannelOnly,
+		ToggleAutoArchiveChannel:    toggleAutoArchiveChannel,
+	}); err != nil {
+		return "", classifyAppError(err)
+	}
+	// Warn when OwnerGroupOnlyActions is enabled: this immediately restricts all active runs
+	// in this playbook so only the run owner can finish/restore them.
+	if args.Updates.OwnerGroupOnlyActions != nil && *args.Updates.OwnerGroupOnlyActions && !currentPlaybook.OwnerGroupOnlyActions {
+		c.logger.WithFields(logrus.Fields{
+			"playbook_id": args.ID,
+			"user_id":     userID,
+		}).Warn("OwnerGroupOnlyActions enabled: all active runs in this playbook now require owner-level permission to finish or restore")
+	}
+
+	if args.Updates.ChannelNameTemplate != nil {
+		if err := app.ValidateChannelNameTemplate(*args.Updates.ChannelNameTemplate); err != nil {
+			return "", newGraphQLError(err)
+		}
+		propertyFields, err := c.propertyService.GetPropertyFields(args.ID)
+		if err != nil {
+			c.logger.WithError(err).Error("UpdatePlaybook: failed to load property fields for template validation")
+			return "", classifyAppError(err)
+		}
+		if unknown := app.ValidateTemplate(*args.Updates.ChannelNameTemplate, app.ResolveOptions{Fields: propertyFields}); len(unknown) > 0 {
+			return "", newGraphQLError(errors.New(app.UnknownTemplateFieldsError(unknown)))
+		}
 	}
 
 	setmap := map[string]interface{}{}
@@ -217,15 +273,15 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	if args.Updates.Public != nil {
 		if *args.Updates.Public {
 			if err := c.permissions.PlaybookMakePublic(userID, currentPlaybook); err != nil {
-				return "", err
+				return "", classifyAppError(err)
 			}
 		} else {
 			if err := c.permissions.PlaybookMakePrivate(userID, currentPlaybook); err != nil {
-				return "", err
+				return "", classifyAppError(err)
 			}
 		}
 		if !c.licenceChecker.PlaybookAllowed(*args.Updates.Public) {
-			return "", errors.Wrapf(app.ErrLicensedFeature, "the playbook is not valid with the current license")
+			return "", classifyAppError(errors.Wrapf(app.ErrLicensedFeature, "the playbook is not valid with the current license"))
 		}
 		addToSetmap(setmap, "Public", args.Updates.Public)
 	}
@@ -249,7 +305,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "InviteUsersEnabled", args.Updates.InviteUsersEnabled)
 	if args.Updates.DefaultOwnerID != nil {
 		if !c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
-			return "", errors.Wrap(app.ErrNoPermissions, "default owner can't view team")
+			return "", classifyAppError(errors.Wrap(app.ErrNoPermissions, "default owner can't view team"))
 		}
 		addToSetmap(setmap, "DefaultCommanderID", args.Updates.DefaultOwnerID)
 	}
@@ -257,7 +313,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	if args.Updates.BroadcastChannelIDs != nil {
 		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, currentPlaybook.BroadcastChannelIDs); err != nil {
-			return "", err
+			return "", classifyAppError(err)
 		}
 		addConcatToSetmap(setmap, "ConcatenatedBroadcastChannelIDs", args.Updates.BroadcastChannelIDs)
 	}
@@ -265,7 +321,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "BroadcastEnabled", args.Updates.BroadcastEnabled)
 	if args.Updates.WebhookOnCreationURLs != nil {
 		if err := app.ValidateWebhookURLs(*args.Updates.WebhookOnCreationURLs); err != nil {
-			return "", err
+			return "", newGraphQLError(err)
 		}
 		addConcatToSetmap(setmap, "ConcatenatedWebhookOnCreationURLs", args.Updates.WebhookOnCreationURLs)
 	}
@@ -277,7 +333,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "RetrospectiveEnabled", args.Updates.RetrospectiveEnabled)
 	if args.Updates.WebhookOnStatusUpdateURLs != nil {
 		if err := app.ValidateWebhookURLs(*args.Updates.WebhookOnStatusUpdateURLs); err != nil {
-			return "", err
+			return "", newGraphQLError(err)
 		}
 		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
 	}
@@ -290,7 +346,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "CategorizeChannelEnabled", args.Updates.CategorizeChannelEnabled)
 	if args.Updates.CategoryName != nil {
 		if err := app.ValidateCategoryName(*args.Updates.CategoryName); err != nil {
-			return "", err
+			return "", newGraphQLError(err)
 		}
 		addToSetmap(setmap, "CategoryName", args.Updates.CategoryName)
 	}
@@ -299,12 +355,130 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
+	addToSetmap(setmap, "OwnerGroupOnlyActions", args.Updates.OwnerGroupOnlyActions)
+	addToSetmap(setmap, "AdminOnlyEdit", args.Updates.AdminOnlyEdit)
+	addToSetmap(setmap, "NewChannelOnly", args.Updates.NewChannelOnly)
+	addToSetmap(setmap, "AutoArchiveChannel", args.Updates.AutoArchiveChannel)
+	if args.Updates.CreationRules != nil {
+		creationRules := make([]app.CreationRule, len(*args.Updates.CreationRules))
+		for i, rule := range *args.Updates.CreationRules {
+			ownerID := ""
+			if rule.SetOwnerID != nil {
+				ownerID = *rule.SetOwnerID
+			}
+			channelID := ""
+			if rule.SetChannelID != nil {
+				channelID = *rule.SetChannelID
+			}
+			inviteUserIDs := []string{}
+			if rule.InviteUserIDs != nil {
+				inviteUserIDs = *rule.InviteUserIDs
+			}
+			var condition *app.ConditionExprV1
+			if rule.Condition != nil {
+				condBytes, err := json.Marshal(*rule.Condition)
+				if err != nil {
+					return "", newGraphQLError(errors.Wrapf(err, "creation rule %d: failed to marshal condition", i))
+				}
+				var cond app.ConditionExprV1
+				if err := json.Unmarshal(condBytes, &cond); err != nil {
+					return "", newGraphQLError(errors.Wrapf(err, "creation rule %d: failed to unmarshal condition", i))
+				}
+				condition = &cond
+			}
+			creationRules[i] = app.CreationRule{
+				Condition:     condition,
+				SetOwnerID:    ownerID,
+				SetChannelID:  channelID,
+				InviteUserIDs: inviteUserIDs,
+			}
+		}
+		if err := app.ValidateCreationRules(creationRules); err != nil {
+			return "", newGraphQLError(errors.Wrap(err, "invalid creation rules"))
+		}
+
+		rulesJSON, err := json.Marshal(creationRules)
+		if err != nil {
+			return "", newGraphQLError(errors.Wrap(err, "failed to marshal creation rules"))
+		}
+		setmap["CreationRulesJSON"] = string(rulesJSON)
+	}
+	// Cross-field validation: reject combinations where the effective channel name template uses
+	// {SEQ} but the effective run number prefix is empty.
+	// NOTE: RunNumberPrefix is trimmed and validated further below before being added to setmap.
+	effectiveTemplate := currentPlaybook.ChannelNameTemplate
+	if args.Updates.ChannelNameTemplate != nil {
+		effectiveTemplate = *args.Updates.ChannelNameTemplate
+	}
+	effectivePrefix := currentPlaybook.RunNumberPrefix
+	if args.Updates.RunNumberPrefix != nil {
+		effectivePrefix = app.NormalizeRunNumberPrefix(*args.Updates.RunNumberPrefix)
+	}
+	if err := app.ValidateChannelNameTemplateWithPrefix(effectiveTemplate, effectivePrefix); err != nil {
+		return "", newGraphQLError(err)
+	}
+
+	// Validate NewChannelOnly + ChannelMode: reject incompatible combinations at save time.
+	newChannelOnly := currentPlaybook.NewChannelOnly
+	if args.Updates.NewChannelOnly != nil {
+		newChannelOnly = *args.Updates.NewChannelOnly
+	}
+	effectiveChannelMode := currentPlaybook.ChannelMode
+	if args.Updates.ChannelMode != nil {
+		if err := effectiveChannelMode.UnmarshalText([]byte(*args.Updates.ChannelMode)); err != nil {
+			return "", newGraphQLError(errors.Wrapf(err, "invalid channel mode: %s", *args.Updates.ChannelMode))
+		}
+	}
+	if err := app.ValidateNewChannelOnlyMode(newChannelOnly, effectiveChannelMode); err != nil {
+		return "", newGraphQLError(err)
+	}
+
+	// Cross-field validation: if status updates are enabled and ReminderTimerDefaultSeconds is 0,
+	// auto-coerce to the default value (15 minutes). The coerced value is written back into
+	// args.Updates.ReminderTimerDefaultSeconds so that addToSetmap persists it.
+	effectiveTimer := currentPlaybook.ReminderTimerDefaultSeconds
+	if args.Updates.ReminderTimerDefaultSeconds != nil {
+		effectiveTimer = int64(*args.Updates.ReminderTimerDefaultSeconds)
+	}
+	effectiveStatusEnabled := currentPlaybook.StatusUpdateEnabled
+	if args.Updates.StatusUpdateEnabled != nil {
+		effectiveStatusEnabled = *args.Updates.StatusUpdateEnabled
+	}
+	app.ValidateStatusUpdateConfig(&effectiveTimer, effectiveStatusEnabled)
+	// Propagate any coerced timer value back so it is persisted by addToSetmap below.
+	if effectiveStatusEnabled && (args.Updates.ReminderTimerDefaultSeconds == nil || int64(*args.Updates.ReminderTimerDefaultSeconds) != effectiveTimer) {
+		coerced := float64(effectiveTimer)
+		args.Updates.ReminderTimerDefaultSeconds = &coerced
+	}
+
+	// Normalize AssigneeType values in checklists and validate companion ID fields.
+	if args.Updates.Checklists != nil {
+		for ci := range *args.Updates.Checklists {
+			for ii := range (*args.Updates.Checklists)[ci].Items {
+				item := &(*args.Updates.Checklists)[ci].Items[ii]
+				if item.AssigneeType != nil {
+					at := *item.AssigneeType
+					if !app.IsValidAssigneeType(at) {
+						at = app.AssigneeTypeSpecificUser
+					}
+					// Reject non-empty companion IDs that fail format validation.
+					if at == app.AssigneeTypeGroup && item.AssigneeGroupID != nil && *item.AssigneeGroupID != "" && !model.IsValidId(*item.AssigneeGroupID) {
+						return "", newGraphQLError(fmt.Errorf("checklist %d item %d: assignee_group_id %q is not a valid ID", ci, ii, *item.AssigneeGroupID))
+					}
+					if at == app.AssigneeTypePropertyUser && item.AssigneePropertyFieldID != nil && *item.AssigneePropertyFieldID != "" && !model.IsValidId(*item.AssigneePropertyFieldID) {
+						return "", newGraphQLError(fmt.Errorf("checklist %d item %d: assignee_property_field_id %q is not a valid ID", ci, ii, *item.AssigneePropertyFieldID))
+					}
+					item.AssigneeType = &at
+				}
+			}
+		}
+	}
 
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {
 		app.CleanUpChecklists(*args.Updates.Checklists)
 		if err := validateUpdateTaskActions(*args.Updates.Checklists); err != nil {
-			return "", errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID)
+			return "", newGraphQLError(errors.Wrapf(err, "failed to validate task actions in graphql json for playbook id: '%s'", args.ID))
 		}
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
@@ -315,13 +489,22 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	if args.Updates.Checklists != nil || args.Updates.InvitedUserIDs != nil || args.Updates.InviteUsersEnabled != nil {
 		if err := validatePreAssignmentUpdate(currentPlaybook, args.Updates.Checklists, args.Updates.InvitedUserIDs, args.Updates.InviteUsersEnabled); err != nil {
-			return "", errors.Wrapf(err, "invalid user pre-assignment for playbook id: '%s'", args.ID)
+			return "", newGraphQLError(errors.Wrapf(err, "invalid user pre-assignment for playbook id: '%s'", args.ID))
 		}
 	}
 
+	// Validate RunNumberPrefix format; trim so the persisted value is always clean.
+	if args.Updates.RunNumberPrefix != nil {
+		*args.Updates.RunNumberPrefix = app.NormalizeRunNumberPrefix(*args.Updates.RunNumberPrefix)
+		if err := app.ValidateRunNumberPrefix(*args.Updates.RunNumberPrefix); err != nil {
+			return "", newGraphQLError(err)
+		}
+		setmap["RunNumberPrefix"] = *args.Updates.RunNumberPrefix
+	}
+
 	if len(setmap) > 0 {
-		if err := c.playbookStore.GraphqlUpdate(args.ID, setmap); err != nil {
-			return "", err
+		if err := c.playbookService.GraphqlUpdate(args.ID, setmap); err != nil {
+			return "", classifyAppError(err)
 		}
 	}
 
@@ -332,6 +515,13 @@ func (r *PlaybookRootResolver) AddPlaybookMember(ctx context.Context, args struc
 	PlaybookID string
 	UserID     string
 }) (string, error) {
+	if !model.IsValidId(args.PlaybookID) {
+		return "", newGraphQLError(errors.New("invalid playbook ID"))
+	}
+	if !model.IsValidId(args.UserID) {
+		return "", newGraphQLError(errors.New("invalid user ID"))
+	}
+
 	c, err := getContext(ctx)
 	if err != nil {
 		return "", err
@@ -343,16 +533,19 @@ func (r *PlaybookRootResolver) AddPlaybookMember(ctx context.Context, args struc
 		return "", err
 	}
 
+	// Member management is intentionally not gated by AdminOnlyEdit: managing who
+	// belongs to a playbook is a membership concern, not a content-editing concern.
+	// PlaybookManageMembers is the correct permission check here.
 	if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
+		return "", classifyAppError(app.ErrPlaybookArchived)
 	}
 
-	if err := c.playbookStore.AddPlaybookMember(args.PlaybookID, args.UserID); err != nil {
-		return "", errors.Wrap(err, "unable to add playbook member")
+	if err := c.playbookService.AddPlaybookMember(args.PlaybookID, args.UserID); err != nil {
+		return "", classifyAppError(err)
 	}
 
 	return "", nil
@@ -362,6 +555,13 @@ func (r *PlaybookRootResolver) RemovePlaybookMember(ctx context.Context, args st
 	PlaybookID string
 	UserID     string
 }) (string, error) {
+	if !model.IsValidId(args.PlaybookID) {
+		return "", newGraphQLError(errors.New("invalid playbook ID"))
+	}
+	if !model.IsValidId(args.UserID) {
+		return "", newGraphQLError(errors.New("invalid user ID"))
+	}
+
 	c, err := getContext(ctx)
 	if err != nil {
 		return "", err
@@ -374,18 +574,19 @@ func (r *PlaybookRootResolver) RemovePlaybookMember(ctx context.Context, args st
 	}
 
 	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
+		return "", classifyAppError(app.ErrPlaybookArchived)
 	}
 
-	// do not require manageMembers permission if the user want to leave playbook
+	// Member management is intentionally not gated by AdminOnlyEdit — see AddPlaybookMember.
+	// Users may always remove themselves; removing others requires PlaybookManageMembers.
 	if userID != args.UserID {
 		if err := c.permissions.PlaybookManageMembers(userID, currentPlaybook); err != nil {
-			return "", err
+			return "", classifyAppError(err)
 		}
 	}
 
-	if err := c.playbookStore.RemovePlaybookMember(args.PlaybookID, args.UserID); err != nil {
-		return "", errors.Wrap(err, "unable to remove playbook member")
+	if err := c.playbookService.RemovePlaybookMember(args.PlaybookID, args.UserID); err != nil {
+		return "", classifyAppError(err)
 	}
 
 	return "", nil
@@ -404,16 +605,11 @@ func (r *PlaybookRootResolver) AddMetric(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
-	if err != nil {
-		return "", err
+	if !model.IsValidId(args.PlaybookID) {
+		return "", newGraphQLError(errors.New("invalid playbook ID"))
 	}
 
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
-	}
-
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if _, err := authorisePlaybookEdit(c, userID, args.PlaybookID); err != nil {
 		return "", err
 	}
 
@@ -424,13 +620,13 @@ func (r *PlaybookRootResolver) AddMetric(ctx context.Context, args struct {
 		target = null.IntFrom(int64(*args.Target))
 	}
 
-	if err := c.playbookStore.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
+	if err := c.playbookService.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
 		Title:       args.Title,
 		Description: args.Description,
 		Type:        args.Type,
 		Target:      target,
 	}); err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	return args.PlaybookID, nil
@@ -448,21 +644,12 @@ func (r *PlaybookRootResolver) UpdateMetric(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentMetric, err := c.playbookStore.GetMetric(args.ID)
+	currentMetric, err := c.playbookService.GetMetric(args.ID)
 	if err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
-	currentPlaybook, err := c.playbookService.Get(currentMetric.PlaybookID)
-	if err != nil {
-		return "", err
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
-	}
-
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
+	if _, err := authorisePlaybookEdit(c, userID, currentMetric.PlaybookID); err != nil {
 		return "", err
 	}
 
@@ -473,8 +660,8 @@ func (r *PlaybookRootResolver) UpdateMetric(ctx context.Context, args struct {
 		setmap["Target"] = null.IntFrom(int64(*args.Target))
 	}
 	if len(setmap) > 0 {
-		if err := c.playbookStore.UpdateMetric(args.ID, setmap); err != nil {
-			return "", err
+		if err := c.playbookService.UpdateMetric(args.ID, setmap); err != nil {
+			return "", classifyAppError(err)
 		}
 	}
 
@@ -490,22 +677,17 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentMetric, err := c.playbookStore.GetMetric(args.ID)
+	currentMetric, err := c.playbookService.GetMetric(args.ID)
 	if err != nil {
+		return "", classifyAppError(err)
+	}
+
+	if _, err := authorisePlaybookEdit(c, userID, currentMetric.PlaybookID); err != nil {
 		return "", err
 	}
 
-	currentPlaybook, err := c.playbookService.Get(currentMetric.PlaybookID)
-	if err != nil {
-		return "", err
-	}
-
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		return "", err
-	}
-
-	if err := c.playbookStore.DeleteMetric(args.ID); err != nil {
-		return "", err
+	if err := c.playbookService.DeleteMetric(args.ID); err != nil {
+		return "", classifyAppError(err)
 	}
 
 	return args.ID, nil

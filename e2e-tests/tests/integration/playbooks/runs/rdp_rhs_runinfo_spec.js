@@ -77,7 +77,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
         const commonTests = () => {
             it('Playbook entry is visible and links to the playbook', () => {
                 // * Verify that the playbook entry exists
-                getOverviewEntry('playbook').should('exist');
+                getOverviewEntry('playbook').should('be.visible');
 
                 // # Click on the Playbook entry
                 getOverviewEntry('playbook').within(() => cy.getStyledComponent('ItemLink').click());
@@ -96,7 +96,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 // * Verify that the participants are rendered
                 getOverviewEntry('participants').within(() => {
                     cy.getStyledComponent('Participants').within(() => {
-                        cy.getStyledComponent('UserPic').should('exist');
+                        cy.getStyledComponent('UserPic').should('be.visible');
                     });
                 });
             });
@@ -110,7 +110,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     cy.findByTestId('rhs-title').contains('Participants');
 
                     // * Verify that the back button is shown
-                    cy.findByTestId('rhs-back-button').should('exist');
+                    cy.findByTestId('rhs-back-button').should('be.visible');
 
                     // * Verify that the participants list shows the number of participants
                     cy.findByText('1 Participant');
@@ -141,7 +141,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     cy.findByRole('button', {name: /Following/}).click({force: true});
 
                     // * Verify that it now says (exactly) Follow
-                    cy.findByRole('button', {name: /^Follow$/}).should('exist');
+                    cy.findByRole('button', {name: /^Follow$/}).should('be.visible');
 
                     // * Verify that the user no longer shows in the following list
                     cy.getStyledComponent('UserRow').should('not.exist');
@@ -150,7 +150,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     cy.findByRole('button', {name: /^Follow$/}).click({force: true});
 
                     // * Verify that it now says Following
-                    cy.findByRole('button', {name: /Following/}).should('exist');
+                    cy.findByRole('button', {name: /Following/}).should('be.visible');
                 });
             });
 
@@ -206,9 +206,9 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     getOverviewEntry('playbook').should('not.exist');
 
                     // * Verify other overview entries are still visible
-                    getOverviewEntry('owner').should('exist');
-                    getOverviewEntry('participants').should('exist');
-                    getOverviewEntry('channel').should('exist');
+                    getOverviewEntry('owner').should('be.visible');
+                    getOverviewEntry('participants').should('be.visible');
+                    getOverviewEntry('channel').should('be.visible');
                 });
             });
         });
@@ -249,8 +249,8 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                             getOverviewEntry('playbook').should('not.exist');
 
                             // * Verify other overview entries are still visible
-                            getOverviewEntry('owner').should('exist');
-                            getOverviewEntry('participants').should('exist');
+                            getOverviewEntry('owner').should('be.visible');
+                            getOverviewEntry('participants').should('be.visible');
                         });
                     });
                 });
@@ -267,7 +267,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     cy.findByRole('button', {name: /^Follow$/}).click({force: true});
 
                     // * Verify that it now says Following
-                    cy.findByRole('button', {name: /Following/}).should('exist');
+                    cy.findByRole('button', {name: /Following/}).should('be.visible');
 
                     // * Verify that the user is now in the following list
                     cy.getStyledComponent('UserRow').within(() => {
@@ -278,7 +278,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                     cy.findByRole('button', {name: /Following/}).click({force: true});
 
                     // * Verify that it now says (exactly) Follow
-                    cy.findByRole('button', {name: /^Follow$/}).should('exist');
+                    cy.findByRole('button', {name: /^Follow$/}).should('be.visible');
                 });
             });
 
@@ -302,7 +302,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 getHeader().findByText('Participate').click();
 
                 // * Assert that modal is shown
-                cy.get('#become-participant-modal').should('exist');
+                cy.get('#become-participant-modal').should('be.visible');
 
                 // # Confirm modal
                 cy.findByTestId('modal-confirm-button').click();
@@ -400,7 +400,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
 
             const commonTests = () => {
                 it('key metrics is present', () => {
-                    getRHSSection('Key Metrics').should('exist');
+                    getRHSSection('Key Metrics').should('be.visible');
                 });
 
                 it('link scrolls to retrospective', () => {
@@ -572,7 +572,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
             it('recent activity is present and it contains a timeline', () => {
                 getRHSSection('Recent Activity').within(() => {
                     // * assert that section is shown
-                    cy.findByTestId('rhs-timeline').should('exist');
+                    cy.findByTestId('rhs-timeline').should('be.visible');
                 });
             });
 
@@ -585,7 +585,7 @@ describe('runs > run details page > run info', {testIsolation: true}, () => {
                 cy.findByRole('complementary').within(() => {
                     // * verify we changed to RHS-timeline
                     cy.findByTestId('rhs-title').contains('Timeline');
-                    cy.findByTestId('rhs-back-button').should('exist');
+                    cy.findByTestId('rhs-back-button').should('be.visible');
                 });
             });
         };

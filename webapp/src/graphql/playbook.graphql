@@ -34,10 +34,17 @@ query Playbook($id: String!) {
 		signal_any_keywords: signalAnyKeywords
 		create_public_playbook_run: createPublicPlaybookRun
 		channel_name_template: channelNameTemplate
+		run_number_prefix: runNumberPrefix
+		next_run_number: nextRunNumber
 		create_channel_member_on_new_participant: createChannelMemberOnNewParticipant
 		remove_channel_member_on_removed_participant: removeChannelMemberOnRemovedParticipant
 		channel_id: channelID
 		channel_mode: channelMode
+		owner_group_only_actions: ownerGroupOnlyActions
+		admin_only_edit: adminOnlyEdit
+		new_channel_only: newChannelOnly
+		auto_archive_channel: autoArchiveChannel
+		creation_rules: creationRules
 		is_favorite: isFavorite
 		checklists {
 			title
@@ -47,6 +54,7 @@ query Playbook($id: String!) {
 				state
 				state_modified: stateModified
 				assignee_id: assigneeID
+				assignee_type: assigneeType
 				assignee_modified: assigneeModified
 				command
 				command_last_run: commandLastRun
@@ -54,6 +62,9 @@ query Playbook($id: String!) {
 				condition_id: conditionID
 				condition_action: conditionAction
 				condition_reason: conditionReason
+				restrict_completion_to_assignee: restrictCompletionToAssignee
+				assignee_group_id: assigneeGroupID
+				assignee_property_field_id: assigneePropertyFieldID
 				task_actions: taskActions {
 					trigger: trigger {
 						type
@@ -77,6 +88,22 @@ query Playbook($id: String!) {
 			description
 			type
 			target
+		}
+		propertyFields {
+			id
+			name
+			type
+			group_id: groupID
+			attrs {
+				visibility
+				sort_order: sortOrder
+				options {
+					id
+					name
+					color
+				}
+				value_type: valueType
+			}
 		}
     }
 }

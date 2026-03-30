@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo, useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import debounce from 'debounce';
 import {ControlProps, components} from 'react-select';
 import styled from 'styled-components';
@@ -16,7 +21,8 @@ import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backstage/runs_list/playbook_selector';
 import {Option as TeamOption} from 'src/components/team/team_selector';
-import {clientFetchPlaybooks, fetchOwnersInTeam} from 'src/client';
+import {clientFetchPlaybooks, fetchOwnersInTeam, fetchPlaybookPropertyFields} from 'src/client';
+import type {PropertyField} from 'src/types/properties';
 import {Playbook} from 'src/types/playbook';
 import SearchInput from 'src/components/backstage/search_input';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
@@ -75,6 +81,38 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
     const [playbookSelectorToggle, setPlaybookSelectorToggle] = useState(false);
     const currentTeamId = useSelector(getCurrentTeamId);
 
+    const [selectFields, setSelectFields] = useState<PropertyField[]>([]);
+    const activePlaybookId = fetchParams.playbook_id;
+
+    useEffect(() => {
+        if (!activePlaybookId) {
+            setSelectFields([]);
+            return undefined;
+        }
+        let cancelled = false;
+        fetchPlaybookPropertyFields(activePlaybookId).then((fields) => {
+            if (!cancelled) {
+                setSelectFields(fields.filter((f) => f.type === 'select' && (f.attrs?.options ?? []).length > 0));
+            }
+        }).catch(() => {
+            if (!cancelled) {
+                setSelectFields([]);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [activePlaybookId]);
+
+    const setPropertyValueFilter = (fieldID: string, optionID: string) => {
+        setFetchParams((oldParams) => ({
+            ...oldParams,
+            property_field_id: fieldID || undefined,
+            property_value_filter: optionID || undefined,
+            page: 0,
+        }));
+    };
+
     const myRunsOnly = fetchParams.participant_or_follower_id === 'me';
     const setMyRunsOnly = (checked?: boolean) => {
         setFetchParams((oldParams) => {
@@ -108,11 +146,9 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
         });
     };
 
-    const setSearchTerm = (term: string) => {
-        setFetchParams((oldParams) => {
-            return {...oldParams, search_term: term, page: 0};
-        });
-    };
+    const setSearchTerm = useCallback((term: string) => {
+        setFetchParams((oldParams) => ({...oldParams, search_term: term, page: 0}));
+    }, [setFetchParams]);
 
     const resetOwner = () => {
         setOwnerId();
@@ -204,8 +240,42 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
                     onSelectedChange={setPlaybookId}
                 />
             }
+            {selectFields.map((field) => (
+                <SelectFieldFilter
+                    key={field.id}
+                    data-testid={`select-field-filter-${field.id}`}
+                    value={fetchParams.property_field_id === field.id ? (fetchParams.property_value_filter ?? '') : ''}
+                    onChange={(e) => {
+                        const optionID = e.target.value;
+                        setPropertyValueFilter(optionID ? field.id : '', optionID);
+                    }}
+                >
+                    <option value=''>{field.name}</option>
+                    {(field.attrs.options ?? []).map((opt) => (
+                        <option
+                            key={opt.id}
+                            value={opt.id}
+                        >{opt.name}</option>
+                    ))}
+                </SelectFieldFilter>
+            ))}
         </PlaybookRunListFilters>
     );
 };
+
+const SelectFieldFilter = styled.select`
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+    }
+`;
 
 export default Filters;

@@ -82,8 +82,8 @@ describe('runs > run details page > RHS', {testIsolation: true}, () => {
             // * Verify that the run info RHS changed to Timeline
             checkRHSTitle('Timeline');
 
-            // # Wait so we don't double-click
-            cy.wait(500);
+            // # Wait for the Timeline panel to be fully rendered before clicking again
+            cy.findByTestId('rhs-title').contains('Timeline').should('be.visible');
 
             // # Click again on the header timeline button
             getHeaderButton('timeline').click();
@@ -102,8 +102,8 @@ describe('runs > run details page > RHS', {testIsolation: true}, () => {
             // * Verify that the RHS is now closed
             getRHS().should('not.exist');
 
-            // # Wait so we don't double-click
-            cy.wait(500);
+            // # Wait for the info button to be ready before clicking again
+            getHeaderButton('info').should('be.visible');
 
             // # Click again on the header info button
             getHeaderButton('info').click();

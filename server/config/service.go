@@ -24,7 +24,7 @@ const (
 	npsPluginID = "com.mattermost.nps"
 
 	// SettingsChangedWSEvent is sent when plugin settings change
-	SettingsChangedWSEvent = "settings_changed"
+	SettingsChangedWSEvent = "playbook_settings_changed"
 )
 
 // ServiceImpl holds access to the plugin's Configuration.

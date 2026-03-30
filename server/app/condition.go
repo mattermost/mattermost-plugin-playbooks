@@ -17,6 +17,7 @@ const (
 	MaxConditionDepth        = 1    // Maximum nesting depth allowed for and/or conditions
 	MaxConditionsPerPlaybook = 1000 // Maximum number of conditions per playbook
 	CurrentConditionVersion  = 1    // Current version of condition expressions
+	conditionsDefaultPerPage = 100  // Default page size for condition list queries
 )
 
 // ConditionExpression interface for version-aware condition expressions
@@ -138,7 +139,7 @@ func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyFi
 	if c.And != nil {
 		conditionCount++
 		if len(c.And) == 0 {
-			return errors.New("and condition must have at least one nested condition")
+			return errors.Wrap(ErrMalformedCondition, "and condition must have at least one nested condition")
 		}
 		if currentDepth >= MaxConditionDepth {
 			return fmt.Errorf("condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
@@ -153,7 +154,7 @@ func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyFi
 	if c.Or != nil {
 		conditionCount++
 		if len(c.Or) == 0 {
-			return errors.New("or condition must have at least one nested condition")
+			return errors.Wrap(ErrMalformedCondition, "or condition must have at least one nested condition")
 		}
 		if currentDepth >= MaxConditionDepth {
 			return fmt.Errorf("condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
@@ -180,11 +181,11 @@ func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyFi
 	}
 
 	if conditionCount == 0 {
-		return errors.New("condition must have at least one operation (and, or, is, isNot)")
+		return errors.Wrap(ErrMalformedCondition, "condition must have at least one operation (and, or, is, isNot)")
 	}
 
 	if conditionCount > 1 {
-		return errors.New("condition can only have one operation (and, or, is, isNot)")
+		return errors.Wrap(ErrMalformedCondition, "condition can only have one operation (and, or, is, isNot)")
 	}
 
 	return nil
@@ -193,7 +194,7 @@ func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyFi
 // Validate ensures the comparison condition has valid field references and option values
 func (cc *ComparisonCondition) Validate(propertyFields []PropertyField) error {
 	if cc.FieldID == "" {
-		return errors.New("field_id cannot be empty")
+		return errors.Wrap(ErrMalformedCondition, "field_id cannot be empty")
 	}
 
 	// Find the field to validate against
@@ -248,6 +249,9 @@ func (cc *ComparisonCondition) validateValueForFieldType(field PropertyField) er
 
 		validOptionIDs := make(map[string]bool)
 		for _, option := range field.Attrs.Options {
+			if option == nil {
+				continue
+			}
 			validOptionIDs[option.GetID()] = true
 		}
 
@@ -274,6 +278,9 @@ func (cc *ComparisonCondition) validateValueForFieldType(field PropertyField) er
 
 		validOptionIDs := make(map[string]bool)
 		for _, option := range field.Attrs.Options {
+			if option == nil {
+				continue
+			}
 			validOptionIDs[option.GetID()] = true
 		}
 
@@ -631,6 +638,9 @@ func (cc *ComparisonCondition) formatSelectValue(field PropertyField) string {
 
 	optionMap := make(map[string]string)
 	for _, option := range field.Attrs.Options {
+		if option == nil {
+			continue
+		}
 		optionMap[option.GetID()] = option.GetName()
 	}
 
@@ -657,6 +667,9 @@ func (cc *ComparisonCondition) formatMultiselectValue(field PropertyField) strin
 
 	optionMap := make(map[string]string)
 	for _, option := range field.Attrs.Options {
+		if option == nil {
+			continue
+		}
 		optionMap[option.GetID()] = option.GetName()
 	}
 
@@ -692,16 +705,38 @@ func (cc *ComparisonCondition) formatUnknownFieldValue() string {
 	return string(cc.Value)
 }
 
+// ConditionActionDef defines an action to execute when a condition transitions to met.
+type ConditionActionDef struct {
+	// Type is the action type: "set_owner" or "notify_channel".
+	Type string `json:"type"`
+
+	// SetOwnerUserID is the user ID to set as run owner (when Type == "set_owner").
+	SetOwnerUserID string `json:"set_owner_user_id,omitempty"`
+
+	// NotifyChannelIDs are channels to post to (when Type == "notify_channel").
+	NotifyChannelIDs []string `json:"notify_channel_ids,omitempty"`
+
+	// NotifyMessage is the message template (when Type == "notify_channel").
+	// Supports {FieldName} placeholders resolved from run property values.
+	NotifyMessage string `json:"notify_message,omitempty"`
+}
+
+const (
+	ConditionActionTypeSetOwner      = "set_owner"
+	ConditionActionTypeNotifyChannel = "notify_channel"
+)
+
 // Condition represents a condition in the public API
 type Condition struct {
-	ID            string              `json:"id"`
-	ConditionExpr ConditionExpression `json:"condition_expr"`
-	Version       int                 `json:"version"`
-	PlaybookID    string              `json:"playbook_id"`
-	RunID         string              `json:"run_id,omitempty"`
-	CreateAt      int64               `json:"create_at"`
-	UpdateAt      int64               `json:"update_at"`
-	DeleteAt      int64               `json:"delete_at"`
+	ID            string               `json:"id"`
+	ConditionExpr ConditionExpression  `json:"condition_expr"`
+	Actions       []ConditionActionDef `json:"actions,omitempty"`
+	Version       int                  `json:"version"`
+	PlaybookID    string               `json:"playbook_id"`
+	RunID         string               `json:"run_id,omitempty"`
+	CreateAt      int64                `json:"create_at"`
+	UpdateAt      int64                `json:"update_at"`
+	DeleteAt      int64                `json:"delete_at"`
 }
 
 // IsValid validates a condition
@@ -737,6 +772,12 @@ func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) err
 		return fmt.Errorf("invalid condition expression: %w", err)
 	}
 
+	for i, action := range c.Actions {
+		if action.Type != ConditionActionTypeSetOwner && action.Type != ConditionActionTypeNotifyChannel {
+			return fmt.Errorf("action %d has unknown type %q", i, action.Type)
+		}
+	}
+
 	return nil
 }
 
@@ -769,20 +810,29 @@ type GetConditionsResults struct {
 // ConditionService provides methods for managing stored conditions
 type ConditionService interface {
 	// Playbooks: RW
-	GetPlaybookConditions(userID, playbookID string, page, perPage int) (*GetConditionsResults, error)
-	GetPlaybookCondition(userID, playbookID, conditionID string) (*Condition, error)
+	GetPlaybookConditions(playbookID string, page, perPage int) (*GetConditionsResults, error)
+	GetPlaybookCondition(playbookID, conditionID string) (*Condition, error)
 	CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error)
 	UpdatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error)
 	DeletePlaybookCondition(userID, playbookID, conditionID string, teamID string) error
 
 	// Runs: RO
-	GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error)
+	GetRunConditions(playbookID, runID string, page, perPage int) (*GetConditionsResults, error)
 
 	// Copy conditions from playbook to run with field ID mappings, returns old condition ID to new condition mapping
 	CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
 
-	// Evaluate conditions for a run when a property field changes
-	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
+	// Evaluate conditions for a run when a property field changes.
+	// oldValue is the previous value of the changed field, used to detect
+	// not-met → met transitions for triggering actions.
+	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string, oldValue json.RawMessage) (*ConditionEvaluationResult, error)
+
+	// EvaluateConditionsForTransform pre-evaluates conditions for the changed field and
+	// returns both the summary result and a pure checklist transform (no DB calls inside).
+	// The transform can safely be passed to UpdatePlaybookRunChecklistsAtomic — it will be
+	// invoked while the IR_Incident row lock is held, eliminating the TOCTOU race that
+	// UpdatePlaybookRun(run) would introduce when checklist mutations occur concurrently.
+	EvaluateConditionsForTransform(playbookRun *PlaybookRun, changedFieldID string, oldValue json.RawMessage) (*ConditionEvaluationResult, func([]Checklist) []Checklist, error)
 
 	// Evaluate all conditions for a run (typically called on run creation)
 	EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error)
@@ -822,6 +872,9 @@ type ChecklistConditionChanges struct {
 type ConditionEvaluationResult struct {
 	// Changes per checklist, keyed by checklist title
 	ChecklistChanges map[string]*ChecklistConditionChanges
+
+	// TriggeredActions contains actions from conditions that transitioned from not-met to met.
+	TriggeredActions []ConditionActionDef
 }
 
 // AnythingChanged returns true if any conditions resulted in visibility changes

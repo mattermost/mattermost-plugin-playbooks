@@ -3,10 +3,17 @@
 
 import {generateId} from 'mattermost-redux/utils/helpers';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {Store} from 'src/types/store';
-import {promptUpdateStatus, setClientId, toggleRHS} from 'src/actions';
+import {
+    openPlaybookRunModal,
+    promptUpdateStatus,
+    setClientId,
+    toggleRHS,
+} from 'src/actions';
 import {inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {fetchPlaybookRunsForChannelByUser} from './client';
 
@@ -18,10 +25,16 @@ export function makeSlashCommandHook(store: Store) {
         const message = inMessage && typeof inMessage === 'string' ? inMessage.trim() : null;
 
         if (message?.startsWith('/playbook run')) {
-            const clientId = generateId();
-            store.dispatch(setClientId(clientId));
-
-            return {message: `/playbook run ${clientId}`, args};
+            const teamId = getCurrentTeamId(state);
+            const channelId = getCurrentChannelId(state);
+            store.dispatch(openPlaybookRunModal({
+                teamId,
+                triggerChannelId: channelId,
+                onRunCreated: (runId: string) => {
+                    navigateToPluginUrl(`/runs/${runId}?from=run_modal`);
+                },
+            }));
+            return {};
         }
 
         if (message?.startsWith('/playbook update') && inPlaybookRunChannel(state)) {

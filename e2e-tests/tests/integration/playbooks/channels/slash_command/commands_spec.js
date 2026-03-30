@@ -536,7 +536,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
                 cy.findByTestId('update_run_status_textbox').type('valid update');
 
                 // # Submit the dialog.
-                cy.get('button.confirm').click();
+                cy.findByTestId('modal-confirm-button').click();
             });
 
             // * Verify that the Post update dialog has gone.

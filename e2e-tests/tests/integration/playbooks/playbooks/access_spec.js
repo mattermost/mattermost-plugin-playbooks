@@ -59,7 +59,9 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
             // # Add a new member
             cy.findByTestId('add-people-input').type(testUser2.username);
-            cy.wait(500);
+
+            // * Wait for the profile option to appear in the dropdown
+            cy.findByTestId('profile-option-' + testUser2.username).should('be.visible');
             cy.findByTestId('profile-option-' + testUser2.username).click({force: true});
 
             // * Verify that user was added

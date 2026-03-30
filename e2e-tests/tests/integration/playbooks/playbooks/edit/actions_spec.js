@@ -11,8 +11,6 @@
 
 /* eslint-disable no-only-tests/no-only-tests */
 
-import * as TIMEOUTS from '../../../../fixtures/timeouts';
-
 // assumes that E20 license is uploaded
 describe('playbooks > edit', {testIsolation: true}, () => {
     let testTeam;
@@ -22,7 +20,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
     let testUser3;
 
     const openCategorySelector = () => {
-        cy.get('.channel-selector__control input').click({force: true});
+        cy.findByTestId('user-joins-channel-categorize').find('.channel-selector__control input').click({force: true});
     };
     const selectCategory = (name) => {
         cy.get('.channel-selector__menu').findByText(name).click({force: true});
@@ -78,7 +76,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     // # select the actions section.
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is checked
-                        cy.get('#create-new-channel label input').should('be.checked');
+                        cy.get('#create-new-channel').find('input').first().should('be.checked');
                     });
                 });
             });
@@ -154,7 +152,11 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add one user
                             cy.addInvitedUser(testUser2.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser2.username).should('exist');
+                            });
 
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control').
@@ -202,7 +204,11 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add a new user
                             cy.addInvitedUser(testUser3.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser3.username).should('exist');
+                            });
 
                             cy.get('.invite-users-selector__control').
                                 after('content').
@@ -240,9 +246,17 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add a couple of users
                             cy.addInvitedUser(testUser2.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser2.username).should('exist');
+                            });
                             cy.addInvitedUser(testUser3.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that both users appear as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser3.username).should('exist');
+                            });
 
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control').
@@ -255,7 +269,6 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                 within(() => {
                                     cy.findByText('Remove').click();
                                 });
-                            cy.wait(TIMEOUTS.ONE_SEC);
 
                             // * Verify that there is only one user, the one not removed
                             cy.get('.invite-users-selector__control').
@@ -294,9 +307,17 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add a couple of users
                             cy.addInvitedUser(testUser2.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser2.username).should('exist');
+                            });
                             cy.addInvitedUser(testUser3.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that both users appear as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser3.username).should('exist');
+                            });
 
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control').
@@ -671,7 +692,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                 cy.get('#actions #create-new-channel').within(() => {
                     // * Verify that the toggle is unchecked and inputs are disabled
                     cy.get('input[type=radio]').eq(0).should('not.be.checked');
-                    cy.get('label input[type=radio]').should('be.disabled');
+                    cy.get('input[type=radio]').should('be.disabled');
                     cy.get('button').should('be.disabled');
                 });
             });
@@ -1025,7 +1046,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
             it('is enabled in a new playbook', () => {
                 cy.get('#retrospective').within(() => {
                     // * Verify that the toggle is checked
-                    cy.get('input[type=checkbox]').should('be.checked');
+                    cy.get('input').first().should('be.checked');
                 });
             });
 

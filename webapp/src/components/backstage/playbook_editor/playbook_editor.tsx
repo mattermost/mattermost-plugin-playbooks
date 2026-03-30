@@ -23,8 +23,9 @@ import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
-import {useForceDocumentTitle, useStats} from 'src/hooks';
+import {useForceDocumentTitle, useIsSystemAdmin, useStats} from 'src/hooks';
 import {useAllowPlaybookAttributes} from 'src/hooks/license';
+import {PlaybookRole} from 'src/types/permissions';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
@@ -74,6 +75,9 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
+    const isSystemAdmin = useIsSystemAdmin();
+    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const canEdit = !playbook?.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
 
     if (error) {
         // not found
@@ -127,7 +131,7 @@ const PlaybookEditor = () => {
                         />
                     </StarButton>
                     <TextEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                         value={playbook.title}
                         onSave={(title) => updatePlaybook({title})}
@@ -184,6 +188,7 @@ const PlaybookEditor = () => {
             </TitleBar>
             <Header ref={headingRef}>
                 <TextEdit
+                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                     value={playbook.title}
                     onSave={(title) => updatePlaybook({title})}
@@ -226,7 +231,7 @@ const PlaybookEditor = () => {
                 </TextEdit>
                 <Description>
                     <MarkdownEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
                         value={playbook.description}
                         onSave={(description) => updatePlaybook({description})}
@@ -286,6 +291,7 @@ const PlaybookEditor = () => {
                     <Outline
                         playbook={playbook}
                         refetch={refetch}
+                        canEdit={canEdit}
                     />
                 </Route>
                 <Route

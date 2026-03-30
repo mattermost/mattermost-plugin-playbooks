@@ -84,7 +84,7 @@ describe('runs > run details page > finish', {testIsolation: true}, () => {
     describe('finish run', () => {
         it('can be confirmed', () => {
             // # Click finish run button
-            cy.findByTestId('run-finish-section').find('button').click();
+            cy.findByTestId('run-finish-section').findByRole('button', {name: /Finish/i}).click();
 
             // * Check that status badge is in-progress
             cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');
@@ -110,7 +110,7 @@ describe('runs > run details page > finish', {testIsolation: true}, () => {
 
         it('can be canceled', () => {
             // # Click on finish run
-            cy.findByTestId('run-finish-section').find('button').click();
+            cy.findByTestId('run-finish-section').findByRole('button', {name: /Finish/i}).click();
 
             // * Check that status badge is in-progress
             cy.findByTestId('run-header-section').findByTestId('badge').contains('In Progress');

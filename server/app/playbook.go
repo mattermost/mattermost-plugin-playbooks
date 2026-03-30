@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -20,6 +22,13 @@ import (
 // The tag export supports the export/import feature. If the field makes sense for export, the value should be
 // the JSON name of the item in the export format. If the field should not be exported the value should be "-".
 // Fields should be exported if they are not server specific like InvitedUserIDs or are tracking metadata like CreateAt.
+//
+// Schema note: most fields map 1:1 to columns in IR_Playbook.  When adding a direct column, search
+// for "When adding a Playbook column" to find all the places in sqlstore/playbook.go that must be updated
+// (SELECT list, INSERT columns, UPDATE set-map, and rawPlaybook scanner). The following fields are
+// instead stored as JSON blobs and do NOT require a migration when their sub-types gain new fields:
+//   - Checklists      → IR_Playbook.ChecklistsJSON
+//   - CreationRules   → IR_Playbook.CreationRulesJSON
 type Playbook struct {
 	ID                                      string                 `json:"id" export:"-"`
 	Title                                   string                 `json:"title" export:"title"`
@@ -77,9 +86,30 @@ type Playbook struct {
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
+	OwnerGroupOnlyActions bool `json:"owner_group_only_actions" export:"owner_group_only_actions"`
+	AdminOnlyEdit         bool `json:"admin_only_edit" export:"-"`
+	NewChannelOnly        bool `json:"new_channel_only" export:"new_channel_only"`
+	AutoArchiveChannel    bool `json:"auto_archive_channel" export:"auto_archive_channel"`
+
+	RunNumberPrefix string `json:"run_number_prefix" export:"run_number_prefix"`
+	NextRunNumber   int64  `json:"next_run_number" export:"-"`
+
+	CreationRules []CreationRule `json:"creation_rules" export:"-"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
+}
+
+// CreationRule maps a condition to a set of actions applied at run creation time.
+// Rules are evaluated in order: first matching rule wins for SetOwnerID and SetChannelID;
+// InviteUserIDs accumulate across all matching rules.
+// A nil Condition means the rule always matches (catch-all / default rule).
+type CreationRule struct {
+	Condition     *ConditionExprV1 `json:"condition,omitempty"`
+	SetOwnerID    string           `json:"set_owner_id,omitempty"`
+	SetChannelID  string           `json:"set_channel_id,omitempty"`
+	InviteUserIDs []string         `json:"invite_user_ids,omitempty"`
 }
 
 const (
@@ -321,6 +351,20 @@ type ChecklistItem struct {
 
 	// ConditionReason is a string representation of the condition.
 	ConditionReason string `json:"condition_reason" export:"-"`
+
+	// AssigneeType indicates how the assignee is determined. Empty string means a specific user
+	// (existing behavior). "owner" and "creator" are resolved at run creation time.
+	AssigneeType string `json:"assignee_type" export:"assignee_type"`
+
+	// RestrictCompletionToAssignee prevents non-assignees from checking off this task.
+	RestrictCompletionToAssignee bool `json:"restrict_completion_to_assignee" export:"restrict_completion_to_assignee"`
+
+	// AssigneeGroupID is the group ID when AssigneeType=="group".
+	AssigneeGroupID string `json:"assignee_group_id" export:"assignee_group_id"`
+
+	// AssigneePropertyFieldID is the property field ID when AssigneeType=="property_user".
+	// The resolved user ID is cached in AssigneeID and refreshed on property value changes.
+	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"-"`
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
@@ -431,6 +475,34 @@ type PlaybookService interface {
 
 	// ReorderPropertyFields reorders property fields for a playbook and bumps the playbook's updated_at
 	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// GraphqlUpdate updates a playbook via a setmap and publishes a WS event on success.
+	GraphqlUpdate(playbookID string, setmap map[string]interface{}) error
+
+	// AddPlaybookMember adds a user as a member to a playbook and publishes a WS event on success.
+	AddPlaybookMember(playbookID, userID string) error
+
+	// RemovePlaybookMember removes a user from a playbook and publishes a WS event on success.
+	RemovePlaybookMember(playbookID, userID string) error
+
+	// AddMetric adds a metric to a playbook and publishes a WS event on success.
+	AddMetric(playbookID string, config PlaybookMetricConfig) error
+
+	// GetMetric retrieves a metric by ID.
+	GetMetric(metricID string) (*PlaybookMetricConfig, error)
+
+	// UpdateMetric updates a metric and publishes a WS event on success.
+	UpdateMetric(metricID string, setmap map[string]interface{}) error
+
+	// DeleteMetric deletes a metric and publishes a WS event on success.
+	DeleteMetric(metricID string) error
+
+	// UpdateChannelNameTemplateAtomically atomically reads and updates the channel name template
+	// using a SELECT FOR UPDATE transaction, preventing lost-update races on concurrent edits.
+	UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -511,6 +583,17 @@ type PlaybookStore interface {
 
 	// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
 	BumpPlaybookUpdatedAt(playbookID string) error
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// UpdateChannelNameTemplateAtomically locks the row, applies transformFn to the current
+	// ChannelNameTemplate, and writes back the result. The transformation function is supplied
+	// by the caller so that all string/business logic stays in the app layer.
+	// CONTRACT: transformFn MUST be a pure in-memory computation (no I/O, no DB calls, no goroutines).
+	// It is invoked while the IR_Playbook row lock is held; blocking work inside it delays all
+	// concurrent writers on the same playbook row.
+	UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error
 }
 
 const (
@@ -519,6 +602,92 @@ const (
 	ChecklistItemStateClosed     = "closed"
 	ChecklistItemStateSkipped    = "skipped"
 )
+
+const (
+	AssigneeTypeSpecificUser = ""              // zero value — a specific person is assigned (existing behaviour)
+	AssigneeTypeOwner        = "owner"         // resolved from PlaybookRun.OwnerUserID at run creation / owner change
+	AssigneeTypeCreator      = "creator"       // resolved from PlaybookRun.ReporterUserID at run creation
+	AssigneeTypeGroup        = "group"         // assigned to a Mattermost group; membership checked at completion time
+	AssigneeTypePropertyUser = "property_user" // resolved from a User-type property field value; cached in AssigneeID
+)
+
+const (
+	// MaxRunNumberPrefixLength is the maximum length for a RunNumberPrefix.
+	MaxRunNumberPrefixLength = 32
+
+	// MaxChannelNameTemplateLength is the maximum length for a ChannelNameTemplate.
+	MaxChannelNameTemplateLength = 1024
+)
+
+var runNumberPrefixRegex = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$`)
+
+// NormalizeRunNumberPrefix trims whitespace and leading/trailing hyphens from a prefix.
+// Callers should normalize before storing or validating.
+func NormalizeRunNumberPrefix(prefix string) string {
+	return strings.Trim(strings.TrimSpace(prefix), "-")
+}
+
+// ValidateRunNumberPrefix checks that a RunNumberPrefix is alphanumeric + hyphens, max 32 chars.
+// Empty string is valid (means no prefix).
+func ValidateRunNumberPrefix(prefix string) error {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		return nil
+	}
+	if utf8.RuneCountInString(prefix) > MaxRunNumberPrefixLength {
+		return errors.Errorf("run_number_prefix must be at most %d characters", MaxRunNumberPrefixLength)
+	}
+	if !runNumberPrefixRegex.MatchString(prefix) {
+		return errors.New("run_number_prefix must start and end with an alphanumeric character and contain only alphanumeric characters and hyphens")
+	}
+	return nil
+}
+
+// ValidateChannelNameTemplate checks that a ChannelNameTemplate does not exceed the max length
+// and is not whitespace-only.
+func ValidateChannelNameTemplate(tmpl string) error {
+	if strings.TrimSpace(tmpl) == "" && tmpl != "" {
+		return errors.New("channel_name_template must not be whitespace-only")
+	}
+	if utf8.RuneCountInString(tmpl) > MaxChannelNameTemplateLength {
+		return errors.Errorf("channel_name_template must be at most %d characters", MaxChannelNameTemplateLength)
+	}
+	return nil
+}
+
+// defaultReminderTimerSeconds is used when status updates are enabled but no
+// reminder interval has been specified (ReminderTimerDefaultSeconds == 0).
+const defaultReminderTimerSeconds int64 = 900 // 15 minutes
+
+// ValidateStatusUpdateConfig checks that the status update configuration is consistent.
+// When status updates are enabled and ReminderTimerDefaultSeconds is 0, it is
+// auto-coerced to defaultReminderTimerSeconds (15 minutes).
+// The pointer parameter allows the function to write the coerced value back to the caller.
+func ValidateStatusUpdateConfig(timerSeconds *int64, statusUpdateEnabled bool) {
+	if statusUpdateEnabled && *timerSeconds <= 0 {
+		*timerSeconds = defaultReminderTimerSeconds
+	}
+}
+
+// ValidateNewChannelOnlyMode checks that NewChannelOnly is not enabled when ChannelMode
+// is set to link an existing channel.
+func ValidateNewChannelOnlyMode(newChannelOnly bool, channelMode ChannelPlaybookMode) error {
+	if newChannelOnly && channelMode == PlaybookRunLinkExistingChannel {
+		return errors.New("NewChannelOnly cannot be enabled when ChannelMode is set to link an existing channel")
+	}
+	return nil
+}
+
+// IsValidAssigneeType reports whether the provided assignee type is valid.
+// Valid types are: AssigneeTypeSpecificUser (specific user), AssigneeTypeOwner,
+// AssigneeTypeCreator, AssigneeTypeGroup, and AssigneeTypePropertyUser.
+func IsValidAssigneeType(assigneeType string) bool {
+	return assigneeType == AssigneeTypeSpecificUser ||
+		assigneeType == AssigneeTypeOwner ||
+		assigneeType == AssigneeTypeCreator ||
+		assigneeType == AssigneeTypeGroup ||
+		assigneeType == AssigneeTypePropertyUser
+}
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
@@ -630,6 +799,45 @@ func ValidatePreAssignment(assignees []string, invitedUsers []string, inviteUser
 	}
 	if !assigneesAreInvited(assignees, invitedUsers) {
 		return errors.New("users missing in invite user list")
+	}
+	return nil
+}
+
+const (
+	MaxCreationRulesPerPlaybook = 100
+	MaxInviteUserIDsPerRule     = 50
+)
+
+// ValidateCreationRules validates creation rules for format, bounds, and condition structure.
+// propertyFields is optional; when provided, condition values are also validated against their
+// field type (e.g., select values must be valid option IDs).
+func ValidateCreationRules(rules []CreationRule, propertyFields ...PropertyField) error {
+	if len(rules) > MaxCreationRulesPerPlaybook {
+		return errors.Wrapf(ErrMalformedPlaybookRun, "playbook may have at most %d creation rules, got %d", MaxCreationRulesPerPlaybook, len(rules))
+	}
+	for i, rule := range rules {
+		if rule.SetOwnerID != "" && !model.IsValidId(rule.SetOwnerID) {
+			return errors.Wrapf(ErrMalformedPlaybookRun, "creation rule %d: SetOwnerID %q is not a valid user ID", i, rule.SetOwnerID)
+		}
+		if rule.SetChannelID != "" && !model.IsValidId(rule.SetChannelID) {
+			return errors.Wrapf(ErrMalformedPlaybookRun, "creation rule %d: SetChannelID %q is not a valid channel ID", i, rule.SetChannelID)
+		}
+		if len(rule.InviteUserIDs) > MaxInviteUserIDsPerRule {
+			return errors.Wrapf(ErrMalformedPlaybookRun, "creation rule %d: InviteUserIDs may have at most %d entries, got %d", i, MaxInviteUserIDsPerRule, len(rule.InviteUserIDs))
+		}
+		for j, userID := range rule.InviteUserIDs {
+			if userID == "" {
+				return errors.Wrapf(ErrMalformedPlaybookRun, "creation rule %d: InviteUserIDs[%d] must not be empty", i, j)
+			}
+			if !model.IsValidId(userID) {
+				return errors.Wrapf(ErrMalformedPlaybookRun, "creation rule %d: InviteUserIDs[%d] %q is not a valid user ID", i, j, userID)
+			}
+		}
+		if rule.Condition != nil {
+			if err := rule.Condition.Validate(propertyFields); err != nil {
+				return errors.Wrapf(ErrMalformedPlaybookRun, "creation rule %d: invalid condition: %v", i, err)
+			}
+		}
 	}
 	return nil
 }

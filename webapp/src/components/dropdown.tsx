@@ -21,7 +21,7 @@ import {
 } from '@floating-ui/react';
 
 const FloatingContainer = styled.div<{$styles?: ReturnType<typeof css>}>`
-	z-index: 50;
+	z-index: 1060;
     min-width: 16rem;
 
     ${({$styles}) => $styles};

@@ -42,8 +42,10 @@ import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
 import {usePlaybookAttributes, useProxyState} from 'src/hooks';
 import {usePlaybookConditions} from 'src/hooks/conditions';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {getDistinctAssignees} from 'src/utils';
-import {ConditionExprV1} from 'src/types/conditions';
+import {ConditionActionDef, ConditionExprV1} from 'src/types/conditions';
 
 import CollapsibleChecklist, {ChecklistInputComponent, TitleHelpTextWrapper} from './collapsible_checklist';
 
@@ -80,6 +82,28 @@ interface Props {
     onTaskAdded?: () => void;
 }
 
+// mapChecklistItemToInput converts a ChecklistItem from the frontend type to the
+// GraphQL PlaybookUpdates input shape. Every field used by the server must appear
+// here; omitting a field causes it to be silently dropped from the mutation payload
+// and the server will reset it to its zero value.
+export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
+    title: ci.title,
+    description: ci.description,
+    state: ci.state,
+    stateModified: ci.state_modified || 0,
+    assigneeID: ci.assignee_id || '',
+    assigneeType: ci.assignee_type || '',
+    assigneeGroupID: ci.assignee_group_id || '',
+    assigneePropertyFieldID: ci.assignee_property_field_id || '',
+    assigneeModified: ci.assignee_modified || 0,
+    command: ci.command,
+    commandLastRun: ci.command_last_run,
+    dueDate: ci.due_date,
+    taskActions: ci.task_actions,
+    conditionID: ci.condition_id,
+    restrictCompletionToAssignee: ci.restrict_completion_to_assignee || false,
+});
+
 const ChecklistList = ({
     playbookRun,
     playbook: inPlaybook,
@@ -95,6 +119,7 @@ const ChecklistList = ({
 }: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
+    const toaster = useToaster();
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
@@ -102,23 +127,17 @@ const ChecklistList = ({
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
-    const propertyFields = usePlaybookAttributes(inPlaybook?.id || '');
+    const playbookPropertyFields = usePlaybookAttributes(inPlaybook?.id || playbookRun?.playbook_id || '');
+
+    // In run context, use run-level property fields: assignee_property_field_id and
+    // condition field IDs were remapped from playbook-level to run-level IDs at run
+    // creation, so the badge label lookup and condition display need matching IDs.
+    // In the playbook editor, use playbook-level fields directly.
+    const propertyFields = playbookRun?.property_fields || playbookPropertyFields;
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
-            items: cl.items.map((ci) => ({
-                title: ci.title,
-                description: ci.description,
-                state: ci.state,
-                stateModified: ci.state_modified || 0,
-                assigneeID: ci.assignee_id || '',
-                assigneeModified: ci.assignee_modified || 0,
-                command: ci.command,
-                commandLastRun: ci.command_last_run,
-                dueDate: ci.due_date,
-                taskActions: ci.task_actions,
-                conditionID: ci.condition_id,
-            })),
+            items: cl.items.map(mapChecklistItemToInput),
         }));
         const updates: PlaybookUpdates = {
             checklists: updatedChecklists,
@@ -163,6 +182,7 @@ const ChecklistList = ({
                         state_modified: ci.state_modified || 0,
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
+                        assignee_property_field_id: ci.assignee_property_field_id || '',
                     };
                 }),
             };
@@ -224,8 +244,8 @@ const ChecklistList = ({
 
             // Dispatch Redux action to remove from store immediately
             dispatch(conditionDeleted(conditionId, playbook?.id || ''));
-        } catch (error) {
-            console.error('Failed to delete condition:', error); // eslint-disable-line no-console
+        } catch {
+            toaster.add({content: formatMessage({defaultMessage: 'Failed to delete condition'}), toastStyle: ToastStyle.Failure});
         }
     };
 
@@ -265,8 +285,8 @@ const ChecklistList = ({
                     return next;
                 });
             }, 100);
-        } catch (error) {
-            console.error('Failed to create condition:', error); // eslint-disable-line no-console
+        } catch {
+            toaster.add({content: formatMessage({defaultMessage: 'Failed to create condition'}), toastStyle: ToastStyle.Failure});
         }
     };
 
@@ -285,8 +305,24 @@ const ChecklistList = ({
 
             // Dispatch Redux action to update the store immediately
             dispatch(conditionUpdated(updatedCondition));
-        } catch (error) {
-            console.error('Failed to update condition:', error); // eslint-disable-line no-console
+        } catch {
+            toaster.add({content: formatMessage({defaultMessage: 'Failed to update condition'}), toastStyle: ToastStyle.Failure});
+        }
+    };
+
+    const onUpdateConditionActions = async (conditionId: string, actions: ConditionActionDef[]) => {
+        try {
+            const existingCondition = conditions.find((c) => c.id === conditionId);
+            if (!existingCondition) {
+                return;
+            }
+            const updatedCondition = await updatePlaybookCondition(playbook?.id || '', conditionId, {
+                ...existingCondition,
+                actions,
+            });
+            dispatch(conditionUpdated(updatedCondition));
+        } catch {
+            toaster.add({content: formatMessage({defaultMessage: 'Failed to update condition actions'}), toastStyle: ToastStyle.Failure});
         }
     };
 
@@ -622,6 +658,7 @@ const ChecklistList = ({
                                                     onDeleteCondition={onDeleteCondition}
                                                     onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
                                                     onUpdateCondition={onUpdateCondition}
+                                                    onUpdateConditionActions={onUpdateConditionActions}
                                                     newlyCreatedConditionIds={newlyCreatedConditionIds}
                                                     autoAddTask={autoAddTask && checklistIndex === 0}
                                                     onTaskAdded={onTaskAdded}

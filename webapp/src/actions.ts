@@ -51,12 +51,14 @@ import {
     PLAYBOOK_RESTORED,
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
+    PLAYBOOK_UPDATED,
     PUBLISH_TEMPLATES,
     PlaybookArchived,
     PlaybookCreated,
     PlaybookRestored,
     PlaybookRunCreated,
     PlaybookRunUpdated,
+    PlaybookUpdated,
     PublishTemplates,
     RECEIVED_GLOBAL_SETTINGS,
     RECEIVED_PLAYBOOK_CONDITIONS,
@@ -287,6 +289,12 @@ export const playbookArchived = (teamID: string): PlaybookArchived => ({
 export const playbookRestored = (teamID: string): PlaybookRestored => ({
     type: PLAYBOOK_RESTORED,
     teamID,
+});
+
+export const playbookUpdated = (teamID: string, playbookID: string): PlaybookUpdated => ({
+    type: PLAYBOOK_UPDATED,
+    teamID,
+    playbookID,
 });
 
 export const receivedPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedPlaybookRuns => ({

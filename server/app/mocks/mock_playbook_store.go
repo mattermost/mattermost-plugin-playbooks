@@ -396,3 +396,32 @@ func (mr *MockPlaybookStoreMockRecorder) UpdateMetric(arg0, arg1 interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetric", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateMetric), arg0, arg1)
 }
+
+// IncrementRunNumber mocks base method.
+func (m *MockPlaybookStore) IncrementRunNumber(arg0 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementRunNumber", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IncrementRunNumber indicates an expected call of IncrementRunNumber.
+func (mr *MockPlaybookStoreMockRecorder) IncrementRunNumber(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementRunNumber", reflect.TypeOf((*MockPlaybookStore)(nil).IncrementRunNumber), arg0)
+}
+
+// UpdateChannelNameTemplateAtomically mocks base method.
+func (m *MockPlaybookStore) UpdateChannelNameTemplateAtomically(arg0 string, arg1 func(string) string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChannelNameTemplateAtomically", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateChannelNameTemplateAtomically indicates an expected call of UpdateChannelNameTemplateAtomically.
+func (mr *MockPlaybookStoreMockRecorder) UpdateChannelNameTemplateAtomically(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelNameTemplateAtomically", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateChannelNameTemplateAtomically), arg0, arg1)
+}

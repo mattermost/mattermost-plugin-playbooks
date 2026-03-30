@@ -4,6 +4,7 @@
 package client
 
 import (
+	"encoding/json"
 	"time"
 
 	"gopkg.in/guregu/null.v4"
@@ -61,6 +62,10 @@ type PlaybookRun struct {
 	MetricsData                             []RunMetricData `json:"metrics_data"`
 	CreateChannelMemberOnNewParticipant     bool            `json:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool            `json:"remove_channel_member_on_removed_participant"`
+	RunNumber                               int64           `json:"run_number"`
+	SequentialID                            string          `json:"sequential_id"`
+	TaskTotal                               int             `json:"task_total"`
+	TaskCompleted                           int             `json:"task_completed"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -130,15 +135,16 @@ type TimelineEvent struct {
 
 // PlaybookRunCreateOptions specifies the parameters for PlaybookRunService.Create method.
 type PlaybookRunCreateOptions struct {
-	Name            string `json:"name"`
-	OwnerUserID     string `json:"owner_user_id"`
-	TeamID          string `json:"team_id"`
-	ChannelID       string `json:"channel_id"`
-	Summary         string `json:"summary"`
-	PostID          string `json:"post_id"`
-	PlaybookID      string `json:"playbook_id"`
-	CreatePublicRun *bool  `json:"create_public_run"`
-	Type            string `json:"type"`
+	Name            string                            `json:"name"`
+	OwnerUserID     string                            `json:"owner_user_id"`
+	TeamID          string                            `json:"team_id"`
+	ChannelID       string                            `json:"channel_id"`
+	Summary         string                            `json:"summary"`
+	PostID          string                            `json:"post_id"`
+	PlaybookID      string                            `json:"playbook_id"`
+	CreatePublicRun *bool                             `json:"create_public_run"`
+	Type            string                            `json:"type"`
+	PropertyValues  map[string]json.RawMessage        `json:"property_values,omitempty"`
 }
 
 // RunAction represents the run action settings. Frontend passes this struct to update settings.
@@ -257,6 +263,13 @@ type PlaybookRunListOptions struct {
 	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
 	// This is sent as the "since" URL parameter.
 	ActivitySince int64 `url:"since,omitempty"`
+
+	// PropertyFieldID, when set together with PropertyValueFilter, restricts results to runs
+	// where the given property field is set to the given option ID.
+	PropertyFieldID string `url:"property_field_id,omitempty"`
+
+	// PropertyValueFilter is the option ID to match for the field given by PropertyFieldID.
+	PropertyValueFilter string `url:"property_value_filter,omitempty"`
 }
 
 // PlaybookRunList contains the paginated result.
@@ -291,8 +304,15 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name        *string `json:"name,omitempty"`
-	Summary     *string `json:"summary,omitempty"`
+	Name                                    *string  `json:"name,omitempty"`
+	Summary                                 *string  `json:"summary,omitempty"`
+	ChannelID                               *string  `json:"channel_id,omitempty"`
+	CreateChannelMemberOnNewParticipant     *bool    `json:"create_channel_member_on_new_participant,omitempty"`
+	RemoveChannelMemberOnRemovedParticipant *bool    `json:"remove_channel_member_on_removed_participant,omitempty"`
+	StatusUpdateBroadcastChannelsEnabled    *bool    `json:"status_update_broadcast_channels_enabled,omitempty"`
+	StatusUpdateBroadcastWebhooksEnabled    *bool    `json:"status_update_broadcast_webhooks_enabled,omitempty"`
+	BroadcastChannelIDs                     []string `json:"broadcast_channel_ids,omitempty"`
+	WebhookOnStatusUpdateURLs               []string `json:"webhook_on_status_update_urls,omitempty"`
 }
 
 type RunMetricData struct {

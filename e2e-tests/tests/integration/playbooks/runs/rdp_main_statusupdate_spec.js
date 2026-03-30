@@ -87,7 +87,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                 cy.findByTestId('run-statusupdate-section').findByTestId('post-update-button').should('be.visible');
 
                 // # Click finish button and confirm modal
-                cy.findByTestId('run-finish-section').find('button').click();
+                cy.findByTestId('run-finish-section').findByRole('button', {name: /Finish/i}).click();
                 cy.get('#confirmModal').get('#confirmModalButton').click();
 
                 // * Check that post update button does not exist anymore

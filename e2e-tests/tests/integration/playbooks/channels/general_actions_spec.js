@@ -419,8 +419,8 @@ describe('channels > general actions', {testIsolation: true}, () => {
                 cy.findByRole('button', {name: /save/i}).click();
             });
 
-            // # wait to avoid MM-45969
-            cy.wait(5000);
+            // # Wait for the modal to close before navigating (avoids MM-45969 race condition)
+            cy.get('#channel-actions-modal').should('not.exist');
 
             // # Switch to the additional channel
             cy.get('#sidebarItem_' + channel.name).click();

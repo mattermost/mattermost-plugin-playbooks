@@ -15,6 +15,37 @@ import (
 
 type PropertyRootResolver struct{}
 
+// requirePlaybookAttributes returns an error if the playbook attributes feature is not licensed.
+func requirePlaybookAttributes(c *GraphQLContext) error {
+	if !c.licenceChecker.PlaybookAttributesAllowed() {
+		return classifyAppError(errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license"))
+	}
+	return nil
+}
+
+// authorisePlaybookEdit fetches the playbook, checks edit permissions, and rejects archived playbooks.
+func authorisePlaybookEdit(c *GraphQLContext, userID, playbookID string) (app.Playbook, error) {
+	playbook, err := c.playbookService.Get(playbookID)
+	if err != nil {
+		return app.Playbook{}, classifyAppError(err)
+	}
+	if err := c.permissions.PlaybookEdit(userID, playbook); err != nil {
+		return app.Playbook{}, classifyAppError(err)
+	}
+	if playbook.DeleteAt != 0 {
+		return app.Playbook{}, classifyAppError(app.ErrPlaybookArchived)
+	}
+	return playbook, nil
+}
+
+// validatePropertyFieldOwnership returns an error if the field does not belong to the given playbook.
+func validatePropertyFieldOwnership(field *app.PropertyField, playbookID string) error {
+	if field.TargetID != playbookID {
+		return newGraphQLError(errors.New("property field does not belong to the specified playbook"))
+	}
+	return nil
+}
+
 func (r *PropertyRootResolver) PlaybookProperty(ctx context.Context, args struct {
 	PlaybookID string
 	PropertyID string
@@ -24,11 +55,18 @@ func (r *PropertyRootResolver) PlaybookProperty(ctx context.Context, args struct
 		return nil, err
 	}
 
-	if !c.licenceChecker.PlaybookAttributesAllowed() {
-		return nil, errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	if err := requirePlaybookAttributes(c); err != nil {
+		return nil, err
 	}
 
 	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if !model.IsValidId(args.PlaybookID) {
+		return nil, newGraphQLError(errors.New("invalid playbook ID"))
+	}
+	if !model.IsValidId(args.PropertyID) {
+		return nil, newGraphQLError(errors.New("invalid property ID"))
+	}
 
 	// Check permissions to view the playbook
 	if err := c.permissions.PlaybookView(userID, args.PlaybookID); err != nil {
@@ -38,12 +76,15 @@ func (r *PropertyRootResolver) PlaybookProperty(ctx context.Context, args struct
 	// Get the property field using the service
 	propertyField, err := c.propertyService.GetPropertyField(args.PropertyID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get property field")
+		return nil, classifyAppError(err)
+	}
+	if propertyField == nil {
+		return nil, classifyAppError(app.ErrNotFound)
 	}
 
 	// Verify the property field belongs to the specified playbook
-	if propertyField.TargetID != args.PlaybookID {
-		return nil, errors.New("property field does not belong to the specified playbook")
+	if err := validatePropertyFieldOwnership(propertyField, args.PlaybookID); err != nil {
+		return nil, err
 	}
 
 	return &PropertyFieldResolver{propertyField: *propertyField}, nil
@@ -58,23 +99,18 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 		return "", err
 	}
 
-	if !c.licenceChecker.PlaybookAttributesAllowed() {
-		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	if err := requirePlaybookAttributes(c); err != nil {
+		return "", err
+	}
+
+	if !model.IsValidId(args.PlaybookID) {
+		return "", newGraphQLError(errors.New("invalid playbook ID"))
 	}
 
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
-	if err != nil {
+	if _, err := authorisePlaybookEdit(c, userID, args.PlaybookID); err != nil {
 		return "", err
-	}
-
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		return "", err
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
 	}
 
 	// Convert GraphQL input to PropertyField
@@ -83,7 +119,7 @@ func (r *PropertyRootResolver) AddPlaybookPropertyField(ctx context.Context, arg
 	// Create the property field using the playbook service
 	createdField, err := c.playbookService.CreatePropertyField(args.PlaybookID, *propertyField)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create property field")
+		return "", classifyAppError(err)
 	}
 
 	return createdField.ID, nil
@@ -99,34 +135,36 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 		return "", err
 	}
 
-	if !c.licenceChecker.PlaybookAttributesAllowed() {
-		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	if err := requirePlaybookAttributes(c); err != nil {
+		return "", err
+	}
+
+	if !model.IsValidId(args.PlaybookID) {
+		return "", newGraphQLError(errors.New("invalid playbook ID"))
+	}
+
+	if !model.IsValidId(args.PropertyFieldID) {
+		return "", newGraphQLError(errors.New("invalid property field ID"))
 	}
 
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
-	if err != nil {
+	if _, err := authorisePlaybookEdit(c, userID, args.PlaybookID); err != nil {
 		return "", err
-	}
-
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		return "", err
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
 	}
 
 	// Get the existing property field to ensure it exists and belongs to this playbook
 	existingField, err := c.propertyService.GetPropertyField(args.PropertyFieldID)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get existing property field")
+		return "", classifyAppError(err)
+	}
+	if existingField == nil {
+		return "", classifyAppError(app.ErrNotFound)
 	}
 
 	// Verify the property field belongs to the specified playbook
-	if existingField.TargetID != args.PlaybookID {
-		return "", errors.New("property field does not belong to the specified playbook")
+	if err := validatePropertyFieldOwnership(existingField, args.PlaybookID); err != nil {
+		return "", err
 	}
 
 	// Convert GraphQL input to PropertyField
@@ -136,13 +174,7 @@ func (r *PropertyRootResolver) UpdatePlaybookPropertyField(ctx context.Context, 
 	// Update the property field using the playbook service
 	updatedField, err := c.playbookService.UpdatePropertyField(args.PlaybookID, *propertyField)
 	if err != nil {
-		if errors.Is(err, app.ErrPropertyOptionsInUse) {
-			return "", newGraphQLError(err)
-		}
-		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
-			return "", newGraphQLError(err)
-		}
-		return "", errors.Wrap(err, "failed to update property field")
+		return "", classifyAppError(err)
 	}
 
 	return updatedField.ID, nil
@@ -157,43 +189,54 @@ func (r *PropertyRootResolver) DeletePlaybookPropertyField(ctx context.Context, 
 		return "", err
 	}
 
-	if !c.licenceChecker.PlaybookAttributesAllowed() {
-		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	if err := requirePlaybookAttributes(c); err != nil {
+		return "", err
+	}
+
+	if !model.IsValidId(args.PlaybookID) {
+		return "", newGraphQLError(errors.New("invalid playbook ID"))
+	}
+
+	if !model.IsValidId(args.PropertyFieldID) {
+		return "", newGraphQLError(errors.New("invalid property field ID"))
 	}
 
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
+	playbook, err := authorisePlaybookEdit(c, userID, args.PlaybookID)
 	if err != nil {
 		return "", err
-	}
-
-	if err := c.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		return "", err
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		return "", errors.New("archived playbooks can not be modified")
 	}
 
 	// Get the existing property field to ensure it exists and belongs to this playbook
 	existingField, err := c.propertyService.GetPropertyField(args.PropertyFieldID)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get existing property field")
+		return "", classifyAppError(err)
+	}
+	if existingField == nil {
+		return "", classifyAppError(app.ErrNotFound)
 	}
 
 	// Verify the property field belongs to the specified playbook
-	if existingField.TargetID != args.PlaybookID {
-		return "", errors.New("property field does not belong to the specified playbook")
+	if err := validatePropertyFieldOwnership(existingField, args.PlaybookID); err != nil {
+		return "", err
+	}
+
+	// Guard: reject deletion if the field is still referenced in the channel name template.
+	if playbook.ChannelNameTemplate != "" {
+		allFields, err := c.propertyService.GetPropertyFields(args.PlaybookID)
+		if err != nil {
+			return "", classifyAppError(err)
+		}
+		if err := app.ValidateTemplateAfterFieldDeletion(playbook.ChannelNameTemplate, args.PropertyFieldID, allFields); err != nil {
+			return "", newGraphQLError(err)
+		}
 	}
 
 	// Delete the property field using the playbook service
 	err = c.playbookService.DeletePropertyField(args.PlaybookID, args.PropertyFieldID)
 	if err != nil {
-		if errors.Is(err, app.ErrPropertyFieldInUse) {
-			return "", newGraphQLError(err)
-		}
-		return "", errors.Wrap(err, "failed to delete property field")
+		return "", classifyAppError(err)
 	}
 
 	return args.PropertyFieldID, nil
@@ -209,8 +252,8 @@ func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args str
 		return "", err
 	}
 
-	if !c.licenceChecker.PlaybookAttributesAllowed() {
-		return "", errors.Wrapf(app.ErrLicensedFeature, "playbook attributes feature is not covered by current server license")
+	if err := requirePlaybookAttributes(c); err != nil {
+		return "", err
 	}
 
 	userID := c.r.Header.Get("Mattermost-User-ID")
@@ -223,31 +266,27 @@ func (r *PropertyRootResolver) SetRunPropertyValue(ctx context.Context, args str
 		value = json.RawMessage(`null`)
 	}
 
-	// Get the run to check permissions
-	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.RunID)
+	if !model.IsValidId(args.RunID) {
+		return "", newGraphQLError(errors.New("invalid run ID"))
+	}
+
+	if !model.IsValidId(args.PropertyFieldID) {
+		return "", newGraphQLError(errors.New("invalid property field ID"))
+	}
+
+	// Coarse byte-size guard: the authoritative rune-count check is in the service layer.
+	// Use 4x multiplier to account for multi-byte UTF-8 and JSON encoding overhead.
+	if len(value) > 4*app.MaxPropertyValueLength {
+		return "", newGraphQLError(errors.Errorf("property value exceeds maximum size of %d characters", app.MaxPropertyValueLength))
+	}
+
+	if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+		return "", classifyAppError(err)
+	}
+
+	propertyValue, err := c.playbookRunService.SetRunPropertyValue(userID, args.RunID, args.PropertyFieldID, value)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get playbook run")
-	}
-
-	// Check permissions to modify the run
-	if err := c.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
-		return "", err
-	}
-
-	// Verify the property field exists and belongs to the run
-	propertyField, err := c.propertyService.GetPropertyField(args.PropertyFieldID)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get property field")
-	}
-
-	if propertyField.TargetType != "run" || propertyField.TargetID != playbookRun.ID {
-		return "", errors.New("property field does not belong to this run")
-	}
-
-	// Set the property value via PlaybookRunService (which handles websockets)
-	propertyValue, err := c.playbookRunService.SetRunPropertyValue(userID, playbookRun.ID, args.PropertyFieldID, value)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to set property value")
+		return "", classifyAppError(err)
 	}
 
 	return propertyValue.ID, nil

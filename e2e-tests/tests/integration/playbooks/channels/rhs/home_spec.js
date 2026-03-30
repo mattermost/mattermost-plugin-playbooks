@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import * as TIMEOUTS from '../../../../fixtures/timeouts';
-
 // Stage: @prod
 // Group: @playbooks
 
@@ -35,9 +33,6 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
             // # Navigate to the application, starting in a non-run channel.
             cy.visit(`/${testTeam.name}/`);
 
-            // # Wait for page to fully load and settle
-            cy.wait(TIMEOUTS.TWO_SEC);
-
             // * Check post list content as an indicator of page stability
             cy.get('#postListContent').should('be.visible');
         });
@@ -60,13 +55,12 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
 
                 // # Ensure any existing runs in this channel are finished so we get the empty state
                 cy.apiFinishAllRuns(testTeam.id);
-                cy.wait(500);
 
                 // # Ensure RHS is closed before opening it
                 cy.get('body').then(($body) => {
                     if ($body.find('#sidebar-right.is-open').length > 0) {
                         cy.getPlaybooksAppBarIcon().click(); // Close if already open
-                        cy.wait(500);
+                        cy.get('#sidebar-right.is-open').should('not.exist');
                     }
                 });
 
@@ -83,7 +77,9 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
                     // # First create a blank checklist so the header with dropdown appears
                     cy.findByTestId('create-blank-checklist').click();
                 });
-                cy.wait(2000); // Wait for checklist creation and RHS update
+
+                // # Wait for the checklist to be created and the dropdown chevron to appear
+                cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').should('be.visible');
 
                 // # Click the dropdown next to "+ New checklist" button in header
                 cy.get('[data-testid="create-blank-checklist"]').parent().find('.icon-chevron-down').click();
@@ -120,13 +116,12 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
 
                 // # Ensure any existing runs in this channel are finished so we get the empty state
                 cy.apiFinishAllRuns(testTeam.id);
-                cy.wait(500);
 
                 // # Ensure RHS is closed before opening it
                 cy.get('body').then(($body) => {
                     if ($body.find('#sidebar-right.is-open').length > 0) {
                         cy.getPlaybooksAppBarIcon().click(); // Close if already open
-                        cy.wait(500);
+                        cy.get('#sidebar-right.is-open').should('not.exist');
                     }
                 });
 
@@ -190,13 +185,12 @@ describe('channels > rhs > home', {testIsolation: true}, () => {
         it.skip('permission notice should be shown and no create button should exist', () => {
             // # Ensure any existing runs in this channel are finished so we get the empty state
             cy.apiFinishAllRuns(restrictedTestTeam.id);
-            cy.wait(500);
 
             // # Ensure RHS is closed before opening it
             cy.get('body').then(($body) => {
                 if ($body.find('#sidebar-right.is-open').length > 0) {
                     cy.getPlaybooksAppBarIcon().click(); // Close if already open
-                    cy.wait(500);
+                    cy.get('#sidebar-right.is-open').should('not.exist');
                 }
             });
 

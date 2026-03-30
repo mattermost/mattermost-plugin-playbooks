@@ -34,6 +34,12 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 		return
 	}
 
+	// If retrospectives are disabled, cancel any recurring schedule and stop.
+	if !playbookRunToRemind.RetrospectiveEnabled {
+		s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
+		return
+	}
+
 	// In the meantime we did publish a retrospective, so no reminder.
 	if playbookRunToRemind.RetrospectivePublishedAt != 0 {
 		return

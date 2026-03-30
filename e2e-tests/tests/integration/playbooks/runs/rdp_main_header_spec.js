@@ -792,7 +792,9 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
 
             describe('run actions', () => {
                 describe('modal behaviour', () => {
-                    /* modal cannot be opened read-only from dropdown */
+                    // TODO: The dropdown item for run actions was removed for non-participant viewers.
+                    // This test needs to be updated to reflect the new permission model where
+                    // read-only users can no longer access run actions via the dropdown.
                     // eslint-disable-next-line no-only-tests/no-only-tests
                     it.skip('modal can be opened read-only', () => {
                         // # Click on run actions

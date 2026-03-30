@@ -82,6 +82,7 @@ describe('incremental updates', () => {
                         state: 'Open',
                         state_modified: 0,
                         assignee_id: '',
+                        assignee_type: '',
                         assignee_modified: 0,
                         command: '',
                         description: '',
@@ -91,6 +92,8 @@ describe('incremental updates', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
+                        restrict_completion_to_assignee: false,
+                        assignee_group_id: '',
                     },
                     {
                         id: 'item_2',
@@ -98,6 +101,7 @@ describe('incremental updates', () => {
                         state: 'Open',
                         state_modified: 0,
                         assignee_id: '',
+                        assignee_type: '',
                         assignee_modified: 0,
                         command: '',
                         description: '',
@@ -107,6 +111,8 @@ describe('incremental updates', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
+                        restrict_completion_to_assignee: false,
+                        assignee_group_id: '',
                     },
                 ],
             },
@@ -145,6 +151,10 @@ describe('incremental updates', () => {
         current_status: PlaybookRunStatus.InProgress,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        run_number: 0,
+        sequential_id: '',
+        task_total: 0,
+        task_completed: 0,
     };
 
     describe('handleWebsocketPlaybookRunUpdatedIncremental', () => {
@@ -473,6 +483,77 @@ describe('incremental updates', () => {
             expect(dispatchedAction.data).toEqual(update);
             expect(dispatchedAction.data.playbook_run_updated_at).toBe(1500);
             expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name with Timestamp');
+        });
+
+        it('does nothing if payload has no id', () => {
+            // Create a handler with our mocks
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            // Create an update without an id field
+            const updateWithoutId = {
+                playbook_run_updated_at: 1000,
+                changed_fields: {
+                    name: 'Should Not Be Dispatched',
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(updateWithoutId),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // Check dispatch was not called
+            expect(testDispatch).not.toHaveBeenCalled();
+        });
+
+        it('fetches full run when run is not in state', () => {
+            // Use a getState that returns an empty runs map so the run is not found
+            const emptyRunsGetState = jest.fn(() => {
+                return {
+                    entities: {
+                        playbookRuns: {
+                            runs: {},
+                        },
+                    },
+                    'plugins-playbooks': {
+                        myPlaybookRunsByTeam: {},
+                    },
+                } as any;
+            });
+
+            // Create a handler with the empty-state mock
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(emptyRunsGetState, testDispatch);
+
+            // Create a valid update for a run that is not in state
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 1000,
+                changed_fields: {
+                    name: 'Updated Name',
+                },
+            };
+
+            // Create the WebSocket message
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            // Call the handler
+            handler(msg);
+
+            // The incremental update action must NOT be dispatched because the run is absent
+            // from state; the handler falls back to fetchAndUpdatePlaybookRun instead.
+            const incrementalDispatches = testDispatch.mock.calls.filter(
+                (call) => call[0]?.type === WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED,
+            );
+            expect(incrementalDispatches).toHaveLength(0);
         });
     });
 
@@ -1204,6 +1285,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1253,6 +1335,8 @@ describe('incremental updates', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
+                        restrict_completion_to_assignee: false,
+                        assignee_group_id: '',
                     },
                     {
                         id: 'item_b',
@@ -1338,6 +1422,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',
@@ -1381,6 +1466,7 @@ describe('incremental updates', () => {
                             state: 'Open',
                             state_modified: 0,
                             assignee_id: '',
+                            assignee_type: '',
                             assignee_modified: 0,
                             command: '',
                             description: '',
@@ -1390,6 +1476,8 @@ describe('incremental updates', () => {
                             condition_id: '',
                             condition_action: '',
                             condition_reason: '',
+                            restrict_completion_to_assignee: false,
+                            assignee_group_id: '',
                         },
                     ],
                 });
@@ -1421,6 +1509,7 @@ describe('incremental updates', () => {
                                         state: 'Open',
                                         state_modified: 0,
                                         assignee_id: '',
+                                        assignee_type: '',
                                         assignee_modified: 0,
                                         command: '',
                                         description: '',

@@ -79,7 +79,7 @@ func (h *ConditionHandler) getPlaybookConditions(c *Context, w http.ResponseWrit
 
 	page, perPage := parsePaginationParams(r.URL.Query())
 
-	results, err := h.conditionService.GetPlaybookConditions(userID, playbookID, page, perPage)
+	results, err := h.conditionService.GetPlaybookConditions(playbookID, page, perPage)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -108,7 +108,7 @@ func (h *ConditionHandler) getRunConditions(c *Context, w http.ResponseWriter, r
 
 	page, perPage := parsePaginationParams(r.URL.Query())
 
-	results, err := h.conditionService.GetRunConditions(userID, run.PlaybookID, runID, page, perPage)
+	results, err := h.conditionService.GetRunConditions(run.PlaybookID, runID, page, perPage)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -187,7 +187,7 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 	}
 
 	// Get existing condition
-	existing, err := h.conditionService.GetPlaybookCondition(userID, playbookID, conditionID)
+	existing, err := h.conditionService.GetPlaybookCondition(playbookID, conditionID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -249,7 +249,7 @@ func (h *ConditionHandler) deletePlaybookCondition(c *Context, w http.ResponseWr
 	}
 
 	// Get existing condition
-	existing, err := h.conditionService.GetPlaybookCondition(userID, playbookID, conditionID)
+	existing, err := h.conditionService.GetPlaybookCondition(playbookID, conditionID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -301,13 +301,14 @@ func parsePaginationParams(query url.Values) (page, perPage int) {
 
 // ConditionRequest represents a condition request from the API
 type ConditionRequest struct {
-	ID            string          `json:"id"`
-	ConditionExpr json.RawMessage `json:"condition_expr"`
-	Version       int             `json:"version"`
-	PlaybookID    string          `json:"playbook_id"`
-	RunID         string          `json:"run_id,omitempty"`
-	CreateAt      int64           `json:"create_at"`
-	UpdateAt      int64           `json:"update_at"`
+	ID            string                   `json:"id"`
+	ConditionExpr json.RawMessage          `json:"condition_expr"`
+	Actions       []app.ConditionActionDef `json:"actions,omitempty"`
+	Version       int                      `json:"version"`
+	PlaybookID    string                   `json:"playbook_id"`
+	RunID         string                   `json:"run_id,omitempty"`
+	CreateAt      int64                    `json:"create_at"`
+	UpdateAt      int64                    `json:"update_at"`
 }
 
 // ToCondition converts a ConditionRequest to a Condition
@@ -319,6 +320,7 @@ func (cr *ConditionRequest) ToCondition() (*app.Condition, error) {
 
 	condition := &app.Condition{
 		ID:         cr.ID,
+		Actions:    cr.Actions,
 		Version:    cr.Version,
 		PlaybookID: cr.PlaybookID,
 		RunID:      cr.RunID,

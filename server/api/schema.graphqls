@@ -51,6 +51,7 @@ type Mutation {
 	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
 	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	setItemPropertyUserAssignee(runID: String!, checklistNum: Float!, itemNum: Float!, propertyFieldID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 }
 
 type PageInfo {
@@ -95,6 +96,19 @@ input PlaybookUpdates {
 	removeChannelMemberOnRemovedParticipant: Boolean
 	channelId: String
 	channelMode: String
+	ownerGroupOnlyActions: Boolean
+	adminOnlyEdit: Boolean
+	newChannelOnly: Boolean
+	autoArchiveChannel: Boolean
+	runNumberPrefix: String
+	creationRules: [CreationRuleInput!]
+}
+
+input CreationRuleInput {
+	condition: JSON
+	setOwnerID: String
+	setChannelID: String
+	inviteUserIDs: [String!]
 }
 
 input ChecklistUpdates {
@@ -109,11 +123,15 @@ input ChecklistItemUpdates {
 	stateModified: Float!
 	assigneeID: String!
 	assigneeModified: Float!
+	assigneeType: String
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
 	taskActions: [TaskActionUpdates!]
 	conditionID: String!
+	restrictCompletionToAssignee: Boolean
+	assigneeGroupID: String
+	assigneePropertyFieldID: String
 }
 
 input TaskActionUpdates {
@@ -181,6 +199,13 @@ type Playbook {
 	removeChannelMemberOnRemovedParticipant: Boolean!
 	channelID: String!
 	channelMode: String!
+	ownerGroupOnlyActions: Boolean!
+	adminOnlyEdit: Boolean!
+	newChannelOnly: Boolean!
+	autoArchiveChannel: Boolean!
+	runNumberPrefix: String!
+	nextRunNumber: Float!
+	creationRules: JSON!
 }
 
 type Checklist {
@@ -201,6 +226,7 @@ type ChecklistItem {
 	stateModified: Float!
 	assigneeID: String!
 	assigneeModified: Float!
+	assigneeType: String!
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
@@ -208,6 +234,9 @@ type ChecklistItem {
 	conditionID: String!
 	conditionAction: String!
 	conditionReason: String!
+	restrictCompletionToAssignee: Boolean!
+	assigneeGroupID: String!
+	assigneePropertyFieldID: String!
 }
 
 type TaskAction {
@@ -299,6 +328,8 @@ type Run {
 
 	propertyFields: [PropertyField!]!
 
+	runNumber: Float!
+	sequentialID: String!
 	type: PlaybookRunType!
 }
 

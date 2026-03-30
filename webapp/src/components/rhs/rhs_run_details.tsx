@@ -17,6 +17,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {throttle} from 'lodash';
 
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {PlaybookRole} from 'src/types/permissions';
+import {usePlaybook} from 'src/graphql/hooks';
 
 import {
     RHSContainer,
@@ -65,6 +67,10 @@ const RHSRunDetails = (props: Props) => {
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbookRun] = useRun(props.runID);
+    const [playbook] = usePlaybook(playbookRun?.playbook_id ?? '');
+    const isPlaybookAdmin = playbook?.members?.some(
+        (m) => m.user_id === currentUserId && m.scheme_roles?.includes(PlaybookRole.Admin),
+    ) ?? false;
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields | null = playbookRun ? {
@@ -188,6 +194,8 @@ const RHSRunDetails = (props: Props) => {
                             readOnly={readOnly}
                             onReadOnlyInteract={onReadOnlyInteract}
                             setShowParticipants={setShowParticipants}
+                            ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
+                            isPlaybookAdmin={isPlaybookAdmin}
                         />
                         <RHSChecklistList
                             playbookRun={playbookRun}
@@ -197,6 +205,7 @@ const RHSRunDetails = (props: Props) => {
                             autoAddTask={props.autoAddTask}
                             onTaskAdded={props.onTaskAdded}
                             onBackClick={props.onBackClick}
+                            ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
                         />
                     </Scrollbars>
                 </RHSContent>

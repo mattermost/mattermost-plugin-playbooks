@@ -146,7 +146,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
         describe('header', () => {
             it('has title', () => {
                 cy.get('#rhsContainer').within(() => {
-                    cy.findByText('Tasks').should('exist');
+                    cy.findByText('Tasks').should('be.visible');
                 });
             });
         });
@@ -270,7 +270,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             cy.addNewTaskFromRHS(newTasktext);
 
             // Check that it was created
-            cy.findByText(newTasktext).should('exist');
+            cy.findByText(newTasktext).should('be.visible');
         });
 
         it('add new task slash command', () => {
@@ -279,7 +279,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly(`/playbook checkadd 0 ${newTasktext}`);
 
             // Check that it was created
-            cy.findByText(newTasktext).should('exist');
+            cy.findByText(newTasktext).should('be.visible');
         });
 
         it('creates a new checklist', () => {
@@ -295,7 +295,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
 
             // # Click on the button to add a checklist
             cy.get('#rhsContainer').within(() => {
-                cy.findByText(title).should('exist');
+                cy.findByText(title).should('be.visible');
             });
         });
 
@@ -319,7 +319,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             // * Verify that the checklist changed its name
             cy.get('#rhsContainer').within(() => {
                 cy.findByText(oldTitle).should('not.exist');
-                cy.findByText(oldTitle + newTitle).should('exist');
+                cy.findByText(oldTitle + newTitle).should('be.visible');
             });
         });
 
@@ -345,9 +345,9 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
                 });
 
             // * Verify if Due in 3 days info is added
-            cy.findAllByTestId('due-date-info-button').eq(0).should('exist').within(() => {
-                cy.findByText('in 3 days').should('exist');
-                cy.findByText('Due').should('exist');
+            cy.findAllByTestId('due-date-info-button').eq(0).should('be.visible').within(() => {
+                cy.findByText('in 3 days').should('be.visible');
+                cy.findByText('Due').should('be.visible');
             });
         });
 
@@ -369,8 +369,8 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             });
 
             // * Verify if overdue tasks info was added. Should not include skipped / completed tasks.
-            cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
-                cy.findByText('2 tasks overdue').should('exist');
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).should('be.visible').within(() => {
+                cy.findByText('2 tasks overdue').should('be.visible');
             });
 
             // # Filter overdue tasks
@@ -391,8 +391,8 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             setTaskDueDate(2, '1 minute ago');
 
             // * Verify if overdue tasks info was added
-            cy.findAllByTestId('overdue-tasks-filter').eq(0).should('exist').within(() => {
-                cy.findByText('1 task overdue').should('exist');
+            cy.findAllByTestId('overdue-tasks-filter').eq(0).should('be.visible').within(() => {
+                cy.findByText('1 task overdue').should('be.visible');
             });
 
             // # Filter overdue tasks
@@ -469,9 +469,9 @@ const setTaskDueDate = (taskIndex, dateQuery, offset = 0) => {
     });
 
     // * Verify if Due date info is added
-    cy.findAllByTestId('due-date-info-button').eq(offset).should('exist').within(() => {
-        cy.findByText(dateQuery).should('exist');
-        cy.findByText('Due').should('exist');
+    cy.findAllByTestId('due-date-info-button').eq(offset).should('be.visible').within(() => {
+        cy.findByText(dateQuery).should('be.visible');
+        cy.findByText('Due').should('be.visible');
     });
 };
 

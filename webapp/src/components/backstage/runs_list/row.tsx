@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
 import styled from 'styled-components';
@@ -24,6 +24,9 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
+import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
+import TaskProgress from 'src/components/backstage/runs_list/task_progress';
+import AttributeColumns from 'src/components/backstage/runs_list/attribute_columns';
 import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
@@ -66,6 +69,7 @@ const RunName = styled.div`
 
 const PlaybookRunItem = styled.div`
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     padding-top: 8px;
     padding-bottom: 8px;
@@ -79,9 +83,15 @@ const PlaybookRunItem = styled.div`
     }
 `;
 
+const AttributeColumnsRow = styled.div`
+    width: 100%;
+    padding: 4px 0 4px 15px;
+`;
+
 interface Props {
     playbookRun: PlaybookRun
     fixedTeam?: boolean
+    selectedFieldIds?: string[]
 }
 
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId)?.display_name ?? '';
@@ -109,10 +119,17 @@ const Row = (props: Props) => {
         <PlaybookRunItem
             className='row'
             key={props.playbookRun.id}
+            data-testid='run-list-item'
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
             <div className='col-sm-4'>
-                <RunName>{props.playbookRun.name}</RunName>
+                <RunName>
+                    <SequentialIdDisplay
+                        runNumber={props.playbookRun.run_number ?? 0}
+                        sequentialId={props.playbookRun.sequential_id ?? ''}
+                        runName={props.playbookRun.name}
+                    />
+                </RunName>
                 {infoLine}
             </div>
             <div className='col-sm-2'>
@@ -144,10 +161,23 @@ const Row = (props: Props) => {
                         values={{numParticipants: props.playbookRun.participant_ids.length}}
                     />
                 </SmallText>
+                <TaskProgress
+                    taskTotal={props.playbookRun.task_total}
+                    taskCompleted={props.playbookRun.task_completed}
+                />
             </div>
             <div className='col-sm-2'>
                 <FollowPlaybookRun id={props.playbookRun.id}/>
             </div>
+            {props.playbookRun.property_fields && props.playbookRun.property_fields.length > 0 && (
+                <AttributeColumnsRow>
+                    <AttributeColumns
+                        propertyFields={props.playbookRun.property_fields}
+                        propertyValues={props.playbookRun.property_values}
+                        selectedFieldIds={props.selectedFieldIds}
+                    />
+                </AttributeColumnsRow>
+            )}
         </PlaybookRunItem>
     );
 };
@@ -173,7 +203,14 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
     const [metadata] = useRunMetadata(id);
     const [followers, setFollowers] = useState(metadata?.followers || []);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+    const [isToggling, setIsToggling] = useState(false);
     const addToast = useToaster().add;
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     useUpdateEffect(() => {
         const newFollowers = metadata?.followers || [];
@@ -182,15 +219,27 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
     }, [currentUser.id, JSON.stringify(metadata?.followers)]);
 
     const toggleFollow = () => {
+        if (isToggling) {
+            return;
+        }
+        setIsToggling(true);
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
         action(id)
             .then(() => {
+                if (!isMountedRef.current) {
+                    return;
+                }
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setIsFollowing(!isFollowing);
                 setFollowers(newFollowers);
+                setIsToggling(false);
             })
             .catch(() => {
+                if (!isMountedRef.current) {
+                    return;
+                }
                 setIsFollowing(isFollowing);
+                setIsToggling(false);
                 addToast({
                     content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
                     toastStyle: ToastStyle.Failure,
@@ -241,8 +290,8 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 };
 
 const FollowButton = styled(SecondaryButton)`
-    border: 1px solid var(--center-channel-color-08);
-    color: var(--center-channel-color-64);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const FollowingButton = styled(TertiaryButton)`

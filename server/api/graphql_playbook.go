@@ -5,6 +5,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -53,6 +54,27 @@ func (r *PlaybookResolver) NumRuns() int32 {
 
 func (r *PlaybookResolver) ActiveRuns() int32 {
 	return int32(r.Playbook.ActiveRuns)
+}
+
+func (r *PlaybookResolver) NextRunNumber() float64 {
+	return float64(r.Playbook.NextRunNumber)
+}
+
+func (r *PlaybookResolver) RunNumberPrefix() string {
+	return r.Playbook.RunNumberPrefix
+}
+
+func (r *PlaybookResolver) CreationRules() JSONResolver {
+	rules := r.Playbook.CreationRules
+	if rules == nil {
+		rules = []app.CreationRule{}
+	}
+	b, err := json.Marshal(rules)
+	if err != nil {
+		logrus.WithError(err).Error("failed to marshal playbook creation rules")
+		b = []byte(`[]`)
+	}
+	return *NewJSONResolver(b)
 }
 
 func (r *PlaybookResolver) RetrospectiveReminderIntervalSeconds() float64 {
@@ -228,18 +250,22 @@ func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
 }
 
 type UpdateChecklistItem struct {
-	Title            string            `json:"title"`
-	State            string            `json:"state"`
-	StateModified    float64           `json:"state_modified"`
-	AssigneeID       string            `json:"assignee_id"`
-	AssigneeModified float64           `json:"assignee_modified"`
-	Command          string            `json:"command"`
-	CommandLastRun   float64           `json:"command_last_run"`
-	Description      string            `json:"description"`
-	LastSkipped      float64           `json:"delete_at"`
-	DueDate          float64           `json:"due_date"`
-	TaskActions      *[]app.TaskAction `json:"task_actions"`
-	ConditionID      string            `json:"condition_id"`
+	Title                        string            `json:"title"`
+	State                        string            `json:"state"`
+	StateModified                float64           `json:"state_modified"`
+	AssigneeID                   string            `json:"assignee_id"`
+	AssigneeModified             float64           `json:"assignee_modified"`
+	AssigneeType                 *string           `json:"assignee_type"`
+	Command                      string            `json:"command"`
+	CommandLastRun               float64           `json:"command_last_run"`
+	Description                  string            `json:"description"`
+	LastSkipped                  float64           `json:"delete_at"`
+	DueDate                      float64           `json:"due_date"`
+	TaskActions                  *[]app.TaskAction `json:"task_actions"`
+	ConditionID                  string            `json:"condition_id"`
+	RestrictCompletionToAssignee *bool             `json:"restrict_completion_to_assignee"`
+	AssigneeGroupID              *string           `json:"assignee_group_id"`
+	AssigneePropertyFieldID      *string           `json:"assignee_property_field_id"`
 }
 
 func (ci *UpdateChecklistItem) GetAssigneeID() string {
@@ -260,4 +286,12 @@ func (ci *UpdateChecklistItem) SetStateModified(modified int64) {
 
 func (ci *UpdateChecklistItem) SetCommandLastRun(lastRun int64) {
 	ci.CommandLastRun = float64(lastRun)
+}
+
+// CreationRuleInput is the GraphQL input type for creation rules.
+type CreationRuleInput struct {
+	Condition     *interface{} `json:"condition"`
+	SetOwnerID    *string      `json:"setOwnerID"`
+	SetChannelID  *string      `json:"setChannelID"`
+	InviteUserIDs *[]string    `json:"inviteUserIDs"`
 }

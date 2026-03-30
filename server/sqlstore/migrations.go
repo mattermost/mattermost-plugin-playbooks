@@ -1677,8 +1677,10 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Incident")
 			}
 
-			// Set the initial UpdateAt value to be the same as CreateAt
-			if _, err := e.Exec("UPDATE IR_Incident SET UpdateAt = CreateAt"); err != nil {
+			if _, err := sqlStore.execBuilder(e, sq.
+				Update("IR_Incident").
+				Set("UpdateAt", sq.Expr("CreateAt")),
+			); err != nil {
 				return errors.Wrapf(err, "failed setting initial UpdateAt values")
 			}
 			return nil
@@ -1739,6 +1741,129 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating index IR_Condition_RunID_DeleteAt")
 			}
 
+			return nil
+		},
+	},
+	{
+		// Adds all columns and indexes introduced by the exp branch.
+		// Every operation is idempotent (IF NOT EXISTS / IF to_regclass IS NULL),
+		// so this migration is safe to re-run on environments that already have
+		// some or all of these schema changes (e.g. after a version-counter reset).
+		fromVersion: semver.MustParse("0.67.0"),
+		toVersion:   semver.MustParse("0.68.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Playbook", "OwnerGroupOnlyActions", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column OwnerGroupOnlyActions to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "AdminOnlyEdit", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AdminOnlyEdit to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "NewChannelOnly", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column NewChannelOnly to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "AutoArchiveChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchiveChannel to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "CreationRulesJSON", "JSONB NOT NULL DEFAULT '[]'"); err != nil {
+				return errors.Wrapf(err, "failed adding column CreationRulesJSON to IR_Playbook")
+			}
+
+			// Sequential ID system: prefix stored on playbook, counter and display ID on run.
+			if err := addColumnToPGTable(e, "IR_Playbook", "RunNumberPrefix", "VARCHAR(32) NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding RunNumberPrefix to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "NextRunNumber", "BIGINT NOT NULL DEFAULT 1"); err != nil {
+				return errors.Wrapf(err, "failed adding NextRunNumber to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "RunNumber", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+				return errors.Wrapf(err, "failed adding RunNumber to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "SequentialID", "VARCHAR(64) NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding SequentialID to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "ChannelCreatedByRun", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column ChannelCreatedByRun to IR_Incident")
+			}
+
+			// Backfill: runs whose playbook currently has ChannelMode = 'create_new_channel' are
+			// assumed to have had their channel created by the run at the time they were started.
+			// Raw SQL is used here because squirrel cannot express UPDATE...FROM multi-table joins.
+			// This backfill must run inside the migration transaction (e) — the preceding
+			// ALTER TABLE IR_Incident holds an AccessExclusiveLock for the duration of the transaction,
+			// so using a separate connection would deadlock. Running both operations on the same
+			// transaction executor avoids the deadlock.
+			//
+			// KNOWN LIMITATION: Playbooks that switched ChannelMode from 'create_new_channel' to
+			// 'link_existing_channel' after creating runs will NOT have ChannelCreatedByRun = TRUE
+			// for those pre-switch runs, even though their channels were originally created by the run.
+			// Impact is limited to auto-archiving: those channels won't be auto-archived on run finish.
+			// Fixing this would require joining on a historical snapshot of ChannelMode that does
+			// not currently exist in the schema.
+			if _, err := e.Exec(`
+    UPDATE IR_Incident
+    SET ChannelCreatedByRun = TRUE
+    FROM IR_Playbook
+    WHERE IR_Incident.PlaybookID = IR_Playbook.ID
+      AND IR_Playbook.ChannelMode = 'create_new_channel'
+      AND IR_Playbook.DeleteAt = 0
+      AND IR_Incident.DeleteAt = 0
+`); err != nil {
+				return errors.Wrapf(err, "failed to backfill ChannelCreatedByRun for existing runs")
+			}
+
+			// Prefix must be unique per team among active (non-archived) playbooks only.
+			if _, err := e.Exec(createPGUniquePartialIndex(
+				"IR_Playbook_TeamID_RunNumberPrefix_Unique",
+				"IR_Playbook",
+				"TeamID, RunNumberPrefix",
+				"RunNumberPrefix != '' AND DeleteAt = 0",
+			)); err != nil {
+				return errors.Wrapf(err, "failed creating unique index IR_Playbook_TeamID_RunNumberPrefix_Unique")
+			}
+			// Run numbers come from an ever-incrementing counter; partial index covers live runs only.
+			if _, err := e.Exec(createPGUniquePartialIndex(
+				"IR_Incident_PlaybookID_RunNumber_Unique",
+				"IR_Incident",
+				"PlaybookID, RunNumber",
+				"RunNumber > 0 AND DeleteAt = 0",
+			)); err != nil {
+				return errors.Wrapf(err, "failed creating unique index IR_Incident_PlaybookID_RunNumber_Unique")
+			}
+
+			// Backfill: playbooks with status updates enabled and a zero-or-negative reminder
+			// interval. The column default is 0 (added before validation was enforced), so
+			// existing rows may have 0 which ValidateStatusUpdateConfig auto-coerces to
+			// defaultReminderTimerSeconds (900) at runtime; this migration aligns the stored
+			// DB value with that runtime behaviour.
+			if _, err := sqlStore.execBuilder(e, sq.
+				Update("IR_Playbook").
+				Set("ReminderTimerDefaultSeconds", 900).
+				Where(sq.Eq{"StatusUpdateEnabled": true}).
+				Where(sq.LtOrEq{"ReminderTimerDefaultSeconds": 0}),
+			); err != nil {
+				return errors.Wrapf(err, "failed to backfill ReminderTimerDefaultSeconds for status-update-enabled playbooks")
+			}
+
+			// SS-15: mid-run condition actions (set owner, notify channel).
+			if err := addColumnToPGTable(e, "IR_Condition", "Actions", "JSONB NOT NULL DEFAULT '[]'"); err != nil {
+				return errors.Wrapf(err, "failed adding column Actions to IR_Condition")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.68.0"),
+		toVersion:   semver.MustParse("0.69.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// The Actions column was originally absent from the 0.67→0.68 migration
+			// when it was first deployed; that migration was later amended to include it.
+			// This guard ensures the column exists on instances that ran the original
+			// (pre-amendment) 0.67→0.68 migration and are now at 0.68.0 without Actions.
+			// addColumnToPGTable is idempotent: duplicate_column errors are silently ignored.
+			if err := addColumnToPGTable(e, "IR_Condition", "Actions", "JSONB NOT NULL DEFAULT '[]'"); err != nil {
+				return errors.Wrapf(err, "failed adding column Actions to IR_Condition")
+			}
 			return nil
 		},
 	},

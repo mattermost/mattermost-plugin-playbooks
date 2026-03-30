@@ -10,3 +10,7 @@ export const supportsOptions = <T extends Pick<PropertyField, 'type'>>(field: T)
 export const hasOptions = <T extends Pick<PropertyField, 'attrs'>>(field: T) => {
     return Boolean(field.attrs?.options && field.attrs.options.length > 0);
 };
+
+export const isUserLookupType = <T extends Pick<PropertyField, 'type'>>(field: T) => {
+    return field.type === 'user' || field.type === 'multiuser';
+};

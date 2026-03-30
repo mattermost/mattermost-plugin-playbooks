@@ -40,8 +40,12 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 	fields1, err := e.PlaybooksClient.Playbooks.GetPropertyFields(context.Background(), playbookID)
 	require.NoError(t, err)
 	require.Len(t, fields1, 1)
-	require.Equal(t, "Initial Field", fields1[0].Name)
-	require.Equal(t, fieldID, fields1[0].ID)
+	byName1 := make(map[string]client.PropertyField)
+	for _, f := range fields1 {
+		byName1[f.Name] = f
+	}
+	require.Contains(t, byName1, "Initial Field")
+	require.Equal(t, fieldID, byName1["Initial Field"].ID)
 
 	// Step 4a: Update the field name
 	updateNameRequest := client.PropertyFieldRequest{
@@ -62,7 +66,11 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 	fields2, err := e.PlaybooksClient.Playbooks.GetPropertyFields(context.Background(), playbookID)
 	require.NoError(t, err)
 	require.Len(t, fields2, 1)
-	require.Equal(t, "Updated Field Name", fields2[0].Name)
+	byName2 := make(map[string]client.PropertyField)
+	for _, f := range fields2 {
+		byName2[f.Name] = f
+	}
+	require.Contains(t, byName2, "Updated Field Name")
 
 	// Step 4b: Update the field type (select requires options)
 	updateTypeRequest := client.PropertyFieldRequest{
@@ -88,7 +96,11 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 	fields3, err := e.PlaybooksClient.Playbooks.GetPropertyFields(context.Background(), playbookID)
 	require.NoError(t, err)
 	require.Len(t, fields3, 1)
-	require.Equal(t, "select", fields3[0].Type)
+	byName3 := make(map[string]client.PropertyField)
+	for _, f := range fields3 {
+		byName3[f.Name] = f
+	}
+	require.Equal(t, "select", byName3["Updated Field Name"].Type)
 
 	// Step 4c: Update to add attributes (options for select field)
 	updateAttrsRequest := client.PropertyFieldRequest{
@@ -122,10 +134,10 @@ func TestPlaybookPropertyFieldsCRUD(t *testing.T) {
 	err = e.PlaybooksClient.Playbooks.DeletePropertyField(context.Background(), playbookID, fieldID)
 	require.NoError(t, err)
 
-	// Step 6: List property fields - should be empty now
+	// Step 6: List property fields - should be empty after deleting the user field
 	fields5, err := e.PlaybooksClient.Playbooks.GetPropertyFields(context.Background(), playbookID)
 	require.NoError(t, err)
-	require.Len(t, fields5, 0, "Property field should be deleted and not appear in the list")
+	require.Len(t, fields5, 0, "No property fields should remain after deleting the user field")
 }
 
 func stringPtr(s string) *string {
@@ -223,9 +235,10 @@ func TestRunPropertyOperations(t *testing.T) {
 	runID := createdRun.ID
 
 	// Step 3: List property fields from the run and verify by name
+	// The run gets copies of all 3 user-defined fields from the playbook.
 	runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), runID)
 	require.NoError(t, err)
-	require.Len(t, runFields, 3, "Should have 3 property fields")
+	require.Len(t, runFields, 3, "Should have 3 property fields (the 3 user fields copied from the playbook)")
 
 	// Verify fields by name (IDs may differ between playbook and run)
 	fieldsByName := make(map[string]client.PropertyField)

@@ -146,6 +146,22 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 			}
 		}
 	}
+	playbook.RunNumberPrefix = app.NormalizeRunNumberPrefix(playbook.RunNumberPrefix)
+	if err := app.ValidateRunNumberPrefix(playbook.RunNumberPrefix); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+
+	if err := app.ValidateChannelNameTemplate(playbook.ChannelNameTemplate); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+
+	if err := app.ValidateCreationRules(playbook.CreationRules); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid creation rules", err)
+		return false
+	}
+
 	for listIndex := range playbook.Checklists {
 		for itemIndex := range playbook.Checklists[listIndex].Items {
 			if err := validateTaskActions(playbook.Checklists[listIndex].Items[itemIndex].TaskActions); err != nil {
@@ -171,10 +187,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if playbook.ReminderTimerDefaultSeconds <= 0 {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
-		return
-	}
+	app.ValidateStatusUpdateConfig(&playbook.ReminderTimerDefaultSeconds, playbook.StatusUpdateEnabled)
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookCreate(userID, playbook)) {
 		return
@@ -194,12 +207,35 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Validate governance flag changes: at creation time there is no pre-existing playbook admin,
+	// so only system admins can create playbooks with governance flags pre-enabled.
+	if !h.requireSystemAdminForGovernanceFlags(w, c.logger, userID, playbook.AdminOnlyEdit, playbook.OwnerGroupOnlyActions, playbook.NewChannelOnly, playbook.AutoArchiveChannel) {
+		return
+	}
+
+	// Validate that template field placeholders reference existing property fields.
+	// At creation time no fields exist yet, so any field placeholder other than built-ins is invalid.
+	if !h.validateChannelNameTemplate(w, c.logger, &playbook) {
+		return
+	}
+
 	if err := h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
 
 	app.CleanUpChecklists(playbook.Checklists)
+
+	if err := app.ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	// Normalize unrecognized AssigneeType values and validate companion ID fields.
+	if err := app.NormalizeAssigneeTypes(playbook.Checklists); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		return
+	}
 
 	if err := validatePreAssignment(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid pre-assignment", err)
@@ -251,9 +287,14 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	// Force parsed playbook id to be URL parameter id
 	playbook.ID = vars["id"]
+
 	oldPlaybook, err := h.playbookService.Get(playbook.ID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
 		return
 	}
 
@@ -262,8 +303,26 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
+	app.ValidateStatusUpdateConfig(&playbook.ReminderTimerDefaultSeconds, playbook.StatusUpdateEnabled)
+
+	isAdmin := app.IsSystemAdmin(userID, h.pluginAPI)
+	isPbAdmin := app.IsPlaybookAdminMember(userID, oldPlaybook)
+	if err := app.ValidateGovernanceFlags(isAdmin, isPbAdmin, app.GovernanceFlagChanges{
+		EnableAdminOnlyEdit:         playbook.AdminOnlyEdit && !oldPlaybook.AdminOnlyEdit,
+		ToggleOwnerGroupOnlyActions: playbook.OwnerGroupOnlyActions != oldPlaybook.OwnerGroupOnlyActions,
+		ToggleNewChannelOnly:        playbook.NewChannelOnly != oldPlaybook.NewChannelOnly,
+		ToggleAutoArchiveChannel:    playbook.AutoArchiveChannel != oldPlaybook.AutoArchiveChannel,
+	}); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, err.Error(), err)
 		return
+	}
+	// Warn when OwnerGroupOnlyActions is enabled: this immediately restricts all active runs
+	// in this playbook so only the run owner can finish/restore them.
+	if playbook.OwnerGroupOnlyActions && !oldPlaybook.OwnerGroupOnlyActions {
+		c.logger.WithFields(logrus.Fields{
+			"playbook_id": playbook.ID,
+			"user_id":     userID,
+		}).Warn("OwnerGroupOnlyActions enabled: all active runs in this playbook now require owner-level permission to finish or restore")
 	}
 
 	if oldPlaybook.DeleteAt != 0 {
@@ -271,8 +330,44 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Preserve server-managed counters that must not be set via REST PUT.
+	playbook.NextRunNumber = oldPlaybook.NextRunNumber
+
+	// Preserve CreationRules if not provided in the update (nil means "don't change").
+	if playbook.CreationRules == nil {
+		playbook.CreationRules = oldPlaybook.CreationRules
+	}
+
 	if !h.validPlaybook(w, c.logger, &playbook) {
 		return
+	}
+
+	// Cross-field validation: use effective values so that changing RunNumberPrefix alone
+	// (without resending ChannelNameTemplate) is still validated against the existing template.
+	effectiveTemplate := playbook.ChannelNameTemplate
+	if effectiveTemplate == "" {
+		effectiveTemplate = oldPlaybook.ChannelNameTemplate
+	}
+	if effectiveTemplate != "" {
+		propertyFields, err := h.propertyService.GetPropertyFields(playbook.ID)
+		if err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+		if unknown := app.ValidateTemplate(effectiveTemplate, app.ResolveOptions{Fields: propertyFields}); len(unknown) > 0 {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
+			return
+		}
+		// Fall back to the stored prefix when the request omits it, mirroring the
+		// effectiveTemplate fallback above so that partial PUTs are validated correctly.
+		effectivePrefix := playbook.RunNumberPrefix
+		if effectivePrefix == "" {
+			effectivePrefix = oldPlaybook.RunNumberPrefix
+		}
+		if err := app.ValidateChannelNameTemplateWithPrefix(effectiveTemplate, effectivePrefix); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 	}
 
 	// Clean checklist IDs for incremental update compatibility
@@ -281,6 +376,17 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	app.CleanUpChecklists(playbook.Checklists)
+
+	if err := app.ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	// Normalize unrecognized AssigneeType values and validate companion ID fields.
+	if err = app.NormalizeAssigneeTypes(playbook.Checklists); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		return
+	}
 
 	if err = validatePreAssignment(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid user pre-assignment", err)
@@ -507,9 +613,10 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'page': it should be a positive number")
 	}
 
+	const defaultPerPage = 1000
 	perPageParam := params.Get("per_page")
 	if perPageParam == "" || perPageParam == "0" {
-		perPageParam = "1000"
+		perPageParam = strconv.Itoa(defaultPerPage)
 	}
 	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
@@ -639,6 +746,28 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
+	// Validate governance flags: duplicating a playbook with governance flags requires the same
+	// privilege as creating one with those flags — system admin, since there is no pre-existing
+	// playbook admin for the new copy.
+	if !h.requireSystemAdminForGovernanceFlags(w, c.logger, userID, playbook.AdminOnlyEdit, playbook.OwnerGroupOnlyActions, playbook.NewChannelOnly, playbook.AutoArchiveChannel) {
+		return
+	}
+
+	if err := app.ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	app.ValidateStatusUpdateConfig(&playbook.ReminderTimerDefaultSeconds, playbook.StatusUpdateEnabled)
+
+	// Validate that template field placeholders reference existing property fields.
+	// The duplicated playbook retains the source playbook's field IDs, so existing
+	// property field placeholders are valid; only built-in tokens are allowed for
+	// fields that no longer exist in the new copy.
+	if !h.validateChannelNameTemplate(w, c.logger, &playbook) {
+		return
+	}
+
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -677,6 +806,13 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Guard governance flags before rewriting members: only system admins can import
+	// playbooks with governance flags enabled, since there is no pre-existing playbook
+	// admin to check against for a fresh import.
+	if !h.requireSystemAdminForGovernanceFlags(w, c.logger, userID, playbook.AdminOnlyEdit, playbook.OwnerGroupOnlyActions, playbook.NewChannelOnly, playbook.AutoArchiveChannel) {
+		return
+	}
+
 	// Make the importer the sole admin of the playbook.
 	playbook.Members = []app.PlaybookMember{
 		{
@@ -697,6 +833,24 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	if !h.validPlaybook(w, c.logger, &playbook) {
+		return
+	}
+
+	if err := app.ValidateNewChannelOnlyMode(playbook.NewChannelOnly, playbook.ChannelMode); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	app.ValidateStatusUpdateConfig(&playbook.ReminderTimerDefaultSeconds, playbook.StatusUpdateEnabled)
+
+	// At import time no property fields exist, so any non-built-in placeholder is invalid.
+	if !h.validateChannelNameTemplate(w, c.logger, &playbook) {
+		return
+	}
+
+	// Normalize unrecognized AssigneeType values and validate companion ID fields.
+	if err := app.NormalizeAssigneeTypes(playbook.Checklists); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
@@ -730,6 +884,42 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 		titles[m.Title] = true
 	}
 	return nil
+}
+
+// validateChannelNameTemplate validates the channel name template for a new playbook
+// (no existing property fields — only system tokens are allowed).
+func (h *PlaybookHandler) validateChannelNameTemplate(w http.ResponseWriter, logger logrus.FieldLogger, playbook *app.Playbook) bool {
+	if playbook.ChannelNameTemplate == "" {
+		return true
+	}
+	if unknown := app.ValidateTemplate(playbook.ChannelNameTemplate, app.ResolveOptions{}); len(unknown) > 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
+		return false
+	}
+	if err := app.ValidateChannelNameTemplateWithPrefix(playbook.ChannelNameTemplate, playbook.RunNumberPrefix); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, err.Error(), err)
+		return false
+	}
+	return true
+}
+
+// requireSystemAdminForGovernanceFlags returns false (and writes error) if governance flags
+// are being set but the caller lacks system admin rights. Returns true if checks pass.
+func (h *PlaybookHandler) requireSystemAdminForGovernanceFlags(w http.ResponseWriter, logger logrus.FieldLogger, userID string, adminOnlyEdit, ownerGroupOnlyActions, newChannelOnly, autoArchiveChannel bool) bool {
+	if !adminOnlyEdit && !ownerGroupOnlyActions && !newChannelOnly && !autoArchiveChannel {
+		return true
+	}
+	isAdmin := app.IsSystemAdmin(userID, h.pluginAPI)
+	if err := app.ValidateGovernanceFlags(isAdmin, false /* isPbAdmin: no existing playbook */, app.GovernanceFlagChanges{
+		EnableAdminOnlyEdit:         adminOnlyEdit,
+		ToggleOwnerGroupOnlyActions: ownerGroupOnlyActions,
+		ToggleNewChannelOnly:        newChannelOnly,
+		ToggleAutoArchiveChannel:    autoArchiveChannel,
+	}); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, err.Error(), err)
+		return false
+	}
+	return true
 }
 
 func (h *PlaybookHandler) getTopPlaybooksForUser(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -860,13 +1050,33 @@ func GetStartOfDayForTimeRange(timeRange string, location *time.Location) (*time
 	return &resultTime, nil
 }
 
+func (h *PlaybookHandler) requirePlaybookAttributesLicense(w http.ResponseWriter, logger logrus.FieldLogger) bool {
+	return checkPlaybookAttributesLicense(h.licenseChecker, w, logger)
+}
+
+func (h *PlaybookHandler) authorisePropertyFieldEdit(w http.ResponseWriter, logger logrus.FieldLogger, userID, playbookID string) (app.Playbook, bool) {
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return app.Playbook{}, false
+	}
+	if err := h.permissions.PlaybookEdit(userID, playbook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return app.Playbook{}, false
+	}
+	if playbook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return app.Playbook{}, false
+	}
+	return playbook, true
+}
+
 func (h *PlaybookHandler) getPlaybookPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	logger := c.logger.WithField("playbook_id", playbookID)
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
@@ -902,32 +1112,24 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 	playbookID := vars["id"]
 	logger := c.logger.WithField("playbook_id", playbookID)
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	if _, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID); !ok {
 		return
 	}
 
 	var request PropertyFieldRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	if strings.TrimSpace(request.Name) == "" {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field name must not be empty", errors.New("property field name must not be empty"))
 		return
 	}
 
@@ -948,26 +1150,13 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 	fieldID := vars["fieldID"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	if _, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID); !ok {
 		return
 	}
 
@@ -988,17 +1177,22 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
+	if strings.TrimSpace(request.Name) == "" {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field name must not be empty", errors.New("property field name must not be empty"))
+		return
+	}
+
 	propertyField := convertRequestToPropertyField(request)
 	propertyField.ID = fieldID
 
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
 	if err != nil {
 		if errors.Is(err, app.ErrPropertyOptionsInUse) {
-			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, "Property options are in use and cannot be deleted.", err)
 			return
 		}
 		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
-			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, "Property field type cannot be changed after creation.", err)
 			return
 		}
 		h.HandleError(w, logger, err)
@@ -1014,26 +1208,14 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	fieldID := vars["fieldID"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	currentPlaybook, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID)
+	if !ok {
 		return
 	}
 
@@ -1048,9 +1230,22 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
+	// Validate the field isn't referenced by the ChannelNameTemplate
+	if currentPlaybook.ChannelNameTemplate != "" {
+		allFields, err := h.propertyService.GetPropertyFields(playbookID)
+		if err != nil {
+			h.HandleError(w, logger, err)
+			return
+		}
+		if err := app.ValidateTemplateAfterFieldDeletion(currentPlaybook.ChannelNameTemplate, fieldID, allFields); err != nil {
+			h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "Cannot delete property field: it is referenced by the run name template.", err)
+			return
+		}
+	}
+
 	if err := h.playbookService.DeletePropertyField(playbookID, fieldID); err != nil {
 		if errors.Is(err, app.ErrPropertyFieldInUse) {
-			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, "Property field is in use and cannot be deleted.", err)
 			return
 		}
 		h.HandleError(w, logger, err)
@@ -1070,26 +1265,13 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 	playbookID := vars["id"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID})
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	if _, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID); !ok {
 		return
 	}
 
@@ -1101,6 +1283,11 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 
 	if request.FieldID == "" {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "field_id is required", errors.New("missing required field"))
+		return
+	}
+
+	if !model.IsValidId(request.FieldID) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid field ID", errors.New("invalid field ID"))
 		return
 	}
 

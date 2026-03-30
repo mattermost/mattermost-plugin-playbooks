@@ -6,11 +6,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -807,7 +809,7 @@ func TestPropertyFieldDeletionWithConditions(t *testing.T) {
 		Variables: map[string]any{
 			"playbookID": playbookID,
 			"propertyField": map[string]any{
-				"name": "Status",
+				"name": "Priority",
 				"type": "select",
 				"attrs": map[string]any{
 					"options": []map[string]any{
@@ -876,7 +878,7 @@ func TestPropertyFieldDeletionWithConditions(t *testing.T) {
 	}, &deleteResponse)
 	require.NoError(t, err)
 	require.NotEmpty(t, deleteResponse.Errors)
-	require.Contains(t, deleteResponse.Errors[0].Message, "property field is in use")
+	require.Contains(t, deleteResponse.Errors[0].Message, "Property field is in use")
 	require.Contains(t, deleteResponse.Errors[0].Message, "1 condition(s)")
 
 	err = e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, createdCondition.ID)
@@ -914,7 +916,7 @@ func TestPropertyOptionRemovalWithConditions(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fieldID, optionIDs := gqlCreateSelectPropertyField(t, e, playbookID, "Status", []string{
+	fieldID, optionIDs := gqlCreateSelectPropertyField(t, e, playbookID, "Priority", []string{
 		"Todo", "In Progress", "Done", "Blocked", "Archived",
 	})
 	todoID, inProgressID, doneID, blockedID, archivedID := optionIDs[0], optionIDs[1], optionIDs[2], optionIDs[3], optionIDs[4]
@@ -929,7 +931,7 @@ func TestPropertyOptionRemovalWithConditions(t *testing.T) {
 			{"id": blockedID, "name": "Blocked"},
 		})
 		require.NotEmpty(t, response.Errors)
-		require.Contains(t, response.Errors[0].Message, "property options are in use")
+		require.Contains(t, response.Errors[0].Message, "Property options are in use")
 		require.Contains(t, response.Errors[0].Message, "Todo")
 		require.Contains(t, response.Errors[0].Message, "Done")
 		require.Contains(t, response.Errors[0].Message, "Archived")
@@ -1030,7 +1032,7 @@ func gqlUpdatePropertyFieldOptions(t *testing.T, e *TestEnvironment, playbookID,
 			"playbookID":      playbookID,
 			"propertyFieldID": fieldID,
 			"propertyField": map[string]any{
-				"name": "Status",
+				"name": "Priority",
 				"type": "select",
 				"attrs": map[string]any{
 					"options": options,
@@ -1071,4 +1073,89 @@ func gqlCreateConditionWithOptions(t *testing.T, e *TestEnvironment, playbookID,
 	require.NoError(t, err)
 
 	return created
+}
+
+// TestPropertyFieldRenameCascade verifies that renaming a property field updates ChannelNameTemplate.
+func TestPropertyFieldRenameCascade(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("renaming field updates template reference", func(t *testing.T) {
+		pb := createPlaybookWithPrefix(t, e, "CAS", "")
+
+		// Create a text property field
+		field, err := e.PlaybooksAdminClient.Playbooks.CreatePropertyField(context.Background(), pb.ID, client.PropertyFieldRequest{
+			Name: "OldName",
+			Type: "text",
+		})
+		require.NoError(t, err)
+
+		// Set template referencing the field
+		pb, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pb.ID)
+		require.NoError(t, err)
+		pb.ChannelNameTemplate = "{SEQ} - {OldName}"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// Rename the field
+		_, err = e.PlaybooksAdminClient.Playbooks.UpdatePropertyField(context.Background(), pb.ID, field.ID, client.PropertyFieldRequest{
+			Name: "NewName",
+			Type: "text",
+		})
+		require.NoError(t, err)
+
+		// Verify template was updated
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), pb.ID)
+		require.NoError(t, err)
+		assert.Contains(t, updated.ChannelNameTemplate, "{NewName}")
+		assert.NotContains(t, updated.ChannelNameTemplate, "{OldName}")
+	})
+}
+
+// TestReservedFieldNameSEQ verifies that creating a property field named "SEQ" is rejected.
+func TestReservedFieldNameSEQ(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("creating field named SEQ is rejected", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Reserved Name Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "SEQ",
+			Type: "text",
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("creating field named seq (lowercase) is also rejected", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Reserved Name Playbook LC",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksAdminClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "seq",
+			Type: "text",
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
 }
