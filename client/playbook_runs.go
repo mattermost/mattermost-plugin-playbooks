@@ -384,11 +384,11 @@ func (s *PlaybookRunService) SetItemPropertyUserAssignee(ctx context.Context, pl
 	if err != nil {
 		return err
 	}
-	resp, err := s.client.do(ctx, req, nil)
-	if resp != nil && resp.Body != nil {
-		resp.Body.Close()
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
 	}
-	return err
+	return nil
 }
 
 func (s *PlaybookRunService) SetItemCommand(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, newCommand string) error {

@@ -109,17 +109,19 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             });
 
             // * Verify initial owner is testUser
-            cy.findByTestId('run-header-owner').should('contain.text', testUser.username);
+            cy.findByTestId('runinfo-owner').should('contain.text', testUser.username);
 
             // # Change Priority to High in the RHS to trigger the condition action
             cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             // * Verify the owner changed to alternateUser
-            cy.findByTestId('run-header-owner').should('contain.text', alternateUser.username);
+            cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
 
             // * Assert via API that the ownership change was persisted server-side
-            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                expect(run.owner_user_id, 'server should reflect the new owner').to.equal(alternateUser.id);
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id, 'server should reflect the new owner').to.equal(alternateUser.id);
+                });
             });
         });
 
@@ -196,7 +198,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             // * Owner changed to alternateUser
-            cy.findByTestId('run-header-owner').should('contain.text', alternateUser.username);
+            cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
 
             // # Change owner back to testUser via UI (logged in as alternateUser — the new owner)
             cy.apiLogin(alternateUser);
@@ -214,11 +216,13 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.playbooksSetRunPropertyViaRHS('Priority', 'Medium');
 
             // * Owner should still be testUser (action did not re-fire)
-            cy.findByTestId('run-header-owner').should('contain.text', testUser.username);
+            cy.findByTestId('runinfo-owner').should('contain.text', testUser.username);
 
             // * Assert via API that owner_user_id was not changed by the condition re-fire
-            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                expect(run.owner_user_id, 'owner_user_id should remain unchanged').to.equal(testUser.id);
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id, 'owner_user_id should remain unchanged').to.equal(testUser.id);
+                });
             });
         });
     });
@@ -288,7 +292,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     cy.playbooksSetRunPropertyViaUI('run-property-zone', 'Alpha');
 
                     // * Verify owner changed to alternateUser (condition fired on Zone=Alpha)
-                    cy.findByTestId('run-header-owner').should('contain.text', alternateUser.username);
+                    cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
                 });
             });
         });
@@ -361,23 +365,29 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
             // # Set Zone=Alpha → owner should be testUser (already is, but action fires)
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
-            cy.findByTestId('run-header-owner').should('contain.text', testUser.username);
-            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                expect(run.owner_user_id).to.equal(testUser.id);
+            cy.findByTestId('runinfo-owner').should('contain.text', testUser.username);
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id).to.equal(testUser.id);
+                });
             });
 
             // # Change Zone=Bravo → owner should change to alternateUser
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Bravo');
-            cy.findByTestId('run-header-owner').should('contain.text', alternateUser.username);
-            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                expect(run.owner_user_id).to.equal(alternateUser.id);
+            cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id).to.equal(alternateUser.id);
+                });
             });
 
             // # Change back to Alpha → owner should change back to testUser
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
-            cy.findByTestId('run-header-owner').should('contain.text', testUser.username);
-            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                expect(run.owner_user_id).to.equal(testUser.id);
+            cy.findByTestId('runinfo-owner').should('contain.text', testUser.username);
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id).to.equal(testUser.id);
+                });
             });
         });
     });
@@ -455,7 +465,9 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.playbooksSetRunPropertyViaRHS('Priority', 'Critical');
 
             // # Navigate to the run's channel
-            cy.playbooksVisitRunChannel(testTeam.name, testRun);
+            cy.then(() => {
+                cy.playbooksVisitRunChannel(testTeam.name, testRun);
+            });
 
             // * Verify notification message was posted
             cy.get('#postListContent').within(() => {
@@ -544,7 +556,9 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
 
             // # Navigate to the run channel to check the posted notification
-            cy.playbooksVisitRunChannel(testTeam.name, testRun);
+            cy.then(() => {
+                cy.playbooksVisitRunChannel(testTeam.name, testRun);
+            });
 
             // * Both tokens must be resolved — raw {Zone} and {Severity} must NOT appear
             cy.get('#postListContent').within(() => {
@@ -706,13 +720,17 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.playbooksSetRunPropertyViaRHS('Severity', 'Critical');
 
             // * Verify owner changed (set_owner action fired)
-            cy.findByTestId('run-header-owner').should('contain.text', alternateUser.username);
-            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                expect(run.owner_user_id, 'set_owner action should have fired').to.equal(alternateUser.id);
+            cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id, 'set_owner action should have fired').to.equal(alternateUser.id);
+                });
             });
 
             // * Verify notification was posted (notify_channel action fired)
-            cy.playbooksVisitRunChannel(testTeam.name, testRun);
+            cy.then(() => {
+                cy.playbooksVisitRunChannel(testTeam.name, testRun);
+            });
             cy.get('#postListContent').within(() => {
                 cy.contains('Severity escalated to Critical — ownership transferred').should('exist');
             });
@@ -782,27 +800,33 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
             // STEP 1: unmet → met: set Zone=Alpha → condition fires, owner = alternateUser
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
-            cy.findByTestId('run-header-owner').should('contain.text', alternateUser.username);
+            cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
 
             // STEP 2: met → unmet: set Zone=Bravo → condition no longer met, action should NOT re-fire
             // Reset owner back to testUser first (to observe whether action would fire again)
             cy.apiLogin(alternateUser);
-            cy.visit(`/playbooks/runs/${testRun.id}`);
+            cy.then(() => {
+                cy.visit(`/playbooks/runs/${testRun.id}`);
+            });
             cy.playbooksChangeRunOwnerViaRHS(testUser.username);
             cy.apiLogin(testUser);
 
-            cy.visit(`/playbooks/runs/${testRun.id}`);
+            cy.then(() => {
+                cy.visit(`/playbooks/runs/${testRun.id}`);
+            });
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Bravo');
 
             // * Owner should remain testUser — action did NOT fire on the met→unmet transition
-            cy.findByTestId('run-header-owner').should('contain.text', testUser.username);
+            cy.findByTestId('runinfo-owner').should('contain.text', testUser.username);
 
             // STEP 3: unmet → met again: set Zone=Alpha → condition fires again, owner = alternateUser
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
-            cy.findByTestId('run-header-owner').should('contain.text', alternateUser.username);
+            cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
 
-            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-                expect(run.owner_user_id, 'condition should re-fire on second unmet→met transition').to.equal(alternateUser.id);
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id, 'condition should re-fire on second unmet→met transition').to.equal(alternateUser.id);
+                });
             });
         });
     });

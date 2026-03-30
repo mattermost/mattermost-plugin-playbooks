@@ -5420,18 +5420,18 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDsForUser(userID string) ([]stri
 	return s.store.GetPlaybookRunIDsForUser(userID)
 }
 
-// createPropertyChangeTimelineEvent creates a timeline event for property changes
+// createPropertyChangeTimelineEvent creates a timeline event for property changes and returns it.
 func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 	userID string,
 	playbookRunID string,
 	propertyField *PropertyField,
 	oldValue json.RawMessage,
 	newValue json.RawMessage,
-) error {
+) (*TimelineEvent, error) {
 	// Get user info for summary
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", userID)
 	}
 
 	// Format values for display
@@ -5471,7 +5471,7 @@ func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 
 	detailsJSON, err := json.Marshal(details)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal property change details")
+		return nil, errors.Wrap(err, "failed to marshal property change details")
 	}
 
 	// Create timeline event
@@ -5486,12 +5486,12 @@ func (s *PlaybookRunServiceImpl) createPropertyChangeTimelineEvent(
 		SubjectUserID: userID,
 	}
 
-	_, err = s.store.CreateTimelineEvent(event)
+	createdEvent, err := s.store.CreateTimelineEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "failed to create timeline event for property change")
+		return nil, errors.Wrap(err, "failed to create timeline event for property change")
 	}
 
-	return nil
+	return createdEvent, nil
 }
 
 // SetRunPropertyValue sets a property value for a playbook run and sends websocket updates
@@ -5612,10 +5612,13 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		s.executeConditionActions(userID, run, evaluationResult.TriggeredActions)
 	}
 
-	// Create timeline event for the property change.
+	// Create timeline event for the property change and append it to the run so the
+	// WS diff includes the new event and the frontend is notified without a page reload.
 	if valueChanged {
-		if err := s.createPropertyChangeTimelineEvent(userID, playbookRunID, propertyField, currentValue, value); err != nil {
+		if createdEvent, err := s.createPropertyChangeTimelineEvent(userID, playbookRunID, propertyField, currentValue, value); err != nil {
 			logrus.WithError(err).WithField("run_id", playbookRunID).Warn("failed to create timeline event for property change")
+		} else {
+			run.TimelineEvents = append(run.TimelineEvents, *createdEvent)
 		}
 	}
 

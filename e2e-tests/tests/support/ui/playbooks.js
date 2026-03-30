@@ -711,7 +711,7 @@ Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
         });
     });
 
-    cy.findByText(value).click();
+    cy.contains('.property-select__option', value).click();
 
     cy.wait('@SetRunPropertyValue');
 });

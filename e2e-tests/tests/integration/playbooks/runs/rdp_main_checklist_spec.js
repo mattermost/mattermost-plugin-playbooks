@@ -135,8 +135,8 @@ describe('runs > run details page > checklist', {testIsolation: true}, () => {
         commonTests();
 
         it('click does not work', () => {
-            // # Click first task
-            getChecklistTasks().eq(taskIndex).find('.checkbox').should('have.attr', 'readonly');
+            // # Viewer cannot interact with checkboxes — they are rendered disabled
+            getChecklistTasks().eq(taskIndex).find('.checkbox').should('be.disabled');
         });
 
         it('has not hover menu', () => {

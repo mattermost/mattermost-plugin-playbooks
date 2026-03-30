@@ -429,7 +429,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly(`/playbook owner 0 @${testUser2.username}`);
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('Become a participant to interact with this run');
+            cy.verifyEphemeralMessage('You do not have permission to change the owner of this run.');
 
             // # Run a slash command on a run with write access
             cy.uiPostMessageQuickly(`/playbook owner 1 @${testUser2.username}`);
@@ -456,7 +456,7 @@ describe('channels > slash command > owner', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly('/playbook finish 0');
 
             // * Verify the message.
-            cy.verifyEphemeralMessage(`userID ${testUser2.id} is not an admin or channel member`);
+            cy.verifyEphemeralMessage('You do not have permission to finish this run.');
 
             // # Type a command
             cy.findByTestId('post_textbox').clear().type('/playbook finish ');

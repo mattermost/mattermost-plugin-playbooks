@@ -89,7 +89,7 @@ describe('api > runs', {testIsolation: true}, () => {
                         playbookId: testPlaybook.id,
                         teamId: 'other_team_id',
                     }, {expectedStatusCode: 400}).then((body) => {
-                        expect(body).to.have.property('error', 'unable to create playbook run');
+                        expect(body).to.have.property('error', 'invalid team ID');
                     });
                 });
             });
@@ -143,7 +143,7 @@ describe('api > runs', {testIsolation: true}, () => {
                         playbookId: testPlaybook.id,
                         teamId: 'other_team_id',
                     }, {expectedStatusCode: 400}).then((body) => {
-                        expect(body).to.have.property('error', 'unable to create playbook run');
+                        expect(body).to.have.property('error', 'invalid team ID');
                     });
                 });
             });

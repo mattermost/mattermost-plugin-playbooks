@@ -360,7 +360,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "you don't have permission to add one or more of the broadcast channels", err)
 			return
 		}
-		fieldsToUpdate["ConcatenatedBroadcastChannelIDs"] = strings.Join(*updates.BroadcastChannelIDs, ",")
+		addConcatToSetmap(fieldsToUpdate, "ConcatenatedBroadcastChannelIDs", updates.BroadcastChannelIDs)
 	}
 
 	if updates.WebhookOnStatusUpdateURLs != nil {
@@ -368,7 +368,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid webhook URL", err)
 			return
 		}
-		fieldsToUpdate["ConcatenatedWebhookOnStatusUpdateURLs"] = strings.Join(*updates.WebhookOnStatusUpdateURLs, ",")
+		addConcatToSetmap(fieldsToUpdate, "ConcatenatedWebhookOnStatusUpdateURLs", updates.WebhookOnStatusUpdateURLs)
 	}
 
 	// Update using GraphqlUpdate
