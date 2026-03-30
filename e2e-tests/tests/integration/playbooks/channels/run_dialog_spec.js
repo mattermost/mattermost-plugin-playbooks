@@ -26,14 +26,14 @@ describe('channels > run dialog', {testIsolation: true}, () => {
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Playbook',
-                memberIDs: [],
+                memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
             });
 
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Second Playbook',
-                memberIDs: [],
+                memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
             });
         });
@@ -43,7 +43,8 @@ describe('channels > run dialog', {testIsolation: true}, () => {
         cy.apiLogin(testUser);
 
         // # Navigate to the team and trigger the modal via slash command
-        cy.visit(`${testTeam.name}`);
+        cy.visit(`/${testTeam.name}/channels/town-square`);
+
         cy.openPlaybookRunDialogFromSlashCommand();
 
         // * Verify the RunPlaybookModal opened (select-playbook step)
