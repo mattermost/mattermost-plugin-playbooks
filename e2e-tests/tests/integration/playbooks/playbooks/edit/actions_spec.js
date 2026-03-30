@@ -358,7 +358,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                 parent().
                                 within(() => {
                                     cy.findByText(testUser2.username);
-                                    cy.findByText(testUser2.username);
+                                    cy.findByText(testUser3.username);
                                 });
                         });
                     });

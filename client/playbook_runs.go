@@ -218,7 +218,11 @@ func (s *PlaybookRunService) Restore(ctx context.Context, playbookRunID string) 
 	}
 
 	_, err = s.client.do(ctx, req, nil)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *PlaybookRunService) ChangeOwner(ctx context.Context, playbookRunID, ownerID string) error {
@@ -232,7 +236,11 @@ func (s *PlaybookRunService) ChangeOwner(ctx context.Context, playbookRunID, own
 	}
 
 	_, err = s.client.do(ctx, req, nil)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {

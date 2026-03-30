@@ -459,7 +459,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 				if item.AssigneeType != nil {
 					at := *item.AssigneeType
 					if !app.IsValidAssigneeType(at) {
-						at = app.AssigneeTypeSpecificUser
+						at = ""
 					}
 					// Reject non-empty companion IDs that fail format validation.
 					if at == app.AssigneeTypeGroup && item.AssigneeGroupID != nil && *item.AssigneeGroupID != "" && !model.IsValidId(*item.AssigneeGroupID) {

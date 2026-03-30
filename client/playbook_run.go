@@ -311,8 +311,8 @@ type PlaybookRunUpdateOptions struct {
 	RemoveChannelMemberOnRemovedParticipant *bool    `json:"remove_channel_member_on_removed_participant,omitempty"`
 	StatusUpdateBroadcastChannelsEnabled    *bool    `json:"status_update_broadcast_channels_enabled,omitempty"`
 	StatusUpdateBroadcastWebhooksEnabled    *bool    `json:"status_update_broadcast_webhooks_enabled,omitempty"`
-	BroadcastChannelIDs                     []string `json:"broadcast_channel_ids,omitempty"`
-	WebhookOnStatusUpdateURLs               []string `json:"webhook_on_status_update_urls,omitempty"`
+	BroadcastChannelIDs                     *[]string `json:"broadcast_channel_ids,omitempty"`
+	WebhookOnStatusUpdateURLs               *[]string `json:"webhook_on_status_update_urls,omitempty"`
 }
 
 type RunMetricData struct {
