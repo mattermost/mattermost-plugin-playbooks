@@ -45,7 +45,7 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
             channelNameTemplate: update.channel_name_template,
             runNumberPrefix: update.run_number_prefix,
             channelMode: update.channel_mode,
-            channelID: update.channel_id,
+            channelId: update.channel_id,
         });
     }, [updatePlaybook]));
 

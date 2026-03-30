@@ -15,8 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "package": "npm pack --pack-destination ./pack",
-    "prepack": "npm run build",
+    "package": "npm run build && npm pack --pack-destination ./pack",
     "build": "npm run build:bundle && npm run types:generate",
     "build:bundle": "node scripts/generate_bundle.mjs",
     "types:check": "tsc --noEmit",

@@ -102,7 +102,6 @@ const TextProperty = (props: Props) => {
     );
 };
 
-
 const URLLink = styled.a`
     color: var(--button-bg);
     text-decoration: none;

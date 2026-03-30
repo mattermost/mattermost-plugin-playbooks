@@ -8,9 +8,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -24,17 +23,19 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 		mockStore := mock_app.NewMockPlaybookStore(ctrl)
 		mockPoster := mock_bot.NewMockPoster(ctrl)
 		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
-
-		pluginAPI := &plugintest.API{}
-		pluginAPI.On("LogAuditRec", mock.Anything, mock.Anything).Return().Maybe()
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+		mockAuditor.EXPECT().MakeAuditRecord(gomock.Any(), gomock.Any()).Return(&model.AuditRecord{}).AnyTimes()
+		mockAuditor.EXPECT().LogAuditRec(gomock.Any()).AnyTimes()
 
 		svc := app.NewPlaybookService(
 			mockStore,
 			mockPoster,
 			nil,
-			pluginAPI,
+			mockAuditor,
 			&metrics.Metrics{},
 			mockPropertyService,
+			mockConditionService,
 		)
 		return svc, mockStore, mockPoster
 	}
@@ -84,6 +85,7 @@ func TestPlaybookService_GraphqlUpdateRunNumberPrefixMutable(t *testing.T) {
 		mockStore := mock_app.NewMockPlaybookStore(ctrl)
 		mockPoster := mock_bot.NewMockPoster(ctrl)
 		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
 
 		svc := app.NewPlaybookService(
 			mockStore,
@@ -92,6 +94,7 @@ func TestPlaybookService_GraphqlUpdateRunNumberPrefixMutable(t *testing.T) {
 			nil,
 			&metrics.Metrics{},
 			mockPropertyService,
+			mockConditionService,
 		)
 		return svc, mockStore, mockPoster
 	}
@@ -137,6 +140,7 @@ func TestPlaybookService_IncrementRunNumber(t *testing.T) {
 		mockStore := mock_app.NewMockPlaybookStore(ctrl)
 		mockPoster := mock_bot.NewMockPoster(ctrl)
 		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
 
 		svc := app.NewPlaybookService(
 			mockStore,
@@ -145,6 +149,7 @@ func TestPlaybookService_IncrementRunNumber(t *testing.T) {
 			nil,
 			&metrics.Metrics{},
 			mockPropertyService,
+			mockConditionService,
 		)
 		return svc, mockStore
 	}

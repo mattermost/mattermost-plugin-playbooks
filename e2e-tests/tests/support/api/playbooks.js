@@ -662,7 +662,7 @@ Cypress.Commands.add('apiSetRunSelectPropertyValueByName', (runId, fieldName, op
     return cy.apiGetRunPropertyFields(runId).then((fields) => {
         const field = fields.find((f) => f.name === fieldName);
         expect(field, `run-level field "${fieldName}" should exist`).to.exist;
-        const option = (field.attrs && field.attrs.options || []).find((o) => o.name === optionName);
+        const option = ((field.attrs && field.attrs.options) || []).find((o) => o.name === optionName);
         expect(option, `option "${optionName}" should exist in field "${fieldName}"`).to.exist;
         return cy.apiSetRunPropertyValue(runId, field.id, option.id);
     });

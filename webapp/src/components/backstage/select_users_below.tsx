@@ -46,6 +46,8 @@ const UserLineContainer = styled.div`
 `;
 
 const UserList = styled.div`
+    overflow-y: auto;
+    max-height: 50vh;
     margin: 12px 0;
 `;
 
@@ -56,7 +58,8 @@ const BelowLineProfile = styled(Profile)`
 
 const IconWrapper = styled.div`
     display: inline-flex;
-    padding: 10px 5px 10px 8px;
+    align-items: center;
+    gap: 2px;
 `;
 
 export interface SelectUsersBelowProps {
@@ -135,15 +138,22 @@ interface UserLineProps {
     onMakeMember: (userid: string) => void;
 }
 
-const MemberButton = styled.button`
+const MemberButton = styled.button<{$isActive?: boolean}>`
     display: inline-flex;
+    align-items: center;
+    padding: 4px 2px;
+    border: none;
     border-radius: 4px;
-    color: var(--link-color);
-    fill: var(--link-color);
+    background: transparent;
+    color: ${({$isActive}) => ($isActive ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
+    cursor: pointer;
+    white-space: nowrap;
 
     &:hover {
-       background: rgba(var(--center-channel-color-rgb), 0.08);
-       color: rgba(var(--center-channel-color-rgb), 0.72);
+        color: var(--button-bg);
     }
 `;
 

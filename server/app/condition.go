@@ -11,6 +11,7 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -507,14 +508,17 @@ func (cc *ComparisonCondition) SwapPropertyIDs(propertyMappings *PropertyCopyRes
 		var arrayValue []string
 		if err := json.Unmarshal(cc.Value, &arrayValue); err == nil {
 			// Successfully unmarshaled as array, translate option IDs
-			translatedValues := make([]string, len(arrayValue))
-			for i, optionID := range arrayValue {
+			translatedValues := make([]string, 0, len(arrayValue))
+			for _, optionID := range arrayValue {
 				if newOptionID, exists := propertyMappings.OptionMappings[optionID]; exists {
-					translatedValues[i] = newOptionID
+					translatedValues = append(translatedValues, newOptionID)
 				} else {
-					// If no mapping exists, keep the original value
-					translatedValues[i] = optionID
+					logrus.WithField("option_id", optionID).Warn("no mapping found for option ID in condition, skipping")
 				}
+			}
+
+			if len(translatedValues) == 0 && len(arrayValue) > 0 {
+				return errors.Errorf("all option IDs failed to map for %s field %s: condition would be invalid with empty value array", targetField.Type, newFieldID)
 			}
 
 			// Marshal back to JSON
@@ -821,6 +825,9 @@ type ConditionService interface {
 
 	// Copy conditions from playbook to run with field ID mappings, returns old condition ID to new condition mapping
 	CopyPlaybookConditionsToRun(playbookID, runID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
+
+	// Copy conditions from playbook to playbook with field ID mappings, returns old condition ID to new condition mapping
+	CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
 
 	// Evaluate conditions for a run when a property field changes.
 	// oldValue is the previous value of the changed field, used to detect

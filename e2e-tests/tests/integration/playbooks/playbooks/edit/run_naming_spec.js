@@ -201,8 +201,10 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
                 cy.apiGetPlaybookRun(runId).then(({body: run}) => {
                     // * Run was created successfully
                     expect(run.id).to.be.a('string').and.not.be.empty;
+
                     // * Name matches the provided run name (no template set)
                     expect(run.name).to.equal('Special Prefix Run');
+
                     // * sequential_id was generated and contains the prefix
                     expect(run.sequential_id).to.be.a('string').and.include('ABC-');
                 });

@@ -25,6 +25,7 @@ func TestPlaybookService_UpdatePropertyField_RenameCascade(t *testing.T) {
 	makeService := func(ctrl *gomock.Controller) (app.PlaybookService, *mock_app.MockPlaybookStore, *mock_app.MockPropertyService, *mock_bot.MockPoster) {
 		mockStore := mock_app.NewMockPlaybookStore(ctrl)
 		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
 		mockPoster := mock_bot.NewMockPoster(ctrl)
 
 		svc := app.NewPlaybookService(
@@ -34,6 +35,7 @@ func TestPlaybookService_UpdatePropertyField_RenameCascade(t *testing.T) {
 			nil,
 			&metrics.Metrics{},
 			mockPropertyService,
+			mockConditionService,
 		)
 		return svc, mockStore, mockPropertyService, mockPoster
 	}

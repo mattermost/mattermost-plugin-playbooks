@@ -210,9 +210,9 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
 
             // * Assert the enforcement hint is visible
             cy.get('#playbooks_run_playbook_dialog').within(() => {
-                cy.get('#new-channel-only-hint')
-                    .should('be.visible')
-                    .and('contain', 'This playbook requires a new channel for each run');
+                cy.get('#new-channel-only-hint').
+                    should('be.visible').
+                    and('contain', 'This playbook requires a new channel for each run');
             });
         });
 

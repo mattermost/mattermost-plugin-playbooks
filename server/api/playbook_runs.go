@@ -647,11 +647,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
-		c.logger.WithField("user_id", userID).Warn("addToTimelineDialog: user does not have permission to read the post's channel")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "You do not have permission to access the specified post.",
-		}, http.StatusOK)
+	if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, post.ChannelId)) {
 		return
 	}
 
@@ -742,7 +738,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.Wrap(app.ErrPlaybookArchived, "playbook is archived, cannot create a new run using an archived playbook")
 		}
 
-		if err = h.permissions.RunCreate(userID, *playbook); err != nil {
+		if err = h.permissions.RunCreate(userID, *playbook, playbookRun.TeamID); err != nil {
 			return nil, err
 		}
 
@@ -889,9 +885,7 @@ func (h *PlaybookRunHandler) getPlaybookRuns(c *Context, w http.ResponseWriter, 
 
 	// Add channel permission check if channel_id filter is used
 	if filterOptions.ChannelID != "" {
-		hasPermission := h.pluginAPI.User.HasPermissionToChannel(userID, filterOptions.ChannelID, model.PermissionReadChannel)
-		if !hasPermission {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "No permission to access this channel", nil)
+		if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, filterOptions.ChannelID)) {
 			return
 		}
 	}
@@ -965,6 +959,10 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(c *Context, w http.Response
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, channelID)) {
+		return
+	}
 
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
@@ -1684,8 +1682,7 @@ func (h *PlaybookRunHandler) getPlaybookRunsForChannelByUser(c *Context, w http.
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "not found", errors.New("user does not have access to channel"))
+	if !h.PermissionsCheck(w, c.logger, h.permissions.ChannelView(userID, channelID)) {
 		return
 	}
 

@@ -270,7 +270,6 @@ const ResumeButtonWrapper = styled.div`
     display: inline-block;
 `;
 
-
 const DoneButtonContainer = styled.div`
     display: flex;
     margin: 12px 0 0;

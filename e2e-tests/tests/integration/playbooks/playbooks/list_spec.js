@@ -115,6 +115,202 @@ describe('playbooks > list', {testIsolation: true}, () => {
         });
     });
 
+    it('can duplicate playbook with attributes and conditions', () => {
+        let priorityField;
+        let statusField;
+
+        // # Create a playbook with attributes and conditions
+        cy.apiCreateTestPlaybook({
+            teamId: testTeam.id,
+            title: 'Playbook with Attributes',
+            userId: testUser.id,
+        }).then((playbook) => {
+            // # Add a text attribute
+            cy.apiAddPropertyField(playbook.id, {
+                name: 'Customer Name',
+                type: 'text',
+                attrs: {
+                    visibility: 'always',
+                    sortOrder: 0,
+                },
+            });
+
+            // # Add a select attribute with options
+            cy.apiAddPropertyField(playbook.id, {
+                name: 'Priority',
+                type: 'select',
+                attrs: {
+                    visibility: 'always',
+                    sortOrder: 1,
+                    options: [
+                        {name: 'High'},
+                        {name: 'Medium'},
+                        {name: 'Low'},
+                    ],
+                },
+            });
+
+            // # Add another select attribute
+            cy.apiAddPropertyField(playbook.id, {
+                name: 'Status',
+                type: 'select',
+                attrs: {
+                    visibility: 'when_set',
+                    sortOrder: 2,
+                    options: [
+                        {name: 'Active'},
+                        {name: 'Pending'},
+                    ],
+                },
+            });
+
+            // # Get the property fields to use in condition
+            cy.apiGetPropertyFields(playbook.id).then((fields) => {
+                priorityField = fields.find((f) => f.name === 'Priority');
+                statusField = fields.find((f) => f.name === 'Status');
+
+                const highOptionId = priorityField.attrs.options.find((o) => o.name === 'High').id;
+                const activeOptionId = statusField.attrs.options.find((o) => o.name === 'Active').id;
+
+                // # Create a condition with AND logic
+                cy.apiCreatePlaybookCondition(playbook.id, {
+                    and: [
+                        {is: {field_id: priorityField.id, value: [highOptionId]}},
+                        {is: {field_id: statusField.id, value: [activeOptionId]}},
+                    ],
+                }).then((condition) => {
+                    // # Attach condition to first task
+                    cy.apiAttachConditionToTask(playbook.id, 0, 0, condition.id);
+                });
+            });
+        });
+
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
+        // # Open the product
+        cy.visit('/playbooks');
+
+        // # Switch to Playbooks
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Click on the dot menu of the playbook with attributes
+        cy.contains('[data-testid="playbook-item"]', 'Playbook with Attributes').within(() => {
+            cy.findByTestId('menuButtonActions').click();
+        });
+
+        // # Click on duplicate
+        cy.findByText('Duplicate').click();
+
+        // * Verify that playbook got duplicated (there may be multiple from previous runs)
+        cy.contains('Copy of Playbook with Attributes', {timeout: 10000}).should('be.visible');
+
+        // # Click on the duplicated playbook to open it (use first match if multiple exist)
+        cy.get('[data-testid="playbook-title"]').
+            contains('Copy of Playbook with Attributes').
+            first().
+            click();
+
+        // # Navigate to attributes section
+        cy.findByText('Attributes').click();
+
+        // * Verify all attributes were copied
+        cy.findAllByTestId('property-field-row').should('have.length', 3);
+
+        // * Verify text attribute
+        verifyAttributeInList(0, 'Customer Name');
+
+        // * Verify select attribute with options
+        verifyAttributeInList(1, 'Priority');
+        cy.findAllByTestId('property-field-row').eq(1).within(() => {
+            cy.findByText('High').should('exist');
+            cy.findByText('Medium').should('exist');
+            cy.findByText('Low').should('exist');
+        });
+
+        // * Verify second select attribute with options
+        verifyAttributeInList(2, 'Status');
+        cy.findAllByTestId('property-field-row').eq(2).within(() => {
+            cy.findByText('Active').should('exist');
+            cy.findByText('Pending').should('exist');
+        });
+
+        // # Modify the duplicated playbook to test independence
+        // # Rename the first attribute
+        cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.findByLabelText('Attribute name').clear().type('Modified Name');
+        });
+
+        // # Click outside to save
+        cy.get('body').click(0, 0);
+        cy.wait(500);
+
+        // * Verify the change was saved
+        verifyAttributeInList(0, 'Modified Name');
+
+        // # Navigate to outline section to verify conditions
+        cy.findByText('Outline').click();
+
+        // * Verify condition was copied
+        cy.findByTestId('condition-header').should('exist');
+        cy.findByTestId('condition-header').within(() => {
+            cy.findByText('Priority').should('exist');
+            cy.findByText('Status').should('exist');
+            cy.findByText(/\band\b/i).should('exist');
+        });
+
+        // # Modify the condition to test independence
+        // # Click edit button
+        cy.findByTestId('condition-header-edit-button').click();
+        cy.wait(500);
+
+        // # Change AND to OR
+        cy.contains('.condition-select__single-value', 'AND').click();
+        cy.get('.condition-select__menu').contains('OR').click();
+        cy.wait(500);
+
+        // # Click save button
+        cy.findByRole('button', {name: /save condition changes/i}).click();
+        cy.wait(500);
+
+        // * Verify the change was saved
+        cy.findByTestId('condition-header').within(() => {
+            cy.findByText(/\bor\b/i).should('exist');
+        });
+
+        // # Navigate back to playbooks list
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Wait for playbook list to load
+        cy.findAllByTestId('playbook-item').should('have.length.at.least', 1);
+
+        // # Open the original playbook (not the "Copy of" version)
+        cy.get('[data-testid="playbook-title"]').
+            filter(':contains("Playbook with Attributes")').
+            not(':contains("Copy of")').
+            first().
+            click();
+
+        // # Navigate to attributes section
+        cy.findByText('Attributes').click();
+
+        // * Verify original playbook still has its attributes unchanged
+        cy.findAllByTestId('property-field-row').should('have.length', 3);
+
+        // * Verify the first attribute still has the original name (not "Modified Name")
+        verifyAttributeInList(0, 'Customer Name');
+
+        // # Navigate to outline section
+        cy.findByText('Outline').click();
+
+        // * Verify original playbook still has its condition with AND (not OR)
+        cy.findByTestId('condition-header').should('exist');
+        cy.findByTestId('condition-header').within(() => {
+            cy.findByText(/\band\b/i).should('exist');
+            cy.findByText(/\bor\b/i).should('not.exist');
+        });
+    });
+
     context('archived playbooks', () => {
         it('does not show them by default', () => {
             // # Open the product
@@ -123,10 +319,11 @@ describe('playbooks > list', {testIsolation: true}, () => {
             // # Switch to Playbooks
             cy.findByTestId('playbooksLHSButton').click();
 
-            // * Assert the archived playbook is not there.
-            cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(2);
-            });
+            // * Assert the archived playbook is not visible
+            cy.findByText('Playbook archived').should('not.exist');
+
+            // * Assert at least some non-archived playbooks are visible
+            cy.findAllByTestId('playbook-title').should('have.length.at.least', 1);
         });
         it('shows them upon click on the filter', () => {
             // # Open the product
@@ -135,12 +332,16 @@ describe('playbooks > list', {testIsolation: true}, () => {
             // # Switch to Playbooks
             cy.findByTestId('playbooksLHSButton').click();
 
-            // # Click the With Archived button
-            cy.findByTestId('with-archived').click();
+            // # Count playbooks without archived filter
+            cy.findAllByTestId('playbook-title').its('length').then((countWithoutArchived) => {
+                // # Click the With Archived button
+                cy.findByTestId('with-archived').click();
 
-            // * Assert the archived playbook is there.
-            cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(3);
+                // * Assert the archived playbook is now visible
+                cy.findByText('Playbook archived').should('be.visible');
+
+                // * Assert there are more playbooks with archived filter enabled
+                cy.findAllByTestId('playbook-title').should('have.length.at.least', countWithoutArchived + 1);
             });
         });
     });
@@ -213,4 +414,10 @@ describe('playbooks > list', {testIsolation: true}, () => {
             cy.findByText('The file must be a valid JSON playbook template.').should('be.visible');
         });
     });
+
+    function verifyAttributeInList(index, name) {
+        cy.findAllByTestId('property-field-row').eq(index).within(() => {
+            cy.findByLabelText('Attribute name').should('have.value', name);
+        });
+    }
 });

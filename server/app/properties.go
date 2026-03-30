@@ -242,6 +242,7 @@ type PropertyService interface {
 	DeletePropertyField(playbookID string, propertyID string) error
 	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
 	CopyPlaybookPropertiesToRun(playbookID, runID string) (*PropertyCopyResult, error)
+	CopyPlaybookPropertiesToPlaybook(sourcePlaybookID, targetPlaybookID string) (*PropertyCopyResult, error)
 	UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
 	// UpsertRunPropertyValueWithField upserts using an already-loaded field, avoiding a DB lookup.
 	// Use this when the field is already known (e.g. from CopyPlaybookPropertiesToRun) to avoid

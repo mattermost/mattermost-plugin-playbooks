@@ -570,12 +570,18 @@ func (p *PermissionsService) PlaybookMakePublic(userID string, playbook Playbook
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to make playbook `%s` public", userID, playbook.ID)
 }
 
-func (p *PermissionsService) RunCreate(userID string, playbook Playbook) error {
-	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionRunCreate) {
-		return nil
+func (p *PermissionsService) RunCreate(userID string, playbook Playbook, targetTeamID string) error {
+	if !p.hasPermissionsToPlaybook(userID, playbook, model.PermissionRunCreate) {
+		return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to run playbook `%s`", userID, playbook.ID)
 	}
 
-	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to run playbook `%s`", userID, playbook.ID)
+	if targetTeamID != "" && targetTeamID != playbook.TeamID {
+		if !p.pluginAPI.User.HasPermissionToTeam(userID, targetTeamID, model.PermissionRunCreate) {
+			return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create a run in team `%s`", userID, targetTeamID)
+		}
+	}
+
+	return nil
 }
 
 func (p *PermissionsService) RunManageProperties(userID, runID string) error {
@@ -665,6 +671,32 @@ func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error
 	}
 
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create actions for channel `%s`", userID, channelID)
+}
+
+func (p *PermissionsService) ChannelView(userID, channelID string) error {
+	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		return nil
+	}
+
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to view channel `%s`", userID, channelID)
+}
+
+func (p *PermissionsService) ChannelManageMembers(userID, channelID string) error {
+	channel, err := p.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get channel `%s`", channelID)
+	}
+
+	permission := model.PermissionManagePublicChannelMembers
+	if channel.Type == model.ChannelTypePrivate {
+		permission = model.PermissionManagePrivateChannelMembers
+	}
+
+	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, permission) {
+		return nil
+	}
+
+	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to manage members of channel `%s`", userID, channelID)
 }
 
 func (p *PermissionsService) ChannelActionView(userID, channelID string) error {

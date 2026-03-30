@@ -467,7 +467,6 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             let testPlaybook;
             let testRun;
             let zoneField;
-            let severityField;
 
             // # Create playbook with two property fields: Zone (select) and Severity (select)
             cy.apiCreateTestPlaybook({
@@ -502,7 +501,6 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
                 cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
                     zoneField = fields.find((f) => f.name === 'Zone');
-                    severityField = fields.find((f) => f.name === 'Severity');
                 });
             });
 
@@ -808,5 +806,4 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             });
         });
     });
-
 });

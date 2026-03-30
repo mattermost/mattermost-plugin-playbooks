@@ -23,7 +23,7 @@ var (
 	collapseOrphanedSeparatorsRe = regexp.MustCompile(`\s*-\s*-\s*`)
 	collapseMultiSpaceRe         = regexp.MustCompile(`\s{2,}`)
 
-	fieldRegexCache   sync.Map // map[string]*regexp.Regexp, keyed by field name
+	fieldRegexCache sync.Map // map[string]*regexp.Regexp, keyed by field name
 )
 
 func fieldRegex(fieldName string) *regexp.Regexp {

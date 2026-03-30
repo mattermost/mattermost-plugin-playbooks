@@ -40,7 +40,6 @@ import {useProfilesInTeam, useUserDisplayNameMap} from 'src/hooks/general';
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {TemplatePropertyField, buildTemplatePreview, extractTemplateFieldNames} from 'src/utils/template_utils';
 
-
 const ID = 'playbooks_run_playbook_dialog';
 
 export const makeModalDefinition = (
