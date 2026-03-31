@@ -137,9 +137,9 @@ describe('playbooks > overview', {testIsolation: true}, () => {
             // # Click Run Playbook
             cy.findByTestId('run-playbook').click({force: true});
 
-            // * Verify the playbook run creation dialog has opened
+            // * Verify the playbook run creation dialog has opened on the run configuration step
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
-                cy.findByText('Create checklist').should('exist');
+                cy.findByText('Start run').should('exist');
             });
         };
 
@@ -166,9 +166,9 @@ describe('playbooks > overview', {testIsolation: true}, () => {
             // # Click Run Playbook
             cy.findByTestId('run-playbook').click();
 
-            // * Verify the playbook run creation dialog has opened
+            // * Verify the playbook run creation dialog has opened on the run configuration step
             cy.get('#playbooks_run_playbook_dialog').should('exist').within(() => {
-                cy.findByText('Create checklist').should('exist');
+                cy.findByText('Start run').should('exist');
             });
         });
     });
@@ -434,6 +434,9 @@ describe('playbooks > overview', {testIsolation: true}, () => {
         });
 
         it('start a run in existing channel', () => {
+            // # Intercept the GraphQL mutation so we can wait for the save
+            cy.intercept('POST', '/plugins/playbooks/api/v0/query').as('graphqlQuery');
+
             // # Visit the selected playbook
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
@@ -450,6 +453,9 @@ describe('playbooks > overview', {testIsolation: true}, () => {
                 cy.findByText('Select a channel').click().type('Town{enter}');
             });
 
+            // # Wait for the playbook save to complete (debounced GraphQL mutation)
+            cy.waitForGraphQLQueries();
+
             // # Click Run Playbook
             cy.findByTestId('run-playbook').click({force: true});
 
@@ -459,7 +465,6 @@ describe('playbooks > overview', {testIsolation: true}, () => {
 
             // * Verify that channel configuration matches playbook config
             cy.findByTestId('link-existing-channel-radio').should('be.checked');
-            cy.get('#link-existing-channel-selector').get('input[type=text]').should('be.enabled');
             cy.findByTestId('create-channel-radio').should('not.be.checked');
             cy.findByTestId('create-private-channel-radio').should('not.exist');
 

@@ -302,7 +302,8 @@ describe('runs > run details page', {testIsolation: true}, () => {
             });
 
             it('auto save', () => {
-                cy.playbooksInterceptGraphQLMutation('UpdateRun');
+                // # Intercept the REST endpoint used by updateRetrospective for metric autosave
+                cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/retrospective').as('UpdateRetro');
                 getRetro().within(() => {
                     // # Enter metric values
                     cy.get('input[type=text]').eq(0).click();
@@ -323,10 +324,13 @@ describe('runs > run details page', {testIsolation: true}, () => {
                     cy.get('input[type=text]').eq(0).clear().type('12:00:10').
                         tab().clear().type('20').
                         tab().clear().type('21');
+
+                    // # Click outside to trigger autosave for the new values
+                    cy.findByText('Retrospective').click({force: true});
                 });
 
-                // # Wait for auto save to complete before reloading
-                cy.wait('@UpdateRun');
+                // # Wait for the autosave of the new values to complete before reloading
+                cy.wait('@UpdateRetro');
 
                 // # Reload page
                 cy.visit(`/playbooks/runs/${testRun.id}`);

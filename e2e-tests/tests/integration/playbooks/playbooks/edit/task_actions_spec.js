@@ -57,14 +57,16 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     const editTask = () => {
-        cy.findByTestId('checkbox-item-container').within(() => {
-            cy.findByText('Test Task').trigger('mouseover');
-            cy.findByTestId('hover-menu-edit-button').click();
-        });
+        // # Scroll checklists section into view — Cypress 15 strict visibility
+        cy.get('#checklists').scrollIntoView();
 
-        // Wait for edit mode to render - assignee button appears in edit mode
-        cy.findByTestId('checkbox-item-container').within(() => {
-            cy.findByTestId('assignee-profile-selector', {timeout: 10000}).should('be.visible');
+        // # Hover over the container and click the Edit button
+        cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+        cy.get('[data-testid="checkbox-item-container"] [data-testid="hover-menu-edit-button"]').click({force: true});
+
+        // Wait for edit mode to render — the Save button only appears in edit mode
+        cy.get('[data-testid="checkbox-item-container"]').within(() => {
+            cy.findByTestId('checklist-item-save-button', {timeout: 10000}).should('be.visible');
         });
     };
 

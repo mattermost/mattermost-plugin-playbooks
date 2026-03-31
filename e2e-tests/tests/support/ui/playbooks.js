@@ -166,13 +166,15 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     // # Get the interactive dialog modal.
     cy.getStatusUpdateDialog().within(() => {
         // # remove what's there if applicable, and type the new update in the textbox.
-        cy.findByTestId('update_run_status_textbox').should('be.visible').clear().focus().realType(message);
+        cy.findByTestId('update_run_status_textbox').should('be.visible').clear().type(message);
 
         if (reminderQuery) {
-            cy.get('#reminder_timer_datetime').within(() => {
-                cy.get('.playbooks-rselect__input input').focus().realType(reminderQuery);
-                cy.get('.playbooks-rselect__input input').focus().type('{enter}');
-            });
+            cy.get('#reminder_timer_datetime input').click({force: true}).realType(reminderQuery);
+
+            // Wait for the debounced option parsing (150ms debounce) to complete
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(500);
+            cy.get('#reminder_timer_datetime input').realType('{enter}');
         }
 
         // # Submit the dialog.

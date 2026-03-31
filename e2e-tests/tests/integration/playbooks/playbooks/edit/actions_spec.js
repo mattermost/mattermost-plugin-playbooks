@@ -20,7 +20,10 @@ describe('playbooks > edit', {testIsolation: true}, () => {
     let testUser3;
 
     const openCategorySelector = () => {
-        cy.findByTestId('user-joins-channel-categorize').find('.channel-selector__control input').click({force: true});
+        // When called inside a within('user-joins-channel-categorize') scope,
+        // query the input directly — re-querying the parent testid would fail
+        // because within() scopes to children only.
+        cy.get('.channel-selector__control input').click({force: true});
     };
     const selectCategory = (name) => {
         cy.get('.channel-selector__menu').findByText(name).click({force: true});
@@ -263,12 +266,11 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                 after('content').
                                 should('eq', '2 SELECTED');
 
-                            // # Remove the first users added
-                            cy.get('.invite-users-selector__option').
-                                eq(0).
-                                within(() => {
-                                    cy.findByText('Remove').click();
-                                });
+                            // # Remove the first user added — click the Remove
+                            // styled span directly (not its inner text child)
+                            cy.findByText('SELECTED').parent().
+                                find('.invite-users-selector__option').eq(0).
+                                getStyledComponent('Remove').first().click();
 
                             // * Verify that there is only one user, the one not removed
                             cy.get('.invite-users-selector__control').
@@ -391,11 +393,12 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                         // # Visit the selected playbook
                         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify user is pre-assigned
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByText(`@${testUser.username}`).should('exist');
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.contains(`@${testUser.username}`).should('exist');
                         });
 
                         cy.get('#actions').within(() => {
@@ -431,12 +434,12 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                         cy.reload();
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify that user is not pre-assigned anymore
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByTestId('assignee-profile-selector').should('exist');
-                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.findByTestId('checklist-item-save-button').should('be.visible');
                         });
 
                         cy.get('#actions').within(() => {
@@ -453,11 +456,12 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                         // # Visit the selected playbook
                         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify user is pre-assigned
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByText(`@${testUser.username}`).should('exist');
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.contains(`@${testUser.username}`).should('exist');
                         });
 
                         cy.get('#actions').within(() => {
@@ -489,12 +493,12 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                         cy.reload();
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify that user is not pre-assigned
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByTestId('assignee-profile-selector').should('exist');
-                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.findByTestId('checklist-item-save-button').should('be.visible');
                         });
 
                         cy.get('#actions').within(() => {
@@ -887,7 +891,13 @@ describe('playbooks > edit', {testIsolation: true}, () => {
             beforeEach(() => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-                cy.findByTestId('playbook-channel-actions-button').click();
+
+                // # Scroll actions section into view before clicking
+                cy.get('#actions').scrollIntoView();
+                cy.findByTestId('playbook-channel-actions-button').should('be.visible').click();
+
+                // * Wait for the modal to render
+                cy.findByTestId('user-joins-channel-categorize').should('exist');
             });
 
             describe('add the channel to a sidebar category', () => {

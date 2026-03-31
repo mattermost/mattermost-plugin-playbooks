@@ -73,6 +73,9 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
         it('can create a condition from task menu', () => {
             navigateToPlaybook(testPlaybook.id);
 
+            // # Scroll the checklists section into view so condition elements are visible
+            scrollToChecklists();
+
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
             cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
@@ -91,6 +94,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
             cy.reload();
 
+            // # After reload, scroll checklists into view and verify condition persisted
+            scrollToChecklists();
             cy.findByTestId('condition-header').should('be.visible');
         });
     });
@@ -109,6 +114,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition header is visible
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
 
                 cy.findByTestId('condition-header').within(() => {
@@ -138,6 +145,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify changes persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').within(() => {
                     cy.findByText('Priority').should('be.visible');
                     cy.findByText('is not').should('be.visible');
@@ -159,12 +168,13 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
-                cy.findByTestId('condition-header-edit-button').click();
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
+
+                cy.findByTestId('condition-header-edit-button').click({force: true});
 
                 // * Wait for the condition editor to open
-                cy.findByTestId('condition-add-button').should('be.visible');
-
-                cy.findByTestId('condition-add-button').click();
+                cy.findByTestId('condition-add-button').should('exist').click({force: true});
 
                 cy.findAllByTestId('condition-remove-button').should('have.length', 2);
 
@@ -181,6 +191,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify changes persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').within(() => {
                     cy.findByText('Priority').should('be.visible');
                     cy.findByText('Status').should('be.visible');
@@ -202,6 +214,9 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
+
                 cy.findByTestId('condition-header-edit-button').click();
 
                 // * Wait for the condition editor to open
@@ -218,6 +233,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify changes persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').within(() => {
                     cy.findByText(/\bor\b/i).should('be.visible');
                 });
@@ -239,6 +256,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
 
                 cy.findByTestId('condition-header-delete-button').click();
@@ -257,6 +276,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify condition is gone
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('not.exist');
             });
         });
@@ -276,6 +297,9 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so task elements are visible
+                scrollToChecklists();
+
                 cy.findByText('Step 1').should('be.visible');
                 cy.findByText('Step 2').should('be.visible');
 
@@ -285,13 +309,13 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                     cy.findByTitle('More').click();
                 });
 
-                // * Wait for the task context menu to open
-                cy.get('[data-testid^="task-menu-assign-condition-"]').first().should('be.visible');
+                // * Wait for the task context menu to open (exclude the non-clickable header)
+                cy.get('[data-testid^="task-menu-assign-condition-"]:not([data-testid="task-menu-assign-condition-header"])').first().should('exist');
 
                 // # Intercept the UpdatePlaybook mutation triggered by assigning the task to a condition
                 cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
-                cy.get('[data-testid^="task-menu-assign-condition-"]').first().click();
+                cy.get('[data-testid^="task-menu-assign-condition-"]:not([data-testid="task-menu-assign-condition-header"])').first().click({force: true});
 
                 // * Wait for the playbook save to complete before asserting
                 cy.wait('@UpdatePlaybook');
@@ -300,6 +324,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify assignment persisted
+                scrollToChecklists();
                 cy.findAllByTestId('condition-header').should('have.length', 1);
             });
         });
@@ -318,6 +344,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
 
                 cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
@@ -341,6 +369,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify condition persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
             });
         });
@@ -348,5 +378,15 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
     function navigateToPlaybook(playbookId) {
         cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
+    }
+
+    /**
+     * Scroll the checklists section into view.
+     * Cypress 15 strict visibility checks require elements to be actionably
+     * visible; scrolling ensures condition headers within the Tasks section
+     * are not clipped or below the fold.
+     */
+    function scrollToChecklists() {
+        cy.get('#checklists').scrollIntoView();
     }
 });

@@ -270,7 +270,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             cy.addNewTaskFromRHS(newTasktext);
 
             // Check that it was created
-            cy.findByText(newTasktext).should('be.visible');
+            cy.findByText(newTasktext).scrollIntoView().should('be.visible');
         });
 
         it('add new task slash command', () => {
@@ -279,7 +279,7 @@ describe('channels > rhs > checklist', {testIsolation: true}, () => {
             cy.uiPostMessageQuickly(`/playbook checkadd 0 ${newTasktext}`);
 
             // Check that it was created
-            cy.findByText(newTasktext).should('be.visible');
+            cy.findByText(newTasktext).scrollIntoView().should('be.visible');
         });
 
         it('creates a new checklist', () => {
