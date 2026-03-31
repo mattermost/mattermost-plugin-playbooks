@@ -54,11 +54,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             navigateToAttributes();
 
             // # Click add button in empty state
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByRole('button', {name: /add.*first attribute/i}).click();
 
             // # Wait for attribute to be created
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@AddPropertyField');
 
             // * Verify empty state is gone
             cy.findByText(/no attributes yet/i).should('not.exist');
@@ -72,9 +72,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
 
             // # Save by clicking outside
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@SavePropertyField');
 
             // * Verify attribute is displayed with correct name
             verifyAttribute(0, 'Priority');
@@ -184,11 +184,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
 
             // # Select new type
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.findByText(/^select$/i).click();
 
-            // # Wait for GraphQL mutation
-            cy.wait('@UpdatePlaybook');
+            // # Wait for REST PUT
+            cy.wait('@SavePropertyField');
 
             // * Verify type changed (should now have property values input)
             cy.playbooksGetPropertyFieldRow(0).within(() => {
@@ -207,9 +207,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
 
             // # Click outside to save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@SavePropertyField');
 
             // * Verify both options exist
             cy.playbooksGetPropertyFieldRow(0).within(() => {
@@ -233,9 +233,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.waitForGraphQLQueries();
 
             // # Click outside to save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@SavePropertyField');
 
             // * Verify the option was updated
             cy.playbooksGetPropertyFieldRow(0).within(() => {
@@ -260,9 +260,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.waitForGraphQLQueries();
 
             // # Click outside to save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@SavePropertyField');
 
             // * Verify the option was deleted
             cy.playbooksGetPropertyFieldRow(0).within(() => {
@@ -291,8 +291,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         it('can delete an attribute', () => {
             // # Navigate and create two attributes
             navigateToAttributes();
-            addAttribute('Attribute 1', 'text');
-            addAttribute('Attribute 2', 'text');
+            addAttribute('Alpha Field', 'text');
+            addAttribute('Beta Field', 'text');
 
             // * Verify both exist
             cy.findAllByTestId('property-field-row').should('have.length', 2);
@@ -302,7 +302,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify only one attribute remains
             cy.findAllByTestId('property-field-row').should('have.length', 1);
-            verifyAttribute(0, 'Attribute 2');
+            verifyAttribute(0, 'Beta Field');
         });
 
         it('shows confirmation modal when deleting', () => {
@@ -430,11 +430,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByTestId('menuButton').click();
             });
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@AddPropertyField');
 
             // * Verify duplicate was created with "Copy" suffix
             cy.playbooksGetPropertyFieldRow(0).within(() => {
@@ -457,11 +457,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByTestId('menuButton').click();
             });
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@AddPropertyField');
 
             // * Verify duplicate has the same options
             cy.playbooksGetPropertyFieldRow(1).within(() => {
@@ -481,11 +481,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByTestId('menuButton').click();
             });
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@AddPropertyField');
 
             // # Edit the duplicate's name
             editAttributeName(1, 'Modified Copy');
@@ -566,22 +566,18 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function addAttribute(name = null, type = 'text', options = []) {
         // # Click add attribute button
-        cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+        cy.playbooksInterceptPropertyFieldMutation('POST');
         cy.findByRole('button', {name: /add.*attribute/i}).click();
-
-        // # Wait for GraphQL mutation
-        cy.wait('@UpdatePlaybook');
+        cy.wait('@AddPropertyField');
 
         // # Fill in the name only if provided
         if (name) {
             cy.findAllByTestId('property-field-row').last().within(() => {
                 cy.findByLabelText('Attribute name').clear().type(name);
             });
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-
-            // # Wait for GraphQL mutation
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@SavePropertyField');
         }
 
         // # Change type if not text
@@ -591,9 +587,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
 
             // # Select the type from dropdown
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.findByText(new RegExp(`^${type}$`, 'i')).click();
-            cy.wait('@UpdatePlaybook');
+            cy.wait('@SavePropertyField');
         }
 
         // # Add options for select types
@@ -607,12 +603,15 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                     addNewOption(options[i]);
                 }
             });
-        }
 
-        // # Click outside to save (trigger blur)
-        cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
-        cy.get('body').click(0, 0);
-        cy.wait('@UpdatePlaybook');
+            // # Click outside to save the options list
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
+            cy.get('body').click(0, 0);
+            cy.wait('@SavePropertyField');
+        } else {
+            // # Click outside to defocus any remaining input
+            cy.get('body').click(0, 0);
+        }
     }
 
     /**
@@ -641,9 +640,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
         // # Confirm deletion in modal
         cy.get('#confirm-property-delete-modal').should('be.visible');
-        cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+        cy.playbooksInterceptPropertyFieldMutation('DELETE');
         cy.findByRole('button', {name: /delete/i}).click();
-        cy.wait('@UpdatePlaybook');
+        cy.wait('@DeletePropertyField');
     }
 
     /**
@@ -657,8 +656,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         });
 
         // # Click outside to trigger save
-        cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+        cy.playbooksInterceptPropertyFieldMutation('PUT');
         cy.get('body').click(0, 0);
-        cy.wait('@UpdatePlaybook');
+        cy.wait('@SavePropertyField');
     }
 });

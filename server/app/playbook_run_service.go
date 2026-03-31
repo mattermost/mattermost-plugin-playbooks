@@ -5607,6 +5607,12 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
+	// Capture the owner before condition actions may change it, so the WS
+	// incremental diff correctly reflects the owner change (ChangeOwner sends
+	// its own WS event, but the property-change diff should not silently
+	// suppress the owner delta).
+	prevOwnerUserID := run.OwnerUserID
+
 	// Execute triggered condition actions (set owner, notify channel).
 	if evaluationResult != nil && len(evaluationResult.TriggeredActions) > 0 {
 		s.executeConditionActions(userID, run, evaluationResult.TriggeredActions)
@@ -5626,6 +5632,7 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	if valueChanged || assigneeOnlyUpdate {
 		prevRun := *run
 		prevRun.PropertyValues = prevPropertyValues
+		prevRun.OwnerUserID = prevOwnerUserID
 		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, &prevRun, run)
 	}
 
@@ -5672,6 +5679,8 @@ func (s *PlaybookRunServiceImpl) executeConditionActions(userID string, run *Pla
 						"run_id":       run.ID,
 						"new_owner_id": action.SetOwnerUserID,
 					}).Warn("condition action: failed to change run owner")
+				} else {
+					run.OwnerUserID = action.SetOwnerUserID
 				}
 			}
 

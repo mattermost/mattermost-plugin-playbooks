@@ -201,15 +201,14 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
 
             // # Change owner back to testUser via UI (logged in as alternateUser — the new owner)
-            cy.apiLogin(alternateUser);
-            cy.visit(`/playbooks/runs/${testRun.id}`);
-            cy.playbooksChangeRunOwnerViaRHS(testUser.username);
-
-            cy.apiLogin(testUser);
-
-            // # Change from High to Medium — condition is STILL met (both High and Medium match).
-            // The condition does not transition from not-met to met, so the action should NOT fire.
             cy.then(() => {
+                cy.apiLogin(alternateUser);
+                cy.visit(`/playbooks/runs/${testRun.id}`);
+            });
+            cy.playbooksChangeRunOwnerOnRunPage(testUser.username);
+
+            cy.then(() => {
+                cy.apiLogin(testUser);
                 cy.visit(`/playbooks/runs/${testRun.id}`);
             });
 
@@ -397,6 +396,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             let testPlaybook;
             let testRun;
             let priorityField;
+            let notifyChannelId;
 
             // # Create playbook with Priority field
             cy.apiCreateTestPlaybook({
@@ -406,6 +406,11 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             }).then((playbook) => {
                 testPlaybook = playbook;
                 createdPlaybookIds.push(playbook.id);
+            });
+
+            // # Get town-square channel for notifications (known before run exists)
+            cy.apiGetChannelByName(testTeam.name, 'town-square').then(({channel}) => {
+                notifyChannelId = channel.id;
             });
 
             cy.then(() => {
@@ -427,19 +432,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                 });
             });
 
-            // # Start a run first to get the channel ID for the notify action
-            cy.then(() => {
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: testPlaybook.id,
-                    playbookRunName: 'Notify Action Run ' + getRandomId(),
-                    ownerUserId: testUser.id,
-                }).then((run) => {
-                    testRun = run;
-                });
-            });
-
-            // # Create condition: "when Priority is Critical" → notify run channel
+            // # Create condition BEFORE starting the run so it gets copied
             cy.then(() => {
                 const criticalOptionId = priorityField.attrs.options.find((o) => o.name === 'Critical').id;
 
@@ -451,10 +444,22 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                 }, [
                     {
                         type: 'notify_channel',
-                        notify_channel_ids: [testRun.channel_id],
+                        notify_channel_ids: [notifyChannelId],
                         notify_message: 'Priority escalated to Critical on run {Priority}',
                     },
                 ]);
+            });
+
+            // # Start a run (condition is now copied to it)
+            cy.then(() => {
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'Notify Action Run ' + getRandomId(),
+                    ownerUserId: testUser.id,
+                }).then((run) => {
+                    testRun = run;
+                });
             });
 
             // # Navigate to run and trigger the condition
@@ -464,9 +469,9 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
             cy.playbooksSetRunPropertyViaRHS('Priority', 'Critical');
 
-            // # Navigate to the run's channel
+            // # Navigate to town-square to check the notification
             cy.then(() => {
-                cy.playbooksVisitRunChannel(testTeam.name, testRun);
+                cy.visit(`/${testTeam.name}/channels/town-square`);
             });
 
             // * Verify notification message was posted
@@ -479,6 +484,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             let testPlaybook;
             let testRun;
             let zoneField;
+            let notifyChannelId;
 
             // # Create playbook with two property fields: Zone (select) and Severity (select)
             cy.apiCreateTestPlaybook({
@@ -488,6 +494,11 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             }).then((playbook) => {
                 testPlaybook = playbook;
                 createdPlaybookIds.push(playbook.id);
+            });
+
+            // # Get town-square for notifications
+            cy.apiGetChannelByName(testTeam.name, 'town-square').then(({channel}) => {
+                notifyChannelId = channel.id;
             });
 
             cy.then(() => {
@@ -516,19 +527,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                 });
             });
 
-            // # Start a run to get channel_id
-            cy.then(() => {
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: testPlaybook.id,
-                    playbookRunName: 'Multi-Token Run ' + getRandomId(),
-                    ownerUserId: testUser.id,
-                }).then((run) => {
-                    testRun = run;
-                });
-            });
-
-            // # Create condition: Zone=Alpha → notify_channel with two tokens in the message
+            // # Create condition BEFORE starting the run so it gets copied
             cy.then(() => {
                 const alphaOptionId = zoneField.attrs.options.find((o) => o.name === 'Alpha').id;
 
@@ -540,10 +539,22 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                 }, [
                     {
                         type: 'notify_channel',
-                        notify_channel_ids: [testRun.channel_id],
+                        notify_channel_ids: [notifyChannelId],
                         notify_message: 'Alert in zone {Zone} with severity {Severity}',
                     },
                 ]);
+            });
+
+            // # Start a run (condition is now copied to it)
+            cy.then(() => {
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'Multi-Token Run ' + getRandomId(),
+                    ownerUserId: testUser.id,
+                }).then((run) => {
+                    testRun = run;
+                });
             });
 
             // # Set Severity=Critical first (so it has a value when the condition fires)
@@ -555,9 +566,9 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             // # Trigger the condition by setting Zone=Alpha
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
 
-            // # Navigate to the run channel to check the posted notification
+            // # Navigate to town-square to check the posted notification
             cy.then(() => {
-                cy.playbooksVisitRunChannel(testTeam.name, testRun);
+                cy.visit(`/${testTeam.name}/channels/town-square`);
             });
 
             // * Both tokens must be resolved — raw {Zone} and {Severity} must NOT appear
@@ -648,6 +659,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             let testPlaybook;
             let testRun;
             let severityField;
+            let notifyChannelId;
 
             // # Create playbook with a Severity select field
             cy.apiCreateTestPlaybook({
@@ -657,6 +669,11 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             }).then((playbook) => {
                 testPlaybook = playbook;
                 createdPlaybookIds.push(playbook.id);
+            });
+
+            // # Get town-square for notifications
+            cy.apiGetChannelByName(testTeam.name, 'town-square').then(({channel}) => {
+                notifyChannelId = channel.id;
             });
 
             cy.then(() => {
@@ -678,19 +695,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                 });
             });
 
-            // # Start a run to get the channel ID for the notify action
-            cy.then(() => {
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: testPlaybook.id,
-                    playbookRunName: 'Multi-Action Run ' + getRandomId(),
-                    ownerUserId: testUser.id,
-                }).then((run) => {
-                    testRun = run;
-                });
-            });
-
-            // # Create condition: Severity=Critical → set_owner(alternateUser) AND notify_channel
+            // # Create condition BEFORE run: Severity=Critical → set_owner AND notify_channel
             cy.then(() => {
                 const criticalOptionId = severityField.attrs.options.find((o) => o.name === 'Critical').id;
 
@@ -706,10 +711,22 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                     {
                         type: 'notify_channel',
-                        notify_channel_ids: [testRun.channel_id],
+                        notify_channel_ids: [notifyChannelId],
                         notify_message: 'Severity escalated to Critical — ownership transferred',
                     },
                 ]);
+            });
+
+            // # Start run AFTER condition is created (so condition gets copied)
+            cy.then(() => {
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'Multi-Action Run ' + getRandomId(),
+                    ownerUserId: testUser.id,
+                }).then((run) => {
+                    testRun = run;
+                });
             });
 
             // # Navigate to run and trigger the condition
@@ -727,9 +744,9 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                 });
             });
 
-            // * Verify notification was posted (notify_channel action fired)
+            // * Verify notification was posted to town-square (notify_channel action fired)
             cy.then(() => {
-                cy.playbooksVisitRunChannel(testTeam.name, testRun);
+                cy.visit(`/${testTeam.name}/channels/town-square`);
             });
             cy.get('#postListContent').within(() => {
                 cy.contains('Severity escalated to Critical — ownership transferred').should('exist');
@@ -808,7 +825,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.then(() => {
                 cy.visit(`/playbooks/runs/${testRun.id}`);
             });
-            cy.playbooksChangeRunOwnerViaRHS(testUser.username);
+
+            cy.playbooksChangeRunOwnerOnRunPage(testUser.username);
             cy.apiLogin(testUser);
 
             cy.then(() => {

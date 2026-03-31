@@ -415,6 +415,25 @@ Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
 });
 
 /**
+ * Intercept a playbook property field REST mutation and alias it for cy.wait().
+ * method: 'POST' (add/duplicate), 'PUT' (update name/type/options), 'DELETE' (delete)
+ * Aliases: AddPropertyField, SavePropertyField, DeletePropertyField
+ */
+Cypress.Commands.add('playbooksInterceptPropertyFieldMutation', (method) => {
+    const aliasMap = {POST: 'AddPropertyField', PUT: 'SavePropertyField', DELETE: 'DeletePropertyField'};
+    const urlMap = {
+        POST: '/plugins/playbooks/api/v0/playbooks/*/property_fields',
+        PUT: '/plugins/playbooks/api/v0/playbooks/*/property_fields/*',
+        DELETE: '/plugins/playbooks/api/v0/playbooks/*/property_fields/*',
+    };
+    const alias = aliasMap[method];
+    if (!alias) {
+        throw new Error(`playbooksInterceptPropertyFieldMutation: unsupported method "${method}"`);
+    }
+    cy.intercept(method, urlMap[method]).as(alias);
+});
+
+/**
  * Intercept the REST call that toggles a checklist item's state (PUT …/state).
  * Alias: @SetChecklistItemState
  *
@@ -441,6 +460,21 @@ Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
     // wait up to HALF_MIN for the option to become available.
     cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
     cy.wait('@ChangeRunOwner');
+});
+
+/**
+ * Change the run owner via the owner selector on the run details page (/playbooks/runs/:id).
+ * The run details page uses a REST POST to /runs/:id/owner (not the ChangeRunOwner GraphQL mutation
+ * used by the channel RHS), so we intercept the REST endpoint.
+ * @param {String} newOwnerUsername - Username of the new owner to select
+ */
+Cypress.Commands.add('playbooksChangeRunOwnerOnRunPage', (newOwnerUsername) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('runinfo-owner').within(() => {
+        cy.findByTestId('assignee-profile-selector').click();
+    });
+    cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
+    cy.wait('@SetRunOwner');
 });
 
 /**
@@ -705,10 +739,8 @@ Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
 
     cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
 
-    cy.findByRole('complementary').within(() => {
-        cy.findByTestId(testId).within(() => {
-            cy.findByTestId('property-value').realClick();
-        });
+    cy.findByTestId(testId).within(() => {
+        cy.findByTestId('property-value').click();
     });
 
     cy.contains('.property-select__option', value).click();
