@@ -404,6 +404,18 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 } : undefined}
             >
                 <CheckboxContainer>
+                    {!props.readOnly && !props.newItem && (
+                        <SelectionCheckbox
+                            type='checkbox'
+                            checked={props.isSelected ?? false}
+                            onChange={() => {
+                                props.onItemSelect?.();
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            $isSelected={props.isSelected ?? false}
+                            $bulkEditMode={props.bulkEditMode ?? false}
+                        />
+                    )}
                     {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
@@ -607,6 +619,56 @@ const DraggableWrapper = styled.div`
     /* Wrapper for draggable item including condition header */
 `;
 
+export const SelectionCheckbox = styled.input<{$isSelected: boolean; $bulkEditMode: boolean}>`
+    display: flex;
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(var(--center-channel-color-rgb), 0.32);
+    border-radius: 50%;
+    margin: 0;
+    margin-top: 2px;
+    margin-right: 4px;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    pointer-events: auto;
+    opacity: ${({$isSelected, $bulkEditMode}) => ($isSelected || $bulkEditMode) ? 1 : 0};
+    transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+
+    &:checked {
+        border: 2px solid var(--button-bg);
+        background: var(--button-bg);
+    }
+
+    &::before {
+        position: relative;
+        color: #fff;
+        content: "\\f012c";
+        font-family: compass-icons, mattermosticons;
+        font-size: 11px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-weight: bold;
+        text-rendering: auto;
+        transform: scale(0) rotate(90deg);
+        transition: transform 0.15s;
+    }
+
+    &:checked::before {
+        transform: scale(1) rotate(0deg);
+    }
+
+    &:hover {
+        border-color: var(--button-bg);
+        opacity: 1;
+    }
+`;
+
 const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverMenuItemOpen: boolean, $hasCondition: boolean, $isPlaybookEditor: boolean, $bulkEditMode: boolean, $isSelected: boolean}>`
     margin-bottom: 4px;
     padding: 8px 0;
@@ -628,7 +690,8 @@ const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverM
         &:hover,
         &:focus-within {
             ${DragButton},
-            ${HoverMenu} {
+            ${HoverMenu},
+            ${SelectionCheckbox} {
                 opacity: 1;
             }
         }

@@ -83,7 +83,7 @@ const MultiSelectActionBar = ({
     };
 
     return (
-        <BarContainer>
+        <BarContainer data-testid='multi-select-action-bar'>
             <LeftSection>
                 <SelectedCount>
                     {formatMessage(

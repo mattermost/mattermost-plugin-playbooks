@@ -113,8 +113,7 @@ const ChecklistList = ({
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
     const {add: addToast} = useToaster();
 
-    type SelectedItemInfo = {checklistIndex: number; itemIndex: number; item: ChecklistItem};
-    const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItemInfo>>(new Map());
+    const [selectedItems, setSelectedItems] = useState<Map<string, {checklistIndex: number; itemIndex: number; item: ChecklistItem}>>(new Map());
 
     // Clear selections when exiting bulk edit mode
     useEffect(() => {
@@ -124,7 +123,7 @@ const ChecklistList = ({
     }, [bulkEditMode]);
 
     const onItemSelect = useCallback((key: string, checklistIndex: number, itemIndex: number, item: ChecklistItem) => {
-        setSelectedItems((prev) => {
+        setSelectedItems((prev: Map<string, {checklistIndex: number; itemIndex: number; item: ChecklistItem}>) => {
             const next = new Map(prev);
             if (next.has(key)) {
                 next.delete(key);
@@ -183,13 +182,16 @@ const ChecklistList = ({
     // Memoized lookup sets for selected items — must be before early return
     const selectedIndices = useMemo(() => {
         const indices = new Set<string>();
-        selectedItems.forEach(({checklistIndex, itemIndex}) => {
+        selectedItems.forEach(({checklistIndex, itemIndex}: {checklistIndex: number; itemIndex: number; item: ChecklistItem}) => {
             indices.add(`${checklistIndex}-${itemIndex}`);
         });
         return indices;
     }, [selectedItems]);
 
     const selectedItemKeysSet = useMemo(() => new Set(selectedItems.keys()), [selectedItems]);
+
+    // Effective bulk-edit mode: externally enabled OR at least one item is selected internally
+    const effectiveBulkMode = bulkEditMode || selectedItems.size > 0;
 
     if (!playbook && !playbookRun) {
         return null;
@@ -484,7 +486,7 @@ const ChecklistList = ({
 
     const handleBulkDelete = async () => {
         const selectedByChecklist = new Map<number, Set<number>>();
-        selectedItems.forEach(({checklistIndex, itemIndex}) => {
+        selectedItems.forEach(({checklistIndex, itemIndex}: {checklistIndex: number; itemIndex: number; item: ChecklistItem}) => {
             if (!selectedByChecklist.has(checklistIndex)) {
                 selectedByChecklist.set(checklistIndex, new Set());
             }
@@ -540,7 +542,7 @@ const ChecklistList = ({
         // Group selected items by checklist, then process in descending index order
         // to avoid index corruption when items are moved via splice
         const byChecklist = new Map<number, number[]>();
-        selectedItems.forEach(({checklistIndex, itemIndex}) => {
+        selectedItems.forEach(({checklistIndex, itemIndex}: {checklistIndex: number; itemIndex: number; item: ChecklistItem}) => {
             if (!byChecklist.has(checklistIndex)) {
                 byChecklist.set(checklistIndex, []);
             }
@@ -871,7 +873,7 @@ const ChecklistList = ({
                                                     allChecklists={checklists}
                                                     onMoveItemToCondition={(itemIndex: number, conditionId: string) => onMoveItemToCondition(checklistIndex, itemIndex, conditionId)}
                                                     selectedItemKeys={selectedItemKeysSet}
-                                                    bulkEditMode={bulkEditMode}
+                                                    bulkEditMode={effectiveBulkMode}
                                                     onItemSelect={onItemSelect}
                                                 />
                                             </CollapsibleChecklist>
