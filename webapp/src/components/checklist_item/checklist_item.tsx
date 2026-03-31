@@ -393,6 +393,12 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     };
 
     const renderAssignTo = (): null | React.ReactNode => {
+        if (isEditing) {
+            // In edit mode the AssigneeDropdown in renderAssigneeEditor already
+            // shows the assignee, so skip the read-only display here.
+            return null;
+        }
+
         const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
         const isPropertyUserAssignee = assigneeType === 'property_user';
         const isGroupAssignee = assigneeType === 'group';

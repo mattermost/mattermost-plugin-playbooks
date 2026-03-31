@@ -278,6 +278,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             <Divider/>
             <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.person_section', defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
             <ProfileSelector
+                testId={'assignee-profile-selector'}
                 selectedUserId={assigneeType === 'group' ? '' : checklistItem.assignee_id}
                 placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
                 enableEdit={editable}
