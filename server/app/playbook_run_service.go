@@ -2487,7 +2487,7 @@ func (s *PlaybookRunServiceImpl) SetGroupAssignee(playbookRunID, userID, groupID
 	}
 
 	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
+		return errors.Wrap(ErrMalformedPlaybookRun, "invalid checklist item indices")
 	}
 
 	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
@@ -2497,10 +2497,10 @@ func (s *PlaybookRunServiceImpl) SetGroupAssignee(playbookRunID, userID, groupID
 
 	// Validate the group exists
 	if groupID == "" {
-		return errors.New("assigneeGroupID cannot be empty")
+		return errors.Wrap(ErrMalformedPlaybookRun, "assigneeGroupID cannot be empty")
 	}
 	if !model.IsValidId(groupID) {
-		return errors.New("invalid group ID format")
+		return errors.Wrap(ErrMalformedPlaybookRun, "invalid group ID format")
 	}
 	if _, err = s.pluginAPI.Group.GetMemberUsers(groupID, 0, 1); err != nil {
 		return errors.Wrapf(err, "failed to validate group %s", groupID)
@@ -2566,7 +2566,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(userID, playbookRunID s
 	}
 
 	if !IsValidChecklistItemIndex(playbookRun.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
+		return errors.Wrap(ErrMalformedPlaybookRun, "invalid checklist item indices")
 	}
 
 	itemToCheck := &playbookRun.Checklists[checklistNumber].Items[itemNumber]
@@ -2638,7 +2638,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
 
 	if !IsValidAssigneeType(assigneeType) || assigneeType == AssigneeTypeSpecificUser || assigneeType == AssigneeTypeGroup || assigneeType == AssigneeTypePropertyUser {
-		return errors.New("invalid role assignee type: must be 'owner' or 'creator'")
+		return errors.Wrap(ErrMalformedPlaybookRun, "invalid role assignee type: must be 'owner' or 'creator'")
 	}
 
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
@@ -2647,7 +2647,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	}
 
 	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
+		return errors.Wrap(ErrMalformedPlaybookRun, "invalid checklist item indices")
 	}
 
 	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]

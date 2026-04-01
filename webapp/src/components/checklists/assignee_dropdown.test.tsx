@@ -104,7 +104,7 @@ describe('AssigneeDropdown', () => {
         expect(treeStr).toContain('Run Creator');
     });
 
-    it('role options appear before user search results', () => {
+    it('user search appears before role dropdown', () => {
         const onChanged = jest.fn();
         const item = makeChecklistItem({assignee_id: '', assignee_type: ''});
 
@@ -119,16 +119,12 @@ describe('AssigneeDropdown', () => {
 
         const instance = component.root;
 
-        // Radio inputs now carry data-testid='role-option-owner' / 'role-option-creator' / 'role-option-none'
-        const ownerRadio = instance.findByProps({'data-testid': 'role-option-owner'});
-        const creatorRadio = instance.findByProps({'data-testid': 'role-option-creator'});
+        const roleSelect = instance.findByProps({'data-testid': 'role-options'});
         const profileSelector = instance.findByProps({'data-testid': 'profile-selector'});
 
-        expect(ownerRadio).toBeTruthy();
-        expect(creatorRadio).toBeTruthy();
+        expect(roleSelect).toBeTruthy();
         expect(profileSelector).toBeTruthy();
 
-        // The role radio group appears before the profile selector in the tree
         const tree = component.toJSON() as ReactTestRendererJSON;
         expect(tree).not.toBeNull();
     });
@@ -147,8 +143,8 @@ describe('AssigneeDropdown', () => {
         );
 
         const instance = component.root;
-        const ownerRadio = instance.findByProps({'data-testid': 'role-option-owner'});
-        ownerRadio.props.onChange();
+        const roleSelect = instance.findByProps({'data-testid': 'role-options'});
+        roleSelect.props.onChange({target: {value: 'owner'}});
 
         expect(onChanged).toHaveBeenCalledWith({
             ...item,
@@ -173,8 +169,8 @@ describe('AssigneeDropdown', () => {
         );
 
         const instance = component.root;
-        const creatorRadio = instance.findByProps({'data-testid': 'role-option-creator'});
-        creatorRadio.props.onChange();
+        const roleSelect = instance.findByProps({'data-testid': 'role-options'});
+        roleSelect.props.onChange({target: {value: 'creator'}});
 
         expect(onChanged).toHaveBeenCalledWith({
             ...item,
@@ -185,7 +181,7 @@ describe('AssigneeDropdown', () => {
         });
     });
 
-    it('selecting None radio clears an existing role assignment', () => {
+    it('selecting None from role dropdown clears an existing role assignment', () => {
         const onChanged = jest.fn();
         const item = makeChecklistItem({assignee_id: '', assignee_type: 'owner'});
 
@@ -199,8 +195,8 @@ describe('AssigneeDropdown', () => {
         );
 
         const instance = component.root;
-        const noneRadio = instance.findByProps({'data-testid': 'role-option-none'});
-        noneRadio.props.onChange();
+        const roleSelect = instance.findByProps({'data-testid': 'role-options'});
+        roleSelect.props.onChange({target: {value: 'none'}});
 
         expect(onChanged).toHaveBeenCalledWith({
             ...item,
@@ -480,7 +476,7 @@ describe('AssigneeDropdown', () => {
         delete_at: 0,
     });
 
-    it('shows Run User radio option when user-type property fields are available', () => {
+    it('shows Run User option when user-type property fields are available', () => {
         const onChanged = jest.fn();
         const item = makeChecklistItem();
         const fields = [makeUserField('f1', 'Manager')];
@@ -501,7 +497,7 @@ describe('AssigneeDropdown', () => {
         expect(treeStr).toContain('Run User');
     });
 
-    it('does not show Run User radio when no user-type property fields exist', () => {
+    it('does not show Run User option when no user-type property fields exist', () => {
         const onChanged = jest.fn();
         const item = makeChecklistItem();
 
@@ -516,11 +512,11 @@ describe('AssigneeDropdown', () => {
         );
 
         const instance = component.root;
-        const runUserRadios = instance.findAll((n) => n.props['data-testid'] === 'role-option-property_user');
-        expect(runUserRadios.length).toBe(0);
+        const runUserOptions = instance.findAll((n) => n.props['data-testid'] === 'role-option-property_user');
+        expect(runUserOptions.length).toBe(0);
     });
 
-    it('does not show Run User radio when propertyFields is undefined', () => {
+    it('does not show Run User option when propertyFields is undefined', () => {
         const onChanged = jest.fn();
         const item = makeChecklistItem();
 
@@ -534,11 +530,11 @@ describe('AssigneeDropdown', () => {
         );
 
         const instance = component.root;
-        const runUserRadios = instance.findAll((n) => n.props['data-testid'] === 'role-option-property_user');
-        expect(runUserRadios.length).toBe(0);
+        const runUserOptions = instance.findAll((n) => n.props['data-testid'] === 'role-option-property_user');
+        expect(runUserOptions.length).toBe(0);
     });
 
-    it('selecting Run User radio shows sub-dropdown but does not call onChanged until a field is picked', () => {
+    it('selecting Run User from role dropdown shows sub-dropdown but does not call onChanged until a field is picked', () => {
         const onChanged = jest.fn();
         const item = makeChecklistItem({assignee_id: 'user-1', assignee_type: ''});
         const fields = [makeUserField('f1', 'Manager')];
@@ -554,11 +550,11 @@ describe('AssigneeDropdown', () => {
         );
 
         const instance = component.root;
-        const runUserRadio = instance.findByProps({'data-testid': 'role-option-property_user'});
+        const roleSelect = instance.findByProps({'data-testid': 'role-options'});
 
-        // Clicking the radio defers the mutation — no onChanged call yet.
+        // Selecting property_user defers the mutation — no onChanged call yet.
         renderer.act(() => {
-            runUserRadio.props.onChange();
+            roleSelect.props.onChange({target: {value: 'property_user'}});
         });
         expect(onChanged).not.toHaveBeenCalled();
 
@@ -566,7 +562,7 @@ describe('AssigneeDropdown', () => {
         expect(instance.findByProps({'data-testid': 'property-user-field-options'})).toBeTruthy();
     });
 
-    it('attribute sub-dropdown is shown only when Run User radio is selected', () => {
+    it('attribute sub-dropdown is shown only when Run User role is selected', () => {
         const onChanged = jest.fn();
         const fields = [makeUserField('f1', 'Manager')];
 

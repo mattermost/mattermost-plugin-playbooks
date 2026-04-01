@@ -482,7 +482,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		}
 		checklistsJSON, err := json.Marshal(args.Updates.Checklists)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID)
+			return "", newGraphQLError(errors.Wrapf(err, "failed to marshal checklist in graphql json for playbook id: '%s'", args.ID))
 		}
 		setmap["ChecklistsJSON"] = checklistsJSON
 	}

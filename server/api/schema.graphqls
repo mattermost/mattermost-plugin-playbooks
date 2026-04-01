@@ -23,6 +23,9 @@ type Query {
 		after: String,
 		types: [PlaybookRunType!] = [],
 		omitEnded: Boolean = false,
+		propertyFieldID: String = "",
+		propertyValueFilter: String = "",
+		activitySince: Float = 0,
 	): RunConnection! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
 	playbookProperty(playbookID: String!, propertyID: String!): PropertyField @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")

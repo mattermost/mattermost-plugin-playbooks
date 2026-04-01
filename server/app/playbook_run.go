@@ -1809,6 +1809,14 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'channel_id': must be 26 characters or blank")
 	}
 
+	if options.PropertyFieldID != "" && !model.IsValidId(options.PropertyFieldID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_field_id': must be 26 characters or blank")
+	}
+
+	if options.PropertyValueFilter != "" && !model.IsValidId(options.PropertyValueFilter) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_value_filter': must be 26 characters or blank")
+	}
+
 	for _, s := range options.Statuses {
 		if !validStatus(s) {
 			return PlaybookRunFilterOptions{}, errors.New("bad parameter in 'statuses': must be InProgress or Finished")

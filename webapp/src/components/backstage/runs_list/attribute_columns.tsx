@@ -149,6 +149,12 @@ export const AttributeColumnsConfig = ({propertyFields, selectedFieldIds, onSele
 
     useClickOutsideRef(wrapperRef, () => setDropdownOpen(false));
 
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            setDropdownOpen(false);
+        }
+    }, []);
+
     const sortedFields = useMemo(
         () => [...propertyFields].sort(sortBySortOrder),
         [propertyFields],
@@ -162,7 +168,10 @@ export const AttributeColumnsConfig = ({propertyFields, selectedFieldIds, onSele
     }, [selectedFieldIds, onSelectionChange]);
 
     return (
-        <ConfigWrapper ref={wrapperRef}>
+        <ConfigWrapper
+            ref={wrapperRef}
+            onKeyDown={handleKeyDown}
+        >
             <ConfigureButton
                 data-testid='configure-columns-button'
                 aria-expanded={dropdownOpen}
@@ -178,6 +187,7 @@ export const AttributeColumnsConfig = ({propertyFields, selectedFieldIds, onSele
                 <DropdownPanel
                     data-testid='column-selector-dropdown'
                     role='menu'
+                    aria-label={formatMessage({id: 'playbooks.attribute_columns.column_menu', defaultMessage: 'Column selection'})}
                 >
                     {sortedFields.map((field) => {
                         const sid = stableFieldId(field);

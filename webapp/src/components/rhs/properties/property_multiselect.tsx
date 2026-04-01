@@ -46,18 +46,25 @@ const MultiselectProperty = (props: Props) => {
         setTempValue(displayValue ?? null);
     }, [displayValue]);
 
+    const previousDisplayRef = useRef(displayValue);
+    useUpdateEffect(() => {
+        previousDisplayRef.current = displayValue;
+    }, [displayValue]);
+
     const handleStopEdit = useCallback(() => {
         setIsEditing(false);
-        const previousDisplay = displayValue;
+        const previousDisplay = previousDisplayRef.current;
         const committed = tempValue ?? undefined;
+        previousDisplayRef.current = committed;
         setDisplayValue(committed);
         props.onValueChange(tempValue ?? null)?.catch(() => {
             if (isMounted.current) {
+                previousDisplayRef.current = previousDisplay;
                 setDisplayValue((current) => (current === committed ? previousDisplay : current));
             }
         });
         setTempValue(undefined);
-    }, [displayValue, tempValue, props.onValueChange]);
+    }, [tempValue, props.onValueChange]);
 
     const selectOptions = props.field.attrs?.options?.map((option) => ({
         value: option.id,

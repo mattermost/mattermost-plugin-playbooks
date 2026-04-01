@@ -491,6 +491,98 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
         });
     });
 
+    describe('switching from role/group assignment to a user', () => {
+        it('switching from role assignment to a specific user clears the role', () => {
+            cy.apiLogin(testOwner);
+
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Role-to-User Switch Playbook ' + getRandomId(),
+                memberIDs: [testOwner.id],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+                checklists: [{title: 'Stage 1', items: [{title: 'Switchable Task', assignee_type: ROLE_OWNER}]}],
+            }).then((playbook) => {
+                createdPlaybookIds.push(playbook.id);
+
+                // # Start a run so we can test in the run context
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: 'Role-to-User Switch Run ' + getRandomId(),
+                    ownerUserId: testOwner.id,
+                }).then((run) => {
+                    // * Verify the task starts with assignee_type=owner
+                    cy.apiGetPlaybookRun(run.id).then((response) => {
+                        const task = response.body.checklists[0].items[0];
+                        expect(task.assignee_type).to.equal(ROLE_OWNER);
+                    });
+
+                    // # Visit the run channel to open the RHS
+                    cy.playbooksVisitRunChannel(testTeam.name, run);
+
+                    // # Manually reassign the task to a specific user via the API
+                    cy.apiChangeChecklistItemAssignee(run.id, 0, 0, testOwner.id);
+
+                    // * After reassignment, assignee_type must be cleared and assignee_id set
+                    cy.apiGetPlaybookRun(run.id).then((response) => {
+                        const task = response.body.checklists[0].items[0];
+                        expect(task.assignee_id).to.equal(testOwner.id);
+                        expect(task.assignee_type).to.equal('');
+                    });
+
+                    // * The task in the RHS must show the user profile, not the role badge
+                    cy.findByTestId('pb-checklists-inner-container').within(() => {
+                        cy.contains('[data-testid="checkbox-item-container"]', 'Switchable Task').within(() => {
+                            cy.contains(testOwner.username).should('exist');
+                            cy.findByTestId('role-indicator-badge').should('not.exist');
+                        });
+                    });
+                });
+            });
+        });
+
+        it('switching from role to user in the playbook editor clears assignee_type', () => {
+            cy.apiLogin(testOwner);
+
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Editor Role-to-User Playbook ' + getRandomId(),
+                memberIDs: [testOwner.id],
+                makePublic: true,
+                createPublicPlaybookRun: true,
+                checklists: [{title: 'Stage 1', items: [{title: 'Switchable Task', assignee_type: ROLE_OWNER}]}],
+            }).then((playbook) => {
+                createdPlaybookIds.push(playbook.id);
+
+                // # Open the task editor in the playbook outline
+                cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Switchable Task');
+
+                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+
+                cy.get('#checklists').within(() => {
+                    // # Select "None" from the role dropdown to clear the role
+                    cy.findByTestId('role-options').select('none');
+
+                    // # Then assign a specific user via the profile selector
+                    cy.findByTestId('assignee-profile-selector').click();
+                });
+
+                // # Pick the user from the profile selector dropdown (rendered as @username)
+                cy.get('.playbook-react-select').contains('@' + testOwner.username).click();
+
+                cy.wait('@UpdatePlaybook');
+
+                // * Server must have assignee_type cleared and assignee_id set
+                cy.apiGetPlaybook(playbook.id).then((resp) => {
+                    const item = resp.checklists[0].items[0];
+                    expect(item.assignee_type).to.equal('');
+                    expect(item.assignee_id).to.equal(testOwner.id);
+                });
+            });
+        });
+    });
+
     it('changing owner in RHS preserves property_user task display', () => {
         // Regression: changing the run owner via the RHS profile selector used to
         // wipe property_values from the WebSocket update, causing the resolved

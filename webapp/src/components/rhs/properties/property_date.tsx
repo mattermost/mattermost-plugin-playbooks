@@ -73,6 +73,7 @@ const DateProperty = (props: Props) => {
     const millis = parsePropertyDate(rawValue);
     const [displayMillis, setDisplayMillis] = useState<number>(millis || 0);
     const isMounted = useRef(true);
+    const previousMillisRef = useRef(displayMillis);
     useEffect(() => () => {
         isMounted.current = false;
     }, []);
@@ -80,6 +81,7 @@ const DateProperty = (props: Props) => {
     useUpdateEffect(() => {
         const newRaw = props.value?.value;
         const newMillis = parsePropertyDate(newRaw);
+        previousMillisRef.current = newMillis || 0;
         setDisplayMillis(newMillis || 0);
     }, [props.value?.value]);
 
@@ -92,26 +94,30 @@ const DateProperty = (props: Props) => {
 
     const handleSelectedChange = useCallback((option: DateTimeOption | undefined | null) => {
         if (!option || !option.value) {
-            const previousMillis = displayMillis;
+            const previousMillis = previousMillisRef.current;
+            previousMillisRef.current = 0;
             setDisplayMillis(0);
             setIsEditing(false);
             props.onValueChange(null)?.catch(() => {
                 if (isMounted.current) {
+                    previousMillisRef.current = previousMillis;
                     setDisplayMillis((current) => (current === 0 ? previousMillis : current));
                 }
             });
             return;
         }
         const newMillis = option.value.toMillis();
-        const previousMillis = displayMillis;
+        const previousMillis = previousMillisRef.current;
+        previousMillisRef.current = newMillis;
         setDisplayMillis(newMillis);
         setIsEditing(false);
         props.onValueChange(new Date(newMillis).toISOString())?.catch(() => {
             if (isMounted.current) {
+                previousMillisRef.current = previousMillis;
                 setDisplayMillis((current) => (current === newMillis ? previousMillis : current));
             }
         });
-    }, [displayMillis, props.onValueChange]);
+    }, [props.onValueChange]);
 
     if (isEditing) {
         return (

@@ -1,20 +1,13 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
-import {getGroups} from 'mattermost-redux/actions/groups';
-import {getAllGroups} from 'mattermost-redux/selectors/entities/groups';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
+import {useAllowReferenceGroups} from 'src/hooks/use_allow_reference_groups';
 import {ChecklistItem} from 'src/types/playbook';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 
@@ -33,14 +26,9 @@ interface Props {
 const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserIds, runOwnerUserId, runCreatorUserId, mode, propertyFields, propertyValues}: Props) => {
     const {formatMessage} = useIntl();
     const profilesInTeam = useProfilesInTeam();
-    const dispatch = useDispatch();
-    const allGroupsMap = useSelector(getAllGroups);
-    const groups = useMemo(() => Object.values(allGroupsMap).filter((g) => g.allow_reference), [allGroupsMap]);
+    const groups = useAllowReferenceGroups();
     const [assignedGroupName, setAssignedGroupName] = useState<string>('');
     const [pendingPropertyUser, setPendingPropertyUser] = useState<boolean>(false);
-    useEffect(() => {
-        dispatch(getGroups({filter_allow_reference: true, per_page: 100, page: 0}));
-    }, [dispatch]);
 
     const assigneeType = checklistItem.assignee_type || '';
 
@@ -99,6 +87,8 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             ...checklistItem,
             assignee_type: '',
             assignee_id: user?.id ?? '',
+            assignee_group_id: '',
+            assignee_property_field_id: '',
         });
     }, [checklistItem, onChanged]);
 
@@ -193,58 +183,32 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
     }
 
     const roleOptions = [
-        {value: 'none', label: formatMessage({id: 'playbooks.assignee_dropdown.role_none', defaultMessage: 'None'}), hint: ''},
-        {value: 'owner', label: formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}), hint: formatMessage({id: 'playbooks.assignee_dropdown.owner_hint', defaultMessage: 'Resolves to run owner at creation'})},
-        {value: 'creator', label: formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'}), hint: formatMessage({id: 'playbooks.assignee_dropdown.creator_hint', defaultMessage: 'Resolves to run creator at creation'})},
+        {value: 'none', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.role_none', defaultMessage: 'None'})},
+        {value: 'owner', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.owner_hint', defaultMessage: 'Resolves to run owner at creation'})},
+        {value: 'creator', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.creator_hint', defaultMessage: 'Resolves to run creator at creation'})},
         ...(userPropertyFields.length > 0 ? [{
             value: 'property_user',
-            label: formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'}),
-            hint: formatMessage({id: 'playbooks.assignee_dropdown.property_user_hint', defaultMessage: 'Resolves to a user-type attribute at creation'}),
+            displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.property_user_hint', defaultMessage: 'Resolves to a user-type attribute at creation'}),
         }] : []),
     ];
 
     return (
         <Container>
-            <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.role_section', defaultMessage: 'ASSIGN TO A ROLE'})}</SectionLabel>
-            <RoleRadioGroup>
-                {roleOptions.map((opt) => (
-                    <RadioRow key={opt.value}>
-                        <RadioInput
-                            type='radio'
-                            name='assignee-role'
-                            value={opt.value}
-                            checked={displayRole === opt.value}
-                            onChange={() => handleRoleRadioChange(opt.value)}
-                            data-testid={`role-option-${opt.value}`}
-                        />
-                        <RadioContent>
-                            <RadioLabelText>{opt.label}</RadioLabelText>
-                            {opt.hint && <RoleOptionHint>{opt.hint}</RoleOptionHint>}
-                        </RadioContent>
-                    </RadioRow>
-                ))}
-            </RoleRadioGroup>
-            {displayRole === 'property_user' && (
-                <SelectWrapper>
-                    <AssigneeSelect
-                        data-testid='property-user-field-options'
-                        aria-label={formatMessage({id: 'playbooks.assignee_dropdown.property_user_field_label', defaultMessage: 'Select property field for assignee'})}
-                        value={checklistItem.assignee_property_field_id ?? ''}
-                        onChange={(e) => handlePropertyUserFieldChange(e.target.value)}
-                    >
-                        <option value=''>{formatMessage({id: 'playbooks.assignee_dropdown.select_attribute', defaultMessage: 'Select attribute...'})}</option>
-                        {userPropertyFields.map((f) => (
-                            <option
-                                key={f.id}
-                                value={f.id}
-                                data-testid={`property-user-field-option-${f.id}`}
-                            >
-                                {f.name}
-                            </option>
-                        ))}
-                    </AssigneeSelect>
-                </SelectWrapper>
-            )}
+            <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.person_section', defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
+            <ProfileSelector
+                testId={'assignee-profile-selector'}
+                selectedUserId={assigneeType === 'group' ? '' : checklistItem.assignee_id}
+                placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
+                enableEdit={editable}
+                getAllUsers={getAllUsersInTeam}
+                onSelectedChange={handleUserSelect}
+                selfIsFirstOption={true}
+                userGroups={{
+                    subsetUserIds: participantUserIds,
+                    defaultLabel: formatMessage({id: 'playbooks.assignee_dropdown.not_participating', defaultMessage: 'NOT PARTICIPATING'}),
+                    subsetLabel: formatMessage({id: 'playbooks.assignee_dropdown.participants', defaultMessage: 'PARTICIPANTS'}),
+                }}
+            />
             {groups.length > 0 && (
                 <>
                     <Divider/>
@@ -276,21 +240,46 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                 </>
             )}
             <Divider/>
-            <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.person_section', defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
-            <ProfileSelector
-                testId={'assignee-profile-selector'}
-                selectedUserId={assigneeType === 'group' ? '' : checklistItem.assignee_id}
-                placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
-                enableEdit={editable}
-                getAllUsers={getAllUsersInTeam}
-                onSelectedChange={handleUserSelect}
-                selfIsFirstOption={true}
-                userGroups={{
-                    subsetUserIds: participantUserIds,
-                    defaultLabel: formatMessage({id: 'playbooks.assignee_dropdown.not_participating', defaultMessage: 'NOT PARTICIPATING'}),
-                    subsetLabel: formatMessage({id: 'playbooks.assignee_dropdown.participants', defaultMessage: 'PARTICIPANTS'}),
-                }}
-            />
+            <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.role_section', defaultMessage: 'ASSIGN TO A ROLE'})}</SectionLabel>
+            <SelectWrapper>
+                <AssigneeSelect
+                    data-testid='role-options'
+                    aria-label={formatMessage({id: 'playbooks.assignee_dropdown.role_label', defaultMessage: 'Select role for assignee'})}
+                    value={displayRole}
+                    onChange={(e) => handleRoleRadioChange(e.target.value)}
+                >
+                    {roleOptions.map((opt) => (
+                        <option
+                            key={opt.value}
+                            value={opt.value}
+                            data-testid={`role-option-${opt.value}`}
+                        >
+                            {opt.displayLabel}
+                        </option>
+                    ))}
+                </AssigneeSelect>
+            </SelectWrapper>
+            {displayRole === 'property_user' && (
+                <SelectWrapper>
+                    <AssigneeSelect
+                        data-testid='property-user-field-options'
+                        aria-label={formatMessage({id: 'playbooks.assignee_dropdown.property_user_field_label', defaultMessage: 'Select property field for assignee'})}
+                        value={checklistItem.assignee_property_field_id ?? ''}
+                        onChange={(e) => handlePropertyUserFieldChange(e.target.value)}
+                    >
+                        <option value=''>{formatMessage({id: 'playbooks.assignee_dropdown.select_attribute', defaultMessage: 'Select attribute...'})}</option>
+                        {userPropertyFields.map((f) => (
+                            <option
+                                key={f.id}
+                                value={f.id}
+                                data-testid={`property-user-field-option-${f.id}`}
+                            >
+                                {f.name}
+                            </option>
+                        ))}
+                    </AssigneeSelect>
+                </SelectWrapper>
+            )}
         </Container>
     );
 };
@@ -299,40 +288,6 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     gap: 4px;
-`;
-
-const RoleRadioGroup = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 4px;
-    padding: 0 8px;
-`;
-
-const RadioRow = styled.label`
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 3px 0;
-    cursor: pointer;
-`;
-
-const RadioInput = styled.input`
-    margin-top: 3px;
-    cursor: pointer;
-    accent-color: var(--button-bg);
-    flex-shrink: 0;
-`;
-
-const RadioContent = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
-
-const RadioLabelText = styled.span`
-    font-size: 13px;
-    color: var(--center-channel-color);
-    line-height: 18px;
 `;
 
 const SectionLabel = styled.div`
@@ -350,12 +305,6 @@ const Divider = styled.div`
     margin: 4px 0;
 `;
 
-const RoleOptionHint = styled.div`
-    font-size: 11px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    line-height: 16px;
-`;
-
 const SelectWrapper = styled.div`
     padding: 2px 8px 6px;
 `;
@@ -371,7 +320,7 @@ const AssigneeSelect = styled.select`
     color: var(--center-channel-color);
     font-size: 13px;
     cursor: pointer;
-    appearance: auto;
+    appearance: none;
 
     &:focus {
         box-shadow: inset 0 0 0 2px var(--button-bg);

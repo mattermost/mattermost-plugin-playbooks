@@ -29,9 +29,9 @@ describe('runs > creation rules', {testIsolation: true}, () => {
             testOwner = user;
 
             // # Create an alternate owner user
-            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-                testAlternateOwner = newUser;
-            });
+            return cy.apiCreateAndAddUserToTeam(testTeam.id);
+        }).then((newUser) => {
+            testAlternateOwner = newUser;
 
             // # Login as testOwner to create the playbook
             cy.apiLogin(testOwner);

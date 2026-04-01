@@ -509,18 +509,23 @@ export const usePlaybookName = (playbookId: string) => {
     const [playbookName, setPlaybookName] = useState('');
 
     useEffect(() => {
-        const getPlaybookName = async () => {
-            if (playbookId !== '') {
-                try {
-                    const playbook = await clientFetchPlaybook(playbookId);
-                    setPlaybookName(playbook?.title || '');
-                } catch {
-                    setPlaybookName('');
-                }
-            }
+        let cancelled = false;
+        if (playbookId !== '') {
+            clientFetchPlaybook(playbookId)
+                .then((playbook) => {
+                    if (!cancelled) {
+                        setPlaybookName(playbook?.title || '');
+                    }
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        setPlaybookName('');
+                    }
+                });
+        }
+        return () => {
+            cancelled = true;
         };
-
-        getPlaybookName();
     }, [playbookId]);
 
     return playbookName;
@@ -530,16 +535,21 @@ export const useStats = (playbookId: string) => {
     const [stats, setStats] = useState(EmptyPlaybookStats);
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const ret = await fetchPlaybookStats(playbookId);
-                setStats(ret);
-            } catch {
-                setStats(EmptyPlaybookStats);
-            }
+        let cancelled = false;
+        fetchPlaybookStats(playbookId)
+            .then((ret) => {
+                if (!cancelled) {
+                    setStats(ret);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setStats(EmptyPlaybookStats);
+                }
+            });
+        return () => {
+            cancelled = true;
         };
-
-        fetchStats();
     }, [playbookId]);
 
     return stats;

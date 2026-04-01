@@ -430,6 +430,11 @@ export const fetchPlaybookConditions = (playbookId: string) => async (dispatch: 
         }
     } catch (error) {
         console.error('Failed to fetch playbook conditions:', error); //eslint-disable-line no-console
+        dispatch({
+            type: RECEIVED_PLAYBOOK_CONDITIONS,
+            playbookId,
+            conditions: [],
+        } as ReceivedPlaybookConditions);
     }
 };
 
@@ -451,12 +456,22 @@ export const conditionDeleted = (conditionId: string, playbookId: string): Condi
 });
 
 export const fetchPlaybookPropertyFieldsAction = (playbookId: string) => async (dispatch: Dispatch<AnyAction>) => {
-    const result = await fetchPlaybookPropertyFields(playbookId);
-    dispatch({
-        type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
-        playbookId,
-        propertyFields: result,
-    });
+    try {
+        const result = await fetchPlaybookPropertyFields(playbookId);
+        dispatch({
+            type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
+            playbookId,
+            propertyFields: result,
+        });
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch playbook property fields:', error);
+        dispatch({
+            type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
+            playbookId,
+            propertyFields: [],
+        });
+    }
 };
 
 export const addPlaybookPropertyFieldAction = (playbookId: string, propertyField: PropertyFieldInput) => async (dispatch: Dispatch<AnyAction>) => {

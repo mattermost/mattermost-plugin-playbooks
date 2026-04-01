@@ -1,11 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
+import {CodeBracketsIcon, SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -39,6 +39,8 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
     const dispatch = useDispatch();
     const teamId = useSelector(getCurrentTeamId);
     const disabled = disabledProp || playbook.delete_at !== 0;
+    const [insertCounter, setInsertCounter] = useState(0);
+    const templateEnabled = !disabled && playbook.channel_mode === 'create_new_channel';
 
     const handlePublicChange = (isPublic: boolean) => {
         setPlaybook({
@@ -164,15 +166,32 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade, fieldName
                             onChange={(e) => handleRunNumberPrefixChange(e.target.value)}
                             placeholder={formatMessage({defaultMessage: 'e.g. INC-'})}
                         />
-                        <InputLabel>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
+                        <LabelRow>
+                            <InputLabel>{formatMessage({defaultMessage: 'Run name template'})}</InputLabel>
+                            {templateEnabled && (
+                                <InsertVariableButton
+                                    type='button'
+                                    onClick={() => setInsertCounter((n) => n + 1)}
+                                    aria-label={formatMessage({defaultMessage: 'Insert variable'})}
+                                    title={formatMessage({defaultMessage: 'Insert variable'})}
+                                    data-testid='channel-access-run-name-template-insert-variable'
+                                >
+                                    <CodeBracketsIcon
+                                        size={14}
+                                        aria-hidden={true}
+                                    />
+                                </InsertVariableButton>
+                            )}
+                        </LabelRow>
                         <TemplateInput
-                            enabled={!disabled && playbook.channel_mode === 'create_new_channel'}
+                            enabled={templateEnabled}
                             placeholderText={formatMessage({defaultMessage: 'Run name template (optional)'})}
                             input={playbook.channel_name_template ?? ''}
                             onChange={handleChannelNameTemplateChange}
                             fieldNames={fieldNames ?? []}
                             prefix={playbook.run_number_prefix ?? ''}
                             testId='channel-access-run-name-template'
+                            openInsertToggle={insertCounter}
                         />
                     </RunNamingBlock>
                     <ChannelActionButton
@@ -272,4 +291,27 @@ const InputLabel = styled.div`
     font-weight: 600;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     margin-top: 8px;
+`;
+
+const LabelRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+`;
+
+const InsertVariableButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: var(--button-bg);
+    }
 `;

@@ -187,6 +187,62 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         });
     });
 
+    it('shows an insert variable button next to the template input', () => {
+        // # Visit the playbook outline editor
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+        // * Wait for the page to load
+        cy.findByTestId('channel-access-run-name-template-input').should('be.visible');
+
+        // * The insert variable button exists with a tooltip
+        cy.findByTestId('channel-access-run-name-template-insert-variable').should('exist');
+        cy.findByTestId('channel-access-run-name-template-insert-variable').should('have.attr', 'title', 'Insert variable');
+    });
+
+    it('clicking insert variable button and selecting a token inserts it into the template', () => {
+        // # Visit the playbook outline editor
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+        // * Wait for the page to load
+        cy.findByTestId('channel-access-run-name-template-input').should('be.visible');
+
+        // # Clear template first
+        cy.findByTestId('channel-access-run-name-template-input').clear();
+
+        // # Click the insert variable button
+        cy.findByTestId('channel-access-run-name-template-insert-variable').click();
+
+        // * The suggestion list should appear
+        cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
+
+        // # Click the {SEQ} suggestion (mousedown — the handler uses onMouseDown)
+        cy.findByTestId('channel-access-run-name-template-suggestion-SEQ').trigger('mousedown');
+
+        // * The template input should now contain {SEQ}
+        cy.findByTestId('channel-access-run-name-template-input').should('have.value', '{SEQ}');
+    });
+
+    it('insert variable appends token at end when template already has content', () => {
+        // # Set an initial template via API
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident - '}).then(() => {
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+            cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
+
+            // # Click the insert variable button
+            cy.findByTestId('channel-access-run-name-template-insert-variable').click();
+
+            // * The suggestion list should appear
+            cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
+
+            // # Click the {OWNER} suggestion (mousedown — the handler uses onMouseDown)
+            cy.findByTestId('channel-access-run-name-template-suggestion-OWNER').trigger('mousedown');
+
+            // * The template should have the token appended
+            cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
+        });
+    });
+
     it('handles prefix with special characters gracefully', () => {
         // # 'ABC-' has a trailing dash — FormatSequentialID appends another dash,
         // # so the sequential_id should be 'ABC--N'. The key assertion is that the

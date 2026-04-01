@@ -30,7 +30,6 @@ import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_arc
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
 import Actions from './section_actions';
-import SectionRunNaming from './section_run_naming';
 import ScrollNavBase from './scroll_nav';
 import Section from './section';
 
@@ -149,16 +148,6 @@ const Outline = ({playbook, refetch, canEdit}: Props) => {
             >
                 <StatusUpdates
                     playbook={playbook}
-                    disabled={archived || !canEdit}
-                />
-            </Section>
-            <Section
-                id={'run-naming'}
-                title={formatMessage({defaultMessage: 'Run Naming'})}
-            >
-                <SectionRunNaming
-                    playbook={playbook}
-                    updatePlaybook={updatePlaybook}
                     disabled={archived || !canEdit}
                 />
             </Section>

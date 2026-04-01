@@ -27,24 +27,28 @@ const SelectProperty = (props: Props) => {
         typeof props.value?.value === 'string' ? props.value.value : null
     );
     const isMounted = useRef(true);
+    const previousValueRef = useRef(displayValue);
     useEffect(() => () => {
         isMounted.current = false;
     }, []);
 
     useUpdateEffect(() => {
         const newValue = typeof props.value?.value === 'string' ? props.value.value : null;
+        previousValueRef.current = newValue;
         setDisplayValue(newValue);
     }, [props.value?.value]);
 
     const handleValueChange = useCallback((newValue: string | null) => {
-        const previousValue = displayValue;
+        const previousValue = previousValueRef.current;
+        previousValueRef.current = newValue;
         setDisplayValue(newValue);
         props.onValueChange(newValue)?.catch(() => {
             if (isMounted.current) {
+                previousValueRef.current = previousValue;
                 setDisplayValue((current) => (current === newValue ? previousValue : current));
             }
         });
-    }, [displayValue, props.onValueChange]);
+    }, [props.onValueChange]);
 
     const handleStartEdit = useCallback(() => {
         setIsEditing(true);

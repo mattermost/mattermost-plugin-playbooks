@@ -274,7 +274,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         });
     });
 
-    it('shows sequential ID in run details page header', () => {
+    it('shows sequential ID in run details info panel', () => {
         // # Create a playbook with a unique run_number_prefix (different from test 1 to avoid uniqueness conflict)
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
@@ -300,11 +300,36 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                     // # Visit the run details page directly
                     cy.playbooksVisitRun(playbookRun.id);
 
-                    // * Assert sequential ID is shown in the run header
-                    cy.findByTestId('run-header-section').within(() => {
-                        cy.findByTestId('run-sequential-id').should('exist');
-                        cy.findByTestId('run-sequential-id').should('contain', 'HDR-');
-                    });
+                    // * Assert sequential ID is shown in the RHS info overview
+                    cy.findByTestId('run-sequential-id').should('exist');
+                    cy.findByTestId('run-sequential-id').should('contain', 'HDR-');
+                });
+            });
+        });
+    });
+
+    it('shows sequential ID next to playbook name in channel RHS', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'RHS ID Playbook ' + getRandomId(),
+            memberIDs: [testUser.id],
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'RHS'}).then(() => {
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: 'RHS Run ' + getRandomId(),
+                    ownerUserId: testUser.id,
+                }).then((run) => {
+                    // # Navigate to the run channel
+                    cy.playbooksVisitRunChannel(testTeam.name, run);
+
+                    // * Assert the sequential ID chip is shown in the channel RHS
+                    cy.findByTestId('rhs-sequential-id').should('exist');
+                    cy.findByTestId('rhs-sequential-id').should('contain', 'RHS-');
                 });
             });
         });

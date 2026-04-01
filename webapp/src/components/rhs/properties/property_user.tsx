@@ -221,12 +221,7 @@ export const MultiuserProperty = (props: Props) => {
     return (
         <PropertyDisplayContainer
             onClick={() => setIsEditing(true)}
-            onKeyDown={(e: KeyboardEvent) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setIsEditing(true);
-                }
-            }}
+            onKeyDown={handleActivateKey}
             data-testid='property-value'
         >
             <ChipsContainer>

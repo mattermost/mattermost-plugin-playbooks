@@ -116,10 +116,12 @@ const PlaybookProperties = ({playbookID}: Props) => {
         }
     }, [dispatch, playbookID, addToast]);
 
+    const [isAdding, setIsAdding] = useState(false);
     const addProperty = useCallback(async () => {
-        if (properties.length >= MAX_PROPERTIES_LIMIT) {
+        if (isAdding || properties.length >= MAX_PROPERTIES_LIMIT) {
             return;
         }
+        setIsAdding(true);
 
         // Find the highest number in existing "Attribute X" names
         const attributeNumbers = properties
@@ -148,8 +150,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 toastStyle: ToastStyle.Failure,
                 duration: 8000,
             });
+        } finally {
+            setIsAdding(false);
         }
-    }, [dispatch, playbookID, properties, addToast]);
+    }, [isAdding, dispatch, playbookID, properties, addToast]);
 
     const handleDragEnd = useCallback(async (result: any) => {
         if (!result.destination) {

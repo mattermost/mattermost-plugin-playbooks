@@ -23,23 +23,6 @@ jest.mock('react-intl', () => {
     };
 });
 
-// ReactSelect is heavy and relies on the browser DOM — replace with a minimal stub
-// that exposes the onChange handler so tests can simulate token selection.
-jest.mock('react-select', () => ({
-    __esModule: true,
-    default: ({onChange}: {onChange: (option: any) => void}) => (
-        <div data-testid='token-dropdown'>
-            <button
-                data-testid='select-seq-token'
-                onClick={() => onChange({value: 'SEQ', label: '{SEQ} — Sequential ID', isSystem: true})}
-            >
-                {'SEQ'}
-            </button>
-        </div>
-    ),
-}));
-
-// SelectorWrapper is a plain styled div — mock to avoid styled-components issues
 jest.mock('src/components/backstage/playbook_edit/automation/styles', () => ({
     SelectorWrapper: ({children}: {children: React.ReactNode}) => <div data-testid='selector-wrapper'>{children}</div>,
 }));
@@ -48,6 +31,21 @@ jest.mock('src/utils/template_utils', () => ({
     buildTemplatePreview: (template: string) => `preview:${template}`,
     SYSTEM_TOKENS: new Set(['SEQ', 'OWNER', 'CREATOR']),
 }));
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+// Simulate typing into the input — fires onChange with the new value and cursor position.
+const simulateInput = (component: renderer.ReactTestRenderer, value: string, cursorAt?: number) => {
+    act(() => {
+        const tree = component.toJSON();
+        const inputNode = findNodeByTestId(tree, 'tpl-input');
+        inputNode.props.onChange({
+            target: {value, selectionStart: cursorAt ?? value.length},
+        });
+    });
+};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -68,11 +66,11 @@ describe('TemplateInput', () => {
                 input='Hello {SEQ}'
                 onChange={onChange}
                 fieldNames={[]}
-                testId='run-name-template'
+                testId='tpl'
             />,
         );
         const tree = component.toJSON();
-        const inputNode = findNodeByTestId(tree, 'run-name-template-input');
+        const inputNode = findNodeByTestId(tree, 'tpl-input');
 
         expect(inputNode).not.toBeNull();
         expect(inputNode.props.value).toBe('Hello {SEQ}');
@@ -88,86 +86,139 @@ describe('TemplateInput', () => {
                 input='Hello'
                 onChange={onChange}
                 fieldNames={[]}
-                testId='run-name-template'
+                testId='tpl'
             />,
         );
-        const tree = component.toJSON();
-        const inputNode = findNodeByTestId(tree, 'run-name-template-input');
 
-        act(() => {
-            inputNode.props.onChange({target: {value: 'Hello World'}});
-        });
+        simulateInput(component, 'Hello World');
 
         expect(onChange).toHaveBeenCalledTimes(1);
         expect(onChange).toHaveBeenCalledWith('Hello World');
     });
 
-    it('opens token dropdown when "{" is typed', () => {
+    it('opens suggestion list when input contains an unmatched {', () => {
         const onChange = jest.fn();
 
+        // Start with input that already has `{` — parent re-renders with this value
         const component = renderer.create(
             <TemplateInput
                 enabled={true}
                 placeholderText='Enter template'
-                input='Hello'
+                input='Hello {'
                 onChange={onChange}
-                fieldNames={[]}
-                testId='run-name-template'
+                fieldNames={['Zone']}
+                testId='tpl'
             />,
         );
 
         let tree = component.toJSON();
 
-        // Dropdown should not be visible initially
-        expect(findNodeByTestId(tree, 'token-dropdown')).toBeNull();
+        // Suggestions hidden initially (no input change event yet)
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(true);
 
-        act(() => {
-            const inputNode = findNodeByTestId(tree, 'run-name-template-input');
-            inputNode.props.onKeyDown({
-                key: '{',
-                currentTarget: {selectionStart: 5},
-            });
-        });
+        // Simulate the onChange that produced "Hello {"
+        simulateInput(component, 'Hello {');
 
         tree = component.toJSON();
-        expect(findNodeByTestId(tree, 'token-dropdown')).not.toBeNull();
+
+        // Now suggestions should appear (not hidden) with system tokens + field names
+        const suggestions = findNodeByTestId(tree, 'tpl-suggestions');
+        expect(suggestions).not.toBeNull();
+        expect(suggestions.props.hidden).toBe(false);
+        expect(findNodeByTestId(tree, 'tpl-suggestion-SEQ')).not.toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-suggestion-Zone')).not.toBeNull();
     });
 
-    it('inserts selected token at cursor position', () => {
+    it('inserts selected token via mouseDown on suggestion', () => {
         const onChange = jest.fn();
 
         const component = renderer.create(
             <TemplateInput
                 enabled={true}
                 placeholderText='Enter template'
-                input='Hello '
+                input='Hello {'
                 onChange={onChange}
                 fieldNames={[]}
-                testId='run-name-template'
+                testId='tpl'
             />,
         );
 
-        // Open the dropdown by typing "{"
+        // Trigger suggestions by simulating onChange with "Hello {"
+        simulateInput(component, 'Hello {');
+
+        // Click the SEQ suggestion
         act(() => {
             const tree = component.toJSON();
-            const inputNode = findNodeByTestId(tree, 'run-name-template-input');
-
-            // Simulate cursor at position 6 (end of 'Hello ')
-            inputNode.props.onKeyDown({
-                key: '{',
-                currentTarget: {selectionStart: 6},
-            });
+            const seqItem = findNodeByTestId(tree, 'tpl-suggestion-SEQ');
+            seqItem.props.onMouseDown({preventDefault: jest.fn()});
         });
 
-        // Select the SEQ token from the dropdown stub
+        // Should insert {SEQ} replacing the `{` and partial query
+        expect(onChange).toHaveBeenLastCalledWith('Hello {SEQ}');
+    });
+
+    it('filters suggestions as user types after {', () => {
+        const onChange = jest.fn();
+
+        const component = renderer.create(
+            <TemplateInput
+                enabled={true}
+                placeholderText='Enter template'
+                input='{OW'
+                onChange={onChange}
+                fieldNames={['Zone']}
+                testId='tpl'
+            />,
+        );
+
+        // Simulate typing "{OW" — trigger is at position 0, query is "OW"
+        simulateInput(component, '{OW');
+
+        const tree = component.toJSON();
+
+        // OWNER matches 'OW', SEQ and Zone don't
+        expect(findNodeByTestId(tree, 'tpl-suggestion-OWNER')).not.toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-suggestion-SEQ')).toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-suggestion-Zone')).toBeNull();
+    });
+
+    it('closes suggestions when } is typed', () => {
+        const onChange = jest.fn();
+
+        // Start with partial "{SE" — trigger active
+        const component = renderer.create(
+            <TemplateInput
+                enabled={true}
+                placeholderText='Enter template'
+                input='{SE'
+                onChange={onChange}
+                fieldNames={[]}
+                testId='tpl'
+            />,
+        );
+
+        // Open suggestions
+        simulateInput(component, '{SE');
+        let tree = component.toJSON();
+        expect(findNodeByTestId(tree, 'tpl-suggestions')).not.toBeNull();
+
+        // Re-render with completed token and simulate the change
         act(() => {
-            const tree = component.toJSON();
-            const seqButton = findNodeByTestId(tree, 'select-seq-token');
-            seqButton.props.onClick();
+            component.update(
+                <TemplateInput
+                    enabled={true}
+                    placeholderText='Enter template'
+                    input='{SEQ}'
+                    onChange={onChange}
+                    fieldNames={[]}
+                    testId='tpl'
+                />,
+            );
         });
+        simulateInput(component, '{SEQ}');
 
-        // The token is inserted at cursorPos=6; 'Hello ' + '{SEQ}' + '' (skip the '{' at pos 6)
-        expect(onChange).toHaveBeenCalledWith('Hello {SEQ}');
+        tree = component.toJSON();
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(true);
     });
 
     it('displays unknown field hint for unrecognised field IDs', () => {
@@ -180,12 +231,12 @@ describe('TemplateInput', () => {
                 input='{UnknownField}'
                 onChange={onChange}
                 fieldNames={[]}
-                testId='run-name-template'
+                testId='tpl'
             />,
         );
 
         const tree = component.toJSON();
-        const warningNode = findNodeByTestId(tree, 'run-name-template-warning');
+        const warningNode = findNodeByTestId(tree, 'tpl-warning');
 
         expect(warningNode).not.toBeNull();
         const json = JSON.stringify(warningNode);
@@ -202,17 +253,17 @@ describe('TemplateInput', () => {
                 input='{SEQ} - Incident'
                 onChange={onChange}
                 fieldNames={[]}
-                testId='run-name-template'
+                testId='tpl'
             />,
         );
 
         const tree = component.toJSON();
-        const warningNode = findNodeByTestId(tree, 'run-name-template-warning');
+        const warningNode = findNodeByTestId(tree, 'tpl-warning');
 
         expect(warningNode).toBeNull();
     });
 
-    it('handleKeyDown: closes dropdown when focus leaves the container', () => {
+    it('closes suggestions when focus leaves the container', () => {
         jest.useFakeTimers();
         const onChange = jest.fn();
 
@@ -220,35 +271,22 @@ describe('TemplateInput', () => {
             <TemplateInput
                 enabled={true}
                 placeholderText='Enter template'
-                input='Hello'
+                input='Hello {'
                 onChange={onChange}
                 fieldNames={[]}
-                testId='run-name-template'
+                testId='tpl'
             />,
         );
 
-        // Open the dropdown
-        act(() => {
-            const tree = component.toJSON();
-            const inputNode = findNodeByTestId(tree, 'run-name-template-input');
-            inputNode.props.onKeyDown({
-                key: '{',
-                currentTarget: {selectionStart: 5},
-            });
-        });
+        // Open suggestions
+        simulateInput(component, 'Hello {');
 
         let tree = component.toJSON();
-        expect(findNodeByTestId(tree, 'token-dropdown')).not.toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-suggestions')).not.toBeNull();
 
-        // Trigger onBlur on the container — simulates focus leaving to an external element.
-        // Since document.activeElement won't be inside the container in jsdom,
-        // the setTimeout callback will call setShowDropdown(false).
+        // Trigger onBlur on the container
         act(() => {
             const containerNode = findNodeByTestId(tree, 'selector-wrapper');
-
-            // Walk up to find the InputContainer div (direct child of SelectorWrapper)
-            // The tree structure is: selector-wrapper > InputContainer > ...
-            // InputContainer is the first child array element
             const inputContainer = Array.isArray(containerNode.children) ? containerNode.children[0] : null;
             if (inputContainer && inputContainer.props && inputContainer.props.onBlur) {
                 inputContainer.props.onBlur();
@@ -257,7 +295,7 @@ describe('TemplateInput', () => {
         });
 
         tree = component.toJSON();
-        expect(findNodeByTestId(tree, 'token-dropdown')).toBeNull();
+        expect(findNodeByTestId(tree, 'tpl-suggestions').props.hidden).toBe(true);
 
         jest.useRealTimers();
     });

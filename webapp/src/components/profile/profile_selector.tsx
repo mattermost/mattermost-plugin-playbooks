@@ -29,6 +29,19 @@ export interface Option {
     user: UserProfile;
 }
 
+export interface ExtraOption {
+    value: string;
+    label: JSX.Element | string;
+    isExtraOption: true;
+}
+
+export interface ExtraSection {
+    label: string;
+    options: ExtraOption[];
+}
+
+type AnyOption = Option | ExtraOption;
+
 interface ActionObj {
     action: ActionTypes;
 }
@@ -72,6 +85,16 @@ interface Props {
      * - one with defaultLabel and the rest of the users
      */
     userGroups?: UserGroup;
+
+    /**
+     * Additional non-user sections (e.g. roles, groups) shown below the user sections.
+     */
+    extraSections?: ExtraSection[];
+
+    /**
+     * Called when a non-user option from extraSections is selected.
+     */
+    onExtraOptionSelected?: (value: string) => void;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -170,16 +193,21 @@ export default function ProfileSelector(props: Props) {
         }
     }, [userInSubsetOptions, props.selectedUserId]);
 
-    const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
+    const onSelectedChange = async (value: AnyOption | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
             return;
         }
         toggleOpen();
-        if (value?.user.id === selected?.user.id) {
+        if (value && 'isExtraOption' in value && value.isExtraOption) {
+            props.onExtraOptionSelected?.(value.value);
+            return;
+        }
+        const userOption = value as Option | undefined;
+        if (userOption?.user.id === selected?.user.id) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.user);
+            props.onSelectedChange(userOption?.user);
         }
     };
 
@@ -256,16 +284,34 @@ export default function ProfileSelector(props: Props) {
     } : noDropdown;
 
     const getSelectOptions = () => {
+        let groups: Array<{label: string; options: AnyOption[]}> = [];
+
         if (!props.userGroups) {
-            return userNotInSubsetOptions;
+            groups = [{label: '', options: userNotInSubsetOptions}];
+        } else if (userNotInSubsetOptions.length === 0) {
+            groups = [{label: '', options: userInSubsetOptions}];
+        } else {
+            groups = [
+                {label: props.userGroups.subsetLabel, options: userInSubsetOptions},
+                {label: props.userGroups.defaultLabel, options: userNotInSubsetOptions},
+            ];
         }
-        if (userNotInSubsetOptions.length === 0) {
-            return userInSubsetOptions;
+
+        if (props.extraSections) {
+            for (const section of props.extraSections) {
+                if (section.options.length > 0) {
+                    groups.push({label: section.label, options: section.options});
+                }
+            }
         }
-        return [
-            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
-            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
-        ];
+
+        // If there's only one unlabeled group with no extra sections, return flat
+        if (groups.length === 1 && !groups[0].label) {
+            return groups[0].options;
+        }
+
+        // Filter out empty unlabeled groups
+        return groups.filter((g) => g.label || g.options.length > 0);
     };
 
     return (
@@ -288,7 +334,7 @@ export default function ProfileSelector(props: Props) {
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
-                onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
+                onChange={(option, action) => onSelectedChange(option as AnyOption, action as ActionObj)}
                 classNamePrefix='playbook-react-select'
                 className='playbook-react-select'
                 {...props.customControlProps}

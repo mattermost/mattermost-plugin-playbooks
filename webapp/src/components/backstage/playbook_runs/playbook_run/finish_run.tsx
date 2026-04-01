@@ -18,7 +18,7 @@ import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import {ChecklistItemState} from 'src/types/playbook';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {useIsBlockedByOwnerOnly} from 'src/hooks/permissions';
+import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 import {OVERLAY_DELAY} from 'src/constants';
 
 interface ChecklistsSubset {
@@ -109,7 +109,7 @@ interface Props {
 
 const FinishRun = ({playbookRun, ownerGroupOnlyActions, isOwner}: Props) => {
     const {formatMessage} = useIntl();
-    const blockedByOwnerOnly = useIsBlockedByOwnerOnly(ownerGroupOnlyActions, isOwner);
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
 
     const onFinishRun = useOnFinishRun(playbookRun);
 

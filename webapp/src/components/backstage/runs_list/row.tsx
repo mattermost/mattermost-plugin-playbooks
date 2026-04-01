@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
 import styled from 'styled-components';
@@ -122,7 +127,7 @@ const Row = (props: Props) => {
             data-testid='run-list-item'
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
-            <div className='col-sm-4'>
+            <div className='col-sm-3'>
                 <RunName>
                     <SequentialIdDisplay
                         runNumber={props.playbookRun.run_number ?? 0}
@@ -161,6 +166,8 @@ const Row = (props: Props) => {
                         values={{numParticipants: props.playbookRun.participant_ids.length}}
                     />
                 </SmallText>
+            </div>
+            <div className='col-sm-1'>
                 <TaskProgress
                     taskTotal={props.playbookRun.task_total}
                     taskCompleted={props.playbookRun.task_completed}
@@ -218,7 +225,7 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
         setIsFollowing(newFollowers.includes(currentUser.id));
     }, [currentUser.id, JSON.stringify(metadata?.followers)]);
 
-    const toggleFollow = () => {
+    const toggleFollow = useCallback(() => {
         if (isToggling) {
             return;
         }
@@ -245,7 +252,7 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
                     toastStyle: ToastStyle.Failure,
                 });
             });
-    };
+    }, [isToggling, isFollowing, id, followers, currentUser.id, addToast, formatMessage]);
 
     if (isFollowing) {
         return (

@@ -917,6 +917,10 @@ func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
 			if !p.canViewTeam(userID, run.TeamID) {
 				return errors.Wrapf(ErrNoPermissions, "no team access for run %s", runID)
 			}
+			logrus.WithFields(logrus.Fields{
+				"user_id": userID,
+				"run_id":  runID,
+			}).Warn("playbook admin taking ownership of OwnerGroupOnlyActions run")
 			return nil
 		}
 		return errors.Wrapf(ErrNoPermissions, "only the run owner, a playbook admin, or a system admin can change ownership when OwnerGroupOnlyActions is set")

@@ -9,21 +9,20 @@ import React, {
     useState,
 } from 'react';
 import styled, {css} from 'styled-components';
-import ReactSelect, {StylesConfig, ValueType} from 'react-select';
 import {useIntl} from 'react-intl';
 
 import {SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 import {SYSTEM_TOKENS, buildTemplatePreview} from 'src/utils/template_utils';
 
-const TOKEN_LABELS: Record<string, {id: string; defaultMessage: string}> = {
-    SEQ: {id: 'playbooks.template_input.seq_token', defaultMessage: "'{SEQ}' — Sequential ID"},
-    OWNER: {id: 'playbooks.template_input.owner_token', defaultMessage: "'{OWNER}' — Run owner"},
-    CREATOR: {id: 'playbooks.template_input.creator_token', defaultMessage: "'{CREATOR}' — Run creator"},
+const TOKEN_DESCRIPTIONS: Record<string, {id: string; defaultMessage: string}> = {
+    SEQ: {id: 'playbooks.template_input.seq_desc', defaultMessage: 'Sequential ID'},
+    OWNER: {id: 'playbooks.template_input.owner_desc', defaultMessage: 'Run owner'},
+    CREATOR: {id: 'playbooks.template_input.creator_desc', defaultMessage: 'Run creator'},
 };
 
 type TokenOption = {
     value: string;
-    label: string;
+    description: string;
     isSystem: boolean;
 };
 
@@ -37,38 +36,31 @@ interface Props {
     maxLength?: number;
     prefix?: string;
     testId?: string;
+    openInsertToggle?: number;
 }
 
-const selectStyles: StylesConfig<TokenOption, false> = {
-    control: (provided) => ({...provided, minWidth: 200, margin: 0, borderRadius: 4}),
-    menu: (provided) => ({...provided, width: 260}),
-    option: (provided, state) => ({
-        ...provided,
-        backgroundColor: state.isFocused ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent',
-        color: 'var(--center-channel-color)',
-        fontSize: '13px',
-    }),
-};
-
-export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur, fieldNames, maxLength, prefix, testId}: Props) => {
+export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur, fieldNames, maxLength, prefix, testId, openInsertToggle}: Props) => {
     const {formatMessage} = useIntl();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+
+    // Track whether the suggestion list is open and where the `{` trigger started
+    const [triggerPos, setTriggerPos] = useState<number | null>(null);
+    const [insertMode, setInsertMode] = useState(false);
+
     const systemTokenOptions = useMemo<TokenOption[]>(() =>
         [...SYSTEM_TOKENS].map((token) => ({
             value: token,
-            label: TOKEN_LABELS[token] ? formatMessage(TOKEN_LABELS[token]) : `{${token}}`,
+            description: TOKEN_DESCRIPTIONS[token] ? formatMessage(TOKEN_DESCRIPTIONS[token]) : '',
             isSystem: true,
         })),
     [formatMessage]);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [cursorPos, setCursorPos] = useState(0);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     const fieldOptions = useMemo<TokenOption[]>(() => fieldNames.map((name) => ({
         value: name,
-        label: `{${name}}`,
+        description: '',
         isSystem: false,
     })), [fieldNames]);
 
@@ -76,6 +68,21 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         ...systemTokenOptions,
         ...fieldOptions,
     ], [systemTokenOptions, fieldOptions]);
+
+    const query = triggerPos === null ? '' : input.slice(triggerPos + 1);
+
+    const filteredOptions = useMemo(() => {
+        if (triggerPos === null) {
+            return [];
+        }
+        const q = input.slice(triggerPos + 1).toLowerCase();
+        return allOptions.filter((opt) => opt.value.toLowerCase().includes(q));
+    }, [triggerPos, input, allOptions]);
+
+    // Reset selection when filter changes
+    useEffect(() => {
+        setSelectedIndex(0);
+    }, [filteredOptions]);
 
     const unknownFields = useMemo(() => {
         const knownUpper = new Set([
@@ -105,42 +112,111 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
             );
     }, [input, fieldNamesUpperSet, prefix, formatMessage]);
 
-    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === '{') {
-            setCursorPos(e.currentTarget.selectionStart ?? e.currentTarget.value.length);
-            setShowDropdown(true);
-        }
+    const closeSuggestions = useCallback(() => {
+        setTriggerPos(null);
+        setInsertMode(false);
+        setSelectedIndex(0);
     }, []);
 
-    const handleSelect = useCallback((selected: ValueType<TokenOption, false>) => {
-        const option = selected as TokenOption | null | undefined;
-        if (!option) {
-            setShowDropdown(false);
+    const acceptOption = useCallback((option: TokenOption) => {
+        const token = `{${option.value}}`;
+
+        if (triggerPos === null) {
             return;
         }
 
-        const token = `{${option.value}}`;
-
-        // Insert at cursor position, replacing the opening { that triggered the dropdown
-        const before = input.slice(0, cursorPos);
-        const after = input.slice(cursorPos + 1); // skip the { that was already typed
-        const newValue = before + token + after;
-
-        onChange(newValue);
-        setShowDropdown(false);
-
-        // Restore focus to input after selection
-        if (focusTimeoutRef.current) {
-            clearTimeout(focusTimeoutRef.current);
+        let before: string;
+        let after: string;
+        if (insertMode) {
+            // Insert-button mode — no `{` was typed, insert at triggerPos
+            before = input.slice(0, triggerPos);
+            after = input.slice(triggerPos);
+        } else {
+            // Keyboard mode — replace from the `{` through the partial query
+            before = input.slice(0, triggerPos);
+            after = input.slice(triggerPos + 1 + query.length);
         }
-        focusTimeoutRef.current = setTimeout(() => {
+
+        const newValue = before + token + after;
+        onChange(newValue);
+        closeSuggestions();
+
+        // Restore focus and cursor
+        setTimeout(() => {
             if (inputRef.current) {
                 inputRef.current.focus();
                 const newPos = before.length + token.length;
                 inputRef.current.setSelectionRange(newPos, newPos);
             }
         }, 0);
-    }, [cursorPos, input, onChange]);
+    }, [input, triggerPos, insertMode, query.length, onChange, closeSuggestions]);
+
+    const findTrigger = useCallback((val: string, cursor: number): number | null => {
+        for (let i = cursor - 1; i >= 0; i--) {
+            if (val[i] === '}' || val[i] === ' ') {
+                return null; // closed or broken — no trigger
+            }
+            if (val[i] === '{') {
+                return i;
+            }
+        }
+        return null;
+    }, []);
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        const cursor = e.target.selectionStart ?? val.length;
+        onChange(val);
+
+        // Detect or dismiss the trigger on every keystroke
+        if (insertMode) {
+            return;
+        }
+        const pos = findTrigger(val, cursor);
+        if (pos === null) {
+            setTriggerPos(null);
+            setSelectedIndex(0);
+        } else {
+            setTriggerPos(pos);
+        }
+    }, [onChange, insertMode, findTrigger]);
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (triggerPos !== null && filteredOptions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedIndex((prev) => (prev + 1) % filteredOptions.length);
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedIndex((prev) => ((prev - 1) + filteredOptions.length) % filteredOptions.length);
+                return;
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                acceptOption(filteredOptions[selectedIndex]);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeSuggestions();
+            }
+        }
+    }, [triggerPos, filteredOptions, selectedIndex, acceptOption, closeSuggestions]);
+
+    // Handle the external insert-variable button toggle
+    const prevToggleRef = useRef(openInsertToggle);
+    useEffect(() => {
+        if (openInsertToggle !== undefined && openInsertToggle !== prevToggleRef.current) {
+            prevToggleRef.current = openInsertToggle;
+            const pos = inputRef.current?.selectionStart ?? inputRef.current?.value.length ?? 0;
+            setTriggerPos(pos);
+            setInsertMode(true);
+            setSelectedIndex(0);
+            inputRef.current?.focus();
+        }
+    }, [openInsertToggle]); // eslint-disable-line react-hooks/exhaustive-deps -- read live DOM value, no need to react to `input` changes
 
     const handleContainerBlur = useCallback(() => {
         if (blurTimeoutRef.current !== undefined) {
@@ -148,26 +224,22 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         }
         blurTimeoutRef.current = setTimeout(() => {
             if (!containerRef.current?.contains(document.activeElement)) {
-                setShowDropdown(false);
+                closeSuggestions();
                 onBlur?.();
             }
         }, 0);
-    }, [onBlur]);
+    }, [onBlur, closeSuggestions]);
 
     useEffect(() => {
         return () => {
-            if (focusTimeoutRef.current !== undefined) {
-                clearTimeout(focusTimeoutRef.current);
-            }
             if (blurTimeoutRef.current !== undefined) {
                 clearTimeout(blurTimeoutRef.current);
             }
         };
     }, []);
 
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(e.target.value);
-    }, [onChange]);
+    const showSuggestions = triggerPos !== null && enabled && filteredOptions.length > 0;
+    const suggestionsId = testId ? `${testId}-suggestions-listbox` : 'template-suggestions';
 
     return (
         <SelectorWrapper>
@@ -185,22 +257,39 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
                     placeholder={placeholderText}
                     maxLength={maxLength}
                     data-testid={testId ? `${testId}-input` : undefined}
+                    role='combobox'
+                    aria-label={placeholderText}
+                    aria-expanded={showSuggestions}
+                    aria-autocomplete='list'
+                    aria-controls={suggestionsId}
+                    aria-activedescendant={showSuggestions ? `${suggestionsId}-${selectedIndex}` : undefined}
                 />
-                {showDropdown && enabled && (
-                    <DropdownContainer>
-                        <ReactSelect
-                            autoFocus={true}
-                            options={allOptions}
-                            menuIsOpen={true}
-                            controlShouldRenderValue={false}
-                            placeholder={formatMessage({id: 'playbooks.template_input.search_placeholder', defaultMessage: 'Search tokens...'})}
-                            styles={selectStyles}
-                            components={{DropdownIndicator: null, IndicatorSeparator: null}}
-                            onChange={handleSelect}
-                            tabSelectsValue={true}
-                        />
-                    </DropdownContainer>
-                )}
+                <SuggestionList
+                    role='listbox'
+                    id={suggestionsId}
+                    hidden={!showSuggestions}
+                    data-testid={testId ? `${testId}-suggestions` : undefined}
+                >
+                    {filteredOptions.map((opt, i) => (
+                        <SuggestionItem
+                            key={opt.value}
+                            id={`${suggestionsId}-${i}`}
+                            role='option'
+                            aria-selected={i === selectedIndex}
+                            $selected={i === selectedIndex}
+                            onMouseDown={(e) => {
+                                e.preventDefault(); // keep focus in input
+                                acceptOption(opt);
+                            }}
+                            onMouseEnter={() => setSelectedIndex(i)}
+                            data-testid={testId ? `${testId}-suggestion-${opt.value}` : undefined}
+                        >
+                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx -- displaying template token syntax, not translatable text */}
+                            <TokenName>{`{${opt.value}}`}</TokenName>
+                            {opt.description && <TokenDesc>{opt.description}</TokenDesc>}
+                        </SuggestionItem>
+                    ))}
+                </SuggestionList>
             </InputContainer>
             {input && (
                 <Preview data-testid={testId ? `${testId}-preview` : undefined}>
@@ -222,15 +311,44 @@ const InputContainer = styled.div`
     width: 100%;
 `;
 
-const DropdownContainer = styled.div`
+const SuggestionList = styled.ul`
     position: absolute;
     top: 100%;
     left: 0;
+    right: 0;
     z-index: 10;
-    margin-top: 4px;
+    margin: 4px 0 0;
+    padding: 4px 0;
+    list-style: none;
     background: var(--center-channel-bg);
     border-radius: 4px;
     box-shadow: var(--elevation-4, 0 4px 16px rgba(0 0 0 / 0.12));
+    max-height: 200px;
+    overflow-y: auto;
+`;
+
+const SuggestionItem = styled.li<{$selected: boolean}>`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    background: ${({$selected}) => ($selected ? 'rgba(var(--button-bg-rgb), 0.08)' : 'transparent')};
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.08);
+    }
+`;
+
+const TokenName = styled.span`
+    font-weight: 600;
+    color: var(--center-channel-color);
+`;
+
+const TokenDesc = styled.span`
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
 `;
 
 const TextBox = styled.input<{disabled: boolean}>`

@@ -23,13 +23,13 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
             testTeam = team;
             testOwner = user;
 
-            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-                testCreator = newUser;
-            });
+            return cy.apiCreateAndAddUserToTeam(testTeam.id);
+        }).then((newUser) => {
+            testCreator = newUser;
 
-            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-                testNewOwner = newUser;
-            });
+            return cy.apiCreateAndAddUserToTeam(testTeam.id);
+        }).then((newUser) => {
+            testNewOwner = newUser;
         });
     });
 

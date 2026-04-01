@@ -20,7 +20,7 @@ import {useOnFinishRun} from 'src/components/backstage/playbook_runs/playbook_ru
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
 import {OVERLAY_DELAY} from 'src/constants';
-import {useIsBlockedByOwnerOnly} from 'src/hooks/permissions';
+import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 
 import {ChecklistParent} from './rhs_checklist_list';
 
@@ -54,7 +54,7 @@ const RHSFooter = ({
     isOwner,
 }: RHSFooterProps) => {
     const {formatMessage} = useIntl();
-    const blockedByOwnerOnly = useIsBlockedByOwnerOnly(ownerGroupOnlyActions, isOwner);
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
     const onFinishRun = useOnFinishRun(playbookRun, 'rhs');
 
     // Only show footers in RHS

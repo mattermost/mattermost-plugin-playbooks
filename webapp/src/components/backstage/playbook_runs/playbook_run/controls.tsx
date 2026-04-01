@@ -30,7 +30,7 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
 import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
-import {useIsBlockedByOwnerOnly} from 'src/hooks/permissions';
+import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
 
@@ -180,7 +180,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
     const {formatMessage} = useIntl();
     const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
     const currentUserId = useSelector(getCurrentUserId);
-    const isBlockedByOwnerOnly = useIsBlockedByOwnerOnly(props.ownerGroupOnlyActions, props.isOwner);
+    const isBlockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -241,7 +241,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
     const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
     const currentUserId = useSelector(getCurrentUserId);
-    const isBlockedByOwnerOnly = useIsBlockedByOwnerOnly(props.ownerGroupOnlyActions, props.isOwner);
+    const isBlockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {

@@ -291,8 +291,8 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                 cy.get('#checklists').within(() => {
-                    // # Select the Run User radio to reveal the field sub-dropdown
-                    cy.findByTestId('role-option-property_user').click();
+                    // # Select the Run User role to reveal the field sub-dropdown
+                    cy.findByTestId('role-options').select('property_user');
 
                     // # Pick the Reviewer field from the sub-dropdown
                     cy.findByTestId('property-user-field-options').select('Reviewer');
@@ -320,7 +320,7 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                 cy.get('#checklists').within(() => {
-                    cy.findByTestId('role-option-property_user').click();
+                    cy.findByTestId('role-options').select('property_user');
                     cy.findByTestId('property-user-field-options').select('Reviewer');
 
                     // * Selected value persists without any save action
@@ -349,7 +349,7 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
                 cy.get('#checklists').within(() => {
-                    cy.findByTestId('role-option-property_user').click();
+                    cy.findByTestId('role-options').select('property_user');
                     cy.findByTestId('property-user-field-options').select('Reviewer');
                 });
                 cy.wait('@UpdatePlaybook');
@@ -357,7 +357,7 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 // * Verify persistence: re-navigate to the outline and reopen the editor
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
                 cy.get('#checklists').within(() => {
-                    cy.findByTestId('role-option-property_user').should('be.checked');
+                    cy.findByTestId('role-options').should('have.value', 'property_user');
                     cy.findByTestId('property-user-field-options').find(':selected').should('have.text', 'Reviewer');
                 });
             });
@@ -381,15 +381,15 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
                 cy.get('#checklists').within(() => {
-                    cy.findByTestId('role-option-property_user').click();
+                    cy.findByTestId('role-options').select('property_user');
                     cy.findByTestId('property-user-field-options').select('Reviewer');
                 });
                 cy.wait('@UpdatePlaybook');
                 cy.playbooksReopenTaskAssigneeEditor('Assignee Task');
 
                 cy.get('#checklists').within(() => {
-                    // * Run User radio must be selected and sub-dropdown must show Reviewer
-                    cy.findByTestId('role-option-property_user').should('be.checked');
+                    // * Run User role must be selected and sub-dropdown must show Reviewer
+                    cy.findByTestId('role-options').should('have.value', 'property_user');
                     cy.findByTestId('property-user-field-options').find(':selected').should('have.text', 'Reviewer');
                 });
             });
@@ -413,8 +413,8 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                 cy.get('#checklists').within(() => {
-                    // # Select Run User radio, then pick Reviewer
-                    cy.findByTestId('role-option-property_user').click();
+                    // # Select Run User role, then pick Reviewer
+                    cy.findByTestId('role-options').select('property_user');
                     cy.findByTestId('property-user-field-options').select('Reviewer');
                     cy.findByTestId('property-user-field-options').find(':selected').should('have.text', 'Reviewer');
 
@@ -450,7 +450,7 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Attribute Task');
                 cy.get('#checklists').within(() => {
-                    cy.findByTestId('role-option-property_user').click();
+                    cy.findByTestId('role-options').select('property_user');
                     cy.findByTestId('property-user-field-options').select('Reviewer');
                 });
                 cy.wait('@UpdatePlaybook');
@@ -484,11 +484,11 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                 cy.get('#checklists').within(() => {
-                    // * The Run User radio must exist (user field present)
-                    cy.findByTestId('role-option-property_user').should('exist');
+                    // * The Run User option must exist (user field present)
+                    cy.findByTestId('role-options').find('option[value="property_user"]').should('exist');
 
                     // # Open the sub-dropdown
-                    cy.findByTestId('role-option-property_user').click();
+                    cy.findByTestId('role-options').select('property_user');
 
                     // * Priority (select type) must NOT appear as an option in the sub-dropdown
                     cy.findByTestId('property-user-field-options').within(() => {

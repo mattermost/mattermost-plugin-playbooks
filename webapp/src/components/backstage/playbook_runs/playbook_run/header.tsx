@@ -31,7 +31,6 @@ import {useUpdateRun} from 'src/graphql/hooks';
 import TextEdit from 'src/components/text_edit';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {PlaybookRun, Metadata as PlaybookRunMetadata, PlaybookRunStatus} from 'src/types/playbook_run';
-import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
 
 interface Props {
     playbookRunMetadata: PlaybookRunMetadata | null;
@@ -67,12 +66,6 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                     color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
                 />
             </StarButton>
-            {playbookRun.run_number != null && playbookRun.run_number > 0 && playbookRun.sequential_id && (
-                <SequentialIdDisplay
-                    runNumber={playbookRun.run_number}
-                    sequentialId={playbookRun.sequential_id}
-                />
-            )}
 
             <TextEdit
                 disabled={playbookRun.current_status !== PlaybookRunStatus.InProgress}

@@ -74,6 +74,15 @@ const RHSAboutTitle = (props: Props) => {
                             <PlaybookChipText>{playbookName}</PlaybookChipText>
                         </PlaybookChip>
                     </OverlayTrigger>
+                    {props.playbookRun.run_number != null && props.playbookRun.run_number > 0 && props.playbookRun.sequential_id && (
+                        <>
+                            {/* eslint-disable-next-line formatjs/no-literal-string-in-jsx */}
+                            <ChipSeparator>{'/'}</ChipSeparator>
+                            <SequentialIdChip data-testid='rhs-sequential-id'>
+                                {props.playbookRun.sequential_id}
+                            </SequentialIdChip>
+                        </>
+                    )}
                 </PlaybookChipContainer>
             )}
             <TitleWrapper>
@@ -133,7 +142,27 @@ const RHSAboutTitle = (props: Props) => {
 };
 
 const PlaybookChipContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
     margin-bottom: 8px;
+`;
+
+const ChipSeparator = styled.span`
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+    font-size: 10px;
+    font-weight: 600;
+`;
+
+const SequentialIdChip = styled.span`
+    font-weight: 600;
+    font-size: 10px;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+    padding: 0 4px;
+    white-space: nowrap;
 `;
 
 const PlaybookChip = styled.button`

@@ -331,7 +331,7 @@ func (s *conditionService) getConditions(
 ) (*GetConditionsResults, error) {
 	conditions, err := fetchConditions()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get conditions")
 	}
 
 	totalCount, err := fetchCount()

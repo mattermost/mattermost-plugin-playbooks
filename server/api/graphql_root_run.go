@@ -54,7 +54,10 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	After                   *string
 	Types                   []string
 	// Default false will be applied by the schema
-	OmitEnded bool
+	OmitEnded           bool
+	PropertyFieldID     string
+	PropertyValueFilter string
+	ActivitySince       float64
 }) (*RunConnectionResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -101,6 +104,14 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		PerPage:                 perPage,
 		SkipExtras:              true,
 		OmitEnded:               args.OmitEnded,
+		PropertyFieldID:         args.PropertyFieldID,
+		PropertyValueFilter:     args.PropertyValueFilter,
+		ActivitySince:           int64(args.ActivitySince),
+	}
+
+	filterOptions, err = filterOptions.Validate()
+	if err != nil {
+		return nil, newGraphQLError(err)
 	}
 
 	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
