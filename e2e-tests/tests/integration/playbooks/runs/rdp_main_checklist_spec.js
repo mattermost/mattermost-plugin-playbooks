@@ -134,7 +134,7 @@ describe('runs > run details page > checklist', {testIsolation: true}, () => {
 
         commonTests();
 
-        it('click does not work', () => {
+        it('checkbox is disabled for viewer', () => {
             // # Viewer cannot interact with checkboxes — they are rendered disabled
             getChecklistTasks().eq(taskIndex).find('.checkbox').should('be.disabled');
         });

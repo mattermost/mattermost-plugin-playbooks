@@ -134,7 +134,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                     cy.assertRunDetailsPageRenderComplete(testUser.username);
 
                     // # Click on kebab menu
-                    cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                    cy.findByTestId('run-statusupdate-section').find('[class^="Kebab-"]').click();
 
                     // # click on request update option (force because is disabled)
                     cy.findByText('Request update...').click({force: true});
@@ -146,7 +146,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
 
             it('requests and confirm', () => {
                 // # Click on kebab menu
-                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                cy.findByTestId('run-statusupdate-section').find('[class^="Kebab-"]').click();
 
                 cy.findByTestId('dropdownmenu').within(($dropdown) => {
                     cy.wrap($dropdown).children().should('have.length', 2);
@@ -167,7 +167,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
 
             it('requests and cancel', () => {
                 // # Click on kebab menu
-                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                cy.findByTestId('run-statusupdate-section').find('[class^="Kebab-"]').click();
                 cy.findByTestId('dropdownmenu').within(($dropdown) => {
                     cy.wrap($dropdown).children().should('have.length', 2);
 

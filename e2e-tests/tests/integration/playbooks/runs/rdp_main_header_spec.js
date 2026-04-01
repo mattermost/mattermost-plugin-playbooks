@@ -518,13 +518,13 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
             describe('Favorite', () => {
                 it('add and remove from LHS', () => {
                     // # Click fav icon
-                    getHeader().getStyledComponent('StarButton').click();
+                    getHeader().find('[class^="StarButton-"]').click();
 
                     // * Assert run appears in LHS
                     cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
 
                     // # Click fav icon again (unfav)
-                    getHeader().getStyledComponent('StarButton').click();
+                    getHeader().find('[class^="StarButton-"]').click();
 
                     // * Assert run disappeared from LHS
                     cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('not.exist');

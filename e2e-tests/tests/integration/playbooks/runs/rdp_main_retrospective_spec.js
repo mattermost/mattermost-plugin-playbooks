@@ -39,7 +39,7 @@ const editAndPublishRetro = () => {
     getRetro().get('.icon-check-all').should('be.visible');
 };
 
-const getMetricInput = (index) => getRetro().getStyledComponent('InputContainer').eq(index);
+const getMetricInput = (index) => getRetro().find('[class^="InputContainer-"]').eq(index);
 
 const verifyMetricInput = (index, title, target, description, placeholder) => {
     getMetricInput(index).within(() => {

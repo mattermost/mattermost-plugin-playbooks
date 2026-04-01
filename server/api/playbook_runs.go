@@ -691,10 +691,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
 	}
 
-	if playbookRun.OwnerUserID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
-	}
-
 	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && playbookRun.PlaybookID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
@@ -825,6 +821,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.OwnerUserID = userID
 		}
 	}
+	if playbookRun.OwnerUserID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
+	}
 
 	// Resolve template placeholders and allocate sequential run numbers.
 	// Creation rules evaluated inside ResolveRunCreationParams may inject a new ChannelID;
@@ -844,9 +843,11 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if chErr != nil {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "creation rule specified an invalid channel")
 		}
-		injectedPerm := model.PermissionCreatePost
-		injectedMsg := "You do not have permission to post in this channel"
-		if injectedChannel.IsGroupOrDirect() {
+		injectedPerm := model.PermissionManagePublicChannelProperties
+		injectedMsg := "You do not have permission to manage this channel"
+		if injectedChannel.Type == model.ChannelTypePrivate {
+			injectedPerm = model.PermissionManagePrivateChannelProperties
+		} else if injectedChannel.IsGroupOrDirect() {
 			injectedPerm = model.PermissionReadChannel
 			injectedMsg = "You do not have access to this channel"
 		}
@@ -1785,6 +1786,10 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	}
 	if params.AssigneeType == app.AssigneeTypeOwner || params.AssigneeType == app.AssigneeTypeCreator {
 		exclusiveCount++
+	}
+	if params.AssigneeType != "" && params.AssigneeType != app.AssigneeTypeOwner && params.AssigneeType != app.AssigneeTypeCreator {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_type", errors.New("assignee_type must be owner, creator, or blank"))
+		return
 	}
 	if params.AssigneeID != "" && (params.AssigneeGroupID != "" || params.AssigneePropertyFieldID != "" || params.AssigneeType == app.AssigneeTypeOwner || params.AssigneeType == app.AssigneeTypeCreator) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assignee_id cannot be combined with assignee_group_id, assignee_property_field_id, or role assignee_type", errors.New("ambiguous assignee parameters"))

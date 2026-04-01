@@ -62,6 +62,11 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                 // * Run name input should be visible but not required (template handles naming)
                 cy.findByTestId('run-name-input').should('exist');
 
+                // * Run name field should show "optional" indicator when template handles naming
+                cy.get('#playbooks_run_playbook_dialog').within(() => {
+                    cy.findByText(/optional/i).should('exist');
+                });
+
                 // * Start run button should be enabled even with blank name (template handles naming)
                 cy.findByRole('button', {name: /start run/i}).should('not.be.disabled');
             });
@@ -106,8 +111,10 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
             cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
 
             // * Run name input should be required (no "optional" text)
-            cy.findByTestId('run-name-input').should('exist');
-            cy.findByText(/optional/i).should('not.exist');
+            cy.get('#playbooks_run_playbook_dialog').within(() => {
+                cy.findByTestId('run-name-input').should('exist');
+                cy.findByText(/optional/i).should('not.exist');
+            });
 
             // * Start run button should be disabled with blank name
             cy.findByRole('button', {name: /start run/i}).should('be.disabled');
@@ -311,7 +318,9 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
 
                     // * Verify the run was created with the template-resolved name via API
                     cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
-                        const createdRun = response.body.items.find((r) => r.name && r.name.includes('EMEA'));
+                        const createdRun = response.body.items.find(
+                            (r) => r.playbook_id === playbook.id && r.name && r.name.includes('EMEA'),
+                        );
                         expect(createdRun, 'run with EMEA in name should exist').to.exist;
                         expect(createdRun.name).to.include('Incident');
                     });

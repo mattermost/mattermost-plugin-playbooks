@@ -9,8 +9,6 @@
 // Stage: @prod
 // Group: @playbooks
 
-/* eslint-disable no-only-tests/no-only-tests */
-
 // assumes that E20 license is uploaded
 describe('playbooks > edit', {testIsolation: true}, () => {
     let testTeam;
@@ -266,17 +264,12 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                 after('content').
                                 should('eq', '2 SELECTED');
 
-                            // # Remove the first user added — click the Remove
-                            // styled span directly (not its inner text child)
-                            cy.findByText('SELECTED').parent().
-                                find('.invite-users-selector__option').eq(0).
-                                getStyledComponent('Remove').first().click();
+                            // # Remove the first user added
+                            cy.get('.invite-users-selector__option').eq(0).within(() => {
+                                cy.findByText('Remove').click();
+                            });
 
                             // * Verify that there is only one user, the one not removed
-                            cy.get('.invite-users-selector__control').
-                                after('content').
-                                should('eq', '1 SELECTED');
-
                             cy.findByText('SELECTED').
                                 parent().
                                 within(() => {
@@ -284,6 +277,10 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                         should('have.length', 1).
                                         contains(testUser3.username);
                                 });
+
+                            cy.get('.invite-users-selector__control').
+                                after('content').
+                                should('eq', '1 SELECTED');
                         });
                     });
                 });
@@ -440,6 +437,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                             cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
                             cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
                             cy.findByTestId('checklist-item-save-button').should('be.visible');
+                            cy.contains(`@${testUser.username}`).should('not.exist');
                         });
 
                         cy.get('#actions').within(() => {

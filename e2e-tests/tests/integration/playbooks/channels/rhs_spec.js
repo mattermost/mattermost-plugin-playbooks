@@ -335,11 +335,12 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
 
             // # Navigate to the run's channel (run creation navigates to backstage by default)
-            cy.apiGetPlaybookRunByName(testTeam.id, playbookRunName).then((response) => {
-                const playbookRun = response.body.items.find((run) => run.name === playbookRunName);
-                cy.apiGetChannel(playbookRun.channel_id).then(({channel}) => {
-                    cy.visit(`/${testTeam.name}/channels/${channel.name}`);
-                });
+            cy.apiGetPlaybookRunByName(testTeam.id, playbookRunName).then(({body}) => {
+                const playbookRun = body.items.find((run) => run.name === playbookRunName);
+                expect(playbookRun, `Expected run "${playbookRunName}" to exist`).to.exist;
+                return cy.apiGetChannel(playbookRun.channel_id);
+            }).then(({channel}) => {
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
             });
 
             // * Verify the playbook run RHS is open.
@@ -368,11 +369,12 @@ describe('channels > rhs', {testIsolation: true}, () => {
             cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
 
             // # Navigate to the run's channel (run creation navigates to backstage by default)
-            cy.apiGetPlaybookRunByName(testTeam.id, playbookRunName).then((response) => {
-                const playbookRun = response.body.items.find((run) => run.name === playbookRunName);
-                cy.apiGetChannel(playbookRun.channel_id).then(({channel}) => {
-                    cy.visit(`/${testTeam.name}/channels/${channel.name}`);
-                });
+            cy.apiGetPlaybookRunByName(testTeam.id, playbookRunName).then(({body}) => {
+                const playbookRun = body.items.find((run) => run.name === playbookRunName);
+                expect(playbookRun, `Expected run "${playbookRunName}" to exist`).to.exist;
+                return cy.apiGetChannel(playbookRun.channel_id);
+            }).then(({channel}) => {
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
             });
 
             // * Verify the playbook run RHS is open.

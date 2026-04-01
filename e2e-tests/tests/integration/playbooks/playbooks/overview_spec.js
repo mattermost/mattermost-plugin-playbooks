@@ -434,9 +434,6 @@ describe('playbooks > overview', {testIsolation: true}, () => {
         });
 
         it('start a run in existing channel', () => {
-            // # Intercept the GraphQL mutation so we can wait for the save
-            cy.intercept('POST', '/plugins/playbooks/api/v0/query').as('graphqlQuery');
-
             // # Visit the selected playbook
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
