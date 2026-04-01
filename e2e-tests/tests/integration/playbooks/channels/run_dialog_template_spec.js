@@ -322,6 +322,10 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                     // * Wait for modal to close
                     cy.get('#playbooks_run_playbook_dialog').should('not.exist');
 
+                    // * Wait for navigation to the run channel, which confirms the backend
+                    //   has finished persisting the run.
+                    cy.url().should('not.include', '/town-square');
+
                     // * Verify the run was created with the template-resolved name via API
                     cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
                         const createdRun = response.body.items.find(

@@ -1155,12 +1155,15 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
-		return "message must not be empty", errors.New("message field empty")
+		return "message must not be empty", errors.Wrap(app.ErrMalformedPlaybookRun, "message field empty")
 	}
 
 	if options.Reminder <= 0 && !options.FinishRun {
-		return "the reminder must be set and not 0", errors.New("reminder was 0")
+		return "the reminder must be set and not 0", errors.Wrap(app.ErrMalformedPlaybookRun, "reminder was 0")
 	}
+
+	// Save the original reminder before normalization so we can restore it if FinishPlaybookRun fails.
+	originalReminder := options.Reminder
 
 	if options.Reminder < 0 || options.FinishRun {
 		options.Reminder = 0
@@ -1177,9 +1180,10 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 	// is still InProgress, avoiding duplicate channel announcements.
 	if options.FinishRun {
 		if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
-			// Restore the reminder since FinishPlaybookRun failed and the run stays InProgress
-			if options.Reminder > 0 {
-				if restoreErr := h.playbookRunService.SetNewReminder(playbookRunID, options.Reminder); restoreErr != nil {
+			// Restore the reminder since FinishPlaybookRun failed and the run stays InProgress.
+			// Use originalReminder because options.Reminder was normalized to 0 for FinishRun.
+			if originalReminder > 0 {
+				if restoreErr := h.playbookRunService.SetNewReminder(playbookRunID, originalReminder); restoreErr != nil {
 					logger.WithError(restoreErr).WithField("playbook_run_id", playbookRunID).Warn("failed to restore reminder after FinishPlaybookRun failure")
 				}
 			}
@@ -1211,8 +1215,11 @@ func (h *PlaybookRunHandler) finish(c *Context, w http.ResponseWriter, r *http.R
 	}
 
 	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
-		if errors.Is(err, app.ErrNotFound) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Run not found.", err)
+		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
+			// Return 403 (not 404) to stay consistent with the permission check above
+			// and avoid leaking run existence in a race where the run is deleted
+			// between the permission check and the service call.
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to finish this run.", err)
 			return
 		}
 		h.HandleError(w, c.logger, err)
@@ -1290,8 +1297,11 @@ func (h *PlaybookRunHandler) restore(c *Context, w http.ResponseWriter, r *http.
 	}
 
 	if err := h.playbookRunService.RestorePlaybookRun(playbookRunID, userID); err != nil {
-		if errors.Is(err, app.ErrNotFound) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Run not found.", err)
+		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
+			// Return 403 (not 404) to stay consistent with the permission check above
+			// and avoid leaking run existence in a race where the run is deleted
+			// between the permission check and the service call.
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to restore this run.", err)
 			return
 		}
 		h.HandleError(w, c.logger, err)
