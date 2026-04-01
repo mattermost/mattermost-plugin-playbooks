@@ -481,16 +481,21 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: runNameProps) => {
         onSetRunName(value);
     }, [error, formatMessage, onSetRunName]);
 
+    let suffix = '';
+    if (error) {
+        suffix = ' ' + formatMessage({id: 'playbook_run_modal.error_suffix', defaultMessage: '*'});
+    } else if (readOnly) {
+        suffix = ' ' + formatMessage({id: 'playbook_run_modal.optional_suffix', defaultMessage: '(optional)'});
+    }
+
     return (<>
         <RunNameLabel invalid={Boolean(error)}>
             {formatMessage(
                 {
                     id: 'playbook_run_modal.run_name_label',
-                    defaultMessage: 'Run name{errorSuffix}',
+                    defaultMessage: 'Run name{suffix}',
                 },
-                {
-                    errorSuffix: error ? formatMessage({id: 'playbook_run_modal.error_suffix', defaultMessage: ' *'}) : '',
-                },
+                {suffix},
             )}
         </RunNameLabel>
         <BaseInput
