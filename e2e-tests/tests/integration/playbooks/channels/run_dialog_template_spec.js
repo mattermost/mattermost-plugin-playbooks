@@ -195,11 +195,11 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                     cy.findByText(SELECT_USER_PLACEHOLDER).click();
                 });
 
-                // * Wait for user picker options to render and select the first user
+                // * Wait for user picker options to render and select the test user by name
                 cy.get('.playbook-react-select__option').should('have.length.greaterThan', 0);
 
-                // # Select the first user shown in the list
-                cy.get('.playbook-react-select__option').first().click();
+                // # Select the test user by display name
+                cy.get('.playbook-react-select__option').contains(testUser.username).click();
 
                 cy.get('#playbooks_run_playbook_dialog').within(() => {
                     // * Start run should now be enabled
@@ -227,13 +227,16 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
 
                 cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
 
-                // # Open the user picker and select the first user
+                // # Open the user picker and select the test user by name
                 cy.findByText(SELECT_USER_PLACEHOLDER).click();
                 cy.get('.playbook-react-select__option').should('have.length.greaterThan', 0);
-                cy.get('.playbook-react-select__option').first().click();
+                cy.get('.playbook-react-select__option').contains(testUser.username).click();
 
                 // * Preview must exist and contain "Incident" from the template
                 cy.findByTestId('run-name-preview').should('contain', PREVIEW_LABEL).and('contain', 'Incident');
+
+                // * Preview must contain the selected user's display name
+                cy.findByTestId('run-name-preview').should('contain', testUser.username);
 
                 // * Preview must not contain a raw 26-char alphanumeric Mattermost user ID —
                 //   that was the bug: user ID shown instead of a human-readable display name.
@@ -264,6 +267,9 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
 
                 // * Preview must appear immediately (no fields to fill — OWNER is a system token)
                 cy.findByTestId('run-name-preview').should('exist').and('contain', PREVIEW_LABEL);
+
+                // * Preview must contain the current user's display name (the run owner)
+                cy.findByTestId('run-name-preview').should('contain', testUser.username);
 
                 // * Preview must NOT show the generic "Owner's name" placeholder
                 cy.findByTestId('run-name-preview').should('not.contain', "Owner's name");

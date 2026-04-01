@@ -497,6 +497,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                             cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
                             cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
                             cy.findByTestId('checklist-item-save-button').should('be.visible');
+                            cy.contains(`@${testUser.username}`).should('not.exist');
                         });
 
                         cy.get('#actions').within(() => {

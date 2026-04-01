@@ -58,7 +58,10 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
 
     return (
         <Container data-testid={'run-header-section'}>
-            <StarButton onClick={toggleFavorite}>
+            <StarButton
+                data-testid='toggle-favorite'
+                onClick={toggleFavorite}
+            >
                 <FavoriteIcon
                     size={18}
                     color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}

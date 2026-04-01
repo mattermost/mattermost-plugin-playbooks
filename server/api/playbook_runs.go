@@ -1093,7 +1093,10 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 
 	if err := h.playbookRunService.ChangeOwner(vars["id"], userID, params.OwnerID); err != nil {
 		if errors.Is(err, app.ErrNotFound) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "Run not found.", err)
+			// Return 403 (not 404) to stay consistent with the permission check above
+			// and avoid leaking run existence in a race where the run is deleted
+			// between the permission check and the service call.
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to change the owner of this run.", err)
 			return
 		}
 		h.HandleError(w, c.logger, err)
@@ -1156,12 +1159,8 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 		return "the reminder must be set and not 0", errors.New("reminder was 0")
 	}
 
-	// options.Reminder arrives as integer seconds from the dialog; convert to Duration once.
-	reminderDuration := options.Reminder * time.Second
 	if options.Reminder < 0 || options.FinishRun {
 		options.Reminder = 0
-	} else {
-		options.Reminder = reminderDuration
 	}
 
 	if err := h.playbookRunService.UpdateStatus(playbookRunID, userID, options); err != nil {
@@ -1176,8 +1175,8 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 	if options.FinishRun {
 		if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
 			// Restore the reminder since FinishPlaybookRun failed and the run stays InProgress
-			if reminderDuration > 0 {
-				if restoreErr := h.playbookRunService.SetNewReminder(playbookRunID, reminderDuration); restoreErr != nil {
+			if options.Reminder > 0 {
+				if restoreErr := h.playbookRunService.SetNewReminder(playbookRunID, options.Reminder); restoreErr != nil {
 					logger.WithError(restoreErr).WithField("playbook_run_id", playbookRunID).Warn("failed to restore reminder after FinishPlaybookRun failure")
 				}
 			}
@@ -1448,7 +1447,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 			}, http.StatusOK)
 			return
 		}
-		options.Reminder = time.Duration(reminder)
+		options.Reminder = time.Duration(reminder) * time.Second
 	}
 
 	if finishB, ok := request.Submission[app.DialogFieldFinishRun]; ok {
