@@ -436,6 +436,25 @@ Cypress.Commands.add('playbooksInterceptPropertyFieldMutation', (method) => {
 });
 
 /**
+ * Intercept a playbook condition REST mutation and alias it for cy.wait().
+ * method: 'POST' (create), 'PUT' (update), 'DELETE' (delete)
+ * Aliases: CreateCondition, SaveCondition, DeleteCondition
+ */
+Cypress.Commands.add('playbooksInterceptConditionMutation', (method) => {
+    const aliasMap = {POST: 'CreateCondition', PUT: 'SaveCondition', DELETE: 'DeleteCondition'};
+    const urlMap = {
+        POST: '/plugins/playbooks/api/v0/playbooks/*/conditions',
+        PUT: '/plugins/playbooks/api/v0/playbooks/*/conditions/*',
+        DELETE: '/plugins/playbooks/api/v0/playbooks/*/conditions/*',
+    };
+    const alias = aliasMap[method];
+    if (!alias) {
+        throw new Error(`playbooksInterceptConditionMutation: unsupported method "${method}"`);
+    }
+    cy.intercept(method, urlMap[method]).as(alias);
+});
+
+/**
  * Intercept the REST call that toggles a checklist item's state (PUT …/state).
  * Alias: @SetChecklistItemState
  *

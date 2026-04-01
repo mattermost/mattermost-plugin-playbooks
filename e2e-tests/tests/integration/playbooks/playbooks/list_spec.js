@@ -241,9 +241,10 @@ describe('playbooks > list', {testIsolation: true}, () => {
             cy.findByLabelText('Attribute name').clear().type('Modified Name');
         });
 
-        // # Click outside to save
+        // # Click outside to trigger save
+        cy.playbooksInterceptPropertyFieldMutation('PUT');
         cy.get('body').click(0, 0);
-        cy.wait(500);
+        cy.wait('@SavePropertyField');
 
         // * Verify the change was saved
         verifyAttributeInList(0, 'Modified Name');
@@ -262,16 +263,15 @@ describe('playbooks > list', {testIsolation: true}, () => {
         // # Modify the condition to test independence
         // # Click edit button
         cy.findByTestId('condition-header-edit-button').click();
-        cy.wait(500);
 
         // # Change AND to OR
         cy.contains('.condition-select__single-value', 'AND').click();
         cy.get('.condition-select__menu').contains('OR').click();
-        cy.wait(500);
 
         // # Click save button
+        cy.playbooksInterceptConditionMutation('PUT');
         cy.findByRole('button', {name: /save condition changes/i}).click();
-        cy.wait(500);
+        cy.wait('@SaveCondition');
 
         // * Verify the change was saved
         cy.findByTestId('condition-header').within(() => {

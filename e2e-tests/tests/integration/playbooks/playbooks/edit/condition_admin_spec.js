@@ -129,19 +129,19 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                 cy.contains('.condition-select__single-value', 'is').should('be.visible');
 
                 // # Intercept condition update REST calls triggered by expression changes
-                cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*/conditions/*').as('updateCondition');
+                cy.playbooksInterceptConditionMutation('PUT');
 
                 cy.contains('.condition-select__single-value', 'is').click();
                 cy.get('.condition-select__menu').contains('is not').click();
 
                 // * Wait for the condition update to complete before proceeding
-                cy.wait('@updateCondition');
+                cy.wait('@SaveCondition');
 
                 cy.contains('.condition-select__single-value', 'High').click();
                 cy.get('.condition-select__menu').contains('Medium').click();
 
                 // * Wait for the second condition update to complete before reloading
-                cy.wait('@updateCondition');
+                cy.wait('@SaveCondition');
 
                 cy.reload();
 
@@ -179,13 +179,13 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                 cy.findAllByTestId('condition-remove-button').should('have.length', 2);
 
                 // # Intercept condition update REST call triggered by selecting a field
-                cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*/conditions/*').as('updateCondition');
+                cy.playbooksInterceptConditionMutation('PUT');
 
                 cy.contains('.condition-select__single-value', 'Priority').last().click();
                 cy.get('.condition-select__menu').contains('Status').click();
 
                 // * Wait for the condition update to save
-                cy.wait('@updateCondition');
+                cy.wait('@SaveCondition');
 
                 cy.contains('.condition-select__single-value', 'OR').should('be.visible');
 
@@ -223,13 +223,13 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                 cy.contains('.condition-select__single-value', 'AND').should('be.visible');
 
                 // # Intercept condition update REST call triggered by changing the logical operator
-                cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*/conditions/*').as('updateCondition');
+                cy.playbooksInterceptConditionMutation('PUT');
 
                 cy.contains('.condition-select__single-value', 'AND').click();
                 cy.get('.condition-select__menu').contains('OR').click();
 
                 // * Wait for the condition update to complete before reloading
-                cy.wait('@updateCondition');
+                cy.wait('@SaveCondition');
 
                 cy.reload();
 
