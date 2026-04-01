@@ -461,7 +461,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
 		}
 
-		if err = h.permissions.RunCreate(userID, *playbook); err != nil {
+		if err = h.permissions.RunCreate(userID, *playbook, playbookRun.TeamID); err != nil {
 			return nil, err
 		}
 
