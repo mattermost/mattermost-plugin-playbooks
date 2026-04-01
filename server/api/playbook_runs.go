@@ -1119,6 +1119,9 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// options.Reminder arrives as integer seconds from the JSON body; convert to time.Duration.
+	options.Reminder = options.Reminder * time.Second
+
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options, c.logger); internalErr != nil {
 		if errors.Is(internalErr, app.ErrNoPermissions) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
