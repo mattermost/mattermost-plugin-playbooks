@@ -139,10 +139,11 @@ const UserLabel = (props: UserLabelProps) => {
     let icon = <PlusIcon/>;
     if (props.invitedUsers.find((user: UserProfile) => user.id === props.id)) {
         icon = (
-            <Remove onClick={(e) => {
-                e.stopPropagation();
-                props.onRemove();
-            }}
+            <Remove
+                onClick={(e) => {
+                    e.stopPropagation();
+                    props.onRemove();
+                }}
             >
                 <FormattedMessage defaultMessage='Remove'/>
             </Remove>
