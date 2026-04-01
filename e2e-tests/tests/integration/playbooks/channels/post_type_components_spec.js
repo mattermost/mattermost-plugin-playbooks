@@ -62,11 +62,13 @@ describe('channels > post type components', {testIsolation: true}, () => {
                 reminder: 60,
             });
 
-            cy.getLastPost().then((element) => {
-                // * Verify the expected message text
-                cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
-                cy.get(element).contains('status update');
-            });
+            // * Verify the expected message text in the last post.
+            // Use findAllByTestId with .should() so Cypress retries the DOM query
+            // when React re-renders the custom post type component (the initial
+            // render may return null while Redux hydrates channel/team data).
+            cy.findAllByTestId('postView').last().
+                should('contain', `${testUser.username} posted an update for ${testPlaybookRun.name}`).
+                and('contain', 'status update');
         });
 
         it('displays when permalinked in a different channel', () => {
@@ -88,11 +90,10 @@ describe('channels > post type components', {testIsolation: true}, () => {
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
-                cy.getLastPost().then((element) => {
-                    // * Verify the expected message text
-                    cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
-                    cy.get(element).contains('status update');
-                });
+                // * Verify the expected message text in the last post
+                cy.findAllByTestId('postView').last().
+                    should('contain', `${testUser.username} posted an update for ${testPlaybookRun.name}`).
+                    and('contain', 'status update');
             });
         });
 
@@ -119,11 +120,10 @@ describe('channels > post type components', {testIsolation: true}, () => {
                 // # Post a permalink to the status update
                 cy.uiPostMessageQuickly(`${Cypress.config('baseUrl')}/${testTeam.name}/pl/${postId}`);
 
-                cy.getLastPost().then((element) => {
-                    // * Verify the expected message text
-                    cy.get(element).contains(`${testUser.username} posted an update for ${testPlaybookRun.name}`);
-                    cy.get(element).contains('status update');
-                });
+                // * Verify the expected message text in the last post
+                cy.findAllByTestId('postView').last().
+                    should('contain', `${testUser.username} posted an update for ${testPlaybookRun.name}`).
+                    and('contain', 'status update');
             });
         });
     });
