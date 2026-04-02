@@ -83,6 +83,11 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
+	// These routes are intentionally outside playbookRunRouterAuthorized: each handler
+	// performs its own permission check (RunChangeOwner, RunFinish, RunRestore) which may
+	// be stricter than the middleware's RunManageProperties when OwnerGroupOnlyActions is set.
+	// Dialog handlers must also return SubmitDialogResponse (HTTP 200) on all paths,
+	// which the middleware's error-format would break.
 	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
@@ -238,30 +243,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		app.RunSourcePost,
 		playbookRunCreateOptions.PropertyValues,
 	)
-	if errors.Is(err, app.ErrNoPermissions) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
-		return
-	}
-	if errors.Is(err, app.ErrNotFound) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, "unable to create playbook run", err)
-		return
-	}
-	if errors.Is(err, app.ErrPlaybookArchived) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
-		return
-	}
-	if errors.Is(err, app.ErrLicensedFeature) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
-		return
-	}
-	if errors.Is(err, app.ErrMalformedPlaybookRun) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
-		return
-	}
-	if errors.Is(err, app.ErrDuplicateEntry) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusConflict, "unable to create playbook run", err)
-		return
-	}
 	if err != nil {
 		h.HandleError(w, c.logger, errors.Wrapf(err, "unable to create playbook run"))
 		return
@@ -327,6 +308,10 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	addToSetmap(fieldsToUpdate, "StatusUpdateBroadcastWebhooksEnabled", updates.StatusUpdateBroadcastWebhooksEnabled)
 
 	if updates.ChannelID != nil {
+		if !model.IsValidId(*updates.ChannelID) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid channel ID", errors.New("invalid channel ID"))
+			return
+		}
 		channel, err := h.pluginAPI.Channel.Get(*updates.ChannelID)
 		if err != nil {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to get channel", err)
@@ -2450,6 +2435,10 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bad parameter 'per_page'")
+	}
+	const maxPerPage = 1000 // run list queries allow a larger page than the condition-list cap (MaxPerPage)
+	if perPage > maxPerPage {
+		perPage = maxPerPage
 	}
 
 	sort := u.Query().Get("sort")

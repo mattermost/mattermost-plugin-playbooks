@@ -191,8 +191,9 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # Visit the playbook outline editor
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-        // * Wait for the page to load
-        cy.findByTestId('channel-access-run-name-template-input').should('be.visible');
+        // * Wait for the page to load — scroll into view first because the
+        // Actions section may be below the fold in the scrollable container
+        cy.findByTestId('channel-access-run-name-template-input').scrollIntoView().should('be.visible');
 
         // * The insert variable button exists with a tooltip
         cy.findByTestId('channel-access-run-name-template-insert-variable').should('exist');
@@ -203,8 +204,9 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # Visit the playbook outline editor
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
-        // * Wait for the page to load
-        cy.findByTestId('channel-access-run-name-template-input').should('be.visible');
+        // * Wait for the page to load — scroll into view first because the
+        // Actions section may be below the fold in the scrollable container
+        cy.findByTestId('channel-access-run-name-template-input').scrollIntoView().should('be.visible');
 
         // # Clear template first
         cy.findByTestId('channel-access-run-name-template-input').clear();

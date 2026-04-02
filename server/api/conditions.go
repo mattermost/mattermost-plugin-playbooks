@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/pkg/errors"
 
@@ -72,6 +73,11 @@ func (h *ConditionHandler) getPlaybookConditions(c *Context, w http.ResponseWrit
 	userID := r.Header.Get("Mattermost-User-ID")
 	playbookID := vars["id"]
 
+	if !model.IsValidId(playbookID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid playbook ID", errors.New("invalid playbook ID"))
+		return
+	}
+
 	// Permission check
 	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookViewConditions(userID, playbookID)) {
 		return
@@ -93,6 +99,11 @@ func (h *ConditionHandler) getRunConditions(c *Context, w http.ResponseWriter, r
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 	runID := vars["id"]
+
+	if !model.IsValidId(runID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run ID", errors.New("invalid run ID"))
+		return
+	}
 
 	// Permission check for run view
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunViewConditions(userID, runID)) {
@@ -125,6 +136,11 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 	userID := r.Header.Get("Mattermost-User-ID")
 	playbookID := vars["id"]
 
+	if !model.IsValidId(playbookID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid playbook ID", errors.New("invalid playbook ID"))
+		return
+	}
+
 	// Get playbook for permission check
 	playbook, err := h.playbookService.Get(playbookID)
 	if err != nil {
@@ -155,11 +171,7 @@ func (h *ConditionHandler) createPlaybookCondition(c *Context, w http.ResponseWr
 
 	createdCondition, err := h.conditionService.CreatePlaybookCondition(userID, *condition, playbook.TeamID)
 	if err != nil {
-		if errors.Is(err, app.ErrMalformedCondition) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid condition expression", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -173,6 +185,11 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 	userID := r.Header.Get("Mattermost-User-ID")
 	playbookID := vars["id"]
 	conditionID := vars["conditionID"]
+
+	if !model.IsValidId(playbookID) || !model.IsValidId(conditionID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid ID", errors.New("invalid playbook or condition ID"))
+		return
+	}
 
 	// Get playbook for permission check
 	playbook, err := h.playbookService.Get(playbookID)
@@ -218,11 +235,7 @@ func (h *ConditionHandler) updatePlaybookCondition(c *Context, w http.ResponseWr
 
 	updatedCondition, err := h.conditionService.UpdatePlaybookCondition(userID, *condition, playbook.TeamID)
 	if err != nil {
-		if errors.Is(err, app.ErrMalformedCondition) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid condition expression", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
@@ -235,6 +248,11 @@ func (h *ConditionHandler) deletePlaybookCondition(c *Context, w http.ResponseWr
 	userID := r.Header.Get("Mattermost-User-ID")
 	playbookID := vars["id"]
 	conditionID := vars["conditionID"]
+
+	if !model.IsValidId(playbookID) || !model.IsValidId(conditionID) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid ID", errors.New("invalid playbook or condition ID"))
+		return
+	}
 
 	// Get playbook for permission check
 	playbook, err := h.playbookService.Get(playbookID)

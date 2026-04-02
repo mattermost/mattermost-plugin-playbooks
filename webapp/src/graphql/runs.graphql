@@ -26,3 +26,7 @@ mutation SetRunPropertyValue($runID: String!, $propertyFieldID: String!, $value:
 	setRunPropertyValue(runID: $runID, propertyFieldID: $propertyFieldID, value: $value)
 }
 
+mutation SetItemPropertyUserAssignee($runID: String!, $checklistNum: Float!, $itemNum: Float!, $propertyFieldID: String!) {
+	setItemPropertyUserAssignee(runID: $runID, checklistNum: $checklistNum, itemNum: $itemNum, propertyFieldID: $propertyFieldID)
+}
+

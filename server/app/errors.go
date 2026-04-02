@@ -52,3 +52,8 @@ var ErrLicensedFeature = errors.New("not covered by current server license")
 
 // ErrFilterTooWide occurs when a property value filter matches more runs than the allowed maximum.
 var ErrFilterTooWide = errors.New("filter matches too many results")
+
+// ErrInternalPrecondition indicates a programming contract violation — a caller
+// skipped a mandatory step (e.g. calling ResolveRunCreationParams before CreatePlaybookRun).
+// This maps to HTTP 500, not 400, because it is never caused by bad user input.
+var ErrInternalPrecondition = errors.New("internal precondition violated")

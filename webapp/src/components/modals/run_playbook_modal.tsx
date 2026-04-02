@@ -272,7 +272,7 @@ export const RunPlaybookModal = ({
         } catch {
             isSubmittingRef.current = false;
             setIsSubmitting(false);
-            setSubmitError(formatMessage({id: 'playbook_run_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
+            setSubmitError(formatMessage({id: 'playbooks.run_playbook_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
             return;
         }
         runPromise
@@ -300,7 +300,7 @@ export const RunPlaybookModal = ({
                 if (!isMountedRef.current) {
                     return;
                 }
-                setSubmitError(formatMessage({id: 'playbook_run_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
+                setSubmitError(formatMessage({id: 'playbooks.run_playbook_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
                 setIsSubmitting(false);
             });
     }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, onHide, onRunCreated, formatMessage]);
@@ -317,7 +317,7 @@ export const RunPlaybookModal = ({
                 >
                     <LoadingContainer
                         role='status'
-                        aria-label={formatMessage({id: 'playbook_run_modal.loading', defaultMessage: 'Loading playbook details…'})}
+                        aria-label={formatMessage({id: 'playbooks.run_playbook_modal.loading', defaultMessage: 'Loading playbook details…'})}
                     >
                         <LoadingSpinner/>
                     </LoadingContainer>
@@ -333,7 +333,7 @@ export const RunPlaybookModal = ({
                     {...restModalProps}
                 >
                     <ErrorMessage role='alert'>
-                        {formatMessage({id: 'playbook_run_modal.load_error', defaultMessage: 'Failed to load playbook details. Please close and try again.'})}
+                        {formatMessage({id: 'playbooks.run_playbook_modal.load_error', defaultMessage: 'Failed to load playbook details. Please close and try again.'})}
                     </ErrorMessage>
                 </StyledGenericModal>
             );
@@ -483,16 +483,16 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: runNameProps) => {
 
     let suffix = '';
     if (error) {
-        suffix = ' ' + formatMessage({id: 'playbook_run_modal.error_suffix', defaultMessage: '*'});
+        suffix = ' ' + formatMessage({id: 'playbooks.run_playbook_modal.error_suffix', defaultMessage: '*'});
     } else if (readOnly) {
-        suffix = ' ' + formatMessage({id: 'playbook_run_modal.optional_suffix', defaultMessage: '(optional)'});
+        suffix = ' ' + formatMessage({id: 'playbooks.run_playbook_modal.optional_suffix', defaultMessage: '(optional)'});
     }
 
     return (<>
         <RunNameLabel invalid={Boolean(error)}>
             {formatMessage(
                 {
-                    id: 'playbook_run_modal.run_name_label',
+                    id: 'playbooks.run_playbook_modal.run_name_label',
                     defaultMessage: 'Run name{suffix}',
                 },
                 {suffix},
@@ -974,8 +974,8 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
                 isClearable={true}
                 isMulti={isMulti}
                 placeholder={isMulti ?
-                    formatMessage({id: 'playbook_run_modal.select_options', defaultMessage: 'Select options...'}) :
-                    formatMessage({id: 'playbook_run_modal.select', defaultMessage: 'Select...'})
+                    formatMessage({id: 'playbooks.run_playbook_modal.select_options', defaultMessage: 'Select options...'}) :
+                    formatMessage({id: 'playbooks.run_playbook_modal.select', defaultMessage: 'Select...'})
                 }
             />
         );

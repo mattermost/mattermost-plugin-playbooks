@@ -406,13 +406,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	// That method always sets playbookRun.Name (via template resolution or fallback).
 	// An empty Name here means the caller skipped the mandatory two-step contract.
 	if pb != nil && strings.TrimSpace(playbookRun.Name) == "" {
-		return nil, errors.Wrap(ErrMalformedPlaybookRun, "run name is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
+		return nil, errors.Wrap(ErrInternalPrecondition, "run name is empty: ResolveRunCreationParams must be called before CreatePlaybookRun")
 	}
 	// ResolveRunCreationParams allocates a RunNumber only when PlaybookID is set.
 	// A zero RunNumber here means the caller skipped the mandatory two-step contract.
 	// The PlaybookID guard is intentional: a run without a PlaybookID has no sequence counter.
 	if pb != nil && playbookRun.PlaybookID != "" && playbookRun.RunNumber == 0 {
-		return nil, errors.Wrap(ErrMalformedPlaybookRun, "run number is 0: ResolveRunCreationParams must be called before CreatePlaybookRun to allocate a sequential run number")
+		return nil, errors.Wrap(ErrInternalPrecondition, "run number is 0: ResolveRunCreationParams must be called before CreatePlaybookRun to allocate a sequential run number")
 	}
 	// Enforce NewChannelOnly as a defence-in-depth guard in the service layer.
 	// ResolveRunCreationParams already rejects ChannelID at the API boundary; this

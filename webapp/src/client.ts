@@ -140,12 +140,8 @@ export async function postStatusUpdate(
         },
     });
 
-    try {
-        const data = await doPost(`${apiUrl}/runs/${playbookRunId}/update-status-dialog`, body);
-        return data;
-    } catch (error) {
-        return {error};
-    }
+    const data = await doPost(`${apiUrl}/runs/${playbookRunId}/update-status-dialog`, body);
+    return data;
 }
 
 export async function fetchPlaybookRunMetadata(id: string) {

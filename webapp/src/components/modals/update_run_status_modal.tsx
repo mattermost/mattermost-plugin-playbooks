@@ -65,7 +65,8 @@ type Props = {
     hasPermission: boolean;
     message?: string,
     reminderInSeconds?: number,
-    finishRunChecked?: boolean,
+    finishRunChecked?: boolean;
+    initialError?: string;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makeModalDefinition = (props: Props) => ({
@@ -160,6 +161,7 @@ const UpdateRunStatusModal = ({
     message: providedMessage,
     reminderInSeconds: providedReminder,
     finishRunChecked: providedFinishRunChecked,
+    initialError: providedInitialError,
     ...modalProps
 }: Props) => {
     const dispatch = useDispatch();
@@ -239,14 +241,33 @@ const UpdateRunStatusModal = ({
         }, 300);
     };
 
-    const onConfirm = () => {
-        if (hasPermission && message?.trim() && currentUserId && channelId && run?.teamID) {
-            postStatusUpdate(
+    const [submitError, setSubmitError] = useState(providedInitialError ?? '');
+    const [submitting, setSubmitting] = useState(false);
+
+    const onConfirm = async () => {
+        if (submitting || !(hasPermission && message?.trim() && currentUserId && channelId && run?.teamID && isReminderValid)) {
+            return;
+        }
+        setSubmitting(true);
+        setSubmitError('');
+        try {
+            await postStatusUpdate(
                 playbookRunId,
                 {message, reminder, finishRun},
                 {user_id: currentUserId, channel_id: channelId, team_id: run?.teamID}
             );
+            setSubmitting(false);
             onActualHide();
+        } catch {
+            const errorMsg = formatMessage({id: 'playbooks.update_run_status_modal.error', defaultMessage: 'Failed to post status update. Please try again.'});
+            if (finishRun) {
+                // Modal was hidden for the confirmation dialog; re-open it so the user sees the error
+                onActualHide();
+                dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, finishRun, errorMsg));
+            } else {
+                setSubmitError(errorMsg);
+            }
+            setSubmitting(false);
         }
     };
 
@@ -349,6 +370,11 @@ const UpdateRunStatusModal = ({
                 </WarningLine>
             }
             <VerticalSpacer $size={8}/>
+            {submitError &&
+                <WarningLine>
+                    <WarningIcon/> {submitError}
+                </WarningLine>
+            }
         </FormContainer>
     );
 
@@ -389,7 +415,7 @@ const UpdateRunStatusModal = ({
                 onExited={() => null}
                 handleConfirm={hasPermission ? onSubmit : null}
                 autoCloseOnConfirmButton={false}
-                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.teamID && isReminderValid)}
+                isConfirmDisabled={submitting || !(hasPermission && message?.trim() && currentUserId && channelId && run?.teamID && isReminderValid)}
                 id={ID}
                 footer={footer}
                 components={{FooterContainer}}

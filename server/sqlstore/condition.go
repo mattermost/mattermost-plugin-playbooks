@@ -445,7 +445,7 @@ func (c *conditionStore) GetConditionsByRunAndFieldID(runID, fieldID string) ([]
 	query := c.conditionSelect.
 		Where(sq.Eq{"RunID": runID}).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where("PropertyFieldIDs @> ?", string(fieldIDArray))
+		Where(sq.Expr("PropertyFieldIDs @> ?::jsonb", string(fieldIDArray)))
 
 	var sqlConditions []conditionForDB
 	if err := c.store.selectBuilder(c.store.db, &sqlConditions, query); err != nil {

@@ -34,14 +34,15 @@ const UserProperty = (props: Props) => {
         typeof props.value?.value === 'string' ? props.value?.value : null,
     );
     const isMounted = useRef(true);
-    const previousValueRef = useRef<string | null>(displayValue);
+    const serverValueRef = useRef<string | null>(displayValue);
+    const callSeqRef = useRef(0);
     useEffect(() => () => {
         isMounted.current = false;
     }, []);
 
     useUpdateEffect(() => {
-        const newValue = typeof props.value?.value === 'string' ? props.value.value : null;
-        previousValueRef.current = newValue;
+        const newValue = typeof props.value?.value === 'string' ? props.value?.value : null;
+        serverValueRef.current = newValue;
         setDisplayValue(newValue);
     }, [props.value?.value]);
 
@@ -55,15 +56,18 @@ const UserProperty = (props: Props) => {
     }, []);
 
     const handleSelectedChange = useCallback((user?: UserProfile) => {
-        const previousValue = previousValueRef.current;
         const newValue = user?.id ?? null;
-        previousValueRef.current = newValue;
+        const seq = ++callSeqRef.current;
         setDisplayValue(newValue);
-        Promise.resolve(props.onValueChange(newValue)).catch(() => {
-            if (isMounted.current) {
-                setDisplayValue((current) => (current === newValue ? previousValue : current));
-            }
-        });
+        Promise.resolve(props.onValueChange(newValue))
+            .then(() => {
+                serverValueRef.current = newValue;
+            })
+            .catch(() => {
+                if (isMounted.current && callSeqRef.current === seq) {
+                    setDisplayValue(serverValueRef.current);
+                }
+            });
         setIsEditing(false);
     }, [props.onValueChange]);
 
@@ -91,6 +95,8 @@ const UserProperty = (props: Props) => {
     if (!displayValue) {
         return (
             <PropertyDisplayContainer
+                role='button'
+                tabIndex={0}
                 onClick={() => setIsEditing(true)}
                 onKeyDown={handleActivateKey}
                 data-testid='property-value'
@@ -102,6 +108,8 @@ const UserProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
+            role='button'
+            tabIndex={0}
             onClick={() => setIsEditing(true)}
             onKeyDown={handleActivateKey}
             data-testid='property-value'
@@ -120,15 +128,18 @@ export const MultiuserProperty = (props: Props) => {
     const userIds: string[] = Array.isArray(rawValue) ? rawValue as string[] : [];
 
     const [displayValues, setDisplayValues] = useState<string[]>(userIds);
+    const displayValuesRef = useRef<string[]>(userIds);
     const isMounted = useRef(true);
-    const previousValuesRef = useRef<string[]>(userIds);
+    const serverValuesRef = useRef<string[]>(userIds);
+    const callSeqRef = useRef(0);
     useEffect(() => () => {
         isMounted.current = false;
     }, []);
 
     useUpdateEffect(() => {
         const newValue = Array.isArray(props.value?.value) ? props.value?.value as string[] : [];
-        previousValuesRef.current = newValue;
+        serverValuesRef.current = newValue;
+        displayValuesRef.current = newValue;
         setDisplayValues(newValue);
     }, [props.value?.value]);
 
@@ -145,27 +156,39 @@ export const MultiuserProperty = (props: Props) => {
         if (!user) {
             return;
         }
-        const previousValues = previousValuesRef.current;
-        const newValues = previousValues.includes(user.id) ? previousValues.filter((id) => id !== user.id) : [...previousValues, user.id];
-        previousValuesRef.current = newValues;
+        const current = displayValuesRef.current;
+        const newValues = current.includes(user.id) ? current.filter((id) => id !== user.id) : [...current, user.id];
+        const seq = ++callSeqRef.current;
+        displayValuesRef.current = newValues;
         setDisplayValues(newValues);
-        Promise.resolve(props.onValueChange(newValues.length > 0 ? newValues : null)).catch(() => {
-            if (isMounted.current) {
-                setDisplayValues((current) => (current === newValues ? previousValues : current));
-            }
-        });
+        Promise.resolve(props.onValueChange(newValues.length > 0 ? newValues : null))
+            .then(() => {
+                serverValuesRef.current = newValues;
+            })
+            .catch(() => {
+                if (isMounted.current && callSeqRef.current === seq) {
+                    displayValuesRef.current = serverValuesRef.current;
+                    setDisplayValues(serverValuesRef.current);
+                }
+            });
     }, [props.onValueChange]);
 
     const handleRemoveUser = useCallback((uid: string) => {
-        const previousValues = previousValuesRef.current;
-        const newValues = previousValues.filter((id) => id !== uid);
-        previousValuesRef.current = newValues;
+        const current = displayValuesRef.current;
+        const newValues = current.filter((id) => id !== uid);
+        const seq = ++callSeqRef.current;
+        displayValuesRef.current = newValues;
         setDisplayValues(newValues);
-        Promise.resolve(props.onValueChange(newValues.length > 0 ? newValues : null)).catch(() => {
-            if (isMounted.current) {
-                setDisplayValues((current) => (current === newValues ? previousValues : current));
-            }
-        });
+        Promise.resolve(props.onValueChange(newValues.length > 0 ? newValues : null))
+            .then(() => {
+                serverValuesRef.current = newValues;
+            })
+            .catch(() => {
+                if (isMounted.current && callSeqRef.current === seq) {
+                    displayValuesRef.current = serverValuesRef.current;
+                    setDisplayValues(serverValuesRef.current);
+                }
+            });
     }, [props.onValueChange]);
 
     if (isEditing) {
@@ -209,6 +232,8 @@ export const MultiuserProperty = (props: Props) => {
     if (displayValues.length === 0) {
         return (
             <PropertyDisplayContainer
+                role='button'
+                tabIndex={0}
                 onClick={() => setIsEditing(true)}
                 onKeyDown={handleActivateKey}
                 data-testid='property-value'
@@ -220,6 +245,8 @@ export const MultiuserProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
+            role='button'
+            tabIndex={0}
             onClick={() => setIsEditing(true)}
             onKeyDown={handleActivateKey}
             data-testid='property-value'

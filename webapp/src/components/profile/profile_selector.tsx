@@ -131,7 +131,7 @@ export default function ProfileSelector(props: Props) {
     const [userInSubsetOptions, setUserInSubsetOptions] = useState<Option[]>([]);
     const [userNotInSubsetOptions, setUserNotInSubsetOptions] = useState<Option[]>([]);
 
-    async function fetchUsers() {
+    async function fetchUsers(signal?: {cancelled: boolean}) {
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
         };
@@ -142,6 +142,11 @@ export default function ProfileSelector(props: Props) {
 
         const subsetUserIds = props.userGroups?.subsetUserIds || [];
         const allUsers = await props.getAllUsers();
+
+        if (signal?.cancelled) {
+            return;
+        }
+
         const usersNotInSubset = allUsers.filter((user) => !subsetUserIds.find((userId) => userId === user.id));
 
         const userToOption = (user: UserProfile) => {
@@ -174,7 +179,11 @@ export default function ProfileSelector(props: Props) {
 
     // Fill in the userOptions on mount and whenever the user source changes.
     useEffect(() => {
-        fetchUsers();
+        const signal = {cancelled: false};
+        fetchUsers(signal);
+        return () => {
+            signal.cancelled = true;
+        };
     }, [props.getAllUsers]);
 
     const [selected, setSelected] = useState<Option | null>(null);

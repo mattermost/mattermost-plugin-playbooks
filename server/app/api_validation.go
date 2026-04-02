@@ -53,6 +53,8 @@ func ValidateRunSummaryUpdate(summary string) (string, error) {
 }
 
 // ValidateRunUpdateOnFinished checks that name/summary updates are not applied to finished runs.
+// Note: ChannelID, BroadcastChannelIDs, and WebhookOnStatusUpdateURLs are intentionally
+// updatable on finished runs — they configure delivery settings, not run content.
 func ValidateRunUpdateOnFinished(currentStatus string, hasNameUpdate, hasSummaryUpdate bool) error {
 	if currentStatus == StatusFinished && (hasNameUpdate || hasSummaryUpdate) {
 		return errors.Wrap(ErrPlaybookRunNotActive, "cannot update a finished run")

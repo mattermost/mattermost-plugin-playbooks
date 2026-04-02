@@ -100,7 +100,7 @@ func (s *propertyService) CreatePropertyField(playbookID string, propertyField P
 		if delErr := s.api.Property.DeletePropertyField(s.groupID, createdField.ID); delErr != nil {
 			s.api.Log.Error("failed to roll back property field after limit exceeded; manual deletion of this field may be required", "err", delErr.Error(), "field_id", createdField.ID, "playbook_id", playbookID)
 		}
-		return nil, errors.Errorf("cannot create property field: playbook already has %d property fields (max %d)", postCreateCount, MaxPropertiesPerPlaybook)
+		return nil, errors.Wrapf(ErrPropertyFieldInUse, "cannot create property field: playbook already has %d property fields (max %d)", postCreateCount, MaxPropertiesPerPlaybook)
 	}
 
 	resultField, err := NewPropertyFieldFromMattermostPropertyField(createdField)
@@ -264,11 +264,17 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 func (s *propertyService) findRemovedOptions(oldOptions, newOptions model.PropertyOptions[*model.PluginPropertyOption]) []string {
 	newOptionIDs := make(map[string]bool)
 	for _, option := range newOptions {
+		if option == nil {
+			continue
+		}
 		newOptionIDs[option.GetID()] = true
 	}
 
 	var removedIDs []string
 	for _, option := range oldOptions {
+		if option == nil {
+			continue
+		}
 		if !newOptionIDs[option.GetID()] {
 			removedIDs = append(removedIDs, option.GetID())
 		}
@@ -280,6 +286,9 @@ func (s *propertyService) findRemovedOptions(oldOptions, newOptions model.Proper
 func (s *propertyService) getOptionNames(options model.PropertyOptions[*model.PluginPropertyOption], optionsInUse map[string]int) string {
 	var names []string
 	for _, option := range options {
+		if option == nil {
+			continue
+		}
 		if count, exists := optionsInUse[option.GetID()]; exists {
 			var countStr string
 			if count == 1 {
@@ -586,6 +595,9 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 			// so we can map between playbook-level and run-level option IDs
 			// (e.g. for runs list filtering by select attribute value).
 			opt := propertyField.Attrs.Options[i]
+			if opt == nil {
+				continue
+			}
 			opt.Data["parent_id"] = opt.GetID()
 			opt.SetID("")
 		}
