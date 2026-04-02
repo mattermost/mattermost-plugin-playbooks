@@ -143,7 +143,7 @@ describe('FinishRun component', () => {
         expect(component.toJSON()).toBeNull();
     });
 
-    it('renders a disabled finish button when ownerGroupOnlyActions is true and the user is not the owner', () => {
+    it('returns null when ownerGroupOnlyActions is true and the user is not the owner', () => {
         const component = renderer.create(
             <FinishRun
                 playbookRun={baseRun}
@@ -151,36 +151,7 @@ describe('FinishRun component', () => {
                 isOwner={false}
             />,
         );
-        const json = JSON.stringify(component.toJSON());
-        expect(json).toContain('run-finish-section');
-
-        // The button should be rendered but disabled
-        const findButton = (node: any): any => {
-            if (!node) {
-                return null;
-            }
-            if (Array.isArray(node)) {
-                for (const child of node) {
-                    const found = findButton(child);
-                    if (found) {
-                        return found;
-                    }
-                }
-                return null;
-            }
-            if (node.props?.['data-testid'] === 'finish-run-button') {
-                return node;
-            }
-            if (node.children) {
-                return findButton(node.children);
-            }
-            return null;
-        };
-
-        const tree = component.toJSON() as any;
-        const btn = findButton(tree);
-        expect(btn).not.toBeNull();
-        expect(btn.props.disabled).toBe(true);
+        expect(component.toJSON()).toBeNull();
     });
 
     it('renders when ownerGroupOnlyActions is true and the user is the owner', () => {

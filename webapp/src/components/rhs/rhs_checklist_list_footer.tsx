@@ -20,7 +20,7 @@ import {useOnFinishRun} from 'src/components/backstage/playbook_runs/playbook_ru
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
 import {OVERLAY_DELAY} from 'src/constants';
-import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
+import {useIsBlockedByOwnerOnlyForFinishRestore, useIsSystemAdmin} from 'src/hooks/permissions';
 
 import {ChecklistParent} from './rhs_checklist_list';
 
@@ -55,6 +55,7 @@ const RHSFooter = ({
 }: RHSFooterProps) => {
     const {formatMessage} = useIntl();
     const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(ownerGroupOnlyActions, isOwner);
+    const isSystemAdmin = useIsSystemAdmin();
     const onFinishRun = useOnFinishRun(playbookRun, 'rhs');
 
     // Only show footers in RHS
@@ -63,7 +64,8 @@ const RHSFooter = ({
     }
 
     // Priority 1: Show ParticipatePrompt if active and not a participant
-    if (active && !isParticipant) {
+    // System admins bypass this — they should see action controls directly.
+    if (active && !isParticipant && !isSystemAdmin) {
         return (
             <ParticipatePrompt>
                 <ParticipateContent>
@@ -90,7 +92,8 @@ const RHSFooter = ({
     }
 
     // Priority 2: Show finish prompt to users who can modify the run and are not blocked by owner-only restrictions.
-    if (active && canModify && !blockedByOwnerOnly) {
+    // System admins can always finish a run (admin bypass).
+    if (active && (canModify || isSystemAdmin) && !blockedByOwnerOnly) {
         return (
             <FinishPrompt data-testid='rhs-finish-section'>
                 <FinishContent>
@@ -145,7 +148,7 @@ const RHSFooter = ({
                         </FinishedTime>
                     </FinishedNotice>
                     <FinishedRightWrapper>
-                        {canRestore && !blockedByOwnerOnly ? (
+                        {(canRestore || isSystemAdmin) && !blockedByOwnerOnly ? (
                             <ResumeButton
                                 onClick={handleResume}
                                 disabled={false}

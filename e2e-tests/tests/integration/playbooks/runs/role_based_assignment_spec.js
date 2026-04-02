@@ -26,13 +26,13 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
             testTeam = team;
             testOwner = user;
 
-            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-                testCreator = newUser;
-            });
+            return cy.apiCreateAndAddUserToTeam(testTeam.id);
+        }).then((newUser) => {
+            testCreator = newUser;
 
-            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-                testNewOwner = newUser;
-            });
+            return cy.apiCreateAndAddUserToTeam(testTeam.id);
+        }).then((newUser) => {
+            testNewOwner = newUser;
         });
     });
 
@@ -191,6 +191,18 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                         cy.findByTestId('role-indicator-badge').should('contain', 'Run Owner');
                         cy.contains(testNewOwner.username).should('exist');
                     });
+                });
+
+                // * Verify via API that the owner change was persisted
+                cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
+                    expect(runData.owner_user_id).to.equal(testNewOwner.id);
+                });
+
+                // * Verify task assignee_id was re-resolved to the new owner
+                cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
+                    const ownerTask = runData.checklists[0].items.find((item) => item.assignee_type === 'owner');
+                    expect(ownerTask, 'owner-type task must exist in the checklist').to.exist;
+                    expect(ownerTask.assignee_id, 'owner-type task should be re-assigned to new owner').to.equal(testNewOwner.id);
                 });
             });
         });
@@ -611,8 +623,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Fetch property fields separately (REST playbook response doesn't include them)
-            cy.apiGetPropertyFields(playbook.id).then((propertyFields) => {
-                const managerField = propertyFields.find((f) => f.name === 'Manager');
+            cy.apiGetPropertyFieldByName(playbook.id, 'Manager').then((managerField) => {
                 expect(managerField).to.exist;
 
                 // # Patch the second task to use property_user assignment

@@ -51,6 +51,11 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
                 cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
                 cy.playbooksToggleWithConfirmation('new-channel-only-toggle');
 
+                // * Verify new_channel_only was persisted via API
+                cy.apiGetPlaybook(playbook.id).then((pb) => {
+                    expect(pb.new_channel_only, 'new_channel_only should be true after toggle').to.equal(true);
+                });
+
                 restrictedPlaybook = playbook;
             });
         });

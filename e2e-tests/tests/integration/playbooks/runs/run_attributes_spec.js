@@ -51,7 +51,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 testRun = run;
 
                 // # Navigate to run
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
         });
 
@@ -331,10 +331,10 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 clickAttributeToEdit('Labels');
 
                 // # Click clear indicator
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 getAttributeRow('Labels').within(() => {
                     cy.get('div.property-select__clear-indicator').should('be.visible').realClick();
                 });
-                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
                 cy.wait('@SetRunPropertyValue');
 
@@ -551,7 +551,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             });
             cy.findByText(/delete/i).click();
             cy.get('#confirm-property-delete-modal').should('be.visible');
+            cy.playbooksInterceptPropertyFieldMutation('DELETE');
             cy.findByRole('button', {name: /delete/i}).click();
+            cy.wait('@DeletePropertyField');
             cy.get('#confirm-property-delete-modal').should('not.exist');
 
             // # Add new attribute
@@ -612,7 +614,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
      */
     function navigateToRun() {
         cy.then(() => {
-            cy.visit(`/playbooks/runs/${testRun.id}`);
+            cy.playbooksVisitRun(testRun.id);
         });
     }
 
@@ -700,7 +702,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
      */
     function clickAttributeToEdit(attributeName) {
         getAttributeRow(attributeName).within(() => {
-            // Click on the property value (empty state or existing value)
+            // # Click on the property value (empty state or existing value)
             cy.findByTestId('property-value').click();
         });
     }

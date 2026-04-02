@@ -69,8 +69,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    priorityField = fields.find((f) => f.name === 'Priority');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Priority').then((field) => {
+                    priorityField = field;
                 });
             });
 
@@ -105,7 +105,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
             // # Navigate to the run detail page
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
 
             // * Verify initial owner is testUser
@@ -155,8 +155,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    priorityField = fields.find((f) => f.name === 'Priority');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Priority').then((field) => {
+                    priorityField = field;
                 });
             });
 
@@ -191,7 +191,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             });
 
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
 
             // # Trigger the condition the first time
@@ -203,13 +203,13 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             // # Change owner back to testUser via UI (logged in as alternateUser — the new owner)
             cy.then(() => {
                 cy.apiLogin(alternateUser);
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
             cy.playbooksChangeRunOwnerOnRunPage(testUser.username);
 
             cy.then(() => {
                 cy.apiLogin(testUser);
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
 
             cy.playbooksSetRunPropertyViaRHS('Priority', 'Medium');
@@ -255,8 +255,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    zoneField = fields.find((f) => f.name === 'Zone');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Zone').then((field) => {
+                    zoneField = field;
                 });
             });
 
@@ -292,6 +292,11 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
                     // * Verify owner changed to alternateUser (condition fired on Zone=Alpha)
                     cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
+
+                    // * Assert via API that the ownership change was persisted server-side
+                    cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
+                        expect(runData.owner_user_id, 'server should reflect the new owner').to.equal(alternateUser.id);
+                    });
                 });
             });
         });
@@ -327,8 +332,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    zoneField = fields.find((f) => f.name === 'Zone');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Zone').then((field) => {
+                    zoneField = field;
                 });
             });
 
@@ -359,7 +364,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             });
 
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
 
             // # Set Zone=Alpha → owner should be testUser (already is, but action fires)
@@ -427,8 +432,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    priorityField = fields.find((f) => f.name === 'Priority');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Priority').then((field) => {
+                    priorityField = field;
                 });
             });
 
@@ -464,7 +469,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
             // # Navigate to run and trigger the condition
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
 
             cy.playbooksSetRunPropertyViaRHS('Priority', 'Critical');
@@ -522,8 +527,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    zoneField = fields.find((f) => f.name === 'Zone');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Zone').then((field) => {
+                    zoneField = field;
                 });
             });
 
@@ -559,7 +564,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
             // # Set Severity=Critical first (so it has a value when the condition fires)
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
             cy.playbooksSetRunPropertyViaRHS('Severity', 'Critical');
 
@@ -607,8 +612,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    priorityField = fields.find((f) => f.name === 'Priority');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Priority').then((field) => {
+                    priorityField = field;
                 });
             });
 
@@ -690,8 +695,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    severityField = fields.find((f) => f.name === 'Severity');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Severity').then((field) => {
+                    severityField = field;
                 });
             });
 
@@ -731,7 +736,7 @@ describe('runs > condition actions', {testIsolation: true}, () => {
 
             // # Navigate to run and trigger the condition
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
 
             cy.playbooksSetRunPropertyViaRHS('Severity', 'Critical');
@@ -785,8 +790,8 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    zoneField = fields.find((f) => f.name === 'Zone');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Zone').then((field) => {
+                    zoneField = field;
                 });
             });
 
@@ -812,32 +817,25 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             });
 
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
 
-            // STEP 1: unmet → met: set Zone=Alpha → condition fires, owner = alternateUser
+            // # STEP 1: unmet → met: set Zone=Alpha → condition fires, owner = alternateUser
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
             cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
 
-            // STEP 2: met → unmet: set Zone=Bravo → condition no longer met, action should NOT re-fire
-            // Reset owner back to testUser first (to observe whether action would fire again)
-            cy.apiLogin(alternateUser);
+            // # STEP 2: met → unmet: set Zone=Bravo → condition no longer met, action should NOT re-fire
+            // # Reset owner back to testUser via API (avoid fragile UI login switch)
             cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
-            });
-
-            cy.playbooksChangeRunOwnerOnRunPage(testUser.username);
-            cy.apiLogin(testUser);
-
-            cy.then(() => {
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.apiChangePlaybookRunOwner(testRun.id, testUser.id);
+                cy.playbooksVisitRun(testRun.id);
             });
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Bravo');
 
             // * Owner should remain testUser — action did NOT fire on the met→unmet transition
             cy.findByTestId('runinfo-owner').should('contain.text', testUser.username);
 
-            // STEP 3: unmet → met again: set Zone=Alpha → condition fires again, owner = alternateUser
+            // # STEP 3: unmet → met again: set Zone=Alpha → condition fires again, owner = alternateUser
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Alpha');
             cy.findByTestId('runinfo-owner').should('contain.text', alternateUser.username);
 

@@ -32,6 +32,7 @@ jest.mock('react-redux', () => ({
         };
         return selector(state);
     }),
+    useDispatch: () => jest.fn(),
 }));
 
 const makePropertyField = (id: string, name: string, sortOrder = 0): PropertyField => ({

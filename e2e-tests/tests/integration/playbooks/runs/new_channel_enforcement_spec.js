@@ -97,7 +97,7 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
                         channelId: channel.id,
                     }, {expectedStatusCode: 400});
 
-                    // Verify no run was created with the existing channel
+                    // * Verify no run was created with the existing channel
                     cy.apiGetAllPlaybookRuns(testTeam.id).then(({body: {items}}) => {
                         const matchingRun = items.find((r) => r.channel_id === channel.id);
                         expect(matchingRun, 'no run should be created with existing channel').to.not.exist;

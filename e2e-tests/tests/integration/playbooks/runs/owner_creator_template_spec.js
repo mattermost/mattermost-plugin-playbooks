@@ -294,6 +294,9 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
                     cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
                         expect(runData.owner_user_id, 'owner updated').to.equal(testNewOwner.id);
                         expect(runData.reporter_user_id, 'creator unchanged').to.equal(testCreator.id);
+
+                        // * Verify run name is frozen at creation time — still contains the initial owner's name
+                        expect(runData.name, 'run name should still contain the initial owner name').to.include(initialOwnerName);
                     });
                 });
             });

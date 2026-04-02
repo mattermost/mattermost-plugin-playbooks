@@ -9,6 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../utils';
 import * as TIMEOUTS from '../../../fixtures/timeouts';
 
 describe('runs > task actions', {testIsolation: true}, () => {
@@ -32,7 +33,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Create a playbook
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
-                title: 'Playbook (' + Date.now() + ')',
+                title: 'Playbook (' + getRandomId() + ')',
                 checklists: [{
                     title: 'Test Checklist',
                     items: [
@@ -64,7 +65,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPlaybook.id,
-                playbookRunName: `the run name ${Date.now()}`,
+                playbookRunName: `the run name ${getRandomId()}`,
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
                 testPlaybookRun = playbookRun;
@@ -136,7 +137,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -180,7 +181,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword2 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword2 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -223,7 +224,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and a phrase with multiple words happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and a phrase with multiple words happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -278,7 +279,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -289,7 +290,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword2 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword2 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -345,7 +346,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh keyword1 keyword2 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh keyword1 keyword2 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -429,7 +430,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -440,7 +441,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -495,7 +496,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -511,7 +512,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -565,7 +566,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -631,7 +632,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -642,7 +643,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
@@ -702,7 +703,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: testPlaybook.id,
-                    playbookRunName: `the run name ${Date.now()}`,
+                    playbookRunName: `the run name ${getRandomId()}`,
                     ownerUserId: testUser.id,
                     channelId: testChannel.id,
                 }).then((playbookRun) => {
@@ -714,7 +715,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: testPlaybook.id,
-                    playbookRunName: `the run name ${Date.now()}`,
+                    playbookRunName: `the run name ${getRandomId()}`,
                     ownerUserId: testUser.id,
                     channelId: testChannel.id,
                 }).then((playbookRun) => {
@@ -729,7 +730,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testChannel.id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testChannel.id,
             });
 

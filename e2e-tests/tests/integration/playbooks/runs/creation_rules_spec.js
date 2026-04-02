@@ -20,6 +20,7 @@ describe('runs > creation rules', {testIsolation: true}, () => {
     const startRunAndAssertOwner = (playbookId, runName, expectedOwnerId) => {
         cy.playbooksStartRunViaModal(playbookId, runName);
         cy.url().should('include', '/playbooks/runs/');
+        cy.findByTestId('run-header-section').should('be.visible');
         cy.playbooksAssertRunPropertyFromUrl('owner_user_id', expectedOwnerId);
     };
 
@@ -137,5 +138,123 @@ describe('runs > creation rules', {testIsolation: true}, () => {
         // # Start a run via UI and verify the owner is the default (no rule applied)
         const runName = 'Cleared-rules run ' + getRandomId();
         startRunAndAssertOwner(testPlaybook.id, runName, testOwner.id);
+    });
+
+    it('conditional rule sets owner when attribute value matches', () => {
+        let conditionalPlaybook;
+        let zoneField;
+
+        // # Create a dedicated playbook for this test
+        cy.apiCreateTestPlaybook({
+            teamId: testTeam.id,
+            title: `Conditional Match Playbook ${getRandomId()}`,
+            userId: testOwner.id,
+        }).then((playbook) => {
+            conditionalPlaybook = playbook;
+        });
+
+        // # Add a Zone select property field with options via the UI
+        cy.then(() => {
+            cy.playbooksAddPropertyFieldViaUI(conditionalPlaybook.id, 'Zone', 'select', ['Alpha', 'Bravo']);
+        });
+
+        // # Read back the field to get its ID and option IDs
+        cy.then(() => {
+            cy.apiGetPropertyFieldByName(conditionalPlaybook.id, 'Zone').then((field) => {
+                zoneField = field;
+            });
+        });
+
+        cy.then(() => {
+            // # Set a channel_name_template so the modal shows Zone field, and set the creation rule
+            const alphaOptionId = zoneField.attrs.options.find((o) => o.name === 'Alpha').id;
+            cy.apiPatchPlaybook(conditionalPlaybook.id, {
+                channel_name_template: '{Zone}-run',
+                creation_rules: [{
+                    condition: {
+                        is: {field_id: zoneField.id, value: [alphaOptionId]},
+                    },
+                    set_owner_id: testAlternateOwner.id,
+                }],
+            });
+        });
+
+        // # Start a run via the modal, setting Zone=Alpha to trigger the creation rule
+        cy.then(() => {
+            cy.playbooksStartRunViaModal(conditionalPlaybook.id, '', {Zone: 'Alpha'});
+            cy.findByTestId('run-header-section').should('be.visible');
+
+            // * Assert the owner was changed by the creation rule
+            cy.playbooksAssertRunPropertyFromUrl('owner_user_id', testAlternateOwner.id);
+        });
+    });
+
+    it('conditional rule does not fire when attribute value does not match', () => {
+        let conditionalPlaybook;
+        let zoneField;
+
+        // # Create a dedicated playbook for this test
+        cy.apiCreateTestPlaybook({
+            teamId: testTeam.id,
+            title: `Conditional No-Match Playbook ${getRandomId()}`,
+            userId: testOwner.id,
+        }).then((playbook) => {
+            conditionalPlaybook = playbook;
+        });
+
+        // # Add a Zone select property field with options via the UI
+        cy.then(() => {
+            cy.playbooksAddPropertyFieldViaUI(conditionalPlaybook.id, 'Zone', 'select', ['Alpha', 'Bravo']);
+        });
+
+        // # Read back the field to get its ID and option IDs
+        cy.then(() => {
+            cy.apiGetPropertyFieldByName(conditionalPlaybook.id, 'Zone').then((field) => {
+                zoneField = field;
+            });
+        });
+
+        cy.then(() => {
+            // # Set a conditional creation rule: Zone=Alpha → set owner to testAlternateOwner
+            const alphaOptionId = zoneField.attrs.options.find((o) => o.name === 'Alpha').id;
+            cy.apiPatchPlaybook(conditionalPlaybook.id, {
+                creation_rules: [{
+                    condition: {
+                        is: {field_id: zoneField.id, value: [alphaOptionId]},
+                    },
+                    set_owner_id: testAlternateOwner.id,
+                }],
+            });
+        });
+
+        cy.then(() => {
+            // # Start a run via the modal (no Zone value set, does NOT match the rule)
+            const runName = 'No-match Rule Run ' + getRandomId();
+            startRunAndAssertOwner(conditionalPlaybook.id, runName, testOwner.id);
+        });
+    });
+
+    it('creation rule with invite_user_ids adds participants to the run', () => {
+        // # Create a third user to be invited by the rule
+        cy.apiCreateAndAddUserToTeam(testTeam.id).then((invitedUser) => {
+            // # Set a catch-all creation rule with invite_user_ids
+            cy.apiPatchPlaybook(testPlaybook.id, {
+                creation_rules: [{invite_user_ids: [invitedUser.id]}],
+            });
+
+            // # Start a run
+            const runName = 'Invite Rule Run ' + getRandomId();
+            cy.playbooksStartRunViaModal(testPlaybook.id, runName);
+
+            cy.url().should('include', '/playbooks/runs/');
+            cy.findByTestId('run-header-section').should('be.visible');
+
+            // * Verify via API that the invited user is a participant
+            cy.playbooksGetRunIdFromUrl().then((runId) => {
+                cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                    expect(run.participant_ids, 'invited user should be a participant').to.include(invitedUser.id);
+                });
+            });
+        });
     });
 });

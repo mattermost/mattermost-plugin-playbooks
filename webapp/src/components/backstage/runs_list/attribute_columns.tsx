@@ -17,7 +17,7 @@ import {getUsers} from 'mattermost-redux/selectors/entities/common';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {type PropertyField, PropertyFieldType, type PropertyValue} from 'src/types/properties';
-import {useClickOutsideRef} from 'src/hooks';
+import {useClickOutsideRef, useEnsureProfiles} from 'src/hooks';
 import {parsePropertyDate} from 'src/components/rhs/properties/property_date';
 
 export const ATTRIBUTE_COLUMNS_STORAGE_KEY = 'playbook_runs_attribute_columns';
@@ -41,6 +41,31 @@ interface Props {
 const AttributeColumns = ({propertyFields, propertyValues, selectedFieldIds}: Props) => {
     const nameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) ?? '';
     const usersMap = useSelector(getUsers);
+
+    const userIdsToFetch = useMemo(() => {
+        if (!propertyFields || !propertyValues) {
+            return [];
+        }
+        const userFieldIds = new Set(
+            propertyFields
+                .filter((f) => f.type === PropertyFieldType.User || f.type === PropertyFieldType.Multiuser)
+                .map((f) => f.id),
+        );
+        const ids: string[] = [];
+        for (const pv of propertyValues) {
+            if (!userFieldIds.has(pv.field_id) || pv.value == null) {
+                continue;
+            }
+            if (Array.isArray(pv.value)) {
+                ids.push(...(pv.value as string[]));
+            } else {
+                ids.push(String(pv.value));
+            }
+        }
+        return ids;
+    }, [propertyFields, propertyValues]);
+
+    useEnsureProfiles(userIdsToFetch);
 
     const propertyValuesMap = useMemo(
         () => Object.fromEntries((propertyValues ?? []).map((pv) => [pv.field_id, pv])),
@@ -225,26 +250,38 @@ const AttributeRow = styled.div`
     display: flex;
     flex-flow: row wrap;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 `;
 
 const AttributeCell = styled.div`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
     font-size: 12px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 120px;
+    max-width: 200px;
 `;
 
 const FieldName = styled.span`
     font-weight: 600;
-    margin-right: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+
+    &::after {
+        content: ':';
+    }
 `;
 
 const FieldValue = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const ConfigWrapper = styled.div`

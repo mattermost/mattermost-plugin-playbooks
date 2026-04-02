@@ -462,6 +462,7 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
     describe('creator-typed locked tasks', () => {
         let creatorTeam;
         let runCreator;
+        let separateOwner;
         let nonCreatorUser;
         let creatorPlaybook;
         let creatorRun;
@@ -472,13 +473,17 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
                 creatorTeam = team;
                 runCreator = user;
 
-                cy.apiCreateAndAddUserToTeam(team.id).then((newUser) => {
-                    nonCreatorUser = newUser;
-                });
+                return cy.apiCreateAndAddUserToTeam(team.id);
+            }).then((newUser) => {
+                separateOwner = newUser;
 
-                cy.apiLogin(user);
+                return cy.apiCreateAndAddUserToTeam(creatorTeam.id);
+            }).then((newUser) => {
+                nonCreatorUser = newUser;
+
+                cy.apiLogin(runCreator);
                 cy.apiCreatePlaybook({
-                    teamId: team.id,
+                    teamId: creatorTeam.id,
                     title: 'Creator-Typed Lockdown Playbook ' + getRandomId(),
                     memberIDs: [],
                     makePublic: true,
@@ -501,15 +506,18 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
 
         beforeEach(() => {
             cy.viewport('macbook-13');
+
+            // # runCreator creates the run (becomes reporter/creator),
+            //   but separateOwner is the owner — roles are cleanly separated.
             cy.apiLogin(runCreator);
             cy.apiRunPlaybook({
                 teamId: creatorTeam.id,
                 playbookId: creatorPlaybook.id,
                 playbookRunName: 'Creator Lockdown Run (' + getRandomId() + ')',
-                ownerUserId: runCreator.id,
+                ownerUserId: separateOwner.id,
             }).then((run) => {
                 creatorRun = run;
-                cy.apiAddUsersToRun(run.id, [nonCreatorUser.id]);
+                cy.apiAddUsersToRun(run.id, [separateOwner.id, nonCreatorUser.id]);
             });
         });
 
@@ -541,13 +549,27 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
             });
         });
 
+        it('owner (who is not the creator) sees a disabled checkbox on a creator-typed restricted task', () => {
+            // separateOwner is the run owner but NOT the creator — they must not
+            // be able to complete a creator-typed locked task.
+
+            // # Login as separateOwner (owner, not creator) and visit the run
+            cy.apiLogin(separateOwner);
+            cy.playbooksVisitRun(creatorRun.id);
+
+            cy.findByTestId('run-checklist-section').findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                // * Checkbox must be DISABLED — separateOwner is the owner but not the creator
+                cy.get('[data-testid="task-checkbox"]').should('be.disabled');
+            });
+        });
+
         it('owner reassignment does not affect creator access — creator retains enabled checkbox', () => {
             // Verify the creator role is bound to the run creator, not the current owner.
-            // Even if ownership is transferred away from runCreator, runCreator (the creator)
+            // Even if ownership is transferred to nonCreatorUser, runCreator (the creator)
             // keeps the enabled checkbox.
 
-            // # Reassign ownership from runCreator to nonCreatorUser via the RHS
-            cy.apiLogin(runCreator);
+            // # Reassign ownership from separateOwner to nonCreatorUser via the RHS
+            cy.apiLogin(separateOwner);
             cy.playbooksVisitRunChannel(creatorTeam.name, creatorRun);
             cy.playbooksChangeRunOwnerViaRHS(nonCreatorUser.username);
 
@@ -556,7 +578,8 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
                 expect(playbookRun.owner_user_id).to.equal(nonCreatorUser.id);
             });
 
-            // # Visit the run detail page as runCreator (no longer the owner)
+            // # Visit the run detail page as runCreator (never the owner, always the creator)
+            cy.apiLogin(runCreator);
             cy.playbooksVisitRun(creatorRun.id);
 
             cy.findByTestId('run-checklist-section').findAllByTestId('checkbox-item-container').eq(0).within(() => {
@@ -565,12 +588,12 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
             });
         });
 
-        it('new owner (who is not the creator) sees a disabled checkbox on a creator-typed restricted task', () => {
-            // Reassign ownership to nonCreatorUser, then verify non-creator cannot complete
+        it('new owner (who is not the creator) sees a disabled checkbox after reassignment', () => {
+            // Reassign ownership to nonCreatorUser, then verify they cannot complete
             // even though they are now the owner.
 
-            // # Reassign ownership from runCreator to nonCreatorUser
-            cy.apiLogin(runCreator);
+            // # Reassign ownership from separateOwner to nonCreatorUser
+            cy.apiLogin(separateOwner);
             cy.playbooksVisitRunChannel(creatorTeam.name, creatorRun);
             cy.playbooksChangeRunOwnerViaRHS(nonCreatorUser.username);
 

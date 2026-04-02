@@ -123,7 +123,9 @@ describe('runs > select attribute filter', {testIsolation: true}, () => {
         });
 
         // # Filter by Triaging
+        cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('FilterRunsTriaging');
         cy.get('[data-testid^="select-field-filter-"]').select('Triaging');
+        cy.wait('@FilterRunsTriaging');
 
         // * Only the Triaging run should be visible
         cy.findByTestId('playbookRunList').within(() => {
@@ -132,7 +134,9 @@ describe('runs > select attribute filter', {testIsolation: true}, () => {
         });
 
         // # Filter by Resolved
+        cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('FilterRunsResolved');
         cy.get('[data-testid^="select-field-filter-"]').select('Resolved');
+        cy.wait('@FilterRunsResolved');
 
         // * Only the Resolved run should be visible
         cy.findByTestId('playbookRunList').within(() => {
@@ -149,7 +153,9 @@ describe('runs > select attribute filter', {testIsolation: true}, () => {
         cy.playbooksFilterByPlaybook(testPlaybook.title);
 
         // # Filter by Triaging
+        cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('FilterRunsTriaging2');
         cy.get('[data-testid^="select-field-filter-"]').select('Triaging');
+        cy.wait('@FilterRunsTriaging2');
 
         // * Only the Triaging run visible
         cy.findByTestId('playbookRunList').within(() => {
@@ -158,7 +164,9 @@ describe('runs > select attribute filter', {testIsolation: true}, () => {
         });
 
         // # Clear the filter by selecting the empty option (field name)
+        cy.intercept('GET', '/plugins/playbooks/api/v0/runs*').as('FilterRunsCleared');
         cy.get('[data-testid^="select-field-filter-"]').select('Status');
+        cy.wait('@FilterRunsCleared');
 
         // * Both runs visible again
         cy.findByTestId('playbookRunList').within(() => {

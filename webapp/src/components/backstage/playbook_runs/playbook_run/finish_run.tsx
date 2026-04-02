@@ -6,7 +6,6 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import {FlagOutlineIcon} from '@mattermost/compass-icons/components';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
@@ -19,7 +18,6 @@ import {ChecklistItemState} from 'src/types/playbook';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useIsBlockedByOwnerOnlyForFinishRestore} from 'src/hooks/permissions';
-import {OVERLAY_DELAY} from 'src/constants';
 
 interface ChecklistsSubset {
     items: {
@@ -113,7 +111,7 @@ const FinishRun = ({playbookRun, ownerGroupOnlyActions, isOwner}: Props) => {
 
     const onFinishRun = useOnFinishRun(playbookRun);
 
-    if (playbookRun.current_status === PlaybookRunStatus.Finished) {
+    if (playbookRun.current_status === PlaybookRunStatus.Finished || blockedByOwnerOnly) {
         return null;
     }
 
@@ -125,27 +123,9 @@ const FinishRun = ({playbookRun, ownerGroupOnlyActions, isOwner}: Props) => {
                 </IconWrapper>
                 <Text>{formatMessage({id: 'playbooks.finish_run.prompt', defaultMessage: 'Time to wrap up?'})}</Text>
                 <RightWrapper>
-                    {blockedByOwnerOnly ? (
-                        <OverlayTrigger
-                            placement='top'
-                            delay={OVERLAY_DELAY}
-                            overlay={
-                                <Tooltip id='finish-run-owner-only-tooltip'>
-                                    {formatMessage({id: 'playbooks.finish_run.owner_only_tooltip', defaultMessage: 'Only the run owner can finish this run'})}
-                                </Tooltip>
-                            }
-                        >
-                            <FinishRunButton
-                                disabled={true}
-                            >
-                                {formatMessage({id: 'playbooks.finish_run.button', defaultMessage: 'Finish'})}
-                            </FinishRunButton>
-                        </OverlayTrigger>
-                    ) : (
-                        <FinishRunButton onClick={onFinishRun}>
-                            {formatMessage({id: 'playbooks.finish_run.button', defaultMessage: 'Finish'})}
-                        </FinishRunButton>
-                    )}
+                    <FinishRunButton onClick={onFinishRun}>
+                        {formatMessage({id: 'playbooks.finish_run.button', defaultMessage: 'Finish'})}
+                    </FinishRunButton>
                 </RightWrapper>
             </Content>
         </Container>

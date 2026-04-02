@@ -17,6 +17,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
     let testTeam;
     let testAdminUser;
     let testNonMemberUser;
+    let testMemberUser;
     let testPlaybook;
 
     before(() => {
@@ -27,6 +28,11 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
             // # Create a team member who is NOT a member of the playbook
             cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
                 testNonMemberUser = newUser;
+            });
+
+            // # Create a team member who WILL be a regular (non-admin) playbook member
+            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
+                testMemberUser = newUser;
             });
 
             // # Login as admin to create playbook
@@ -40,6 +46,22 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
                 makePublic: true,
             }).then((playbook) => {
                 testPlaybook = playbook;
+
+                // # Add testMemberUser as a regular (non-admin) playbook member
+                cy.apiGetPlaybook(testPlaybook.id).then((fetchedPlaybook) => {
+                    const updatedMembers = [
+                        ...fetchedPlaybook.members,
+                        {user_id: testMemberUser.id, roles: ['playbook_member']},
+                    ];
+                    cy.apiUpdatePlaybook({...fetchedPlaybook, members: updatedMembers});
+                });
+
+                // * Verify testMemberUser was added as member-only (not admin)
+                cy.apiGetPlaybook(testPlaybook.id).then((fetched) => {
+                    const member = fetched.members.find((m) => m.user_id === testMemberUser.id);
+                    expect(member, 'testMemberUser should be a playbook member').to.exist;
+                    expect(member.roles).to.not.include('playbook_admin');
+                });
             });
         });
     });
@@ -136,6 +158,11 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         // * The checklists section is visible but read-only — "Add a section" is absent
         cy.get('[id="checklists"]').should('exist');
         cy.findByTestId('add-a-checklist-button').should('not.exist');
+
+        // * Verify playbook was NOT mutated by the non-member visit
+        cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+            expect(playbook.title).to.equal(PLAYBOOK_TITLE);
+        });
     });
 
     it('admin can still see "Add a section" button when admin_only_edit is enabled', () => {
@@ -161,6 +188,87 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
             cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
                 // * The PUT request is rejected with 403 Forbidden
                 cy.apiUpdatePlaybook({...playbook, title: 'Unauthorized Update'}, 403);
+            });
+        });
+    });
+
+    // --- Member (non-admin) enforcement tests: verify the feature blocks playbook members who are not admins ---
+
+    it('playbook member (non-admin) cannot see "Add a section" button when admin_only_edit is enabled', () => {
+        // # Enable admin_only_edit via API
+        cy.apiPatchPlaybook(testPlaybook.id, {admin_only_edit: true});
+
+        // # Login as member (non-admin)
+        cy.apiLogin(testMemberUser);
+
+        // # Visit the playbook outline editor
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+        // * The checklists section is visible but read-only — "Add a section" is absent
+        cy.get('[id="checklists"]').should('exist');
+        cy.findByTestId('add-a-checklist-button').should('not.exist');
+
+        // * Verify playbook was NOT mutated by the visit
+        cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+            expect(playbook.title).to.equal(PLAYBOOK_TITLE);
+        });
+    });
+
+    it('playbook member (non-admin) can see "Add a section" button when admin_only_edit is disabled', () => {
+        // # Ensure admin_only_edit is disabled (reset by beforeEach)
+        // # Login as member (non-admin)
+        cy.apiLogin(testMemberUser);
+
+        // # Visit the playbook outline editor
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+        // * Member can see the "Add a section" button when admin_only_edit is off
+        cy.findByTestId('add-a-checklist-button').should('exist');
+    });
+
+    it('REST API rejects playbook update from playbook member (non-admin) when admin_only_edit is enabled', () => {
+        // # Enable admin_only_edit via API
+        cy.apiPatchPlaybook(testPlaybook.id, {admin_only_edit: true}).then(() => {
+            // # Login as member (non-admin)
+            cy.apiLogin(testMemberUser);
+
+            // # Member fetches the playbook then tries to update it
+            cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                // * The PUT request is rejected with 403 Forbidden
+                cy.apiUpdatePlaybook({...playbook, title: 'Member Unauthorized Update'}, 403);
+            });
+        });
+    });
+
+    it('REST API accepts playbook update from playbook member (non-admin) when admin_only_edit is disabled', () => {
+        // # Ensure admin_only_edit is disabled via API
+        cy.apiPatchPlaybook(testPlaybook.id, {admin_only_edit: false}).then(() => {
+            // # Login as member (non-admin)
+            cy.apiLogin(testMemberUser);
+
+            // # Member updates the playbook title
+            cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                // * The PUT request succeeds with 200
+                cy.apiUpdatePlaybook({...playbook, title: 'Member Updated Title'}, 200);
+            });
+        });
+    });
+
+    it('system admin can update playbook even when admin_only_edit is enabled', () => {
+        // # Enable admin_only_edit via API
+        cy.apiPatchPlaybook(testPlaybook.id, {admin_only_edit: true}).then(() => {
+            // # Login as sysadmin
+            cy.apiAdminLogin();
+
+            // # Sysadmin updates the playbook title via API
+            cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                // * The PUT request succeeds with 200
+                cy.apiUpdatePlaybook({...playbook, title: 'Sysadmin Updated Title'}, 200);
+            });
+
+            // * Assert the title was updated successfully
+            cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                expect(playbook.title).to.equal('Sysadmin Updated Title');
             });
         });
     });

@@ -55,6 +55,9 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
 
         // * Assert "Require new channel for all runs" toggle exists
         cy.findByTestId('new-channel-only-toggle').should('exist');
+
+        // * Assert toggle is initially unchecked (default state)
+        cy.findByTestId('new-channel-only-toggle').find('input').first().should('not.be.checked');
     });
 
     // NOTE: The API rejection test (new_channel_only=true + existing channel_id → 400)

@@ -51,6 +51,7 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
             cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Default'}).then(() => {
                 // # Navigate to the team and trigger the modal via slash command
                 cy.visit(`/${testTeam.name}/channels/town-square`);
+                cy.get('#post_textbox').should('be.visible');
                 cy.openPlaybookRunDialogFromSlashCommand();
 
                 // * Verify the RunPlaybookModal opened (select-playbook step)
@@ -85,6 +86,7 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
             createdPlaybookIds.push(playbook.id);
             cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Default'}).then(() => {
                 cy.visit(`/${testTeam.name}/channels/town-square`);
+                cy.get('#post_textbox').should('be.visible');
                 cy.openPlaybookRunDialogFromSlashCommand();
 
                 cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
@@ -106,6 +108,7 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
         }).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
             cy.visit(`/${testTeam.name}/channels/town-square`);
+            cy.get('#post_textbox').should('be.visible');
             cy.openPlaybookRunDialogFromSlashCommand();
 
             cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
@@ -143,6 +146,7 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                 // Template references the Zone property field by name
                 cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{Zone}'}).then(() => {
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+                    cy.get('#post_textbox').should('be.visible');
                     cy.openPlaybookRunDialogFromSlashCommand();
 
                     cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
@@ -179,6 +183,7 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                 return cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{Manager} Incident'});
             }).then(() => {
                 cy.visit(`/${testTeam.name}/channels/town-square`);
+                cy.get('#post_textbox').should('be.visible');
                 cy.openPlaybookRunDialogFromSlashCommand();
 
                 cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
@@ -223,6 +228,7 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                 return cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{Manager} Incident'});
             }).then(() => {
                 cy.visit(`/${testTeam.name}/channels/town-square`);
+                cy.get('#post_textbox').should('be.visible');
                 cy.openPlaybookRunDialogFromSlashCommand();
 
                 cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
@@ -261,6 +267,7 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
             // Template uses {OWNER} only (no {SEQ} to avoid needing a run_number_prefix)
             cy.apiPatchPlaybook(playbook.id, {channel_name_template: 'Incident by {OWNER}'}).then(() => {
                 cy.visit(`/${testTeam.name}/channels/town-square`);
+                cy.get('#post_textbox').should('be.visible');
                 cy.openPlaybookRunDialogFromSlashCommand();
 
                 cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
@@ -298,11 +305,12 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                 return cy.apiPatchPlaybook(playbook.id, {channel_name_template: '{Region} Incident'});
             }).then(() => {
                 // # Fetch field IDs so we can target the correct input
-                cy.apiGetPropertyFields(playbook.id).then((fields) => {
-                    const regionField = fields.find((f) => f.name === 'Region');
+                cy.apiGetPropertyFieldByName(playbook.id, 'Region').then((field) => {
+                    const regionField = field;
 
                     // # Navigate and open the run dialog via slash command
                     cy.visit(`/${testTeam.name}/channels/town-square`);
+                    cy.get('#post_textbox').should('be.visible');
                     cy.openPlaybookRunDialogFromSlashCommand();
 
                     cy.get('#playbooks_run_playbook_dialog').findByText(playbookTitle).click();
@@ -311,7 +319,9 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                     cy.findByRole('button', {name: /start run/i}).should('be.disabled');
 
                     // # Fill in the Region attribute field using its data-testid
-                    cy.findByTestId(`property-field-${regionField.id}`).type('EMEA');
+                    cy.get('#playbooks_run_playbook_dialog').within(() => {
+                        cy.findByTestId(`property-field-${regionField.id}`).type('EMEA');
+                    });
 
                     // * Start run should now be enabled
                     cy.findByRole('button', {name: /start run/i}).should('not.be.disabled');
@@ -333,6 +343,15 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                         );
                         expect(createdRun, 'run with EMEA in name should exist').to.exist;
                         expect(createdRun.name).to.include('Incident');
+
+                        // * Verify property values were persisted on the run
+                        cy.assertRunHasPropertyValues(createdRun.id);
+
+                        // * Verify the channel name was resolved from the template
+                        cy.apiGetChannel(createdRun.channel_id).then(({channel}) => {
+                            expect(channel.display_name, 'channel display name should contain EMEA').to.include('EMEA');
+                            expect(channel.display_name, 'channel display name should contain Incident').to.include('Incident');
+                        });
                     });
                 });
             });

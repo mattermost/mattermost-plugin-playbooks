@@ -8,7 +8,8 @@
 
 // Stage: @prod
 // Group: @playbooks
-//
+
+import {getRandomId} from '../../../../utils';
 import * as TIMEOUTS from '../../../../fixtures/timeouts';
 
 describe('playbooks > edit > task actions', {testIsolation: true}, () => {
@@ -38,7 +39,7 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
         // # Create a playbook
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
-            title: 'Playbook (' + Date.now() + ')',
+            title: 'Playbook (' + getRandomId() + ')',
             checklists: [{
                 title: 'Test Checklist',
                 items: [
@@ -75,17 +76,17 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     };
 
     it('disallows no keywords', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Attempt to enable the trigger
+        // # Attempt to enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify no actions are configured
+        // * Verify no actions are configured
         getTaskActionsButton().should('exist');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -98,22 +99,22 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows a single keyword', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add a keyword
+        // # Add a keyword
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
         });
 
-        // Enable the trigger
+        // # Enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions
+        // * Verify configured actions
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -126,23 +127,23 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows multiple keywords', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add multiple keywords
+        // # Add multiple keywords
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
             cy.get('input').eq(0).type('keyword2{enter}', {force: true});
         });
 
-        // Enable the trigger
+        // # Enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions
+        // * Verify configured actions
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -155,22 +156,22 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows multi-word phrases', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add a phrase
+        // # Add a phrase
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('a phrase with multiple words{enter}', {force: true});
         });
 
-        // Enable the trigger
+        // # Enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions
+        // * Verify configured actions
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -183,34 +184,34 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows removing previously configured keywords', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add multiple keywords
+        // # Add multiple keywords
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
             cy.get('input').eq(0).type('keyword2{enter}', {force: true});
         });
 
-        // Enable the trigger
+        // # Enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Re-open the dialog
+        // # Re-open the dialog
         cy.findByText('1 action').click();
 
-        // Remove one trigger keyword
+        // # Remove one trigger keyword
         cy.get('.modal-body').within(() => {
             cy.findByText('keyword1').next().click();
         });
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions
+        // * Verify configured actions
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -223,35 +224,35 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('disables when all keywords removed', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add multiple keywords
+        // # Add multiple keywords
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
             cy.get('input').eq(0).type('keyword2{enter}', {force: true});
         });
 
-        // Enable the trigger
+        // # Enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Re-open the dialog
+        // # Re-open the dialog
         cy.findByText('1 action').click();
 
-        // Remove all trigger keywords
+        // # Remove all trigger keywords
         cy.get('.modal-body').within(() => {
             cy.findByText('keyword1').next().click();
             cy.findByText('keyword2').next().click();
         });
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions
+        // * Verify configured actions
         getTaskActionsButton().should('exist');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -264,11 +265,11 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('disallows a user without keywords', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add a user
+        // # Add a user
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(1).
                 type('@' + testUser.username, {force: true}).
@@ -276,13 +277,13 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
                 type('{enter}', {force: true});
         });
 
-        // Attempt to enable the trigger
+        // # Attempt to enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify no actions are configured
+        // * Verify no actions are configured
         getTaskActionsButton().should('exist');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -295,16 +296,16 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows a single user', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add a keyword
+        // # Add a keyword
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
         });
 
-        // Add a user
+        // # Add a user
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(1).
                 type('@' + testUser.username, {force: true}).
@@ -312,13 +313,13 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
                 type('{enter}', {force: true});
         });
 
-        // Attempt to enable the trigger
+        // # Attempt to enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions and user
+        // * Verify configured actions and user
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -331,16 +332,16 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows configuring multiple users', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add a keyword
+        // # Add a keyword
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
         });
 
-        // Add two users
+        // # Add two users
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(1).
                 type('@' + testUser.username, {force: true}).
@@ -352,13 +353,13 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
                 type('{enter}', {force: true});
         });
 
-        // Attempt to enable the trigger
+        // # Attempt to enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions and user
+        // * Verify configured actions and user
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -371,16 +372,16 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('rejects unknown user', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add a keyword
+        // # Add a keyword
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
         });
 
-        // Type an unknown user
+        // # Type an unknown user
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(1).
                 type('@unknown', {force: true}).
@@ -388,16 +389,16 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
                 type('{enter}', {force: true});
         });
 
-        // Click away
+        // # Click away
         cy.get('.modal-body').click();
 
-        // Attempt to enable the trigger
+        // # Attempt to enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions and user
+        // * Verify configured actions and user
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);
@@ -410,16 +411,16 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
     });
 
     it('allows removing previously configured users', () => {
-        // Open the task actions modal
+        // # Open the task actions modal
         editTask();
         getTaskActionsButton().click();
 
-        // Add a keyword
+        // # Add a keyword
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(0).type('keyword1{enter}', {force: true});
         });
 
-        // Add two users
+        // # Add two users
         cy.get('.modal-body').within(() => {
             cy.get('input').eq(1).
                 type('@' + testUser.username, {force: true}).
@@ -431,24 +432,24 @@ describe('playbooks > edit > task actions', {testIsolation: true}, () => {
                 type('{enter}', {force: true});
         });
 
-        // Attempt to enable the trigger
+        // # Attempt to enable the trigger
         cy.findByText('Mark the task as done').click();
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Re-open the dialog
+        // # Re-open the dialog
         cy.findByText('1 action').click();
 
-        // Remove one user keyword
+        // # Remove one user keyword
         cy.get('.modal-body').within(() => {
             cy.findByText(testUser.username).parent().parent().next().click();
         });
 
-        // Save the dialog
+        // # Save the dialog
         cy.findByTestId('modal-confirm-button').click();
 
-        // Verify configured actions
+        // * Verify configured actions
         cy.findByText('1 action');
         cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
             const trigger = JSON.parse(playbook.checklists[0].items[0].task_actions[0].trigger.payload);

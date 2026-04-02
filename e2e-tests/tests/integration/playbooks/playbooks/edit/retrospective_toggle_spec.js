@@ -86,6 +86,39 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
         });
     });
 
+    it('clicking the toggle in the editor disables retrospective and persists via API', () => {
+        // # Create a playbook with retrospective enabled (default)
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Retrospective Click Toggle Playbook (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            // # Visit the playbook outline editor
+            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+
+            // * Assert toggle is initially checked (enabled)
+            cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');
+            cy.get('[id="retrospective"]').find('input').first().should('be.checked');
+
+            // # Click the toggle to disable retrospective
+            cy.get('[id="retrospective"]').find('label').first().click();
+
+            // * Assert toggle is now unchecked
+            cy.get('[id="retrospective"]').find('input').first().should('not.be.checked');
+
+            // * Verify via API that retrospective_enabled was persisted as false
+            cy.apiGetPlaybook(playbook.id).then((pb) => {
+                expect(pb.retrospective_enabled, 'retrospective_enabled should be false after clicking toggle').to.equal(false);
+            });
+
+            // # Reload to confirm persistence
+            cy.reload();
+            cy.get('[id="retrospective"]').find('input').first().should('not.be.checked');
+        });
+    });
+
     it('disabling retrospective hides the retrospective section in run details', () => {
         // # Create a playbook with retrospective disabled, then start a run
         cy.apiCreatePlaybook({

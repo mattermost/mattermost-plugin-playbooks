@@ -9,7 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
-/* eslint-disable no-only-tests/no-only-tests */
+import {getRandomId} from '../../../utils';
 
 describe('runs > run details page > status update', {testIsolation: true}, () => {
     let testTeam;
@@ -51,9 +51,9 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
         // # Login as testUser
         cy.apiLogin(testUser);
 
-        const now = Date.now();
-        const playbookRunName = 'Playbook Run (' + now + ')';
-        playbookRunChannelName = 'playbook-run-' + now;
+        const runId = getRandomId();
+        const playbookRunName = 'Playbook Run (' + runId + ')';
+        playbookRunChannelName = 'playbook-run-' + runId;
 
         cy.apiRunPlaybook({
             teamId: testTeam.id,

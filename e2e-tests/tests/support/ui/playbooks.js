@@ -332,14 +332,37 @@ Cypress.Commands.add('playbooksAssertChecklistItem', (itemIndex, {disabled, chec
 
 /**
  * Start a run via the RunPlaybook modal from the playbook outline page.
- * Navigates to the outline, fills in the run name, submits, and waits for redirect.
+ * Navigates to the outline, fills in the run name, optionally sets property values, submits,
+ * and waits for redirect.
+ *
+ * When propertyValues is provided, the run name input may be readonly (driven by a
+ * channel_name_template). In that case the run name is not typed.
+ *
  * @param {String} playbookId - The playbook ID to run
- * @param {String} runName - The name for the new run
+ * @param {String} runName - The name for the new run (ignored when the input is readonly)
+ * @param {Object} [propertyValues] - Optional map of { propertyName: optionLabel } to set
+ *   select property values in the modal before submitting.
  */
-Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {
+Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName, propertyValues) => {
     cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
     cy.findByTestId('run-playbook').click();
-    cy.findByTestId('run-name-input').clear().type(runName);
+
+    // # Fill in the run name unless the input is readonly (template-driven)
+    cy.findByTestId('run-name-input').then(($input) => {
+        if (!$input.attr('readonly')) {
+            cy.wrap($input).clear().type(runName);
+        }
+    });
+
+    // # Set property values in the modal if provided
+    if (propertyValues) {
+        for (const [fieldName, optionLabel] of Object.entries(propertyValues)) {
+            cy.findByText(fieldName).should('be.visible');
+            cy.findByText('Select...').click();
+            cy.findByText(optionLabel).click();
+        }
+    }
+
     cy.findByTestId('modal-confirm-button').click();
     cy.url().should('include', '/playbooks/runs/');
 });
@@ -421,15 +444,15 @@ Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
  * method: 'POST' (add/duplicate), 'PUT' (update name/type/options), 'DELETE' (delete)
  * Aliases: AddPropertyField, SavePropertyField, DeletePropertyField
  */
-Cypress.Commands.add('playbooksInterceptPropertyFieldMutation', (method) => {
+Cypress.Commands.add('playbooksInterceptPropertyFieldMutation', (method, aliasOverride) => {
     const aliasMap = {POST: 'AddPropertyField', PUT: 'SavePropertyField', DELETE: 'DeletePropertyField'};
     const urlMap = {
         POST: '/plugins/playbooks/api/v0/playbooks/*/property_fields',
         PUT: '/plugins/playbooks/api/v0/playbooks/*/property_fields/*',
         DELETE: '/plugins/playbooks/api/v0/playbooks/*/property_fields/*',
     };
-    const alias = aliasMap[method];
-    if (!alias) {
+    const alias = aliasOverride || aliasMap[method];
+    if (!urlMap[method]) {
         throw new Error(`playbooksInterceptPropertyFieldMutation: unsupported method "${method}"`);
     }
     cy.intercept(method, urlMap[method]).as(alias);
@@ -692,13 +715,14 @@ Cypress.Commands.add('playbooksAssertSequentialIdInList', (runName, expectedIdFr
  * @param {String} playbookId - The playbook ID
  * @param {String} fieldName  - The attribute name to type
  * @param {String} [fieldType='text'] - The attribute type
+ * @param {Array}  [options=[]] - Option names for select/multi-select types (e.g. ['Alpha', 'Bravo'])
  */
-Cypress.Commands.add('playbooksAddPropertyFieldViaUI', (playbookId, fieldName, fieldType = 'text') => {
+Cypress.Commands.add('playbooksAddPropertyFieldViaUI', (playbookId, fieldName, fieldType = 'text', options = []) => {
     cy.visit('/playbooks/playbooks/' + playbookId + '/attributes');
 
     // # Click "Add attribute" (text matches both "Add attribute" and "Add your first attribute")
     // Property field creation uses a REST POST, not the UpdatePlaybook GraphQL mutation.
-    cy.intercept('POST', '/plugins/playbooks/api/v0/playbooks/*/property_fields').as('AddPropertyField');
+    cy.playbooksInterceptPropertyFieldMutation('POST');
     cy.findByRole('button', {name: /add.*attribute/i}).click();
     cy.wait('@AddPropertyField');
 
@@ -706,7 +730,7 @@ Cypress.Commands.add('playbooksAddPropertyFieldViaUI', (playbookId, fieldName, f
     cy.findAllByTestId('property-field-row').last().within(() => {
         cy.findByLabelText('Attribute name').clear().type(fieldName);
     });
-    cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*/property_fields/*').as('SavePropertyFieldName');
+    cy.playbooksInterceptPropertyFieldMutation('PUT', 'SavePropertyFieldName');
     cy.get('body').click(0, 0);
     cy.wait('@SavePropertyFieldName');
 
@@ -715,9 +739,38 @@ Cypress.Commands.add('playbooksAddPropertyFieldViaUI', (playbookId, fieldName, f
         cy.findAllByTestId('property-field-row').last().within(() => {
             cy.findByRole('button', {name: 'Change attribute type'}).trigger('click');
         });
-        cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*/property_fields/*').as('SavePropertyFieldType');
+        cy.playbooksInterceptPropertyFieldMutation('PUT', 'SavePropertyFieldType');
         cy.findByText(new RegExp('^' + fieldType + '$', 'i')).click();
         cy.wait('@SavePropertyFieldType');
+    }
+
+    // # Add options for select/multi-select types
+    if (options.length > 0 && (fieldType === 'select' || fieldType === 'multi-select')) {
+        cy.findAllByTestId('property-field-row').last().within(() => {
+            options.forEach((optionText, index) => {
+                if (index > 0) {
+                    cy.findByRole('button', {name: 'Add value'}).click();
+                    cy.waitForGraphQLQueries();
+                }
+
+                cy.findAllByText(/^Option \d+$/).last().parent().as('optEl');
+                cy.get('@optEl').click();
+                cy.waitUntil(
+                    () => cy.get('@optEl').then(($el) => $el.attr('aria-controls') !== undefined),
+                    {timeout: 2000, interval: 100},
+                );
+                cy.get('@optEl').invoke('attr', 'aria-controls').then((ac) => {
+                    const escapedId = ac.replace(/:/g, '\\:');
+                    cy.document().its('body').find(`#${escapedId}`).within(() => {
+                        cy.findByPlaceholderText('Enter value name').clear().type(`${optionText}{enter}`);
+                    });
+                });
+                cy.waitForGraphQLQueries();
+            });
+        });
+
+        // # Click outside to close any open option editor
+        cy.get('body').click(0, 0);
     }
 });
 

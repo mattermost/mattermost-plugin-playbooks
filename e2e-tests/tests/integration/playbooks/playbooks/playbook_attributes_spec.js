@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../utils';
+
 describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -28,7 +30,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Create a fresh playbook for each test
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
-            title: 'Attributes Test Playbook (' + Date.now() + ')',
+            title: 'Attributes Test Playbook (' + getRandomId() + ')',
             userId: testUser.id,
         }).then((playbook) => {
             testPlaybook = playbook;
@@ -97,6 +99,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify attribute persists
             verifyAttribute(0, 'Customer Name');
+
+            // * Verify attribute was persisted via API
+            cy.apiGetPropertyFieldByName(testPlaybook.id, 'Customer Name');
         });
 
         it('can create a select attribute with options', () => {
@@ -171,6 +176,13 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify change persists
             verifyAttribute(0, 'New Name');
+
+            // * Verify rename was persisted via API
+            cy.apiGetPropertyFieldByName(testPlaybook.id, 'New Name');
+            cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
+                const oldField = fields.find((f) => f.name === 'Old Name');
+                expect(oldField, 'Old Name field should not exist in API').to.be.undefined;
+            });
         });
 
         it('can change attribute type', () => {

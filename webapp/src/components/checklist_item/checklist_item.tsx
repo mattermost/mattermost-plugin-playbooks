@@ -190,7 +190,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [formatMessage, userPropertyFields]);
 
     const groupOptions = useMemo(
-        () => groups.map((g) => ({id: g.id, displayName: g.display_name})),
+        () => groups.map((g) => ({id: g.id, displayName: g.display_name, name: g.name, memberCount: g.member_count})),
         [groups],
     );
 

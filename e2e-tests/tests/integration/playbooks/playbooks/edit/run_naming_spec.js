@@ -131,7 +131,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('persists prefix and template values set via API and shows them in editor', () => {
         // # Set prefix and template values via API to avoid blur timing issues
-        // Note: prefix must be alphanumeric (no trailing dash) — FormatSequentialID adds the dash
+        // # Note: prefix must be alphanumeric (no trailing dash) — FormatSequentialID adds the dash
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'INC', channel_name_template: `${TOKEN_SEQ} - Incident`}).then(() => {
             // # Visit the playbook outline editor
             cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
@@ -178,7 +178,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
                 cy.assertRunNameResolved(runId, 'SEQ-');
                 cy.assertRunNameResolved(runId, 'Convention');
 
-                // Verify sequential_id is stored in backend (not just rendered in UI)
+                // * Verify sequential_id is stored in backend (not just rendered in UI)
                 cy.apiGetPlaybookRun(runId).then(({body: runData}) => {
                     expect(runData.sequential_id).to.not.be.empty;
                     expect(runData.sequential_id).to.include('SEQ-');
@@ -246,9 +246,9 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
     });
 
     it('handles prefix with special characters gracefully', () => {
-        // # 'ABC-' has a trailing dash — FormatSequentialID appends another dash,
-        // # so the sequential_id should be 'ABC--N'. The key assertion is that the
-        // # run was created successfully and sequential_id is non-empty (no crash).
+        // # 'ABC-' has a trailing dash — NormalizeRunNumberPrefix trims it to 'ABC'
+        // # before storing. So FormatSequentialID('ABC', 1) produces 'ABC-00001'.
+        // # The key assertion is that normalization occurs and the run is created successfully.
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'ABC-'}).then(() => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,

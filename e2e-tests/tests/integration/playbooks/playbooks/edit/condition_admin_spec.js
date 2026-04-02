@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../../utils';
+
 describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -28,7 +30,7 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
-            title: 'Condition Test Playbook ' + Date.now(),
+            title: 'Condition Test Playbook ' + getRandomId(),
             userId: testUser.id,
         }).then((playbook) => {
             testPlaybook = playbook;
@@ -58,9 +60,11 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                         ],
                     },
                 }).then(() => {
-                    cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                        priorityField = fields.find((f) => f.name === 'Priority');
-                        statusField = fields.find((f) => f.name === 'Status');
+                    cy.apiGetPropertyFieldByName(testPlaybook.id, 'Priority').then((field) => {
+                        priorityField = field;
+                    });
+                    cy.apiGetPropertyFieldByName(testPlaybook.id, 'Status').then((field) => {
+                        statusField = field;
                     });
                 });
             });

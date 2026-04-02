@@ -53,8 +53,10 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
         });
 
+        const incPrefix = 'INC' + getRandomId().slice(0, 3).toUpperCase();
+
         // # Set the run_number_prefix on the playbook (no trailing dash — FormatSequentialID adds it)
-        cy.then(() => cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'INC'}));
+        cy.then(() => cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: incPrefix}));
 
         // # Start first run via API
         cy.then(() => cy.apiRunPlaybook({
@@ -63,9 +65,9 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             playbookRunName: firstRunName,
             ownerUserId: testUser.id,
         })).then((firstRun) => {
-            // Verify sequential_id is stored in backend (not just rendered in UI)
+            // * Verify sequential_id is stored in backend (not just rendered in UI)
             cy.apiGetPlaybookRun(firstRun.id).then(({body: runData}) => {
-                expect(runData.sequential_id).to.equal(formatSequentialID('INC', 1));
+                expect(runData.sequential_id).to.equal(formatSequentialID(incPrefix, 1));
             });
         });
 
@@ -76,9 +78,9 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             playbookRunName: secondRunName,
             ownerUserId: testUser.id,
         })).then((secondRun) => {
-            // Verify sequential_id is stored in backend (not just rendered in UI)
+            // * Verify sequential_id is stored in backend (not just rendered in UI)
             cy.apiGetPlaybookRun(secondRun.id).then(({body: runData}) => {
-                expect(runData.sequential_id).to.equal(formatSequentialID('INC', 2));
+                expect(runData.sequential_id).to.equal(formatSequentialID(incPrefix, 2));
             });
         });
 
@@ -86,11 +88,11 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         cy.visit('/playbooks/runs');
         cy.findByTestId('playbookRunList').should('be.visible');
 
-        // * Assert first run shows INC-00001 alongside its name
-        cy.then(() => cy.playbooksAssertSequentialIdInList(firstRunName, formatSequentialID('INC', 1)));
+        // * Assert first run shows its sequential ID alongside its name
+        cy.then(() => cy.playbooksAssertSequentialIdInList(firstRunName, formatSequentialID(incPrefix, 1)));
 
-        // * Assert second run shows INC-00002 alongside its name
-        cy.then(() => cy.playbooksAssertSequentialIdInList(secondRunName, formatSequentialID('INC', 2)));
+        // * Assert second run shows its sequential ID alongside its name
+        cy.then(() => cy.playbooksAssertSequentialIdInList(secondRunName, formatSequentialID(incPrefix, 2)));
     });
 
     it('does not show sequential ID badge when no prefix is configured', () => {
@@ -130,7 +132,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
     });
 
     it('changing the prefix after runs exist keeps existing run IDs frozen', () => {
-        // Use a random prefix to avoid unique-constraint collisions on Cypress retries
+        // # Use a random prefix to avoid unique-constraint collisions on Cypress retries
         const prefix = 'TST' + getRandomId().slice(0, 4).toUpperCase();
         const newPrefix = 'NEW' + getRandomId().slice(0, 4).toUpperCase();
         let testPlaybook;
@@ -190,7 +192,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
     });
 
     it('prefix can be changed before any runs exist and affects all subsequent runs', () => {
-        // Create a playbook with prefix IH
+        // # Create a playbook with prefix IH
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
             title: 'Prefix Change Before Runs Playbook ' + getRandomId(),
@@ -292,7 +294,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                     playbookRunName: 'Header ID Run ' + getRandomId(),
                     ownerUserId: testUser.id,
                 }).then((playbookRun) => {
-                    // Verify sequential_id is stored in backend (not just rendered in UI)
+                    // * Verify sequential_id is stored in backend (not just rendered in UI)
                     cy.apiGetPlaybookRun(playbookRun.id).then(({body: runData}) => {
                         expect(runData.sequential_id).to.equal(formatSequentialID('HDR', 1));
                     });
@@ -302,8 +304,41 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
                     // * Assert sequential ID is shown in the RHS info overview
                     cy.findByTestId('run-sequential-id').should('exist');
-                    cy.findByTestId('run-sequential-id').should('contain', 'HDR-');
+                    cy.findByTestId('run-sequential-id').should('contain', formatSequentialID('HDR', 1));
                 });
+            });
+        });
+    });
+
+    it('rejects a duplicate run_number_prefix on the same team', () => {
+        const sharedPrefix = 'DUP' + getRandomId().slice(0, 3).toUpperCase();
+        let playbookA;
+
+        // # Create playbook A with a prefix
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Prefix Dup A ' + getRandomId(),
+            memberIDs: [testUser.id],
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            playbookA = playbook;
+            createdPlaybookIds.push(playbook.id);
+        });
+
+        cy.then(() => cy.apiPatchPlaybook(playbookA.id, {run_number_prefix: sharedPrefix}));
+
+        // # Create playbook B and attempt the same prefix
+        cy.then(() => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Prefix Dup B ' + getRandomId(),
+                memberIDs: [testUser.id],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                createdPlaybookIds.push(playbook.id);
+
+                // * Attempt to set the same prefix — should fail with 409 or 400
+                cy.apiPatchPlaybook(playbook.id, {run_number_prefix: sharedPrefix}, 409);
             });
         });
     });
@@ -329,7 +364,7 @@ describe('runs > sequential id', {testIsolation: true}, () => {
 
                     // * Assert the sequential ID chip is shown in the channel RHS
                     cy.findByTestId('rhs-sequential-id').should('exist');
-                    cy.findByTestId('rhs-sequential-id').should('contain', 'RHS-');
+                    cy.findByTestId('rhs-sequential-id').should('contain', formatSequentialID('RHS', 1));
                 });
             });
         });

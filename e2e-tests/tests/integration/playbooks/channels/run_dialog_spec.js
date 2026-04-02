@@ -15,6 +15,8 @@ describe('channels > run dialog', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
 
+    let createdPlaybookIds = [];
+
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
@@ -28,6 +30,8 @@ describe('channels > run dialog', {testIsolation: true}, () => {
                 title: 'Playbook',
                 memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                createdPlaybookIds.push(playbook.id);
             });
 
             cy.apiCreatePlaybook({
@@ -35,8 +39,16 @@ describe('channels > run dialog', {testIsolation: true}, () => {
                 title: 'Second Playbook',
                 memberIDs: [testUser.id],
                 createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                createdPlaybookIds.push(playbook.id);
             });
         });
+    });
+
+    after(() => {
+        cy.apiLogin(testUser);
+        createdPlaybookIds.forEach((id) => cy.apiArchivePlaybook(id));
+        createdPlaybookIds = [];
     });
 
     beforeEach(() => {
@@ -44,6 +56,7 @@ describe('channels > run dialog', {testIsolation: true}, () => {
 
         // # Navigate to the team and trigger the modal via slash command
         cy.visit(`/${testTeam.name}/channels/town-square`);
+        cy.get('#post_textbox').should('be.visible');
 
         cy.openPlaybookRunDialogFromSlashCommand();
 
@@ -91,6 +104,33 @@ describe('channels > run dialog', {testIsolation: true}, () => {
             const allPlaybookRuns = response.body;
             const playbookRun = allPlaybookRuns.items.find((inc) => inc.name === playbookRunName);
             expect(playbookRun).to.be.undefined;
+        });
+    });
+
+    it('creates a run successfully via slash command dialog', () => {
+        const playbookRunName = 'Slash Cmd Run ' + getRandomId();
+
+        // # Select a playbook
+        cy.get('#playbooks_run_playbook_dialog').findByText('Playbook').click();
+
+        // # Type a run name
+        cy.findByTestId('run-name-input').type(playbookRunName);
+
+        // # Click Start run
+        cy.findByRole('button', {name: /start run/i}).click();
+
+        // * Verify the modal closes
+        cy.get('#playbooks_run_playbook_dialog').should('not.exist');
+
+        // * Verify navigation away from town-square (to the new run channel)
+        cy.url().should('not.include', '/town-square');
+
+        // * Verify the run was created via API
+        cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
+            const allPlaybookRuns = response.body;
+            const playbookRun = allPlaybookRuns.items.find((inc) => inc.name === playbookRunName);
+            expect(playbookRun).to.not.be.undefined;
+            expect(playbookRun.name).to.equal(playbookRunName);
         });
     });
 });

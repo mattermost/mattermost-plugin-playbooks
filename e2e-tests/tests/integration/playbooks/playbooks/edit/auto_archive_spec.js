@@ -106,6 +106,11 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             // * Confirm the banner appears (guards against a silent toggle failure)
             cy.findByTestId('auto-archive-confirmation-banner').scrollIntoView().should('be.visible');
 
+            // * Verify auto_archive_channel was persisted via API
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.auto_archive_channel, 'auto_archive_channel should be true').to.equal(true);
+            });
+
             // # Start a run from the playbook
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
@@ -120,8 +125,16 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
                 cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
                 cy.playbooksConfirmFinishModal();
 
-                // * Assert the run's channel is now archived (delete_at > 0)
-                cy.apiGetChannel(testRun.channel_id).then(({channel}) => {
+                // * Assert the run's channel is now archived (poll for async archive)
+                const checkArchived = () => {
+                    return cy.apiGetChannel(testRun.channel_id).then(({channel}) => {
+                        if (channel.delete_at === 0) {
+                            throw new Error('Channel not yet archived');
+                        }
+                        return channel;
+                    });
+                };
+                cy.waitUntil(checkArchived, {timeout: 10000, interval: 500}).then((channel) => {
                     expect(channel.delete_at).to.be.greaterThan(0);
                 });
             });

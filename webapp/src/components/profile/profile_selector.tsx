@@ -354,7 +354,7 @@ export default function ProfileSelector(props: Props) {
 
 // styles for the select component
 const selectStyles: StylesConfig<Option, boolean> = {
-    control: (provided) => ({...provided, minWidth: 240, margin: 8}),
+    control: (provided) => ({...provided, minWidth: 280, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
         const hoverColor = 'rgba(20, 93, 191, 0.08)';
@@ -363,11 +363,17 @@ const selectStyles: StylesConfig<Option, boolean> = {
             ...provided,
             backgroundColor: state.isSelected ? hoverColor : bgHover,
             color: 'unset',
+            padding: '6px 12px',
         };
     },
     groupHeading: (provided) => ({
         ...provided,
         fontWeight: 600,
+        fontSize: '11px',
+        letterSpacing: '0.02em',
+        textTransform: 'uppercase' as const,
+        color: 'rgba(var(--center-channel-color-rgb), 0.56)',
+        padding: '8px 12px 4px',
     }),
 };
 
@@ -388,20 +394,30 @@ const getUserDescription = (firstName: string, lastName: string, nickName: strin
 };
 
 export const formatProfileName = (descriptionSuffix: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-        const name = '@' + userName;
-        const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
+        const fullName = getFullName(firstName, lastName) || preferredName;
+        const handle = '@' + userName;
         return (
             <>
-                <span>{name}</span>
-                {description && <Description className={'description'}>{description}</Description>}
+                <FullName>{fullName}{descriptionSuffix}</FullName>
+                <Handle className={'description'}>{handle}</Handle>
             </>
         );
     };
 };
 
-const Description = styled.span`
+const FullName = styled.span`
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+`;
+
+const Handle = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;

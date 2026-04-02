@@ -616,6 +616,20 @@ Cypress.Commands.add('apiGetPropertyFields', (playbookId) => {
 });
 
 /**
+ * Get a single property field by name from a playbook. Fails if not found.
+ * Yields the full field object (including id, attrs.options, etc.)
+ * @param {String} playbookId - The playbook ID
+ * @param {String} fieldName  - The property field name to find
+ */
+Cypress.Commands.add('apiGetPropertyFieldByName', (playbookId, fieldName) => {
+    return cy.apiGetPropertyFields(playbookId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `property field "${fieldName}" should exist on playbook`).to.not.be.undefined;
+        return cy.wrap(field);
+    });
+});
+
+/**
  * Set a property value on a run via REST API.
  * @param {String} runId - The run ID
  * @param {String} fieldId - The property field ID (run-scoped)

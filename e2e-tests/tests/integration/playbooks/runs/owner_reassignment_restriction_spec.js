@@ -72,7 +72,7 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
             // # Add participant and potential new owner to the run
             cy.apiAddUsersToRun(testPlaybookRun.id, [testParticipant.id, testNewOwner.id]);
 
-            // Brief verification that users were added before navigating
+            // * Brief verification that users were added before navigating
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
                 expect(run.participant_ids).to.have.length.greaterThan(0);
             });
@@ -119,7 +119,7 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         // * Assert the owner selector still shows the original owner's username
         cy.findByTestId('owner-profile-selector').should('contain', testOwner.username);
 
-        // Verify server-side: owner_user_id is unchanged
+        // * Verify server-side: owner_user_id is unchanged
         cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
             expect(run.owner_user_id).to.equal(testOwner.id);
         });
@@ -137,6 +137,39 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
 
         // * Assert the ephemeral error message is shown to the non-owner
         cy.verifyEphemeralMessage('You do not have permission to change the owner of this run.');
+    });
+
+    it('playbook admin (non-owner) can reassign ownership when owner_group_only_actions is enabled', () => {
+        // # Create a playbook admin user
+        cy.apiCreateAndAddUserToTeam(testTeam.id).then((playbookAdminUser) => {
+            // # Add as playbook admin
+            cy.apiLogin(testOwner);
+            cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                const updatedMembers = [
+                    ...playbook.members,
+                    {user_id: playbookAdminUser.id, roles: ['playbook_member', 'playbook_admin']},
+                ];
+                cy.apiUpdatePlaybook({...playbook, members: updatedMembers});
+            });
+
+            // # Add playbook admin to the run
+            cy.apiAddUsersToRun(testPlaybookRun.id, [playbookAdminUser.id]);
+
+            // # Login as playbook admin and navigate to the run channel
+            cy.apiLogin(playbookAdminUser);
+            cy.visit(`/${testTeam.name}/channels/${testChannelName}`);
+
+            // # Change ownership via the owner profile selector
+            cy.playbooksChangeRunOwnerViaRHS(testNewOwner.username);
+
+            // * Assert the reassignment succeeded
+            cy.findByTestId('owner-profile-selector').should('contain', testNewOwner.username);
+
+            // * Assert via API that the ownership change was persisted
+            cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                expect(run.owner_user_id, 'playbook admin should be able to reassign ownership').to.equal(testNewOwner.id);
+            });
+        });
     });
 
     it('non-owner can reassign ownership when owner_group_only_actions is false', () => {
@@ -158,7 +191,7 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
                 // # Add participant and new owner to the run
                 cy.apiAddUsersToRun(run.id, [testParticipant.id, testNewOwner.id]);
 
-                // Brief verification that users were added before navigating
+                // * Brief verification that users were added before navigating
                 cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
                     expect(updatedRun.participant_ids).to.have.length.greaterThan(0);
                 });

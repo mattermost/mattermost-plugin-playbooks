@@ -161,9 +161,9 @@ describe('runs > user and date property types', {testIsolation: true}, () => {
                         cy.visit('/playbooks/runs');
                         cy.playbooksFilterByPlaybook(playbook.title);
 
-                        // * Assert the runs list shows a Reviewer attribute column for the run
+                        // * Assert the runs list shows the Reviewer attribute with the assigned user's name
                         cy.playbooksGetRunListRow(run.name).within(() => {
-                            cy.get('[data-testid="run-list-item-attributes"]').should('contain', 'Reviewer');
+                            cy.get('[data-testid="run-list-item-attributes"]').should('contain', testUser2.username);
                         });
                     });
                 });

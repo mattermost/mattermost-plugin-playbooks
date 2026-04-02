@@ -125,6 +125,9 @@ describe('runs > status update template resolution', {testIsolation: true}, () =
             expect(resolvedMessage).to.include('Jane Smith');
 
             // * No raw tokens must remain
+            // * {SEQ} is stripped because no run_number_prefix is configured on this playbook.
+            // # This tests the "no sequential ID → strip {SEQ} placeholder" path.
+            // # The positive resolution path ({SEQ} → 'INC-00001') is covered in sequential_id_spec.js.
             expect(resolvedMessage).to.not.include('{SEQ}');
             expect(resolvedMessage).to.not.include('{Zone}');
             expect(resolvedMessage).to.not.include(TOKEN_OWNER);

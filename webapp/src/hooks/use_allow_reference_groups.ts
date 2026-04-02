@@ -20,7 +20,7 @@ export const useAllowReferenceGroups = () => {
 
     useEffect(() => {
         if (Object.keys(allGroupsMap).length === 0) {
-            dispatch(getGroups({filter_allow_reference: true, per_page: 100, page: 0}));
+            dispatch(getGroups({filter_allow_reference: true, per_page: 100, page: 0, include_member_count: true}));
         }
     }, [dispatch, allGroupsMap]);
 
