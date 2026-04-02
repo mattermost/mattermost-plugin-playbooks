@@ -120,12 +120,7 @@ const ClickableMultiValue = (props: {
     }, [props.data.label]);
 
     const onDropdownChange = (open: boolean) => {
-        if (open) {
-            setTimeout(() => {
-                inputRef.current?.focus();
-                inputRef.current?.select();
-            }, 50);
-        } else {
+        if (!open) {
             handleRename();
             setEditValue(props.data.label);
         }
@@ -191,6 +186,7 @@ const ClickableMultiValue = (props: {
                         ref={inputRef}
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
+                        onFocus={(e) => e.target.select()}
                         onKeyDown={handleKeyDown}
                         onBlur={handleBlur}
                         maxLength={255}
