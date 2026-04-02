@@ -410,7 +410,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		playbookID = rawPlaybookID
 	}
 	if rawName, ok := request.Submission[app.DialogFieldNameKey].(string); ok {
-		name = strings.TrimSpace(rawName)
+		name = rawName
 	}
 
 	if name != "" {
@@ -1112,7 +1112,7 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
 		} else if errors.Is(internalErr, app.ErrNotFound) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, publicMsg, internalErr)
-		} else if errors.Is(internalErr, app.ErrMalformedPlaybookRun) || errors.Is(internalErr, app.ErrPlaybookRunNotActive) {
+		} else if errors.Is(internalErr, app.ErrMalformedPlaybookRun) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
 		} else {
 			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, publicMsg, internalErr)

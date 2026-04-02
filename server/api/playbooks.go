@@ -309,6 +309,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	isPbAdmin := app.IsPlaybookAdminMember(userID, oldPlaybook)
 	if err := app.ValidateGovernanceFlags(isAdmin, isPbAdmin, app.GovernanceFlagChanges{
 		EnableAdminOnlyEdit:         playbook.AdminOnlyEdit && !oldPlaybook.AdminOnlyEdit,
+		DisableAdminOnlyEdit:        !playbook.AdminOnlyEdit && oldPlaybook.AdminOnlyEdit,
 		ToggleOwnerGroupOnlyActions: playbook.OwnerGroupOnlyActions != oldPlaybook.OwnerGroupOnlyActions,
 		ToggleNewChannelOnly:        playbook.NewChannelOnly != oldPlaybook.NewChannelOnly,
 		ToggleAutoArchiveChannel:    playbook.AutoArchiveChannel != oldPlaybook.AutoArchiveChannel,
@@ -768,6 +769,12 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
+	// Normalize unrecognized AssigneeType values and validate companion ID fields.
+	if err := app.NormalizeAssigneeTypes(playbook.Checklists); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -1055,6 +1062,10 @@ func (h *PlaybookHandler) requirePlaybookAttributesLicense(w http.ResponseWriter
 }
 
 func (h *PlaybookHandler) authorisePropertyFieldEdit(w http.ResponseWriter, logger logrus.FieldLogger, userID, playbookID string) (app.Playbook, bool) {
+	if !model.IsValidId(playbookID) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid playbook ID", errors.New("invalid playbook ID"))
+		return app.Playbook{}, false
+	}
 	playbook, err := h.playbookService.Get(playbookID)
 	if err != nil {
 		h.HandleError(w, logger, err)

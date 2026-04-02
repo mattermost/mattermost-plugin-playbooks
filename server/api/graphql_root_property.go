@@ -70,7 +70,7 @@ func (r *PropertyRootResolver) PlaybookProperty(ctx context.Context, args struct
 
 	// Check permissions to view the playbook
 	if err := c.permissions.PlaybookView(userID, args.PlaybookID); err != nil {
-		return nil, err
+		return nil, classifyAppError(err)
 	}
 
 	// Get the property field using the service

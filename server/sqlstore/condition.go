@@ -240,6 +240,9 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 	if err != nil {
 		return conditionForDB{}, errors.Wrap(err, "failed to marshal condition expression")
 	}
+	if len(conditionExprJSON) > maxJSONLength {
+		return conditionForDB{}, errors.Errorf("condition expression json for condition id '%s' is too long (max %d)", condition.ID, maxJSONLength)
+	}
 
 	propertyFieldIDsJSON, err := json.Marshal(propertyFieldIDs)
 	if err != nil {
@@ -258,6 +261,9 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 		if err2 != nil {
 			return conditionForDB{}, errors.Wrap(err2, "failed to marshal condition actions")
 		}
+	}
+	if len(actionsJSON) > maxJSONLength {
+		return conditionForDB{}, errors.Errorf("condition actions json for condition id '%s' is too long (max %d)", condition.ID, maxJSONLength)
 	}
 
 	return conditionForDB{

@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useId,
+    useMemo,
+} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {LockIcon} from '@mattermost/compass-icons/components';
@@ -25,6 +30,7 @@ interface Props {
 }
 
 const TaskLockdownCheckbox = ({item, currentUserId, runOwnerId, runCreatorId, onChange, readOnly, assigneeName}: Props) => {
+    const tooltipId = useId();
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const isSystemAdmin = useIsSystemAdmin();
@@ -103,7 +109,7 @@ const TaskLockdownCheckbox = ({item, currentUserId, runOwnerId, runCreatorId, on
             )}
             {isPermitted ? checkbox : (
                 <Tooltip
-                    id={`task-lockdown-tooltip-${item.id ?? item.title}`}
+                    id={`task-lockdown-tooltip-${item.id || tooltipId}`}
                     content={tooltipContent}
                 >
                     <DisabledWrapper>

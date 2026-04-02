@@ -55,6 +55,8 @@ type Mutation {
 
 	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	setItemPropertyUserAssignee(runID: String!, checklistNum: Float!, itemNum: Float!, propertyFieldID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	setItemGroupAssignee(runID: String!, checklistNum: Float!, itemNum: Float!, groupID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
+	setItemRoleAssignee(runID: String!, checklistNum: Float!, itemNum: Float!, assigneeType: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 }
 
 type PageInfo {

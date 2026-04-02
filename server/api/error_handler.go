@@ -45,6 +45,8 @@ var sentinelErrors = []sentinelError{
 	{app.ErrLicensedFeature, http.StatusForbidden, "This feature is not available with your current license."},
 	{app.ErrMalformedCondition, http.StatusBadRequest, "Invalid condition data."},
 	{app.ErrFilterTooWide, http.StatusBadRequest, "Filter matches too many results; please narrow the filter."},
+	{app.ErrPropertyLimitExceeded, http.StatusConflict, "Maximum number of property fields reached."},
+	{app.ErrInternalPrecondition, http.StatusInternalServerError, "An internal server error occurred."},
 }
 
 type ErrorHandler struct {

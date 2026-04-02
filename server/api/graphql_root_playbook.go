@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -29,12 +30,12 @@ func getGraphqlPlaybook(ctx context.Context, playbookID string) (*PlaybookResolv
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err = c.permissions.PlaybookView(userID, playbookID); err != nil {
-		return nil, err
+		return nil, classifyAppError(err)
 	}
 
 	playbook, err := c.playbookService.Get(playbookID)
 	if err != nil {
-		return nil, err
+		return nil, classifyAppError(err)
 	}
 
 	return &PlaybookResolver{playbook}, nil
@@ -67,7 +68,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 
 	if args.TeamID != "" {
 		if err = c.permissions.PlaybookList(userID, args.TeamID); err != nil {
-			return nil, err
+			return nil, classifyAppError(err)
 		}
 	}
 
@@ -94,7 +95,7 @@ func (r *PlaybookRootResolver) Playbooks(ctx context.Context, args struct {
 
 	playbookResults, err := c.playbookService.GetPlaybooksForTeam(requesterInfo, args.TeamID, opts)
 	if err != nil {
-		return nil, err
+		return nil, classifyAppError(err)
 	}
 
 	filteredItems := c.permissions.FilterPlaybooksByViewPermission(userID, playbookResults.Items)
@@ -119,12 +120,12 @@ func (r *RunRootResolver) UpdatePlaybookFavorite(ctx context.Context, args struc
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err = c.permissions.PlaybookView(userID, args.ID); err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	currentPlaybook, err := c.playbookService.Get(args.ID)
 	if err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	if currentPlaybook.DeleteAt != 0 {
@@ -216,7 +217,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	currentPlaybook, err := c.playbookService.Get(args.ID)
 	if err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	if err := c.permissions.PlaybookEdit(userID, currentPlaybook); err != nil {
@@ -233,11 +234,13 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	isAdmin := app.IsSystemAdmin(userID, c.pluginAPI)
 	isPbAdmin := app.IsPlaybookAdminMember(userID, currentPlaybook)
 	enableAdminOnlyEdit := args.Updates.AdminOnlyEdit != nil && *args.Updates.AdminOnlyEdit && !currentPlaybook.AdminOnlyEdit
+	disableAdminOnlyEdit := args.Updates.AdminOnlyEdit != nil && !*args.Updates.AdminOnlyEdit && currentPlaybook.AdminOnlyEdit
 	toggleOwnerGroupOnlyActions := args.Updates.OwnerGroupOnlyActions != nil && *args.Updates.OwnerGroupOnlyActions != currentPlaybook.OwnerGroupOnlyActions
 	toggleNewChannelOnly := args.Updates.NewChannelOnly != nil && *args.Updates.NewChannelOnly != currentPlaybook.NewChannelOnly
 	toggleAutoArchiveChannel := args.Updates.AutoArchiveChannel != nil && *args.Updates.AutoArchiveChannel != currentPlaybook.AutoArchiveChannel
 	if err := app.ValidateGovernanceFlags(isAdmin, isPbAdmin, app.GovernanceFlagChanges{
 		EnableAdminOnlyEdit:         enableAdminOnlyEdit,
+		DisableAdminOnlyEdit:        disableAdminOnlyEdit,
 		ToggleOwnerGroupOnlyActions: toggleOwnerGroupOnlyActions,
 		ToggleNewChannelOnly:        toggleNewChannelOnly,
 		ToggleAutoArchiveChannel:    toggleAutoArchiveChannel,
@@ -268,6 +271,13 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	}
 
 	setmap := map[string]interface{}{}
+	if args.Updates.Title != nil {
+		trimmed := strings.TrimSpace(*args.Updates.Title)
+		if trimmed == "" {
+			return "", newGraphQLError(errors.New("playbook title must not be empty"))
+		}
+		args.Updates.Title = &trimmed
+	}
 	addToSetmap(setmap, "Title", args.Updates.Title)
 	addToSetmap(setmap, "Description", args.Updates.Description)
 	if args.Updates.Public != nil {
@@ -304,6 +314,9 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 
 	addToSetmap(setmap, "InviteUsersEnabled", args.Updates.InviteUsersEnabled)
 	if args.Updates.DefaultOwnerID != nil {
+		if !model.IsValidId(*args.Updates.DefaultOwnerID) {
+			return "", newGraphQLError(errors.New("invalid default owner ID"))
+		}
 		if !c.pluginAPI.User.HasPermissionToTeam(*args.Updates.DefaultOwnerID, currentPlaybook.TeamID, model.PermissionViewTeam) {
 			return "", classifyAppError(errors.Wrap(app.ErrNoPermissions, "default owner can't view team"))
 		}
@@ -530,7 +543,7 @@ func (r *PlaybookRootResolver) AddPlaybookMember(ctx context.Context, args struc
 
 	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
 	if err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	// Member management is intentionally not gated by AdminOnlyEdit: managing who
@@ -570,7 +583,7 @@ func (r *PlaybookRootResolver) RemovePlaybookMember(ctx context.Context, args st
 
 	currentPlaybook, err := c.playbookService.Get(args.PlaybookID)
 	if err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	if currentPlaybook.DeleteAt != 0 {

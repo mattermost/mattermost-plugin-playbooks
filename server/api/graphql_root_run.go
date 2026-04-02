@@ -32,12 +32,12 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err = c.permissions.RunView(userID, args.ID); err != nil {
-		return nil, err
+		return nil, classifyAppError(err)
 	}
 
 	run, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
-		return nil, err
+		return nil, classifyAppError(err)
 	}
 
 	return &RunResolver{*run}, nil
@@ -133,7 +133,7 @@ func (r *RunRootResolver) SetRunFavorite(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err = c.permissions.RunView(userID, args.ID); err != nil {
-		return "", err
+		return "", classifyAppError(err)
 	}
 
 	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
@@ -236,6 +236,9 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
 
 	if args.Updates.ChannelID != nil {
+		if !model.IsValidId(*args.Updates.ChannelID) {
+			return "", newGraphQLError(errors.New("invalid channel ID"))
+		}
 		channel, err := c.pluginAPI.Channel.Get(*args.Updates.ChannelID)
 		if err != nil {
 			var appErr *model.AppError
@@ -311,6 +314,11 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	if len(args.UserIDs) > maxBatchParticipantOps {
 		return "", newGraphQLError(fmt.Errorf("too many users: maximum %d per call", maxBatchParticipantOps))
 	}
+	for _, uid := range args.UserIDs {
+		if !model.IsValidId(uid) {
+			return "", newGraphQLError(fmt.Errorf("invalid user ID: %q", uid))
+		}
+	}
 
 	// When user is joining run RunView permission is enough, otherwise user need manage permissions
 	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
@@ -349,6 +357,11 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	}
 	if len(args.UserIDs) > maxBatchParticipantOps {
 		return "", newGraphQLError(fmt.Errorf("too many users: maximum %d per call", maxBatchParticipantOps))
+	}
+	for _, uid := range args.UserIDs {
+		if !model.IsValidId(uid) {
+			return "", newGraphQLError(fmt.Errorf("invalid user ID: %q", uid))
+		}
 	}
 
 	// When user is leaving run RunView permission is enough, otherwise user need manage permissions
@@ -441,6 +454,76 @@ func (r *RunRootResolver) SetItemPropertyUserAssignee(ctx context.Context, args 
 	return "", nil
 }
 
+func (r *RunRootResolver) SetItemGroupAssignee(ctx context.Context, args struct {
+	RunID        string
+	ChecklistNum float64
+	ItemNum      float64
+	GroupID      string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if !model.IsValidId(args.RunID) {
+		return "", newGraphQLError(errors.New("invalid run ID"))
+	}
+
+	if args.ChecklistNum < 0 || args.ItemNum < 0 {
+		return "", newGraphQLError(errors.New("checklist and item indices must be non-negative"))
+	}
+
+	if !model.IsValidId(args.GroupID) {
+		return "", newGraphQLError(errors.New("invalid group ID"))
+	}
+
+	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+		return "", classifyAppError(err)
+	}
+
+	if err := c.playbookRunService.SetGroupAssignee(args.RunID, userID, args.GroupID, int(args.ChecklistNum), int(args.ItemNum)); err != nil {
+		return "", classifyAppError(err)
+	}
+
+	return "", nil
+}
+
+func (r *RunRootResolver) SetItemRoleAssignee(ctx context.Context, args struct {
+	RunID        string
+	ChecklistNum float64
+	ItemNum      float64
+	AssigneeType string
+}) (string, error) {
+	c, err := getContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	userID := c.r.Header.Get("Mattermost-User-ID")
+
+	if !model.IsValidId(args.RunID) {
+		return "", newGraphQLError(errors.New("invalid run ID"))
+	}
+
+	if args.ChecklistNum < 0 || args.ItemNum < 0 {
+		return "", newGraphQLError(errors.New("checklist and item indices must be non-negative"))
+	}
+
+	if args.AssigneeType != app.AssigneeTypeOwner && args.AssigneeType != app.AssigneeTypeCreator {
+		return "", newGraphQLError(errors.New("assigneeType must be 'owner' or 'creator'"))
+	}
+
+	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
+		return "", classifyAppError(err)
+	}
+
+	if err := c.playbookRunService.SetRoleAssignee(args.RunID, userID, args.AssigneeType, int(args.ChecklistNum), int(args.ItemNum)); err != nil {
+		return "", classifyAppError(err)
+	}
+
+	return "", nil
+}
+
 func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct {
 	RunID        string
 	ChecklistNum float64
@@ -453,6 +536,9 @@ func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct 
 	c, err := getContext(ctx)
 	if err != nil {
 		return "", err
+	}
+	if args.ChecklistNum < 0 || args.ItemNum < 0 {
+		return "", newGraphQLError(errors.New("checklist and item indices must be non-negative"))
 	}
 	if args.TaskActions == nil {
 		return "", newGraphQLError(errors.New("taskActions must not be nil"))

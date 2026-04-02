@@ -569,6 +569,10 @@ func (s *playbookService) IncrementRunNumber(playbookID string) (int64, error) {
 }
 
 func (s *playbookService) GraphqlUpdate(playbookID string, setmap map[string]interface{}) error {
+	if _, ok := setmap["NextRunNumber"]; ok {
+		return errors.New("NextRunNumber cannot be set via GraphqlUpdate; use IncrementRunNumber")
+	}
+
 	pb, err := s.store.Get(playbookID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get playbook %s before graphql update", playbookID)

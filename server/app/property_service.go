@@ -100,7 +100,7 @@ func (s *propertyService) CreatePropertyField(playbookID string, propertyField P
 		if delErr := s.api.Property.DeletePropertyField(s.groupID, createdField.ID); delErr != nil {
 			s.api.Log.Error("failed to roll back property field after limit exceeded; manual deletion of this field may be required", "err", delErr.Error(), "field_id", createdField.ID, "playbook_id", playbookID)
 		}
-		return nil, errors.Wrapf(ErrPropertyFieldInUse, "cannot create property field: playbook already has %d property fields (max %d)", postCreateCount, MaxPropertiesPerPlaybook)
+		return nil, errors.Wrapf(ErrPropertyLimitExceeded, "cannot create property field: playbook already has %d property fields (max %d)", postCreateCount, MaxPropertiesPerPlaybook)
 	}
 
 	resultField, err := NewPropertyFieldFromMattermostPropertyField(createdField)
@@ -119,7 +119,7 @@ func (s *propertyService) validatePropertyLimit(playbookID string) error {
 	}
 
 	if currentCount >= MaxPropertiesPerPlaybook {
-		return errors.Errorf("cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
+		return errors.Wrapf(ErrPropertyLimitExceeded, "cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
 	}
 
 	return nil
@@ -562,6 +562,7 @@ func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.Pro
 	}
 
 	propertyField.ID = ""
+	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypePlaybook
 	propertyField.TargetID = targetPlaybookID
 
@@ -585,6 +586,7 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	propertyField.ID = ""
+	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypeRun
 	propertyField.TargetID = runID
 	propertyField.Attrs.ParentID = playbookProperty.ID

@@ -144,6 +144,7 @@ type PlaybookCreateOptions struct {
 	NewChannelOnly                          bool                   `json:"new_channel_only"`
 	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 	RunNumberPrefix                         string                 `json:"run_number_prefix"`
+	NextRunNumber                           int64                  `json:"next_run_number"`
 	ChannelNameTemplate                     string                 `json:"channel_name_template"`
 	CreationRules                           []CreationRule         `json:"creation_rules"`
 }

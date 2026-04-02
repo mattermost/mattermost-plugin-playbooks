@@ -89,16 +89,13 @@ func (p *PermissionsService) CanModifyTaskState(userID string, item ChecklistIte
 	if item.AssigneeType == AssigneeTypeCreator && run != nil && run.ReporterUserID == userID {
 		return nil
 	}
-	// System admin bypass. Fetch the user to call IsSystemAdmin() directly so that an
-	// API error fails open rather than closed. RestrictCompletionToAssignee is a
-	// usability guard, not a hard security boundary; locking out admins during a
-	// transient API outage is worse than the alternative.
+	// System admin bypass. Fail-closed: if we cannot verify the user's admin status,
+	// proceed to assignee-based checks rather than granting admin-level bypass.
 	user, userErr := p.pluginAPI.User.Get(userID)
 	if userErr != nil {
-		logrus.WithError(userErr).WithField("user_id", userID).Warn("task lockdown: failed to fetch user for admin check, allowing action")
-		return nil
+		logrus.WithError(userErr).WithField("user_id", userID).Warn("task lockdown: failed to fetch user for admin check, falling through to assignee check")
 	}
-	if user.IsSystemAdmin() {
+	if user != nil && user.IsSystemAdmin() {
 		return nil
 	}
 	// Playbook admin bypass

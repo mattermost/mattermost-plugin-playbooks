@@ -74,6 +74,7 @@ const DateProperty = (props: Props) => {
     const [displayMillis, setDisplayMillis] = useState<number>(millis || 0);
     const isMounted = useRef(true);
     const previousMillisRef = useRef(displayMillis);
+    const callSeqRef = useRef(0);
     useEffect(() => () => {
         isMounted.current = false;
     }, []);
@@ -93,13 +94,14 @@ const DateProperty = (props: Props) => {
     }, []);
 
     const handleSelectedChange = useCallback((option: DateTimeOption | undefined | null) => {
+        const seq = ++callSeqRef.current;
         if (!option || !option.value) {
             const previousMillis = previousMillisRef.current;
             previousMillisRef.current = 0;
             setDisplayMillis(0);
             setIsEditing(false);
             props.onValueChange(null)?.catch(() => {
-                if (isMounted.current) {
+                if (isMounted.current && callSeqRef.current === seq) {
                     previousMillisRef.current = previousMillis;
                     setDisplayMillis((current) => (current === 0 ? previousMillis : current));
                 }
@@ -112,7 +114,7 @@ const DateProperty = (props: Props) => {
         setDisplayMillis(newMillis);
         setIsEditing(false);
         props.onValueChange(new Date(newMillis).toISOString())?.catch(() => {
-            if (isMounted.current) {
+            if (isMounted.current && callSeqRef.current === seq) {
                 previousMillisRef.current = previousMillis;
                 setDisplayMillis((current) => (current === newMillis ? previousMillis : current));
             }
@@ -141,6 +143,8 @@ const DateProperty = (props: Props) => {
     if (!displayMillis) {
         return (
             <PropertyDisplayContainer
+                role='button'
+                tabIndex={0}
                 onClick={() => setIsEditing(true)}
                 onKeyDown={handleActivateKey}
                 data-testid='property-value'
@@ -154,6 +158,8 @@ const DateProperty = (props: Props) => {
 
     return (
         <PropertyDisplayContainer
+            role='button'
+            tabIndex={0}
             onClick={() => setIsEditing(true)}
             onKeyDown={handleActivateKey}
             data-testid='property-value'

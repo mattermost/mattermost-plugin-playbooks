@@ -1740,24 +1740,32 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		return nil
 	}
 
-	query := sq.
-		Insert("IR_Run_Participants").
-		Columns("IncidentID", "UserID", "IsParticipant")
+	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
+		end := i + followUnfollowBatchSize
+		if end > len(userIDs) {
+			end = len(userIDs)
+		}
+		chunk := userIDs[i:end]
 
-	for _, userID := range userIDs {
-		query = query.Values(playbookRunID, userID, isParticipating)
+		query := sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsParticipant")
+
+		for _, userID := range chunk {
+			query = query.Values(playbookRunID, userID, isParticipating)
+		}
+
+		_, err := s.store.execBuilder(
+			s.store.db,
+			query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
+		)
+
+		if err != nil {
+			return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", chunk, playbookRunID)
+		}
 	}
 
-	_, err := s.store.execBuilder(
-		s.store.db,
-		query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
-	)
-
-	if err != nil {
-		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
-	}
-
-	if err = s.touchPlaybookRun(playbookRunID); err != nil {
+	if err := s.touchPlaybookRun(playbookRunID); err != nil {
 		return errors.Wrapf(err, "failed to touch playbook run '%s'", playbookRunID)
 	}
 
@@ -1980,6 +1988,7 @@ JOIN child_options co ON pv.fieldid = co.field_id
 WHERE pv.value = to_jsonb(co.option_id)
   AND pv.deleteat = 0
   AND pv.targettype = 'run'
+  AND pv.targetid IN (SELECT ID FROM IR_Incident WHERE DeleteAt = 0)
 LIMIT $4`
 
 	var runIDs []string

@@ -609,6 +609,7 @@
   "playbooks.auto_archive_toggle.hint_text": "Automatically archive the channel when the run is finished.",
   "playbooks.auto_archive_toggle.label": "Auto-archive channel",
   "playbooks.checklist_item.assignee_error": "Failed to update assignee.",
+  "playbooks.checklist_item.due_date_error": "Failed to update due date.",
   "playbooks.finish_run.button": "Finish",
   "playbooks.finish_run.confirm_button": "Finish",
   "playbooks.finish_run.confirm_title": "Confirm finish",

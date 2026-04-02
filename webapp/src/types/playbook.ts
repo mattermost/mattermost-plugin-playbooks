@@ -68,13 +68,13 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_mode: string;
     channel_id: string;
 
-    owner_group_only_actions?: boolean;
-    admin_only_edit?: boolean;
-    new_channel_only?: boolean;
-    auto_archive_channel?: boolean;
-    run_number_prefix?: string;
-    next_run_number?: number;
-    creation_rules?: CreationRule[];
+    owner_group_only_actions: boolean;
+    admin_only_edit: boolean;
+    new_channel_only: boolean;
+    auto_archive_channel: boolean;
+    run_number_prefix: string;
+    next_run_number: number;
+    creation_rules: CreationRule[];
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -241,6 +241,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         auto_archive_channel: false,
         run_number_prefix: '',
         next_run_number: 1,
+        creation_rules: [],
         propertyFields: [],
     };
 }

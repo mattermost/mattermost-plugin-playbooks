@@ -65,6 +65,7 @@ func ValidateRunUpdateOnFinished(currentStatus string, hasNameUpdate, hasSummary
 // GovernanceFlagChanges describes which governance flags the caller is attempting to change.
 type GovernanceFlagChanges struct {
 	EnableAdminOnlyEdit         bool // false→true transition
+	DisableAdminOnlyEdit        bool // true→false transition
 	ToggleOwnerGroupOnlyActions bool // change in either direction
 	ToggleNewChannelOnly        bool // change in either direction
 	ToggleAutoArchiveChannel    bool // change in either direction
@@ -76,8 +77,8 @@ func ValidateGovernanceFlags(isSystemAdmin, isPlaybookAdmin bool, changes Govern
 	if isSystemAdmin || isPlaybookAdmin {
 		return nil
 	}
-	if changes.EnableAdminOnlyEdit {
-		return errors.Wrap(ErrNoPermissions, "only playbook admins or system admins can enable admin-only edit")
+	if changes.EnableAdminOnlyEdit || changes.DisableAdminOnlyEdit {
+		return errors.Wrap(ErrNoPermissions, "only playbook admins or system admins can change admin-only edit")
 	}
 	if changes.ToggleOwnerGroupOnlyActions {
 		return errors.Wrap(ErrNoPermissions, "only playbook admins or system admins can toggle owner-group-only actions")

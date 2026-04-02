@@ -53,6 +53,9 @@ var ErrLicensedFeature = errors.New("not covered by current server license")
 // ErrFilterTooWide occurs when a property value filter matches more runs than the allowed maximum.
 var ErrFilterTooWide = errors.New("filter matches too many results")
 
+// ErrPropertyLimitExceeded occurs when trying to create a property field that would exceed the maximum allowed count.
+var ErrPropertyLimitExceeded = errors.New("property limit exceeded")
+
 // ErrInternalPrecondition indicates a programming contract violation — a caller
 // skipped a mandatory step (e.g. calling ResolveRunCreationParams before CreatePlaybookRun).
 // This maps to HTTP 500, not 400, because it is never caused by bad user input.

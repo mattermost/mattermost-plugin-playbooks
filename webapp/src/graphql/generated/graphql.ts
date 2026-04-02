@@ -117,7 +117,11 @@ export type Mutation = {
   /** @deprecated GraphQL API is being deprecated. Use REST API endpoints instead. */
   removeRunParticipants: Scalars['String'];
   /** @deprecated GraphQL API is being deprecated. Use REST API endpoints instead. */
+  setItemGroupAssignee: Scalars['String'];
+  /** @deprecated GraphQL API is being deprecated. Use REST API endpoints instead. */
   setItemPropertyUserAssignee: Scalars['String'];
+  /** @deprecated GraphQL API is being deprecated. Use REST API endpoints instead. */
+  setItemRoleAssignee: Scalars['String'];
   /** @deprecated GraphQL API is being deprecated. Use REST API endpoints instead. */
   setRunFavorite: Scalars['String'];
   /** @deprecated GraphQL API is being deprecated. Use REST API endpoints instead. */
@@ -194,10 +198,26 @@ export type MutationRemoveRunParticipantsArgs = {
 };
 
 
+export type MutationSetItemGroupAssigneeArgs = {
+  checklistNum: Scalars['Float'];
+  groupID: Scalars['String'];
+  itemNum: Scalars['Float'];
+  runID: Scalars['String'];
+};
+
+
 export type MutationSetItemPropertyUserAssigneeArgs = {
   checklistNum: Scalars['Float'];
   itemNum: Scalars['Float'];
   propertyFieldID: Scalars['String'];
+  runID: Scalars['String'];
+};
+
+
+export type MutationSetItemRoleAssigneeArgs = {
+  assigneeType: Scalars['String'];
+  checklistNum: Scalars['Float'];
+  itemNum: Scalars['Float'];
   runID: Scalars['String'];
 };
 

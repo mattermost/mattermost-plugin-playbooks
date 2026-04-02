@@ -1781,6 +1781,9 @@ var migrations = []Migration{
 			if err := addColumnToPGTable(e, "IR_Incident", "SequentialID", "VARCHAR(64) NOT NULL DEFAULT ''"); err != nil {
 				return errors.Wrapf(err, "failed adding SequentialID to IR_Incident")
 			}
+			if _, err := e.Exec(createPGIndex("idx_ir_incident_sequential_id", "IR_Incident", "SequentialID")); err != nil {
+				return errors.Wrapf(err, "failed creating index idx_ir_incident_sequential_id")
+			}
 			if err := addColumnToPGTable(e, "IR_Incident", "ChannelCreatedByRun", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
 				return errors.Wrapf(err, "failed adding column ChannelCreatedByRun to IR_Incident")
 			}

@@ -61,7 +61,9 @@ const UserProperty = (props: Props) => {
         setDisplayValue(newValue);
         Promise.resolve(props.onValueChange(newValue))
             .then(() => {
-                serverValueRef.current = newValue;
+                if (callSeqRef.current === seq) {
+                    serverValueRef.current = newValue;
+                }
             })
             .catch(() => {
                 if (isMounted.current && callSeqRef.current === seq) {
@@ -163,7 +165,9 @@ export const MultiuserProperty = (props: Props) => {
         setDisplayValues(newValues);
         Promise.resolve(props.onValueChange(newValues.length > 0 ? newValues : null))
             .then(() => {
-                serverValuesRef.current = newValues;
+                if (callSeqRef.current === seq) {
+                    serverValuesRef.current = newValues;
+                }
             })
             .catch(() => {
                 if (isMounted.current && callSeqRef.current === seq) {
@@ -181,7 +185,9 @@ export const MultiuserProperty = (props: Props) => {
         setDisplayValues(newValues);
         Promise.resolve(props.onValueChange(newValues.length > 0 ? newValues : null))
             .then(() => {
-                serverValuesRef.current = newValues;
+                if (callSeqRef.current === seq) {
+                    serverValuesRef.current = newValues;
+                }
             })
             .catch(() => {
                 if (isMounted.current && callSeqRef.current === seq) {

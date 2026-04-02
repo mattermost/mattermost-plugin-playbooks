@@ -391,6 +391,38 @@ func (s *PlaybookRunService) SetItemPropertyUserAssignee(ctx context.Context, pl
 	return nil
 }
 
+func (s *PlaybookRunService) SetItemGroupAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, groupID string) error {
+	assigneeURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		AssigneeGroupID string `json:"assignee_group_id"`
+	}{groupID}
+	req, err := s.client.newAPIRequest(http.MethodPut, assigneeURL, body)
+	if err != nil {
+		return err
+	}
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *PlaybookRunService) SetItemRoleAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, assigneeType string) error {
+	assigneeURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		AssigneeType string `json:"assignee_type"`
+	}{assigneeType}
+	req, err := s.client.newAPIRequest(http.MethodPut, assigneeURL, body)
+	if err != nil {
+		return err
+	}
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *PlaybookRunService) SetItemCommand(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, newCommand string) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/command", playbookRunID, checklistIdx, itemIdx)
 	body := struct {

@@ -60,7 +60,7 @@ const DraggableChecklistItem = (props: Props) => {
                     playbookId={props.playbookId}
                     participantUserIds={props.playbookRun?.participant_ids ?? []}
                     onChange={(newState: ChecklistItemState) => {
-                        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState, props.item.id);
+                        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
                     }}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}

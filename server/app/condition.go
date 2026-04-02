@@ -143,7 +143,7 @@ func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyFi
 			return errors.Wrap(ErrMalformedCondition, "and condition must have at least one nested condition")
 		}
 		if currentDepth >= MaxConditionDepth {
-			return fmt.Errorf("condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
+			return errors.Wrapf(ErrMalformedCondition, "condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
 		}
 		for _, condition := range c.And {
 			if err := condition.validate(currentDepth+1, propertyFields); err != nil {
@@ -158,7 +158,7 @@ func (c *ConditionExprV1) validate(currentDepth int, propertyFields []PropertyFi
 			return errors.Wrap(ErrMalformedCondition, "or condition must have at least one nested condition")
 		}
 		if currentDepth >= MaxConditionDepth {
-			return fmt.Errorf("condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
+			return errors.Wrapf(ErrMalformedCondition, "condition nesting depth exceeds maximum allowed (%d)", MaxConditionDepth)
 		}
 		for _, condition := range c.Or {
 			if err := condition.validate(currentDepth+1, propertyFields); err != nil {

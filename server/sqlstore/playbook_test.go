@@ -2211,14 +2211,6 @@ func TestGraphqlUpdateGuards(t *testing.T) {
 	pbID, err := playbookStore.Create(pb)
 	require.NoError(t, err)
 
-	t.Run("NextRunNumber in setmap returns error", func(t *testing.T) {
-		err := playbookStore.GraphqlUpdate(pbID, map[string]interface{}{
-			"NextRunNumber": int64(5),
-		})
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "NextRunNumber cannot be set via GraphqlUpdate")
-	})
-
 	t.Run("legitimate field update succeeds", func(t *testing.T) {
 		err := playbookStore.GraphqlUpdate(pbID, map[string]interface{}{
 			"Title": "Updated Title",

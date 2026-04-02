@@ -275,6 +275,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const onAssigneeChange = async (user?: UserProfile) => {
         const userId = user?.id || '';
+        const prevAssigneeID = assigneeID;
+        const prevAssigneeType = assigneeType;
+        const prevAssigneeGroupID = assigneeGroupID;
+        const prevAssigneePropertyFieldID = assigneePropertyFieldID;
         setAssigneeID(userId);
         setAssigneeType('');
         setAssigneeGroupID('');
@@ -285,6 +289,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (props.playbookRunId) {
             const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
             if (response.error && isMounted.current) {
+                setAssigneeID(prevAssigneeID);
+                setAssigneeType(prevAssigneeType);
+                setAssigneeGroupID(prevAssigneeGroupID);
+                setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
                 toaster.add({
                     content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
                     toastStyle: ToastStyle.Failure,
@@ -300,7 +308,22 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
+    const assigneeCallSeqRef = useRef(0);
+
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
+        const seq = ++assigneeCallSeqRef.current;
+        const prevAssigneeID = updatedItem.assignee_id === undefined ? '' : assigneeID;
+        const prevAssigneeGroupID = assigneeGroupID;
+        const prevAssigneeType = assigneeType;
+        const prevAssigneePropertyFieldID = assigneePropertyFieldID;
+        const rollback = () => {
+            if (isMounted.current && assigneeCallSeqRef.current === seq) {
+                setAssigneeID(prevAssigneeID);
+                setAssigneeGroupID(prevAssigneeGroupID);
+                setAssigneeType(prevAssigneeType);
+                setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
+            }
+        };
         setAssigneeID(updatedItem.assignee_id || '');
         setAssigneeGroupID(updatedItem.assignee_group_id || '');
         setAssigneeType(updatedItem.assignee_type || '');
@@ -311,7 +334,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (updatedItem.assignee_type === 'group' && updatedItem.assignee_group_id) {
             if (props.playbookRunId) {
                 const response = await setGroupAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_group_id);
-                if (response.error && isMounted.current) {
+                if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
+                    rollback();
                     toaster.add({
                         content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
                         toastStyle: ToastStyle.Failure,
@@ -323,7 +347,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else if (updatedItem.assignee_type === 'owner' || updatedItem.assignee_type === 'creator') {
             if (props.playbookRunId) {
                 const response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
-                if (response.error && isMounted.current) {
+                if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
+                    rollback();
                     toaster.add({
                         content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
                         toastStyle: ToastStyle.Failure,
@@ -335,7 +360,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else if (updatedItem.assignee_type === 'property_user' && updatedItem.assignee_property_field_id) {
             if (props.playbookRunId) {
                 const response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
-                if (response.error && isMounted.current) {
+                if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
+                    rollback();
                     toaster.add({
                         content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
                         toastStyle: ToastStyle.Failure,
@@ -346,7 +372,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             }
         } else if (props.playbookRunId) {
             const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
-            if (response.error && isMounted.current) {
+            if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
+                rollback();
                 toaster.add({
                     content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
                     toastStyle: ToastStyle.Failure,
@@ -355,8 +382,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else {
             props.onUpdateChecklistItem?.(updatedItem);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately using props.X instead of destructured values to keep the handler close to prop reads
-    }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster]);
+    }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster, assigneeID, assigneeGroupID, assigneeType, assigneePropertyFieldID]);
 
     const onExtraOptionSelected = async (value: string) => {
         const updatedItem = {...props.checklistItem};
@@ -391,7 +417,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (props.playbookRunId) {
             const response = await clientSetDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
             if (response.error) {
-                console.log(response.error); // eslint-disable-line no-console
+                toaster.add({
+                    content: formatMessage({id: 'playbooks.checklist_item.due_date_error', defaultMessage: 'Failed to update due date.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
             }
         } else {
             const newItem = {...props.checklistItem};

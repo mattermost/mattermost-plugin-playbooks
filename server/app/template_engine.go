@@ -27,12 +27,9 @@ var (
 )
 
 func fieldRegex(fieldName string) *regexp.Regexp {
-	if v, ok := fieldRegexCache.Load(fieldName); ok {
-		return v.(*regexp.Regexp)
-	}
 	re := regexp.MustCompile(`(?i)\{\s*` + regexp.QuoteMeta(fieldName) + `\s*\}`)
-	fieldRegexCache.Store(fieldName, re)
-	return re
+	actual, _ := fieldRegexCache.LoadOrStore(fieldName, re)
+	return actual.(*regexp.Regexp)
 }
 
 // FormatFunc is a function that formats a property field's raw JSON value as a string.

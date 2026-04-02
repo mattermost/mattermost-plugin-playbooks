@@ -705,24 +705,20 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 		return errors.New("id should not be empty")
 	}
 
-	if _, ok := setmap["NextRunNumber"]; ok {
-		return errors.New("NextRunNumber cannot be set via GraphqlUpdate; use IncrementRunNumber")
-	}
-
 	// if checklists are passed and len (as string) is bigger than limit -> fails
 	if _, exists := setmap["ChecklistsJSON"]; exists {
 		if len(string(setmap["ChecklistsJSON"].([]uint8))) > maxJSONLength {
-			return fmt.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
+			return errors.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
 		}
 	}
 
 	if raw, exists := setmap["CreationRulesJSON"]; exists {
 		s, ok := raw.(string)
 		if !ok {
-			return fmt.Errorf("failed update playbook with id '%s': CreationRulesJSON must be a string, got %T", id, raw)
+			return errors.Errorf("failed update playbook with id '%s': CreationRulesJSON must be a string, got %T", id, raw)
 		}
 		if len(s) > maxJSONLength {
-			return fmt.Errorf("failed update playbook with id '%s': creation rules json too long (max %d)", id, maxJSONLength)
+			return errors.Errorf("failed update playbook with id '%s': creation rules json too long (max %d)", id, maxJSONLength)
 		}
 	}
 

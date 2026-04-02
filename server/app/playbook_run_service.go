@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -5091,13 +5092,16 @@ const maxConcurrentWebhooks = 10
 
 // triggerWebhooks sends the JSON body to each webhook URL in a bounded goroutine pool.
 // Each request has a hard timeout of webhookTimeout; at most maxConcurrentWebhooks
-// requests run concurrently.
+// requests run concurrently. The function blocks until all goroutines complete.
 func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) {
+	var wg sync.WaitGroup
 	sem := make(chan struct{}, maxConcurrentWebhooks)
 	for i := range webhooks {
 		url := webhooks[i]
 		sem <- struct{}{}
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			defer func() { <-sem }()
 
 			ctx, cancel := context.WithTimeout(context.Background(), webhookTimeout)
@@ -5125,6 +5129,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 			}
 		}()
 	}
+	wg.Wait()
 }
 
 func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {

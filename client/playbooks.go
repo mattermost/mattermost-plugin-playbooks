@@ -347,3 +347,25 @@ func (s *PlaybooksService) DeletePropertyField(ctx context.Context, playbookID, 
 
 	return nil
 }
+
+// ReorderPropertyFields reorders a property field to a new position within a playbook.
+func (s *PlaybooksService) ReorderPropertyFields(ctx context.Context, playbookID, fieldID string, targetPosition int) ([]PropertyField, error) {
+	reorderURL := fmt.Sprintf("playbooks/%s/property_fields/reorder", playbookID)
+	body := struct {
+		FieldID        string `json:"field_id"`
+		TargetPosition int    `json:"target_position"`
+	}{FieldID: fieldID, TargetPosition: targetPosition}
+	req, err := s.client.newAPIRequest(http.MethodPost, reorderURL, body)
+	if err != nil {
+		return nil, err
+	}
+
+	var fields []PropertyField
+	resp, err := s.client.do(ctx, req, &fields)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return fields, nil
+}

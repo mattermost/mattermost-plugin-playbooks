@@ -750,6 +750,18 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.AssigneeModified != item.AssigneeModified {
 				fields["assignee_modified"] = item.AssigneeModified
 			}
+			if prev.AssigneeType != item.AssigneeType {
+				fields["assignee_type"] = item.AssigneeType
+			}
+			if prev.AssigneeGroupID != item.AssigneeGroupID {
+				fields["assignee_group_id"] = item.AssigneeGroupID
+			}
+			if prev.AssigneePropertyFieldID != item.AssigneePropertyFieldID {
+				fields["assignee_property_field_id"] = item.AssigneePropertyFieldID
+			}
+			if prev.RestrictCompletionToAssignee != item.RestrictCompletionToAssignee {
+				fields["restrict_completion_to_assignee"] = item.RestrictCompletionToAssignee
+			}
 			if prev.Command != item.Command {
 				fields["command"] = item.Command
 			}
