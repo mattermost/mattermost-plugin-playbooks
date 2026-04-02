@@ -104,6 +104,117 @@ func (s *playbookService) Import(playbook Playbook, userID string) (string, erro
 	return newID, nil
 }
 
+// ImportWithProperties imports a playbook with its properties and conditions.
+// This calls Create directly (rather than Import) so a single audit record
+// covers the full operation including property/condition setup.
+func (s *playbookService) ImportWithProperties(playbook Playbook, userID string, properties []ExportPropertyField, conditions []ExportCondition) (string, error) {
+	auditRec := s.auditor.MakeAuditRecord("importPlaybookWithProperties", model.AuditStatusFail)
+	defer s.auditor.LogAuditRec(auditRec)
+
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "numProperties", len(properties))
+	model.AddEventParameterToAuditRec(auditRec, "numConditions", len(conditions))
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
+
+	newPlaybookID, err := s.Create(playbook, userID)
+	if err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return "", err
+	}
+	playbook.ID = newPlaybookID
+
+	if len(properties) == 0 && len(conditions) == 0 {
+		auditRec.Success()
+		auditRec.AddEventResultState(playbook)
+		return newPlaybookID, nil
+	}
+
+	oldFieldIDToNewFieldID := make(map[string]string)
+	oldOptionIDToNewOptionID := make(map[string]string)
+	copiedFields := []PropertyField{}
+
+	for _, exportProperty := range properties {
+		newField := PropertyField{
+			PropertyField: model.PropertyField{
+				Name: exportProperty.Name,
+				Type: exportProperty.Type,
+			},
+			Attrs: exportProperty.Attrs,
+		}
+		createdField, err := s.propertyService.CreatePropertyField(newPlaybookID, newField)
+		if err != nil {
+			auditRec.AddErrorDesc("failed to create property field " + exportProperty.Name + ": " + err.Error())
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id":       newPlaybookID,
+				"property_name":     exportProperty.Name,
+				"original_field_id": exportProperty.ID,
+			}).Warn("failed to create property field during import, skipping")
+			continue
+		}
+		oldFieldIDToNewFieldID[exportProperty.ID] = createdField.ID
+		copiedFields = append(copiedFields, *createdField)
+
+		if createdField.SupportsOptions() {
+			for j, oldOption := range exportProperty.Attrs.Options {
+				if j < len(createdField.Attrs.Options) {
+					oldOptionIDToNewOptionID[oldOption.GetID()] = createdField.Attrs.Options[j].GetID()
+				}
+			}
+		}
+	}
+
+	if len(conditions) > 0 && len(oldFieldIDToNewFieldID) > 0 {
+		propertyMappings := &PropertyCopyResult{
+			FieldMappings:  oldFieldIDToNewFieldID,
+			OptionMappings: oldOptionIDToNewOptionID,
+			CopiedFields:   copiedFields,
+		}
+
+		conditionMapping, err := s.conditionService.CreateConditionsFromExport(newPlaybookID, conditions, propertyMappings)
+		if err != nil {
+			auditRec.AddErrorDesc("failed to create conditions from export: " + err.Error())
+			logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to create conditions from export")
+		}
+
+		if len(conditionMapping) > 0 {
+			oldConditionIDToNewConditionID := make(map[string]string)
+			for oldID, newCond := range conditionMapping {
+				oldConditionIDToNewConditionID[oldID] = newCond.ID
+			}
+
+			updatedPlaybook, err := s.Get(newPlaybookID)
+			if err != nil {
+				auditRec.AddErrorDesc("failed to get playbook for condition remapping: " + err.Error())
+				logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to get playbook for condition remapping")
+			} else {
+				for i := range updatedPlaybook.Checklists {
+					for j := range updatedPlaybook.Checklists[i].Items {
+						if newConditionID, ok := oldConditionIDToNewConditionID[updatedPlaybook.Checklists[i].Items[j].ConditionID]; ok {
+							updatedPlaybook.Checklists[i].Items[j].ConditionID = newConditionID
+						}
+					}
+				}
+
+				if err := s.store.Update(updatedPlaybook); err != nil {
+					auditRec.AddErrorDesc("failed to update playbook with remapped condition IDs: " + err.Error())
+					logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to update playbook with remapped condition IDs")
+				}
+			}
+		}
+	}
+
+	auditRec.Success()
+	auditRec.AddEventResultState(playbook)
+
+	return newPlaybookID, nil
+}
+
+// GetPlaybookConditionsForExport delegates to the condition service to fetch conditions
+// for export without authentication overhead.
+func (s *playbookService) GetPlaybookConditionsForExport(playbookID string) ([]Condition, error) {
+	return s.conditionService.GetPlaybookConditionsForExport(playbookID)
+}
+
 func (s *playbookService) Get(id string) (Playbook, error) {
 	return s.store.Get(id)
 }

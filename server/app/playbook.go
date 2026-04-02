@@ -328,10 +328,10 @@ type ChecklistItem struct {
 	UpdateAt int64 `json:"update_at" export:"-"`
 
 	// ConditionID is the ID of the condition that created this checklist item, if any
-	ConditionID string `json:"condition_id" export:"-"`
+	ConditionID string `json:"condition_id" export:"condition_id"`
 
 	// ConditionAction is a string that represents the action created as a result of a condition. For now, '' or 'hidden'
-	ConditionAction ConditionAction `json:"condition_action" export:"-"`
+	ConditionAction ConditionAction `json:"condition_action" export:"condition_action"`
 
 	// ConditionReason is a string representation of the condition.
 	ConditionReason string `json:"condition_reason" export:"-"`
@@ -397,6 +397,12 @@ type PlaybookService interface {
 
 	// Import imports a new playbook
 	Import(playbook Playbook, userID string) (string, error)
+
+	// ImportWithProperties imports a new playbook with its properties and conditions
+	ImportWithProperties(playbook Playbook, userID string, properties []ExportPropertyField, conditions []ExportCondition) (string, error)
+
+	// GetPlaybookConditionsForExport retrieves all conditions for a playbook for export purposes
+	GetPlaybookConditionsForExport(playbookID string) ([]Condition, error)
 
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)

@@ -64,6 +64,36 @@ func (mr *MockConditionServiceMockRecorder) CopyPlaybookConditionsToRun(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CopyPlaybookConditionsToRun", reflect.TypeOf((*MockConditionService)(nil).CopyPlaybookConditionsToRun), arg0, arg1, arg2)
 }
 
+// CreateConditionsFromExport mocks base method.
+func (m *MockConditionService) CreateConditionsFromExport(arg0 string, arg1 []app.ExportCondition, arg2 *app.PropertyCopyResult) (map[string]*app.Condition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateConditionsFromExport", arg0, arg1, arg2)
+	ret0, _ := ret[0].(map[string]*app.Condition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateConditionsFromExport indicates an expected call of CreateConditionsFromExport.
+func (mr *MockConditionServiceMockRecorder) CreateConditionsFromExport(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateConditionsFromExport", reflect.TypeOf((*MockConditionService)(nil).CreateConditionsFromExport), arg0, arg1, arg2)
+}
+
+// GetPlaybookConditionsForExport mocks base method.
+func (m *MockConditionService) GetPlaybookConditionsForExport(arg0 string) ([]app.Condition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPlaybookConditionsForExport", arg0)
+	ret0, _ := ret[0].([]app.Condition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPlaybookConditionsForExport indicates an expected call of GetPlaybookConditionsForExport.
+func (mr *MockConditionServiceMockRecorder) GetPlaybookConditionsForExport(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookConditionsForExport", reflect.TypeOf((*MockConditionService)(nil).GetPlaybookConditionsForExport), arg0)
+}
+
 // CreatePlaybookCondition mocks base method.
 func (m *MockConditionService) CreatePlaybookCondition(arg0 string, arg1 app.Condition, arg2 string) (*app.Condition, error) {
 	m.ctrl.T.Helper()

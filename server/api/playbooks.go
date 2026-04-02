@@ -609,7 +609,21 @@ func (h *PlaybookHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	export, err := app.GeneratePlaybookExport(playbook)
+	// Fetch properties and conditions for the playbook
+	properties, err := h.propertyService.GetPropertyFields(playbookID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	// Fetch conditions through the playbook service which manages the export
+	conditions, err := h.playbookService.GetPlaybookConditionsForExport(playbookID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	export, err := app.GeneratePlaybookExport(playbook, properties, conditions)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -659,7 +673,9 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	userID := r.Header.Get("Mattermost-User-ID")
 	var importBlock struct {
 		app.Playbook
-		Version int `json:"version"`
+		Version    int                    `json:"version"`
+		Properties []app.ExportPropertyField `json:"properties,omitempty"`
+		Conditions []app.ExportCondition   `json:"conditions,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&importBlock); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook import", err)
@@ -700,7 +716,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	id, err := h.playbookService.Import(playbook, userID)
+	id, err := h.playbookService.ImportWithProperties(playbook, userID, importBlock.Properties, importBlock.Conditions)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
