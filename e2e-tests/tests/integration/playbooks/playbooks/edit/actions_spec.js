@@ -264,8 +264,8 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                 after('content').
                                 should('eq', '2 SELECTED');
 
-                            // # Remove the first user added
-                            cy.get('.invite-users-selector__option').eq(0).within(() => {
+                            // # Remove testUser2 by targeting its username rather than index
+                            cy.get('.invite-users-selector__option').contains(testUser2.username).parents('.invite-users-selector__option').within(() => {
                                 cy.findByText('Remove').click();
                             });
 
