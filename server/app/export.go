@@ -62,10 +62,10 @@ func generateMetricsExport(metrics []PlaybookMetricConfig) []interface{} {
 
 // ExportPropertyField represents a property field in export format
 type ExportPropertyField struct {
-	ID   string                              `json:"id"`
-	Name string                              `json:"name"`
-	Type model.PropertyFieldType             `json:"type"`
-	Attrs Attrs                              `json:"attrs"`
+	ID    string                  `json:"id"`
+	Name  string                  `json:"name"`
+	Type  model.PropertyFieldType `json:"type"`
+	Attrs Attrs                   `json:"attrs"`
 }
 
 // ExportCondition represents a condition in export format

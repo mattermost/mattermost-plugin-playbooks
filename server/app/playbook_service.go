@@ -116,6 +116,30 @@ func (s *playbookService) ImportWithProperties(playbook Playbook, userID string,
 	model.AddEventParameterToAuditRec(auditRec, "numConditions", len(conditions))
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
+	// Save exported condition references before clearing them. These are needed
+	// later to remap old condition IDs to newly created ones.
+	type exportedCondRef struct {
+		checklistIdx    int
+		itemIdx         int
+		conditionID     string
+		conditionAction ConditionAction
+	}
+	var exportedCondRefs []exportedCondRef
+	for i := range playbook.Checklists {
+		for j := range playbook.Checklists[i].Items {
+			if playbook.Checklists[i].Items[j].ConditionID != "" {
+				exportedCondRefs = append(exportedCondRefs, exportedCondRef{
+					checklistIdx:    i,
+					itemIdx:         j,
+					conditionID:     playbook.Checklists[i].Items[j].ConditionID,
+					conditionAction: playbook.Checklists[i].Items[j].ConditionAction,
+				})
+			}
+			playbook.Checklists[i].Items[j].ConditionID = ""
+			playbook.Checklists[i].Items[j].ConditionAction = ""
+		}
+	}
+
 	newPlaybookID, err := s.Create(playbook, userID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
@@ -163,6 +187,24 @@ func (s *playbookService) ImportWithProperties(playbook Playbook, userID string,
 		}
 	}
 
+	// Second pass: remap ParentID on fields that reference other fields
+	for i, field := range copiedFields {
+		if field.Attrs.ParentID != "" {
+			if newParentID, ok := oldFieldIDToNewFieldID[field.Attrs.ParentID]; ok {
+				copiedFields[i].Attrs.ParentID = newParentID
+				updatedField := copiedFields[i]
+				if _, err := s.propertyService.UpdatePropertyField(newPlaybookID, updatedField); err != nil {
+					logrus.WithError(err).WithFields(logrus.Fields{
+						"playbook_id":   newPlaybookID,
+						"field_id":      field.ID,
+						"old_parent_id": field.Attrs.ParentID,
+						"new_parent_id": newParentID,
+					}).Warn("failed to remap ParentID on imported property field")
+				}
+			}
+		}
+	}
+
 	if len(conditions) > 0 && len(oldFieldIDToNewFieldID) > 0 {
 		propertyMappings := &PropertyCopyResult{
 			FieldMappings:  oldFieldIDToNewFieldID,
@@ -176,7 +218,7 @@ func (s *playbookService) ImportWithProperties(playbook Playbook, userID string,
 			logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to create conditions from export")
 		}
 
-		if len(conditionMapping) > 0 {
+		if len(conditionMapping) > 0 && len(exportedCondRefs) > 0 {
 			oldConditionIDToNewConditionID := make(map[string]string)
 			for oldID, newCond := range conditionMapping {
 				oldConditionIDToNewConditionID[oldID] = newCond.ID
@@ -187,11 +229,22 @@ func (s *playbookService) ImportWithProperties(playbook Playbook, userID string,
 				auditRec.AddErrorDesc("failed to get playbook for condition remapping: " + err.Error())
 				logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to get playbook for condition remapping")
 			} else {
-				for i := range updatedPlaybook.Checklists {
-					for j := range updatedPlaybook.Checklists[i].Items {
-						if newConditionID, ok := oldConditionIDToNewConditionID[updatedPlaybook.Checklists[i].Items[j].ConditionID]; ok {
-							updatedPlaybook.Checklists[i].Items[j].ConditionID = newConditionID
-						}
+				// Write back only the condition IDs that were actually recreated,
+				// using the saved exported references (the stored items have empty IDs).
+				for _, ref := range exportedCondRefs {
+					if ref.checklistIdx >= len(updatedPlaybook.Checklists) ||
+						ref.itemIdx >= len(updatedPlaybook.Checklists[ref.checklistIdx].Items) {
+						logrus.WithFields(logrus.Fields{
+							"playbook_id":    newPlaybookID,
+							"checklist_idx":  ref.checklistIdx,
+							"item_idx":       ref.itemIdx,
+							"num_checklists": len(updatedPlaybook.Checklists),
+						}).Warn("checklist structure changed after create, skipping condition remap for item")
+						continue
+					}
+					if newConditionID, ok := oldConditionIDToNewConditionID[ref.conditionID]; ok {
+						updatedPlaybook.Checklists[ref.checklistIdx].Items[ref.itemIdx].ConditionID = newConditionID
+						updatedPlaybook.Checklists[ref.checklistIdx].Items[ref.itemIdx].ConditionAction = ref.conditionAction
 					}
 				}
 

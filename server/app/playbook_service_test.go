@@ -515,22 +515,35 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 
 		oldFieldID := "old-prop-1"
 		newFieldID := "new-prop-1"
+		oldChildFieldID := "old-prop-child"
+		newChildFieldID := "new-prop-child"
 		oldOptionID := "old-opt-1"
 		newOptionID := "new-opt-1"
 		oldConditionID := "old-cond-1"
 		newConditionID := "new-cond-1"
 
-		exportProperties := []app.ExportPropertyField{{
-			ID:   oldFieldID,
-			Name: "Status",
-			Type: model.PropertyFieldTypeSelect,
-			Attrs: app.Attrs{
-				Visibility: app.PropertyFieldVisibilityAlways,
-				Options: model.PropertyOptions[*model.PluginPropertyOption]{
-					model.NewPluginPropertyOption(oldOptionID, "Active"),
+		exportProperties := []app.ExportPropertyField{
+			{
+				ID:   oldFieldID,
+				Name: "Status",
+				Type: model.PropertyFieldTypeSelect,
+				Attrs: app.Attrs{
+					Visibility: app.PropertyFieldVisibilityAlways,
+					Options: model.PropertyOptions[*model.PluginPropertyOption]{
+						model.NewPluginPropertyOption(oldOptionID, "Active"),
+					},
 				},
 			},
-		}}
+			{
+				ID:   oldChildFieldID,
+				Name: "SubStatus",
+				Type: model.PropertyFieldTypeText,
+				Attrs: app.Attrs{
+					Visibility: app.PropertyFieldVisibilityAlways,
+					ParentID:   oldFieldID,
+				},
+			},
+		}
 
 		exportConditions := []app.ExportCondition{{
 			ID:      oldConditionID,
@@ -548,13 +561,22 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 			Checklists: []app.Checklist{{
 				Title: "CL",
 				Items: []app.ChecklistItem{{
-					Title:       "Conditional task",
-					ConditionID: oldConditionID,
+					Title:           "Conditional task",
+					ConditionID:     oldConditionID,
+					ConditionAction: app.ConditionActionHidden,
 				}},
 			}},
 		}
 
-		mockStore.EXPECT().Create(gomock.Any()).Return(newPlaybookID, nil)
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				assert.Empty(t, pb.Checklists[0].Items[0].ConditionID,
+					"ConditionID should be cleared before Create")
+				assert.Empty(t, pb.Checklists[0].Items[0].ConditionAction,
+					"ConditionAction should be cleared before Create")
+				return newPlaybookID, nil
+			})
 		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
 
 		createdField := &app.PropertyField{
@@ -566,7 +588,24 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 				},
 			},
 		}
-		mockPropertyService.EXPECT().CreatePropertyField(newPlaybookID, gomock.Any()).Return(createdField, nil)
+		createdChildField := &app.PropertyField{
+			PropertyField: model.PropertyField{ID: newChildFieldID, Name: "SubStatus", Type: model.PropertyFieldTypeText},
+			Attrs: app.Attrs{
+				Visibility: app.PropertyFieldVisibilityAlways,
+				ParentID:   oldFieldID, // still has old parent ID before remap
+			},
+		}
+
+		firstCreate := mockPropertyService.EXPECT().CreatePropertyField(newPlaybookID, gomock.Any()).Return(createdField, nil)
+		mockPropertyService.EXPECT().CreatePropertyField(newPlaybookID, gomock.Any()).Return(createdChildField, nil).After(firstCreate)
+
+		mockPropertyService.EXPECT().
+			UpdatePropertyField(newPlaybookID, gomock.Any()).
+			DoAndReturn(func(pbID string, field app.PropertyField) (*app.PropertyField, error) {
+				assert.Equal(t, newChildFieldID, field.ID, "should update the child field")
+				assert.Equal(t, newFieldID, field.Attrs.ParentID, "ParentID should be remapped to new field ID")
+				return &field, nil
+			})
 
 		mockConditionService.EXPECT().
 			CreateConditionsFromExport(newPlaybookID, exportConditions, gomock.Any()).
@@ -581,13 +620,26 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 				}, nil
 			})
 
-		mockStore.EXPECT().Get(newPlaybookID).Return(playbook, nil)
+		// Get returns the playbook as stored (with cleared ConditionIDs)
+		storedPlaybook := app.Playbook{
+			Title: "Test",
+			Checklists: []app.Checklist{{
+				Title: "CL",
+				Items: []app.ChecklistItem{{
+					Title:       "Conditional task",
+					ConditionID: "",
+				}},
+			}},
+		}
+		mockStore.EXPECT().Get(newPlaybookID).Return(storedPlaybook, nil)
 
 		mockStore.EXPECT().
 			Update(gomock.Any()).
 			DoAndReturn(func(pb app.Playbook) error {
 				assert.Equal(t, newConditionID, pb.Checklists[0].Items[0].ConditionID,
 					"checklist item ConditionID should be remapped to new condition ID")
+				assert.Equal(t, app.ConditionActionHidden, pb.Checklists[0].Items[0].ConditionAction,
+					"checklist item ConditionAction should be restored after remap")
 				return nil
 			})
 
@@ -698,4 +750,3 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 		assert.Equal(t, newPlaybookID, resultID)
 	})
 }
-

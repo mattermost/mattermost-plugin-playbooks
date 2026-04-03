@@ -673,9 +673,9 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 	userID := r.Header.Get("Mattermost-User-ID")
 	var importBlock struct {
 		app.Playbook
-		Version    int                    `json:"version"`
+		Version    int                       `json:"version"`
 		Properties []app.ExportPropertyField `json:"properties,omitempty"`
-		Conditions []app.ExportCondition   `json:"conditions,omitempty"`
+		Conditions []app.ExportCondition     `json:"conditions,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&importBlock); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode playbook import", err)

@@ -150,6 +150,11 @@ func (s *conditionService) CreateConditionsFromExport(playbookID string, exportC
 		return conditionMapping, nil
 	}
 
+	currentCount, err := s.store.GetPlaybookConditionCount(playbookID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current condition count during import")
+	}
+
 	newProperties, err := s.propertyService.GetPropertyFields(playbookID)
 	if err != nil {
 		logrus.WithError(err).WithField("playbook_id", playbookID).Warn("failed to fetch property fields for validation during import")
@@ -157,6 +162,16 @@ func (s *conditionService) CreateConditionsFromExport(playbookID string, exportC
 	}
 
 	for _, exportCondition := range exportConditions {
+		if currentCount >= MaxConditionsPerPlaybook {
+			logrus.WithFields(logrus.Fields{
+				"playbook_id": playbookID,
+				"limit":       MaxConditionsPerPlaybook,
+				"created":     len(conditionMapping),
+				"skipped":     len(exportConditions) - len(conditionMapping),
+			}).Warn("reached maximum conditions per playbook during import, skipping remaining")
+			break
+		}
+
 		if exportCondition.ConditionExpr == nil {
 			logrus.WithFields(logrus.Fields{
 				"playbook_id":  playbookID,
@@ -193,6 +208,8 @@ func (s *conditionService) CreateConditionsFromExport(playbookID string, exportC
 			continue
 		}
 
+		newCondition.Sanitize()
+
 		createdCondition, err := s.store.CreateCondition(playbookID, newCondition)
 		if err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
@@ -204,10 +221,11 @@ func (s *conditionService) CreateConditionsFromExport(playbookID string, exportC
 		}
 
 		conditionMapping[exportCondition.ID] = createdCondition
+		currentCount++
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"playbook_id":       playbookID,
+		"playbook_id":        playbookID,
 		"conditions_created": len(conditionMapping),
 	}).Info("created conditions from export")
 
