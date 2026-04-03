@@ -6219,8 +6219,8 @@ func resolveRoleAssignments(checklists []Checklist, ownerID, creatorID string) [
 				// Keep AssigneeType="owner" so ChangeOwner can re-resolve
 			case AssigneeTypeCreator:
 				items[ii].AssigneeID = creatorID
-				// Clear to specific-user — creator is a one-time resolution
-				items[ii].AssigneeType = AssigneeTypeSpecificUser
+				// Keep AssigneeType="creator" so the role badge is visible and
+				// task lockdown can check the creator role.
 			default:
 				// AssigneeTypeSpecificUser ("") and any unrecognized values are left as-is.
 				// Validation at the API layer should prevent unrecognized values.

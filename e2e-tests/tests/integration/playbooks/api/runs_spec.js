@@ -162,7 +162,7 @@ describe('api > runs', {testIsolation: true}, () => {
                     playbookId: testPlaybook.id,
                     teamId: testTeam.id,
                 }, {expectedStatusCode: 403}).then((body) => {
-                    expect(body).to.have.property('error', 'unable to create playbook run');
+                    expect(body).to.have.property('error', "You don't have permission to perform this action.");
                 });
             });
         });
@@ -181,7 +181,7 @@ describe('api > runs', {testIsolation: true}, () => {
                     channel_id: playbookRun.channel_id,
                     playbook_id: testPlaybook.id,
                 }, {expectedStatusCode: 400}).then((body) => {
-                    expect(body).to.have.property('error', 'unable to create playbook run');
+                    expect(body).to.have.property('error', 'Invalid playbook run data.');
                 });
             });
         });

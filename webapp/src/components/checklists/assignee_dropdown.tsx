@@ -128,7 +128,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         return (
             <Container>
                 {resolvedUserId && (
-                    <ProfileSelector
+                    <CompactProfileSelector
                         selectedUserId={resolvedUserId}
                         placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
                         enableEdit={false}
@@ -167,7 +167,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         return (
             <Container>
                 {resolvedUserId && (
-                    <ProfileSelector
+                    <CompactProfileSelector
                         selectedUserId={resolvedUserId}
                         placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
                         enableEdit={false}
@@ -325,6 +325,26 @@ const AssigneeSelect = styled.select`
     &:focus {
         box-shadow: inset 0 0 0 2px var(--button-bg);
         outline: none;
+    }
+`;
+
+const CompactProfileSelector = styled(ProfileSelector)`
+    .PlaybookRunProfileButton {
+        height: 24px;
+        padding: 2px 6px 2px 2px;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        border-radius: 100px;
+
+        .image {
+            width: 20px;
+            height: 20px;
+        }
+
+        .PlaybookRunProfile {
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 10px;
+        }
     }
 `;
 

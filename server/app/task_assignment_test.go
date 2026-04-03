@@ -120,10 +120,9 @@ func TestResolveAssigneeRoles(t *testing.T) {
 	})
 
 	t.Run("AssigneeType persists after resolution", func(t *testing.T) {
-		// After resolveRoleAssignments, AssigneeType="owner" must be kept on
-		// the item — not cleared — so that resolveOwnerRoleAssignments can
-		// re-resolve on ChangeOwner. Creator is a one-time resolution so its
-		// AssigneeType is cleared to SpecificUser.
+		// After resolveRoleAssignments, AssigneeType must be kept on both
+		// owner and creator items — owner for ChangeOwner re-resolution,
+		// creator for the role badge display and task lockdown checks.
 		checklists := []Checklist{
 			{
 				Items: []ChecklistItem{
@@ -137,8 +136,8 @@ func TestResolveAssigneeRoles(t *testing.T) {
 
 		assert.Equal(t, AssigneeTypeOwner, checklists[0].Items[0].AssigneeType,
 			"AssigneeType should remain 'owner' after resolution")
-		assert.Equal(t, AssigneeTypeSpecificUser, checklists[0].Items[1].AssigneeType,
-			"AssigneeType 'creator' should be cleared to specific-user after one-time resolution")
+		assert.Equal(t, AssigneeTypeCreator, checklists[0].Items[1].AssigneeType,
+			"AssigneeType should remain 'creator' after resolution")
 	})
 
 	t.Run("items across multiple checklists are all resolved", func(t *testing.T) {
