@@ -22,6 +22,8 @@ export class PlaybooksPage {
 
     async goto(teamName: string) {
         await this.page.goto(`/${teamName}/channels/town-square`);
+        await expect(this.page).toHaveURL(new RegExp(`/${teamName}/channels/town-square(?:\\?.*)?$`));
+        await expect(this.page.locator(`a[href="/${teamName}/channels/town-square"]`)).toBeVisible();
         await this.page.goto('/playbooks');
         await expect(this.playbooksLHSButton).toBeVisible();
     }
