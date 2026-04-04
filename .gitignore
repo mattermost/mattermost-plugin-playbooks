@@ -33,5 +33,9 @@ mprocs.yaml
 CLAUDE.md
 .cursorrules
 
+# Local e2e test artifacts
+e2e-tests/node_modules/
+e2e-tests/results/
+
 # Local worktree config
 .config/wt.toml*
