@@ -1,18 +1,13 @@
-# Copyright 2022 Mattermost, Inc.
-name: "e2e-test"
-description: This action used to runs cypress e2e integration tests
+# Copyright 2026 Mattermost, Inc.
+name: "playwright-e2e-test"
+description: This action runs Playwright e2e integration tests
 
 inputs:
-  CYPRESS_serverEdition:
-    description: The cypress server edition
-    required: true
-  SPECS:
-    description: The cypress specs to run
-    required: true
   ARTIFACT_SUFFIX:
     description: Optional suffix for artifact names to avoid conflicts
     required: false
     default: ""
+
 runs:
   using: "composite"
   steps:
@@ -29,7 +24,7 @@ runs:
         cache: "npm"
         cache-dependency-path: |
           webapp/package-lock.json
-          e2e-tests/cypress/package-lock.json
+          e2e-tests/playwright/package-lock.json
 
     - name: ci/cache-node-modules
       id: cache-node-modules
@@ -37,19 +32,15 @@ runs:
       with:
         path: |
           webapp/node_modules
-          e2e-tests/cypress/node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/cypress/package-lock.json') }}
-        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/cypress/package-lock.json') }}
-
-    - name: ci/disable-ALSA
-      run: printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
-      shell: bash
+          e2e-tests/playwright/node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/playwright/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('webapp/package-lock.json') }}-${{ hashFiles('e2e-tests/playwright/package-lock.json') }}
 
     - name: ci/restore-postresql
       uses: docker://postgres:14
       env:
         TEST_DATABASE_URL: postgres://mmuser:mostest@postgres:5432/mattermost_test
-        DB_SETUP_SQL_PATH: e2e-tests/cypress/db-setup/mattermost.sql
+        DB_SETUP_SQL_PATH: e2e-tests/playwright/db-setup/mattermost.sql
       with:
         entrypoint: ./.github/actions/e2e-test/generate-test-data.sh
 
@@ -61,17 +52,16 @@ runs:
       run: |
         cd webapp
         npm install --ignore-scripts --no-save --legacy-peer-deps
-        cd ../e2e-tests/cypress
-        npm install --ignore-scripts --no-save --legacy-peer-deps
+        cd ../e2e-tests/playwright
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --ignore-scripts --no-save --legacy-peer-deps
 
-    - name: ci/installing-cypress-deps
+    - name: ci/installing-playwright-deps
       shell: bash
       env:
         NODE_ENV: development
       run: |
-        sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
-        cd e2e-tests/cypress
-        npx cypress install
+        cd e2e-tests/playwright
+        npx playwright install --with-deps chromium
 
     - name: ci/install-playbooks
       env:
@@ -81,32 +71,25 @@ runs:
       run: make upload-to-server
       shell: bash
 
-    - name: ci/run-cypress-tests
+    - name: ci/run-playwright-tests
       env:
-        TYPE: NONE
-        PULL_REQUEST: ""
-        BROWSER: chrome
-        HEADLESS: "true"
-        DASHBOARD_ENABLE: "false"
-        FULL_REPORT: "false"
         MM_SERVICESETTINGS_SITEURL: http://localhost:8065
         MM_ADMIN_USERNAME: sysadmin
         MM_ADMIN_PASSWORD: Sys@dmin-sample1
-        CYPRESS_serverEdition: ${{ inputs.CYPRESS_serverEdition }}
         MM_SERVICESETTINGS_EXPERIMENTALSTRICTCSRFENFORCEMENT: "false"
         MM_SERVICESETTINGS_STRICTCSRFENFORCEMENT: "false"
         TERM: xterm
       run: |
-        cd e2e-tests/cypress
-        npm run test -- --spec "${{ inputs.SPECS }}"
+        cd e2e-tests/playwright
+        npm run test
       shell: bash
 
-    - name: ci/upload-cypress-test-results
+    - name: ci/upload-playwright-test-results
       if: always()
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
-        name: cypress-test-results-${{ matrix.runId }}${{ inputs.ARTIFACT_SUFFIX }}
+        name: playwright-test-results${{ inputs.ARTIFACT_SUFFIX }}
         path: |
-          e2e-tests/cypress/results/junit
-          e2e-tests/cypress/tests/screenshots
+          e2e-tests/playwright/results/junit
+          e2e-tests/playwright/test-results
         retention-days: 14 ## No need to keep test results more than 14 days

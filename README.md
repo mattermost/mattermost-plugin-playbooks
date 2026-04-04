@@ -47,7 +47,25 @@ To quickly test Mattermost Playbooks, use the following test commands to create 
 
 ## Running E2E tests
 
-When running E2E tests, the local `mattermost-server` configuration may be unexpectedly modified if either `on_prem_default_config.json` or `cloud_default_default_config.json` (depending on the server edition) has conflicting values for the same keys. This can be avoided by setting `CYPRESS_developerMode=true` when calling Cypress scripts. For example: `CYPRESS_developerMode=true npm run cypress:open`.
+The project now keeps Cypress and Playwright in separate packages under `e2e-tests/`. They do not share helpers, and any seed data needed by both suites is duplicated into each package on purpose.
+
+For Cypress:
+
+```bash
+cd e2e-tests/cypress
+npm install
+```
+
+When running Cypress E2E tests, the local `mattermost-server` configuration may be unexpectedly modified if either `on_prem_default_config.json` or `cloud_default_default_config.json` (depending on the server edition) has conflicting values for the same keys. This can be avoided by setting `CYPRESS_developerMode=true` when calling Cypress scripts. For example: `CYPRESS_developerMode=true npm run cypress:open`.
+
+For Playwright:
+
+```bash
+cd e2e-tests/playwright
+npm install
+npm run playwright:install
+npm test
+```
 
 ## How to Release
 

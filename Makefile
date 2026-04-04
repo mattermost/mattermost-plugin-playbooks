@@ -101,7 +101,7 @@ install-go-tools:
 
 ## Runs eslint and golangci-lint
 .PHONY: check-style
-check-style: manifest-check apply webapp/node_modules e2e-tests/node_modules install-go-tools
+check-style: manifest-check apply webapp/node_modules e2e-tests/cypress/node_modules e2e-tests/playwright/node_modules install-go-tools
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -109,7 +109,10 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run check-types
 endif
 
-	cd e2e-tests && npm run check
+	cd e2e-tests/cypress && npm run check
+	cd e2e-tests/cypress && npm run check-types
+	cd e2e-tests/playwright && npm run check
+	cd e2e-tests/playwright && npm run check-types
 
 # It's highly recommended to run go-vet first
 # to find potential compile errors that could introduce
@@ -123,13 +126,14 @@ endif
 
 ## Fix JS file ESLint issues
 .PHONY: fix-style
-fix-style: apply webapp/node_modules e2e-tests/node_modules
+fix-style: apply webapp/node_modules e2e-tests/cypress/node_modules e2e-tests/playwright/node_modules
 	@echo Fixing lint issues to follow style guide
 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && npm run fix
 endif
-	cd e2e-tests && npm run fix
+	cd e2e-tests/cypress && npm run fix
+	cd e2e-tests/playwright && npm run fix
 
 
 ## Builds the server, if it exists, for all supported architectures, unless MM_SERVICESETTINGS_ENABLEDEVELOPER is set
@@ -164,10 +168,17 @@ ifneq ($(HAS_WEBAPP),)
 	touch $@
 endif
 
-## Ensures NPM dependencies are installed without having to run this all the time.
-e2e-tests/node_modules: $(wildcard e2e-tests/package.json)
+## Ensures Cypress E2E NPM dependencies are installed without having to run this all the time.
+e2e-tests/cypress/node_modules: $(wildcard e2e-tests/cypress/package.json)
 ifneq ($(HAS_WEBAPP),)
-	cd e2e-tests && $(NPM) install
+	cd e2e-tests/cypress && $(NPM) install
+	touch $@
+endif
+
+## Ensures Playwright E2E NPM dependencies are installed without having to run this all the time.
+e2e-tests/playwright/node_modules: $(wildcard e2e-tests/playwright/package.json)
+ifneq ($(HAS_WEBAPP),)
+	cd e2e-tests/playwright && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 $(NPM) install
 	touch $@
 endif
 

@@ -20,10 +20,10 @@ endif
 docs-server:
 	npx @redocly/openapi-cli@1.0.0-beta.3 preview-docs server/api/api.yaml
 
-## Re-generate tests-e2e/db-setup/mattermost.sql from the Postgres image expected to be running
-## in the developer's Docker environment.
-.PHONY: tests-e2e/db-setup/mattermost.sql
-tests-e2e/db-setup/mattermost.sql:
+## Re-generate Cypress and Playwright E2E database seeds from the Postgres image
+## expected to be running in the developer's Docker environment.
+.PHONY: e2e-tests/cypress/db-setup/mattermost.sql
+e2e-tests/cypress/db-setup/mattermost.sql:
 	docker exec mattermost-postgres pg_dump \
 		--username=mmuser \
 		--clean \
@@ -36,4 +36,5 @@ tests-e2e/db-setup/mattermost.sql:
 		--exclude-table ir_timelineevent \
 		--exclude-table ir_userinfo \
 		--exclude-table ir_viewedchannel \
-		mattermost_test > tests-e2e/db-setup/mattermost.sql
+		mattermost_test > e2e-tests/cypress/db-setup/mattermost.sql
+	cp e2e-tests/cypress/db-setup/mattermost.sql e2e-tests/playwright/db-setup/mattermost.sql

@@ -1,0 +1,11 @@
+# env, cert, key, license
+.env*
+*.crt
+*.key
+*.license
+
+# node
+node_modules
+playwright-report
+results
+test-results

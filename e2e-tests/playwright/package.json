@@ -1,0 +1,28 @@
+{
+  "name": "mattermost-plugin-playbooks-e2e-playwright",
+  "private": true,
+  "engines": {
+    "node": "20.x || 22.x || >=24.0.0",
+    "npm": ">=10.1.0"
+  },
+  "scripts": {
+    "check": "eslint . --quiet --cache",
+    "check-types": "tsc --noEmit",
+    "fix": "eslint . --quiet --fix --cache",
+    "playwright:install": "playwright install --with-deps chromium",
+    "playwright:test": "cross-env TZ=Etc/UTC playwright test",
+    "playwright:test:headed": "cross-env TZ=Etc/UTC playwright test --headed",
+    "test": "cross-env TZ=Etc/UTC playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.2",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.2.0",
+    "eslint-plugin-playwright": "^2.10.1",
+    "globals": "^17.4.0",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.0"
+  }
+}
