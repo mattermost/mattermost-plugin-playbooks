@@ -32,3 +32,6 @@ mprocs.yaml
 .claude
 CLAUDE.md
 .cursorrules
+
+# Local worktree config
+.config/wt.toml*
