@@ -10,6 +10,7 @@ MM_UTILITIES_DIR ?= ../mattermost-utilities
 DLV_DEBUG_PORT := 2346
 DEFAULT_GOOS ?= $(shell go env GOOS)
 DEFAULT_GOARCH ?= $(shell go env GOARCH)
+GO_PROJECT_PACKAGES = $(shell $(GO) list ./... | sed '/\/node_modules\//d')
 
 export GO111MODULE=on
 
@@ -119,9 +120,9 @@ endif
 # weird reports at golangci-lint step
 ifneq ($(HAS_SERVER),)
 	@echo Running golangci-lint
-	$(GO) vet ./...
+	$(GO) vet $(GO_PROJECT_PACKAGES)
 	$(GOBIN)/golangci-lint run ./...
-	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go ./...
+	$(GO) vet -vettool=$(GOBIN)/mattermost-govet -license -license.year=2020 -license.ignore=server/graphql/models.go $(GO_PROJECT_PACKAGES)
 endif
 
 ## Fix JS file ESLint issues
