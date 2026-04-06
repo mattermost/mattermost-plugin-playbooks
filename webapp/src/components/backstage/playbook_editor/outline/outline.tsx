@@ -251,7 +251,8 @@ type SectionsProps = {
 const SectionsImpl = ({
     children,
     className,
-}: SectionsProps & StyledAttrs) => {
+    ...rest
+}: SectionsProps & StyledAttrs & React.HTMLAttributes<HTMLDivElement>) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -270,7 +271,10 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div className={className}>
+            <div
+                className={className}
+                {...rest}
+            >
                 {children}
             </div>
         </>

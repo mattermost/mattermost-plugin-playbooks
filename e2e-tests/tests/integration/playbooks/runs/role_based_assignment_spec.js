@@ -261,6 +261,11 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                         cy.contains(testCreator.username).should('exist');
                     });
                 });
+
+                // * Verify via API that the creator-type task assignee_id was NOT changed by the owner update
+                cy.apiGetPlaybookRun(run.id).then(({body: creatorRun}) => {
+                    expect(creatorRun.checklists[0].items[0].assignee_id).to.equal(testCreator.id);
+                });
             });
         });
     });
@@ -318,6 +323,11 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     cy.contains('[data-testid="checkbox-item-container"]', 'Owner Task').within(() => {
                         cy.contains(testCreator.username).should('exist');
                     });
+                });
+
+                // * Verify via API that the manually-set assignee_id was NOT changed by the owner update
+                cy.apiGetPlaybookRun(run.id).then(({body: manualRun}) => {
+                    expect(manualRun.checklists[0].items[0].assignee_id).to.equal(testCreator.id);
                 });
             });
         });
@@ -585,11 +595,14 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
 
                 cy.wait('@UpdatePlaybook');
 
-                // * Server must have assignee_type cleared and assignee_id set
+                // * Server must have assignee_type cleared and assignee_id set;
+                //   assignee_group_id and assignee_property_field_id must also be cleared
                 cy.apiGetPlaybook(playbook.id).then((resp) => {
                     const item = resp.checklists[0].items[0];
                     expect(item.assignee_type).to.equal('');
                     expect(item.assignee_id).to.equal(testOwner.id);
+                    expect(item.assignee_group_id).to.equal('');
+                    expect(item.assignee_property_field_id).to.equal('');
                 });
             });
         });
@@ -678,6 +691,11 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                             cy.findByTestId('property-user-indicator-badge').should('exist').and('contain', 'Manager');
                             cy.contains(testNewOwner.username).should('exist');
                         });
+                    });
+
+                    // * Verify via API that the property_user task still carries assignee_type=property_user after owner change
+                    cy.apiGetPlaybookRun(run.id).then(({body: propUserRun}) => {
+                        expect(propUserRun.checklists[0].items[1].assignee_type).to.equal('property_user');
                     });
                 });
             });

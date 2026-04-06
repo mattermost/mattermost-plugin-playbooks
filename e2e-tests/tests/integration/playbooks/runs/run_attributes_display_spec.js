@@ -109,9 +109,13 @@ describe('runs > attribute columns', {testIsolation: true}, () => {
         // # Set Zone text value
         cy.playbooksSetRunPropertyViaUI('run-property-zone', 'US-East', {type: 'text'});
 
+        // # Set Priority to Medium (third column, not shown by default)
+        cy.playbooksSetRunPropertyViaUI('run-property-priority', 'Medium');
+
         // * Assert property values are persisted server-side (guards against optimistic UI bugs)
         cy.assertRunPropertyValueStored(testRun.id, 'Severity');
         cy.assertRunPropertyValueStored(testRun.id, 'Zone', 'US-East');
+        cy.assertRunPropertyValueStored(testRun.id, 'Priority');
 
         // # Visit the runs list
         cy.visit('/playbooks/runs');
@@ -123,6 +127,9 @@ describe('runs > attribute columns', {testIsolation: true}, () => {
 
             // * Assert second property value (Zone) is shown
             cy.findByTestId('run-list-item-attributes').should('contain', 'US-East');
+
+            // * Assert third property value (Priority) is not shown by default
+            cy.findByTestId('run-list-item-attributes').should('not.contain', 'Medium');
         });
     });
 
@@ -182,6 +189,19 @@ describe('runs > attribute columns', {testIsolation: true}, () => {
     });
 
     it('hides column after deselecting it in configure columns dropdown', () => {
+        // # Visit run details to set property values
+        cy.playbooksVisitRun(testRun.id);
+
+        // # Set Severity to Critical
+        cy.playbooksSetRunPropertyViaUI('run-property-severity', 'Critical');
+
+        // # Set Zone text value
+        cy.playbooksSetRunPropertyViaUI('run-property-zone', 'US-West', {type: 'text'});
+
+        // * Assert property values are persisted server-side
+        cy.assertRunPropertyValueStored(testRun.id, 'Severity');
+        cy.assertRunPropertyValueStored(testRun.id, 'Zone', 'US-West');
+
         // # Visit the runs list
         cy.visit('/playbooks/runs');
 
@@ -203,6 +223,9 @@ describe('runs > attribute columns', {testIsolation: true}, () => {
         cy.playbooksGetRunListRow(testRun.name).within(() => {
             // * Assert Zone column is no longer shown
             cy.findByTestId('run-list-item-attributes').should('not.contain', 'Zone');
+
+            // * Assert Severity column is still visible after Zone is deselected
+            cy.findByTestId('run-list-item-attributes').should('contain', 'Critical');
         });
     });
 

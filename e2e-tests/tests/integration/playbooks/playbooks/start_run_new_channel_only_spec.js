@@ -61,6 +61,11 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
         });
 
         it('"Link to existing channel" radio is disabled', () => {
+            // * Verify via API that new_channel_only is true on the playbook
+            cy.apiGetPlaybook(restrictedPlaybook.id).then((pb) => {
+                expect(pb.new_channel_only).to.equal(true);
+            });
+
             // # Open the run modal from the playbook editor
             cy.playbooksOpenRunModal(restrictedPlaybook.id);
 
@@ -124,6 +129,11 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             cy.playbooksGetRunIdFromUrl().then((runId) => {
                 cy.apiGetPlaybookRun(runId).then(({body: run}) => {
                     expect(run.channel_id, 'run should have a new channel_id').to.be.a('string').and.not.be.empty;
+
+                    // * Verify via API that the associated channel exists
+                    cy.apiGetChannel(run.channel_id).then(({channel}) => {
+                        expect(channel).to.exist;
+                    });
                 });
             });
         });

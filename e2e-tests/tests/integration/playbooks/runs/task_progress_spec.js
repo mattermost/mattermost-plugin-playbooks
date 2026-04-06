@@ -83,6 +83,15 @@ describe('runs > task progress', {testIsolation: true}, () => {
             // * Assert progress is visible before any action
             cy.findByTestId('task-progress-indicator').should('be.visible').and('contain', `0/${TOTAL_TASKS}`);
         });
+
+        // * Assert backend state: all items are uncompleted
+        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+            const items = run.checklists[0].items;
+            expect(items[0].state).to.equal('');
+            expect(items[1].state).to.equal('');
+            expect(items[2].state).to.equal('');
+            expect(items[3].state).to.equal('');
+        });
     });
 
     it('shows 2/4 progress after completing 2 tasks', () => {
@@ -99,6 +108,15 @@ describe('runs > task progress', {testIsolation: true}, () => {
             // * Assert task progress shows 2/4
             cy.findByTestId('task-progress-indicator').should('contain', `2/${TOTAL_TASKS}`);
         });
+
+        // * Assert backend state: items 0 and 1 are closed, items 2 and 3 are open
+        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+            const items = run.checklists[0].items;
+            expect(items[0].state).to.equal('closed');
+            expect(items[1].state).to.equal('closed');
+            expect(items[2].state).to.equal('');
+            expect(items[3].state).to.equal('');
+        });
     });
 
     it('shows 3/4 progress after skipping a task (skipped counts as completed)', () => {
@@ -107,7 +125,7 @@ describe('runs > task progress', {testIsolation: true}, () => {
         cy.playbooksCompleteTaskAtIndex(0);
         cy.playbooksCompleteTaskAtIndex(1);
 
-        // # Skip task 2 via API (no UI skip command available)
+        // # Skip task 2 via API — no UI skip command available
         cy.apiSetChecklistItemState(testRun.id, 0, 2, 'skipped');
 
         // # Visit the runs list
@@ -117,6 +135,13 @@ describe('runs > task progress', {testIsolation: true}, () => {
         cy.playbooksGetRunListRow(testRun.name).within(() => {
             // * Assert task progress shows 3/4 (skipped counts toward completion)
             cy.findByTestId('task-progress-indicator').should('contain', `3/${TOTAL_TASKS}`);
+        });
+
+        // * Assert backend state: items 0 and 1 are closed, item 2 is skipped, item 3 is open
+        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+            const items = run.checklists[0].items;
+            expect(items[2].state).to.equal('skipped');
+            expect(items[3].state).to.equal('');
         });
     });
 
@@ -135,6 +160,15 @@ describe('runs > task progress', {testIsolation: true}, () => {
         cy.playbooksGetRunListRow(testRun.name).within(() => {
             // * Assert task progress shows 4/4
             cy.findByTestId('task-progress-indicator').should('contain', `${TOTAL_TASKS}/${TOTAL_TASKS}`);
+        });
+
+        // * Assert backend state: all 4 items are closed
+        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+            const items = run.checklists[0].items;
+            expect(items[0].state).to.equal('closed');
+            expect(items[1].state).to.equal('closed');
+            expect(items[2].state).to.equal('closed');
+            expect(items[3].state).to.equal('closed');
         });
     });
 });

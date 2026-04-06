@@ -165,6 +165,12 @@ describe('runs > user and date property types', {testIsolation: true}, () => {
                         cy.playbooksGetRunListRow(run.name).within(() => {
                             cy.get('[data-testid="run-list-item-attributes"]').should('contain', testUser2.username);
                         });
+
+                        // * Cross-surface check: verify Reviewer property is also shown on the run detail page
+                        cy.playbooksVisitRun(run.id);
+                        cy.findByTestId('run-property-reviewer').within(() => {
+                            cy.findByTestId('property-value').should('contain', testUser2.username);
+                        });
                     });
                 });
             });

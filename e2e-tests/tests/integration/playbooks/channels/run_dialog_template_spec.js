@@ -159,6 +159,9 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                         cy.contains('label', /Zone/).should('exist');
                         cy.contains('label', /Zone/).should('not.contain.text', '*');
 
+                        // * Only Zone appears — Severity (not referenced in template) must not be shown
+                        cy.findByText('Severity').should('not.exist');
+
                         // * Start run should be disabled until Zone is filled
                         cy.findByRole('button', {name: /start run/i}).should('be.disabled');
                     });
@@ -210,6 +213,9 @@ describe('channels > run dialog > template mode (RunPlaybookModal)', {testIsolat
                     // * Start run should now be enabled
                     cy.findByRole('button', {name: /start run/i}).should('not.be.disabled');
                 });
+
+                // * Name preview must contain the selected user's username after selection
+                cy.findByTestId('run-name-preview').should('contain', testUser.username);
             });
         });
     });

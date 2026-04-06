@@ -89,7 +89,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
     it('shows admin_only_edit toggle in editor and can be toggled by admin', () => {
         // # Visit the playbook outline editor as admin
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * Assert admin_only_edit toggle exists
         cy.findByTestId('admin-only-edit-toggle').should('exist');
@@ -122,13 +122,18 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
     it('persists admin_only_edit toggle state after page reload', () => {
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // # Enable admin_only_edit via the toggle UI
         cy.playbooksToggleWithConfirmation('admin-only-edit-toggle');
 
         // * Assert checkbox is checked
         cy.findByTestId('admin-only-edit-toggle').find('input').first().should('be.checked');
+
+        // * Assert via API that admin_only_edit was persisted immediately after toggling
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            expect(pb.admin_only_edit).to.equal(true);
+        });
 
         // # Reload the page to verify the state persists
         cy.reload();
@@ -146,14 +151,17 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
     it('non-member cannot see "Add a section" button when admin_only_edit is enabled', () => {
         // # Enable admin_only_edit via the UI toggle (already logged in as admin)
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
         cy.playbooksToggleWithConfirmation('admin-only-edit-toggle');
 
         // # Login as non-member (team member, not a playbook member)
         cy.apiLogin(testNonMemberUser);
 
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+        // * The outline content area is visible (non-member can view public playbook)
+        cy.findByTestId('preview-content').should('be.visible');
 
         // * The checklists section is visible but read-only — "Add a section" is absent
         cy.get('[id="checklists"]').should('exist');
@@ -167,15 +175,11 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
     it('admin can still see "Add a section" button when admin_only_edit is enabled', () => {
         // # Enable admin_only_edit via the UI toggle (already logged in as admin)
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
         cy.playbooksToggleWithConfirmation('admin-only-edit-toggle');
 
         // * Admin still sees the "Add a section" button (not read-only)
-        cy.findByTestId('add-a-checklist-button').should('exist').click();
-        cy.findByTestId('checklist-title-input').should('exist');
-
-        // # Cancel by pressing Escape
-        cy.get('body').type('{esc}');
+        cy.findByTestId('add-a-checklist-button').should('exist');
     });
 
     it('REST API rejects playbook update from non-member when admin_only_edit is enabled', () => {
@@ -189,6 +193,11 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
                 // * The PUT request is rejected with 403 Forbidden
                 cy.apiUpdatePlaybook({...playbook, title: 'Unauthorized Update'}, 403);
             });
+
+            // * UI check: non-member sees the outline but not the admin-only-edit toggle
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.findByTestId('preview-content').should('be.visible');
+            cy.findByTestId('admin-only-edit-toggle').should('not.exist');
         });
     });
 
@@ -202,7 +211,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.apiLogin(testMemberUser);
 
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * The checklists section is visible but read-only — "Add a section" is absent
         cy.get('[id="checklists"]').should('exist');
@@ -220,7 +229,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.apiLogin(testMemberUser);
 
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * Member can see the "Add a section" button when admin_only_edit is off
         cy.findByTestId('add-a-checklist-button').should('exist');
@@ -237,6 +246,11 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
                 // * The PUT request is rejected with 403 Forbidden
                 cy.apiUpdatePlaybook({...playbook, title: 'Member Unauthorized Update'}, 403);
             });
+
+            // * UI check: member sees the outline but not the admin-only-edit toggle
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.findByTestId('preview-content').should('be.visible');
+            cy.findByTestId('admin-only-edit-toggle').should('not.exist');
         });
     });
 

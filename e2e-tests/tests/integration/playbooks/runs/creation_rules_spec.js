@@ -100,6 +100,13 @@ describe('runs > creation rules', {testIsolation: true}, () => {
             // # Start a run via UI and assert the owner is testAlternateOwner (first rule wins)
             const runName = 'First-match rule run ' + getRandomId();
             startRunAndAssertOwner(testPlaybook.id, runName, testAlternateOwner.id);
+
+            // * Assert backend: the second alternate owner did NOT become the run owner
+            cy.playbooksGetRunIdFromUrl().then((testRunId) => {
+                cy.apiGetPlaybookRun(testRunId).then(({body: run}) => {
+                    expect(run.owner_user_id).to.not.equal(secondAlternateOwner.id);
+                });
+            });
         });
     });
 
@@ -114,6 +121,11 @@ describe('runs > creation rules', {testIsolation: true}, () => {
             playbook.title = 'Creation Rules Playbook Updated';
             delete playbook.creation_rules;
             cy.apiUpdatePlaybook(playbook);
+        });
+
+        // * Assert backend: title was updated correctly before starting the run
+        cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+            expect(playbook.title).to.equal('Creation Rules Playbook Updated');
         });
 
         // # Start a run via UI to prove the creation rule still fires after the unrelated update
@@ -160,7 +172,7 @@ describe('runs > creation rules', {testIsolation: true}, () => {
 
         // # Read back the field to get its ID and option IDs
         cy.then(() => {
-            cy.apiGetPropertyFieldByName(conditionalPlaybook.id, 'Zone').then((field) => {
+            return cy.apiGetPropertyFieldByName(conditionalPlaybook.id, 'Zone').then((field) => {
                 zoneField = field;
             });
         });
@@ -209,7 +221,7 @@ describe('runs > creation rules', {testIsolation: true}, () => {
 
         // # Read back the field to get its ID and option IDs
         cy.then(() => {
-            cy.apiGetPropertyFieldByName(conditionalPlaybook.id, 'Zone').then((field) => {
+            return cy.apiGetPropertyFieldByName(conditionalPlaybook.id, 'Zone').then((field) => {
                 zoneField = field;
             });
         });
@@ -249,10 +261,11 @@ describe('runs > creation rules', {testIsolation: true}, () => {
             cy.url().should('include', '/playbooks/runs/');
             cy.findByTestId('run-header-section').should('be.visible');
 
-            // * Verify via API that the invited user is a participant
+            // * Verify via API that the invited user is a participant and the owner is unchanged
             cy.playbooksGetRunIdFromUrl().then((runId) => {
                 cy.apiGetPlaybookRun(runId).then(({body: run}) => {
                     expect(run.participant_ids, 'invited user should be a participant').to.include(invitedUser.id);
+                    expect(run.owner_user_id).to.equal(testOwner.id);
                 });
             });
         });

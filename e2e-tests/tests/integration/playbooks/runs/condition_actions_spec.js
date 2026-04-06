@@ -483,6 +483,13 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             cy.get('#postListContent').within(() => {
                 cy.contains('Priority escalated to Critical on run Critical').should('exist');
             });
+
+            // * Verify via API that the notify_channel action did not change run ownership
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id).to.equal(testUser.id);
+                });
+            });
         });
 
         it('resolves multiple {PropertyName} tokens in notify_message to current field values', () => {
@@ -579,6 +586,13 @@ describe('runs > condition actions', {testIsolation: true}, () => {
             // * Both tokens must be resolved — raw {Zone} and {Severity} must NOT appear
             cy.get('#postListContent').within(() => {
                 cy.contains('Alert in zone Alpha with severity Critical').should('exist');
+            });
+
+            // * Verify via API that the notify_channel action did not change run ownership
+            cy.then(() => {
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id).to.equal(testUser.id);
+                });
             });
         });
     });
@@ -831,6 +845,11 @@ describe('runs > condition actions', {testIsolation: true}, () => {
                 cy.playbooksVisitRun(testRun.id);
             });
             cy.playbooksSetRunPropertyViaRHS('Zone', 'Bravo');
+
+            // * Verify via API that the Zone property change to Bravo was persisted server-side
+            cy.then(() => {
+                cy.assertRunPropertyValueStored(testRun.id, 'Zone');
+            });
 
             // * Owner should remain testUser — action did NOT fire on the met→unmet transition
             cy.findByTestId('runinfo-owner').should('contain.text', testUser.username);

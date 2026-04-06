@@ -202,6 +202,16 @@ describe('runs > attribute columns applied to all rows', {testIsolation: true}, 
     });
 
     it('shows attribute columns on every row after a column is deselected', () => {
+        // # Set Severity property values on each run
+        cy.playbooksVisitRun(run1.id);
+        cy.playbooksSetRunPropertyViaUI('run-property-severity', 'Critical');
+
+        cy.playbooksVisitRun(run2.id);
+        cy.playbooksSetRunPropertyViaUI('run-property-severity', 'High');
+
+        cy.playbooksVisitRun(run3.id);
+        cy.playbooksSetRunPropertyViaUI('run-property-severity', 'Medium');
+
         // # Visit the runs list
         cy.visit('/playbooks/runs');
         cy.get('#playbookRunList').should('exist');
@@ -233,6 +243,19 @@ describe('runs > attribute columns applied to all rows', {testIsolation: true}, 
         cy.playbooksGetRunListRow(run3.name).within(() => {
             cy.findByTestId('run-list-item-attributes').should('exist');
             cy.findByTestId('run-list-item-attributes').should('not.contain', 'Zone');
+        });
+
+        // * Severity column must still appear on every row after Zone is deselected
+        cy.playbooksGetRunListRow(run1.name).within(() => {
+            cy.findByTestId('run-list-item-attributes').should('contain', 'Critical');
+        });
+
+        cy.playbooksGetRunListRow(run2.name).within(() => {
+            cy.findByTestId('run-list-item-attributes').should('contain', 'High');
+        });
+
+        cy.playbooksGetRunListRow(run3.name).within(() => {
+            cy.findByTestId('run-list-item-attributes').should('contain', 'Medium');
         });
     });
 

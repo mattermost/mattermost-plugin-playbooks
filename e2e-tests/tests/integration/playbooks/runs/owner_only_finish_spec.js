@@ -113,6 +113,11 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
 
             cy.uiPostMessageQuickly('/playbook finish');
             cy.verifyEphemeralMessage('You do not have permission to finish this run.');
+
+            // * Assert backend: run is still active (not finished)
+            cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                expect(run.current_status).to.not.equal('Finished');
+            });
         });
 
         it('old owner cannot finish the run after ownership is reassigned to another user', () => {
@@ -164,9 +169,19 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
                 expect(run.current_status).to.equal('Finished');
                 expect(run.end_at).to.be.greaterThan(0);
             });
+
+            // * Verify the associated channel was not deleted (delete_at should be 0)
+            cy.apiGetChannel(testPlaybookRun.channel_id).then(({channel}) => {
+                expect(channel.delete_at).to.equal(0);
+            });
         });
 
         it('system admin can finish the run even when not the owner', () => {
+            // * Assert backend: run is still active before admin clicks finish
+            cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                expect(run.current_status).to.not.equal('Finished');
+            });
+
             // # Login as sysadmin
             cy.apiAdminLogin();
 
@@ -180,6 +195,11 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         it('playbook admin (non-owner) cannot see the finish section', () => {
             // # Create a playbook admin user
             cy.apiCreateAndAddUserToTeam(testTeam.id).then((playbookAdminUser) => {
+                // * Assert backend: playbook admin is not the run owner
+                cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id).to.not.equal(playbookAdminUser.id);
+                });
+
                 // # Add as playbook admin
                 cy.apiLogin(testOwner);
                 cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {

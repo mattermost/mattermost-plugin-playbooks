@@ -49,10 +49,15 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.visitPlaybookEditor(playbook.id, 'outline');
 
             // * Assert the auto-archive toggle is present
             cy.findByTestId('auto-archive-channel-toggle').should('exist');
+
+            // * Assert via API that auto_archive_channel defaults to false
+            cy.apiGetPlaybook(playbook.id).then((pb) => {
+                expect(pb.auto_archive_channel).to.equal(false);
+            });
         });
     });
 
@@ -66,7 +71,7 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.visitPlaybookEditor(playbook.id, 'outline');
 
             // # Enable the auto-archive toggle
             cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
@@ -83,6 +88,10 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             cy.apiGetPlaybook(playbook.id).then((pb) => {
                 expect(pb.auto_archive_channel, 'auto_archive_channel should be true').to.equal(true);
             });
+
+            // # Toggle auto-archive off and verify banner disappears
+            cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
+            cy.findByTestId('auto-archive-confirmation-banner').should('not.exist');
         });
     });
 
@@ -100,7 +109,7 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Enable auto-archive via the playbook editor UI
-            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
             cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
 
             // * Confirm the banner appears (guards against a silent toggle failure)
@@ -152,7 +161,7 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.visitPlaybookEditor(playbook.id, 'outline');
 
             // * Assert the auto-archive toggle is disabled
             cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('be.disabled');
@@ -160,6 +169,11 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             // * Assert a tooltip explains why it's disabled
             cy.findByTestId('auto-archive-channel-toggle').find('span').first().trigger('mouseover');
             cy.findByRole('tooltip').should('be.visible').and('contain', TOOLTIP_DISABLED_TEXT);
+
+            // * Assert via API that channel_mode is link_existing_channel
+            cy.apiGetPlaybook(playbook.id).then((pb) => {
+                expect(pb.channel_mode).to.equal('link_existing_channel');
+            });
         });
     });
 
@@ -174,7 +188,7 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.visitPlaybookEditor(playbook.id, 'outline');
 
             // * Assert the auto-archive toggle is enabled (not disabled)
             cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('not.be.disabled');
@@ -205,6 +219,12 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
                 cy.playbooksVisitRunChannel(testTeam.name, testRun);
                 cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
                 cy.playbooksConfirmFinishModal();
+
+                // * Assert the run is finished before checking channel state
+                cy.apiGetPlaybookRun(testRun.id).then(({body: finishedRun}) => {
+                    expect(finishedRun.current_status).to.equal('Finished');
+                    expect(finishedRun.end_at).to.be.greaterThan(0);
+                });
 
                 // * Assert the run channel is NOT archived (delete_at === 0)
                 cy.apiGetChannel(testRun.channel_id).then(({channel}) => {

@@ -94,6 +94,11 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
         cy.findByTestId('run-checklist-section').findAllByTestId('checkbox-item-container').eq(0).within(() => {
             cy.get('[data-testid="lock-indicator"]').should('exist');
         });
+
+        // * Assert backend: item 0 has restrict_completion_to_assignee = true
+        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+            expect(run.checklists[0].items[0].restrict_completion_to_assignee).to.equal(true);
+        });
     });
 
     it('does not show lock indicator on an unrestricted task', () => {
@@ -104,6 +109,11 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
         // * Assert no lock indicator on the unlocked task (index 1)
         cy.findByTestId('run-checklist-section').findAllByTestId('checkbox-item-container').eq(1).within(() => {
             cy.get('[data-testid="lock-indicator"]').should('not.exist');
+        });
+
+        // * Assert backend: item 1 does not have restrict_completion_to_assignee = true
+        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+            expect(run.checklists[0].items[1].restrict_completion_to_assignee).to.equal(false);
         });
     });
 
@@ -138,10 +148,11 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
         cy.apiLogin(testUser);
         cy.playbooksVisitRun(testRun.id);
 
-        // Verify the task still exists before asserting UI
+        // Verify the task still exists before asserting UI, and confirm restrict_completion_to_assignee
         cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
             // task should still exist
             expect(run.checklists[0].items).to.have.length.greaterThan(0);
+            expect(run.checklists[0].items[0].restrict_completion_to_assignee).to.equal(true);
         });
 
         // * Assert the checkbox is enabled (no assignee = no restriction)
@@ -294,6 +305,9 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
             cy.apiGetPlaybookRun(groupRun.id).then((response) => {
                 const item = response.body.checklists[0].items[0];
                 expect(item.state, 'item state should be closed').to.equal('closed');
+
+                // * Assert unlocked task (index 1) is still uncompleted
+                expect(response.body.checklists[0].items[1].state).to.equal('');
             });
         });
 
@@ -456,6 +470,14 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
                 // * Checkbox must now be disabled — ownerUser lost the owner role
                 cy.get('[data-testid="task-checkbox"]').should('be.disabled');
             });
+
+            // * Assert new owner (nonOwnerUser) sees an enabled checkbox
+            cy.apiLogin(nonOwnerUser);
+            cy.playbooksVisitRunChannel(ownerTeam.name, ownerRun);
+            cy.playbooksVisitRun(ownerRun.id);
+            cy.findByTestId('run-checklist-section').findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                cy.get('[data-testid="task-checkbox"]').should('not.be.disabled');
+            });
         });
     });
 
@@ -585,6 +607,13 @@ describe('runs > task lockdown', {testIsolation: true}, () => {
             cy.findByTestId('run-checklist-section').findAllByTestId('checkbox-item-container').eq(0).within(() => {
                 // * Checkbox must still be ENABLED — runCreator is the run creator regardless of owner role
                 cy.get('[data-testid="task-checkbox"]').should('not.be.disabled');
+            });
+
+            // * Assert new owner (nonCreatorUser, who is not the creator) sees a DISABLED checkbox
+            cy.apiLogin(nonCreatorUser);
+            cy.playbooksVisitRun(creatorRun.id);
+            cy.findByTestId('run-checklist-section').findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                cy.get('[data-testid="task-checkbox"]').should('be.disabled');
             });
         });
 

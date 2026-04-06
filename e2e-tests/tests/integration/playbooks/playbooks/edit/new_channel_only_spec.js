@@ -51,13 +51,18 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
 
     it('shows the Require new channel toggle in the playbook editor', () => {
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * Assert "Require new channel for all runs" toggle exists
         cy.findByTestId('new-channel-only-toggle').should('exist');
 
         // * Assert toggle is initially unchecked (default state)
         cy.findByTestId('new-channel-only-toggle').find('input').first().should('not.be.checked');
+
+        // * Assert via API that new_channel_only defaults to false
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            expect(pb.new_channel_only).to.equal(false);
+        });
     });
 
     // NOTE: The API rejection test (new_channel_only=true + existing channel_id → 400)
@@ -68,6 +73,11 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
 
         // # Enable new_channel_only on the playbook
         cy.apiPatchPlaybook(testPlaybook.id, {new_channel_only: true}).then(() => {
+            // * Assert via API that new_channel_only is now true
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.new_channel_only).to.equal(true);
+            });
+
             // # Create a run without channel_id (new channel mode) — should succeed
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
@@ -79,6 +89,11 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
                 expect(run.id).to.be.a('string').and.not.be.empty;
                 expect(run.channel_id).to.be.a('string').and.not.be.empty;
                 expect(run.name).to.equal(runName);
+
+                // * Assert the channel exists
+                cy.apiGetChannel(run.channel_id).then(({channel}) => {
+                    expect(channel).to.exist;
+                });
             });
         });
     });

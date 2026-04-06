@@ -39,7 +39,8 @@ const (
 )
 
 // FormatSequentialID returns the formatted sequential identifier string.
-// Returns empty string for standalone runs (RunNumber == 0).
+// Returns empty string only when RunNumber == 0 (unset run).
+// Otherwise returns the formatted number (00001, 00042, etc), optionally prefixed with dash if prefix is configured.
 // Playbook-backed runs always have RunNumber >= 1 after the migration.
 func FormatSequentialID(prefix string, runNumber int64) string {
 	if runNumber == 0 {

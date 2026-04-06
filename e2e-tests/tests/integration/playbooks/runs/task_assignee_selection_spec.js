@@ -223,6 +223,14 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 // * The task must render the group badge in the run checklist
                 cy.findByTestId('group-indicator-badge').should('exist');
                 cy.findByTestId('group-indicator-badge').should('contain', testGroup.display_name);
+
+                // * Verify via API that the run's checklist item has the correct assignee_type and assignee_group_id
+                cy.playbooksGetRunIdFromUrl().then((runId) => {
+                    cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                        expect(run.checklists[0].items[0].assignee_type).to.equal('group');
+                        expect(run.checklists[0].items[0].assignee_group_id).to.equal(testGroup.id);
+                    });
+                });
             });
         });
 
@@ -461,6 +469,13 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 // * The task must render the field name badge in the run checklist
                 cy.findByTestId('property-user-indicator-badge').should('exist');
                 cy.findByTestId('property-user-indicator-badge').should('contain', 'Reviewer');
+
+                // * Verify via API that the run's checklist item has assignee_type set to property_user
+                cy.playbooksGetRunIdFromUrl().then((runId) => {
+                    cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                        expect(run.checklists[0].items[0].assignee_type).to.equal('property_user');
+                    });
+                });
             });
         });
 
@@ -482,6 +497,13 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksAddPropertyFieldViaUI(playbook.id, 'Priority', 'select');
 
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
+
+                // * Verify via API that Priority field has type 'select' (not 'user') so filtering it is correct
+                cy.apiGetPropertyFields(playbook.id).then((fields) => {
+                    const field = fields.find((f) => f.name === 'Priority');
+                    expect(field.type).to.equal('select');
+                    expect(field.type).to.not.equal('user');
+                });
 
                 cy.get('#checklists').within(() => {
                     // * The Run User option must exist (user field present)

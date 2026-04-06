@@ -842,3 +842,12 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
         return cy.wrap(runId);
     });
 });
+
+/**
+ * Navigate to a playbook editor page.
+ * @param {String} playbookId - The playbook ID
+ * @param {String} [tab='outline'] - The tab to navigate to (e.g. 'outline', 'attributes')
+ */
+Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
+});

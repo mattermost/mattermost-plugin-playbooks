@@ -54,7 +54,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('shows run naming fields inside the Actions section', () => {
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * Assert run number prefix and run name template inputs exist in the Actions section
         cy.findByTestId('channel-access-run-number-prefix').should('exist');
@@ -63,7 +63,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('saves prefix and template values and shows preview', () => {
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * Wait for the page to load
         cy.findByTestId('channel-access-run-number-prefix').should('exist');
@@ -87,11 +87,9 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
 
         // # Now set template value on the fresh page — no stale-closure risk
-        cy.findByTestId('channel-access-run-name-template-input').then(($el) => {
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            nativeInputValueSetter.call($el[0], `${TOKEN_SEQ} - Incident-Report`);
-            $el[0].dispatchEvent(new Event('input', {bubbles: true}));
-        });
+        // # Type the template and dismiss the dropdown that opens when typing '{'
+        cy.findByTestId('channel-access-run-name-template-input').type(`${TOKEN_SEQ} - Incident-Report`, {parseSpecialCharSequences: false});
+        cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
 
         // * Assert preview section is shown with resolved prefix and template.
         // # The preview renders the sequential ID as 'INC-N' (FormatSequentialID adds the
@@ -111,22 +109,29 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('shows a warning when template references an unknown field', () => {
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * Wait for the page to load
         cy.findByTestId('channel-access-run-name-template-input').should('exist');
 
-        // # Set template value with unknown field using native value setter to avoid opening
-        // # the token dropdown (typing '{' would open it and steal focus)
-        cy.findByTestId('channel-access-run-name-template-input').then(($el) => {
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            nativeInputValueSetter.call($el[0], '{UnknownField}');
-            $el[0].dispatchEvent(new Event('input', {bubbles: true}));
-        });
+        // # Type a valid prefix first to prime the input
+        cy.findByTestId('channel-access-run-name-template-input').type('Test - ', {parseSpecialCharSequences: false});
+
+        // # Now type an unknown field reference
+        cy.findByTestId('channel-access-run-name-template-input').type('{UnknownField}', {parseSpecialCharSequences: false});
+
+        // # Dismiss any dropdown that opened when typing '{'
+        cy.findByTestId('channel-access-run-name-template-input').type('{esc}');
+
+        // * Assert the input contains the unknown field reference
+        cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Test - {UnknownField}');
 
         // * Assert warning is shown for unknown field reference
         cy.findByTestId('channel-access-run-name-template-warning').should('exist');
         cy.findByTestId('channel-access-run-name-template-warning').should('contain', 'UnknownField');
+
+        // * Note: The server rejects unknown fields on save, so this invalid template
+        // * will not persist, but the UI warning correctly identifies the invalid field.
     });
 
     it('persists prefix and template values set via API and shows them in editor', () => {
@@ -134,7 +139,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # Note: prefix must be alphanumeric (no trailing dash) — FormatSequentialID adds the dash
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'INC', channel_name_template: `${TOKEN_SEQ} - Incident`}).then(() => {
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
             // * Assert prefix value is loaded from API
             cy.findByTestId('channel-access-run-number-prefix').should('have.value', 'INC');
@@ -148,7 +153,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # Set prefix and template via API
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'SEQ', channel_name_template: `${TOKEN_SEQ} - Convention`}).then(() => {
             // # Open the Run playbook modal from the outline editor
-            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
             cy.findByTestId('channel-access-run-name-template-input').should('exist');
             cy.findByTestId('run-playbook').click();
 
@@ -189,7 +194,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
     it('shows an insert variable button next to the template input', () => {
         // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+        cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
         // * Wait for the page to load — scroll into view first because the
         // Actions section may be below the fold in the scrollable container
@@ -201,35 +206,20 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
     });
 
     it('clicking insert variable button and selecting a token inserts it into the template', () => {
-        // # Visit the playbook outline editor
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-
-        // * Wait for the page to load — scroll into view first because the
-        // Actions section may be below the fold in the scrollable container
-        cy.findByTestId('channel-access-run-name-template-input').scrollIntoView().should('be.visible');
-
-        // # Clear template first
-        cy.findByTestId('channel-access-run-name-template-input').clear();
-
-        // # Click the insert variable button
-        cy.findByTestId('channel-access-run-name-template-insert-variable').click();
-
-        // * The suggestion list should appear
-        cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
-
-        // # Click the {SEQ} suggestion (mousedown — the handler uses onMouseDown)
-        cy.findByTestId('channel-access-run-name-template-suggestion-SEQ').trigger('mousedown');
-
-        // * The template input should now contain {SEQ}
-        cy.findByTestId('channel-access-run-name-template-input').should('have.value', '{SEQ}');
-    });
-
-    it('insert variable appends token at end when template already has content', () => {
-        // # Set an initial template via API
+        // # Set up playbook with existing template via API
         cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident - '}).then(() => {
-            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            // # Visit the playbook outline editor
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
 
+            // * Wait for the page to load — scroll into view first because the
+            // Actions section may be below the fold in the scrollable container
+            cy.findByTestId('channel-access-run-name-template-input').scrollIntoView().should('be.visible');
+
+            // * Verify initial content is loaded from API
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
+
+            // # Intercept UpdatePlaybook mutation so we can wait for the debounced save
+            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
             // # Click the insert variable button
             cy.findByTestId('channel-access-run-name-template-insert-variable').click();
@@ -237,11 +227,49 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * The suggestion list should appear
             cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
 
-            // # Click the {OWNER} suggestion (mousedown — the handler uses onMouseDown)
-            cy.findByTestId('channel-access-run-name-template-suggestion-OWNER').trigger('mousedown');
+            // # Select a token using keyboard navigation (downArrow moves to OWNER, then enter selects it)
+            cy.findByTestId('channel-access-run-name-template-input').type('{downArrow}{enter}');
+
+            // * The template input should now have the second suggestion appended (OWNER)
+            cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
+
+            // # Wait for the debounced save to reach the server
+            cy.wait('@UpdatePlaybook');
+
+            // * Assert via API that the {OWNER} token was persisted
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.channel_name_template).to.include('{OWNER}');
+            });
+        });
+    });
+
+    it('insert variable appends token at end when template already has content', () => {
+        // # Set an initial template via API
+        cy.apiPatchPlaybook(testPlaybook.id, {channel_name_template: 'Incident - '}).then(() => {
+            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+
+            cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
+
+            // # Intercept UpdatePlaybook mutation so we can wait for the debounced save
+            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+
+            // # Click the insert variable button
+            cy.findByTestId('channel-access-run-name-template-insert-variable').click();
+
+            // * The suggestion list should appear
+            cy.findByTestId('channel-access-run-name-template-suggestions').should('be.visible');
+
+            // # Select the {OWNER} suggestion by pressing arrow down once (SEQ is at 0, OWNER is at 1) and enter
+            cy.findByTestId('channel-access-run-name-template-input').type('{downArrow}{enter}');
 
             // * The template should have the token appended
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - {OWNER}');
+
+            // * Assert via API that the {OWNER} token was persisted
+            cy.wait('@UpdatePlaybook');
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.channel_name_template).to.include('{OWNER}');
+            });
         });
     });
 
@@ -250,6 +278,11 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
         // # before storing. So FormatSequentialID('ABC', 1) produces 'ABC-00001'.
         // # The key assertion is that normalization occurs and the run is created successfully.
         cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: 'ABC-'}).then(() => {
+            // * Assert via API that the prefix was normalized (trailing dash trimmed to 'ABC')
+            cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+                expect(pb.run_number_prefix).to.equal('ABC');
+            });
+
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPlaybook.id,

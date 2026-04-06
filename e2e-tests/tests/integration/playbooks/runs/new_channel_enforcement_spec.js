@@ -65,6 +65,11 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
                         expect(run.channel_id).to.not.be.empty;
                     });
                 });
+
+                // * Assert backend: playbook still has new_channel_only=true
+                cy.apiGetPlaybook(playbook.id).then((pb) => {
+                    expect(pb.new_channel_only).to.equal(true);
+                });
             });
         });
     });
@@ -162,6 +167,16 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
             cy.playbooksGetRunIdFromUrl().then((runId) => {
                 cy.apiGetPlaybookRun(runId).then(({body: run}) => {
                     expect(run.channel_id, 'run should have a new channel_id').to.be.a('string').and.not.be.empty;
+
+                    // * Assert backend: playbook has new_channel_only=false
+                    cy.apiGetPlaybook(playbook.id).then((pb) => {
+                        expect(pb.new_channel_only).to.equal(false);
+                    });
+
+                    // * Assert the created channel is a real channel (create_at > 0)
+                    cy.apiGetChannel(run.channel_id).then(({channel}) => {
+                        expect(channel.create_at).to.be.greaterThan(0);
+                    });
                 });
             });
         });

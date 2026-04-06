@@ -112,6 +112,9 @@ describe('runs > task title placeholder interpolation', {testIsolation: true}, (
                     // # Change the Zone property value to APAC via UI (we're already on the run details page)
                     cy.playbooksSetRunPropertyViaUI('run-property-zone', 'APAC', {type: 'text'});
 
+                    // * Confirm the Zone property change to APAC was actually persisted server-side
+                    cy.assertRunPropertyValueStored(runId, 'Zone', 'APAC');
+
                     // * Assert the task title still reflects the creation-time value EMEA
                     cy.apiGetPlaybookRun(runId).then(({body: run}) => {
                         const firstItem = run.checklists[0].items[0];

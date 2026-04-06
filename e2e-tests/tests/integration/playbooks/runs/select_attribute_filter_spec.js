@@ -143,9 +143,25 @@ describe('runs > select attribute filter', {testIsolation: true}, () => {
             cy.findAllByText(runResolved.name).should('have.length.gte', 1);
             cy.findAllByText(runTriaging.name).should('have.length', 0);
         });
+
+        // * Verify via API that the filtered-out run still exists (not deleted by filtering)
+        cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
+            // Verify that we got at least 2 runs back
+            expect(response.body.items.length).to.be.at.least(2);
+
+            // Find run by name since property_values may not be available in the API response
+            const resolved = response.body.items.find((r) => r.name === runResolved.name);
+            expect(resolved).to.exist;
+        });
     });
 
     it('clearing the filter shows all runs again', () => {
+        // # Capture total run count from API before filtering
+        let originalCount;
+        cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
+            originalCount = response.body.items.length;
+        });
+
         // # Visit runs list
         cy.visit('/playbooks/runs');
 
@@ -172,6 +188,11 @@ describe('runs > select attribute filter', {testIsolation: true}, () => {
         cy.findByTestId('playbookRunList').within(() => {
             cy.findAllByText(runTriaging.name).should('have.length.gte', 1);
             cy.findAllByText(runResolved.name).should('have.length.gte', 1);
+        });
+
+        // * Verify via API that total run count matches original count (no runs deleted by filtering)
+        cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
+            expect(response.body.items.length).to.equal(originalCount);
         });
     });
 });

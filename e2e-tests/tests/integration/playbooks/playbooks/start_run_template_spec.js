@@ -52,6 +52,11 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         });
 
         it('submit button is enabled even when name input shows template (no required fields)', () => {
+            // * Verify via API that the playbook's channel_name_template includes {OWNER}
+            cy.apiGetPlaybook(seqTemplatePlaybook.id).then((pb) => {
+                expect(pb.channel_name_template).to.include('{OWNER}');
+            });
+
             // # Open the modal from the playbook editor
             cy.playbooksOpenRunModal(seqTemplatePlaybook.id);
 
@@ -95,6 +100,16 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
         });
 
         it('shows property field inputs for fields referenced in run_name_template', () => {
+            // * Verify via API that the playbook has a Severity field and the template references it
+            cy.apiGetPlaybook(templatePlaybook.id).then((pb) => {
+                expect(pb.channel_name_template).to.include('{Severity}');
+            });
+
+            cy.apiGetPropertyFields(templatePlaybook.id).then((fields) => {
+                const field = fields.find((f) => f.name === 'Severity');
+                expect(field).to.exist;
+            });
+
             // # Open the modal from the playbook editor
             cy.playbooksOpenRunModal(templatePlaybook.id);
 
@@ -191,6 +206,11 @@ describe('playbooks > start a run > template mode (React modal)', {testIsolation
                 cy.assertRunNameResolved(runId, 'Critical');
                 cy.assertRunHasPropertyValues(runId);
                 cy.assertRunPropertyValueStored(runId, 'Severity');
+
+                // * Verify via API that property_values are non-empty on the run
+                cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                    expect(run.property_values).to.not.be.empty;
+                });
             });
         });
     });

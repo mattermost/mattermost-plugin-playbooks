@@ -137,6 +137,11 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
 
         // * Assert the ephemeral error message is shown to the non-owner
         cy.verifyEphemeralMessage('You do not have permission to change the owner of this run.');
+
+        // * Assert backend: owner_user_id is unchanged (still testOwner)
+        cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+            expect(run.owner_user_id).to.equal(testOwner.id);
+        });
     });
 
     it('playbook admin (non-owner) can reassign ownership when owner_group_only_actions is enabled', () => {

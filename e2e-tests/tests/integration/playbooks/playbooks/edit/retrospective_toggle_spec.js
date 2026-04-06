@@ -49,7 +49,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.visitPlaybookEditor(playbook.id, 'outline');
 
             // * Assert the retrospective section exists in the outline
             cy.get('[id="retrospective"]').should('exist');
@@ -69,7 +69,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.visitPlaybookEditor(playbook.id, 'outline');
 
             // # Scroll to the retrospective section and check the checkbox
             cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');
@@ -96,7 +96,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.visitPlaybookEditor(playbook.id, 'outline');
 
             // * Assert toggle is initially checked (enabled)
             cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');
@@ -153,6 +153,9 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             // * Wait for the run page to load by checking for the checklists section
             cy.findByTestId('run-checklist-section').should('exist');
 
+            // * Assert the checklist section IS visible
+            cy.findByTestId('run-checklist-section').should('be.visible');
+
             // * Assert the retrospective section is NOT visible in run details
             cy.findByTestId('run-retrospective-section').should('not.exist');
         });
@@ -205,15 +208,15 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
                 ownerUserId: testUser.id,
             });
         }).then((playbookRun) => {
-            // # Finish the run
-            cy.apiFinishRun(playbookRun.id);
-
-            // # Navigate to the run channel
+            // # Finish the run via the UI
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
-
-            // * Assert no retrospective prompt bot message was posted
-            cy.findAllByTestId('postView').each(($el) => {
-                expect($el.text()).not.to.include(RETRO_REMINDER_TEXT);
+            cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
+            cy.playbooksConfirmFinishModal();
+            cy.then(() => {
+                // * Assert no retrospective prompt bot message was posted
+                cy.findAllByTestId('postView').each(($el) => {
+                    expect($el.text()).not.to.include(RETRO_REMINDER_TEXT);
+                });
             });
         });
     });
@@ -235,14 +238,14 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
                 ownerUserId: testUser.id,
             });
         }).then((playbookRun) => {
-            // # Finish the run
-            cy.apiFinishRun(playbookRun.id);
-
-            // # Navigate to the run channel
+            // # Finish the run via the UI
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
-
-            // * Assert the retrospective prompt bot message was posted
-            cy.findAllByText(new RegExp(RETRO_REMINDER_TEXT, 'i')).filter(':visible').first().should('be.visible');
+            cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
+            cy.playbooksConfirmFinishModal();
+            cy.then(() => {
+                // * Assert the retrospective prompt bot message was posted
+                cy.findAllByText(new RegExp(RETRO_REMINDER_TEXT, 'i')).filter(':visible').first().should('be.visible');
+            });
         });
     });
 });

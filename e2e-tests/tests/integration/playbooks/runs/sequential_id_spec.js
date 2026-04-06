@@ -56,7 +56,9 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         const incPrefix = 'INC' + getRandomId().slice(0, 3).toUpperCase();
 
         // # Set the run_number_prefix on the playbook (no trailing dash — FormatSequentialID adds it)
-        cy.then(() => cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: incPrefix}));
+        cy.then(() => {
+            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: incPrefix});
+        });
 
         // # Start first run via API
         cy.then(() => cy.apiRunPlaybook({
@@ -113,20 +115,25 @@ describe('runs > sequential id', {testIsolation: true}, () => {
                 playbookId: playbook.id,
                 playbookRunName: runName,
                 ownerUserId: testUser.id,
-            });
+            }).then((testRun) => {
+                // # Visit the runs list
+                cy.visit('/playbooks/runs');
+                cy.findByTestId('playbookRunList').should('be.visible');
 
-            // # Visit the runs list
-            cy.visit('/playbooks/runs');
-            cy.findByTestId('playbookRunList').should('be.visible');
+                // # Find the run row — assert exactly one row with this name before checking badge
+                cy.get('#playbookRunList').within(() => {
+                    cy.findAllByText(runName).should('have.length', 1);
+                });
 
-            // # Find the run row — assert exactly one row with this name before checking badge
-            cy.get('#playbookRunList').within(() => {
-                cy.findAllByText(runName).should('have.length', 1);
-            });
+                // * Assert no sequential ID badge is shown (no element matching INC- or seq-id pattern)
+                cy.get('#playbookRunList').within(() => {
+                    cy.findByTestId('run-sequential-id').should('not.exist');
+                });
 
-            // * Assert no sequential ID badge is shown (no element matching INC- or seq-id pattern)
-            cy.get('#playbookRunList').within(() => {
-                cy.findByTestId('run-sequential-id').should('not.exist');
+                // * Assert backend: sequential_id contains formatted number even when no prefix is configured
+                cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                    expect(run.sequential_id).to.equal('00001');
+                });
             });
         });
     });
@@ -150,7 +157,9 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
         });
 
-        cy.then(() => cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: prefix}));
+        cy.then(() => {
+            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: prefix});
+        });
 
         // # Start a run
         cy.then(() => cy.apiRunPlaybook({
@@ -166,7 +175,9 @@ describe('runs > sequential id', {testIsolation: true}, () => {
         });
 
         // * Changing to a different prefix succeeds
-        cy.then(() => cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: newPrefix}));
+        cy.then(() => {
+            cy.apiPatchPlaybook(testPlaybook.id, {run_number_prefix: newPrefix});
+        });
 
         // * Existing run keeps its original sequential_id (frozen at creation time)
         cy.then(() => cy.apiGetPlaybookRun(runId)).then(({body: runData}) => {
@@ -204,6 +215,11 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'IH'}).then(() => {
                 // # Change prefix — allowed because no runs exist yet
                 cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'FOO'}).then(() => {
+                    // * Assert backend: playbook prefix is now 'FOO' before any runs are created
+                    cy.apiGetPlaybook(playbook.id).then((pb) => {
+                        expect(pb.run_number_prefix).to.equal('FOO');
+                    });
+
                     // # Start a run — it should use the final prefix FOO
                     cy.apiRunPlaybook({
                         teamId: testTeam.id,
@@ -325,7 +341,9 @@ describe('runs > sequential id', {testIsolation: true}, () => {
             createdPlaybookIds.push(playbook.id);
         });
 
-        cy.then(() => cy.apiPatchPlaybook(playbookA.id, {run_number_prefix: sharedPrefix}));
+        cy.then(() => {
+            cy.apiPatchPlaybook(playbookA.id, {run_number_prefix: sharedPrefix});
+        });
 
         // # Create playbook B and attempt the same prefix
         cy.then(() => {
