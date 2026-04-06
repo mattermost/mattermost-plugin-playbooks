@@ -37,4 +37,5 @@ e2e-tests/cypress/db-setup/mattermost.sql:
 		--exclude-table ir_userinfo \
 		--exclude-table ir_viewedchannel \
 		mattermost_test > e2e-tests/cypress/db-setup/mattermost.sql
+	mkdir -p e2e-tests/playwright/db-setup
 	cp e2e-tests/cypress/db-setup/mattermost.sql e2e-tests/playwright/db-setup/mattermost.sql
