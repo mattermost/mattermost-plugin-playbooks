@@ -411,6 +411,7 @@ const ConditionHeader = ({
                 <ConditionsWrapper>
                     {conditions.map((cond, index) => renderConditionRow(cond, index))}
                 </ConditionsWrapper>
+                {/* Conditional run actions UI hidden until feature is complete
                 {onUpdateActions && (
                     <ActionsEditor>
                         <ThenLabel>{formatMessage({defaultMessage: 'Then'})}</ThenLabel>
@@ -472,6 +473,7 @@ const ConditionHeader = ({
                         </AddActionButton>
                     </ActionsEditor>
                 )}
+                */}
                 <Actions>
                     <Tooltip
                         id={`done-editing-${condition.id}`}

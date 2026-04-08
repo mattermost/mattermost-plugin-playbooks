@@ -26,6 +26,8 @@ import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_c
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
 import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
 import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
+import {Section as BaseSection, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
+import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -197,39 +199,45 @@ const Outline = ({playbook, refetch, canEdit}: Props) => {
             {isPlaybookAdmin && (
                 <Section
                     id={'settings'}
-                    title={formatMessage({defaultMessage: 'Settings'})}
+                    title={''}
                 >
-                    <SettingsRow data-testid='admin-only-edit-toggle'>
-                        <AdminOnlyEditToggle
-                            playbook={playbook}
-                            isAdmin={isPlaybookAdmin}
-                            disabled={archived}
-                            onChange={handleAdminOnlyEditChange}
-                        />
-                    </SettingsRow>
-                    <SettingsRow data-testid='owner-group-only-actions-toggle'>
-                        <OwnerGroupOnlyActionsToggle
-                            playbook={playbook}
-                            isPlaybookAdmin={isPlaybookAdmin}
-                            disabled={archived}
-                            onChange={handleOwnerGroupOnlyActionsChange}
-                        />
-                    </SettingsRow>
-                    <SettingsRow data-testid='new-channel-only-toggle'>
-                        <NewChannelOnlyToggle
-                            playbook={playbook}
-                            isPlaybookAdmin={isPlaybookAdmin}
-                            disabled={archived}
-                            onChange={handleNewChannelOnlyChange}
-                        />
-                    </SettingsRow>
-                    <SettingsRow data-testid='auto-archive-channel-toggle'>
-                        <AutoArchiveToggle
-                            playbook={playbook}
-                            disabled={archived}
-                            onChange={handleAutoArchiveChange}
-                        />
-                    </SettingsRow>
+                    <StyledSettingsSection>
+                        <StyledSettingsSectionTitle>
+                            <SettingsOutlineIcon size={22}/>
+                            {formatMessage({defaultMessage: 'Settings'})}
+                        </StyledSettingsSectionTitle>
+                        <SettingsRow data-testid='admin-only-edit-toggle'>
+                            <AdminOnlyEditToggle
+                                playbook={playbook}
+                                isAdmin={isPlaybookAdmin}
+                                disabled={archived}
+                                onChange={handleAdminOnlyEditChange}
+                            />
+                        </SettingsRow>
+                        <SettingsRow data-testid='owner-group-only-actions-toggle'>
+                            <OwnerGroupOnlyActionsToggle
+                                playbook={playbook}
+                                isPlaybookAdmin={isPlaybookAdmin}
+                                disabled={archived}
+                                onChange={handleOwnerGroupOnlyActionsChange}
+                            />
+                        </SettingsRow>
+                        <SettingsRow data-testid='new-channel-only-toggle'>
+                            <NewChannelOnlyToggle
+                                playbook={playbook}
+                                isPlaybookAdmin={isPlaybookAdmin}
+                                disabled={archived}
+                                onChange={handleNewChannelOnlyChange}
+                            />
+                        </SettingsRow>
+                        <SettingsRow data-testid='auto-archive-channel-toggle'>
+                            <AutoArchiveToggle
+                                playbook={playbook}
+                                disabled={archived}
+                                onChange={handleAutoArchiveChange}
+                            />
+                        </SettingsRow>
+                    </StyledSettingsSection>
                 </Section>
             )}
             <PlaybookActionsModal
@@ -291,6 +299,27 @@ export const Sections = styled(SectionsImpl)`
     margin-bottom: 40px;
     background: var(--center-channel-bg);
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
+`;
+
+const StyledSettingsSection = styled(BaseSection)`
+    padding: 2rem;
+    padding-bottom: 0;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 8px;
+    margin: 0;
+`;
+
+const StyledSettingsSectionTitle = styled(SectionTitle)`
+    display: flex;
+    align-items: center;
+    margin: 0 0 24px;
+    font-size: 16px;
+    font-weight: 600;
+    gap: 8px;
+
+    svg {
+        color: rgba(var(--center-channel-color-rgb), 0.48);
+    }
 `;
 
 const SettingsRow = styled.div`

@@ -80,8 +80,11 @@ const LineGraph = (props: LineGraphProps) => {
                                 color: centerChannelFontColor,
                             },
                             ticks: {
-                                callback: (val: any, index: number) => {
-                                    return (index % 2) === 0 ? val : '';
+                                callback(this: any, val: any, index: number) {
+                                    if (index % 2 !== 0) {
+                                        return '';
+                                    }
+                                    return this.getLabelForValue(val);
                                 },
                                 color: centerChannelFontColor,
                                 maxRotation: 0,
@@ -95,8 +98,7 @@ const LineGraph = (props: LineGraphProps) => {
                             props.onClick(-1);
                             return;
                         }
-                        // eslint-disable-next-line no-underscore-dangle
-                        props.onClick(element[0]._index);
+                        props.onClick(element[0].index);
                     },
                     onHover(event: any) {
                         if (props.onClick) {

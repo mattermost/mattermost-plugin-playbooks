@@ -761,12 +761,24 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 
 	app.ValidateStatusUpdateConfig(&playbook.ReminderTimerDefaultSeconds, playbook.StatusUpdateEnabled)
 
-	// Validate that template field placeholders reference existing property fields.
-	// The duplicated playbook retains the source playbook's field IDs, so existing
-	// property field placeholders are valid; only built-in tokens are allowed for
-	// fields that no longer exist in the new copy.
-	if !h.validateChannelNameTemplate(w, c.logger, &playbook) {
-		return
+	// Validate the channel name template against the source playbook's property
+	// fields, which will be copied into the duplicate. validateChannelNameTemplate
+	// uses an empty field list (for brand-new playbooks), so we must perform a
+	// field-aware check here instead.
+	if playbook.ChannelNameTemplate != "" {
+		sourceFields, pfErr := h.propertyService.GetPropertyFields(playbookID)
+		if pfErr != nil {
+			h.HandleError(w, c.logger, pfErr)
+			return
+		}
+		if unknown := app.ValidateTemplate(playbook.ChannelNameTemplate, app.ResolveOptions{Fields: sourceFields}); len(unknown) > 0 {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, app.UnknownTemplateFieldsError(unknown), nil)
+			return
+		}
+		if err := app.ValidateChannelNameTemplateWithPrefix(playbook.ChannelNameTemplate, playbook.RunNumberPrefix); err != nil {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 	}
 
 	// Normalize unrecognized AssigneeType values and validate companion ID fields.

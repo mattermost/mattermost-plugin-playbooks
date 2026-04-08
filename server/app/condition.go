@@ -45,6 +45,36 @@ type ComparisonCondition struct {
 	Value   json.RawMessage `json:"value"`
 }
 
+func (c *ConditionExprV1) Clone() *ConditionExprV1 {
+	if c == nil {
+		return nil
+	}
+	clone := &ConditionExprV1{}
+	if len(c.And) > 0 {
+		clone.And = make([]ConditionExprV1, len(c.And))
+		for i, sub := range c.And {
+			clone.And[i] = *sub.Clone()
+		}
+	}
+	if len(c.Or) > 0 {
+		clone.Or = make([]ConditionExprV1, len(c.Or))
+		for i, sub := range c.Or {
+			clone.Or[i] = *sub.Clone()
+		}
+	}
+	if c.Is != nil {
+		isCopy := *c.Is
+		isCopy.Value = append(json.RawMessage(nil), c.Is.Value...)
+		clone.Is = &isCopy
+	}
+	if c.IsNot != nil {
+		isNotCopy := *c.IsNot
+		isNotCopy.Value = append(json.RawMessage(nil), c.IsNot.Value...)
+		clone.IsNot = &isNotCopy
+	}
+	return clone
+}
+
 // Evaluate checks if the condition matches the given property fields and values
 func (c *ConditionExprV1) Evaluate(propertyFields []PropertyField, propertyValues []PropertyValue) bool {
 	// fieldID -> PropertyField

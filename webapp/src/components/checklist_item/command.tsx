@@ -43,7 +43,7 @@ const Command = (props: CommandProps) => {
     const [command, setCommand] = useState(props.command);
     const dispatch = useDispatch();
 
-    const [playbookRun] = useRun(String(props.playbookRunId));
+    const [playbookRun] = useRun(props.playbookRunId ?? '');
     const [commandOpen, setCommandOpen] = useState(false);
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout

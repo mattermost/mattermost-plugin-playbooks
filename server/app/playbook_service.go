@@ -295,6 +295,15 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 	}
 	newPlaybook.Title = "Copy of " + playbook.Title
 
+	// RunNumberPrefix has a per-team unique constraint; clear it so the
+	// duplicate can be created without conflicting. The user can configure
+	// a new prefix after duplication. Also reset the counter and clear
+	// ChannelNameTemplate since it may reference property fields that will
+	// get new IDs or the {SEQ} token which requires a prefix.
+	newPlaybook.RunNumberPrefix = ""
+	newPlaybook.NextRunNumber = 0
+	newPlaybook.ChannelNameTemplate = ""
+
 	// On duplicating, make the current user the administrator.
 	newPlaybook.Members = []PlaybookMember{{
 		UserID: userID,
@@ -330,9 +339,9 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 		}
 	}
 
-	// Update checklist item condition IDs to reference the new condition IDs
-	if len(conditionMapping) > 0 {
-		// Need to get the playbook, update it, and save it back
+	needsUpdate := len(conditionMapping) > 0 || (propertyMappings != nil && len(newPlaybook.CreationRules) > 0)
+
+	if needsUpdate {
 		newPlaybook, err = s.Get(playbookID)
 		if err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
@@ -342,7 +351,22 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 			return "", err
 		}
 
-		newPlaybook.SwapConditionIDs(conditionMapping)
+		if len(conditionMapping) > 0 {
+			newPlaybook.SwapConditionIDs(conditionMapping)
+		}
+
+		if propertyMappings != nil {
+			for i := range newPlaybook.CreationRules {
+				if newPlaybook.CreationRules[i].Condition != nil {
+					if err := newPlaybook.CreationRules[i].Condition.SwapPropertyIDs(propertyMappings); err != nil {
+						logrus.WithError(err).WithFields(logrus.Fields{
+							"playbook_id": playbookID,
+							"rule_index":  i,
+						}).Warn("failed to remap property IDs in creation rule condition")
+					}
+				}
+			}
+		}
 
 		if err := s.Update(newPlaybook, userID); err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{

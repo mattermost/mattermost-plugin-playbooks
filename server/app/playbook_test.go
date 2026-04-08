@@ -208,3 +208,110 @@ func TestChecklist_GetItemsOrder(t *testing.T) {
 	itemsOrder = checklist.GetItemsOrder()
 	require.Nil(t, itemsOrder)
 }
+
+func TestCreationRule_Clone(t *testing.T) {
+	t.Run("should deep-copy condition pointer", func(t *testing.T) {
+		original := CreationRule{
+			Condition: &ConditionExprV1{
+				Is: &ComparisonCondition{
+					FieldID: "field_1",
+					Value:   json.RawMessage(`["opt_1"]`),
+				},
+			},
+			SetOwnerID:    "owner_1",
+			SetChannelID:  "channel_1",
+			InviteUserIDs: []string{"user_1", "user_2"},
+		}
+
+		cloned := original.Clone()
+
+		require.NotSame(t, original.Condition, cloned.Condition)
+		require.Equal(t, original.Condition.Is.FieldID, cloned.Condition.Is.FieldID)
+		require.Equal(t, original.SetOwnerID, cloned.SetOwnerID)
+		require.Equal(t, original.InviteUserIDs, cloned.InviteUserIDs)
+
+		cloned.Condition.Is.FieldID = "field_modified"
+		cloned.InviteUserIDs[0] = "user_modified"
+
+		require.Equal(t, "field_1", original.Condition.Is.FieldID)
+		require.Equal(t, "user_1", original.InviteUserIDs[0])
+	})
+
+	t.Run("should handle nil condition", func(t *testing.T) {
+		original := CreationRule{
+			SetOwnerID: "owner_1",
+		}
+
+		cloned := original.Clone()
+
+		require.Nil(t, cloned.Condition)
+		require.Equal(t, "owner_1", cloned.SetOwnerID)
+	})
+
+	t.Run("should deep-copy And/Or slices", func(t *testing.T) {
+		original := CreationRule{
+			Condition: &ConditionExprV1{
+				And: []ConditionExprV1{
+					{Is: &ComparisonCondition{FieldID: "f1", Value: json.RawMessage(`"v1"`)}},
+					{IsNot: &ComparisonCondition{FieldID: "f2", Value: json.RawMessage(`"v2"`)}},
+				},
+			},
+		}
+
+		cloned := original.Clone()
+
+		cloned.Condition.And = append(cloned.Condition.And, ConditionExprV1{
+			Is: &ComparisonCondition{FieldID: "f3", Value: json.RawMessage(`"v3"`)},
+		})
+
+		require.Len(t, original.Condition.And, 2)
+		require.Len(t, cloned.Condition.And, 3)
+	})
+}
+
+func TestPlaybook_Clone_CreationRules(t *testing.T) {
+	t.Run("should deep-copy creation rules", func(t *testing.T) {
+		original := Playbook{
+			ID:    "pb_1",
+			Title: "Test Playbook",
+			CreationRules: []CreationRule{
+				{
+					Condition: &ConditionExprV1{
+						Is: &ComparisonCondition{
+							FieldID: "old_field_id",
+							Value:   json.RawMessage(`["old_opt_id"]`),
+						},
+					},
+					SetOwnerID:    "owner_1",
+					InviteUserIDs: []string{"user_1"},
+				},
+				{
+					SetChannelID: "channel_1",
+				},
+			},
+		}
+
+		cloned := original.Clone()
+
+		require.Len(t, cloned.CreationRules, 2)
+		require.NotSame(t, &original.CreationRules[0], &cloned.CreationRules[0])
+		require.NotSame(t, original.CreationRules[0].Condition, cloned.CreationRules[0].Condition)
+		require.Equal(t, "old_field_id", cloned.CreationRules[0].Condition.Is.FieldID)
+
+		cloned.CreationRules[0].Condition.Is.FieldID = "new_field_id"
+		cloned.CreationRules[0].InviteUserIDs[0] = "user_modified"
+
+		require.Equal(t, "old_field_id", original.CreationRules[0].Condition.Is.FieldID)
+		require.Equal(t, "user_1", original.CreationRules[0].InviteUserIDs[0])
+	})
+
+	t.Run("should handle empty creation rules", func(t *testing.T) {
+		original := Playbook{
+			ID:            "pb_1",
+			CreationRules: nil,
+		}
+
+		cloned := original.Clone()
+		require.Nil(t, cloned.CreationRules)
+	})
+}

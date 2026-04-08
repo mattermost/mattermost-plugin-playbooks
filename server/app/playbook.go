@@ -112,6 +112,17 @@ type CreationRule struct {
 	InviteUserIDs []string         `json:"invite_user_ids,omitempty"`
 }
 
+func (r CreationRule) Clone() CreationRule {
+	c := r
+	if r.Condition != nil {
+		c.Condition = r.Condition.Clone()
+	}
+	if len(r.InviteUserIDs) != 0 {
+		c.InviteUserIDs = append([]string(nil), r.InviteUserIDs...)
+	}
+	return c
+}
+
 const (
 	PlaybookRoleMember = "playbook_member"
 	PlaybookRoleAdmin  = "playbook_admin"
@@ -181,6 +192,13 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.WebhookOnStatusUpdateURLs) != 0 {
 		newPlaybook.WebhookOnStatusUpdateURLs = append([]string(nil), p.WebhookOnStatusUpdateURLs...)
+	}
+	if len(p.CreationRules) != 0 {
+		newRules := make([]CreationRule, len(p.CreationRules))
+		for i, rule := range p.CreationRules {
+			newRules[i] = rule.Clone()
+		}
+		newPlaybook.CreationRules = newRules
 	}
 	return newPlaybook
 }

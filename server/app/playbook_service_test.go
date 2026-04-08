@@ -4,6 +4,7 @@
 package app_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -524,5 +525,180 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultID)
+	})
+
+	t.Run("should remap property IDs in creation rules during duplicate", func(t *testing.T) {
+		ownerID := model.NewId()
+		channelID := model.NewId()
+
+		playbookForCreate := app.Playbook{
+			ID:     originalPlaybookID,
+			Title:  "Playbook With Rules",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					SetOwnerID: ownerID,
+				},
+				{
+					SetChannelID: channelID,
+				},
+			},
+		}
+
+		playbookFromGet := app.Playbook{
+			ID:     "will-be-overwritten",
+			Title:  "Copy of Playbook With Rules",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					Condition: &app.ConditionExprV1{
+						Is: &app.ComparisonCondition{
+							FieldID: "old_field_id",
+							Value:   json.RawMessage(`["old_opt_id"]`),
+						},
+					},
+					SetOwnerID: ownerID,
+				},
+				{
+					SetChannelID: channelID,
+				},
+			},
+		}
+
+		var capturedPlaybookID string
+
+		propertyMappings := &app.PropertyCopyResult{
+			FieldMappings:  map[string]string{"old_field_id": "new_field_id"},
+			OptionMappings: map[string]string{"old_opt_id": "new_opt_id"},
+			CopiedFields: []app.PropertyField{
+				{
+					PropertyField: model.PropertyField{
+						ID:   "new_field_id",
+						Type: model.PropertyFieldTypeSelect,
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				capturedPlaybookID = model.NewId()
+				return capturedPlaybookID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID).
+			Times(2)
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(propertyMappings, nil)
+
+		mockConditionService.EXPECT().
+			CopyPlaybookConditionsToPlaybook(originalPlaybookID, gomock.Any(), propertyMappings).
+			Return(nil, nil)
+
+		mockStore.EXPECT().
+			Get(gomock.Any()).
+			DoAndReturn(func(id string) (app.Playbook, error) {
+				pb := playbookFromGet
+				pb.ID = id
+				return pb, nil
+			})
+
+		mockStore.EXPECT().
+			Update(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) error {
+				require.Len(t, pb.CreationRules, 2)
+
+				require.NotNil(t, pb.CreationRules[0].Condition)
+				assert.Equal(t, "new_field_id", pb.CreationRules[0].Condition.Is.FieldID)
+				assert.Contains(t, string(pb.CreationRules[0].Condition.Is.Value), "new_opt_id")
+
+				require.Nil(t, pb.CreationRules[1].Condition)
+
+				return nil
+			})
+
+		resultID, err := service.Duplicate(playbookForCreate, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, capturedPlaybookID, resultID)
+	})
+
+	t.Run("should still duplicate when creation rule has unmapped field", func(t *testing.T) {
+		ownerID := model.NewId()
+
+		playbookForCreate := app.Playbook{
+			ID:     originalPlaybookID,
+			Title:  "Playbook With Bad Rule",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					SetOwnerID: ownerID,
+				},
+			},
+		}
+
+		playbookFromGet := app.Playbook{
+			ID:     "will-be-overwritten",
+			Title:  "Copy of Playbook With Bad Rule",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					Condition: &app.ConditionExprV1{
+						Is: &app.ComparisonCondition{
+							FieldID: "unmapped_field_id",
+							Value:   json.RawMessage(`["some_value"]`),
+						},
+					},
+					SetOwnerID: ownerID,
+				},
+			},
+		}
+
+		var capturedPlaybookID string
+
+		propertyMappings := &app.PropertyCopyResult{
+			FieldMappings:  map[string]string{},
+			OptionMappings: map[string]string{},
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				capturedPlaybookID = model.NewId()
+				return capturedPlaybookID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID).
+			Times(2)
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(propertyMappings, nil)
+
+		mockConditionService.EXPECT().
+			CopyPlaybookConditionsToPlaybook(originalPlaybookID, gomock.Any(), propertyMappings).
+			Return(nil, nil)
+
+		mockStore.EXPECT().
+			Get(gomock.Any()).
+			DoAndReturn(func(id string) (app.Playbook, error) {
+				pb := playbookFromGet
+				pb.ID = id
+				return pb, nil
+			})
+
+		mockStore.EXPECT().
+			Update(gomock.Any()).
+			Return(nil)
+
+		resultID, err := service.Duplicate(playbookForCreate, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, capturedPlaybookID, resultID)
 	})
 }

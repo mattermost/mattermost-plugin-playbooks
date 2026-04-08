@@ -146,7 +146,7 @@ const StatsView = (props: Props) => {
                 </StatCard>
                 <GraphBox>
                     <LineGraph
-                        title={formatMessage({defaultMessage: 'TOTAL RUNS started per week over the last 12 weeks'})}
+                        title={formatMessage({defaultMessage: 'Total runs started per week over the last 12 weeks'})}
                         labels={props.stats.runs_started_per_week_times.map(([start]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.runs_started_per_week}
                         tooltipTitleCallback={(date) => formatMessage({defaultMessage: 'Week of {date}'}, {date})}
@@ -158,7 +158,7 @@ const StatsView = (props: Props) => {
             <BottomRow>
                 <GraphBox>
                     <BarGraph
-                        title={formatMessage({defaultMessage: 'ACTIVE RUNS per day over the last 14 days'})}
+                        title={formatMessage({defaultMessage: 'Active runs per day over the last 14 days'})}
                         labels={props.stats.active_runs_per_day_times.map(([start]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.active_runs_per_day}
                         tooltipTitleCallback={(date) => formatMessage({defaultMessage: 'Day: {date}'}, {date})}
@@ -168,7 +168,7 @@ const StatsView = (props: Props) => {
                 </GraphBox>
                 <GraphBox>
                     <BarGraph
-                        title={formatMessage({defaultMessage: 'ACTIVE PARTICIPANTS per day over the last 14 days'})}
+                        title={formatMessage({defaultMessage: 'Active participants per day over the last 14 days'})}
                         labels={props.stats.active_participants_per_day_times.map(([start]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.active_participants_per_day}
                         color={'--center-channel-color-40'}
@@ -214,15 +214,14 @@ const BottomRow = styled.div`
 
 const StatCard = styled.div`
     display: flex;
-    max-width: 167px;
-    max-height: 180px;
+    flex: 1;
     flex-direction: column;
     align-items: flex-start;
     padding: 20px 20px 12px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 4px;
     background-color: var(--center-channel-bg);
-    box-shadow: 0 2px 3px rgba(0 0 0 / 0.32);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
 `;
 
 const StatText = styled.div`
@@ -277,13 +276,12 @@ const ClipboardsCheckmarkBig = styled(ClipboardsCheckmark)`
 `;
 
 const GraphBox = styled.div`
-    max-width: 532px;
-    max-height: 180px;
-    flex-grow: 1;
+    flex: 3;
+    min-width: 0;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 4px;
     background-color: var(--center-channel-bg);
-    box-shadow: 0 2px 3px rgba(0 0 0 / 0.32);
+    box-shadow: 0 2px 3px rgba(0 0 0 / 0.08);
 `;
 
 const PillRow = styled.div`

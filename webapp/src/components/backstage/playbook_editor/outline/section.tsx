@@ -33,27 +33,29 @@ const Section = ({
         <Wrapper
             id={id}
         >
-            <Header
-                $clickable={Boolean(onHeaderClick)}
-                $hasSubtitle={hasSubtitle}
-                $hoverEffect={hoverEffect}
-                onClick={onHeaderClick}
-            >
-                <Title>
-                    <CopyLink
-                        id={`section-link-${id}`}
-                        to={getSiteUrl() + `${url}#${id}`}
-                        name={title}
-                        aria-hidden={true}
-                    />
-                    {title}
-                </Title>
-                {headerRight && (
-                    <HeaderRight>
-                        {headerRight}
-                    </HeaderRight>
-                )}
-            </Header>
+            {title && (
+                <Header
+                    $clickable={Boolean(onHeaderClick)}
+                    $hasSubtitle={hasSubtitle}
+                    $hoverEffect={hoverEffect}
+                    onClick={onHeaderClick}
+                >
+                    <Title>
+                        <CopyLink
+                            id={`section-link-${id}`}
+                            to={getSiteUrl() + `${url}#${id}`}
+                            name={title}
+                            aria-hidden={true}
+                        />
+                        {title}
+                    </Title>
+                    {headerRight && (
+                        <HeaderRight>
+                            {headerRight}
+                        </HeaderRight>
+                    )}
+                </Header>
+            )}
             {children}
         </Wrapper>
     );

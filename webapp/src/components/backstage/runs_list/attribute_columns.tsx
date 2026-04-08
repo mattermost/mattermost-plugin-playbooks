@@ -145,15 +145,19 @@ const AttributeColumns = ({propertyFields, propertyValues, selectedFieldIds}: Pr
     return (
         <Wrapper data-testid='run-list-item-attributes'>
             <AttributeRow>
-                {displayFields.map((field) => (
-                    <AttributeCell
-                        key={field.id}
-                        data-testid={`attribute-col-${field.id}`}
-                    >
-                        <FieldName>{field.name}</FieldName>
-                        <FieldValue>{getValueForField(field)}</FieldValue>
-                    </AttributeCell>
-                ))}
+                {displayFields.map((field) => {
+                    const value = getValueForField(field);
+                    return (
+                        <AttributeCell
+                            key={field.id}
+                            data-testid={`attribute-col-${field.id}`}
+                            title={`${field.name}: ${value}`}
+                        >
+                            <FieldName>{field.name}</FieldName>
+                            <FieldValue>{value}</FieldValue>
+                        </AttributeCell>
+                    );
+                })}
             </AttributeRow>
         </Wrapper>
     );
@@ -250,18 +254,18 @@ const AttributeRow = styled.div`
     display: flex;
     flex-flow: row wrap;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 `;
 
 const AttributeCell = styled.div`
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
+    gap: 3px;
+    padding: 1px 6px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
     border-radius: 4px;
     background: rgba(var(--center-channel-color-rgb), 0.04);
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     overflow: hidden;
     text-overflow: ellipsis;
