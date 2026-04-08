@@ -493,7 +493,7 @@ const ChecklistList = ({
             selectedByChecklist.get(checklistIndex)!.add(itemIndex);
         });
 
-        if (playbookRun && playbookRun.type === PlaybookRunType.ChannelChecklist) {
+        if (playbookRun) {
             // Delete in descending index order to avoid index shifting
             let deleteFailures = 0;
             let deleteTotal = 0;
