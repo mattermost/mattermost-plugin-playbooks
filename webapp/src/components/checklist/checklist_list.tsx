@@ -529,11 +529,7 @@ const ChecklistList = ({
                 };
             });
 
-            if (playbookRun) {
-                dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
-            } else {
-                setChecklistsForPlaybook(newChecklists);
-            }
+            setChecklistsForPlaybook(newChecklists);
         }
         setSelectedItems(new Map());
     };
