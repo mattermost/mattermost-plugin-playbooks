@@ -232,11 +232,6 @@ func (s *conditionService) CreateConditionsFromExport(playbookID string, exportC
 	return conditionMapping, nil
 }
 
-// GetPlaybookConditionsForExport retrieves all conditions for a playbook without auth overhead.
-func (s *conditionService) GetPlaybookConditionsForExport(playbookID string) ([]Condition, error) {
-	return s.store.GetPlaybookConditions(playbookID, 0, MaxConditionsPerPlaybook)
-}
-
 // CreatePlaybookCondition creates a new stored condition for a playbook
 func (s *conditionService) CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
 	auditRec := s.auditor.MakeAuditRecord("createCondition", model.AuditStatusFail)

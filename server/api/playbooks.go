@@ -609,14 +609,12 @@ func (h *PlaybookHandler) exportPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	// Fetch properties and conditions for the playbook
 	properties, err := h.propertyService.GetPropertyFields(playbookID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	// Fetch conditions through the playbook service which manages the export
 	conditions, err := h.playbookService.GetPlaybookConditionsForExport(playbookID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -716,7 +714,12 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	id, err := h.playbookService.ImportWithProperties(playbook, userID, importBlock.Properties, importBlock.Conditions)
+	id, err := h.playbookService.Import(app.PlaybookImportData{
+		Playbook:   playbook,
+		Version:    importBlock.Version,
+		Properties: importBlock.Properties,
+		Conditions: importBlock.Conditions,
+	}, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return

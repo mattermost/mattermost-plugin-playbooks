@@ -82,63 +82,17 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	return newID, nil
 }
 
-func (s *playbookService) Import(playbook Playbook, userID string) (string, error) {
+func (s *playbookService) Import(data PlaybookImportData, userID string) (string, error) {
 	auditRec := s.auditor.MakeAuditRecord("importPlaybook", model.AuditStatusFail)
 	defer s.auditor.LogAuditRec(auditRec)
 
+	playbook := data.Playbook
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterToAuditRec(auditRec, "numProperties", len(data.Properties))
+	model.AddEventParameterToAuditRec(auditRec, "numConditions", len(data.Conditions))
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
-	// Perform the actual operation
-	newID, err := s.Create(playbook, userID)
-	if err != nil {
-		auditRec.AddErrorDesc(err.Error())
-		return "", err
-	}
-	playbook.ID = newID
-
-	// Mark success and add result state
-	auditRec.Success()
-	auditRec.AddEventResultState(playbook)
-
-	return newID, nil
-}
-
-// ImportWithProperties imports a playbook with its properties and conditions.
-// This calls Create directly (rather than Import) so a single audit record
-// covers the full operation including property/condition setup.
-func (s *playbookService) ImportWithProperties(playbook Playbook, userID string, properties []ExportPropertyField, conditions []ExportCondition) (string, error) {
-	auditRec := s.auditor.MakeAuditRecord("importPlaybookWithProperties", model.AuditStatusFail)
-	defer s.auditor.LogAuditRec(auditRec)
-
-	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "numProperties", len(properties))
-	model.AddEventParameterToAuditRec(auditRec, "numConditions", len(conditions))
-	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
-
-	// Save exported condition references before clearing them. These are needed
-	// later to remap old condition IDs to newly created ones.
-	type exportedCondRef struct {
-		checklistIdx    int
-		itemIdx         int
-		conditionID     string
-		conditionAction ConditionAction
-	}
-	var exportedCondRefs []exportedCondRef
-	for i := range playbook.Checklists {
-		for j := range playbook.Checklists[i].Items {
-			if playbook.Checklists[i].Items[j].ConditionID != "" {
-				exportedCondRefs = append(exportedCondRefs, exportedCondRef{
-					checklistIdx:    i,
-					itemIdx:         j,
-					conditionID:     playbook.Checklists[i].Items[j].ConditionID,
-					conditionAction: playbook.Checklists[i].Items[j].ConditionAction,
-				})
-			}
-			playbook.Checklists[i].Items[j].ConditionID = ""
-			playbook.Checklists[i].Items[j].ConditionAction = ""
-		}
-	}
+	condRefs := saveAndClearConditionRefs(&playbook)
 
 	newPlaybookID, err := s.Create(playbook, userID)
 	if err != nil {
@@ -147,111 +101,39 @@ func (s *playbookService) ImportWithProperties(playbook Playbook, userID string,
 	}
 	playbook.ID = newPlaybookID
 
-	if len(properties) == 0 && len(conditions) == 0 {
+	if len(data.Properties) == 0 && len(data.Conditions) == 0 {
 		auditRec.Success()
 		auditRec.AddEventResultState(playbook)
 		return newPlaybookID, nil
 	}
 
-	oldFieldIDToNewFieldID := make(map[string]string)
-	oldOptionIDToNewOptionID := make(map[string]string)
-	copiedFields := []PropertyField{}
+	propResult := s.createPropertiesFromExport(newPlaybookID, data.Properties)
 
-	for _, exportProperty := range properties {
-		newField := PropertyField{
-			PropertyField: model.PropertyField{
-				Name: exportProperty.Name,
-				Type: exportProperty.Type,
-			},
-			Attrs: exportProperty.Attrs,
-		}
-		createdField, err := s.propertyService.CreatePropertyField(newPlaybookID, newField)
-		if err != nil {
-			auditRec.AddErrorDesc("failed to create property field " + exportProperty.Name + ": " + err.Error())
-			logrus.WithError(err).WithFields(logrus.Fields{
-				"playbook_id":       newPlaybookID,
-				"property_name":     exportProperty.Name,
-				"original_field_id": exportProperty.ID,
-			}).Warn("failed to create property field during import, skipping")
-			continue
-		}
-		oldFieldIDToNewFieldID[exportProperty.ID] = createdField.ID
-		copiedFields = append(copiedFields, *createdField)
-
-		if createdField.SupportsOptions() {
-			for j, oldOption := range exportProperty.Attrs.Options {
-				if j < len(createdField.Attrs.Options) {
-					oldOptionIDToNewOptionID[oldOption.GetID()] = createdField.Attrs.Options[j].GetID()
-				}
-			}
-		}
-	}
-
-	// Second pass: remap ParentID on fields that reference other fields
-	for i, field := range copiedFields {
-		if field.Attrs.ParentID != "" {
-			if newParentID, ok := oldFieldIDToNewFieldID[field.Attrs.ParentID]; ok {
-				copiedFields[i].Attrs.ParentID = newParentID
-				updatedField := copiedFields[i]
-				if _, err := s.propertyService.UpdatePropertyField(newPlaybookID, updatedField); err != nil {
-					logrus.WithError(err).WithFields(logrus.Fields{
-						"playbook_id":   newPlaybookID,
-						"field_id":      field.ID,
-						"old_parent_id": field.Attrs.ParentID,
-						"new_parent_id": newParentID,
-					}).Warn("failed to remap ParentID on imported property field")
-				}
-			}
-		}
-	}
-
-	if len(conditions) > 0 && len(oldFieldIDToNewFieldID) > 0 {
+	if len(data.Conditions) > 0 && len(propResult.FieldMappings) > 0 {
 		propertyMappings := &PropertyCopyResult{
-			FieldMappings:  oldFieldIDToNewFieldID,
-			OptionMappings: oldOptionIDToNewOptionID,
-			CopiedFields:   copiedFields,
+			FieldMappings:  propResult.FieldMappings,
+			OptionMappings: propResult.OptionMappings,
+			CopiedFields:   propResult.CopiedFields,
 		}
 
-		conditionMapping, err := s.conditionService.CreateConditionsFromExport(newPlaybookID, conditions, propertyMappings)
+		conditionMapping, err := s.conditionService.CreateConditionsFromExport(newPlaybookID, data.Conditions, propertyMappings)
 		if err != nil {
 			auditRec.AddErrorDesc("failed to create conditions from export: " + err.Error())
-			logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to create conditions from export")
+			return "", errors.Wrap(err, "failed to create conditions from export")
 		}
 
-		if len(conditionMapping) > 0 && len(exportedCondRefs) > 0 {
-			oldConditionIDToNewConditionID := make(map[string]string)
-			for oldID, newCond := range conditionMapping {
-				oldConditionIDToNewConditionID[oldID] = newCond.ID
-			}
-
+		if len(conditionMapping) > 0 && len(condRefs) > 0 {
 			updatedPlaybook, err := s.Get(newPlaybookID)
 			if err != nil {
-				auditRec.AddErrorDesc("failed to get playbook for condition remapping: " + err.Error())
-				logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to get playbook for condition remapping")
-			} else {
-				// Write back only the condition IDs that were actually recreated,
-				// using the saved exported references (the stored items have empty IDs).
-				for _, ref := range exportedCondRefs {
-					if ref.checklistIdx >= len(updatedPlaybook.Checklists) ||
-						ref.itemIdx >= len(updatedPlaybook.Checklists[ref.checklistIdx].Items) {
-						logrus.WithFields(logrus.Fields{
-							"playbook_id":    newPlaybookID,
-							"checklist_idx":  ref.checklistIdx,
-							"item_idx":       ref.itemIdx,
-							"num_checklists": len(updatedPlaybook.Checklists),
-						}).Warn("checklist structure changed after create, skipping condition remap for item")
-						continue
-					}
-					if newConditionID, ok := oldConditionIDToNewConditionID[ref.conditionID]; ok {
-						updatedPlaybook.Checklists[ref.checklistIdx].Items[ref.itemIdx].ConditionID = newConditionID
-						updatedPlaybook.Checklists[ref.checklistIdx].Items[ref.itemIdx].ConditionAction = ref.conditionAction
-					}
-				}
+				auditRec.AddErrorDesc(err.Error())
+				return "", errors.Wrap(err, "failed to get playbook for condition remapping")
+			}
 
-				if err := s.store.Update(updatedPlaybook); err != nil {
-					auditRec.AddErrorDesc("failed to update playbook with remapped condition IDs: " + err.Error())
-					logrus.WithError(err).WithField("playbook_id", newPlaybookID).Warn("failed to update playbook with remapped condition IDs")
-				}
+			remapChecklistConditions(&updatedPlaybook, conditionMapping, condRefs)
+
+			if err := s.Update(updatedPlaybook, userID); err != nil {
+				auditRec.AddErrorDesc(err.Error())
+				return "", errors.Wrap(err, "failed to update playbook with remapped condition IDs")
 			}
 		}
 	}
@@ -262,10 +144,130 @@ func (s *playbookService) ImportWithProperties(playbook Playbook, userID string,
 	return newPlaybookID, nil
 }
 
-// GetPlaybookConditionsForExport delegates to the condition service to fetch conditions
-// for export without authentication overhead.
+// GetPlaybookConditionsForExport retrieves all conditions for a playbook for export purposes.
 func (s *playbookService) GetPlaybookConditionsForExport(playbookID string) ([]Condition, error) {
-	return s.conditionService.GetPlaybookConditionsForExport(playbookID)
+	result, err := s.conditionService.GetPlaybookConditions("", playbookID, 0, MaxConditionsPerPlaybook)
+	if err != nil {
+		return nil, err
+	}
+	return result.Items, nil
+}
+
+type exportedCondRef struct {
+	checklistIdx    int
+	itemIdx         int
+	conditionID     string
+	conditionAction ConditionAction
+}
+
+// saveAndClearConditionRefs extracts condition references from checklist items
+// and clears them so the playbook can be created without dangling IDs.
+func saveAndClearConditionRefs(playbook *Playbook) []exportedCondRef {
+	var refs []exportedCondRef
+	for i := range playbook.Checklists {
+		for j := range playbook.Checklists[i].Items {
+			if playbook.Checklists[i].Items[j].ConditionID != "" {
+				refs = append(refs, exportedCondRef{
+					checklistIdx:    i,
+					itemIdx:         j,
+					conditionID:     playbook.Checklists[i].Items[j].ConditionID,
+					conditionAction: playbook.Checklists[i].Items[j].ConditionAction,
+				})
+			}
+			playbook.Checklists[i].Items[j].ConditionID = ""
+			playbook.Checklists[i].Items[j].ConditionAction = ""
+		}
+	}
+	return refs
+}
+
+// remapChecklistConditions writes back condition IDs that were recreated during
+// import, using the saved references from the original export.
+func remapChecklistConditions(playbook *Playbook, conditionMapping map[string]*Condition, refs []exportedCondRef) {
+	oldToNew := make(map[string]string, len(conditionMapping))
+	for oldID, newCond := range conditionMapping {
+		oldToNew[oldID] = newCond.ID
+	}
+
+	for _, ref := range refs {
+		if ref.checklistIdx >= len(playbook.Checklists) ||
+			ref.itemIdx >= len(playbook.Checklists[ref.checklistIdx].Items) {
+			logrus.WithFields(logrus.Fields{
+				"checklist_idx":  ref.checklistIdx,
+				"item_idx":       ref.itemIdx,
+				"num_checklists": len(playbook.Checklists),
+			}).Warn("checklist structure changed after create, skipping condition remap for item")
+			continue
+		}
+		if newCondID, ok := oldToNew[ref.conditionID]; ok {
+			playbook.Checklists[ref.checklistIdx].Items[ref.itemIdx].ConditionID = newCondID
+			playbook.Checklists[ref.checklistIdx].Items[ref.itemIdx].ConditionAction = ref.conditionAction
+		}
+	}
+}
+
+type importPropertyResult struct {
+	FieldMappings  map[string]string
+	OptionMappings map[string]string
+	CopiedFields   []PropertyField
+}
+
+// createPropertiesFromExport creates property fields on the target playbook from
+// exported data, builds old->new ID mappings, and remaps ParentID references.
+func (s *playbookService) createPropertiesFromExport(playbookID string, properties []ExportPropertyField) importPropertyResult {
+	result := importPropertyResult{
+		FieldMappings:  make(map[string]string),
+		OptionMappings: make(map[string]string),
+	}
+
+	for _, exportProp := range properties {
+		newField := PropertyField{
+			PropertyField: model.PropertyField{
+				Name: exportProp.Name,
+				Type: exportProp.Type,
+			},
+			Attrs: exportProp.Attrs,
+		}
+		createdField, err := s.propertyService.CreatePropertyField(playbookID, newField)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id":       playbookID,
+				"property_name":     exportProp.Name,
+				"original_field_id": exportProp.ID,
+			}).Warn("failed to create property field during import, skipping")
+			continue
+		}
+		result.FieldMappings[exportProp.ID] = createdField.ID
+		result.CopiedFields = append(result.CopiedFields, *createdField)
+
+		if createdField.SupportsOptions() {
+			for j, oldOption := range exportProp.Attrs.Options {
+				if j < len(createdField.Attrs.Options) {
+					result.OptionMappings[oldOption.GetID()] = createdField.Attrs.Options[j].GetID()
+				}
+			}
+		}
+	}
+
+	for i, field := range result.CopiedFields {
+		if field.Attrs.ParentID != "" {
+			if newParentID, ok := result.FieldMappings[field.Attrs.ParentID]; ok {
+				result.CopiedFields[i].Attrs.ParentID = newParentID
+				updatedField := result.CopiedFields[i]
+				if _, err := s.propertyService.UpdatePropertyField(playbookID, updatedField); err != nil {
+					result.CopiedFields[i].Attrs.ParentID = ""
+					logrus.WithError(err).WithFields(logrus.Fields{
+						"playbook_id":   playbookID,
+						"field_id":      field.ID,
+						"old_parent_id": field.Attrs.ParentID,
+						"new_parent_id": newParentID,
+					}).Warn("failed to remap ParentID on imported property field, cleared to avoid dangling ref")
+				}
+			}
+		}
+	}
+
+	return result
 }
 
 func (s *playbookService) Get(id string) (Playbook, error) {

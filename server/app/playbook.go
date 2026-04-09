@@ -395,13 +395,10 @@ type PlaybookService interface {
 	// Create creates a new playbook
 	Create(playbook Playbook, userID string) (string, error)
 
-	// Import imports a new playbook
-	Import(playbook Playbook, userID string) (string, error)
+	// Import imports a playbook, optionally including properties and conditions.
+	Import(data PlaybookImportData, userID string) (string, error)
 
-	// ImportWithProperties imports a new playbook with its properties and conditions
-	ImportWithProperties(playbook Playbook, userID string, properties []ExportPropertyField, conditions []ExportCondition) (string, error)
-
-	// GetPlaybookConditionsForExport retrieves all conditions for a playbook for export purposes
+	// GetPlaybookConditionsForExport retrieves all conditions for a playbook for export purposes.
 	GetPlaybookConditionsForExport(playbookID string) ([]Condition, error)
 
 	// GetPlaybooks retrieves all playbooks

@@ -791,9 +791,6 @@ type ConditionService interface {
 	// Create conditions from exported data with property ID remapping, returns old condition ID to new condition mapping
 	CreateConditionsFromExport(playbookID string, exportConditions []ExportCondition, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
 
-	// GetPlaybookConditionsForExport retrieves all conditions for a playbook without auth overhead
-	GetPlaybookConditionsForExport(playbookID string) ([]Condition, error)
-
 	// Evaluate conditions for a run when a property field changes
 	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
 

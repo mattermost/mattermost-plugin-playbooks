@@ -130,33 +130,33 @@ func NewExportCondition(c Condition) ExportCondition {
 	}
 }
 
-func generatePropertiesExport(properties []PropertyField) []interface{} {
-	exported := make([]interface{}, 0, len(properties))
+func generatePropertiesExport(properties []PropertyField) []ExportPropertyField {
+	exported := make([]ExportPropertyField, 0, len(properties))
 	for _, property := range properties {
-		exportProperty := NewExportPropertyField(property)
-		exported = append(exported, exportProperty)
+		exported = append(exported, NewExportPropertyField(property))
 	}
 	return exported
 }
 
-func generateConditionsExport(conditions []Condition) []interface{} {
-	exported := make([]interface{}, 0, len(conditions))
+func generateConditionsExport(conditions []Condition) []ExportCondition {
+	exported := make([]ExportCondition, 0, len(conditions))
 	for _, condition := range conditions {
-		exportCondition := NewExportCondition(condition)
-		exported = append(exported, exportCondition)
+		exported = append(exported, NewExportCondition(condition))
 	}
 	return exported
+}
+
+// PlaybookImportData contains all the data needed to import a playbook,
+// including optional properties and conditions.
+type PlaybookImportData struct {
+	Playbook   Playbook              `json:"playbook"`
+	Version    int                   `json:"version"`
+	Properties []ExportPropertyField `json:"properties,omitempty"`
+	Conditions []ExportCondition     `json:"conditions,omitempty"`
 }
 
 // GeneratePlaybookExport returns a playbook in export format.
 // Fields marked with the stuct tag "export" are included using the given string.
-// If properties and conditions are provided, they are also included in the export.
-// Note: CurrentPlaybookExportVersion is kept at 1 to maintain backward compatibility.
-// This is intentional and safe because:
-// - Added "properties" and "conditions" keys are purely additive
-// - Go's json.Decoder silently ignores unknown keys on import
-// - Servers with old export versions will gracefully degrade (importing without attributes/conditionals)
-// - This avoids hard "Unsupported version" rejections for new exports
 func GeneratePlaybookExport(playbook Playbook, properties []PropertyField, conditions []Condition) ([]byte, error) {
 	export := getFieldsForExport(playbook)
 	export["version"] = CurrentPlaybookExportVersion

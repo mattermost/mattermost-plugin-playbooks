@@ -451,7 +451,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 	})
 }
 
-func TestPlaybookService_ImportWithProperties(t *testing.T) {
+func TestPlaybookService_Import(t *testing.T) {
 	userID := model.NewId()
 	newPlaybookID := model.NewId()
 
@@ -643,7 +643,11 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 				return nil
 			})
 
-		resultID, err := service.ImportWithProperties(playbook, userID, exportProperties, exportConditions)
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   playbook,
+			Properties: exportProperties,
+			Conditions: exportConditions,
+		}, userID)
 		require.NoError(t, err)
 		assert.Equal(t, newPlaybookID, resultID)
 	})
@@ -686,12 +690,11 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 		mockPoster.EXPECT().
 			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
 
-		resultID, err := service.ImportWithProperties(
-			basePlaybook,
-			userID,
-			[]app.ExportPropertyField{},
-			[]app.ExportCondition{},
-		)
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   basePlaybook,
+			Properties: []app.ExportPropertyField{},
+			Conditions: []app.ExportCondition{},
+		}, userID)
 
 		require.NoError(t, err)
 		assert.Equal(t, newPlaybookID, resultID)
@@ -739,12 +742,70 @@ func TestPlaybookService_ImportWithProperties(t *testing.T) {
 			CreatePropertyField(newPlaybookID, gomock.Any()).
 			Return(nil, errors.New("property creation failed"))
 
-		resultID, err := service.ImportWithProperties(
-			basePlaybook,
-			userID,
-			[]app.ExportPropertyField{baseExportProperty},
-			[]app.ExportCondition{},
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   basePlaybook,
+			Properties: []app.ExportPropertyField{baseExportProperty},
+			Conditions: []app.ExportCondition{},
+		}, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, resultID)
+	})
+
+	t.Run("skips conditions when all property creations fail", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockPoster := mock_bot.NewMockPoster(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+		mockAuditor.EXPECT().
+			MakeAuditRecord(gomock.Any(), gomock.Any()).
+			Return(&model.AuditRecord{}).
+			AnyTimes()
+
+		mockAuditor.EXPECT().
+			LogAuditRec(gomock.Any()).
+			AnyTimes()
+
+		service := app.NewPlaybookService(
+			mockStore,
+			mockPoster,
+			nil,
+			mockAuditor,
+			nil,
+			mockPropertyService,
+			mockConditionService,
 		)
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			Return(newPlaybookID, nil)
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
+
+		mockPropertyService.EXPECT().
+			CreatePropertyField(newPlaybookID, gomock.Any()).
+			Return(nil, errors.New("property creation failed"))
+
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   basePlaybook,
+			Properties: []app.ExportPropertyField{baseExportProperty},
+			Conditions: []app.ExportCondition{{
+				ID:      "cond-1",
+				Version: 1,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: "old-prop-1",
+						Value:   json.RawMessage(`["opt-1"]`),
+					},
+				},
+			}},
+		}, userID)
 
 		require.NoError(t, err)
 		assert.Equal(t, newPlaybookID, resultID)
