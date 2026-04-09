@@ -121,7 +121,7 @@ const PlaybookEvents = ({playbookID, ...attrs}: Props & Attrs) => {
     const [userOptions, setUserOptions] = useState<SelectOption[]>([]);
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [autoRefreshIntervalSeconds, setAutoRefreshIntervalSeconds] = useState(autoRefreshIntervalOptionsSeconds[0]);
-    const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+    const [, setBackgroundRefreshing] = useState(false);
     const [isPageVisible, setIsPageVisible] = useState(() => document.visibilityState === 'visible');
     const latestRequestIDRef = useRef(0);
 
@@ -373,12 +373,6 @@ const PlaybookEvents = ({playbookID, ...attrs}: Props & Attrs) => {
     });
 
     const hasFilters = Boolean(fetchParams.search_term) || Boolean(fetchParams.event_types?.length) || Boolean(fetchParams.run_ids?.length) || Boolean(fetchParams.user_ids?.length);
-    let autoRefreshLabel = formatMessage({defaultMessage: 'Auto-refresh pauses on older pages or custom sorts'});
-    if (backgroundRefreshing) {
-        autoRefreshLabel = formatMessage({defaultMessage: 'Updating…'});
-    } else if (autoRefreshEnabled) {
-        autoRefreshLabel = formatMessage({defaultMessage: 'Updates automatically'});
-    }
 
     return (
         <OuterContainer {...attrs}>
@@ -486,7 +480,6 @@ const PlaybookEvents = ({playbookID, ...attrs}: Props & Attrs) => {
                         </FilterField>
                     </PrimaryFiltersRow>
                     <SecondaryFiltersRow>
-                        <AutoRefreshStatus>{autoRefreshLabel}</AutoRefreshStatus>
                         <RowsPerPageField>
                             <FilterLabel htmlFor='playbook-events-per-page'>
                                 <FormattedMessage defaultMessage='Rows per page'/>
@@ -915,12 +908,6 @@ const RowsPerPageField = styled.div`
     flex-direction: column;
     gap: 6px;
     min-width: 110px;
-`;
-
-const AutoRefreshStatus = styled.div`
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    font-size: 12px;
-    font-weight: 600;
 `;
 
 const PerPageSelect = styled.select`
