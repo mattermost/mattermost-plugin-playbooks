@@ -346,14 +346,23 @@ func (s *PlaybookRunServiceImpl) resolveUserFilterUsernames(options *PlaybookRun
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
+func (s *PlaybookRunServiceImpl) getSiteURL() string {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		return ""
+	}
+
+	return *siteURL
+}
+
+func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User, siteURL string) (string, error) {
 	return fmt.Sprintf(
 		"##### [%s](%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 		reporter.Username,
 		playbookTitle,
-		GetPlaybookDetailsRelativeURL(playbookID),
+		getPlaybookDetailsURL(siteURL, playbookID),
 	), nil
 }
 
@@ -782,10 +791,12 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, err
 	}
 
+	siteURL := s.getSiteURL()
+
 	// Do we send a DM to the new owner?
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		startMessage := fmt.Sprintf("You have been assigned ownership of the run: [%s](%s), reported by @%s.",
-			playbookRun.Name, GetRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
+			playbookRun.Name, getRunDetailsURL(siteURL, playbookRun.ID), reporter.Username)
 
 		// DM notification to owner is best-effort: a delivery failure must not abort run creation.
 		if err = s.poster.DM(playbookRun.OwnerUserID, &model.Post{Message: startMessage}); err != nil {
@@ -795,7 +806,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	if pb != nil {
 		var message string
-		message, err = s.buildPlaybookRunCreationMessage(pb.Title, pb.ID, playbookRun, reporter)
+		message, err = s.buildPlaybookRunCreationMessage(pb.Title, pb.ID, playbookRun, reporter, siteURL)
 		if err != nil {
 			err := errors.Wrapf(err, "failed to build the playbook run creation message")
 			auditRec.AddErrorDesc(err.Error())
@@ -1378,35 +1389,35 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) string {
+func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string, siteURL string) string {
 	announcementMsg := fmt.Sprintf(
 		"### Run finished: [%s](%s)\n",
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just marked [%s](%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 	)
 
 	return announcementMsg
 }
 
-func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string) string {
+func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string, siteURL string) string {
 	announcementMsg := fmt.Sprintf(
 		"### Run status update %s : [%s](%s)\n",
 		status,
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s %s status update for [%s](%s). Visit the link above for more information.",
 		userName,
 		status,
 		playbookRun.Name,
-		GetRunDetailsRelativeURL(playbookRun.ID),
+		getRunDetailsURL(siteURL, playbookRun.ID),
 	)
 
 	return announcementMsg
@@ -1453,7 +1464,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return errors.Wrapf(err, "failed to resolve user %s", userID)
 	}
 
-	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
+	siteURL := s.getSiteURL()
+	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, getRunDetailsURL(siteURL, playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
@@ -1466,7 +1478,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify, logger)
 	}
 
-	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
+	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username, siteURL)
 	// DM notifications to followers are best-effort: a delivery failure must not abort the finish.
 	err = s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
 	if err != nil {
@@ -1587,7 +1599,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 
 	data := map[string]interface{}{
 		"RunName":  playbookRunToModify.Name,
-		"RunURL":   GetRunDetailsRelativeURL(playbookRunID),
+		"RunURL":   getRunDetailsURL(s.getSiteURL(), playbookRunID),
 		"Username": user.Username,
 	}
 
@@ -1608,7 +1620,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, statusUpdateMessage, playbookRunToModify, logger)
 	}
 
-	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate)
+	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate, s.getSiteURL())
 	if err = s.dmPostToRunFollowers(&model.Post{Message: runStatusUpdateMessage}, statusUpdateMessage, playbookRunToModify.ID, userID); err != nil {
 		logger.WithError(err).Error("failed to dm post toggle-run-status-updates to run followers")
 	}
@@ -1697,7 +1709,8 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	// Un-archive the channel before posting so the message lands in an active channel.
 	s.tryAutoUnarchiveChannel(playbookRunToRestore, logger)
 
-	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
+	siteURL := s.getSiteURL()
+	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, getRunDetailsURL(siteURL, playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
@@ -2181,7 +2194,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	// Do we send a DM to the new owner?
 	if ownerID != userID {
 		msg := fmt.Sprintf("@%s changed the owner for run: [%s](%s) from **@%s** to **@%s**",
-			subjectUser.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunToModify.ID),
+			subjectUser.Username, playbookRunToModify.Name, getRunDetailsURL(s.getSiteURL(), playbookRunToModify.ID),
 			oldOwnerUsername, newOwner.Username)
 		// DM notification to new owner is best-effort: a delivery failure must not abort the owner change.
 		if err = s.poster.DM(ownerID, &model.Post{Message: msg}); err != nil {
@@ -2480,7 +2493,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to resolve user %s", assigneeID)
 		}
 
-		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
+		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, getRunDetailsURL(s.getSiteURL(), playbookRunID))
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
 
@@ -3681,7 +3694,8 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
-	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale)
+	siteURL := s.getSiteURL()
+	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale, siteURL)
 
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
@@ -3690,8 +3704,8 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		}).Warn("failed to get user timezone")
 	}
 
-	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force)
-	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale)
+	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force, siteURL)
+	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale, siteURL)
 
 	var message string
 	if shouldSendFullData || len(digestMessageItems.overdueRuns) > 0 {
@@ -4534,7 +4548,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	T := i18n.GetUserTranslations(requesterUser.Locale)
 	data := map[string]interface{}{
 		"RunName": playbookRun.Name,
-		"RunURL":  GetRunDetailsRelativeURL(playbookRunID),
+		"RunURL":  getRunDetailsURL(s.getSiteURL(), playbookRunID),
 		"Name":    requesterUser.Username,
 	}
 
@@ -5177,7 +5191,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 	wg.Wait()
 }
 
-func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool, siteURL string) string {
 	var msg strings.Builder
 
 	T := i18n.GetUserTranslations(locale)
@@ -5241,7 +5255,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 
 		// omit run's title if tasks info is empty
 		if tasksInfo.String() != "" {
-			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID)))
+			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID)))
 			runsInfo.WriteString(tasksInfo.String())
 		}
 	}
@@ -5272,7 +5286,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	return msg.String()
 }
 
-func buildRunsInProgressMessage(runs []RunLink, locale string) string {
+func buildRunsInProgressMessage(runs []RunLink, locale string, siteURL string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
@@ -5286,13 +5300,13 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID))
 	}
 
 	return msg
 }
 
-func buildRunsOverdueMessage(runs []RunLink, locale string) string {
+func buildRunsOverdueMessage(runs []RunLink, locale string, siteURL string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
@@ -5304,7 +5318,7 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
+		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID))
 	}
 
 	return msg

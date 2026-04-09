@@ -3,7 +3,10 @@
 
 package app
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const (
 	PlaybooksPath = "/playbooks/playbooks"
@@ -19,9 +22,25 @@ func GetPlaybookDetailsRelativeURL(playbookID string) string {
 	return fmt.Sprintf("%s/%s", PlaybooksPath, playbookID)
 }
 
+func getChannelRelativeURL(teamName string, channelName string) string {
+	return fmt.Sprintf("/%s/channels/%s", teamName, channelName)
+}
+
+func getPostRedirectRelativeURL(postID string) string {
+	return fmt.Sprintf("/_redirect/pl/%s", postID)
+}
+
+func joinSiteURL(siteURL string, relativeURL string) string {
+	if siteURL == "" {
+		return relativeURL
+	}
+
+	return strings.TrimRight(siteURL, "/") + relativeURL
+}
+
 // absolute urls
 func getRunDetailsURL(siteURL string, playbookRunID string) string {
-	return fmt.Sprintf("%s%s", siteURL, GetRunDetailsRelativeURL(playbookRunID))
+	return joinSiteURL(siteURL, GetRunDetailsRelativeURL(playbookRunID))
 }
 
 func getRunRetrospectiveURL(siteURL string, playbookRunID string) string {
@@ -29,7 +48,7 @@ func getRunRetrospectiveURL(siteURL string, playbookRunID string) string {
 }
 
 func getPlaybooksURL(siteURL string) string {
-	return fmt.Sprintf("%s%s", siteURL, PlaybooksPath)
+	return joinSiteURL(siteURL, PlaybooksPath)
 }
 
 func getPlaybooksNewURL(siteURL string) string {
@@ -37,13 +56,13 @@ func getPlaybooksNewURL(siteURL string) string {
 }
 
 func getPlaybookDetailsURL(siteURL string, playbookID string) string {
-	return fmt.Sprintf("%s%s", siteURL, GetPlaybookDetailsRelativeURL(playbookID))
+	return joinSiteURL(siteURL, GetPlaybookDetailsRelativeURL(playbookID))
 }
 
 func getChannelURL(siteURL string, teamName string, channelName string) string {
-	return fmt.Sprintf("%s/%s/channels/%s",
-		siteURL,
-		teamName,
-		channelName,
-	)
+	return joinSiteURL(siteURL, getChannelRelativeURL(teamName, channelName))
+}
+
+func getPostRedirectURL(siteURL string, postID string) string {
+	return joinSiteURL(siteURL, getPostRedirectRelativeURL(postID))
 }
