@@ -11,8 +11,10 @@ import debounce from 'debounce';
 import {DateTime} from 'luxon';
 import React, {
     type HTMLAttributes,
+    useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 import {FormattedMessage, type IntlShape, useIntl} from 'react-intl';
@@ -50,6 +52,7 @@ import {
 } from 'src/types/rhs';
 
 const searchDebounceDelayMilliseconds = 300;
+const autoRefreshIntervalOptionsSeconds = [5, 15, 30, 60];
 const perPageOptions = [25, 50, 100];
 const columnHelper = createColumnHelper<PlaybookTimelineEvent>();
 
@@ -117,32 +120,84 @@ const PlaybookEvents = ({playbookID, ...attrs}: Props & Attrs) => {
     const [selectedUserOptions, setSelectedUserOptions] = useState<SelectOption[]>([]);
     const [userOptions, setUserOptions] = useState<SelectOption[]>([]);
     const [userSearchTerm, setUserSearchTerm] = useState('');
-    const [refreshNonce, setRefreshNonce] = useState(0);
+    const [autoRefreshIntervalSeconds, setAutoRefreshIntervalSeconds] = useState(autoRefreshIntervalOptionsSeconds[0]);
+    const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+    const [isPageVisible, setIsPageVisible] = useState(() => document.visibilityState === 'visible');
+    const latestRequestIDRef = useRef(0);
 
-    useEffect(() => {
-        let cancelled = false;
-        setLoading(true);
+    const fetchEvents = useCallback(async (background = false) => {
+        const requestID = latestRequestIDRef.current + 1;
+        latestRequestIDRef.current = requestID;
 
-        fetchPlaybookTimelineEvents(playbookID, {...fetchParams, team_id: currentTeamId}).then((result) => {
-            if (cancelled) {
+        if (background) {
+            setBackgroundRefreshing(true);
+        } else {
+            setLoading(true);
+            setBackgroundRefreshing(false);
+        }
+
+        try {
+            const result = await fetchPlaybookTimelineEvents(playbookID, {...fetchParams, team_id: currentTeamId});
+            if (latestRequestIDRef.current !== requestID) {
                 return;
             }
 
             setEvents(result.items);
             setTotalCount(result.total_count);
-            setLoading(false);
-        }).catch(() => {
-            if (!cancelled) {
+        } catch {
+            if (latestRequestIDRef.current !== requestID) {
+                return;
+            }
+
+            if (!background) {
                 setEvents([]);
                 setTotalCount(0);
+            }
+        } finally {
+            if (background && latestRequestIDRef.current === requestID) {
+                setBackgroundRefreshing(false);
+            }
+
+            if (!background && latestRequestIDRef.current === requestID) {
                 setLoading(false);
             }
-        });
+        }
+    }, [currentTeamId, fetchParams, playbookID]);
+
+    useEffect(() => {
+        fetchEvents(false);
+    }, [fetchEvents]);
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            setIsPageVisible(document.visibilityState === 'visible');
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
+    const autoRefreshEnabled = isPageVisible &&
+        fetchParams.page === 0 &&
+        fetchParams.sort === 'event_at' &&
+        (fetchParams.direction ?? 'desc') === 'desc';
+
+    useEffect(() => {
+        if (!autoRefreshEnabled) {
+            setBackgroundRefreshing(false);
+            return undefined;
+        }
+
+        const intervalID = setInterval(() => {
+            fetchEvents(true);
+        }, autoRefreshIntervalSeconds * 1000);
 
         return () => {
-            cancelled = true;
+            clearInterval(intervalID);
         };
-    }, [currentTeamId, fetchParams, playbookID, refreshNonce]);
+    }, [autoRefreshEnabled, autoRefreshIntervalSeconds, fetchEvents]);
 
     useEffect(() => {
         let cancelled = false;
@@ -318,6 +373,12 @@ const PlaybookEvents = ({playbookID, ...attrs}: Props & Attrs) => {
     });
 
     const hasFilters = Boolean(fetchParams.search_term) || Boolean(fetchParams.event_types?.length) || Boolean(fetchParams.run_ids?.length) || Boolean(fetchParams.user_ids?.length);
+    let autoRefreshLabel = formatMessage({defaultMessage: 'Auto-refresh pauses on older pages or custom sorts'});
+    if (backgroundRefreshing) {
+        autoRefreshLabel = formatMessage({defaultMessage: 'Updating…'});
+    } else if (autoRefreshEnabled) {
+        autoRefreshLabel = formatMessage({defaultMessage: 'Updates automatically'});
+    }
 
     return (
         <OuterContainer {...attrs}>
@@ -425,14 +486,7 @@ const PlaybookEvents = ({playbookID, ...attrs}: Props & Attrs) => {
                         </FilterField>
                     </PrimaryFiltersRow>
                     <SecondaryFiltersRow>
-                        <RefreshButton
-                            type='button'
-                            onClick={() => setRefreshNonce((value) => value + 1)}
-                            disabled={loading}
-                        >
-                            <i className='icon-refresh'/>
-                            <FormattedMessage defaultMessage='Refresh'/>
-                        </RefreshButton>
+                        <AutoRefreshStatus>{autoRefreshLabel}</AutoRefreshStatus>
                         <RowsPerPageField>
                             <FilterLabel htmlFor='playbook-events-per-page'>
                                 <FormattedMessage defaultMessage='Rows per page'/>
@@ -455,6 +509,27 @@ const PlaybookEvents = ({playbookID, ...attrs}: Props & Attrs) => {
                                         value={option}
                                     >
                                         {option}
+                                    </option>
+                                ))}
+                            </PerPageSelect>
+                        </RowsPerPageField>
+                        <RowsPerPageField>
+                            <FilterLabel htmlFor='playbook-events-update-interval'>
+                                <FormattedMessage defaultMessage='Update interval'/>
+                            </FilterLabel>
+                            <PerPageSelect
+                                id='playbook-events-update-interval'
+                                value={autoRefreshIntervalSeconds}
+                                onChange={(e) => {
+                                    setAutoRefreshIntervalSeconds(Number(e.target.value));
+                                }}
+                            >
+                                {autoRefreshIntervalOptionsSeconds.map((option) => (
+                                    <option
+                                        key={option}
+                                        value={option}
+                                    >
+                                        {formatMessage({defaultMessage: '{seconds} seconds'}, {seconds: option})}
                                     </option>
                                 ))}
                             </PerPageSelect>
@@ -842,27 +917,10 @@ const RowsPerPageField = styled.div`
     min-width: 110px;
 `;
 
-const RefreshButton = styled.button`
-    display: inline-flex;
-    height: 32px;
-    align-items: center;
-    gap: 6px;
-    padding: 0 12px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 4px;
-    background: var(--center-channel-bg);
-    color: var(--center-channel-color);
+const AutoRefreshStatus = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 12px;
     font-weight: 600;
-
-    &:hover:not(:disabled) {
-        background: rgba(var(--center-channel-color-rgb), 0.04);
-    }
-
-    &:disabled {
-        opacity: 0.56;
-        cursor: default;
-    }
 `;
 
 const PerPageSelect = styled.select`
