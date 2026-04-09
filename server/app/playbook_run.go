@@ -1120,6 +1120,20 @@ type TimelineEvent struct {
 	CreatorUserID string `json:"creator_user_id"`
 }
 
+// PlaybookTimelineEvent represents a timeline event flattened with its parent run information.
+type PlaybookTimelineEvent struct {
+	TimelineEvent
+
+	// PlaybookRunName is the display name of the run the event belongs to.
+	PlaybookRunName string `json:"playbook_run_name"`
+
+	// RunNumber is the sequential number assigned to the run within its playbook.
+	RunNumber int64 `json:"run_number"`
+
+	// SequentialID is the formatted run identifier shown to users.
+	SequentialID string `json:"sequential_id"`
+}
+
 // GetPlaybookRunsResults collects the results of the GetPlaybookRuns call: the list of PlaybookRuns matching
 // the HeaderFilterOptions, and the TotalCount of the matching playbook runs before paging was applied.
 type GetPlaybookRunsResults struct {
@@ -1128,6 +1142,15 @@ type GetPlaybookRunsResults struct {
 	PerPage    int           `json:"per_page"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
+}
+
+// GetPlaybookTimelineEventsResults collects the results of the GetPlaybookTimelineEvents call.
+type GetPlaybookTimelineEventsResults struct {
+	TotalCount int                     `json:"total_count"`
+	PageCount  int                     `json:"page_count"`
+	PerPage    int                     `json:"per_page"`
+	HasMore    bool                    `json:"has_more"`
+	Items      []PlaybookTimelineEvent `json:"items"`
 }
 
 type SQLStatusPost struct {
@@ -1237,6 +1260,9 @@ const (
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
+
+	// GetPlaybookTimelineEvents returns a flattened, paged list of timeline events for a playbook.
+	GetPlaybookTimelineEvents(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookTimelineEventsResults, error)
 
 	// CreatePlaybookRun persists a new playbook run. When a Playbook is supplied, callers MUST
 	// call ResolveRunCreationParams first to allocate the sequential run number and resolve
@@ -1482,6 +1508,9 @@ type PlaybookRunStore interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
+	// GetPlaybookTimelineEvents returns flattened timeline events for the selected playbook.
+	GetPlaybookTimelineEvents(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookTimelineEventsResults, error)
+
 	// CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.
 	CreatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
 
@@ -1725,6 +1754,16 @@ type PlaybookRunFilterOptions struct {
 	// PropertyValueFilter is the option ID to match against the property field given by PropertyFieldID.
 	PropertyValueFilter string `url:"property_value_filter,omitempty"`
 
+	// EventTypes filters timeline event queries to the selected event kinds.
+	EventTypes []string
+
+	// UserIDs filters timeline event queries to events where the user is actor or target.
+	UserIDs []string
+
+	// Usernames is an internal helper used to match timeline events whose details
+	// only contain usernames for targets (for example multi-user participant changes).
+	Usernames []string
+
 	// RunIDs, when non-empty, restricts results to only the given run IDs.
 	// This is an internal filter used by the service layer (not exposed via URL).
 	RunIDs []string
@@ -1741,6 +1780,15 @@ func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	}
 	if len(o.RunIDs) > 0 {
 		newPlaybookRunFilterOptions.RunIDs = append([]string{}, o.RunIDs...)
+	}
+	if len(o.EventTypes) > 0 {
+		newPlaybookRunFilterOptions.EventTypes = append([]string{}, o.EventTypes...)
+	}
+	if len(o.UserIDs) > 0 {
+		newPlaybookRunFilterOptions.UserIDs = append([]string{}, o.UserIDs...)
+	}
+	if len(o.Usernames) > 0 {
+		newPlaybookRunFilterOptions.Usernames = append([]string{}, o.Usernames...)
 	}
 
 	return newPlaybookRunFilterOptions

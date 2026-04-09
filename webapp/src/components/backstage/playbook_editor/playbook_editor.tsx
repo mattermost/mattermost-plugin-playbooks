@@ -24,9 +24,10 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useIsSystemAdmin, useStats} from 'src/hooks';
-import {useAllowPlaybookAttributes} from 'src/hooks/license';
+import {useAllowPlaybookAttributes, useAllowTimelineEvents} from 'src/hooks/license';
 import {PlaybookRole} from 'src/types/permissions';
 import {ErrorPageTypes} from 'src/constants';
+import PlaybookEvents from 'src/components/backstage/playbook_events';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
 import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
@@ -55,6 +56,7 @@ const PlaybookEditor = () => {
     const stats = useStats(playbookId);
     const currentUserId = useSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
+    const allowTimelineEvents = useAllowTimelineEvents();
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -253,6 +255,13 @@ const PlaybookEditor = () => {
                         {formatMessage({defaultMessage: 'Attributes'})}
                     </NavItem>
                 )}
+                {allowTimelineEvents && (
+                    <NavItem
+                        to={generatePath(path, {playbookId, tab: 'events'})}
+                    >
+                        {formatMessage({defaultMessage: 'Events'})}
+                    </NavItem>
+                )}
                 <NavItem
                     to={generatePath(path, {playbookId, tab: 'outline'})}
                 >
@@ -282,6 +291,14 @@ const PlaybookEditor = () => {
                         <PlaybookProperties
                             playbookID={playbook.id}
                         />
+                    </Route>
+                )}
+                {allowTimelineEvents && (
+                    <Route
+                        path={generatePath(path, {playbookId, tab: 'events'})}
+                        exact={true}
+                    >
+                        <PlaybookEvents playbookID={playbook.id}/>
                     </Route>
                 )}
                 <Route
@@ -518,6 +535,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 
     ${PlaybookUsage},
+    ${PlaybookEvents},
     ${PlaybookProperties},
     ${PlaybookKeyMetrics} {
         grid-area: aside/aside/aside-right/aside-right;
@@ -566,6 +584,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         }
 
         ${PlaybookUsage},
+        ${PlaybookEvents},
         ${PlaybookProperties},
         ${PlaybookKeyMetrics} {
             grid-area: content;

@@ -108,6 +108,9 @@ func (s *stubRunStoreGetOnly) GetPlaybookRun(playbookRunID string) (*PlaybookRun
 func (s *stubRunStoreGetOnly) GetPlaybookRuns(_ RequesterInfo, _ PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
 	panic("not implemented")
 }
+func (s *stubRunStoreGetOnly) GetPlaybookTimelineEvents(_ RequesterInfo, _ PlaybookRunFilterOptions) (*GetPlaybookTimelineEventsResults, error) {
+	panic("not implemented")
+}
 func (s *stubRunStoreGetOnly) CreatePlaybookRun(_ *PlaybookRun) (*PlaybookRun, error) {
 	panic("not implemented")
 }

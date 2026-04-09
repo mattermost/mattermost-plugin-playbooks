@@ -35,6 +35,9 @@ func (s *stubRunService) GetPlaybookRun(playbookRunID string) (*PlaybookRun, err
 func (s *stubRunService) GetPlaybookRuns(RequesterInfo, PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
 	panic("stubRunService: GetPlaybookRuns not implemented")
 }
+func (s *stubRunService) GetPlaybookTimelineEvents(RequesterInfo, PlaybookRunFilterOptions) (*GetPlaybookTimelineEventsResults, error) {
+	panic("stubRunService: GetPlaybookTimelineEvents not implemented")
+}
 func (s *stubRunService) CreatePlaybookRun(*PlaybookRun, *Playbook, string, bool, string, string, map[string]json.RawMessage) (*PlaybookRun, error) {
 	panic("stubRunService: CreatePlaybookRun not implemented")
 }
@@ -1517,12 +1520,12 @@ func (c *testLicenseChecker) PlaybookAllowed(isPlaybookPublic bool) bool {
 	return c.allowed
 }
 
-func (c *testLicenseChecker) RetrospectiveAllowed() bool          { return true }
-func (c *testLicenseChecker) TimelineAllowed() bool               { return true }
-func (c *testLicenseChecker) StatsAllowed() bool                  { return true }
-func (c *testLicenseChecker) ChecklistItemDueDateAllowed() bool   { return true }
-func (c *testLicenseChecker) PlaybookAttributesAllowed() bool     { return true }
-func (c *testLicenseChecker) ConditionalPlaybooksAllowed() bool   { return true }
+func (c *testLicenseChecker) RetrospectiveAllowed() bool        { return true }
+func (c *testLicenseChecker) TimelineAllowed() bool             { return true }
+func (c *testLicenseChecker) StatsAllowed() bool                { return true }
+func (c *testLicenseChecker) ChecklistItemDueDateAllowed() bool { return true }
+func (c *testLicenseChecker) PlaybookAttributesAllowed() bool   { return true }
+func (c *testLicenseChecker) ConditionalPlaybooksAllowed() bool { return true }
 
 // TestIsPlaybookAdminMember tests the IsPlaybookAdminMember package-level helper
 // that supports the AdminOnlyEdit permission check and the

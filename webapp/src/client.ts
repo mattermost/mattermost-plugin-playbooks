@@ -13,6 +13,8 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
+    FetchPlaybookTimelineEventsParams,
+    FetchPlaybookTimelineEventsReturn,
     Metadata,
     PlaybookRun,
     RunMetricData,
@@ -75,6 +77,17 @@ export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     }
 
     return data as FetchPlaybookRunsReturn;
+}
+
+export async function fetchPlaybookTimelineEvents(playbookID: string, params: FetchPlaybookTimelineEventsParams) {
+    const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
+
+    let data = await doGet(`${apiUrl}/playbooks/${playbookID}/timeline_events${queryParams}`);
+    if (!data) {
+        data = {items: [], total_count: 0, page_count: 0, has_more: false} as FetchPlaybookTimelineEventsReturn;
+    }
+
+    return data as FetchPlaybookTimelineEventsReturn;
 }
 
 export async function fetchPlaybookRun(id: string) {

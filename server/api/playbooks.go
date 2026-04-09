@@ -26,12 +26,13 @@ import (
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	*ErrorHandler
-	playbookService app.PlaybookService
-	propertyService app.PropertyServiceReader
-	pluginAPI       *pluginapi.Client
-	config          config.Service
-	permissions     *app.PermissionsService
-	licenseChecker  app.LicenseChecker
+	playbookService    app.PlaybookService
+	playbookRunService app.PlaybookRunService
+	propertyService    app.PropertyServiceReader
+	pluginAPI          *pluginapi.Client
+	config             config.Service
+	permissions        *app.PermissionsService
+	licenseChecker     app.LicenseChecker
 }
 
 const SettingsKey = "global_settings"
@@ -58,15 +59,16 @@ type PropertyFieldRequest struct {
 }
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, propertyService app.PropertyServiceReader, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, playbookRunService app.PlaybookRunService, propertyService app.PropertyServiceReader, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *PlaybookHandler {
 	handler := &PlaybookHandler{
-		ErrorHandler:    &ErrorHandler{},
-		playbookService: playbookService,
-		propertyService: propertyService,
-		pluginAPI:       api,
-		config:          configService,
-		permissions:     permissions,
-		licenseChecker:  licenseChecker,
+		ErrorHandler:       &ErrorHandler{},
+		playbookService:    playbookService,
+		playbookRunService: playbookRunService,
+		propertyService:    propertyService,
+		pluginAPI:          api,
+		config:             configService,
+		permissions:        permissions,
+		licenseChecker:     licenseChecker,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -84,6 +86,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("/restore", withContext(handler.restorePlaybook)).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", withContext(handler.exportPlaybook)).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("/duplicate", withContext(handler.duplicatePlaybook)).Methods(http.MethodPost)
+	playbookRouter.HandleFunc("/timeline_events", withContext(handler.getPlaybookTimelineEvents)).Methods(http.MethodGet)
 
 	propertyFieldsRouter := playbookRouter.PathPrefix("/property_fields").Subrouter()
 	propertyFieldsRouter.HandleFunc("", withContext(handler.getPlaybookPropertyFields)).Methods(http.MethodGet)
@@ -274,6 +277,154 @@ func (h *PlaybookHandler) getPlaybook(c *Context, w http.ResponseWriter, r *http
 	}
 
 	ReturnJSON(w, &playbook, http.StatusOK)
+}
+
+func (h *PlaybookHandler) getPlaybookTimelineEvents(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.licenseChecker.TimelineAllowed() {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "timeline feature is not available with the current license", nil)
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookView(userID, playbookID)) {
+		return
+	}
+
+	filterOptions, err := parsePlaybookTimelineEventsFilterOptions(r.URL)
+	if err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Bad parameter", err)
+		return
+	}
+	filterOptions.PlaybookID = playbookID
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  userID,
+		TeamID:  filterOptions.TeamID,
+		IsAdmin: app.IsSystemAdmin(userID, h.pluginAPI),
+	}
+
+	results, err := h.playbookRunService.GetPlaybookTimelineEvents(requesterInfo, *filterOptions)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, results, http.StatusOK)
+}
+
+func parsePlaybookTimelineEventsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, error) {
+	query := u.Query()
+
+	page, err := strconv.Atoi(defaultString(query.Get("page"), "0"))
+	if err != nil {
+		return nil, errors.Wrap(err, "bad parameter 'page'")
+	}
+
+	perPage, err := strconv.Atoi(defaultString(query.Get("per_page"), "50"))
+	if err != nil {
+		return nil, errors.Wrap(err, "bad parameter 'per_page'")
+	}
+	if perPage <= 0 {
+		perPage = 50
+	}
+
+	teamID := query.Get("team_id")
+	if teamID != "" && !model.IsValidId(teamID) {
+		return nil, errors.New("bad parameter 'team_id': must be 26 characters or blank")
+	}
+
+	sort := app.SortField(strings.ToLower(defaultString(query.Get("sort"), string(app.SortByEventAt))))
+	switch sort {
+	case app.SortByEventAt, app.SortByName, app.SortBySequentialID, app.SortByEventType:
+	default:
+		return nil, errors.Errorf("bad parameter 'sort' (%s)", sort)
+	}
+
+	direction := app.SortDirection(strings.ToUpper(defaultString(query.Get("direction"), string(app.DirectionDesc))))
+	switch direction {
+	case app.DirectionAsc, app.DirectionDesc:
+	default:
+		return nil, errors.Errorf("bad parameter 'direction' (%s)", direction)
+	}
+
+	statuses := query["statuses"]
+	for _, status := range statuses {
+		if status != app.StatusInProgress && status != app.StatusFinished {
+			return nil, errors.New("bad parameter in 'statuses': must be InProgress or Finished")
+		}
+	}
+
+	eventTypes := query["event_types"]
+	for _, eventType := range eventTypes {
+		if !validTimelineEventType(eventType) {
+			return nil, errors.Errorf("bad parameter in 'event_types': unsupported event type %s", eventType)
+		}
+	}
+
+	runIDs := query["run_ids"]
+	for _, runID := range runIDs {
+		if !model.IsValidId(runID) {
+			return nil, errors.New("bad parameter in 'run_ids': each run ID must be 26 characters")
+		}
+	}
+
+	userIDs := query["user_ids"]
+	for _, userID := range userIDs {
+		if !model.IsValidId(userID) {
+			return nil, errors.New("bad parameter in 'user_ids': each user ID must be 26 characters")
+		}
+	}
+
+	options := app.PlaybookRunFilterOptions{
+		Page:       page,
+		PerPage:    perPage,
+		TeamID:     teamID,
+		Sort:       sort,
+		Direction:  direction,
+		SearchTerm: query.Get("search_term"),
+		Statuses:   statuses,
+		EventTypes: eventTypes,
+		UserIDs:    userIDs,
+		RunIDs:     runIDs,
+	}
+
+	return &options, nil
+}
+
+func validTimelineEventType(eventType string) bool {
+	switch eventType {
+	case string(app.PlaybookRunCreated),
+		string(app.StatusUpdated),
+		string(app.StatusUpdateRequested),
+		string(app.StatusUpdateSnoozed),
+		string(app.OwnerChanged),
+		string(app.AssigneeChanged),
+		string(app.TaskStateModified),
+		string(app.RanSlashCommand),
+		string(app.EventFromPost),
+		string(app.UserJoinedLeft),
+		string(app.ParticipantsChanged),
+		string(app.PublishedRetrospective),
+		string(app.CanceledRetrospective),
+		string(app.RunFinished),
+		string(app.RunRestored),
+		string(app.StatusUpdatesEnabled),
+		string(app.StatusUpdatesDisabled),
+		string(app.PropertyChanged):
+		return true
+	default:
+		return false
+	}
+}
+
+func defaultString(value, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+
+	return value
 }
 
 func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *http.Request) {

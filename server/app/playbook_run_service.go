@@ -237,27 +237,11 @@ func NewPlaybookRunService(
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
-	// If a property value filter is requested, resolve it to a set of run IDs before querying.
-	// The filter UI sends playbook-level field/option IDs, but property values are stored with
-	// run-level IDs (copied at run creation). The store method bridges this by joining
-	// propertyfields (via parent_id) and propertyvalues (via option name matching).
-	if options.PropertyFieldID != "" && options.PropertyValueFilter != "" {
-		matchingIDs, err := s.store.GetRunIDsByParentFieldValue(
-			s.propertyService.GetGroupID(),
-			options.PropertyFieldID,
-			options.PropertyValueFilter,
-			maxPropertyValueFilterRunIDs+1,
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to resolve property value filter to run IDs")
-		}
-		if len(matchingIDs) == 0 {
-			return &GetPlaybookRunsResults{Items: []PlaybookRun{}, TotalCount: 0, PageCount: 0, HasMore: false}, nil
-		}
-		if len(matchingIDs) > maxPropertyValueFilterRunIDs {
-			return nil, errors.Wrapf(ErrFilterTooWide, "property value filter matched too many runs (%d); maximum is %d — please narrow the filter", len(matchingIDs), maxPropertyValueFilterRunIDs)
-		}
-		options.RunIDs = matchingIDs
+	if err := s.resolvePropertyValueFilterRunIDs(&options); err != nil {
+		return nil, err
+	}
+	if options.PropertyFieldID != "" && options.PropertyValueFilter != "" && len(options.RunIDs) == 0 {
+		return &GetPlaybookRunsResults{Items: []PlaybookRun{}, TotalCount: 0, PageCount: 0, HasMore: false}, nil
 	}
 
 	results, err := s.store.GetPlaybookRuns(requesterInfo, options)
@@ -299,6 +283,67 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	}
 
 	return results, nil
+}
+
+func (s *PlaybookRunServiceImpl) GetPlaybookTimelineEvents(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookTimelineEventsResults, error) {
+	if err := s.resolvePropertyValueFilterRunIDs(&options); err != nil {
+		return nil, err
+	}
+	if options.PropertyFieldID != "" && options.PropertyValueFilter != "" && len(options.RunIDs) == 0 {
+		return &GetPlaybookTimelineEventsResults{Items: []PlaybookTimelineEvent{}, TotalCount: 0, PageCount: 0, HasMore: false}, nil
+	}
+	if err := s.resolveUserFilterUsernames(&options); err != nil {
+		return nil, err
+	}
+
+	results, err := s.store.GetPlaybookTimelineEvents(requesterInfo, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get playbook timeline events")
+	}
+
+	return results, nil
+}
+
+func (s *PlaybookRunServiceImpl) resolvePropertyValueFilterRunIDs(options *PlaybookRunFilterOptions) error {
+	if options.PropertyFieldID == "" || options.PropertyValueFilter == "" {
+		return nil
+	}
+
+	matchingIDs, err := s.store.GetRunIDsByParentFieldValue(
+		s.propertyService.GetGroupID(),
+		options.PropertyFieldID,
+		options.PropertyValueFilter,
+		maxPropertyValueFilterRunIDs+1,
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed to resolve property value filter to run IDs")
+	}
+	if len(matchingIDs) > maxPropertyValueFilterRunIDs {
+		return errors.Wrapf(ErrFilterTooWide, "property value filter matched too many runs (%d); maximum is %d — please narrow the filter", len(matchingIDs), maxPropertyValueFilterRunIDs)
+	}
+
+	options.RunIDs = matchingIDs
+	return nil
+}
+
+func (s *PlaybookRunServiceImpl) resolveUserFilterUsernames(options *PlaybookRunFilterOptions) error {
+	if len(options.UserIDs) == 0 {
+		return nil
+	}
+
+	usernames := make([]string, 0, len(options.UserIDs))
+	for _, userID := range options.UserIDs {
+		user, err := s.pluginAPI.User.Get(userID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to resolve user filter for %s", userID)
+		}
+		if user.Username != "" {
+			usernames = append(usernames, strings.ToLower(user.Username))
+		}
+	}
+
+	options.Usernames = usernames
+	return nil
 }
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {

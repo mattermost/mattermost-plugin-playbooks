@@ -45,6 +45,10 @@ type sqlRunMetricData struct {
 	Value          null.Int
 }
 
+type sqlPlaybookTimelineEvent struct {
+	app.PlaybookTimelineEvent
+}
+
 // playbookRunStore holds the information needed to fulfill the methods in the store interface.
 type playbookRunStore struct {
 	pluginAPI                        PluginAPIClient
@@ -435,6 +439,168 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	}
 
 	return result, nil
+}
+
+func (s *playbookRunStore) GetPlaybookTimelineEvents(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) (*app.GetPlaybookTimelineEventsResults, error) {
+	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo, options.TeamID, "i")
+
+	queryForResults := s.queryBuilder.
+		Select(
+			"te.ID",
+			"te.IncidentID AS PlaybookRunID",
+			"te.CreateAt",
+			"te.DeleteAt",
+			"te.EventAt",
+		).
+		Column(
+			sq.Alias(
+				sq.Case().
+					When(sq.Eq{"te.EventType": legacyEventTypeCommanderChanged}, sq.Expr("?", app.OwnerChanged)).
+					Else("te.EventType"),
+				"EventType",
+			),
+		).
+		Columns(
+			"te.Summary",
+			"te.Details",
+			"te.PostID",
+			"te.SubjectUserID",
+			"te.CreatorUserID",
+			"i.Name AS PlaybookRunName",
+			"i.RunNumber",
+			"i.SequentialID",
+		).
+		From("IR_TimelineEvent AS te").
+		Join("IR_Incident AS i ON i.ID = te.IncidentID").
+		Where(permissionsExpr).
+		Where(teamLimitExpr).
+		Where(sq.Eq{"te.DeleteAt": 0})
+
+	queryForTotal := s.queryBuilder.
+		Select("COUNT(*)").
+		From("IR_TimelineEvent AS te").
+		Join("IR_Incident AS i ON i.ID = te.IncidentID").
+		Where(permissionsExpr).
+		Where(teamLimitExpr).
+		Where(sq.Eq{"te.DeleteAt": 0})
+
+	if options.PlaybookID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
+	}
+
+	if len(options.Statuses) != 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
+	}
+
+	if options.OmitEnded {
+		queryForResults = queryForResults.Where(sq.Eq{"i.EndAt": 0})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
+	}
+
+	if len(options.RunIDs) > 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"i.ID": options.RunIDs})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.ID": options.RunIDs})
+	}
+
+	if len(options.EventTypes) > 0 {
+		eventTypes := append([]string{}, options.EventTypes...)
+		for _, eventType := range options.EventTypes {
+			if eventType == string(app.OwnerChanged) {
+				eventTypes = append(eventTypes, legacyEventTypeCommanderChanged)
+				break
+			}
+		}
+		queryForResults = queryForResults.Where(sq.Eq{"te.EventType": eventTypes})
+		queryForTotal = queryForTotal.Where(sq.Eq{"te.EventType": eventTypes})
+	}
+
+	if len(options.UserIDs) > 0 {
+		userFilter := sq.Or{
+			sq.Eq{"te.CreatorUserID": options.UserIDs},
+			sq.Eq{"te.SubjectUserID": options.UserIDs},
+		}
+		for _, username := range options.Usernames {
+			userFilter = append(userFilter, sq.Expr("LOWER(COALESCE(te.Details, '')) LIKE ?", fmt.Sprintf("%%\"%s\"%%", username)))
+		}
+		queryForResults = queryForResults.Where(userFilter)
+		queryForTotal = queryForTotal.Where(userFilter)
+	}
+
+	if options.SearchTerm != "" {
+		searchString := fmt.Sprint("%", strings.ToLower(options.SearchTerm), "%")
+		searchClause := sq.Expr(
+			"(LOWER(i.Name) LIKE ? OR LOWER(COALESCE(te.Summary, '')) LIKE ? OR LOWER(COALESCE(te.Details, '')) LIKE ?)",
+			searchString,
+			searchString,
+			searchString,
+		)
+		queryForResults = queryForResults.Where(searchClause)
+		queryForTotal = queryForTotal.Where(searchClause)
+	}
+
+	page := options.Page
+	if page < 0 {
+		page = 0
+	}
+	perPage := options.PerPage
+	if perPage < 0 {
+		perPage = 0
+	}
+
+	sortColumn := "te.EventAt"
+	switch options.Sort {
+	case app.SortByName:
+		sortColumn = "i.Name"
+	case app.SortBySequentialID:
+		sortColumn = "i.SequentialID"
+	case app.SortByEventType:
+		sortColumn = "te.EventType"
+	case app.SortByEventAt, "":
+		sortColumn = "te.EventAt"
+	}
+
+	sortDirection := "DESC"
+	if options.Direction == app.DirectionAsc {
+		sortDirection = "ASC"
+	}
+
+	queryForResults = queryForResults.
+		OrderBy(fmt.Sprintf("%s %s", sortColumn, sortDirection)).
+		OrderBy(fmt.Sprintf("te.ID %s", sortDirection)).
+		Offset(uint64(page * perPage)).
+		Limit(uint64(perPage))
+
+	var rawEvents []sqlPlaybookTimelineEvent
+	if err := s.store.selectBuilder(s.store.db, &rawEvents, queryForResults); err != nil {
+		return nil, errors.Wrap(err, "failed to query for playbook timeline events")
+	}
+
+	var total int
+	if err := s.store.getBuilder(s.store.db, &total, queryForTotal); err != nil {
+		return nil, errors.Wrap(err, "failed to get playbook timeline event total count")
+	}
+
+	pageCount := 0
+	if options.PerPage > 0 {
+		pageCount = int(math.Ceil(float64(total) / float64(options.PerPage)))
+	}
+	hasMore := options.Page+1 < pageCount
+
+	items := make([]app.PlaybookTimelineEvent, 0, len(rawEvents))
+	for _, rawEvent := range rawEvents {
+		items = append(items, rawEvent.PlaybookTimelineEvent)
+	}
+
+	return &app.GetPlaybookTimelineEventsResults{
+		TotalCount: total,
+		PageCount:  pageCount,
+		PerPage:    options.PerPage,
+		HasMore:    hasMore,
+		Items:      items,
+	}, nil
 }
 
 // CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.
