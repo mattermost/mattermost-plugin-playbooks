@@ -788,6 +788,9 @@ type ConditionService interface {
 	// Copy conditions from playbook to playbook with field ID mappings, returns old condition ID to new condition mapping
 	CopyPlaybookConditionsToPlaybook(sourcePlaybookID, targetPlaybookID string, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
 
+	// Create conditions from exported data with property ID remapping, returns old condition ID to new condition mapping
+	CreateConditionsFromExport(playbookID string, exportConditions []ExportCondition, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
+
 	// Evaluate conditions for a run when a property field changes
 	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
 
