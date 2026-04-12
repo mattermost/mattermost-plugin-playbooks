@@ -114,9 +114,7 @@ const RunList = ({
         const ids = new Set(playbookRuns.map((r) => r.playbook_id));
         const single = ids.size === 1;
         return {
-            storageKey: single ?
-                `${ATTRIBUTE_COLUMNS_STORAGE_KEY}-${[...ids][0]}` :
-                ATTRIBUTE_COLUMNS_STORAGE_KEY,
+            storageKey: single ? `${ATTRIBUTE_COLUMNS_STORAGE_KEY}-${[...ids][0]}` : ATTRIBUTE_COLUMNS_STORAGE_KEY,
             isSinglePlaybook: single,
         };
     }, [playbookRuns, fetchParams?.playbook_id]);

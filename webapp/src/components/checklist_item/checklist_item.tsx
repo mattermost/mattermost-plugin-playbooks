@@ -217,9 +217,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 return assigneeDisplayName || undefined;
             }
             const field = props.propertyFields?.find((f) => f.id === assigneePropertyFieldID);
-            return field ?
-                formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) :
-                formatMessage({defaultMessage: 'Run User'});
+            return field ? formatMessage({defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({defaultMessage: 'Run User'});
         }
         default:
             return assigneeDisplayName || undefined;

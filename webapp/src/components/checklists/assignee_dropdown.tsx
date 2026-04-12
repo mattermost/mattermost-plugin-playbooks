@@ -44,9 +44,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         setAssignedGroupName(found?.display_name ?? '');
     }, [assigneeType, checklistItem.assignee_group_id, groups]);
 
-    const selectedRole = (assigneeType === 'owner' || assigneeType === 'creator' || assigneeType === 'property_user') ?
-        assigneeType :
-        'none';
+    const selectedRole = (assigneeType === 'owner' || assigneeType === 'creator' || assigneeType === 'property_user') ? assigneeType : 'none';
 
     // When the property_user radio is clicked but no field has been selected yet,
     // show it as selected in the UI without firing a mutation.
@@ -121,9 +119,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         if (mode === 'run') {
             resolvedUserId = assigneeType === 'owner' ? runOwnerUserId : runCreatorUserId;
         }
-        const roleLabel = assigneeType === 'owner' ?
-            formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) :
-            formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
+        const roleLabel = assigneeType === 'owner' ? formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) : formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
 
         return (
             <Container>
@@ -153,9 +149,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             badgeTestId = 'group-indicator-badge';
         } else {
             const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
-            badgeLabel = field ?
-                formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) :
-                formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
+            badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
             badgeTestId = 'property-user-indicator-badge';
             if (mode === 'run') {
                 const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);

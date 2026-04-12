@@ -94,9 +94,7 @@ export const RunPlaybookModal = ({
 
     const currentChannelId = useSelector(getCurrentChannelId);
     const currentUserId = useSelector(getCurrentUserId);
-    const userId = (playbook?.default_owner_enabled && playbook.default_owner_id) ?
-        playbook.default_owner_id :
-        currentUserId;
+    const userId = (playbook?.default_owner_enabled && playbook.default_owner_id) ? playbook.default_owner_id : currentUserId;
 
     const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const userMap = useUserDisplayNameMap();
@@ -194,9 +192,7 @@ export const RunPlaybookModal = ({
     // Name is required unless the playbook has a name template.
     // In template mode the resolved preview must also fit within the limit so the backend
     // accepts it; the raw template string itself is not validated against the limit.
-    const nameValid = hasTemplate ?
-        (namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH) :
-        (runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH);
+    const nameValid = hasTemplate ? (namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH) : (runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH);
 
     const namePreviewTooLong = hasTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
 
@@ -927,9 +923,7 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
                 id={inputId}
                 data-testid={`property-field-${field.id}`}
                 type='date'
-                value={typeof value === 'string' || typeof value === 'number' ?
-                    formatDateInputValue(value) :
-                    ''
+                value={typeof value === 'string' || typeof value === 'number' ? formatDateInputValue(value) : ''
                 }
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const dateStr = e.target.value;
@@ -952,9 +946,7 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
 
         const isMulti = field.type === 'multiselect';
 
-        const selectedValue = isMulti ?
-            options.filter((opt) => Array.isArray(value) && (value as string[]).includes(opt.value)) :
-            options.find((opt) => opt.value === value) ?? null;
+        const selectedValue = isMulti ? options.filter((opt) => Array.isArray(value) && (value as string[]).includes(opt.value)) : options.find((opt) => opt.value === value) ?? null;
 
         return (
             <StyledSelect
@@ -973,9 +965,7 @@ const PropertyFieldInput = ({field, value, onChange, fetchAllUsersInTeam, inputI
                 }}
                 isClearable={true}
                 isMulti={isMulti}
-                placeholder={isMulti ?
-                    formatMessage({id: 'playbooks.run_playbook_modal.select_options', defaultMessage: 'Select options...'}) :
-                    formatMessage({id: 'playbooks.run_playbook_modal.select', defaultMessage: 'Select...'})
+                placeholder={isMulti ? formatMessage({id: 'playbooks.run_playbook_modal.select_options', defaultMessage: 'Select options...'}) : formatMessage({id: 'playbooks.run_playbook_modal.select', defaultMessage: 'Select...'})
                 }
             />
         );

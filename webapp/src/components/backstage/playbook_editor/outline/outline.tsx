@@ -14,6 +14,8 @@ import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
+import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
+
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -27,7 +29,6 @@ import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_edito
 import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
 import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 import {Section as BaseSection, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
-import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';

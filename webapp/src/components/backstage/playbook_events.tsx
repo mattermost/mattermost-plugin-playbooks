@@ -869,11 +869,11 @@ const PrimaryFiltersRow = styled.div`
     gap: 12px 16px;
     grid-template-columns: minmax(220px, 0.95fr) minmax(240px, 1fr) minmax(280px, 1.2fr) minmax(240px, 1fr);
 
-    @media screen and (max-width: 1200px) {
+    @media screen and (width <= 1200px) {
         grid-template-columns: repeat(2, minmax(260px, 1fr));
     }
 
-    @media screen and (max-width: 900px) {
+    @media screen and (width <= 900px) {
         grid-template-columns: 1fr;
     }
 `;
@@ -885,7 +885,7 @@ const SecondaryFiltersRow = styled.div`
     margin-top: 12px;
     gap: 12px;
 
-    @media screen and (max-width: 900px) {
+    @media screen and (width <= 900px) {
         justify-content: flex-start;
     }
 `;
@@ -938,7 +938,9 @@ const TableHeader = styled.thead`
     background: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
-const TableBody = styled.tbody``;
+const TableBody = styled.tbody`
+    /* Table body styling is handled by row and cell components */
+`;
 
 const HeaderCell = styled.th`
     padding: 12px 16px;

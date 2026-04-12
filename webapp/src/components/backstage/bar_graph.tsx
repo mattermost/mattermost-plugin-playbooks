@@ -87,7 +87,7 @@ const BarGraph = (props: BarGraphProps) => {
                                 color: centerChannelFontColor,
                             },
                             ticks: {
-                                callback: props.xAxesTicksCallback ? props.xAxesTicksCallback : function(this: any, val: any, index: number) {
+                                callback: props.xAxesTicksCallback ? props.xAxesTicksCallback : function formatXTick(this: any, val: any, index: number) {
                                     if (index % 2 !== 0) {
                                         return '';
                                     }

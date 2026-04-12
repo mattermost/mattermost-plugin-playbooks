@@ -138,9 +138,7 @@ const AttributeColumns = ({propertyFields, propertyValues, selectedFieldIds}: Pr
 
     // undefined = no explicit selection (show first N defaults)
     // string[] = explicit user selection (show exactly those, even if empty)
-    const displayFields = selectedFieldIds === undefined ?
-        sortedFields.slice(0, DEFAULT_MAX_COLUMNS) :
-        sortedFields.filter((f) => selectedFieldIds.includes(stableFieldId(f)));
+    const displayFields = selectedFieldIds === undefined ? sortedFields.slice(0, DEFAULT_MAX_COLUMNS) : sortedFields.filter((f) => selectedFieldIds.includes(stableFieldId(f)));
 
     return (
         <Wrapper data-testid='run-list-item-attributes'>
@@ -190,9 +188,7 @@ export const AttributeColumnsConfig = ({propertyFields, selectedFieldIds, onSele
     );
 
     const handleColumnToggle = useCallback((sid: string) => {
-        const next = selectedFieldIds.includes(sid) ?
-            selectedFieldIds.filter((id) => id !== sid) :
-            [...selectedFieldIds, sid];
+        const next = selectedFieldIds.includes(sid) ? selectedFieldIds.filter((id) => id !== sid) : [...selectedFieldIds, sid];
         onSelectionChange(next);
     }, [selectedFieldIds, onSelectionChange]);
 

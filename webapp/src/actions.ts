@@ -497,15 +497,13 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
     }
 
     // Create optimistic update from input, filtering out options without IDs
-    const optimisticOptions = propertyField.attrs?.options ?
-        propertyField.attrs.options
-            .filter((opt) => opt.id !== undefined)
-            .map((opt) => ({
-                id: opt.id!,
-                name: opt.name,
-                color: opt.color,
-            })) :
-        originalField.attrs.options;
+    const optimisticOptions = propertyField.attrs?.options ? propertyField.attrs.options
+        .filter((opt) => opt.id !== undefined)
+        .map((opt) => ({
+            id: opt.id!,
+            name: opt.name,
+            color: opt.color,
+        })) : originalField.attrs.options;
 
     const optimistic: PropertyField = {
         ...originalField,
