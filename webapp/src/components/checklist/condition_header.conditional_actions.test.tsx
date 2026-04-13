@@ -116,9 +116,15 @@ const mockCondition = {
 const mockPropertyFields: PropertyField[] = [
     {
         id: 'field-1',
+        group_id: 'group-1',
         name: 'Status',
         type: 'select' as const,
+        create_at: 0,
+        update_at: 0,
+        delete_at: 0,
         attrs: {
+            visibility: 'always' as const,
+            sort_order: 0,
             options: [
                 {id: 'opt-1', name: 'Active'},
                 {id: 'opt-2', name: 'Inactive'},

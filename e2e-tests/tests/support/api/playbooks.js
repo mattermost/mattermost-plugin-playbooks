@@ -762,6 +762,42 @@ Cypress.Commands.add('apiDeletePlaybookCondition', (playbookId, conditionId) => 
 });
 
 /**
+ * Export a playbook via REST API
+ * @param {String} playbookId - The playbook ID
+ * @returns {Object} The exported playbook JSON
+ */
+Cypress.Commands.add('apiExportPlaybook', (playbookId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}/export`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Import a playbook via REST API
+ * @param {Object} exportData - The playbook export JSON to import
+ * @param {String} [teamId] - Optional team ID to assign the imported playbook to
+ * @returns {Object} The response body with the new playbook ID
+ */
+Cypress.Commands.add('apiImportPlaybook', (exportData, teamId) => {
+    const qs = teamId ? {team_id: teamId} : {};
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/playbooks/api/v0/playbooks/import',
+        method: 'POST',
+        body: exportData,
+        qs,
+    }).then((response) => {
+        expect(response.status).to.equal(StatusCreated);
+        cy.wrap(response.body);
+    });
+});
+
+/**
  * Attach a condition to a checklist item
  * @param {String} playbookId - The playbook ID
  * @param {Number} checklistIndex - The checklist index (0-based)

@@ -272,7 +272,7 @@ func (s *stubPlaybookService) Get(id string) (Playbook, error) {
 func (s *stubPlaybookService) Create(Playbook, string) (string, error) {
 	panic("stubPlaybookService: Create not implemented")
 }
-func (s *stubPlaybookService) Import(Playbook, string) (string, error) {
+func (s *stubPlaybookService) Import(PlaybookImportData, string) (string, error) {
 	panic("stubPlaybookService: Import not implemented")
 }
 func (s *stubPlaybookService) GetPlaybooks() ([]Playbook, error) {
@@ -350,6 +350,9 @@ func (s *stubPlaybookService) DeleteMetric(string) error {
 
 func (s *stubPlaybookService) UpdateChannelNameTemplateAtomically(string, func(string) string) error {
 	panic("stubPlaybookService: UpdateChannelNameTemplateAtomically not implemented")
+}
+func (s *stubPlaybookService) GetPlaybookConditionsForExport(string) ([]Condition, error) {
+	panic("stubPlaybookService: GetPlaybookConditionsForExport not implemented")
 }
 
 // ---------------------------------------------------------------------------
