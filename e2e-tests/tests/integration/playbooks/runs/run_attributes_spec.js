@@ -580,15 +580,15 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             // # Add Staging option
             cy.findAllByTestId('property-field-row').last().within(() => {
                 cy.findByRole('button', {name: 'Add value'}).click();
+                cy.findAllByText(/^Option \d+$/).last().should('be.visible').click();
             });
-            cy.findAllByText(/^Option \d+$/).last().click();
             cy.findByPlaceholderText('Enter value name').should('be.visible').clear().type('Staging{enter}');
 
             // # Add Prod option
             cy.findAllByTestId('property-field-row').last().within(() => {
                 cy.findByRole('button', {name: 'Add value'}).click();
+                cy.findAllByText(/^Option \d+$/).last().should('be.visible').click();
             });
-            cy.findAllByText(/^Option \d+$/).last().click();
             cy.findByPlaceholderText('Enter value name').should('be.visible').clear().type('Prod{enter}');
 
             // # Navigate back to run

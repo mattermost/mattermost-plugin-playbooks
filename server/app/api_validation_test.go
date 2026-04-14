@@ -13,6 +13,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestValidateTemplateAfterFieldDeletion(t *testing.T) {
+	t.Run("empty template always returns nil", func(t *testing.T) {
+		err := ValidateTemplateAfterFieldDeletion("", "field_1", nil)
+		require.NoError(t, err)
+	})
+
+	t.Run("empty allFields does not panic", func(t *testing.T) {
+		// allFields can be empty when the last field is being deleted.
+		// Previously this caused make([]PropertyField, 0, -1) to panic.
+		err := ValidateTemplateAfterFieldDeletion("{Region}", "field_1", []PropertyField{})
+		require.Error(t, err)
+	})
+
+	t.Run("deleting a field referenced by the template returns error", func(t *testing.T) {
+		fields := []PropertyField{
+			{PropertyField: model.PropertyField{ID: "field_1", Name: "Region"}},
+		}
+		err := ValidateTemplateAfterFieldDeletion("{Region}", "field_1", fields)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrMalformedPlaybookRun))
+	})
+
+	t.Run("deleting an unreferenced field returns nil", func(t *testing.T) {
+		fields := []PropertyField{
+			{PropertyField: model.PropertyField{ID: "field_1", Name: "Region"}},
+			{PropertyField: model.PropertyField{ID: "field_2", Name: "Status"}},
+		}
+		err := ValidateTemplateAfterFieldDeletion("{Region}", "field_2", fields)
+		require.NoError(t, err)
+	})
+}
+
 func TestValidateOwnerID(t *testing.T) {
 	t.Run("valid ID is accepted", func(t *testing.T) {
 		err := ValidateOwnerID(model.NewId())

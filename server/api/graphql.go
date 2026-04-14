@@ -177,7 +177,6 @@ type GraphQLContext struct {
 	statusPostsLoader    *dataloader.Loader[string, []app.StatusPost]
 	timelineEventsLoader *dataloader.Loader[string, []app.TimelineEvent]
 	runMetricsLoader     *dataloader.Loader[string, []app.RunMetricData]
-	propertyFieldsLoader *dataloader.Loader[string, []app.PropertyField]
 }
 
 // When moving over to the multi-product architecture this should be handled by the server.
@@ -208,7 +207,6 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 	statusPostsLoader := dataloader.NewBatchedLoader(graphQLStatusPostsLoader[[]app.StatusPost], dataloader.WithBatchCapacity[string, []app.StatusPost](loaderBatchCapacity))
 	timelineEventsLoader := dataloader.NewBatchedLoader(graphQLTimelineEventsLoader[[]app.TimelineEvent], dataloader.WithBatchCapacity[string, []app.TimelineEvent](loaderBatchCapacity))
 	runMetricsLoader := dataloader.NewBatchedLoader(graphQLRunMetricsLoader[[]app.RunMetricData], dataloader.WithBatchCapacity[string, []app.RunMetricData](loaderBatchCapacity))
-	propertyFieldsLoader := dataloader.NewBatchedLoader(graphQLPropertyFieldsLoader[[]app.PropertyField], dataloader.WithBatchCapacity[string, []app.PropertyField](loaderBatchCapacity))
 
 	graphQLContext := &GraphQLContext{
 		r:                    r,
@@ -227,7 +225,6 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		statusPostsLoader:    statusPostsLoader,
 		timelineEventsLoader: timelineEventsLoader,
 		runMetricsLoader:     runMetricsLoader,
-		propertyFieldsLoader: propertyFieldsLoader,
 	}
 
 	// Populate the context with required info.

@@ -75,36 +75,6 @@ func graphQLTimelineEventsLoader[V []app.TimelineEvent](ctx context.Context, pla
 	return result
 }
 
-func graphQLPropertyFieldsLoader[V []app.PropertyField](ctx context.Context, playbookRunIDs []string) []*dataloader.Result[V] {
-	result := make([]*dataloader.Result[V], len(playbookRunIDs))
-	if len(playbookRunIDs) == 0 {
-		return result
-	}
-
-	c, err := getContext(ctx)
-	if err != nil {
-		return populateResultWithError(err, result)
-	}
-
-	fieldsByRunID, err := c.propertyService.GetRunsPropertyFields(playbookRunIDs)
-	if err != nil {
-		return populateResultWithError(err, result)
-	}
-
-	for i, runID := range playbookRunIDs {
-		fields, ok := fieldsByRunID[runID]
-		if !ok {
-			result[i] = &dataloader.Result[V]{Data: V{}}
-			continue
-		}
-		result[i] = &dataloader.Result[V]{
-			Data: V(fields),
-		}
-	}
-
-	return result
-}
-
 func graphQLRunMetricsLoader[V []app.RunMetricData](ctx context.Context, playbookRunIDs []string) []*dataloader.Result[V] {
 	result := make([]*dataloader.Result[V], len(playbookRunIDs))
 	if len(playbookRunIDs) == 0 {

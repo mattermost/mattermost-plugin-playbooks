@@ -27,6 +27,9 @@ var (
 )
 
 func fieldRegex(fieldName string) *regexp.Regexp {
+	if cached, ok := fieldRegexCache.Load(fieldName); ok {
+		return cached.(*regexp.Regexp)
+	}
 	re := regexp.MustCompile(`(?i)\{\s*` + regexp.QuoteMeta(fieldName) + `\s*\}`)
 	actual, _ := fieldRegexCache.LoadOrStore(fieldName, re)
 	return actual.(*regexp.Regexp)

@@ -1340,6 +1340,58 @@ func TestCondition_IsValid(t *testing.T) {
 		require.Contains(t, err.Error(), "invalid condition expression")
 		require.Contains(t, err.Error(), "field_id cannot be empty")
 	})
+
+	t.Run("validation - set_owner action missing user ID is valid (user can be set later)", func(t *testing.T) {
+		condition := Condition{
+			ID:            "condition_123",
+			ConditionExpr: validConditionExprV1,
+			PlaybookID:    "playbook_123",
+			Actions: []ConditionActionDef{
+				{Type: ConditionActionTypeSetOwner, SetOwnerUserID: ""},
+			},
+		}
+		err := condition.IsValid(false, testPropertyFields)
+		require.NoError(t, err)
+	})
+
+	t.Run("validation - notify_channel action with no channels is valid (channels can be set later)", func(t *testing.T) {
+		condition := Condition{
+			ID:            "condition_123",
+			ConditionExpr: validConditionExprV1,
+			PlaybookID:    "playbook_123",
+			Actions: []ConditionActionDef{
+				{Type: ConditionActionTypeNotifyChannel, NotifyChannelIDs: []string{}},
+			},
+		}
+		err := condition.IsValid(false, testPropertyFields)
+		require.NoError(t, err)
+	})
+
+	t.Run("validation - set_owner action with user ID is valid", func(t *testing.T) {
+		condition := Condition{
+			ID:            "condition_123",
+			ConditionExpr: validConditionExprV1,
+			PlaybookID:    "playbook_123",
+			Actions: []ConditionActionDef{
+				{Type: ConditionActionTypeSetOwner, SetOwnerUserID: "user_123"},
+			},
+		}
+		err := condition.IsValid(false, testPropertyFields)
+		require.NoError(t, err)
+	})
+
+	t.Run("validation - notify_channel action with channels is valid", func(t *testing.T) {
+		condition := Condition{
+			ID:            "condition_123",
+			ConditionExpr: validConditionExprV1,
+			PlaybookID:    "playbook_123",
+			Actions: []ConditionActionDef{
+				{Type: ConditionActionTypeNotifyChannel, NotifyChannelIDs: []string{"channel_1"}},
+			},
+		}
+		err := condition.IsValid(false, testPropertyFields)
+		require.NoError(t, err)
+	})
 }
 
 func TestConditionExprV1_ExtractPropertyIDs(t *testing.T) {

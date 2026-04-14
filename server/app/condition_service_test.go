@@ -1598,3 +1598,65 @@ func TestConditionService_CopyPlaybookConditionsToPlaybook(t *testing.T) {
 		require.Nil(t, result)
 	})
 }
+
+func TestConditionService_EvaluateConditionsForTransform_DoesNotMutateRun(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockConditionStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	service := app.NewConditionService(mockStore, mockPropertyService, mockPoster, mockAuditor)
+
+	condID := model.NewId()
+	runID := model.NewId()
+	fieldID := model.NewId()
+
+	// Build a run with one checklist item bound to the condition.
+	run := &app.PlaybookRun{
+		ID: runID,
+		Checklists: []app.Checklist{
+			{
+				Title: "Triage",
+				Items: []app.ChecklistItem{
+					{
+						ID:              model.NewId(),
+						Title:           "Investigate",
+						ConditionID:     condID,
+						ConditionAction: app.ConditionActionNone,
+					},
+				},
+			},
+		},
+	}
+
+	// Return a condition that is NOT met (run has no matching property values),
+	// so applyConditionResults would set ConditionAction = ConditionActionHidden
+	// on any mutable copy of the item.
+	conditions := []app.Condition{
+		{
+			ID:         condID,
+			PlaybookID: model.NewId(),
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: fieldID,
+					Value:   json.RawMessage(`"expected"`),
+				},
+			},
+		},
+	}
+
+	mockStore.EXPECT().
+		GetConditionsByRunAndFieldID(runID, fieldID).
+		Return(conditions, nil)
+
+	_, _, err := service.EvaluateConditionsForTransform(run, fieldID, json.RawMessage(`"old"`))
+	require.NoError(t, err)
+
+	// The original run's checklist item must not be mutated.
+	require.Equal(t, app.ConditionActionNone, run.Checklists[0].Items[0].ConditionAction,
+		"EvaluateConditionsForTransform must not mutate the caller's run checklists")
+}

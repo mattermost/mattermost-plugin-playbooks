@@ -616,11 +616,16 @@ func (s *conditionService) EvaluateConditionsForTransform(playbookRun *PlaybookR
 
 	conditionResults := s.evaluateConditions(playbookRun, conditions)
 
-	// Apply to a shallow copy of the run to build the summary (triggered actions,
+	// Apply to a deep copy of the run to build the summary (triggered actions,
 	// checklist change counts). The caller's run is not mutated.
 	runCopy := *playbookRun
 	clsCopy := make([]Checklist, len(playbookRun.Checklists))
 	copy(clsCopy, playbookRun.Checklists)
+	for i := range clsCopy {
+		items := make([]ChecklistItem, len(clsCopy[i].Items))
+		copy(items, clsCopy[i].Items)
+		clsCopy[i].Items = items
+	}
 	runCopy.Checklists = clsCopy
 	summary := s.applyConditionResults(&runCopy, conditionResults)
 
