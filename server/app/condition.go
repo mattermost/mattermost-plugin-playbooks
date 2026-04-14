@@ -808,7 +808,7 @@ func (c *Condition) IsValid(isCreation bool, propertyFields []PropertyField) err
 
 	for i, action := range c.Actions {
 		if action.Type != ConditionActionTypeSetOwner && action.Type != ConditionActionTypeNotifyChannel {
-			return fmt.Errorf("action %d has unknown type %q", i, action.Type)
+			return errors.Wrapf(ErrMalformedCondition, "action %d has unknown type %q", i, action.Type)
 		}
 	}
 

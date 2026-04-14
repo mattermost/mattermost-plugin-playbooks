@@ -828,19 +828,19 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if chErr != nil {
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "creation rule specified an invalid channel")
 		}
+		if injectedChannel.IsGroupOrDirect() {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "creation rule: cannot inject a direct or group message channel")
+		}
 		injectedPerm := model.PermissionManagePublicChannelProperties
 		injectedMsg := "You do not have permission to manage this channel"
 		if injectedChannel.Type == model.ChannelTypePrivate {
 			injectedPerm = model.PermissionManagePrivateChannelProperties
-		} else if injectedChannel.IsGroupOrDirect() {
-			injectedPerm = model.PermissionReadChannel
-			injectedMsg = "You do not have access to this channel"
 		}
 		if !h.pluginAPI.User.HasPermissionToChannel(userID, injectedChannel.Id, injectedPerm) {
 			return nil, errors.Wrap(app.ErrNoPermissions, injectedMsg)
 		}
 		// Prevent cross-team channel injection: the injected channel must belong to the run's team.
-		if injectedChannel.TeamId != "" && injectedChannel.TeamId != playbookRun.TeamID {
+		if injectedChannel.TeamId != playbookRun.TeamID {
 			return nil, errors.Wrap(app.ErrNoPermissions, "creation rule: channel does not belong to the run's team")
 		}
 	}
