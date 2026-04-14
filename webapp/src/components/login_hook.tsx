@@ -3,8 +3,6 @@
 
 import {useEffect} from 'react';
 
-import {GlobalState} from '@mattermost/types/store';
-
 import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
@@ -18,7 +16,7 @@ import {PlaybookRole} from 'src/types/permissions';
 // It will be registered at initialize and "rendered" at login.
 const LoginHook = () => {
     const dispatch = useAppDispatch();
-    const hasGlobalSettings = useAppSelector((state: GlobalState) => Boolean(globalSettings(state)));
+    const hasGlobalSettings = useAppSelector((state) => Boolean(globalSettings(state)));
     const fetchAndStoreSettings = async () => dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
 
     useEffect(() => {

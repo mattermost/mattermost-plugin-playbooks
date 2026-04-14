@@ -1,7 +1,6 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 
 import {getChannelsNameMapInTeam} from 'mattermost-redux/selectors/entities/channels';
@@ -12,13 +11,13 @@ import {useAppSelector} from 'src/hooks/redux';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
 export const useDefaultMarkdownOptions = ({team, ...opts}: {team?: Maybe<Team | Team['id']>} & Record<string, any> = {}) => {
-    const selectedTeam = useAppSelector((state: GlobalState) => {
+    const selectedTeam = useAppSelector((state) => {
         if (typeof team === 'string') {
             return getTeam(state, team);
         }
         return team ?? getCurrentTeam(state);
     });
-    const channelNamesMap = useAppSelector((state: GlobalState) => selectedTeam && getChannelsNameMapInTeam(state, selectedTeam.id));
+    const channelNamesMap = useAppSelector((state) => selectedTeam && getChannelsNameMapInTeam(state, selectedTeam.id));
 
     return {
         singleline: false,

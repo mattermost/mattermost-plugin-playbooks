@@ -164,7 +164,7 @@ export function useClientRect() {
 
 export function useCanCreatePlaybooksInTeam(teamId: string) {
     return useAppSelector(
-        (state: GlobalState) => haveITeamPermission(state, teamId, 'playbook_public_create') || haveITeamPermission(state, teamId, 'playbook_private_create')
+        (state) => haveITeamPermission(state, teamId, 'playbook_public_create') || haveITeamPermission(state, teamId, 'playbook_private_create')
     );
 }
 
@@ -239,7 +239,7 @@ export function useThing<T extends NonNullable<any>>(
     deps: DependencyList = [],
 ) {
     const [thing, setThing] = useState<T | null>();
-    const thingFromState = useAppSelector<T | null>((state) => select?.(state, id || '') ?? null);
+    const thingFromState = useAppSelector((state) => select?.(state, id || '') ?? null);
     const [error, setError] = useState<ClientError | null>(null);
     const [isFetching, setIsFetching] = useState<boolean>(true);
 
@@ -334,8 +334,6 @@ export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     return [dropdownPosition, toggleOpen] as const;
 }
 
-type StringToUserProfileFn = (id: string) => UserProfile;
-
 export function useEnsureProfile(userId: string) {
     const userIds = useMemo(() => [userId], [userId]);
     useEnsureProfiles(userIds);
@@ -343,7 +341,7 @@ export function useEnsureProfile(userId: string) {
 
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useAppDispatch();
-    const getUserFromStore = useAppSelector<StringToUserProfileFn>(
+    const getUserFromStore = useAppSelector(
         (state) => (id: string) => getUser(state, id),
     );
 
@@ -396,7 +394,7 @@ export function useOpenStartTrialFormModal() {
 
 export function useFormattedUsername(user: UserProfile) {
     const teamnameNameDisplaySetting =
-        useAppSelector<string | undefined>(
+        useAppSelector(
             getTeammateNameDisplaySetting,
         ) || '';
 
@@ -404,7 +402,7 @@ export function useFormattedUsername(user: UserProfile) {
 }
 
 export function useFormattedUsernameByID(userId: string) {
-    const user = useAppSelector<UserProfile>((state) =>
+    const user = useAppSelector((state) =>
         getUser(state, userId),
     );
 
@@ -414,10 +412,10 @@ export function useFormattedUsernameByID(userId: string) {
 // Return the list of names of the users given a list of UserProfiles or userIds
 // It will respect teamnameNameDisplaySetting.
 export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>): string[] {
-    const teammateNameDisplaySetting = useAppSelector<string | undefined>(
+    const teammateNameDisplaySetting = useAppSelector(
         getTeammateNameDisplaySetting,
     ) || '';
-    const displayNames = useAppSelector((state: GlobalState) => {
+    const displayNames = useAppSelector((state) => {
         return usersOrUserIds?.map((user) => displayUsername(typeof user === 'string' ? getUser(state, user) : user, teammateNameDisplaySetting));
     });
     return displayNames || [];
@@ -602,7 +600,7 @@ export const useProxyState = <T>(
 
 export const useExportLogAvailable = () => {
     //@ts-ignore plugins state is a thing
-    return useAppSelector<boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+    return useAppSelector((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
 };
 
 export enum ReservedCategory {

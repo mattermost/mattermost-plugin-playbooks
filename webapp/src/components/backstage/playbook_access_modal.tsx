@@ -3,7 +3,6 @@
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {Team} from '@mattermost/types/teams';
 import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
 
@@ -75,7 +74,7 @@ const PlaybookAccessModal = ({
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const [playbook, updatePlaybook] = useEditPlaybook(playbookId, refetch);
-    const team = useAppSelector<Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
+    const team = useAppSelector((state) => getTeam(state, playbook?.team_id || ''));
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
 

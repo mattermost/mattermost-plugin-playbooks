@@ -8,10 +8,8 @@ import styled from 'styled-components';
 
 import {Post} from '@mattermost/types/posts';
 import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {Channel} from '@mattermost/types/channels';
 import {getCurrentTeamId, getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {General} from 'mattermost-redux/constants';
-import {Team} from '@mattermost/types/teams';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -19,7 +17,6 @@ import Tooltip from 'src/components/widgets/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
-import {ChannelNamesMap} from 'src/types/backstage';
 import {useFormattedUsernameByID} from 'src/hooks/general';
 
 interface Props {
@@ -28,11 +25,11 @@ interface Props {
 
 export const UpdatePost = (props: Props) => {
     const {formatMessage} = useIntl();
-    const channel = useAppSelector<Channel | undefined>((state) => getChannel(state, props.post.channel_id));
-    const currentTeamId = useAppSelector<string>(getCurrentTeamId);
+    const channel = useAppSelector((state) => getChannel(state, props.post.channel_id));
+    const currentTeamId = useAppSelector(getCurrentTeamId);
     const teamId = channel?.type === General.DM_CHANNEL || channel?.type === General.GM_CHANNEL ? currentTeamId : channel?.team_id;
-    const team = useAppSelector<Team | undefined>((state) => getTeam(state, teamId ?? ''));
-    const channelNamesMap = useAppSelector<ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const team = useAppSelector((state) => getTeam(state, teamId ?? ''));
+    const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
 
     const markdownOptions = {
         singleline: false,

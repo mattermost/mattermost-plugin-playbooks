@@ -9,7 +9,6 @@ import {
 } from 'mattermost-redux/selectors/entities/roles';
 import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-import {GlobalState} from '@mattermost/types/store';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
@@ -18,15 +17,15 @@ import {PlaybookPermissionGeneral, makeGeneralPermissionSpecific} from 'src/type
 import {usePlaybook} from './crud';
 
 export const useHasSystemPermission = (permission: string) => {
-    return useAppSelector((state: GlobalState) => haveISystemPermission(state, {permission}));
+    return useAppSelector((state) => haveISystemPermission(state, {permission}));
 };
 
 export const useHasTeamPermission = (teamID: string, permission: string) => {
-    return useAppSelector((state: GlobalState) => haveITeamPermission(state, teamID, permission));
+    return useAppSelector((state) => haveITeamPermission(state, teamID, permission));
 };
 
 export const useHasChannelPermission = (teamID: string, channelID: string, permission: string) => {
-    return useAppSelector((state: GlobalState) => haveIChannelPermission(state, teamID, channelID, permission));
+    return useAppSelector((state) => haveIChannelPermission(state, teamID, channelID, permission));
 };
 
 export const useHasPlaybookPermissionById = (permission: PlaybookPermissionGeneral, playbookId: string) => {

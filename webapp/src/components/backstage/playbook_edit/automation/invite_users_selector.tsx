@@ -8,7 +8,6 @@ import ReactSelect, {ControlProps, GroupType, OptionsType} from 'react-select';
 import styled from 'styled-components';
 import {type ActionResult} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
-import {GlobalState} from '@mattermost/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, useIntl} from 'react-intl';
@@ -32,7 +31,7 @@ interface Props {
 const InviteUsersSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const [searchTerm, setSearchTerm] = useState('');
-    const invitedUsers = useAppSelector<UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
+    const invitedUsers = useAppSelector((state) => props.userIds.map((id) => getUser(state, id)));
     const [searchedUsers, setSearchedUsers] = useState<UserProfile[]>([]);
     useEnsureProfiles(props.userIds);
 

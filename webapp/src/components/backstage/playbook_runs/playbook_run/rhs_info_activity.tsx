@@ -5,7 +5,6 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 
-import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
@@ -33,7 +32,7 @@ const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const {formatMessage} = useIntl();
     const [filteredEvents] = useTimelineEvents(run, TimelineEventsFilterDefault);
     const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
-    const team = useAppSelector((state: GlobalState) => getTeam(state, run.team_id));
+    const team = useAppSelector((state) => getTeam(state, run.team_id));
 
     if (!team) {
         return null;

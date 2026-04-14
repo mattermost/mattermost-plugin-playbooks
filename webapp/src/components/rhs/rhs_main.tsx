@@ -177,7 +177,7 @@ const defaultListOptions : RunListOptions = {
 const RightHandSidebar = () => {
     useSetRHSState();
     const currentTeam = useAppSelector(getCurrentTeam);
-    const currentChannelId = useAppSelector<string>(getCurrentChannelId);
+    const currentChannelId = useAppSelector(getCurrentChannelId);
     const [currentRunId, setCurrentRunId] = useState<string | undefined>();
     const autoSelectCheckedForChannel = useRef<string | undefined>();
     const [autoAddTaskRunId, setAutoAddTaskRunId] = useState<string|undefined>();

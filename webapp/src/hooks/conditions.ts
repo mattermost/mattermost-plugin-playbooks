@@ -3,8 +3,6 @@
 
 import {useCallback, useEffect} from 'react';
 
-import {GlobalState} from '@mattermost/types/store';
-
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {Condition} from 'src/types/conditions';
@@ -17,7 +15,7 @@ import {createPlaybookCondition} from 'src/client';
  */
 export function usePlaybookConditions(playbookId: string) {
     const dispatch = useAppDispatch();
-    const conditions = useAppSelector((state: GlobalState) => getConditionsByPlaybookId(state, playbookId));
+    const conditions = useAppSelector((state) => getConditionsByPlaybookId(state, playbookId));
 
     const refetch = useCallback(() => {
         if (playbookId) {

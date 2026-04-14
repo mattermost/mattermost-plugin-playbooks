@@ -5,7 +5,6 @@ import styled from 'styled-components';
 
 import React from 'react';
 
-import {UserProfile} from '@mattermost/types/users';
 import {getUserByUsername} from 'mattermost-redux/selectors/entities/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
@@ -19,8 +18,8 @@ import {useEnsureProfile} from 'src/hooks';
 import {StatusPostComplete} from 'src/types/playbook_run';
 
 function useAuthorInfo(userName: string) : [string, string] {
-    const teamnameNameDisplaySetting = useAppSelector<string | undefined>(getTeammateNameDisplaySetting) || '';
-    const user = useAppSelector<UserProfile>((state) => getUserByUsername(state, userName));
+    const teamnameNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
+    const user = useAppSelector((state) => getUserByUsername(state, userName));
     useEnsureProfile(userName);
 
     let profileUrl = '';

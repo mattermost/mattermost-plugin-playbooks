@@ -3,7 +3,6 @@
 
 import React, {useEffect} from 'react';
 
-import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
@@ -70,8 +69,8 @@ export const ProfileName = styled.div<{$hasExtra: boolean}>`
 
 const Profile = (props: Props) => {
     const dispatch = useAppDispatch();
-    const user = useAppSelector<UserProfile>((state) => getUser(state, props.userId));
-    const teamnameNameDisplaySetting = useAppSelector<string | undefined>(getTeammateNameDisplaySetting) || '';
+    const user = useAppSelector((state) => getUser(state, props.userId));
+    const teamnameNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
 
     useEffect(() => {
         if (!user) {

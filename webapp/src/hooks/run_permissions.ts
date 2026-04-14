@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {GlobalState} from '@mattermost/types/store';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -23,7 +22,7 @@ export type RunPermissionFields = RunPermissionsScope & Partial<PlaybookRun>;
  * Check if a channel is archived
  */
 const useIsChannelArchived = (channelId: string): boolean => {
-    return useAppSelector((state: GlobalState) => {
+    return useAppSelector((state) => {
         const channel = getChannel(state, channelId);
         return channel ? channel.delete_at > 0 : false;
     });

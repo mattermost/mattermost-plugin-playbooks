@@ -13,8 +13,6 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {GlobalState} from '@mattermost/types/store';
-
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
@@ -81,7 +79,7 @@ const ChannelActionsModal = () => {
     const dispatch = useAppDispatch();
     const show = useAppSelector(isChannelActionsModalVisible);
     const channelID = useAppSelector(getCurrentChannelId);
-    const channel = useAppSelector((state: GlobalState) => getChannel(state, channelID));
+    const channel = useAppSelector((state) => getChannel(state, channelID));
     const teamID = useAppSelector(getCurrentTeamId);
     const publicChannelPermission = useHasChannelPermission(teamID, channelID, Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES);
     const privateChannelPermission = useHasChannelPermission(teamID, channelID, Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES);

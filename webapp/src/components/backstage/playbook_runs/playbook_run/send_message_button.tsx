@@ -3,7 +3,6 @@
 
 import React, {useEffect} from 'react';
 
-import {GlobalState} from '@mattermost/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 
@@ -19,7 +18,7 @@ interface Props {
 
 export const SendMessageButton = (props: Props) => {
     const dispatch = useAppDispatch();
-    const user = useAppSelector((state: GlobalState) => getUser(state, props.userId));
+    const user = useAppSelector((state) => getUser(state, props.userId));
 
     useEffect(() => {
         if (!user) {

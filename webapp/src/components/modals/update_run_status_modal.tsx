@@ -13,7 +13,6 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {DateTime, Duration} from 'luxon';
 
-import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -135,7 +134,7 @@ const UpdateRunStatusModal = ({
     // Extract channel and follower names
     // The limit applied must be done at the end to consider the chance
     // that the names are hidden to us (channels we haven't joined or are private)
-    const broadcastChannelNames = useAppSelector((state: GlobalState) => {
+    const broadcastChannelNames = useAppSelector((state) => {
         return run?.broadcastChannelIDs.reduce<string[]>((result, id) => {
             const displayName = getChannel(state, id)?.display_name;
             if (displayName) {

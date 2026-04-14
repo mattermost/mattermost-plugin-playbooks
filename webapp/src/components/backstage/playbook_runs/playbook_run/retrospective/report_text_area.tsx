@@ -4,7 +4,6 @@
 import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 
-import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {useAppSelector} from 'src/hooks/redux';
@@ -22,7 +21,7 @@ interface Props {
 }
 
 const ReportTextArea = ({text, isEditable, onEdit, flushChanges, teamId}: Props) => {
-    const team = useAppSelector<Team | undefined>((state) => getTeam(state, teamId));
+    const team = useAppSelector((state) => getTeam(state, teamId));
     const textareaRef = useRef(null);
     const [editing, setEditing] = useState(false);
     useClickOutsideRef(textareaRef, () => {

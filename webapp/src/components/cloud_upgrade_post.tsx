@@ -8,7 +8,6 @@ import styled from 'styled-components';
 import {Post} from '@mattermost/types/posts';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from '@mattermost/types/teams';
 
 import {FormattedMessage} from 'react-intl';
 
@@ -34,7 +33,7 @@ interface Props {
 }
 
 export const CloudUpgradePost = (props: Props) => {
-    const team = useAppSelector<Team | undefined>((state) => {
+    const team = useAppSelector((state) => {
         const channel = getChannel(state, props.post.channel_id);
 
         return channel ? getTeam(state, channel.team_id) : undefined;

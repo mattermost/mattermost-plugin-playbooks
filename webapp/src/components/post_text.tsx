@@ -8,7 +8,6 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 
 import {useAppSelector} from 'src/hooks/redux';
 
-import {ChannelNamesMap} from 'src/types/backstage';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
 
 interface Props {
@@ -19,7 +18,7 @@ interface Props {
 }
 
 const PostText = (props: Props) => {
-    const channelNamesMap = useAppSelector<ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
 
     // @ts-ignore
     const {formatText, messageHtmlToComponent} = window.PostUtils;

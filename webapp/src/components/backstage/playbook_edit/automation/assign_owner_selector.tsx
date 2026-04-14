@@ -7,7 +7,6 @@ import ReactSelect, {ControlProps} from 'react-select';
 
 import styled from 'styled-components';
 import {type ActionResult} from 'mattermost-redux/types/actions';
-import {GlobalState} from '@mattermost/types/store';
 import {UserProfile} from '@mattermost/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
@@ -31,7 +30,7 @@ const AssignOwnerSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const ownerUser = useAppSelector<UserProfile>((state: GlobalState) => getUser(state, props.ownerID));
+    const ownerUser = useAppSelector((state) => getUser(state, props.ownerID));
 
     // Update the options whenever the owner ID or the search term are updated
     useEffect(() => {

@@ -25,7 +25,6 @@ import {
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from '@mattermost/types/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
@@ -246,7 +245,7 @@ export const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTi
 export const RunPlaybook = ({playbook}: ControlProps) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
-    const team = useAppSelector<Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
+    const team = useAppSelector((state) => getTeam(state, playbook?.team_id || ''));
     const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;

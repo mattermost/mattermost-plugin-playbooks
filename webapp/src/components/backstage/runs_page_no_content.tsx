@@ -64,7 +64,7 @@ const NoContentPlaybookRunSvgContainer = styled.div`
 
 const NoContentPage = () => {
     const dispatch = useAppDispatch();
-    const teamId = useAppSelector<string>(getCurrentTeamId);
+    const teamId = useAppSelector(getCurrentTeamId);
     const [playbookExist, setPlaybookExist] = useState(false);
     const {setSelectedPlaybook} = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
     const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});

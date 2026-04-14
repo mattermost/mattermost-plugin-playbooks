@@ -78,7 +78,7 @@ interface Props {
 }
 
 export default function ProfileSelector(props: Props) {
-    const currentUserId = useAppSelector<string>(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const {formatMessage} = useIntl();
 
     const [isOpen, setOpen] = useState(false);

@@ -4,7 +4,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 
 import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
-import {GlobalState} from '@mattermost/types/store';
 
 import {savePreferences as storeSavePreferences} from 'mattermost-redux/actions/preferences';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
@@ -54,7 +53,7 @@ const useTutorialTourTipManager = ({
     // Function to save the tutorial step in redux store start here which needs to be modified
     const dispatch = useAppDispatch();
     const currentUserId = useAppSelector(getCurrentUserId);
-    const currentStep = useAppSelector((state: GlobalState) => getInt(state, tutorialCategory, currentUserId, 0));
+    const currentStep = useAppSelector((state) => getInt(state, tutorialCategory, currentUserId, 0));
     const savePreferences = useCallback(
         (userId: string, stepValue: string) => {
             const preferences = [
@@ -180,7 +179,7 @@ export default useTutorialTourTipManager;
 
 export const useTutorialStepper = (category: string) => {
     const currentUserId = useAppSelector(getCurrentUserId);
-    const currentStep = useAppSelector((state: GlobalState) => get(state, category, currentUserId, ''));
+    const currentStep = useAppSelector((state) => get(state, category, currentUserId, ''));
     const dispatch = useAppDispatch();
 
     return {

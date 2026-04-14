@@ -4,7 +4,6 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {DateTime} from 'luxon';
@@ -34,7 +33,7 @@ interface Props {
 const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: Props) => {
     const {formatMessage} = useIntl();
     const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
-    const team = useAppSelector((state: GlobalState) => getTeam(state, playbookRun.team_id));
+    const team = useAppSelector((state) => getTeam(state, playbookRun.team_id));
 
     const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
 

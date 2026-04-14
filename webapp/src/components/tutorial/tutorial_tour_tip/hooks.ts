@@ -15,8 +15,6 @@ import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
-import {GlobalState} from '@mattermost/types/store';
-
 import {useAppSelector} from 'src/hooks/redux';
 
 import {TutorialTourTipPunchout} from './backdrop';
@@ -81,7 +79,7 @@ export function useMeasurePunchouts(
 
 export const useShowTutorialStep = (stepToShow: number, category: string, defaultAutostart = true): boolean => {
     const currentUserId = useAppSelector(getCurrentUserId);
-    const step = useAppSelector<number | null>((state: GlobalState) => {
+    const step = useAppSelector((state) => {
         if (defaultAutostart) {
             return getInt(state, category, currentUserId, 0);
         }

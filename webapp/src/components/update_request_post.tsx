@@ -8,9 +8,7 @@ import styled from 'styled-components';
 import {ContainerProps, components} from 'react-select';
 
 import {Post} from '@mattermost/types/posts';
-import {Channel} from '@mattermost/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {Team} from '@mattermost/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {ApolloProvider, useQuery} from '@apollo/client';
 
@@ -71,8 +69,8 @@ const firstActiveRunInChannelQuery = graphql(/* GraphQL */`
 const UpdateRequestPost = (props: Props) => {
     const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
-    const channel = useAppSelector<Channel | undefined>((state) => getChannel(state, props.post.channel_id));
-    const team = useAppSelector<Team | undefined>((state) => getTeam(state, channel?.team_id ?? ''));
+    const channel = useAppSelector((state) => getChannel(state, props.post.channel_id));
+    const team = useAppSelector((state) => getTeam(state, channel?.team_id ?? ''));
     const targetUsername = typeof props.post.props.targetUsername === 'string' ? props.post.props.targetUsername : '';
     const playbookRunId = typeof props.post.props.playbookRunId === 'string' ? props.post.props.playbookRunId : '';
 

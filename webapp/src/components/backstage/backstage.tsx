@@ -5,7 +5,7 @@ import React, {useEffect} from 'react';
 import {matchPath, useLocation, useRouteMatch} from 'react-router-dom';
 
 import styled, {css} from 'styled-components';
-import {Theme, getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -32,7 +32,7 @@ const Backstage = () => {
         path: [`${url}/runs/:playbookRunId`, `${url}/playbooks`],
     });
 
-    const currentTheme = useAppSelector<Theme>(getTheme);
+    const currentTheme = useAppSelector(getTheme);
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.

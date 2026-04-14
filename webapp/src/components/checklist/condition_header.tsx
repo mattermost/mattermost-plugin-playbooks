@@ -6,7 +6,6 @@ import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import ReactSelect, {StylesConfig} from 'react-select';
-import {GlobalState} from '@mattermost/types/store';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -42,7 +41,7 @@ const ConditionHeader = ({
     const {formatMessage} = useIntl();
 
     // Get condition from Redux store
-    const condition = useAppSelector((state: GlobalState) => getCondition(state, conditionId));
+    const condition = useAppSelector((state) => getCondition(state, conditionId));
 
     // State for managing editing mode
     const [isEditing, setIsEditing] = useState(startEditing);

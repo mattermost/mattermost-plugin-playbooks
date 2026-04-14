@@ -39,7 +39,7 @@ const RHSRunDetailsTitle = (props: Props) => {
 
     const [metadata] = useRunMetadata(props.runID);
     const followState = useRunFollowers(metadata?.followers || []);
-    const currentChannelName = useAppSelector<string | undefined>(getCurrentChannelName);
+    const currentChannelName = useAppSelector(getCurrentChannelName);
 
     const tooltip = (
         <Tooltip id={'view-run-details'}>
