@@ -5,9 +5,9 @@ import React from 'react';
 import {Root, createRoot} from 'react-dom/client';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
+import {WebSocketEvents} from '@mattermost/client';
 import {GlobalState} from '@mattermost/types/store';
 import {Client4} from 'mattermost-redux/client';
-import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {General} from 'mattermost-redux/constants';
 import {FormattedMessage} from 'react-intl';
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
@@ -253,11 +253,11 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_CREATED, handleWebsocketConditionCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_UPDATED, handleWebsocketConditionUpdated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_DELETED, handleWebsocketConditionDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.UserAdded, handleWebsocketUserAdded(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.UserRemoved, handleWebsocketUserRemoved(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.PostDeleted, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.PostEdited, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.ChannelUpdated, handleWebsocketChannelUpdated(store.getState, store.dispatch));
 
         // Local slash commands
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));

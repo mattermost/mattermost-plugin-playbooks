@@ -5,7 +5,7 @@ import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {Post} from '@mattermost/types/posts';
-import {WebSocketMessage} from '@mattermost/client';
+import {BaseWebSocketMessage} from '@mattermost/client';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
@@ -63,7 +63,7 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
 }
 
 export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -77,7 +77,7 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
 
 // Handler for incremental updates - check state exists before dispatching
 export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -111,7 +111,7 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
 }
 
 export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -139,7 +139,7 @@ export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispat
 }
 
 export function handleWebsocketPlaybookCreated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -151,7 +151,7 @@ export function handleWebsocketPlaybookCreated(getState: GetStateFunc, dispatch:
 }
 
 export function handleWebsocketPlaybookArchived(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -163,7 +163,7 @@ export function handleWebsocketPlaybookArchived(getState: GetStateFunc, dispatch
 }
 
 export function handleWebsocketPlaybookRestored(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -175,7 +175,7 @@ export function handleWebsocketPlaybookRestored(getState: GetStateFunc, dispatch
 }
 
 export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispatch) {
-    return async (msg: WebSocketMessage<{ team_id: string, user_id: string }>) => {
+    return async (msg: BaseWebSocketMessage<{ team_id: string, user_id: string }>) => {
         const currentUserId = getCurrentUserId(getState());
         const currentTeamId = getCurrentTeamId(getState());
         if (currentUserId === msg.data.user_id && currentTeamId === msg.data.team_id) {
@@ -192,7 +192,7 @@ export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispa
 }
 
 export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ channel_id: string, user_id: string }>) => {
+    return (msg: BaseWebSocketMessage<{ channel_id: string, user_id: string }>) => {
         const currentUserId = getCurrentUserId(getState());
         if (currentUserId === msg.broadcast.user_id) {
             dispatch(removedFromPlaybookRunChannel(msg.data.channel_id));
@@ -216,7 +216,7 @@ async function getPlaybookRunFromStatusUpdate(post: Post): Promise<PlaybookRun |
 }
 
 export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispatch: Dispatch) => {
-    return async (msg: WebSocketMessage<{ post: string }>) => {
+    return async (msg: BaseWebSocketMessage<{ post: string }>) => {
         const playbookRunsMap = myPlaybookRunsMap(getState());
         if (playbookRunsMap[msg.broadcast.channel_id]) {
             const playbookRun = await getPlaybookRunFromStatusUpdate(JSON.parse(msg.data.post));
@@ -229,7 +229,7 @@ export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispa
 };
 
 export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: Dispatch) => {
-    return async (msg: WebSocketMessage<{ channel: string }>) => {
+    return async (msg: BaseWebSocketMessage<{ channel: string }>) => {
         const channel = JSON.parse(msg.data.channel);
 
         // Ignore updates to non-playbook run channels.
@@ -259,7 +259,7 @@ function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
 }
 
 export function handleWebsocketSettingsChanged(getState: GetStateFunc, dispatch: Dispatch) {
-    return async (msg: WebSocketMessage<{ payload: string }>): Promise<void> => {
+    return async (msg: BaseWebSocketMessage<{ payload: string }>): Promise<void> => {
         if (!msg.data.payload) {
             return;
         }
@@ -278,7 +278,7 @@ export function handleWebsocketSettingsChanged(getState: GetStateFunc, dispatch:
 
 // Condition websocket handlers
 export function handleWebsocketConditionCreated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -289,7 +289,7 @@ export function handleWebsocketConditionCreated(getState: GetStateFunc, dispatch
 }
 
 export function handleWebsocketConditionUpdated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -300,7 +300,7 @@ export function handleWebsocketConditionUpdated(getState: GetStateFunc, dispatch
 }
 
 export function handleWebsocketConditionDeleted(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
+    return (msg: BaseWebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
