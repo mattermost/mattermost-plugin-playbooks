@@ -1,10 +1,9 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {FullPlaybook} from 'src/graphql/hooks';
-import {PropertyFieldType} from 'src/types/properties';
+import {PropertyField, PropertyFieldType} from 'src/types/properties';
 
-export type TemplatePropertyField = NonNullable<FullPlaybook>['propertyFields'][number];
+export type TemplatePropertyField = PropertyField;
 
 // System token names recognized by the template engine (case-insensitive)
 export const SYSTEM_TOKENS = new Set(['SEQ', 'OWNER', 'CREATOR']);

@@ -218,7 +218,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
             // * Verify initial content is loaded from API
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
 
-            // # Intercept UpdatePlaybook mutation so we can wait for the debounced save
+            // # Intercept UpdatePlaybook GraphQL mutation so we can wait for the debounced save
             cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
             // # Click the insert variable button
@@ -250,7 +250,7 @@ describe('playbooks > edit > run naming', {testIsolation: true}, () => {
 
             cy.findByTestId('channel-access-run-name-template-input').should('have.value', 'Incident - ');
 
-            // # Intercept UpdatePlaybook mutation so we can wait for the debounced save
+            // # Intercept UpdatePlaybook GraphQL mutation so we can wait for the debounced save
             cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
             // # Click the insert variable button

@@ -43,9 +43,7 @@ jest.mock('react-redux', () => ({
     useSelector: jest.fn(() => 'mock-user-id'),
 }));
 
-jest.mock('src/graphql/hooks', () => ({
-    usePlaybook: jest.fn(),
-}));
+jest.mock('src/graphql/hooks', () => ({}));
 
 jest.mock('src/client', () => ({
     createPlaybookRun: jest.fn(),
@@ -53,6 +51,8 @@ jest.mock('src/client', () => ({
 
 jest.mock('src/hooks', () => ({
     useCanCreatePlaybooksInTeam: jest.fn(() => false),
+    usePlaybook: jest.fn(),
+    usePlaybookAttributes: jest.fn(() => null),
 }));
 
 jest.mock('src/hooks/general', () => ({
@@ -199,7 +199,7 @@ jest.mock('@mattermost/compass-icons/components', () => ({
 
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
-import {usePlaybook} from 'src/graphql/hooks';
+import {usePlaybook, usePlaybookAttributes} from 'src/hooks';
 import {createPlaybookRun} from 'src/client';
 import {useUserDisplayNameMap} from 'src/hooks/general';
 import {buildTemplatePreview, extractTemplateFieldNames, resolveTemplatePreview} from 'src/utils/template_utils';
@@ -211,6 +211,7 @@ const mockUseUserDisplayNameMap = useUserDisplayNameMap as jest.Mock;
 const mockDisplayUsername = displayUsername as jest.Mock;
 
 const mockUsePlaybook = usePlaybook as jest.Mock;
+const mockUsePlaybookAttributes = usePlaybookAttributes as jest.Mock;
 const mockCreatePlaybookRun = createPlaybookRun as jest.Mock;
 
 // Base playbook fixture
@@ -481,7 +482,7 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('name field behavior', () => {
         beforeEach(() => {
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
         });
 
         it('still shows the run name input when template is set', () => {
@@ -497,7 +498,8 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('property field inputs', () => {
         beforeEach(() => {
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
         });
 
         it('shows property field inputs for template-referenced fields', () => {
@@ -517,21 +519,21 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('does not show property fields when no template is set', () => {
-            mockUsePlaybook.mockReturnValue([basePlaybook, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             expect(toJson(component)).not.toContain('property-field-');
         });
 
         it('does not show property fields when template only uses {SEQ}', () => {
             const pb = {...basePlaybook, channel_name_template: '{SEQ}-run', propertyFields: playbookWithTemplate.propertyFields};
-            mockUsePlaybook.mockReturnValue([pb, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             expect(toJson(component)).not.toContain('property-field-field-sev');
         });
 
         it('does not show property fields when template only uses system tokens', () => {
             const pb = {...basePlaybook, channel_name_template: '{SEQ}-{OWNER}-{CREATOR}', propertyFields: playbookWithTemplate.propertyFields};
-            mockUsePlaybook.mockReturnValue([pb, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             expect(toJson(component)).not.toContain('property-field-field-sev');
         });
@@ -560,7 +562,8 @@ describe('RunPlaybookModal — template mode', () => {
         };
 
         it('renders a select dropdown for select-type fields', () => {
-            mockUsePlaybook.mockReturnValue([playbookWithSelect, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithSelect, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithSelect.propertyFields);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             const json = toJson(component);
             expect(json).toContain('property-field-field-region');
@@ -571,7 +574,7 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('name preview', () => {
         beforeEach(() => {
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
         });
 
         it('shows name preview when template is set', () => {
@@ -582,7 +585,7 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('does not show name preview when no template', () => {
-            mockUsePlaybook.mockReturnValue([basePlaybook, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             expect(toJson(component)).not.toContain('run-name-preview');
         });
@@ -602,7 +605,7 @@ describe('RunPlaybookModal — template mode', () => {
                 propertyFields: [],
                 run_number_prefix: 'INC',
             };
-            mockUsePlaybook.mockReturnValue([pb, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
 
             // useSelector returns 'mock-user-id' for getCurrentUserId
             mockUseUserDisplayNameMap.mockReturnValue({'mock-user-id': 'Jane Doe'});
@@ -621,7 +624,7 @@ describe('RunPlaybookModal — template mode', () => {
                 channel_name_template: 'by {OWNER}',
                 propertyFields: [],
             };
-            mockUsePlaybook.mockReturnValue([pb, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
             mockUseUserDisplayNameMap.mockReturnValue({});
 
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
@@ -633,7 +636,8 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('form validation', () => {
         it('disables submit when required property field is empty', () => {
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             const tree = component.toJSON();
             const btn = findNodeByTestId(tree, 'confirm-button');
@@ -642,7 +646,8 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('enables submit when name is empty but template exists and fields are filled', () => {
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
             let component: renderer.ReactTestRenderer;
             act(() => {
                 component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
@@ -666,7 +671,7 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('disables submit when no template and name is empty', () => {
-            mockUsePlaybook.mockReturnValue([basePlaybook, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             const tree = component.toJSON();
             const btn = findNodeByTestId(tree, 'confirm-button');
@@ -676,7 +681,8 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('submit with property values', () => {
         it('passes property_values to createPlaybookRun on submit', async () => {
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
             mockCreatePlaybookRun.mockResolvedValue({id: 'run-1', channel_id: 'ch-1'});
 
             let component: renderer.ReactTestRenderer;
@@ -708,7 +714,7 @@ describe('RunPlaybookModal — template mode', () => {
 
         it('does not pass property_values when no fields are filled', async () => {
             const pbNoFields = {...basePlaybook, channel_mode: 'create_new_channel'};
-            mockUsePlaybook.mockReturnValue([pbNoFields, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([pbNoFields, {isFetching: false, error: undefined}]);
             mockCreatePlaybookRun.mockResolvedValue({id: 'run-1', channel_id: 'ch-1'});
 
             let component: renderer.ReactTestRenderer;
@@ -752,7 +758,8 @@ describe('RunPlaybookModal — template mode', () => {
         };
 
         beforeEach(() => {
-            mockUsePlaybook.mockReturnValue([playbookWithUserField, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithUserField, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithUserField.propertyFields);
 
             // Provide a profile so the userMap can resolve the selected user ID
             mockUseUserDisplayNameMap.mockReturnValue({'user-abc': 'Jane Doe'});
@@ -828,7 +835,8 @@ describe('RunPlaybookModal — template mode', () => {
                     },
                 ],
             };
-            mockUsePlaybook.mockReturnValue([pb, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([pb, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(pb.propertyFields);
             const component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             const json = toJson(component);
             expect(json).toContain('property-field-field-team');
@@ -837,7 +845,7 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('playbook switching resets property values', () => {
         it('clears property values when selected playbook changes', () => {
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
 
             let component: renderer.ReactTestRenderer;
             act(() => {
@@ -852,7 +860,7 @@ describe('RunPlaybookModal — template mode', () => {
 
     describe('handleSelectPlaybook callback', () => {
         it('transitions from select-playbook step to run-details step when a playbook is selected', () => {
-            mockUsePlaybook.mockReturnValue([basePlaybook, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
 
             // Start without a playbookId so the modal opens on the select-playbook step
             let component: renderer.ReactTestRenderer;
@@ -879,7 +887,8 @@ describe('RunPlaybookModal — template mode', () => {
 
         it('resets property values when a new playbook is selected', () => {
             // First render with no playbookId
-            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {loading: false, error: undefined}]);
+            mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
+            mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
 
             let component: renderer.ReactTestRenderer;
             act(() => {
@@ -908,7 +917,7 @@ describe('RunPlaybookModal — template mode', () => {
 describe('RunPlaybookModal — no template (free-text mode)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        mockUsePlaybook.mockReturnValue([basePlaybook, {loading: false, error: undefined}]);
+        mockUsePlaybook.mockReturnValue([basePlaybook, {isFetching: false, error: undefined}]);
     });
 
     it('shows the free-text run name input', () => {

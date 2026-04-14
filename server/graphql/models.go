@@ -150,21 +150,9 @@ type PlaybookUpdates struct {
 	Checklists                              []ChecklistUpdates `json:"checklists"`
 	CreateChannelMemberOnNewParticipant     *bool              `json:"createChannelMemberOnNewParticipant"`
 	RemoveChannelMemberOnRemovedParticipant *bool              `json:"removeChannelMemberOnRemovedParticipant"`
-	ChannelID                               *string            `json:"channelID"`
+	ChannelId                               *string            `json:"channelId"`
 	ChannelMode                             *string            `json:"channelMode"`
-	OwnerGroupOnlyActions                         *bool              `json:"ownerGroupOnlyActions"`
-	AdminOnlyEdit                           *bool              `json:"adminOnlyEdit"`
-	NewChannelOnly                          *bool              `json:"newChannelOnly"`
-	AutoArchiveChannel                      *bool              `json:"autoArchiveChannel"`
-	RunNumberPrefix                         *string              `json:"runNumberPrefix"`
-	CreationRules                           []CreationRuleInput  `json:"creationRules"`
-}
-
-type CreationRuleInput struct {
-	Condition    *JSON    `json:"condition"`
-	SetOwnerID   *string  `json:"setOwnerID"`
-	SetChannelID *string  `json:"setChannelID"`
-	InviteUserIDs []string `json:"inviteUserIDs"`
+	RunNumberPrefix                         *string            `json:"runNumberPrefix"`
 }
 
 type ChecklistUpdates struct {
@@ -179,15 +167,15 @@ type ChecklistItemUpdates struct {
 	StateModified                float64             `json:"stateModified"`
 	AssigneeID                   string              `json:"assigneeID"`
 	AssigneeModified             float64             `json:"assigneeModified"`
-	AssigneeType                 *string             `json:"assigneeType"`
+	AssigneeType                 string              `json:"assigneeType"`
 	Command                      string              `json:"command"`
 	CommandLastRun               float64             `json:"commandLastRun"`
 	DueDate                      float64             `json:"dueDate"`
 	TaskActions                  []TaskActionUpdates `json:"taskActions"`
 	ConditionID                  string              `json:"conditionID"`
-	RestrictCompletionToAssignee *bool               `json:"restrictCompletionToAssignee"`
-	AssigneeGroupID              *string             `json:"assigneeGroupID"`
-	AssigneePropertyFieldID      *string             `json:"assigneePropertyFieldID"`
+	RestrictCompletionToAssignee bool                `json:"restrictCompletionToAssignee"`
+	AssigneeGroupID              string              `json:"assigneeGroupID"`
+	AssigneePropertyFieldID      string              `json:"assigneePropertyFieldID"`
 }
 
 type TaskActionUpdates struct {
@@ -255,13 +243,6 @@ type Playbook struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"removeChannelMemberOnRemovedParticipant"`
 	ChannelID                               string                 `json:"channelID"`
 	ChannelMode                             string                 `json:"channelMode"`
-	OwnerGroupOnlyActions                         bool                   `json:"ownerGroupOnlyActions"`
-	AdminOnlyEdit                           bool                   `json:"adminOnlyEdit"`
-	NewChannelOnly                          bool                   `json:"newChannelOnly"`
-	AutoArchiveChannel                      bool                   `json:"autoArchiveChannel"`
-	RunNumberPrefix                         string                 `json:"runNumberPrefix"`
-	NextRunNumber                           int64                  `json:"nextRunNumber"`
-	CreationRules                           JSON                   `json:"creationRules"`
 }
 
 type Checklist struct {

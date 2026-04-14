@@ -459,6 +459,14 @@ Cypress.Commands.add('playbooksInterceptPropertyFieldMutation', (method, aliasOv
 });
 
 /**
+ * Intercept the REST PUT that saves a playbook (client.ts savePlaybook).
+ * Alias: SavePlaybook
+ */
+Cypress.Commands.add('playbooksInterceptPlaybookSave', () => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/playbooks/*').as('SavePlaybook');
+});
+
+/**
  * Intercept a playbook condition REST mutation and alias it for cy.wait().
  * method: 'POST' (create), 'PUT' (update), 'DELETE' (delete)
  * Aliases: CreateCondition, SaveCondition, DeleteCondition

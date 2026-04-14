@@ -48,16 +48,6 @@ func (r *RunResolver) NumTasksClosed() int32 {
 	return int32(closed)
 }
 
-// RunNumber returns the run's sequential number as a float64 for GraphQL Float,
-// consistent with NextRunNumber on the Playbook type.
-func (r *RunResolver) RunNumber() float64 {
-	return float64(r.PlaybookRun.RunNumber)
-}
-
-func (r *RunResolver) SequentialID() string {
-	return r.PlaybookRun.SequentialID
-}
-
 func (r *RunResolver) Type() string {
 	return r.PlaybookRun.Type
 }
@@ -250,9 +240,7 @@ func (r *RunResolver) PropertyFields(ctx context.Context) ([]*PropertyFieldResol
 		return nil, err
 	}
 
-	thunk := c.propertyFieldsLoader.Load(ctx, r.ID)
-
-	propertyFields, err := thunk()
+	propertyFields, err := c.propertyService.GetRunPropertyFields(r.ID)
 	if err != nil {
 		return nil, err
 	}

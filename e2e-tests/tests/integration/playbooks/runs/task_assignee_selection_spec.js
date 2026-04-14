@@ -149,8 +149,12 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.get('#checklists').within(() => {
                     cy.findByTestId('group-options').select(testGroup.id);
                 });
+
+                // # Wait for save+refetch to complete (refetch closes the editor)
                 cy.wait('@UpdatePlaybook');
-                cy.playbooksReopenTaskAssigneeEditor('Assignee Task');
+
+                // # Reopen the editor on the now-refreshed page
+                cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                 cy.get('#checklists').within(() => {
                     // * The dropdown must show the previously selected group after reopening
@@ -176,13 +180,23 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                     checklists: [{title: 'Stage 1', items: [{title: 'Assignee Task'}]}],
                 }).then((playbook) => {
                     createdPlaybookIds.push(playbook.id);
+                    cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
                     cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                     cy.get('#checklists').within(() => {
                         // # Select the first group
                         cy.findByTestId('group-options').select(testGroup.id);
                         cy.findByTestId('group-options').should('have.value', testGroup.id);
+                    });
 
+                    // # Wait for save+refetch to complete (refetch closes the editor)
+                    cy.wait('@UpdatePlaybook');
+
+                    // # Reopen editor and switch to the second group
+                    cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+                    cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
+
+                    cy.get('#checklists').within(() => {
                         // # Switch to the second group
                         cy.findByTestId('group-options').select(secondGroup.id);
 
@@ -392,8 +406,12 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                     cy.findByTestId('role-options').select('property_user');
                     cy.findByTestId('property-user-field-options').select('Reviewer');
                 });
+
+                // # Wait for save+refetch to complete (refetch closes the editor)
                 cy.wait('@UpdatePlaybook');
-                cy.playbooksReopenTaskAssigneeEditor('Assignee Task');
+
+                // # Reopen the editor on the now-refreshed page
+                cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                 cy.get('#checklists').within(() => {
                     // * Run User role must be selected and sub-dropdown must show Reviewer
@@ -418,6 +436,7 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                 cy.playbooksAddPropertyFieldViaUI(playbook.id, 'Reviewer', 'user');
                 cy.playbooksAddPropertyFieldViaUI(playbook.id, 'Approver', 'user');
 
+                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
                 cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
 
                 cy.get('#checklists').within(() => {
@@ -425,7 +444,16 @@ describe('runs > task assignee — group and run attribute selection', {testIsol
                     cy.findByTestId('role-options').select('property_user');
                     cy.findByTestId('property-user-field-options').select('Reviewer');
                     cy.findByTestId('property-user-field-options').find(':selected').should('have.text', 'Reviewer');
+                });
 
+                // # Wait for save+refetch to complete (refetch closes the editor)
+                cy.wait('@UpdatePlaybook');
+
+                // # Reopen editor and switch to Approver
+                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+                cy.playbooksOpenTaskAssigneeEditor(playbook.id, 'Assignee Task');
+
+                cy.get('#checklists').within(() => {
                     // # Switch to Approver
                     cy.findByTestId('property-user-field-options').select('Approver');
 

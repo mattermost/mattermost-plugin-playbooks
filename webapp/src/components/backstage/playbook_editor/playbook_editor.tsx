@@ -26,6 +26,7 @@ import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useIsSystemAdmin, useStats} from 'src/hooks';
 import {useAllowPlaybookAttributes, useAllowTimelineEvents} from 'src/hooks/license';
 import {PlaybookRole} from 'src/types/permissions';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {ErrorPageTypes} from 'src/constants';
 import PlaybookEvents from 'src/components/backstage/playbook_events';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
@@ -51,12 +52,14 @@ const PlaybookEditor = () => {
     const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
+    const [restPlaybook] = useRestPlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
     const currentUserId = useSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
     const allowTimelineEvents = useAllowTimelineEvents();
+    const isSystemAdmin = useIsSystemAdmin();
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -77,9 +80,8 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
-    const isSystemAdmin = useIsSystemAdmin();
     const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
-    const canEdit = !playbook?.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
+    const canEdit = !restPlaybook?.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
 
     if (error) {
         // not found
@@ -190,7 +192,6 @@ const PlaybookEditor = () => {
             </TitleBar>
             <Header ref={headingRef}>
                 <TextEdit
-                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                     value={playbook.title}
                     onSave={(title) => updatePlaybook({title})}
@@ -309,6 +310,7 @@ const PlaybookEditor = () => {
                         playbook={playbook}
                         refetch={refetch}
                         canEdit={canEdit}
+                        restPlaybook={restPlaybook ?? undefined}
                     />
                 </Route>
                 <Route

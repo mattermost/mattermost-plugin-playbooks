@@ -5,8 +5,6 @@ package api
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"github.com/pkg/errors"
 
@@ -15,8 +13,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
-
-const maxBatchParticipantOps = 100
 
 // RunRootResolver hold all queries and mutations for a playbookRun
 type RunRootResolver struct {
@@ -32,12 +28,12 @@ func (r *RunRootResolver) Run(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err = c.permissions.RunView(userID, args.ID); err != nil {
-		return nil, classifyAppError(err)
+		return nil, err
 	}
 
 	run, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
-		return nil, classifyAppError(err)
+		return nil, err
 	}
 
 	return &RunResolver{*run}, nil
@@ -54,10 +50,7 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 	After                   *string
 	Types                   []string
 	// Default false will be applied by the schema
-	OmitEnded           bool
-	PropertyFieldID     string
-	PropertyValueFilter string
-	ActivitySince       float64
+	OmitEnded bool
 }) (*RunConnectionResolver, error) {
 	c, err := getContext(ctx)
 	if err != nil {
@@ -75,12 +68,9 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		args.ParticipantOrFollowerID = userID
 	}
 
-	const maxRunsPerPage = 1000
-	perPage := maxRunsPerPage
+	perPage := 10000 // If paging not specified, get "everything"
 	if args.First != nil {
-		if requested := int(*args.First); requested < perPage {
-			perPage = requested
-		}
+		perPage = int(*args.First)
 	}
 
 	page := 0
@@ -104,19 +94,11 @@ func (r *RunRootResolver) Runs(ctx context.Context, args struct {
 		PerPage:                 perPage,
 		SkipExtras:              true,
 		OmitEnded:               args.OmitEnded,
-		PropertyFieldID:         args.PropertyFieldID,
-		PropertyValueFilter:     args.PropertyValueFilter,
-		ActivitySince:           int64(args.ActivitySince),
-	}
-
-	filterOptions, err = filterOptions.Validate()
-	if err != nil {
-		return nil, newGraphQLError(err)
 	}
 
 	runResults, err := c.playbookRunService.GetPlaybookRuns(requesterInfo, filterOptions)
 	if err != nil {
-		return nil, classifyAppError(err)
+		return nil, err
 	}
 
 	return &RunConnectionResolver{results: *runResults, page: page}, nil
@@ -133,12 +115,12 @@ func (r *RunRootResolver) SetRunFavorite(ctx context.Context, args struct {
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err = c.permissions.RunView(userID, args.ID); err != nil {
-		return "", classifyAppError(err)
+		return "", err
 	}
 
 	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
-		return "", classifyAppError(err)
+		return "", err
 	}
 
 	if args.Fav {
@@ -190,41 +172,21 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if !model.IsValidId(args.ID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
-
 	if err = c.permissions.RunManageProperties(userID, args.ID); err != nil {
-		return "", classifyAppError(err)
+		return "", err
 	}
 
 	playbookRun, err := c.playbookRunService.GetPlaybookRun(args.ID)
 	if err != nil {
-		return "", classifyAppError(err)
+		return "", err
 	}
 
-	// Prevent updating name or summary on finished runs
-	if err := app.ValidateRunUpdateOnFinished(playbookRun.CurrentStatus, args.Updates.Name != nil, args.Updates.Summary != nil); err != nil {
-		return "", classifyAppError(err)
+	// Prevent renaming finished runs
+	if args.Updates.Name != nil && playbookRun.CurrentStatus == app.StatusFinished {
+		return "", newGraphQLError(errors.Wrap(app.ErrPlaybookRunNotActive, "cannot rename a finished run"))
 	}
 
 	now := model.GetMillis()
-
-	if args.Updates.Name != nil {
-		trimmed, err := app.ValidateRunNameUpdate(*args.Updates.Name)
-		if err != nil {
-			return "", newGraphQLError(err)
-		}
-		args.Updates.Name = &trimmed
-	}
-
-	if args.Updates.Summary != nil {
-		trimmed, err := app.ValidateRunSummaryUpdate(*args.Updates.Summary)
-		if err != nil {
-			return "", newGraphQLError(err)
-		}
-		args.Updates.Summary = &trimmed
-	}
 
 	// scalar updates
 	setmap := map[string]interface{}{}
@@ -236,20 +198,13 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
 
 	if args.Updates.ChannelID != nil {
-		if !model.IsValidId(*args.Updates.ChannelID) {
-			return "", newGraphQLError(errors.New("invalid channel ID"))
-		}
 		channel, err := c.pluginAPI.Channel.Get(*args.Updates.ChannelID)
 		if err != nil {
-			var appErr *model.AppError
-			if errors.As(err, &appErr) && appErr.StatusCode == http.StatusNotFound {
-				return "", classifyAppError(app.ErrNotFound)
-			}
-			return "", classifyAppError(errors.Wrapf(err, "failed to get channel"))
+			return "", errors.Wrapf(err, "failed to get channel")
 		}
 
 		if channel.TeamId != playbookRun.TeamID {
-			return "", classifyAppError(errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team"))
+			return "", errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team")
 		}
 
 		permission := model.PermissionManagePublicChannelProperties
@@ -263,7 +218,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		}
 
 		if !c.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
-			return "", classifyAppError(errors.Wrap(app.ErrNoPermissions, permissionMessage))
+			return "", errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 		addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	}
@@ -274,20 +229,20 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 
 	if args.Updates.BroadcastChannelIDs != nil {
 		if err := c.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *args.Updates.BroadcastChannelIDs, playbookRun.BroadcastChannelIDs); err != nil {
-			return "", classifyAppError(err)
+			return "", err
 		}
 		addConcatToSetmap(setmap, "ConcatenatedBroadcastChannelIDs", args.Updates.BroadcastChannelIDs)
 	}
 
 	if args.Updates.WebhookOnStatusUpdateURLs != nil {
 		if err := app.ValidateWebhookURLs(*args.Updates.WebhookOnStatusUpdateURLs); err != nil {
-			return "", newGraphQLError(err)
+			return "", err
 		}
 		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
 	}
 
 	if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
-		return "", classifyAppError(err)
+		return "", err
 	}
 
 	return playbookRun.ID, nil
@@ -298,41 +253,25 @@ func (r *RunRootResolver) AddRunParticipants(ctx context.Context, args struct {
 	UserIDs           []string
 	ForceAddToChannel bool
 }) (string, error) {
-	if !model.IsValidId(args.RunID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
-
 	c, err := getContext(ctx)
 	if err != nil {
 		return "", err
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if len(args.UserIDs) == 0 {
-		return "", nil
-	}
-	if len(args.UserIDs) > maxBatchParticipantOps {
-		return "", newGraphQLError(fmt.Errorf("too many users: maximum %d per call", maxBatchParticipantOps))
-	}
-	for _, uid := range args.UserIDs {
-		if !model.IsValidId(uid) {
-			return "", newGraphQLError(fmt.Errorf("invalid user ID: %q", uid))
-		}
-	}
-
 	// When user is joining run RunView permission is enough, otherwise user need manage permissions
 	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
 		if err := c.permissions.RunView(userID, args.RunID); err != nil {
-			return "", classifyAppError(err)
+			return "", errors.Wrap(err, "attempted to join run without permissions")
 		}
 	} else {
 		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-			return "", classifyAppError(err)
+			return "", errors.Wrap(err, "attempted to modify participants without permissions")
 		}
 	}
 
 	if err := c.playbookRunService.AddParticipants(args.RunID, args.UserIDs, userID, args.ForceAddToChannel, true); err != nil {
-		return "", classifyAppError(err)
+		return "", errors.Wrap(err, "failed to add participant from run")
 	}
 
 	return "", nil
@@ -342,45 +281,31 @@ func (r *RunRootResolver) RemoveRunParticipants(ctx context.Context, args struct
 	RunID   string
 	UserIDs []string
 }) (string, error) {
-	if !model.IsValidId(args.RunID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
-
 	c, err := getContext(ctx)
 	if err != nil {
 		return "", err
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	if len(args.UserIDs) == 0 {
-		return "", nil
-	}
-	if len(args.UserIDs) > maxBatchParticipantOps {
-		return "", newGraphQLError(fmt.Errorf("too many users: maximum %d per call", maxBatchParticipantOps))
-	}
-	for _, uid := range args.UserIDs {
-		if !model.IsValidId(uid) {
-			return "", newGraphQLError(fmt.Errorf("invalid user ID: %q", uid))
-		}
-	}
-
 	// When user is leaving run RunView permission is enough, otherwise user need manage permissions
 	if updatesOnlyRequesterMembership(userID, args.UserIDs) {
 		if err := c.permissions.RunView(userID, args.RunID); err != nil {
-			return "", classifyAppError(err)
+			return "", errors.Wrap(err, "attempted to modify participants without permissions")
 		}
 	} else {
 		if err := c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-			return "", classifyAppError(err)
+			return "", errors.Wrap(err, "attempted to modify participants without permissions")
 		}
 	}
 
 	if err := c.playbookRunService.RemoveParticipants(args.RunID, args.UserIDs, userID); err != nil {
-		return "", classifyAppError(err)
+		return "", errors.Wrap(err, "failed to remove participant from run")
 	}
 
-	if err := c.playbookRunService.UnfollowMultiple(args.RunID, args.UserIDs); err != nil {
-		c.logger.WithError(err).Warn("failed to unfollow run after participant removal; participants were already removed")
+	for _, userID := range args.UserIDs {
+		if err := c.playbookRunService.Unfollow(args.RunID, userID); err != nil {
+			return "", errors.Wrap(err, "failed to make participant to unfollow run")
+		}
 	}
 
 	return "", nil
@@ -400,125 +325,12 @@ func (r *RunRootResolver) ChangeRunOwner(ctx context.Context, args struct {
 	}
 	requesterID := c.r.Header.Get("Mattermost-User-ID")
 
-	if err := app.ValidateOwnerID(args.OwnerID); err != nil {
-		return "", newGraphQLError(err)
-	}
-
-	if !model.IsValidId(args.RunID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
-
-	if err := c.permissions.RunChangeOwner(requesterID, args.RunID); err != nil {
-		return "", classifyAppError(err)
+	if err := c.permissions.RunManageProperties(requesterID, args.RunID); err != nil {
+		return "", errors.Wrap(err, "attempted to modify the run owner without permissions")
 	}
 
 	if err := c.playbookRunService.ChangeOwner(args.RunID, requesterID, args.OwnerID); err != nil {
-		return "", classifyAppError(err)
-	}
-
-	return "", nil
-}
-
-func (r *RunRootResolver) SetItemPropertyUserAssignee(ctx context.Context, args struct {
-	RunID           string
-	ChecklistNum    float64
-	ItemNum         float64
-	PropertyFieldID string
-}) (string, error) {
-	c, err := getContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	userID := c.r.Header.Get("Mattermost-User-ID")
-
-	if !model.IsValidId(args.RunID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
-
-	if args.ChecklistNum < 0 || args.ItemNum < 0 {
-		return "", newGraphQLError(errors.New("checklist and item indices must be non-negative"))
-	}
-
-	if !model.IsValidId(args.PropertyFieldID) {
-		return "", newGraphQLError(errors.New("invalid property field ID"))
-	}
-
-	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-		return "", classifyAppError(err)
-	}
-
-	if err := c.playbookRunService.SetPropertyUserAssignee(userID, args.RunID, int(args.ChecklistNum), int(args.ItemNum), args.PropertyFieldID); err != nil {
-		return "", classifyAppError(err)
-	}
-
-	return "", nil
-}
-
-func (r *RunRootResolver) SetItemGroupAssignee(ctx context.Context, args struct {
-	RunID        string
-	ChecklistNum float64
-	ItemNum      float64
-	GroupID      string
-}) (string, error) {
-	c, err := getContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	userID := c.r.Header.Get("Mattermost-User-ID")
-
-	if !model.IsValidId(args.RunID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
-
-	if args.ChecklistNum < 0 || args.ItemNum < 0 {
-		return "", newGraphQLError(errors.New("checklist and item indices must be non-negative"))
-	}
-
-	if !model.IsValidId(args.GroupID) {
-		return "", newGraphQLError(errors.New("invalid group ID"))
-	}
-
-	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-		return "", classifyAppError(err)
-	}
-
-	if err := c.playbookRunService.SetGroupAssignee(args.RunID, userID, args.GroupID, int(args.ChecklistNum), int(args.ItemNum)); err != nil {
-		return "", classifyAppError(err)
-	}
-
-	return "", nil
-}
-
-func (r *RunRootResolver) SetItemRoleAssignee(ctx context.Context, args struct {
-	RunID        string
-	ChecklistNum float64
-	ItemNum      float64
-	AssigneeType string
-}) (string, error) {
-	c, err := getContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	userID := c.r.Header.Get("Mattermost-User-ID")
-
-	if !model.IsValidId(args.RunID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
-
-	if args.ChecklistNum < 0 || args.ItemNum < 0 {
-		return "", newGraphQLError(errors.New("checklist and item indices must be non-negative"))
-	}
-
-	if args.AssigneeType != app.AssigneeTypeOwner && args.AssigneeType != app.AssigneeTypeCreator {
-		return "", newGraphQLError(errors.New("assigneeType must be 'owner' or 'creator'"))
-	}
-
-	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-		return "", classifyAppError(err)
-	}
-
-	if err := c.playbookRunService.SetRoleAssignee(args.RunID, userID, args.AssigneeType, int(args.ChecklistNum), int(args.ItemNum)); err != nil {
-		return "", classifyAppError(err)
+		return "", errors.Wrap(err, "failed to change the run owner")
 	}
 
 	return "", nil
@@ -530,31 +342,25 @@ func (r *RunRootResolver) UpdateRunTaskActions(ctx context.Context, args struct 
 	ItemNum      float64
 	TaskActions  *[]app.TaskAction
 }) (string, error) {
-	if !model.IsValidId(args.RunID) {
-		return "", newGraphQLError(errors.New("invalid run ID"))
-	}
 	c, err := getContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	if args.ChecklistNum < 0 || args.ItemNum < 0 {
-		return "", newGraphQLError(errors.New("checklist and item indices must be non-negative"))
-	}
 	if args.TaskActions == nil {
-		return "", newGraphQLError(errors.New("taskActions must not be nil"))
+		return "", err
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
 	if err = c.permissions.RunManageProperties(userID, args.RunID); err != nil {
-		return "", classifyAppError(err)
+		return "", err
 	}
 
 	if err := validateTaskActions(*args.TaskActions); err != nil {
-		return "", newGraphQLError(err)
+		return "", err
 	}
 
 	if err := c.playbookRunService.SetTaskActionsToChecklistItem(args.RunID, userID, int(args.ChecklistNum), int(args.ItemNum), *args.TaskActions); err != nil {
-		return "", classifyAppError(err)
+		return "", err
 	}
 
 	return "", nil

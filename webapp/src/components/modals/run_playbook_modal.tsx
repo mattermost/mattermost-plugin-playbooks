@@ -18,11 +18,10 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ArrowLeftIcon, CloseIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
-
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
-import {usePlaybook} from 'src/graphql/hooks';
+import {useCanCreatePlaybooksInTeam, usePlaybook, usePlaybookAttributes} from 'src/hooks';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import GenericModal, {InlineLabel, ModalSideheading} from 'src/components/widgets/generic_modal';
 import {createPlaybookRun} from 'src/client';
@@ -32,7 +31,6 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 import {HorizontalSpacer, RadioInput, StyledSelect} from 'src/components/backstage/styles';
 import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
-import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
 import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
@@ -73,7 +71,8 @@ export const RunPlaybookModal = ({
 
     const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
-    const [playbook, {loading: playbookLoading, error: playbookError}] = usePlaybook(selectedPlaybookId || '');
+    const [playbook, {isFetching: playbookLoading, error: playbookError}] = usePlaybook(selectedPlaybookId || '');
+    const playbookAttributes = usePlaybookAttributes(selectedPlaybookId || '');
     const [runName, setRunName] = useState('');
     const [runSummary, setRunSummary] = useState('');
     const [channelMode, setChannelMode] = useState('');
@@ -149,19 +148,19 @@ export const RunPlaybookModal = ({
     }, [playbook?.channel_name_template]);
 
     const templateFields = useMemo(() => {
-        if (!playbook?.propertyFields || templateFieldNames.size === 0) {
+        if (!playbookAttributes || playbookAttributes.length === 0 || templateFieldNames.size === 0) {
             return [];
         }
         const seen = new Set<string>();
-        return playbook.propertyFields.filter((f) => {
+        return playbookAttributes.filter((f) => {
             const lower = f.name.toLowerCase();
             if (templateFieldNames.has(lower) && !seen.has(lower)) {
                 seen.add(lower);
                 return true;
             }
             return false;
-        });
-    }, [playbook?.propertyFields, templateFieldNames]);
+        }) as unknown as TemplatePropertyField[];
+    }, [playbookAttributes, templateFieldNames]);
 
     const hasTemplate = Boolean(playbook?.channel_name_template);
 
@@ -173,7 +172,7 @@ export const RunPlaybookModal = ({
         }
         return buildTemplatePreview(
             tpl,
-            playbook?.propertyFields ?? [],
+            (playbookAttributes ?? []) as unknown as TemplatePropertyField[],
             propertyValues,
             {
                 prefix: playbook?.run_number_prefix,
@@ -185,7 +184,7 @@ export const RunPlaybookModal = ({
                 creatorFallback: formatMessage({id: 'playbooks.template_preview.creator_fallback', defaultMessage: "Creator's name"}),
             },
         );
-    }, [playbook?.channel_name_template, playbook?.run_number_prefix, playbook?.propertyFields, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
+    }, [playbook?.channel_name_template, playbook?.run_number_prefix, playbookAttributes, playbook?.next_run_number, propertyValues, effectiveUserMap, userId, currentUserId, formatMessage]);
 
     const createNewChannel = channelMode === 'create_new_channel';
 

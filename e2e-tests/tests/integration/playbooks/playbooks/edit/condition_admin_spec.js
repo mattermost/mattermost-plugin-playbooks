@@ -86,7 +86,7 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                 cy.findByTitle('More').click();
             });
 
-            // # Intercept the UpdatePlaybook mutation triggered by creating a condition and assigning it to the task
+            // # Intercept the GraphQL mutation triggered by creating a condition and assigning it to the task
             cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
             cy.findByTestId('task-menu-add-condition').click();
@@ -266,7 +266,7 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.findByTestId('condition-header-delete-button').click();
 
-                // # Intercept the UpdatePlaybook mutation triggered after condition deletion
+                // # Intercept the GraphQL mutation triggered after condition deletion
                 cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
                 cy.findByRole('button', {name: /remove/i}).click();
@@ -316,7 +316,7 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                 // * Wait for the task context menu to open (exclude the non-clickable header)
                 cy.get('[data-testid^="task-menu-assign-condition-"]:not([data-testid="task-menu-assign-condition-header"])').first().should('exist');
 
-                // # Intercept the UpdatePlaybook mutation triggered by assigning the task to a condition
+                // # Intercept the GraphQL mutation triggered by assigning the task to a condition
                 cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
                 cy.get('[data-testid^="task-menu-assign-condition-"]:not([data-testid="task-menu-assign-condition-header"])').first().click({force: true});
@@ -361,7 +361,7 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                 // * Wait for the task context menu to open
                 cy.findByTestId('task-menu-remove-condition').should('be.visible');
 
-                // # Intercept the UpdatePlaybook mutation triggered by removing the task from its condition
+                // # Intercept the GraphQL mutation triggered by removing the task from its condition
                 cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
                 cy.findByTestId('task-menu-remove-condition').click();

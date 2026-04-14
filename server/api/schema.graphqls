@@ -23,9 +23,6 @@ type Query {
 		after: String,
 		types: [PlaybookRunType!] = [],
 		omitEnded: Boolean = false,
-		propertyFieldID: String = "",
-		propertyValueFilter: String = "",
-		activitySince: Float = 0,
 	): RunConnection! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
 	playbookProperty(playbookID: String!, propertyID: String!): PropertyField @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
@@ -54,9 +51,6 @@ type Mutation {
 	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
 	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
-	setItemPropertyUserAssignee(runID: String!, checklistNum: Float!, itemNum: Float!, propertyFieldID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
-	setItemGroupAssignee(runID: String!, checklistNum: Float!, itemNum: Float!, groupID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
-	setItemRoleAssignee(runID: String!, checklistNum: Float!, itemNum: Float!, assigneeType: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 }
 
 type PageInfo {
@@ -101,19 +95,7 @@ input PlaybookUpdates {
 	removeChannelMemberOnRemovedParticipant: Boolean
 	channelId: String
 	channelMode: String
-	ownerGroupOnlyActions: Boolean
-	adminOnlyEdit: Boolean
-	newChannelOnly: Boolean
-	autoArchiveChannel: Boolean
 	runNumberPrefix: String
-	creationRules: [CreationRuleInput!]
-}
-
-input CreationRuleInput {
-	condition: JSON
-	setOwnerID: String
-	setChannelID: String
-	inviteUserIDs: [String!]
 }
 
 input ChecklistUpdates {
@@ -128,15 +110,15 @@ input ChecklistItemUpdates {
 	stateModified: Float!
 	assigneeID: String!
 	assigneeModified: Float!
-	assigneeType: String
+	assigneeType: String!
+	assigneeGroupID: String!
+	assigneePropertyFieldID: String!
+	restrictCompletionToAssignee: Boolean!
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
 	taskActions: [TaskActionUpdates!]
 	conditionID: String!
-	restrictCompletionToAssignee: Boolean
-	assigneeGroupID: String
-	assigneePropertyFieldID: String
 }
 
 input TaskActionUpdates {
@@ -204,13 +186,6 @@ type Playbook {
 	removeChannelMemberOnRemovedParticipant: Boolean!
 	channelID: String!
 	channelMode: String!
-	ownerGroupOnlyActions: Boolean!
-	adminOnlyEdit: Boolean!
-	newChannelOnly: Boolean!
-	autoArchiveChannel: Boolean!
-	runNumberPrefix: String!
-	nextRunNumber: Float!
-	creationRules: JSON!
 }
 
 type Checklist {
@@ -333,8 +308,6 @@ type Run {
 
 	propertyFields: [PropertyField!]!
 
-	runNumber: Float!
-	sequentialID: String!
 	type: PlaybookRunType!
 }
 

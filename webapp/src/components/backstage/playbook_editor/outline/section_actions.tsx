@@ -12,6 +12,7 @@ import styled from 'styled-components';
 import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -29,17 +30,21 @@ import {getDistinctAssignees} from 'src/utils';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     disabled?: boolean;
+    fieldNames?: string[];
+    restPlaybook?: PlaybookWithChecklist;
 }
 
-const LegacyActionsEdit = ({playbook, disabled}: Props) => {
+const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
 
+    // Use restPlaybook for CreateAChannel since it needs run_number_prefix/next_run_number (REST-only fields)
+    const channelPlaybookSource = restPlaybook ?? playbook;
     const [
         playbookForCreateChannel,
         setPlaybookForCreateChannel,
-    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(playbook, useCallback((update) => {
+    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(channelPlaybookSource as ComponentProps<typeof CreateAChannel>['playbook'], useCallback((update) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
             channelNameTemplate: update.channel_name_template,
@@ -87,6 +92,10 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
                 stateModified: ci.state_modified || 0,
                 assigneeID: ci.assignee_id === userId ? '' : ci.assignee_id || '',
                 assigneeModified: ci.assignee_modified || 0,
+                assigneeType: ci.assignee_type || '',
+                assigneeGroupID: ci.assignee_group_id || '',
+                assigneePropertyFieldID: ci.assignee_property_field_id || '',
+                restrictCompletionToAssignee: ci.restrict_completion_to_assignee || false,
                 command: ci.command,
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
@@ -112,6 +121,10 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
                 stateModified: ci.state_modified || 0,
                 assigneeID: '',
                 assigneeModified: ci.assignee_modified || 0,
+                assigneeType: '',
+                assigneeGroupID: '',
+                assigneePropertyFieldID: '',
+                restrictCompletionToAssignee: false,
                 command: ci.command,
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
@@ -168,7 +181,7 @@ const LegacyActionsEdit = ({playbook, disabled}: Props) => {
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
-                        fieldNames={playbook.propertyFields?.map((f) => f.name) ?? []}
+                        fieldNames={fieldNames}
                         disabled={disabled}
                     />
                 </Setting>
