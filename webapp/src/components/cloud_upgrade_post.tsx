@@ -3,17 +3,16 @@
 
 import React from 'react';
 
-import {useSelector} from 'react-redux';
-
 import styled from 'styled-components';
 
 import {Post} from '@mattermost/types/posts';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {GlobalState} from '@mattermost/types/store';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
 
 import {FormattedMessage} from 'react-intl';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import UpgradeIllustrationSvg from 'src/components/assets/upgrade_illustration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -35,7 +34,7 @@ interface Props {
 }
 
 export const CloudUpgradePost = (props: Props) => {
-    const team = useSelector<GlobalState, Team | undefined>((state) => {
+    const team = useAppSelector<Team | undefined>((state) => {
         const channel = getChannel(state, props.post.channel_id);
 
         return channel ? getTeam(state, channel.team_id) : undefined;

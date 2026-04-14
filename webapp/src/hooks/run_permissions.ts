@@ -1,10 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useSelector} from 'react-redux';
-
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from '@mattermost/types/store';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -23,7 +23,7 @@ export type RunPermissionFields = RunPermissionsScope & Partial<PlaybookRun>;
  * Check if a channel is archived
  */
 const useIsChannelArchived = (channelId: string): boolean => {
-    return useSelector((state: GlobalState) => {
+    return useAppSelector((state: GlobalState) => {
         const channel = getChannel(state, channelId);
         return channel ? channel.delete_at > 0 : false;
     });

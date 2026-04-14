@@ -3,7 +3,7 @@
 
 import styled, {css} from 'styled-components';
 import React, {PropsWithChildren, useEffect, useMemo} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {Link} from 'react-router-dom';
 
 import {
@@ -26,10 +26,11 @@ import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from '@mattermost/types/teams';
-import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {FormattedMessage, FormattedNumber, useIntl} from 'react-intl';
 import {createGlobalState} from 'react-use';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {
@@ -125,7 +126,7 @@ export const Back = styled((props: StyledProps) => {
 })`/* stylelint-disable no-empty-source */`;
 
 export const Members = (props: {playbookId: string, numMembers: number, refetch: () => void}) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     return (
         <ButtonIconStyled
             data-testid={'playbook-members'}
@@ -171,7 +172,7 @@ const useIsFollowing = createGlobalState(false);
 export const useEditorFollowersMeta = (playbookId: string) => {
     const [followerIds, setFollowerIds] = useFollowerIds();
     const [isFollowing, setIsFollowing] = useIsFollowing();
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     const refresh = async () => {
         if (!playbookId || !currentUserId) {
@@ -243,9 +244,9 @@ const LEARN_PLAYBOOKS_TITLE = 'Learn how to use playbooks';
 export const playbookIsTutorialPlaybook = (playbookTitle?: string) => playbookTitle === LEARN_PLAYBOOKS_TITLE;
 
 export const RunPlaybook = ({playbook}: ControlProps) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
-    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
+    const team = useAppSelector<Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
     const isTutorialPlaybook = playbookIsTutorialPlaybook(playbook.title);
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
     const enableRunPlaybook = playbook.delete_at === 0 && hasPermissionToRunPlaybook;
@@ -283,7 +284,7 @@ export const RunPlaybook = ({playbook}: ControlProps) => {
 
 export const JoinPlaybook = ({playbook: {id: playbookId}, refetch}: ControlProps & {refetch: () => void;}) => {
     const {formatMessage} = useIntl();
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const {join} = usePlaybookMembership(playbookId, currentUserId);
     const {setFollowing} = useEditorFollowersMeta(playbookId);
 
@@ -338,7 +339,7 @@ export const CopyPlaybookLinkMenuItem = (props: {playbookId: string}) => {
 };
 
 export const LeavePlaybookMenuItem = (props: {playbookId: string}) => {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const refreshLHS = useLHSRefresh();
 
     const {leave} = usePlaybookMembership(props.playbookId, currentUserId);
@@ -364,7 +365,7 @@ type TitleMenuProps = {
     refetch: () => void;
 } & PropsWithChildren<ControlProps>;
 const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: TitleMenuProps) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const [exportHref, exportFilename] = playbookExportProps(playbook);
     const [confirmArchiveModal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
@@ -379,7 +380,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const refreshLHS = useLHSRefresh();
     const {add: addToast} = useToaster();
 
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     const archived = playbook.delete_at !== 0;
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);

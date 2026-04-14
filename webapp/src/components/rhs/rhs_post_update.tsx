@@ -2,11 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 import {DateTime} from 'luxon';
 import {FormattedMessage} from 'react-intl';
 import {FlagCheckeredIcon} from '@mattermost/compass-icons/components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {Timestamp} from 'src/webapp_globals';
 
@@ -29,7 +31,7 @@ interface Props {
 }
 
 const RHSPostUpdate = (props: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
     const postUpdatePunchout = useMeasurePunchouts(

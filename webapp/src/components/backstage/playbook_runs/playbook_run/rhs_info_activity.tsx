@@ -5,10 +5,11 @@ import React from 'react';
 import {useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 
-import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -31,8 +32,8 @@ interface Props {
 const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const {formatMessage} = useIntl();
     const [filteredEvents] = useTimelineEvents(run, TimelineEventsFilterDefault);
-    const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
-    const team = useSelector((state: GlobalState) => getTeam(state, run.team_id));
+    const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
+    const team = useAppSelector((state: GlobalState) => getTeam(state, run.team_id));
 
     if (!team) {
         return null;

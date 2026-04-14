@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
 
 import ReactSelect, {ControlProps} from 'react-select';
 
@@ -13,6 +12,8 @@ import {UserProfile} from '@mattermost/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {useIntl} from 'react-intl';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
@@ -30,7 +31,7 @@ const AssignOwnerSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const ownerUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.ownerID));
+    const ownerUser = useAppSelector<UserProfile>((state: GlobalState) => getUser(state, props.ownerID));
 
     // Update the options whenever the owner ID or the search term are updated
     useEffect(() => {

@@ -5,9 +5,11 @@ import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
-import {useSelector} from 'react-redux';
+
 import {General} from 'mattermost-redux/constants';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 
@@ -32,7 +34,7 @@ interface Props {
 const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
     const {formatMessage} = useIntl();
 
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const [checkboxState, setCheckboxState] = useState(false);
     const {addToRun} = useManageRunMembership(playbookRun?.id);
     const addToast = useToaster().add;
@@ -40,7 +42,7 @@ const BecomeParticipantsModal = ({playbookRun, show, hideModal}: Props) => {
     const playbookRunId = playbookRun?.id || '';
     const [channel, meta] = useChannel(channelId);
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
-    const isChannelMember = useSelector(isCurrentUserChannelMember(channelId)) || isPrivateChannelWithAccess;
+    const isChannelMember = useAppSelector(isCurrentUserChannelMember(channelId)) || isPrivateChannelWithAccess;
     const noAccessToJoinTheChannel = meta.error !== null && meta.error.status_code === 403;
 
     const renderExtraMsg = () => {

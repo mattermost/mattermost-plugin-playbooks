@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector, useStore} from 'react-redux';
+import {useStore} from 'react-redux';
+
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 
@@ -15,6 +16,8 @@ import {Placement} from '@floating-ui/react';
 import {useUpdateEffect} from 'react-use';
 
 import styled from 'styled-components';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
@@ -75,7 +78,7 @@ interface Props {
 }
 
 export default function ProfileSelector(props: Props) {
-    const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+    const currentUserId = useAppSelector<string>(getCurrentUserId);
     const {formatMessage} = useIntl();
 
     const [isOpen, setOpen] = useState(false);
@@ -89,7 +92,7 @@ export default function ProfileSelector(props: Props) {
     // props.userGroups?.subsetUserIds are not guaranteed to be in the page returned by props.getAllUsers
     // but they're expected to be at redux
     const getProfiles = makeGetProfilesByIdsAndUsernames();
-    const store = useStore();
+    const store = useStore<GlobalState>();
     const usersInSubset = getProfiles(store.getState(), {allUserIds: props.userGroups?.subsetUserIds || [], allUsernames: []});
 
     useUpdateEffect(() => {

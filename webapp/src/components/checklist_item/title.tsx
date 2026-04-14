@@ -5,11 +5,11 @@ import React from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {useSelector} from 'react-redux';
 import {Team} from '@mattermost/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from '@mattermost/types/store';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -29,9 +29,9 @@ const ChecklistItemTitle = (props: TitleProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a title'});
 
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team | undefined>(getCurrentTeam);
-    const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
+    const channelNamesMap = useAppSelector<ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const team = useAppSelector<Team | undefined>(getCurrentTeam);
+    const relativeTeamUrl = useAppSelector<string>(getCurrentRelativeTeamUrl);
 
     const markdownOptions = {
         singleline: true,

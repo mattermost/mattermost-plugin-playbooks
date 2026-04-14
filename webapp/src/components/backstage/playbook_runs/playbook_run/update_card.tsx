@@ -3,15 +3,15 @@
 
 import styled from 'styled-components';
 
-import {useSelector} from 'react-redux';
 import React from 'react';
 
 import {UserProfile} from '@mattermost/types/users';
-import {GlobalState} from '@mattermost/types/store';
 import {getUserByUsername} from 'mattermost-redux/selectors/entities/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {Timestamp, formatText, messageHtmlToComponent} from 'src/webapp_globals';
 
@@ -19,8 +19,8 @@ import {useEnsureProfile} from 'src/hooks';
 import {StatusPostComplete} from 'src/types/playbook_run';
 
 function useAuthorInfo(userName: string) : [string, string] {
-    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const user = useSelector<GlobalState, UserProfile>((state) => getUserByUsername(state, userName));
+    const teamnameNameDisplaySetting = useAppSelector<string | undefined>(getTeammateNameDisplaySetting) || '';
+    const user = useAppSelector<UserProfile>((state) => getUserByUsername(state, userName));
     useEnsureProfile(userName);
 
     let profileUrl = '';

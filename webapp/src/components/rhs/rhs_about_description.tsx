@@ -4,13 +4,13 @@
 import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useUpdateEffect} from 'react-use';
-import {useSelector} from 'react-redux';
 
 import {Team} from '@mattermost/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from '@mattermost/types/store';
 
 import {useIntl} from 'react-intl';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import PostText from 'src/components/post_text';
 
@@ -27,7 +27,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
     const placeholder = formatMessage({defaultMessage: 'Add a summary…'});
     const [editedValue, setEditedValue] = useState(props.value);
-    const currentTeam = useSelector<GlobalState, Team | undefined>(getCurrentTeam);
+    const currentTeam = useAppSelector<Team | undefined>(getCurrentTeam);
 
     const saveAndClose = () => {
         const newValue = editedValue.trim();

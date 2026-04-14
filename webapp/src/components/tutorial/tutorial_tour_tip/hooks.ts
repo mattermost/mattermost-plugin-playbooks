@@ -8,7 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import {useSelector} from 'react-redux';
+
 import throttle from 'lodash/throttle';
 
 import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
@@ -16,6 +16,8 @@ import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {GlobalState} from '@mattermost/types/store';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {TutorialTourTipPunchout} from './backdrop';
 
@@ -78,8 +80,8 @@ export function useMeasurePunchouts(
 }
 
 export const useShowTutorialStep = (stepToShow: number, category: string, defaultAutostart = true): boolean => {
-    const currentUserId = useSelector(getCurrentUserId);
-    const step = useSelector<GlobalState, number | null>((state: GlobalState) => {
+    const currentUserId = useAppSelector(getCurrentUserId);
+    const step = useAppSelector<number | null>((state: GlobalState) => {
         if (defaultAutostart) {
             return getInt(state, category, currentUserId, 0);
         }

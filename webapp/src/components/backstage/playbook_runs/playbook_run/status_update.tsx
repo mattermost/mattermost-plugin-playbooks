@@ -2,11 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React, {ReactNode, useState} from 'react';
-import {useDispatch} from 'react-redux';
+
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {AdminNotificationType} from 'src/constants';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
@@ -200,7 +202,7 @@ interface ParticipantProps {
 
 export const ParticipantStatusUpdate = ({id, playbookRun, openRHS}: ParticipantProps) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {RequestUpdateConfirmModal, showRequestUpdateConfirm} = useRequestUpdate(playbookRun.id);
     const {RequestUpdateButton, UpgradeLicenseModal} = useRequestUpdateButton({
         onClick: playbookRun.current_status === PlaybookRunStatus.Finished ? undefined : showRequestUpdateConfirm,

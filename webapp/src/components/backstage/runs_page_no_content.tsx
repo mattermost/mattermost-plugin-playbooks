@@ -5,11 +5,9 @@ import React, {useEffect, useState} from 'react';
 import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
-import {useDispatch, useSelector} from 'react-redux';
-
-import {GlobalState} from '@mattermost/types/store';
-
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
@@ -65,8 +63,8 @@ const NoContentPlaybookRunSvgContainer = styled.div`
 `;
 
 const NoContentPage = () => {
-    const dispatch = useDispatch();
-    const teamId = useSelector<GlobalState, string>(getCurrentTeamId);
+    const dispatch = useAppDispatch();
+    const teamId = useAppSelector<string>(getCurrentTeamId);
     const [playbookExist, setPlaybookExist] = useState(false);
     const {setSelectedPlaybook} = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
     const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});

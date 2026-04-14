@@ -3,7 +3,7 @@
 
 import React, {useMemo, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+
 import styled from 'styled-components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
@@ -21,6 +21,8 @@ import {debounce} from 'lodash';
 import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import {General} from 'mattermost-redux/constants';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import appBarIcon from 'src/components/assets/app-bar-icon.png';
 import {useUpdateRun} from 'src/graphql/hooks';
@@ -93,10 +95,10 @@ interface Props {
 
 const RHSRunList = (props: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-    const currentTeamId = useSelector(getCurrentTeamId);
-    const currentChannelId = useSelector(getCurrentChannelId);
-    const currentUserId = useSelector(getCurrentUserId);
+    const dispatch = useAppDispatch();
+    const currentTeamId = useAppSelector(getCurrentTeamId);
+    const currentChannelId = useAppSelector(getCurrentChannelId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const [loadingMore, setLoadingMore] = useState(false);
     const debouncedSetLoadingMore = useMemo(() => debounce(setLoadingMore, 100), [setLoadingMore]);
     const getMore = async () => {
@@ -104,7 +106,7 @@ const RHSRunList = (props: Props) => {
         await props.getMore();
         debouncedSetLoadingMore(false);
     };
-    const currentChannel = useSelector(getCurrentChannel);
+    const currentChannel = useAppSelector(getCurrentChannel);
     const currentChannelName = currentChannel?.display_name;
     const isDirectOrGroupMessage = currentChannel?.type === General.DM_CHANNEL || currentChannel?.type === General.GM_CHANNEL;
     const filterMenuTitleText = props.options.filter === FilterType.InProgress ? formatMessage({defaultMessage: 'In progress'}) : formatMessage({defaultMessage: 'Finished'});
@@ -530,8 +532,8 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
     const {formatMessage} = useIntl();
     const [removed, setRemoved] = useState(false);
     const {add: addToastMessage} = useToaster();
-    const teamId = useSelector(getCurrentTeamId);
-    const currentUserId = useSelector(getCurrentUserId);
+    const teamId = useAppSelector(getCurrentTeamId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const titleRef = useRef<HTMLDivElement>(null);
     const isTitleOverflowing = useTextOverflow(titleRef);
 
@@ -925,7 +927,7 @@ interface ContextMenuProps {
     onUpdateName: (name: string) => void;
 }
 const ContextMenu = (props: ContextMenuProps) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const overviewURL = `/runs/${props.playbookRunID}?from=channel_rhs_dotmenu`;
     const playbookURL = props.playbookID ? `/playbooks/${props.playbookID}` : '';
 

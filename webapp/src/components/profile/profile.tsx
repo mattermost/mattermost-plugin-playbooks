@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
+
 import {UserProfile} from '@mattermost/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -13,6 +12,8 @@ import {Client4} from 'mattermost-redux/client';
 
 import classNames from 'classnames';
 import styled from 'styled-components';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 interface Props {
     userId: string;
@@ -68,9 +69,9 @@ export const ProfileName = styled.div<{$hasExtra: boolean}>`
 `;
 
 const Profile = (props: Props) => {
-    const dispatch = useDispatch();
-    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, props.userId));
-    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
+    const dispatch = useAppDispatch();
+    const user = useAppSelector<UserProfile>((state) => getUser(state, props.userId));
+    const teamnameNameDisplaySetting = useAppSelector<string | undefined>(getTeammateNameDisplaySetting) || '';
 
     useEffect(() => {
         if (!user) {

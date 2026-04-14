@@ -1,13 +1,13 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Dispatch} from 'redux';
-
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {Post} from '@mattermost/types/posts';
 import {BaseWebSocketMessage} from '@mattermost/client';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {Dispatch} from 'src/types/store';
 
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 import {Condition} from 'src/types/conditions';

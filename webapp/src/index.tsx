@@ -3,7 +3,8 @@
 
 import React from 'react';
 import {Root, createRoot} from 'react-dom/client';
-import {Store, Unsubscribe} from 'redux';
+import {Unsubscribe} from 'redux';
+
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {WebSocketEvents} from '@mattermost/client';
 import {GlobalState} from '@mattermost/types/store';
@@ -12,6 +13,8 @@ import {General} from 'mattermost-redux/constants';
 import {FormattedMessage} from 'react-intl';
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+
+import {Store} from 'src/types/store';
 
 import appIcon from 'src/components/assets/app-bar-icon.png';
 import {isConfiguredForDevelopment} from 'src/license';
@@ -147,7 +150,7 @@ export default class Plugin {
     stylesContainer?: Element;
     stylesRoot?: Root;
 
-    doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
+    doRegistrations(registry: any, store: Store, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -306,7 +309,7 @@ export default class Plugin {
         document.addEventListener('click', this.activityFunc);
     }
 
-    public initialize(registry: any, store: Store<GlobalState>): void {
+    public initialize(registry: any, store: Store): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         this.stylesRoot = createRoot(this.stylesContainer);

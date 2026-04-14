@@ -10,13 +10,13 @@ import {getCurrentUserId, getUsers} from 'mattermost-redux/selectors/entities/co
 
 import Permissions from 'mattermost-redux/constants/permissions';
 
-import {useSelector} from 'react-redux';
-
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import type {UserProfile} from '@mattermost/types/users';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
 
@@ -87,9 +87,9 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
     const permissionToManageSystem = useHasSystemPermission(Permissions.MANAGE_SYSTEM);
     const permissionToEditMembers = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageMembers, props.playbook);
     const permissionToEditRoles = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageRoles, props.playbook);
-    const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
-    const users = useSelector(getUsers);
-    const currentUserId = useSelector(getCurrentUserId);
+    const teammateNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
+    const users = useAppSelector(getUsers);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     const handleAddUser = (userId: string) => {
         props.onAddMember({user_id: userId, roles: [PlaybookRole.Member]});

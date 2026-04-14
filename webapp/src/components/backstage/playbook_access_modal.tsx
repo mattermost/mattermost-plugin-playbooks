@@ -3,13 +3,13 @@
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
 
 import styled from 'styled-components';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -73,9 +73,9 @@ const PlaybookAccessModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [playbook, updatePlaybook] = useEditPlaybook(playbookId, refetch);
-    const team = useSelector<GlobalState, Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
+    const team = useAppSelector<Team | undefined>((state) => getTeam(state, playbook?.team_id || ''));
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
 
