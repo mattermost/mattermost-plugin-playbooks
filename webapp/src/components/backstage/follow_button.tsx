@@ -83,7 +83,7 @@ export const FollowUnfollowButton = ({runID, followState}: Props) => {
     return (
         <WithTooltip
             id={'follow-tooltip'}
-            forcedPlacement='bottom'
+
             title={formatMessage({defaultMessage: 'Get run status update notifications'})}
         >
             <FollowButton

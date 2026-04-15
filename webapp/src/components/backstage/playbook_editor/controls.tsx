@@ -215,7 +215,7 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
             <WithTooltip
                 title={toolTipText}
                 id={`auto-follow-tooltip-${isFollowing}`}
-                forcedPlacement='bottom'
+
             >
                 <div>
                     <CheckboxInputStyled

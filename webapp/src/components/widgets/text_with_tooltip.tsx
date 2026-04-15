@@ -16,7 +16,6 @@ interface Props {
     id: string;
     text: string;
     className?: string;
-    placement?: 'top' | 'bottom' | 'right' | 'left';
 }
 
 const TextWithTooltip = (props: Props) => {
@@ -62,7 +61,7 @@ const TextWithTooltip = (props: Props) => {
         return (
             <WithTooltip
                 id={`${props.id}_name`}
-                forcedPlacement={props.placement}
+
                 title={props.text}
             >
                 {text}

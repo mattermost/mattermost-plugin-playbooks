@@ -423,7 +423,7 @@ const useRequestUpdateButton = ({type, onClick, disabled = false}: {disabled: bo
     const RequestUpdateButton = (
         <WithTooltip
             id={'request-update-button-tooltip'}
-            forcedPlacement={'bottom'}
+
             title={formatMessage(
                 {defaultMessage: '<title>Professional feature</title>\n<body>This is a paid feature, available with a free 30-day trial</body>'},
                 {

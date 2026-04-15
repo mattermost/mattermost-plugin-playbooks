@@ -25,7 +25,7 @@ const HeaderButton = ({tooltipId, tooltipMessage, Icon, onClick, isActive, click
     return (
         <WithTooltip
             id={tooltipId}
-            forcedPlacement={'bottom'}
+
             title={tooltipMessage}
         >
             <StyledHeaderIcon

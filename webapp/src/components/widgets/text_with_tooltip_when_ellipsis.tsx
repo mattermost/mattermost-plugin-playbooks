@@ -16,7 +16,6 @@ interface Props {
     text: string;
     parentRef: MutableRefObject<HTMLElement|null>;
     className?: string;
-    placement?: 'top' | 'bottom' | 'right' | 'left';
 }
 
 const TextWithTooltipWhenEllipsis = (props: Props) => {
@@ -62,7 +61,7 @@ const TextWithTooltipWhenEllipsis = (props: Props) => {
             <WithTooltip
                 title={props.text}
                 id={`${props.id}_name`}
-                forcedPlacement={props.placement}
+
             >
                 {text}
             </WithTooltip>

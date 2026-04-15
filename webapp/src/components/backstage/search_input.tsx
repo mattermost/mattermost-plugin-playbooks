@@ -41,7 +41,7 @@ export default function SearchInput(props: Props) {
             {shouldShowClearIcon && (
                 <WithTooltip
                     id={'clear'}
-                    forcedPlacement={'bottom'}
+
                     title={formatMessage({defaultMessage: 'Clear'})}
                 >
                     <ClearButtonContainer>

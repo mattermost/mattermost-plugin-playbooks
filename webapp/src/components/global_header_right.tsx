@@ -60,7 +60,7 @@ const GlobalHeaderRight = () => {
         <WithTooltip
             title={formatMessage({defaultMessage: 'Tasks'})}
             id='tasks'
-            forcedPlacement='bottom'
+
         >
             <IconButtonWrapper
                 data-testid='header-task-inbox-icon'
