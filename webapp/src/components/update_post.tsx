@@ -13,7 +13,7 @@ import {General} from 'mattermost-redux/constants';
 
 import {useAppSelector} from 'src/hooks/redux';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
@@ -149,14 +149,14 @@ interface BadgeProps {
 
 const Badge = (props: BadgeProps) => {
     return (
-        <Tooltip
+        <WithTooltip
             id={'custom-status-post-badge-' + props.tooltipText}
-            content={props.tooltipText}
+            title={props.tooltipText}
         >
             <BadgeContainer>
                 {props.children}
             </BadgeContainer>
-        </Tooltip>
+        </WithTooltip>
     );
 };
 

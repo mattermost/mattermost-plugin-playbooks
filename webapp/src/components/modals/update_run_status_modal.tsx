@@ -38,7 +38,7 @@ import MarkdownTextbox from 'src/components/markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
 import {nearest} from 'src/utils';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import WarningIcon from 'src/components/assets/icons/warning_icon';
 
@@ -231,20 +231,20 @@ const UpdateRunStatusModal = ({
         }, {
             OverviewLink,
             ChannelsTooltip: (chunks: React.ReactNode) => (
-                <Tooltip
+                <WithTooltip
                     id={`${ID}_broadcast_channels_tooltip`}
-                    content={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
+                    title={generateTooltipText(broadcastChannelNames, broadcastChannelCount)}
                 >
                     <TooltipContent tabIndex={0}>{chunks}</TooltipContent>
-                </Tooltip>
+                </WithTooltip>
             ),
             FollowersTooltip: (chunks: React.ReactNode) => (
-                <Tooltip
+                <WithTooltip
                     id={`${ID}_broadcast_followers_tooltip`}
-                    content={generateTooltipText(followerNames, followersChannelCount)}
+                    title={generateTooltipText(followerNames, followersChannelCount)}
                 >
                     <TooltipContent tabIndex={1}>{chunks}</TooltipContent>
-                </Tooltip>
+                </WithTooltip>
             ),
             i: (x: React.ReactNode) => <i>{x}</i>,
             runName: run?.name || '',

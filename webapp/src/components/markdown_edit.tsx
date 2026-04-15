@@ -16,7 +16,7 @@ import {useUniqueId} from 'src/utils';
 import {CancelSaveButtons, CancelSaveContainer} from './checklist_item/inputs';
 import {ButtonIcon} from './assets/buttons';
 import ShowMore from './widgets/show_more';
-import Tooltip from './widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface MarkdownEditProps {
     value: string;
@@ -98,17 +98,16 @@ const MarkdownEdit = (props: MarkdownEditProps) => {
         >
             {!isEditing && !props.disabled && (
                 <HoverMenuContainer>
-                    <Tooltip
+                    <WithTooltip
                         id={`${id}-tooltip`}
-                        shouldUpdatePosition={true}
-                        content={formatMessage({defaultMessage: 'Edit'})}
+                        title={formatMessage({defaultMessage: 'Edit'})}
                     >
                         <ButtonIcon
                             data-testid='hover-menu-edit-button'
                             className={'icon-pencil-outline icon-16 btn-icon'}
                             onClick={() => !props.disabled && setIsEditing(true)}
                         />
-                    </Tooltip>
+                    </WithTooltip>
                 </HoverMenuContainer>
             )}
             <RenderedText data-testid='rendered-text'>

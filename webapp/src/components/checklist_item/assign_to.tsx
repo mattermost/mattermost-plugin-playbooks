@@ -6,11 +6,8 @@ import styled, {css} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from '@mattermost/types/users';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
-
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {Placement} from '@floating-ui/react';
-
-import {OVERLAY_DELAY} from 'src/constants';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
@@ -122,17 +119,12 @@ const AssignTo = (props: AssignedToProps) => {
 
     if (props.isEditing && !props.assignee_id) {
         assignToButton = (
-            <OverlayTrigger
-                placement='top'
-                delay={OVERLAY_DELAY}
-                overlay={(
-                    <Tooltip id='assignee-tooltip'>
-                        {formatMessage({defaultMessage: 'Assignee'})}
-                    </Tooltip>
-                )}
+            <WithTooltip
+                title={formatMessage({defaultMessage: 'Assignee'})}
+                id='assignee-tooltip'
             >
                 {assignToButton}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 

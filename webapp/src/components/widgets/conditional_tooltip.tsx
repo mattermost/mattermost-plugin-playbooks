@@ -4,7 +4,7 @@
 import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface Props {
     show: boolean;
@@ -24,12 +24,12 @@ const ConditionalTooltip = ({show, id, content, disableChildrenOnShow, children}
         ) : children;
 
         return (
-            <Tooltip
+            <WithTooltip
                 id={id}
-                content={content}
+                title={content}
             >
                 {childNodes}
-            </Tooltip>
+            </WithTooltip>
         );
     }
 

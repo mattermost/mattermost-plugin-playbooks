@@ -7,8 +7,7 @@ import {useIntl} from 'react-intl';
 
 import {copyToClipboard} from 'src/utils';
 
-import {OVERLAY_DELAY} from 'src/constants';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 type Props = {
     id: string;
@@ -40,13 +39,10 @@ const CopyLink = ({
     };
 
     return (
-        <Tooltip
+        <WithTooltip
             id={id}
-            placement='bottom'
-            delay={OVERLAY_DELAY}
-            onExited={() => setWasCopied(false)}
-            shouldUpdatePosition={true}
-            content={wasCopied ? formatMessage({defaultMessage: 'Copied!'}) : (tooltipMessage ?? formatMessage({defaultMessage: "Copy link to ''{name}''"}, {name}))}
+            forcedPlacement='bottom'
+            title={wasCopied ? formatMessage({defaultMessage: 'Copied!'}) : (tooltipMessage ?? formatMessage({defaultMessage: "Copy link to ''{name}''"}, {name}))}
         >
             <AutoSizeCopyIcon
                 onClick={copyLink}
@@ -54,7 +50,7 @@ const CopyLink = ({
                 {...attrs}
                 className={'icon-link-variant ' + attrs.className}
             />
-        </Tooltip>
+        </WithTooltip>
     );
 };
 

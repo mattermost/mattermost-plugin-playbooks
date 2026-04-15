@@ -11,7 +11,7 @@ import {useAppSelector} from 'src/hooks/redux';
 
 import {ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getCondition} from 'src/selectors';
 import {useProxyState} from 'src/hooks';
 import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
@@ -215,9 +215,9 @@ const ConditionHeader = ({
         }
 
         return (
-            <Tooltip
+            <WithTooltip
                 id={`remove-condition-${condition.id}`}
-                content={formatMessage({defaultMessage: 'Remove condition'})}
+                title={formatMessage({defaultMessage: 'Remove condition'})}
             >
                 <span>
                     <DestructiveActionButton
@@ -240,7 +240,7 @@ const ConditionHeader = ({
                         <i className='icon-trash-can-outline'/>
                     </DestructiveActionButton>
                 </span>
-            </Tooltip>
+            </WithTooltip>
         );
     };
 
@@ -346,9 +346,9 @@ const ConditionHeader = ({
                     />
                 )}
                 {conditions.length < 2 && (
-                    <Tooltip
+                    <WithTooltip
                         id={`add-condition-tooltip-${condition.id}-${index}`}
-                        content={formatMessage({defaultMessage: 'Add condition'})}
+                        title={formatMessage({defaultMessage: 'Add condition'})}
                     >
                         <span>
                             <AddConditionButton
@@ -358,12 +358,12 @@ const ConditionHeader = ({
                                 <i className='icon-plus'/>
                             </AddConditionButton>
                         </span>
-                    </Tooltip>
+                    </WithTooltip>
                 )}
                 {conditions.length > 1 && (
-                    <Tooltip
+                    <WithTooltip
                         id={`remove-condition-tooltip-${condition.id}-${index}`}
-                        content={formatMessage({defaultMessage: 'Remove condition'})}
+                        title={formatMessage({defaultMessage: 'Remove condition'})}
                     >
                         <span>
                             <RemoveConditionButton
@@ -373,7 +373,7 @@ const ConditionHeader = ({
                                 <i className='icon-close'/>
                             </RemoveConditionButton>
                         </span>
-                    </Tooltip>
+                    </WithTooltip>
                 )}
             </ConditionRow>
         );
@@ -388,9 +388,9 @@ const ConditionHeader = ({
                     {conditions.map((cond, index) => renderConditionRow(cond, index))}
                 </ConditionsWrapper>
                 <Actions>
-                    <Tooltip
+                    <WithTooltip
                         id={`done-editing-${condition.id}`}
-                        content={formatMessage({defaultMessage: 'Done editing'})}
+                        title={formatMessage({defaultMessage: 'Done editing'})}
                     >
                         <span>
                             <ActionButton
@@ -401,7 +401,7 @@ const ConditionHeader = ({
                                 <i className='icon-check'/>
                             </ActionButton>
                         </span>
-                    </Tooltip>
+                    </WithTooltip>
                     {renderDeleteButton()}
                 </Actions>
             </HeaderContainer>
@@ -438,9 +438,9 @@ const ConditionHeader = ({
             </ConditionsText>
             <Actions>
                 {onUpdate && (
-                    <Tooltip
+                    <WithTooltip
                         id={`edit-condition-${condition.id}`}
-                        content={formatMessage({defaultMessage: 'Edit condition'})}
+                        title={formatMessage({defaultMessage: 'Edit condition'})}
                     >
                         <span>
                             <ActionButton
@@ -450,7 +450,7 @@ const ConditionHeader = ({
                                 <i className='icon-pencil-outline'/>
                             </ActionButton>
                         </span>
-                    </Tooltip>
+                    </WithTooltip>
                 )}
                 {renderDeleteButton()}
             </Actions>

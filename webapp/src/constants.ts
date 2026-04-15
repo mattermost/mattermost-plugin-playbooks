@@ -3,8 +3,6 @@
 
 import {DateTime} from 'luxon';
 
-export const OVERLAY_DELAY = 400;
-
 export enum ErrorPageTypes {
     PLAYBOOK_RUNS = 'playbook_runs',
     PLAYBOOKS = 'playbooks',

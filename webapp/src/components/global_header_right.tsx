@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import styled, {css} from 'styled-components';
 import {CheckboxMultipleMarkedOutlineIcon} from '@mattermost/compass-icons/components';
@@ -12,7 +12,6 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {closeBackstageRHS, openBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
-import {OVERLAY_DELAY} from 'src/constants';
 import {backstageRHS, selectHasOverdueTasks} from 'src/selectors';
 
 const IconButtonWrapper = styled.div<{$toggled: boolean}>`
@@ -57,36 +56,24 @@ const GlobalHeaderRight = () => {
         }
     };
 
-    const tooltip = (
-        <Tooltip id='tasks'>
-            {formatMessage({defaultMessage: 'Tasks'})}
-        </Tooltip>
-    );
-
     return (
-        <>
-            <OverlayTrigger
-                trigger={['hover', 'focus']}
-                delay={OVERLAY_DELAY}
-                placement='bottom'
-                overlay={tooltip}
-                aria-label={formatMessage({defaultMessage: 'Select to toggle a list of tasks.'})}
-
+        <WithTooltip
+            title={formatMessage({defaultMessage: 'Tasks'})}
+            id='tasks'
+            forcedPlacement='bottom'
+        >
+            <IconButtonWrapper
+                data-testid='header-task-inbox-icon'
+                onClick={onClick}
+                $toggled={isTasksOpen}
             >
-                <IconButtonWrapper
-                    data-testid='header-task-inbox-icon'
-                    onClick={onClick}
-                    $toggled={isTasksOpen}
-                >
-                    {hasOverdueTasks ? <UnreadBadge $toggled={isTasksOpen}/> : null}
-                    <CheckboxMultipleMarkedOutlineIcon
-                        size={18}
-                        color={isTasksOpen ? 'var(--team-sidebar)' : 'rgba(255,255,255,0.56)'}
-                    />
-                </IconButtonWrapper>
-
-            </OverlayTrigger>
-        </>
+                {hasOverdueTasks ? <UnreadBadge $toggled={isTasksOpen}/> : null}
+                <CheckboxMultipleMarkedOutlineIcon
+                    size={18}
+                    color={isTasksOpen ? 'var(--team-sidebar)' : 'rgba(255,255,255,0.56)'}
+                />
+            </IconButtonWrapper>
+        </WithTooltip>
     );
 };
 

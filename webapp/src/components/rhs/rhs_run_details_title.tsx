@@ -3,8 +3,8 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from '@mattermost/types/store';
@@ -16,7 +16,6 @@ import LeftChevron from 'src/components/assets/icons/left_chevron';
 import FollowButton from 'src/components/backstage/follow_button';
 import ExternalLink from 'src/components/assets/icons/external_link';
 import {pluginUrl} from 'src/browser_routing';
-import {OVERLAY_DELAY} from 'src/constants';
 
 import {
     RHSTitleButton,
@@ -41,24 +40,11 @@ const RHSRunDetailsTitle = (props: Props) => {
     const followState = useRunFollowers(metadata?.followers || []);
     const currentChannelName = useAppSelector(getCurrentChannelName);
 
-    const tooltip = (
-        <Tooltip id={'view-run-details'}>
-            {formatMessage({defaultMessage: 'Go to overview'})}
-        </Tooltip>
-    );
-
-    const backTooltip = (
-        <Tooltip id={'back-to-checklists'}>
-            {formatMessage({defaultMessage: 'Back to checklists'})}
-        </Tooltip>
-    );
-
     return (
         <RHSTitleContainer>
-            <OverlayTrigger
-                placement={'top'}
-                delay={OVERLAY_DELAY}
-                overlay={backTooltip}
+            <WithTooltip
+                title={formatMessage({defaultMessage: 'Back to checklists'})}
+                id='back-to-checklists'
             >
                 <RHSTitleButton
                     onClick={props.onBackClick}
@@ -66,12 +52,11 @@ const RHSRunDetailsTitle = (props: Props) => {
                 >
                     <LeftChevron/>
                 </RHSTitleButton>
-            </OverlayTrigger>
+            </WithTooltip>
 
-            <OverlayTrigger
-                placement={'top'}
-                delay={OVERLAY_DELAY}
-                overlay={tooltip}
+            <WithTooltip
+                title={formatMessage({defaultMessage: 'Go to overview'})}
+                id='view-run-details'
             >
                 <RHSTitleLink
                     data-testid='rhs-title'
@@ -83,7 +68,7 @@ const RHSRunDetailsTitle = (props: Props) => {
                         <ExternalLink/>
                     </RHSTitleStyledButtonIcon>
                 </RHSTitleLink>
-            </OverlayTrigger>
+            </WithTooltip>
             <VerticalLine/>
             <ChannelNameText>
                 {currentChannelName}

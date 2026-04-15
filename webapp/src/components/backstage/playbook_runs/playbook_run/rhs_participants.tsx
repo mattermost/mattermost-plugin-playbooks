@@ -14,7 +14,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
 
 import SearchInput from 'src/components/backstage/search_input';
@@ -191,16 +191,15 @@ const ParticipantRow = ({id, teamName, isRunOwner, manageMode, removeFromRun, ch
         if (!manageMode) {
             return (
                 <HoverButtonContainer>
-                    <Tooltip
+                    <WithTooltip
                         id={`${id}-tooltip`}
-                        shouldUpdatePosition={true}
-                        content={formatMessage({defaultMessage: 'Send message'})}
+                        title={formatMessage({defaultMessage: 'Send message'})}
                     >
                         <SendMessageButton
                             userId={id}
                             teamName={teamName ?? null}
                         />
-                    </Tooltip>
+                    </WithTooltip>
                 </HoverButtonContainer>
             );
         }

@@ -3,28 +3,20 @@
 
 import React from 'react';
 import styled, {css} from 'styled-components';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import Profile from 'src/components/profile/profile';
-
-import {OVERLAY_DELAY} from 'src/constants';
 
 import {useFormattedUsernameByID} from 'src/hooks';
 
 export const RHSParticipant = (props: UserPicProps) => {
     const name = useFormattedUsernameByID(props.userId);
 
-    const tooltip = (
-        <Tooltip id={'username-' + props.userId}>
-            {name}
-        </Tooltip>
-    );
-
     return (
-        <OverlayTrigger
-            placement={'bottom'}
-            delay={OVERLAY_DELAY}
-            overlay={tooltip}
+        <WithTooltip
+            title={name}
+            id={'username-' + props.userId}
+            forcedPlacement='bottom'
         >
             <UserPic $sizeInPx={props.sizeInPx}>
                 <Profile
@@ -32,7 +24,7 @@ export const RHSParticipant = (props: UserPicProps) => {
                     withoutName={true}
                 />
             </UserPic>
-        </OverlayTrigger>
+        </WithTooltip>
     );
 };
 

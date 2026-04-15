@@ -33,7 +33,7 @@ import DotMenu, {
     DropdownMenuItemStyled,
     iconSplitStyling,
 } from 'src/components/dot_menu';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {createPlaybookRun, playbookExportProps} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -161,13 +161,12 @@ const PlaybookListRow = (props: Props) => {
     const infos: JSX.Element[] = [];
     if (props.playbook.delete_at > 0) {
         infos.push((
-            <Tooltip
-                delay={{show: 0, hide: 1000}}
+            <WithTooltip
                 id={`archive-${props.playbook.id}`}
-                content={formatMessage({defaultMessage: 'This playbook is archived.'})}
+                title={formatMessage({defaultMessage: 'This playbook is archived.'})}
             >
                 <ArchiveIcon className='icon icon-archive-outline'/>
-            </Tooltip>
+            </WithTooltip>
         ));
     }
 

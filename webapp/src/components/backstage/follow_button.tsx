@@ -13,7 +13,7 @@ import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 interface FollowState {
@@ -80,10 +80,10 @@ export const FollowUnfollowButton = ({runID, followState}: Props) => {
     }
 
     return (
-        <Tooltip
+        <WithTooltip
             id={'follow-tooltip'}
-            placement='bottom'
-            content={formatMessage({defaultMessage: 'Get run status update notifications'})}
+            forcedPlacement='bottom'
+            title={formatMessage({defaultMessage: 'Get run status update notifications'})}
         >
             <FollowButton
                 className={'followButton'}
@@ -91,7 +91,7 @@ export const FollowUnfollowButton = ({runID, followState}: Props) => {
             >
                 {formatMessage({defaultMessage: 'Follow'})}
             </FollowButton>
-        </Tooltip>
+        </WithTooltip>
     );
 };
 

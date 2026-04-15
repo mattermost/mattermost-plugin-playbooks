@@ -13,7 +13,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useTextOverflow} from 'src/hooks';
 import {useCanModifyRun} from 'src/hooks/run_permissions';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
 
@@ -111,12 +111,12 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
     const menuButton = (
         <MenuButtonWrapper>
             {isTitleOverflowing ? (
-                <Tooltip
+                <WithTooltip
                     id={`run-title-tooltip-${playbookRun.id}`}
-                    content={playbookRun.name}
+                    title={playbookRun.name}
                 >
                     {titleButton}
-                </Tooltip>
+                </WithTooltip>
             ) : titleButton}
         </MenuButtonWrapper>
     );

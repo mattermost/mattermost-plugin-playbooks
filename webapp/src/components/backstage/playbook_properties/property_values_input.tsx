@@ -10,7 +10,7 @@ import {PlusIcon, TrashCanOutlineIcon} from '@mattermost/compass-icons/component
 import type {PropertyField} from 'src/types/properties';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 type Props = {
     field: PropertyField;
@@ -88,9 +88,9 @@ const PropertyValuesInput = ({
                         formatMessage={formatMessage}
                     />
                 ))}
-                <Tooltip
+                <WithTooltip
                     id='add_value_tooltip'
-                    content={formatMessage({defaultMessage: 'Add value'})}
+                    title={formatMessage({defaultMessage: 'Add value'})}
                 >
                     <AddButton
                         onClick={addNewValue}
@@ -99,7 +99,7 @@ const PropertyValuesInput = ({
                     >
                         <PlusIcon size={16}/>
                     </AddButton>
-                </Tooltip>
+                </WithTooltip>
             </ValuesContainer>
         </Container>
     );

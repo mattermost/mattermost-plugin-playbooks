@@ -8,7 +8,7 @@ import styled from 'styled-components';
 
 import {KeyCodes, isKeyPressed} from 'src/utils';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface Props {
     label?: string;
@@ -151,12 +151,12 @@ const TemplateItem = ({
                 <Title>{title}</Title>
                 <Description>{description}</Description>
                 {author && (
-                    <Tooltip
+                    <WithTooltip
                         id={`${title}_author_usedby`}
-                        content={formatMessage({defaultMessage: 'Used by'})}
+                        title={formatMessage({defaultMessage: 'Used by'})}
                     >
                         <Author>{author}</Author>
-                    </Tooltip>
+                    </WithTooltip>
                 )}
             </Detail>
         </Item>

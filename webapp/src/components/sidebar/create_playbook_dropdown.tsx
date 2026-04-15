@@ -4,8 +4,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {
     GlobeIcon,
@@ -25,7 +25,6 @@ import MenuItem from 'src/components/widgets/menu/menu_item';
 import MenuGroup from 'src/components/widgets/menu/menu_group';
 import MenuWrapper from 'src/components/widgets/menu/menu_wrapper';
 
-import {OVERLAY_DELAY} from 'src/constants';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 
 interface CreatePlaybookDropdownProps {
@@ -40,12 +39,6 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
 
     const [fileInputRef, inputImportPlaybook] = useImportPlaybook(teamId, (id: string) => navigateToPluginUrl(`/playbooks/${id}/outline`));
-
-    const tooltip = (
-        <Tooltip id={'create_playbook_dropdown_tooltip'}>
-            {formatMessage({defaultMessage: 'Browse or create Playbooks and Runs'})}
-        </Tooltip>
-    );
 
     const renderDropdownItems = () => {
         const browsePlaybooks = (
@@ -116,21 +109,20 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
 
     return (
         <Dropdown>
-            <OverlayTrigger
-                delay={OVERLAY_DELAY}
-                placement='top'
-                overlay={tooltip}
-            >
-                <>
+            <>
+                <WithTooltip
+                    title={formatMessage({defaultMessage: 'Browse or create Playbooks and Runs'})}
+                    id='create_playbook_dropdown_tooltip'
+                >
                     <Button
                         aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}
                         data-testid='create-playbook-dropdown-toggle'
                     >
                         <PlusIcon size={18}/>
                     </Button>
-                    {inputImportPlaybook}
-                </>
-            </OverlayTrigger>
+                </WithTooltip>
+                {inputImportPlaybook}
+            </>
             <Menu
                 id='CreatePlaybookDropdown'
                 ariaLabel={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}

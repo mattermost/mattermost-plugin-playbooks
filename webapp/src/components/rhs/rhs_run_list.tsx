@@ -40,7 +40,7 @@ import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {useTextOverflow} from 'src/hooks';
@@ -579,12 +579,12 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         {icon}
                     </IconWrapper>
                     {isTitleOverflowing ? (
-                        <Tooltip
+                        <WithTooltip
                             id={`run-title-tooltip-${props.id}`}
-                            content={props.name}
+                            title={props.name}
                         >
                             <TitleRow ref={titleRef}>{props.name}</TitleRow>
-                        </Tooltip>
+                        </WithTooltip>
                     ) : (
                         <TitleRow ref={titleRef}>{props.name}</TitleRow>
                     )}
@@ -640,9 +640,9 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                         )}
                     </LastUpdatedText>
                     {props.playbook && isPlaybookRun &&
-                        <Tooltip
+                        <WithTooltip
                             id={`playbook-chip-${props.id}`}
-                            content={formatMessage(
+                            title={formatMessage(
                                 {defaultMessage: 'Checklist created from {playbook} playbook'},
                                 {playbook: props.playbook.title}
                             )}
@@ -653,7 +653,7 @@ const RHSRunListCard = (props: RHSRunListCardProps) => {
                                 />
                                 <PlaybookChipText>{props.playbook.title}</PlaybookChipText>
                             </PlaybookChip>
-                        </Tooltip>
+                        </WithTooltip>
                     }
                 </InfoRow>
             </CardContainer>

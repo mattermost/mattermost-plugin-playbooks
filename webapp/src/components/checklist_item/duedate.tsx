@@ -11,8 +11,7 @@ import {
     Duration,
     DurationLikeObject,
 } from 'luxon';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
-
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {Placement} from '@floating-ui/react';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from 'src/components/datetime_selector';
@@ -29,7 +28,7 @@ import {Timestamp} from 'src/webapp_globals';
 import {useAllowSetTaskDueDate} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
-import {AdminNotificationType, OVERLAY_DELAY} from 'src/constants';
+import {AdminNotificationType} from 'src/constants';
 
 interface Props {
     date?: number;
@@ -115,14 +114,12 @@ export const DueDateHoverMenuButton = ({
     const placeholder = dueDateEditAvailable ? (
         hoverMenuButton
     ) : (
-        <OverlayTrigger
-            placement='top'
-            delay={OVERLAY_DELAY}
-            shouldUpdatePosition={true}
-            overlay={<Tooltip id='due-date-tooltip'>{toolTip}</Tooltip>}
+        <WithTooltip
+            title={toolTip}
+            id='due-date-tooltip'
         >
             {hoverMenuButton}
-        </OverlayTrigger>
+        </WithTooltip>
     );
 
     return (
@@ -238,14 +235,13 @@ export const DueDateButton = ({
     // Show tooltip with date info if date exists and not editable
     if (date && mode === Mode.DateTimeValue && !props.editable) {
         dueDateButton = (
-            <OverlayTrigger
-                placement='bottom'
-                delay={OVERLAY_DELAY}
-                shouldUpdatePosition={true}
-                overlay={<Tooltip id='due-date-tooltip'>{dueDateToolTip}</Tooltip>}
+            <WithTooltip
+                title={dueDateToolTip}
+                id='due-date-tooltip'
+                forcedPlacement='bottom'
             >
                 {dueDateButton}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 
@@ -253,13 +249,12 @@ export const DueDateButton = ({
     if (!date) {
         const tooltipText = mode === Mode.DurationValue ? addTimeFrameToolTip : dueDatePlaceholderToolTip;
         dueDateButton = (
-            <OverlayTrigger
-                placement='top'
-                delay={OVERLAY_DELAY}
-                overlay={<Tooltip id='due-date-placeholder-tooltip'>{tooltipText}</Tooltip>}
+            <WithTooltip
+                title={tooltipText}
+                id='due-date-placeholder-tooltip'
             >
                 {dueDateButton}
-            </OverlayTrigger>
+            </WithTooltip>
         );
     }
 

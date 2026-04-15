@@ -11,7 +11,7 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {useAppSelector} from 'src/hooks/redux';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
@@ -57,14 +57,13 @@ const Sidebar = (props: SidebarProps) => {
         <SidebarComponent>
             <Header>
                 {team?.description ? (
-                    <Tooltip
+                    <WithTooltip
                         id='team-name__tooltip'
-                        content={team?.description}
-                        placement='bottom'
-                        shouldUpdatePosition={true}
+                        title={team?.description}
+                        forcedPlacement='bottom'
                     >
                         {teamName}
-                    </Tooltip>
+                    </WithTooltip>
                 ) : (
                     teamName
                 )}

@@ -11,7 +11,7 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import Tooltip from 'src/components/widgets/tooltip';
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
@@ -29,9 +29,9 @@ const RHSParticipants = (props: Props) => {
     };
 
     const becomeParticipant = (
-        <Tooltip
+        <WithTooltip
             id={'rhs-participate'}
-            content={formatMessage({defaultMessage: 'Become a participant'})}
+            title={formatMessage({defaultMessage: 'Become a participant'})}
         >
             <IconWrapper
                 onClick={props.onParticipate}
@@ -41,7 +41,7 @@ const RHSParticipants = (props: Props) => {
                 <AccountPlusOutlineIcon size={16}/>
                 {props.userIds.length === 0 ? formatMessage({defaultMessage: 'Participate'}) : null}
             </IconWrapper>
-        </Tooltip>
+        </WithTooltip>
     );
 
     if (props.userIds.length === 0) {
@@ -87,9 +87,9 @@ const RHSParticipants = (props: Props) => {
                 />
             </UserRow>
             {props.onParticipate ? becomeParticipant : (
-                <Tooltip
+                <WithTooltip
                     id={'rhs-add-participant'}
-                    content={formatMessage({defaultMessage: 'Add participant'})}
+                    title={formatMessage({defaultMessage: 'Add participant'})}
                 >
                     <AddParticipantIconButton
                         onClick={showParticipants}
@@ -98,7 +98,7 @@ const RHSParticipants = (props: Props) => {
                     >
                         <AccountMultiplePlusOutlineIcon size={20}/>
                     </AddParticipantIconButton>
-                </Tooltip>
+                </WithTooltip>
             )}
         </Container>
     );
