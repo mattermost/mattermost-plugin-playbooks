@@ -9,9 +9,10 @@ import {Link} from 'react-router-dom';
 import {AccountMultiplePlusOutlineIcon, AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {

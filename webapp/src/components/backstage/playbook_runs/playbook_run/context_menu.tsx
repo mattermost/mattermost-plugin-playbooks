@@ -9,11 +9,12 @@ import {useIntl} from 'react-intl';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useTextOverflow} from 'src/hooks';
 import {useCanModifyRun} from 'src/hooks/run_permissions';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, TitleButton} from 'src/components/dot_menu';
 

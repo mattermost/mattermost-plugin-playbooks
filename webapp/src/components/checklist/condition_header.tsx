@@ -7,11 +7,12 @@ import {useIntl} from 'react-intl';
 
 import ReactSelect, {StylesConfig} from 'react-select';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppSelector} from 'src/hooks/redux';
 
 import {ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {getCondition} from 'src/selectors';
 import {useProxyState} from 'src/hooks';
 import {useConfirmModal} from 'src/components/widgets/confirmation_modal';

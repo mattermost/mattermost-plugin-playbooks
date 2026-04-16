@@ -11,9 +11,10 @@ import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/sele
 import {getCurrentTeamId, getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {General} from 'mattermost-redux/constants';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppSelector} from 'src/hooks/redux';
 
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import PostText from 'src/components/post_text';
 import {CustomPostContainer, CustomPostContent} from 'src/components/custom_post_styles';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';

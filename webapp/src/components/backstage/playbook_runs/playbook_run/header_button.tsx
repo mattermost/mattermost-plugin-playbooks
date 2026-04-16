@@ -5,6 +5,7 @@ import styled, {css} from 'styled-components';
 import React from 'react';
 
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {CompassIcon} from 'src/types/compass';
 
 interface HeaderButtonProps {

@@ -5,9 +5,9 @@ import React, {HTMLAttributes, useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
-import {copyToClipboard} from 'src/utils';
-
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
+import {copyToClipboard} from 'src/utils';
 
 type Props = {
     id: string;

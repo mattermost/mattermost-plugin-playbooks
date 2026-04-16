@@ -7,6 +7,7 @@ import styled, {css} from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useUniqueId} from 'src/utils';
 
 import Dropdown from './dropdown';

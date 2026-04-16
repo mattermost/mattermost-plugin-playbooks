@@ -6,9 +6,9 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {KeyCodes, isKeyPressed} from 'src/utils';
-
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
+import {KeyCodes, isKeyPressed} from 'src/utils';
 
 interface Props {
     label?: string;

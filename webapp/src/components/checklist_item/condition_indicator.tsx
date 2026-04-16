@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import {SourceBranchIcon} from '@mattermost/compass-icons/components';
 
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {ChecklistItem} from 'src/types/playbook';
 
 interface ConditionIndicatorProps {

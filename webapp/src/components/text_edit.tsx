@@ -7,11 +7,12 @@ import {useIntl} from 'react-intl';
 
 import {useUpdateEffect} from 'react-use';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {resolve, useUniqueId} from 'src/utils';
 
 import {CancelSaveButtons, CancelSaveContainer} from './checklist_item/inputs';
 import {ButtonIcon} from './assets/buttons';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface TextEditProps {
     value: string;

@@ -8,8 +8,9 @@ import styled from 'styled-components';
 
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
-import {useAllowPrivatePlaybooks} from 'src/hooks';
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
+import {useAllowPrivatePlaybooks} from 'src/hooks';
 
 type Props = {
     public: boolean

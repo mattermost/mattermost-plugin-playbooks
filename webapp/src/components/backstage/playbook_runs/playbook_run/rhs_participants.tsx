@@ -11,10 +11,11 @@ import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {formatProfileName} from 'src/components/profile/profile_selector';
 
 import SearchInput from 'src/components/backstage/search_input';

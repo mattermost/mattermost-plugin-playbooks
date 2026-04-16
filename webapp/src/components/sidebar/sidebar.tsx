@@ -9,9 +9,9 @@ import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import Scrollbars from 'react-custom-scrollbars';
 
-import {useAppSelector} from 'src/hooks/redux';
-
 import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 

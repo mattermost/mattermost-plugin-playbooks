@@ -7,6 +7,8 @@ import {useIntl} from 'react-intl';
 
 import {useUpdateEffect} from 'react-use';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import MarkdownTextbox from 'src/components/markdown_textbox';
 
 import FormattedMarkdown from 'src/components/formatted_markdown';
@@ -16,7 +18,6 @@ import {useUniqueId} from 'src/utils';
 import {CancelSaveButtons, CancelSaveContainer} from './checklist_item/inputs';
 import {ButtonIcon} from './assets/buttons';
 import ShowMore from './widgets/show_more';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 interface MarkdownEditProps {
     value: string;

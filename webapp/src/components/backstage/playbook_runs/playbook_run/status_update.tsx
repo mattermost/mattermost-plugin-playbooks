@@ -8,6 +8,8 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 import {KeyVariantCircleIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {AdminNotificationType} from 'src/constants';
@@ -25,7 +27,6 @@ import {requestUpdate} from 'src/client';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import DotMenu, {DropdownMenuItemStyled} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {useToaster} from 'src/components/backstage/toast_banner';
 

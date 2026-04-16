@@ -7,10 +7,11 @@ import styled from 'styled-components';
 
 import {PlusIcon, TrashCanOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import type {PropertyField} from 'src/types/properties';
 import Dropdown from 'src/components/dropdown';
 import {DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 type Props = {
     field: PropertyField;

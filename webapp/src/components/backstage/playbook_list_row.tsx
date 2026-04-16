@@ -22,6 +22,8 @@ import {
 import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
@@ -33,7 +35,6 @@ import DotMenu, {
     DropdownMenuItemStyled,
     iconSplitStyling,
 } from 'src/components/dot_menu';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {createPlaybookRun, playbookExportProps} from 'src/client';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';

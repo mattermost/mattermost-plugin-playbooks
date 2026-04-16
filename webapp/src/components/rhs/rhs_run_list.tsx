@@ -22,6 +22,8 @@ import {getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import {General} from 'mattermost-redux/constants';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import appBarIcon from 'src/components/assets/app-bar-icon.png';
@@ -40,7 +42,6 @@ import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {useTextOverflow} from 'src/hooks';

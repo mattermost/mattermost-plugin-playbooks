@@ -11,6 +11,8 @@ import {DateTime} from 'luxon';
 
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch} from 'src/hooks/redux';
 
 import {
@@ -28,7 +30,6 @@ import {browserHistory, formatText, messageHtmlToComponent} from 'src/webapp_glo
 import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 
 const Circle = styled.div`
     position: absolute;

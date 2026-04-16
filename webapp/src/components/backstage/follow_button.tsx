@@ -7,13 +7,14 @@ import {useIntl} from 'react-intl';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import styled from 'styled-components';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppSelector} from 'src/hooks/redux';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 interface FollowState {

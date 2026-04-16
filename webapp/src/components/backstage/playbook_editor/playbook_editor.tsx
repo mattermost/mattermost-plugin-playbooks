@@ -22,6 +22,8 @@ import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
+import {WithTooltip} from '@mattermost/shared/components/tooltip';
+
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {pluginErrorUrl} from 'src/browser_routing';
@@ -39,7 +41,6 @@ import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CancelSaveContainer} from 'src/components/checklist_item/inputs';
-import {WithTooltip} from '@mattermost/shared/components/tooltip';
 import {useDefaultRedirectOnTeamChange} from 'src/components/backstage/main_body';
 
 import Outline, {ScrollNav, Sections} from './outline/outline';
