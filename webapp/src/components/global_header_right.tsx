@@ -65,6 +65,7 @@ const GlobalHeaderRight = () => {
                 data-testid='header-task-inbox-icon'
                 onClick={onClick}
                 $toggled={isTasksOpen}
+                aria-label={formatMessage({defaultMessage: 'Select to toggle a list of tasks.'})}
             >
                 {hasOverdueTasks ? <UnreadBadge $toggled={isTasksOpen}/> : null}
                 <CheckboxMultipleMarkedOutlineIcon
