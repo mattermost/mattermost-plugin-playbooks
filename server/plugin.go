@@ -5,8 +5,6 @@ package main
 
 import (
 	"context"
-	"crypto/md5" //nolint:gosec // intentional: probing FIPS toolchain behavior
-	"encoding/hex"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -88,9 +86,6 @@ func (p *Plugin) OnActivate() error {
 	if err != nil {
 		return errors.Wrapf(err, "unable to get bundle path")
 	}
-
-	bundlePathSum := md5.Sum([]byte(bundlePath)) //nolint:gosec // intentional: probing FIPS toolchain behavior
-	logrus.WithField("bundle_path_md5", hex.EncodeToString(bundlePathSum[:])).Debug("plugin activating")
 
 	if err := i18n.TranslationsPreInit(filepath.Join(bundlePath, "assets/i18n")); err != nil {
 		return errors.Wrapf(err, "unable to load translation files")
