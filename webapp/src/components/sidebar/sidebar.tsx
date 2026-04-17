@@ -60,7 +60,6 @@ const Sidebar = (props: SidebarProps) => {
                     <WithTooltip
                         id='team-name__tooltip'
                         title={team?.description}
-
                     >
                         {teamName}
                     </WithTooltip>

@@ -238,7 +238,6 @@ export const DueDateButton = ({
             <WithTooltip
                 title={dueDateToolTip}
                 id='due-date-tooltip'
-
             >
                 {dueDateButton}
             </WithTooltip>

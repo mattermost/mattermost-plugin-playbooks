@@ -14,9 +14,8 @@ export const RHSParticipant = (props: UserPicProps) => {
 
     return (
         <WithTooltip
-            title={name}
             id={'username-' + props.userId}
-
+            title={name}
         >
             <UserPic $sizeInPx={props.sizeInPx}>
                 <Profile

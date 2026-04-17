@@ -41,7 +41,6 @@ const CopyLink = ({
     return (
         <WithTooltip
             id={id}
-
             title={wasCopied ? formatMessage({defaultMessage: 'Copied!'}) : (tooltipMessage ?? formatMessage({defaultMessage: "Copy link to ''{name}''"}, {name}))}
         >
             <AutoSizeCopyIcon

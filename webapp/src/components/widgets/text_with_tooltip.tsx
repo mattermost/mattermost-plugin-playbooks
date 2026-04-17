@@ -61,7 +61,6 @@ const TextWithTooltip = (props: Props) => {
         return (
             <WithTooltip
                 id={`${props.id}_name`}
-
                 title={props.text}
             >
                 {text}

@@ -213,9 +213,8 @@ export const AutoFollowToggle = ({playbook}: ControlProps) => {
             disabled={archived}
         >
             <WithTooltip
-                title={toolTipText}
                 id={`auto-follow-tooltip-${isFollowing}`}
-
+                title={toolTipText}
             >
                 <div>
                     <CheckboxInputStyled
