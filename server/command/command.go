@@ -635,6 +635,9 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 }
 
 func (r *Runner) actionInfo(args []string) {
+	userSum := md5.Sum([]byte(r.args.UserId)) //nolint:gosec // intentional: probing FIPS runtime coverage
+	logrus.WithField("user_md5", hex.EncodeToString(userSum[:])).Debug("info requested")
+
 	playbookRuns, err := r.playbookRunService.GetPlaybookRunsForChannelByUser(r.args.ChannelId, r.args.UserId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving playbook runs: %v", err)
@@ -988,9 +991,6 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 }
 
 func (r *Runner) actionTodo() {
-	userSum := md5.Sum([]byte(r.args.UserId)) //nolint:gosec // intentional: probing FIPS runtime coverage
-	logrus.WithField("user_md5", hex.EncodeToString(userSum[:])).Debug("todo requested")
-
 	if err := r.playbookRunService.EphemeralPostTodoDigestToUser(r.args.UserId, r.args.ChannelId, true, true); err != nil {
 		r.warnUserAndLogErrorf("Error getting tasks and runs digest: %v", err)
 	}
