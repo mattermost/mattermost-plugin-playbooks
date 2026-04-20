@@ -14,8 +14,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     let testUser;
     let testAnotherUser;
     let testPublicPlaybook;
-    let testRun;
-
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
@@ -71,8 +69,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             playbookRunName: 'Multi-Select Run',
             ownerUserId: testUser.id,
         }).then((playbookRun) => {
-            testRun = playbookRun;
-
             // # Visit the run details page
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
         });
@@ -92,6 +88,7 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
      */
     const selectTask = (index) => {
         getTask(index).trigger('mouseover');
+
         // The selection checkbox is the first input[type=checkbox] in the row
         // (task-completion checkbox is the second one)
         getTask(index).find('input[type=checkbox]').first().click({force: true});
