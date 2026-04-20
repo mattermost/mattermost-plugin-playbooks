@@ -404,18 +404,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 } : undefined}
             >
                 <CheckboxContainer>
-                    {!props.readOnly && !props.newItem && (
-                        <SelectionCheckbox
-                            type='checkbox'
-                            checked={props.isSelected ?? false}
-                            onChange={() => {
-                                props.onItemSelect?.();
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            $isSelected={props.isSelected ?? false}
-                            $bulkEditMode={props.bulkEditMode ?? false}
-                        />
-                    )}
                     {!props.readOnly && !props.dragging &&
                     <ChecklistItemHoverMenu
                         playbookRunId={props.playbookRunId}
@@ -690,8 +678,7 @@ const ItemContainer = styled.div<{$editing: boolean, $disabled: boolean, $hoverM
         &:hover,
         &:focus-within {
             ${DragButton},
-            ${HoverMenu},
-            ${SelectionCheckbox} {
+            ${HoverMenu} {
                 opacity: 1;
             }
         }
