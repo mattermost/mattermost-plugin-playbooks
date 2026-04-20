@@ -1,17 +1,18 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {
-    clientDeleteChecklistItem,
-    setDueDate as clientSetDueDate,
-    setAssignee,
-} from 'src/client';
+import {clientDeleteChecklistItem, setDueDate as clientSetDueDate, setAssignee} from 'src/client';
 import {playbookRunUpdated} from 'src/actions';
 import {ToastStyle} from 'src/components/backstage/toast';
 import {useToaster} from 'src/components/backstage/toast_banner';

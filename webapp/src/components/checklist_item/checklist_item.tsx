@@ -625,7 +625,7 @@ export const SelectionCheckbox = styled.input<{$isSelected: boolean; $bulkEditMo
     cursor: pointer;
     flex-shrink: 0;
     pointer-events: auto;
-    opacity: ${({$isSelected, $bulkEditMode}) => ($isSelected || $bulkEditMode) ? 1 : 0};
+    opacity: ${({$isSelected, $bulkEditMode}) => (($isSelected || $bulkEditMode) ? 1 : 0)};
     transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 
     &:checked {

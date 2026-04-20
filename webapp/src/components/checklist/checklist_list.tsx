@@ -1,10 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {
-    useCallback,
-    useState,
-} from 'react';
+import React, {useCallback, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -39,8 +36,6 @@ import {
     deletePlaybookCondition,
     updatePlaybookCondition,
 } from 'src/client';
-import {ToastStyle} from 'src/components/backstage/toast';
-import {useToaster} from 'src/components/backstage/toast_banner';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {usePlaybookAttributes, useProxyState} from 'src/hooks';
@@ -107,8 +102,6 @@ const ChecklistList = ({
     const [newChecklistName, setNewChecklistName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
-    const {add: addToast} = useToaster();
-
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
     const propertyFields = usePlaybookAttributes(inPlaybook?.id || '');
@@ -180,7 +173,6 @@ const ChecklistList = ({
         selectedItems,
         selectedItemKeysSet,
         effectiveBulkMode,
-        isSelectedIndex,
         onItemSelect,
         handleBulkAssign,
         handleBulkDueDate,
@@ -375,7 +367,6 @@ const ChecklistList = ({
 
         setChecklistsForPlaybook(newChecklists);
     };
-
 
     const onDragStart = () => {
         setIsDragging(true);
