@@ -3,8 +3,6 @@
 
 import React, {
     useCallback,
-    useEffect,
-    useMemo,
     useState,
 } from 'react';
 import {useIntl} from 'react-intl';
@@ -36,12 +34,9 @@ import {Checklist, ChecklistItem} from 'src/types/playbook';
 import {
     clientAddChecklist,
     clientDeleteChecklist,
-    clientDeleteChecklistItem,
     clientMoveChecklist,
     clientMoveChecklistItem,
-    setDueDate as clientSetDueDate,
     deletePlaybookCondition,
-    setAssignee,
     updatePlaybookCondition,
 } from 'src/client';
 import {ToastStyle} from 'src/components/backstage/toast';
@@ -49,6 +44,7 @@ import {useToaster} from 'src/components/backstage/toast_banner';
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {usePlaybookAttributes, useProxyState} from 'src/hooks';
+import {useBulkActions} from 'src/hooks/bulk_actions';
 import {usePlaybookConditions} from 'src/hooks/conditions';
 import {ConditionExprV1} from 'src/types/conditions';
 import {getDistinctAssignees} from 'src/utils';
@@ -113,27 +109,6 @@ const ChecklistList = ({
     const [newlyCreatedConditionIds, setNewlyCreatedConditionIds] = useState<Set<string>>(new Set());
     const {add: addToast} = useToaster();
 
-    const [selectedItems, setSelectedItems] = useState<Map<string, {checklistIndex: number; itemIndex: number; item: ChecklistItem}>>(new Map());
-
-    // Clear selections when exiting bulk edit mode
-    useEffect(() => {
-        if (!bulkEditMode) {
-            setSelectedItems(new Map());
-        }
-    }, [bulkEditMode]);
-
-    const onItemSelect = useCallback((key: string, checklistIndex: number, itemIndex: number, item: ChecklistItem) => {
-        setSelectedItems((prev: Map<string, {checklistIndex: number; itemIndex: number; item: ChecklistItem}>) => {
-            const next = new Map(prev);
-            if (next.has(key)) {
-                next.delete(key);
-            } else {
-                next.set(key, {checklistIndex, itemIndex, item});
-            }
-            return next;
-        });
-    }, []);
-
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
     const propertyFields = usePlaybookAttributes(inPlaybook?.id || '');
@@ -179,25 +154,7 @@ const ChecklistList = ({
     const archived = playbook != null && playbook.delete_at !== 0 && !playbookRun;
     const readOnly = finished || archived || isReadOnly;
 
-    // Memoized lookup sets for selected items — must be before early return
-    const selectedIndices = useMemo(() => {
-        const indices = new Set<string>();
-        selectedItems.forEach(({checklistIndex, itemIndex}: {checklistIndex: number; itemIndex: number; item: ChecklistItem}) => {
-            indices.add(`${checklistIndex}-${itemIndex}`);
-        });
-        return indices;
-    }, [selectedItems]);
-
-    const selectedItemKeysSet = useMemo(() => new Set(selectedItems.keys()), [selectedItems]);
-
-    // Effective bulk-edit mode: externally enabled OR at least one item is selected internally
-    const effectiveBulkMode = bulkEditMode || selectedItems.size > 0;
-
-    if (!playbook && !playbookRun) {
-        return null;
-    }
-
-    const setChecklistsForPlaybook = (newChecklists: Checklist[]) => {
+    const setChecklistsForPlaybook = useCallback((newChecklists: Checklist[]) => {
         if (!playbook) {
             return;
         }
@@ -217,7 +174,31 @@ const ChecklistList = ({
         });
 
         setPlaybook({...playbook, checklists: updated});
-    };
+    }, [playbook, setPlaybook]);
+
+    const {
+        selectedItems,
+        selectedItemKeysSet,
+        effectiveBulkMode,
+        isSelectedIndex,
+        onItemSelect,
+        handleBulkAssign,
+        handleBulkDueDate,
+        handleBulkDelete,
+        handleBulkAddToCondition,
+        clearSelection,
+    } = useBulkActions({
+        playbookRun,
+        playbook,
+        checklists,
+        setChecklistsForPlaybook,
+        bulkEditMode,
+        onExitBulkEdit,
+    });
+
+    if (!playbook && !playbookRun) {
+        return null;
+    }
 
     const onRenameChecklist = (index: number, title: string) => {
         const newChecklists = [...checklists];
@@ -395,193 +376,6 @@ const ChecklistList = ({
         setChecklistsForPlaybook(newChecklists);
     };
 
-    const isSelectedIndex = (clIdx: number, itemIdx: number) => {
-        return selectedIndices.has(`${clIdx}-${itemIdx}`);
-    };
-
-    const handleBulkAssign = async (userId: string) => {
-        if (playbookRun) {
-            const results = await Promise.allSettled(
-                [...selectedItems.values()].map(({checklistIndex, itemIndex}) =>
-                    setAssignee(playbookRun.id, checklistIndex, itemIndex, userId),
-                ),
-            );
-            const failures = results.filter((r) => r.status === 'rejected');
-            if (failures.length > 0) {
-                addToast({
-                    content: formatMessage(
-                        {defaultMessage: 'Failed to assign {count} of {total} tasks'},
-                        {count: failures.length, total: results.length},
-                    ),
-                    toastStyle: ToastStyle.Failure,
-                });
-            }
-
-            // Update the store for all items (server state is source of truth on next sync)
-            const newChecklists = checklists.map((cl, clIdx) => ({
-                ...cl,
-                items: cl.items.map((item, itemIdx) => {
-                    if (isSelectedIndex(clIdx, itemIdx)) {
-                        return {...item, assignee_id: userId};
-                    }
-                    return item;
-                }),
-            }));
-            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
-        } else if (playbook) {
-            const newChecklists = checklists.map((cl, clIdx) => ({
-                ...cl,
-                items: cl.items.map((item, itemIdx) => {
-                    if (isSelectedIndex(clIdx, itemIdx)) {
-                        return {...item, assignee_id: userId};
-                    }
-                    return item;
-                }),
-            }));
-            setChecklistsForPlaybook(newChecklists);
-        }
-    };
-
-    const handleBulkDueDate = async (timestamp: number) => {
-        if (playbookRun) {
-            const results = await Promise.allSettled(
-                [...selectedItems.values()].map(({checklistIndex, itemIndex}) =>
-                    clientSetDueDate(playbookRun.id, checklistIndex, itemIndex, timestamp),
-                ),
-            );
-            const failures = results.filter((r) => r.status === 'rejected');
-            if (failures.length > 0) {
-                addToast({
-                    content: formatMessage(
-                        {defaultMessage: 'Failed to update due date for {count} of {total} tasks'},
-                        {count: failures.length, total: results.length},
-                    ),
-                    toastStyle: ToastStyle.Failure,
-                });
-            }
-
-            const newChecklists = checklists.map((cl, clIdx) => ({
-                ...cl,
-                items: cl.items.map((item, itemIdx) => {
-                    if (isSelectedIndex(clIdx, itemIdx)) {
-                        return {...item, due_date: timestamp};
-                    }
-                    return item;
-                }),
-            }));
-            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
-        } else if (playbook) {
-            const newChecklists = checklists.map((cl, clIdx) => ({
-                ...cl,
-                items: cl.items.map((item, itemIdx) => {
-                    if (isSelectedIndex(clIdx, itemIdx)) {
-                        return {...item, due_date: timestamp};
-                    }
-                    return item;
-                }),
-            }));
-            setChecklistsForPlaybook(newChecklists);
-        }
-    };
-
-    const handleBulkDelete = async () => {
-        const selectedByChecklist = new Map<number, Set<number>>();
-        selectedItems.forEach(({checklistIndex, itemIndex}: {checklistIndex: number; itemIndex: number; item: ChecklistItem}) => {
-            if (!selectedByChecklist.has(checklistIndex)) {
-                selectedByChecklist.set(checklistIndex, new Set());
-            }
-            selectedByChecklist.get(checklistIndex)!.add(itemIndex);
-        });
-
-        if (playbookRun) {
-            // Delete in descending index order to avoid index shifting
-            let deleteFailures = 0;
-            let deleteTotal = 0;
-            for (const [checklistIndex, itemIndices] of selectedByChecklist.entries()) {
-                const sortedIndices = [...itemIndices].sort((a, b) => b - a);
-                for (const idx of sortedIndices) {
-                    deleteTotal++;
-                    try {
-                        await clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx); // eslint-disable-line no-await-in-loop
-                    } catch {
-                        deleteFailures++;
-                    }
-                }
-            }
-            if (deleteFailures > 0) {
-                addToast({
-                    content: formatMessage(
-                        {defaultMessage: 'Failed to delete {count} of {total} tasks'},
-                        {count: deleteFailures, total: deleteTotal},
-                    ),
-                    toastStyle: ToastStyle.Failure,
-                });
-            }
-        } else {
-            const newChecklists = checklists.map((cl, clIdx) => {
-                const deletedIndices = selectedByChecklist.get(clIdx);
-                if (!deletedIndices) {
-                    return cl;
-                }
-                return {
-                    ...cl,
-                    items: cl.items.filter((_, itemIdx) => !deletedIndices.has(itemIdx)),
-                };
-            });
-
-            setChecklistsForPlaybook(newChecklists);
-        }
-        setSelectedItems(new Map());
-    };
-
-    const handleBulkAddToCondition = (conditionId: string) => {
-        // Group selected items by checklist, then process in descending index order
-        // to avoid index corruption when items are moved via splice
-        const byChecklist = new Map<number, number[]>();
-        selectedItems.forEach(({checklistIndex, itemIndex}: {checklistIndex: number; itemIndex: number; item: ChecklistItem}) => {
-            if (!byChecklist.has(checklistIndex)) {
-                byChecklist.set(checklistIndex, []);
-            }
-            byChecklist.get(checklistIndex)!.push(itemIndex);
-        });
-
-        const updatedChecklists = [...checklists.map((cl) => ({...cl, items: [...cl.items]}))];
-
-        for (const [clIdx, itemIndices] of byChecklist.entries()) {
-            // Process in descending order so splices don't shift later indices
-            const sorted = [...itemIndices].sort((a, b) => b - a);
-            for (const idx of sorted) {
-                const item = updatedChecklists[clIdx].items[idx];
-                if (item.condition_id === conditionId) {
-                    continue;
-                }
-
-                const updatedItem = {...item, condition_id: conditionId};
-
-                // Find the last item in the target condition group
-                let lastConditionItemIndex = -1;
-                for (let i = updatedChecklists[clIdx].items.length - 1; i >= 0; i--) {
-                    if (updatedChecklists[clIdx].items[i].condition_id === conditionId) {
-                        lastConditionItemIndex = i;
-                        break;
-                    }
-                }
-
-                if (lastConditionItemIndex >= 0 && lastConditionItemIndex !== idx) {
-                    const newItems = [...updatedChecklists[clIdx].items];
-                    newItems.splice(idx, 1);
-                    const targetIndex = idx < lastConditionItemIndex ? lastConditionItemIndex : lastConditionItemIndex + 1;
-                    newItems.splice(targetIndex, 0, updatedItem);
-                    updatedChecklists[clIdx] = {...updatedChecklists[clIdx], items: newItems};
-                } else {
-                    const newItems = [...updatedChecklists[clIdx].items];
-                    newItems[idx] = updatedItem;
-                    updatedChecklists[clIdx] = {...updatedChecklists[clIdx], items: newItems};
-                }
-            }
-        }
-        setChecklistsForPlaybook(updatedChecklists);
-    };
 
     const onDragStart = () => {
         setIsDragging(true);
@@ -910,10 +704,7 @@ const ChecklistList = ({
                     hasAnyAssignee={[...selectedItems.values()].some(({checklistIndex, itemIndex}) => Boolean(checklists[checklistIndex]?.items[itemIndex]?.assignee_id))}
                     hasAnyDueDate={[...selectedItems.values()].some(({checklistIndex, itemIndex}) => Boolean(checklists[checklistIndex]?.items[itemIndex]?.due_date))}
                     isPlaybookRun={Boolean(playbookRun)}
-                    onClearSelection={() => {
-                        setSelectedItems(new Map());
-                        onExitBulkEdit?.();
-                    }}
+                    onClearSelection={clearSelection}
                     onBulkAssign={handleBulkAssign}
                     onBulkDueDate={handleBulkDueDate}
                     onBulkDelete={handleBulkDelete}
