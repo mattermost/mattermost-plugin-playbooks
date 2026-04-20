@@ -4,6 +4,7 @@
 package app_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -447,5 +448,366 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultID)
+	})
+}
+
+func TestPlaybookService_Import(t *testing.T) {
+	userID := model.NewId()
+	newPlaybookID := model.NewId()
+
+	basePlaybook := app.Playbook{
+		Title:       "Test Playbook",
+		Description: "Test Description",
+		Checklists: []app.Checklist{
+			{
+				Title: "Checklist 1",
+				Items: []app.ChecklistItem{
+					{
+						Title:       "Item with condition",
+						ConditionID: "old-cond-1",
+					},
+				},
+			},
+		},
+	}
+
+	baseExportProperty := app.ExportPropertyField{
+		ID:   "old-prop-1",
+		Name: "Status",
+		Type: model.PropertyFieldTypeSelect,
+		Attrs: app.Attrs{
+			Visibility: app.PropertyFieldVisibilityAlways,
+			Options: model.PropertyOptions[*model.PluginPropertyOption]{
+				model.NewPluginPropertyOption("opt-1", "Active"),
+				model.NewPluginPropertyOption("opt-2", "Inactive"),
+			},
+		},
+	}
+
+	t.Run("successfully imports playbook with properties and conditions", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockPoster := mock_bot.NewMockPoster(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+		mockAuditor.EXPECT().
+			MakeAuditRecord(gomock.Any(), gomock.Any()).
+			Return(&model.AuditRecord{}).
+			AnyTimes()
+
+		mockAuditor.EXPECT().
+			LogAuditRec(gomock.Any()).
+			AnyTimes()
+
+		service := app.NewPlaybookService(
+			mockStore,
+			mockPoster,
+			nil,
+			mockAuditor,
+			nil, // metrics
+			mockPropertyService,
+			mockConditionService,
+		)
+
+		oldFieldID := "old-prop-1"
+		newFieldID := "new-prop-1"
+		oldChildFieldID := "old-prop-child"
+		newChildFieldID := "new-prop-child"
+		oldOptionID := "old-opt-1"
+		newOptionID := "new-opt-1"
+		oldConditionID := "old-cond-1"
+		newConditionID := "new-cond-1"
+
+		exportProperties := []app.ExportPropertyField{
+			{
+				ID:   oldFieldID,
+				Name: "Status",
+				Type: model.PropertyFieldTypeSelect,
+				Attrs: app.Attrs{
+					Visibility: app.PropertyFieldVisibilityAlways,
+					Options: model.PropertyOptions[*model.PluginPropertyOption]{
+						model.NewPluginPropertyOption(oldOptionID, "Active"),
+					},
+				},
+			},
+			{
+				ID:   oldChildFieldID,
+				Name: "SubStatus",
+				Type: model.PropertyFieldTypeText,
+				Attrs: app.Attrs{
+					Visibility: app.PropertyFieldVisibilityAlways,
+					ParentID:   oldFieldID,
+				},
+			},
+		}
+
+		exportConditions := []app.ExportCondition{{
+			ID:      oldConditionID,
+			Version: 1,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: oldFieldID,
+					Value:   json.RawMessage(`["` + oldOptionID + `"]`),
+				},
+			},
+		}}
+
+		playbook := app.Playbook{
+			Title: "Test",
+			Checklists: []app.Checklist{{
+				Title: "CL",
+				Items: []app.ChecklistItem{{
+					Title:           "Conditional task",
+					ConditionID:     oldConditionID,
+					ConditionAction: app.ConditionActionHidden,
+				}},
+			}},
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				assert.Empty(t, pb.Checklists[0].Items[0].ConditionID,
+					"ConditionID should be cleared before Create")
+				assert.Empty(t, pb.Checklists[0].Items[0].ConditionAction,
+					"ConditionAction should be cleared before Create")
+				return newPlaybookID, nil
+			})
+		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
+
+		createdField := &app.PropertyField{
+			PropertyField: model.PropertyField{ID: newFieldID, Name: "Status", Type: model.PropertyFieldTypeSelect},
+			Attrs: app.Attrs{
+				Visibility: app.PropertyFieldVisibilityAlways,
+				Options: model.PropertyOptions[*model.PluginPropertyOption]{
+					model.NewPluginPropertyOption(newOptionID, "Active"),
+				},
+			},
+		}
+		createdChildField := &app.PropertyField{
+			PropertyField: model.PropertyField{ID: newChildFieldID, Name: "SubStatus", Type: model.PropertyFieldTypeText},
+			Attrs: app.Attrs{
+				Visibility: app.PropertyFieldVisibilityAlways,
+				ParentID:   oldFieldID, // still has old parent ID before remap
+			},
+		}
+
+		firstCreate := mockPropertyService.EXPECT().CreatePropertyField(newPlaybookID, gomock.Any()).Return(createdField, nil)
+		mockPropertyService.EXPECT().CreatePropertyField(newPlaybookID, gomock.Any()).Return(createdChildField, nil).After(firstCreate)
+
+		mockPropertyService.EXPECT().
+			UpdatePropertyField(newPlaybookID, gomock.Any()).
+			DoAndReturn(func(pbID string, field app.PropertyField) (*app.PropertyField, error) {
+				assert.Equal(t, newChildFieldID, field.ID, "should update the child field")
+				assert.Equal(t, newFieldID, field.Attrs.ParentID, "ParentID should be remapped to new field ID")
+				return &field, nil
+			})
+
+		mockConditionService.EXPECT().
+			CreateConditionsFromExport(newPlaybookID, exportConditions, gomock.Any()).
+			DoAndReturn(func(pbID string, conds []app.ExportCondition, mappings *app.PropertyCopyResult) (map[string]*app.Condition, error) {
+				assert.Contains(t, mappings.FieldMappings, oldFieldID, "field mappings should contain old field ID")
+				assert.Equal(t, newFieldID, mappings.FieldMappings[oldFieldID], "field mapping should be old->new")
+				assert.Contains(t, mappings.OptionMappings, oldOptionID, "option mappings should contain old option ID")
+				assert.Equal(t, newOptionID, mappings.OptionMappings[oldOptionID], "option mapping should be old->new")
+
+				return map[string]*app.Condition{
+					oldConditionID: {ID: newConditionID},
+				}, nil
+			})
+
+		// Get returns the playbook as stored (with cleared ConditionIDs)
+		storedPlaybook := app.Playbook{
+			Title: "Test",
+			Checklists: []app.Checklist{{
+				Title: "CL",
+				Items: []app.ChecklistItem{{
+					Title:       "Conditional task",
+					ConditionID: "",
+				}},
+			}},
+		}
+		mockStore.EXPECT().Get(newPlaybookID).Return(storedPlaybook, nil)
+
+		mockStore.EXPECT().
+			Update(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) error {
+				assert.Equal(t, newConditionID, pb.Checklists[0].Items[0].ConditionID,
+					"checklist item ConditionID should be remapped to new condition ID")
+				assert.Equal(t, app.ConditionActionHidden, pb.Checklists[0].Items[0].ConditionAction,
+					"checklist item ConditionAction should be restored after remap")
+				return nil
+			})
+
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   playbook,
+			Properties: exportProperties,
+			Conditions: exportConditions,
+		}, userID)
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, resultID)
+	})
+
+	t.Run("returns early if no properties or conditions", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockPoster := mock_bot.NewMockPoster(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+		mockAuditor.EXPECT().
+			MakeAuditRecord(gomock.Any(), gomock.Any()).
+			Return(&model.AuditRecord{}).
+			AnyTimes()
+
+		mockAuditor.EXPECT().
+			LogAuditRec(gomock.Any()).
+			AnyTimes()
+
+		service := app.NewPlaybookService(
+			mockStore,
+			mockPoster,
+			nil,
+			mockAuditor,
+			nil, // metrics
+			mockPropertyService,
+			mockConditionService,
+		)
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				return newPlaybookID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
+
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   basePlaybook,
+			Properties: []app.ExportPropertyField{},
+			Conditions: []app.ExportCondition{},
+		}, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, resultID)
+	})
+
+	t.Run("gracefully handles property creation failure", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockPoster := mock_bot.NewMockPoster(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+		mockAuditor.EXPECT().
+			MakeAuditRecord(gomock.Any(), gomock.Any()).
+			Return(&model.AuditRecord{}).
+			AnyTimes()
+
+		mockAuditor.EXPECT().
+			LogAuditRec(gomock.Any()).
+			AnyTimes()
+
+		service := app.NewPlaybookService(
+			mockStore,
+			mockPoster,
+			nil,
+			mockAuditor,
+			nil, // metrics
+			mockPropertyService,
+			mockConditionService,
+		)
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				return newPlaybookID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
+
+		mockPropertyService.EXPECT().
+			CreatePropertyField(newPlaybookID, gomock.Any()).
+			Return(nil, errors.New("property creation failed"))
+
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   basePlaybook,
+			Properties: []app.ExportPropertyField{baseExportProperty},
+			Conditions: []app.ExportCondition{},
+		}, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, resultID)
+	})
+
+	t.Run("skips conditions when all property creations fail", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockPoster := mock_bot.NewMockPoster(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+		mockAuditor.EXPECT().
+			MakeAuditRecord(gomock.Any(), gomock.Any()).
+			Return(&model.AuditRecord{}).
+			AnyTimes()
+
+		mockAuditor.EXPECT().
+			LogAuditRec(gomock.Any()).
+			AnyTimes()
+
+		service := app.NewPlaybookService(
+			mockStore,
+			mockPoster,
+			nil,
+			mockAuditor,
+			nil,
+			mockPropertyService,
+			mockConditionService,
+		)
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			Return(newPlaybookID, nil)
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
+
+		mockPropertyService.EXPECT().
+			CreatePropertyField(newPlaybookID, gomock.Any()).
+			Return(nil, errors.New("property creation failed"))
+
+		resultID, err := service.Import(app.PlaybookImportData{
+			Playbook:   basePlaybook,
+			Properties: []app.ExportPropertyField{baseExportProperty},
+			Conditions: []app.ExportCondition{{
+				ID:      "cond-1",
+				Version: 1,
+				ConditionExpr: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: "old-prop-1",
+						Value:   json.RawMessage(`["opt-1"]`),
+					},
+				},
+			}},
+		}, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, resultID)
 	})
 }
