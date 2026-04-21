@@ -502,7 +502,7 @@ func TestCreateInvalidRuns(t *testing.T) {
 			PlaybookID:  e.BasicPlaybook.ID,
 			Summary:     strings.Repeat("A", 4097),
 		})
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 		assert.Nil(t, run)
 	})
 

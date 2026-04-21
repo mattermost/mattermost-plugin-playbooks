@@ -95,7 +95,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  id,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("playbooks can be searched by title", func(t *testing.T) {
