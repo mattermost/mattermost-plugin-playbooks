@@ -1100,7 +1100,11 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	}
 
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		if errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
+		} else {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
+		}
 		return
 	}
 
