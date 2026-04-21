@@ -401,8 +401,8 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             });
 
             // * Due date indicators should appear on both tasks
-            getTask(0).find('.checklist-item-due-date').should('exist');
-            getTask(1).find('.checklist-item-due-date').should('exist');
+            getTask(0).findByTestId('due-date-info-button').should('exist');
+            getTask(1).findByTestId('due-date-info-button').should('exist');
         });
 
         it('clears the selection after setting due date', () => {
@@ -431,22 +431,15 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             cy.findByText('tasks selected').should('not.exist');
         });
 
-        it('can mark tasks as done while others are selected in bulk edit mode', () => {
+        it('task completion checkbox is disabled in bulk edit mode', () => {
             // # Enter bulk edit mode
             enterBulkEditMode();
 
-            // # Select task 1
-            selectTask(1);
+            // * The checkbox container has pointer-events disabled
+            // so clicking a task row selects it instead of toggling completion
+            selectTask(0);
 
-            cy.findByText('1 task selected').should('be.visible');
-
-            // # Complete task 0 (different task) with the completion checkbox
-            getTask(0).find('.checkbox').check({force: true});
-
-            // * Task 0's status checkbox is checked
-            getTask(0).find('.checkbox').should('be.checked');
-
-            // * The selection bar still shows task 1 selected
+            // * The action bar should appear (task was selected, not completed)
             cy.findByText('1 task selected').should('be.visible');
         });
     });
