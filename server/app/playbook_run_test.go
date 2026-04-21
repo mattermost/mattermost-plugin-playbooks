@@ -593,6 +593,32 @@ func TestDetectChangedFields(t *testing.T) {
 		changes = DetectChangedFields(prev, curr)
 		require.Empty(t, changes)
 	})
+
+	t.Run("task progress changes", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", TaskTotal: 3, TaskCompleted: 1}
+		curr := &PlaybookRun{ID: "run1", TaskTotal: 3, TaskCompleted: 2}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		require.Equal(t, 2, changes["task_completed"])
+	})
+
+	t.Run("task total and completed both change", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", TaskTotal: 2, TaskCompleted: 0}
+		curr := &PlaybookRun{ID: "run1", TaskTotal: 3, TaskCompleted: 1}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Equal(t, 3, changes["task_total"])
+		require.Equal(t, 1, changes["task_completed"])
+	})
+
+	t.Run("no task progress change is not detected", func(t *testing.T) {
+		prev := &PlaybookRun{ID: "run1", TaskTotal: 4, TaskCompleted: 2}
+		curr := &PlaybookRun{ID: "run1", TaskTotal: 4, TaskCompleted: 2}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Empty(t, changes)
+	})
 }
 
 func TestPlaybookRunFilterOptions_Validate(t *testing.T) {

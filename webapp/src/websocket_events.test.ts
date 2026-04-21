@@ -476,6 +476,34 @@ describe('incremental updates', () => {
             expect(dispatchedAction.data.playbook_run_updated_at).toBe(1500);
             expect(dispatchedAction.data.changed_fields.name).toBe('Updated Name with Timestamp');
         });
+
+        it('handles task_total and task_completed field updates', () => {
+            const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
+
+            const update: PlaybookRunUpdate = {
+                id: testPlaybookRun.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    task_total: 4,
+                    task_completed: 3,
+                },
+            };
+
+            const msg = {
+                data: {
+                    payload: JSON.stringify(update),
+                },
+            } as WebSocketMessage<{payload: string}>;
+
+            handler(msg);
+
+            expect(testDispatch).toHaveBeenCalledTimes(1);
+            const dispatchedAction = testDispatch.mock.calls[0][0];
+
+            expect(dispatchedAction.type).toBe(WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED);
+            expect(dispatchedAction.data.changed_fields.task_total).toBe(4);
+            expect(dispatchedAction.data.changed_fields.task_completed).toBe(3);
+        });
     });
 
     describe('timeline events incremental updates', () => {

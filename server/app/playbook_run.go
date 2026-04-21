@@ -453,6 +453,12 @@ func detectScalarFieldChanges(previous, current *PlaybookRun, changes map[string
 	if !compareItemsOrder(previous.GetItemsOrder(), current.GetItemsOrder()) {
 		changes["items_order"] = current.GetItemsOrder()
 	}
+	if previous.TaskTotal != current.TaskTotal {
+		changes["task_total"] = current.TaskTotal
+	}
+	if previous.TaskCompleted != current.TaskCompleted {
+		changes["task_completed"] = current.TaskCompleted
+	}
 }
 
 // detectStringSliceFieldChanges compares string slice fields (unordered sets)
