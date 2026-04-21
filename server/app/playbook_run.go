@@ -1065,14 +1065,6 @@ type TimelineEvent struct {
 	CreatorUserID string `json:"creator_user_id"`
 }
 
-// PlaybookTimelineEvent represents a timeline event flattened with its parent run information.
-type PlaybookTimelineEvent struct {
-	TimelineEvent
-
-	// PlaybookRunName is the display name of the run the event belongs to.
-	PlaybookRunName string `json:"playbook_run_name"`
-}
-
 // GetPlaybookRunsResults collects the results of the GetPlaybookRuns call: the list of PlaybookRuns matching
 // the HeaderFilterOptions, and the TotalCount of the matching playbook runs before paging was applied.
 type GetPlaybookRunsResults struct {
@@ -1192,7 +1184,7 @@ type PlaybookRunService interface {
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
 	// CreatePlaybookRun persists a new playbook run. userID is the user who initiated the run.
-	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error)
+	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook) error
@@ -1387,9 +1379,6 @@ type PlaybookRunService interface {
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
 
-	// UnfollowMultiple lets multiple users unfollow a specific playbook run in one batch
-	UnfollowMultiple(playbookRunID string, userIDs []string) error
-
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
@@ -1493,12 +1482,6 @@ type PlaybookRunStore interface {
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
 
-	// UnfollowMultiple lets multiple users unfollow a specific playbook run in one query
-	UnfollowMultiple(playbookRunID string, userIDs []string) error
-
-	// FollowBatch lets multiple users follow a specific playbook run in one query
-	FollowBatch(playbookRunID string, userIDs []string) error
-
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
@@ -1560,13 +1543,6 @@ type PlaybookRunStore interface {
 	// CONTRACT: transform MUST be a pure in-memory computation (no I/O, no DB calls).
 	// It is invoked while the IR_Incident row lock is held.
 	UpdatePlaybookRunChecklistsAtomic(playbookRunID string, transform func([]Checklist) []Checklist) error
-
-	// GetRunIDsByParentFieldValue returns the IDs of runs whose run-level property field
-	// (identified by parent_id = parentFieldID) has a value matching the run-level option
-	// whose name equals the playbook-level option identified by parentOptionID.
-	// This bridges the playbook-level IDs used by the filter UI to the run-level IDs
-	// stored in the property system.
-	GetRunIDsByParentFieldValue(groupID, parentFieldID, parentOptionID string, limit int) ([]string, error)
 }
 
 type JobOnceScheduler interface {
@@ -1658,27 +1634,6 @@ type PlaybookRunFilterOptions struct {
 	// OmitEnded determines whether to omit runs that have ended (EndAt > 0).
 	// If true, only active runs (EndAt = 0) are returned.
 	OmitEnded bool `url:"omit_ended,omitempty"`
-
-	// PropertyFieldID filters runs to those that have the given property field set to PropertyValueFilter.
-	// When set, PropertyValueFilter must also be set.
-	PropertyFieldID string `url:"property_field_id,omitempty"`
-
-	// PropertyValueFilter is the option ID to match against the property field given by PropertyFieldID.
-	PropertyValueFilter string `url:"property_value_filter,omitempty"`
-
-	// EventTypes filters timeline event queries to the selected event kinds.
-	EventTypes []string
-
-	// UserIDs filters timeline event queries to events where the user is actor or target.
-	UserIDs []string
-
-	// Usernames is an internal helper used to match timeline events whose details
-	// only contain usernames for targets (for example multi-user participant changes).
-	Usernames []string
-
-	// RunIDs, when non-empty, restricts results to only the given run IDs.
-	// This is an internal filter used by the service layer (not exposed via URL).
-	RunIDs []string
 }
 
 // Clone duplicates the given options.
@@ -1689,18 +1644,6 @@ func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	}
 	if len(o.Types) > 0 {
 		newPlaybookRunFilterOptions.Types = append([]string{}, o.Types...)
-	}
-	if len(o.RunIDs) > 0 {
-		newPlaybookRunFilterOptions.RunIDs = append([]string{}, o.RunIDs...)
-	}
-	if len(o.EventTypes) > 0 {
-		newPlaybookRunFilterOptions.EventTypes = append([]string{}, o.EventTypes...)
-	}
-	if len(o.UserIDs) > 0 {
-		newPlaybookRunFilterOptions.UserIDs = append([]string{}, o.UserIDs...)
-	}
-	if len(o.Usernames) > 0 {
-		newPlaybookRunFilterOptions.Usernames = append([]string{}, o.Usernames...)
 	}
 
 	return newPlaybookRunFilterOptions
@@ -1780,14 +1723,6 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 
 	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'channel_id': must be 26 characters or blank")
-	}
-
-	if options.PropertyFieldID != "" && !model.IsValidId(options.PropertyFieldID) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_field_id': must be 26 characters or blank")
-	}
-
-	if options.PropertyValueFilter != "" && !model.IsValidId(options.PropertyValueFilter) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_value_filter': must be 26 characters or blank")
 	}
 
 	for _, s := range options.Statuses {

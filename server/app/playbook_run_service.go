@@ -5,13 +5,11 @@ package app
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -270,15 +268,6 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	return results, nil
 }
 
-func (s *PlaybookRunServiceImpl) getSiteURL() string {
-	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	if siteURL == nil {
-		return ""
-	}
-
-	return *siteURL
-}
-
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	return fmt.Sprintf(
 		"##### [%s](%s)\n@%s ran the [%s](%s) playbook.",
@@ -368,7 +357,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 }
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
-func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error) {
+func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
@@ -498,37 +487,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		} else {
 			// Assign the copied property fields to the run
 			playbookRun.PropertyFields = propertyCopyResult.CopiedFields
-
-			// Apply initial property values (from the API request) before resolving assignees.
-			if len(initialPropertyValues) > 0 {
-				runFieldByID := make(map[string]*PropertyField, len(propertyCopyResult.CopiedFields))
-				for i := range propertyCopyResult.CopiedFields {
-					runFieldByID[propertyCopyResult.CopiedFields[i].ID] = &propertyCopyResult.CopiedFields[i]
-				}
-				for playbookFieldID, rawValue := range initialPropertyValues {
-					runFieldID, ok := propertyCopyResult.FieldMappings[playbookFieldID]
-					if !ok {
-						continue
-					}
-					if len(rawValue) == 0 {
-						continue
-					}
-					translatedValue, err := translateOptionIDs(rawValue, propertyCopyResult.OptionMappings)
-					if err != nil {
-						logger.WithError(err).WithField("field_id", playbookFieldID).Warn("failed to translate option IDs for initial property value, skipping")
-						continue
-					}
-					runField, ok := runFieldByID[runFieldID]
-					if !ok {
-						continue
-					}
-					if pv, err := s.propertyService.UpsertRunPropertyValueWithField(playbookRun.ID, runField, translatedValue); err != nil {
-						logger.WithError(err).WithField("field_id", runFieldID).Warn("failed to upsert initial property value, skipping")
-					} else {
-						playbookRun.PropertyValues = append(playbookRun.PropertyValues, *pv)
-					}
-				}
-			}
 
 			// Remap AssigneePropertyFieldID from playbook-level to run-level field IDs.
 			remapAssigneePropertyFieldIDs(playbookRun.Checklists, propertyCopyResult.FieldMappings)
@@ -682,7 +640,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			auditRec.AddErrorDesc(err.Error())
 			return nil, err
 		}
-		s.followBatch(playbookRun.ID, autoFollows, *playbookRun)
+		for _, autoFollow := range autoFollows {
+			if err = s.Follow(playbookRun.ID, autoFollow); err != nil {
+				logger.WithError(err).WithFields(logrus.Fields{
+					"playbook_run_id": playbookRun.ID,
+					"auto_follow":     autoFollow,
+				}).Warn("failed to follow the playbook run")
+			}
+		}
 	}
 
 	if len(playbookRun.WebhookOnCreationURLs) != 0 {
@@ -794,7 +759,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, t
 		}
 		message = post.Message
 	} else {
-		message = s.resolveMessageForRun(currentPlaybookRun.ReminderMessageTemplate, currentPlaybookRun)
+		message = currentPlaybookRun.ReminderMessageTemplate
 	}
 
 	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Summary, message, len(currentPlaybookRun.BroadcastChannelIDs), currentPlaybookRun.PreviousReminder, user.Locale)
@@ -1107,9 +1072,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		originalRun = playbookRunToModify.Clone()
 	}
 
-	// Resolve attribute placeholders in message
-	options.Message = s.resolveMessageForRun(options.Message, playbookRunToModify)
-
 	originalPost, err := s.buildStatusUpdatePost(options.Message, playbookRunID, userID)
 	if err != nil {
 		return err
@@ -1221,35 +1183,35 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string, siteURL string) string {
+func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) string {
 	announcementMsg := fmt.Sprintf(
 		"### Run finished: [%s](%s)\n",
 		playbookRun.Name,
-		getRunDetailsURL(siteURL, playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just marked [%s](%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
-		getRunDetailsURL(siteURL, playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 	)
 
 	return announcementMsg
 }
 
-func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string, siteURL string) string {
+func (s *PlaybookRunServiceImpl) buildStatusUpdateMessage(playbookRun *PlaybookRun, userName string, status string) string {
 	announcementMsg := fmt.Sprintf(
 		"### Run status update %s : [%s](%s)\n",
 		status,
 		playbookRun.Name,
-		getRunDetailsURL(siteURL, playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s %s status update for [%s](%s). Visit the link above for more information.",
 		userName,
 		status,
 		playbookRun.Name,
-		getRunDetailsURL(siteURL, playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 	)
 
 	return announcementMsg
@@ -1296,8 +1258,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return errors.Wrapf(err, "failed to resolve user %s", userID)
 	}
 
-	siteURL := s.getSiteURL()
-	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, getRunDetailsURL(siteURL, playbookRunID))
+	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
@@ -1310,11 +1271,10 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify, logger)
 	}
 
-	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username, siteURL)
-	// DM notifications to followers are best-effort: a delivery failure must not abort the finish.
+	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
 	err = s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
 	if err != nil {
-		logger.WithError(err).Warn("failed to dm post to run followers on finish")
+		logger.WithError(err).Error("failed to dm post to run followers")
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -1350,14 +1310,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	s.metricsService.IncrementRunsFinishedCount(1)
-	updatedRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		// Re-read failed; skip the WS notification to avoid broadcasting a partial snapshot.
-		// Clients will see the correct Finished status on their next load or page refresh.
-		logger.WithError(err).Warn("failed to re-read run after finish; skipping WS notification to avoid partial state broadcast")
-	} else {
-		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, updatedRun)
-	}
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 
@@ -1374,11 +1327,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "endAt", endAt)
 	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusFinished)
-	if updatedRun != nil {
-		auditRec.AddEventResultState(*updatedRun)
-	} else {
-		auditRec.AddEventResultState(*playbookRunToModify)
-	}
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -1411,14 +1360,14 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	playbookRunToModify.StatusUpdateEnabled = enable
 
 	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrap(err, "failed to update playbook run when toggling status updates")
+		return err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
-	}
 	T := i18n.GetUserTranslations(user.Locale)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
 
 	statusUpdate := "enabled"
 	eventType := StatusUpdatesEnabled
@@ -1429,7 +1378,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 
 	data := map[string]interface{}{
 		"RunName":  playbookRunToModify.Name,
-		"RunURL":   getRunDetailsURL(s.getSiteURL(), playbookRunID),
+		"RunURL":   GetRunDetailsRelativeURL(playbookRunID),
 		"Username": user.Username,
 	}
 
@@ -1450,7 +1399,7 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, statusUpdateMessage, playbookRunToModify, logger)
 	}
 
-	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate, s.getSiteURL())
+	runStatusUpdateMessage := s.buildStatusUpdateMessage(playbookRunToModify, user.Username, statusUpdate)
 	if err = s.dmPostToRunFollowers(&model.Post{Message: runStatusUpdateMessage}, statusUpdateMessage, playbookRunToModify.ID, userID); err != nil {
 		logger.WithError(err).Error("failed to dm post toggle-run-status-updates to run followers")
 	}
@@ -1536,8 +1485,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to resolve user %s", userID)
 	}
 
-	siteURL := s.getSiteURL()
-	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, getRunDetailsURL(siteURL, playbookRunID))
+	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
@@ -1959,9 +1907,8 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	// Do we send a DM to the new owner?
 	if ownerID != userID {
 		msg := fmt.Sprintf("@%s changed the owner for run: [%s](%s) from **@%s** to **@%s**",
-			subjectUser.Username, playbookRunToModify.Name, getRunDetailsURL(s.getSiteURL(), playbookRunToModify.ID),
+			subjectUser.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunToModify.ID),
 			oldOwnerUsername, newOwner.Username)
-		// DM notification to new owner is best-effort: a delivery failure must not abort the owner change.
 		if err = s.poster.DM(ownerID, &model.Post{Message: msg}); err != nil {
 			logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to send DM to new owner in ChangeOwner")
 		}
@@ -2240,7 +2187,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to resolve user %s", assigneeID)
 		}
 
-		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, getRunDetailsURL(s.getSiteURL(), playbookRunID))
+		runURL := fmt.Sprintf("[%s](%s?from=dm_assignedtask)\n", playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, runURL)
 
@@ -3403,8 +3350,7 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		return nil, err
 	}
 
-	siteURL := s.getSiteURL()
-	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale, siteURL)
+	part1 := buildRunsOverdueMessage(digestMessageItems.overdueRuns, user.Locale)
 
 	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
@@ -3413,8 +3359,8 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 		}).Warn("failed to get user timezone")
 	}
 
-	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force, siteURL)
-	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale, siteURL)
+	part2 := buildAssignedTaskMessageSummary(digestMessageItems.assignedRuns, user.Locale, timezone, !force)
+	part3 := buildRunsInProgressMessage(digestMessageItems.inProgressRuns, user.Locale)
 
 	var message string
 	if shouldSendFullData || len(digestMessageItems.overdueRuns) > 0 {
@@ -3476,7 +3422,7 @@ func (s *PlaybookRunServiceImpl) GetOverdueUpdateRuns(userID string) ([]RunLink,
 	return s.store.GetOverdueUpdateRuns(userID)
 }
 
-func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, _ string, checklistNumber int) (*PlaybookRun, error) {
+func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
 	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve playbook run")
@@ -3632,7 +3578,7 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(playbookRun *Playboo
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(_, requesterID, postID, clientID string, playbooks []Playbook) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postID, clientID string, playbooks []Playbook) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(requesterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
@@ -3662,21 +3608,10 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(_, requesterID, postID, cl
 	introText := T("app.user.new_run.intro", data)
 
 	defaultPlaybookID := ""
+	defaultChannelNameTemplate := ""
 	if len(playbooks) == 1 {
 		defaultPlaybookID = playbooks[0].ID
-	}
-
-	// When there is exactly one selectable playbook and it has a ChannelNameTemplate,
-	// the name field is optional because the template will generate a name at run-creation
-	// time. With multiple playbooks the user may select one without a template, so the
-	// name field remains required.
-	nameOptional := false
-	nameMinLength := 1
-	nameDefault := ""
-	if len(playbooks) == 1 && playbooks[0].ChannelNameTemplate != "" {
-		nameOptional = true
-		nameMinLength = 0
-		nameDefault = playbooks[0].ChannelNameTemplate
+		defaultChannelNameTemplate = playbooks[0].ChannelNameTemplate
 	}
 
 	return &model.Dialog{
@@ -3695,10 +3630,9 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(_, requesterID, postID, cl
 				DisplayName: T("app.user.new_run.run_name"),
 				Name:        DialogFieldNameKey,
 				Type:        "text",
-				Default:     nameDefault,
-				MinLength:   nameMinLength,
-				MaxLength:   MaxRunNameLength,
-				Optional:    nameOptional,
+				MinLength:   1,
+				MaxLength:   64,
+				Default:     defaultChannelNameTemplate,
 			},
 		},
 		SubmitLabel:    T("app.user.new_run.submit_label"),
@@ -3707,7 +3641,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(_, requesterID, postID, cl
 	}, nil
 }
 
-func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(_, message string, broadcastChannelNum int, reminderTimer time.Duration, locale string) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message string, broadcastChannelNum int, reminderTimer time.Duration, locale string) (*model.Dialog, error) {
 	T := i18n.GetUserTranslations(locale)
 
 	data := map[string]interface{}{
@@ -4240,7 +4174,7 @@ func (s *PlaybookRunServiceImpl) RequestUpdate(playbookRunID, requesterID string
 	T := i18n.GetUserTranslations(requesterUser.Locale)
 	data := map[string]interface{}{
 		"RunName": playbookRun.Name,
-		"RunURL":  getRunDetailsURL(s.getSiteURL(), playbookRunID),
+		"RunURL":  GetRunDetailsRelativeURL(playbookRunID),
 		"Name":    requesterUser.Username,
 	}
 
@@ -4488,14 +4422,10 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		if shouldAddToChannel {
 			s.participateActions(playbookRun, user)
 		}
-	}
 
-	// Participate implies following the run. Batch all follow writes into a single
-	// store call instead of calling Follow() once per user (which triggers 2
-	// GetPlaybookRun calls per iteration).
-	if len(usersToInvite) > 0 {
-		if err = s.store.FollowBatch(playbookRunID, usersToInvite); err != nil {
-			return errors.Wrap(err, "failed to make participants follow run")
+		// Participate implies following the run
+		if err = s.Follow(playbookRunID, userID); err != nil {
+			return errors.Wrap(err, "failed to make participant follow run")
 		}
 	}
 
@@ -4658,36 +4588,6 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 	return nil
 }
 
-// maxAutoFollowBatchSize caps the number of users auto-followed per run creation.
-// Prevents unbounded IN-clause sizes for playbooks with very large auto-follow lists.
-const maxAutoFollowBatchSize = 1000
-
-// followBatch follows multiple users to a run, sending a single WS event instead of N.
-// originalRun is snapshotted by value at call time to avoid stale-pointer races.
-func (s *PlaybookRunServiceImpl) followBatch(playbookRunID string, userIDs []string, originalRun PlaybookRun) {
-	if len(userIDs) == 0 {
-		return
-	}
-
-	if len(userIDs) > maxAutoFollowBatchSize {
-		logrus.WithField("playbook_run_id", playbookRunID).WithField("count", len(userIDs)).
-			Warn("auto-follow list exceeds cap; truncating to maxAutoFollowBatchSize")
-		userIDs = userIDs[:maxAutoFollowBatchSize]
-	}
-
-	if err := s.store.FollowBatch(playbookRunID, userIDs); err != nil {
-		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to batch follow the playbook run")
-		return
-	}
-
-	playbookRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to get playbook run after batch follow")
-		return
-	}
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, &originalRun, playbookRun, userIDs...)
-}
-
 // UnFollow method lets user unfollow a specific playbook run
 func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	auditRec := plugin.MakeAuditRecord("unfollowPlaybookRun", model.AuditStatusFail)
@@ -4717,42 +4617,6 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
 	// Mark success and add result state for audit
-	auditRec.Success()
-	auditRec.AddEventResultState(*playbookRun)
-
-	return nil
-}
-
-// UnfollowMultiple unfollows multiple users from a run in one batch operation.
-func (s *PlaybookRunServiceImpl) UnfollowMultiple(playbookRunID string, userIDs []string) error {
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	auditRec := plugin.MakeAuditRecord("unfollowPlaybookRunBatch", model.AuditStatusFail)
-	defer s.api.LogAuditRec(auditRec)
-
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-	model.AddEventParameterToAuditRec(auditRec, "userIDsCount", len(userIDs))
-
-	originalRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	model.AddEventParameterToAuditRec(auditRec, "teamID", originalRun.TeamID)
-
-	if err := s.store.UnfollowMultiple(playbookRunID, userIDs); err != nil {
-		return errors.Wrapf(err, "users `%+v` failed to batch unfollow the run `%s`", userIDs, playbookRunID)
-	}
-
-	playbookRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userIDs...)
-
 	auditRec.Success()
 	auditRec.AddEventResultState(*playbookRun)
 
@@ -4832,32 +4696,14 @@ func min(a, b int) int {
 	return b
 }
 
-// webhookTimeout is the per-request deadline for outbound webhook calls.
-const webhookTimeout = 30 * time.Second
-
-// maxConcurrentWebhooks caps the number of goroutines that can issue HTTP
-// requests simultaneously, preventing unbounded resource use when a playbook
-// has many webhook URLs configured.
-const maxConcurrentWebhooks = 10
-
-// triggerWebhooks sends the JSON body to each webhook URL in a bounded goroutine pool.
-// Each request has a hard timeout of webhookTimeout; at most maxConcurrentWebhooks
-// requests run concurrently. The function blocks until all goroutines complete.
+// Helper function to Trigger webhooks
 func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) {
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, maxConcurrentWebhooks)
 	for i := range webhooks {
 		url := webhooks[i]
-		sem <- struct{}{}
-		wg.Add(1)
+
 		go func() {
-			defer wg.Done()
-			defer func() { <-sem }()
+			req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 
-			ctx, cancel := context.WithTimeout(context.Background(), webhookTimeout)
-			defer cancel()
-
-			req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
 			if err != nil {
 				logrus.WithError(err).WithField("webhook_url", url).Error("failed to create a POST request to webhook URL")
 				return
@@ -4879,10 +4725,10 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 			}
 		}()
 	}
-	wg.Wait()
+
 }
 
-func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool, siteURL string) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyTasksDueUntilToday bool) string {
 	var msg strings.Builder
 
 	T := i18n.GetUserTranslations(locale)
@@ -4946,7 +4792,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 
 		// omit run's title if tasks info is empty
 		if tasksInfo.String() != "" {
-			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID)))
+			runsInfo.WriteString(fmt.Sprintf("[%s](%s?from=digest_assignedtask)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID)))
 			runsInfo.WriteString(tasksInfo.String())
 		}
 	}
@@ -4977,7 +4823,7 @@ func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone
 	return msg.String()
 }
 
-func buildRunsInProgressMessage(runs []RunLink, locale string, siteURL string) string {
+func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
@@ -4991,13 +4837,13 @@ func buildRunsInProgressMessage(runs []RunLink, locale string, siteURL string) s
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID))
+		msg += fmt.Sprintf("- [%s](%s?from=digest_runsinprogress)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
 	}
 
 	return msg
 }
 
-func buildRunsOverdueMessage(runs []RunLink, locale string, siteURL string) string {
+func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
@@ -5009,7 +4855,7 @@ func buildRunsOverdueMessage(runs []RunLink, locale string, siteURL string) stri
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, getRunDetailsURL(siteURL, run.PlaybookRunID))
+		msg += fmt.Sprintf("- [%s](%s?from=digest_overduestatus)\n", run.Name, GetRunDetailsRelativeURL(run.PlaybookRunID))
 	}
 
 	return msg
@@ -5057,7 +4903,7 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessage(broadcastChannelID 
 
 // dm to users who follow
 
-func (s *PlaybookRunServiceImpl) dmPostToRunFollowers(post *model.Post, _ messageType, playbookRunID, authorID string) error {
+func (s *PlaybookRunServiceImpl) dmPostToRunFollowers(post *model.Post, mType messageType, playbookRunID, authorID string) error {
 	followers, err := s.GetFollowers(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get followers")
@@ -5272,10 +5118,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 			propertyField = &pf
 			break
 		}
-	}
-
-	if propertyField == nil {
-		return nil, errors.Wrap(ErrPropertyFieldNotOnRun, "property field does not belong to this run")
 	}
 
 	var currentValue json.RawMessage
@@ -5516,82 +5358,6 @@ func (s *PlaybookRunServiceImpl) PostPropertyChangeMessage(userID string, run *P
 	}
 }
 
-// buildSystemTokens creates the system token map for template resolution.
-// Tokens: OWNER (display name), CREATOR (display name).
-// Empty userID produces an empty token. User lookup failures fall back to the raw user ID.
-func (s *PlaybookRunServiceImpl) buildSystemTokens(run *PlaybookRun) map[string]string {
-	ownerName := ""
-	if run.OwnerUserID != "" {
-		ownerName = s.resolveUserDisplayName(run.OwnerUserID)
-	}
-	creatorName := ""
-	if run.ReporterUserID != "" {
-		creatorName = s.resolveUserDisplayName(run.ReporterUserID)
-	}
-	return map[string]string{
-		"OWNER":   ownerName,
-		"CREATOR": creatorName,
-	}
-}
-
-// resolveUserDisplayName resolves a user ID to a display name, falling back to the raw ID.
-func (s *PlaybookRunServiceImpl) resolveUserDisplayName(userID string) string {
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil || user == nil {
-		return userID
-	}
-	displayName := model.SanitizeUnicode(user.GetDisplayName(model.ShowNicknameFullName))
-	if displayName == "" {
-		return user.Username
-	}
-	return displayName
-}
-
-// makeRunNameFormatFunc returns a FormatFunc that resolves user-type fields to display names.
-// Each closure caches user lookups to avoid redundant API calls within a single resolution.
-// NOTE: The returned closure is NOT safe for concurrent use — create one per invocation.
-func (s *PlaybookRunServiceImpl) makeRunNameFormatFunc() FormatFunc {
-	userCache := map[string]string{}
-	return func(field *PropertyField, raw json.RawMessage) (string, bool) {
-		if field == nil {
-			return "", true
-		}
-		switch field.Type {
-		case "user":
-			var userID string
-			if err := json.Unmarshal(raw, &userID); err != nil || userID == "" {
-				return DefaultFormatPropertyValue(field, raw)
-			}
-			if cached, ok := userCache[userID]; ok {
-				return cached, false
-			}
-			name := s.resolveUserDisplayName(userID)
-			userCache[userID] = name
-			return name, false
-
-		case "multiuser":
-			var userIDs []string
-			if err := json.Unmarshal(raw, &userIDs); err != nil || len(userIDs) == 0 {
-				return DefaultFormatPropertyValue(field, raw)
-			}
-			var names []string
-			for _, uid := range userIDs {
-				if cached, ok := userCache[uid]; ok {
-					names = append(names, cached)
-					continue
-				}
-				name := s.resolveUserDisplayName(uid)
-				userCache[uid] = name
-				names = append(names, name)
-			}
-			return strings.Join(names, ", "), false
-
-		default:
-			return DefaultFormatPropertyValue(field, raw)
-		}
-	}
-}
-
 // resolveRoleAssignments resolves BOTH Owner and Creator role assignments at run creation time.
 // Called once during CreatePlaybookRun, after checklists are copied from the playbook template.
 // Returns a new []Checklist so the caller's backing array is not mutated.
@@ -5754,89 +5520,58 @@ func remapAssigneePropertyFieldIDs(checklists []Checklist, fieldMappings map[str
 // formatPropertyValueForDisplay formats a property value for display in bot messages
 // Returns the display string and a boolean indicating if the value is empty
 func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) (string, bool) {
-	str, empty := DefaultFormatPropertyValue(propertyField, value)
-	if empty {
+	if len(value) == 0 || string(value) == "null" || string(value) == `""` {
 		return "", true
 	}
-	if len(str) > propertyValueMaxDisplayLength {
-		return str[:propertyValueMaxDisplayLength-3] + "...", false
-	}
-	return str, false
-}
 
-// translateOptionIDs remaps playbook-scoped option IDs in a JSON property value
-// to run-scoped option IDs using the provided mapping. Handles both single-option
-// (JSON string) and multi-option (JSON array of strings) values.
-func translateOptionIDs(raw json.RawMessage, optionMappings map[string]string) (json.RawMessage, error) {
-	if len(optionMappings) == 0 {
-		return raw, nil
-	}
-	// Try single string (select field)
-	var single string
-	if err := json.Unmarshal(raw, &single); err == nil {
-		if mapped, ok := optionMappings[single]; ok {
-			b, err := json.Marshal(mapped)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to marshal translated option ID")
-			}
-			return b, nil
+	switch propertyField.Type {
+	case "text":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value), false
 		}
-		// Not a select option ID (e.g. user-type field passing a user ID) — pass through unchanged.
-		return raw, nil
-	}
-	// Try array of strings (multiselect field)
-	var multi []string
-	if err := json.Unmarshal(raw, &multi); err == nil {
-		translated := make([]string, 0, len(multi))
-		for _, id := range multi {
-			if mapped, ok := optionMappings[id]; ok {
-				translated = append(translated, mapped)
-			} else {
-				logrus.WithField("option_id", id).Warn("translateOptionIDs: option ID not found in mapping, skipping")
+		if len(stringValue) > propertyValueMaxDisplayLength {
+			return stringValue[:propertyValueMaxDisplayLength-3] + "...", false
+		}
+		return stringValue, false
+
+	case "select":
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return string(value), false
+		}
+		// Find the option label for this value
+		for _, option := range propertyField.Attrs.Options {
+			if option.GetID() == stringValue {
+				return option.GetName(), false
 			}
 		}
-		b, err := json.Marshal(translated)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal translated option IDs")
+		return stringValue, false
+
+	case "multiselect":
+		var arrayValue []string
+		if err := json.Unmarshal(value, &arrayValue); err != nil {
+			return string(value), false
 		}
-		return b, nil
+		if len(arrayValue) == 0 {
+			return "", true
+		}
+		// Convert option IDs to labels
+		var labels []string
+		for _, val := range arrayValue {
+			label := val // Default to ID if label not found
+			for _, option := range propertyField.Attrs.Options {
+				if option.GetID() == val {
+					label = option.GetName()
+					break
+				}
+			}
+			labels = append(labels, label)
+		}
+		return strings.Join(labels, ", "), false
+
+	default:
+		return string(value), false
 	}
-	return raw, nil
 }
 
-// resolveMessageForRun resolves attribute placeholders in msg for the given run.
-// It fetches the playbook when needed. If the run has no PlaybookID or the
-// playbook cannot be loaded, msg is returned unchanged.
-func (s *PlaybookRunServiceImpl) resolveMessageForRun(msg string, run *PlaybookRun) string {
-	if msg == "" || run == nil {
-		return msg
-	}
-	return s.resolveAttributePlaceholders(msg, run)
-}
-
-// resolveAttributePlaceholders replaces {FieldName} and system tokens ({SEQ}, {OWNER}, {CREATOR})
-// in msg with the run's current property values and run metadata. Unknown tokens are left as-is (lenient resolution).
-// Uses run.PropertyFields and run.PropertyValues (populated by GetPlaybookRun) to avoid redundant DB calls.
-func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *PlaybookRun) string {
-	if msg == "" || run == nil {
-		return msg
-	}
-
-	fields := run.PropertyFields
-	values := run.PropertyValues
-
-	valuesMap := make(map[string]json.RawMessage, len(values))
-	for _, v := range values {
-		valuesMap[v.FieldID] = v.Value
-	}
-
-	systemTokens := s.buildSystemTokens(run)
-
-	resolved, _ := ResolveTemplate(msg, ResolveOptions{
-		Fields:       fields,
-		Values:       valuesMap,
-		SystemTokens: systemTokens,
-		FormatFunc:   s.makeRunNameFormatFunc(),
-	})
-	return resolved
-}
