@@ -702,9 +702,6 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.AssigneeType != item.AssigneeType {
 				fields["assignee_type"] = item.AssigneeType
 			}
-			if prev.AssigneeGroupID != item.AssigneeGroupID {
-				fields["assignee_group_id"] = item.AssigneeGroupID
-			}
 			if prev.AssigneePropertyFieldID != item.AssigneePropertyFieldID {
 				fields["assignee_property_field_id"] = item.AssigneePropertyFieldID
 			}
@@ -1248,9 +1245,6 @@ type PlaybookRunService interface {
 	// SetAssignee sets the assignee for the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
-
-	// SetGroupAssignee sets a Mattermost group as the assignee for the specified checklist item.
-	SetGroupAssignee(playbookRunID, userID, groupID string, checklistNumber, itemNumber int) error
 
 	// SetRoleAssignee sets a role-based assignee type ("owner" or "creator") for the specified checklist item.
 	SetRoleAssignee(playbookRunID, userID, assigneeType string, checklistNumber, itemNumber int) error

@@ -17,19 +17,11 @@ import {useProfilesInTeam} from 'src/hooks';
 import {ChecklistHoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 export const EXTRA_OPTION_PREFIX_ROLE = 'role:';
-export const EXTRA_OPTION_PREFIX_GROUP = 'group:';
 export const EXTRA_OPTION_PREFIX_PROPERTY_USER = 'property_user:';
 
 export interface RoleOption {
     value: string;
     label: string;
-}
-
-export interface GroupOption {
-    id: string;
-    displayName: string;
-    name: string;
-    memberCount: number;
 }
 
 interface AssignedToProps {
@@ -43,7 +35,6 @@ interface AssignedToProps {
     onOpenChange?: (isOpen: boolean) => void;
     isEditing?: boolean;
     roleOptions?: RoleOption[];
-    groupOptions?: GroupOption[];
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -57,27 +48,6 @@ const AssignTo = (props: AssignedToProps) => {
     };
 
     const extraSections: ExtraSection[] = [];
-    if (props.groupOptions && props.groupOptions.length > 0) {
-        extraSections.push({
-            label: formatMessage({defaultMessage: 'GROUPS'}),
-            options: props.groupOptions.map((g) => ({
-                value: `${EXTRA_OPTION_PREFIX_GROUP}${g.id}`,
-                label: (
-                    <OptionRow>
-                        <GroupIcon className='icon-account-multiple-outline'/>
-                        <GroupOptionText>
-                            <GroupDisplayName>{g.displayName}</GroupDisplayName>
-                            <GroupHandle>{formatMessage({defaultMessage: '@{name}'}, {name: g.name})}</GroupHandle>
-                        </GroupOptionText>
-                        <MemberCountBadge>
-                            {formatMessage({defaultMessage: '{count} members'}, {count: g.memberCount})}
-                        </MemberCountBadge>
-                    </OptionRow>
-                ),
-                isExtraOption: true as const,
-            })),
-        });
-    }
     if (props.roleOptions && props.roleOptions.length > 0) {
         extraSections.push({
             label: formatMessage({defaultMessage: 'RUN ROLES'}),
@@ -323,47 +293,6 @@ const OptionRow = styled.div`
     align-items: center;
     width: 100%;
     gap: 8px;
-`;
-
-const GroupIcon = styled.i`
-    font-size: 20px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    flex-shrink: 0;
-`;
-
-const GroupOptionText = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    overflow: hidden;
-    flex: 1;
-    min-width: 0;
-`;
-
-const GroupDisplayName = styled.span`
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const GroupHandle = styled.span`
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const MemberCountBadge = styled.span`
-    flex-shrink: 0;
-    margin-left: auto;
-    font-size: 11px;
-    font-weight: 600;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    background: rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 4px;
-    padding: 2px 6px;
-    white-space: nowrap;
 `;
 
 const RoleTriangle = styled.i`

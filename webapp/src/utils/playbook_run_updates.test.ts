@@ -36,7 +36,6 @@ describe('playbook_run_updates utilities', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
-                        assignee_group_id: '',
                     },
                 ],
             },

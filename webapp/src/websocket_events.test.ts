@@ -92,7 +92,6 @@ describe('incremental updates', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
-                        assignee_group_id: '',
                     },
                     {
                         id: 'item_2',
@@ -110,7 +109,6 @@ describe('incremental updates', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
-                        assignee_group_id: '',
                     },
                 ],
             },
@@ -1258,7 +1256,6 @@ describe('incremental updates', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
-                        assignee_group_id: '',
                     },
                     {
                         id: 'item_b',
@@ -1398,7 +1395,6 @@ describe('incremental updates', () => {
                             condition_id: '',
                             condition_action: '',
                             condition_reason: '',
-                            assignee_group_id: '',
                         },
                     ],
                 });

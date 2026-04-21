@@ -16,8 +16,6 @@ import {UserProfile} from '@mattermost/types/users';
 
 import {FloatingPortal} from '@floating-ui/react';
 
-import {useAllowReferenceGroups} from 'src/hooks/use_allow_reference_groups';
-
 import {
     clientAddChecklistItem,
     clientEditChecklistItem,
@@ -25,7 +23,6 @@ import {
     setDueDate as clientSetDueDate,
     setAssignee,
     setChecklistItemState,
-    setGroupAssignee,
     setPropertyUserAssignee,
     setRoleAssignee,
 } from 'src/client';
@@ -46,7 +43,7 @@ import AssigneeDropdown from 'src/components/checklists/assignee_dropdown';
 import ChecklistItemHoverMenu, {HoverMenu} from './hover_menu';
 import ChecklistItemDescription from './description';
 import ChecklistItemTitle from './title';
-import AssignTo, {EXTRA_OPTION_PREFIX_GROUP, EXTRA_OPTION_PREFIX_PROPERTY_USER, EXTRA_OPTION_PREFIX_ROLE} from './assign_to';
+import AssignTo, {EXTRA_OPTION_PREFIX_PROPERTY_USER, EXTRA_OPTION_PREFIX_ROLE} from './assign_to';
 import Command from './command';
 import {CancelSaveButtons, CheckBoxButton} from './inputs';
 import {DueDateButton} from './duedate';
@@ -158,12 +155,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const [command, setCommand] = useState(props.checklistItem.command);
     const [taskActions, setTaskActions] = useState(props.checklistItem.task_actions);
     const [assigneeID, setAssigneeID] = useState(props.checklistItem.assignee_id);
-    const [assigneeGroupID, setAssigneeGroupID] = useState(props.checklistItem.assignee_group_id || '');
     const [assigneeType, setAssigneeType] = useState(props.checklistItem.assignee_type || '');
     const [assigneePropertyFieldID, setAssigneePropertyFieldID] = useState(props.checklistItem.assignee_property_field_id || '');
     const [dueDate, setDueDate] = useState(props.checklistItem.due_date);
     const {updateRunTaskActions} = useUpdateRunItemTaskActions(props.playbookRunId);
-    const groups = useAllowReferenceGroups();
 
     const userPropertyFields = useMemo(
         () => props.propertyFields?.filter((f) => f.type === PropertyFieldType.User) ?? [],
@@ -184,20 +179,14 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         return opts;
     }, [formatMessage, userPropertyFields]);
 
-    const groupOptions = useMemo(
-        () => groups.map((g) => ({id: g.id, displayName: g.display_name, name: g.name, memberCount: g.member_count})),
-        [groups],
-    );
-
     // Merge local state into the checklistItem so child components see changes
     // immediately rather than waiting for a WebSocket round-trip or prop update.
     const localChecklistItem = useMemo(() => ({
         ...props.checklistItem,
         assignee_id: assigneeID,
         assignee_type: assigneeType,
-        assignee_group_id: assigneeGroupID,
         assignee_property_field_id: assigneePropertyFieldID,
-    }), [props.checklistItem, assigneeID, assigneeType, assigneeGroupID, assigneePropertyFieldID]);
+    }), [props.checklistItem, assigneeID, assigneeType, assigneePropertyFieldID]);
 
     // Notify parent when editing state changes
     useUpdateEffect(() => {
@@ -227,10 +216,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }, [props.checklistItem.assignee_id]);
 
     useUpdateEffect(() => {
-        setAssigneeGroupID(props.checklistItem.assignee_group_id || '');
-    }, [props.checklistItem.assignee_group_id]);
-
-    useUpdateEffect(() => {
         setAssigneeType(props.checklistItem.assignee_type || '');
     }, [props.checklistItem.assignee_type]);
 
@@ -250,11 +235,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         const userId = user?.id || '';
         const prevAssigneeID = assigneeID;
         const prevAssigneeType = assigneeType;
-        const prevAssigneeGroupID = assigneeGroupID;
         const prevAssigneePropertyFieldID = assigneePropertyFieldID;
         setAssigneeID(userId);
         setAssigneeType('');
-        setAssigneeGroupID('');
         setAssigneePropertyFieldID('');
         if (props.newItem) {
             return;
@@ -264,7 +247,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             if (response.error && isMounted.current) {
                 setAssigneeID(prevAssigneeID);
                 setAssigneeType(prevAssigneeType);
-                setAssigneeGroupID(prevAssigneeGroupID);
                 setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
                 toaster.add({
                     content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
@@ -275,7 +257,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             const newItem = {...props.checklistItem};
             newItem.assignee_id = userId;
             newItem.assignee_type = '';
-            newItem.assignee_group_id = '';
             newItem.assignee_property_field_id = '';
             props.onUpdateChecklistItem?.(newItem);
         }
@@ -286,38 +267,22 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
         const prevAssigneeID = updatedItem.assignee_id === undefined ? '' : assigneeID;
-        const prevAssigneeGroupID = assigneeGroupID;
         const prevAssigneeType = assigneeType;
         const prevAssigneePropertyFieldID = assigneePropertyFieldID;
         const rollback = () => {
             if (isMounted.current && assigneeCallSeqRef.current === seq) {
                 setAssigneeID(prevAssigneeID);
-                setAssigneeGroupID(prevAssigneeGroupID);
                 setAssigneeType(prevAssigneeType);
                 setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
             }
         };
         setAssigneeID(updatedItem.assignee_id || '');
-        setAssigneeGroupID(updatedItem.assignee_group_id || '');
         setAssigneeType(updatedItem.assignee_type || '');
         setAssigneePropertyFieldID(updatedItem.assignee_property_field_id || '');
         if (props.newItem) {
             return;
         }
-        if (updatedItem.assignee_type === 'group' && updatedItem.assignee_group_id) {
-            if (props.playbookRunId) {
-                const response = await setGroupAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_group_id);
-                if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
-                    rollback();
-                    toaster.add({
-                        content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
-                        toastStyle: ToastStyle.Failure,
-                    });
-                }
-            } else {
-                props.onUpdateChecklistItem?.(updatedItem);
-            }
-        } else if (updatedItem.assignee_type === 'owner' || updatedItem.assignee_type === 'creator') {
+        if (updatedItem.assignee_type === 'owner' || updatedItem.assignee_type === 'creator') {
             if (props.playbookRunId) {
                 const response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
                 if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
@@ -355,7 +320,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         } else {
             props.onUpdateChecklistItem?.(updatedItem);
         }
-    }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster, assigneeID, assigneeGroupID, assigneeType, assigneePropertyFieldID]);
+    }, [props.playbookRunId, props.checklistNum, props.itemNum, props.newItem, props.onUpdateChecklistItem, formatMessage, toaster, assigneeID, assigneeType, assigneePropertyFieldID]);
 
     const onExtraOptionSelected = async (value: string) => {
         const updatedItem = {...props.checklistItem};
@@ -363,15 +328,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         if (value.startsWith(EXTRA_OPTION_PREFIX_ROLE)) {
             updatedItem.assignee_type = value.slice(EXTRA_OPTION_PREFIX_ROLE.length);
-            updatedItem.assignee_group_id = '';
-            updatedItem.assignee_property_field_id = '';
-        } else if (value.startsWith(EXTRA_OPTION_PREFIX_GROUP)) {
-            updatedItem.assignee_type = 'group';
-            updatedItem.assignee_group_id = value.slice(EXTRA_OPTION_PREFIX_GROUP.length);
             updatedItem.assignee_property_field_id = '';
         } else if (value.startsWith(EXTRA_OPTION_PREFIX_PROPERTY_USER)) {
             updatedItem.assignee_type = 'property_user';
-            updatedItem.assignee_group_id = '';
             updatedItem.assignee_property_field_id = value.slice(EXTRA_OPTION_PREFIX_PROPERTY_USER.length);
         }
 
@@ -458,14 +417,13 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
         const isPropertyUserAssignee = assigneeType === 'property_user';
-        const isGroupAssignee = assigneeType === 'group';
 
-        if (!assigneeID && !assigneeGroupID && !isRoleAssignee && !isPropertyUserAssignee) {
+        if (!assigneeID && !isRoleAssignee && !isPropertyUserAssignee) {
             // hide when nothing is set
             return null;
         }
 
-        if (isRoleAssignee || isPropertyUserAssignee || isGroupAssignee) {
+        if (isRoleAssignee || isPropertyUserAssignee) {
             return (
                 <AssigneeDropdown
                     checklistItem={localChecklistItem}
@@ -570,7 +528,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 condition_id: '',
                 condition_action: '',
                 condition_reason: '',
-                assignee_group_id: assigneeGroupID,
                 assignee_property_field_id: assigneePropertyFieldID,
             };
             if (props.playbookRunId) {
@@ -606,7 +563,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (
             !isEditing &&
             !assigneeID &&
-            !assigneeGroupID &&
             !isRoleAssignee &&
             !isPropertyUserAssignee &&
             !command &&
@@ -658,7 +614,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         onAssigneeChange={onAssigneeChange}
                         onExtraOptionSelected={onExtraOptionSelected}
                         roleOptions={roleOptions}
-                        groupOptions={groupOptions}
                         due_date={props.checklistItem.due_date}
                         onDueDateChange={onDueDateChange}
                         onDuplicateChecklistItem={props.onDuplicateChecklistItem}

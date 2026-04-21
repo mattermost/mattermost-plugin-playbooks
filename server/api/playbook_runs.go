@@ -1360,7 +1360,6 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 
 	var params struct {
 		AssigneeID              string `json:"assignee_id"`
-		AssigneeGroupID         string `json:"assignee_group_id"`
 		AssigneeType            string `json:"assignee_type"`
 		AssigneePropertyFieldID string `json:"assignee_property_field_id"`
 	}
@@ -1375,19 +1374,12 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_property_field_id", errors.New("invalid assignee_property_field_id"))
 		return
 	}
-	if params.AssigneeGroupID != "" && !model.IsValidId(params.AssigneeGroupID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_group_id", errors.New("invalid assignee_group_id"))
-		return
-	}
 	if params.AssigneeID != "" && !model.IsValidId(params.AssigneeID) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_id", errors.New("invalid assignee_id"))
 		return
 	}
 
 	if params.AssigneePropertyFieldID != "" {
-		exclusiveCount++
-	}
-	if params.AssigneeGroupID != "" {
 		exclusiveCount++
 	}
 	if params.AssigneeType == app.AssigneeTypeOwner || params.AssigneeType == app.AssigneeTypeCreator {
@@ -1397,12 +1389,12 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_type", errors.New("assignee_type must be owner, creator, or blank"))
 		return
 	}
-	if params.AssigneeID != "" && (params.AssigneeGroupID != "" || params.AssigneePropertyFieldID != "" || params.AssigneeType == app.AssigneeTypeOwner || params.AssigneeType == app.AssigneeTypeCreator) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assignee_id cannot be combined with assignee_group_id, assignee_property_field_id, or role assignee_type", errors.New("ambiguous assignee parameters"))
+	if params.AssigneeID != "" && (params.AssigneePropertyFieldID != "" || params.AssigneeType == app.AssigneeTypeOwner || params.AssigneeType == app.AssigneeTypeCreator) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assignee_id cannot be combined with assignee_property_field_id or role assignee_type", errors.New("ambiguous assignee parameters"))
 		return
 	}
 	if exclusiveCount > 1 {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "exactly one of assignee_property_field_id, assignee_group_id, or assignee_type (owner/creator) may be set", errors.New("ambiguous assignee parameters"))
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "exactly one of assignee_property_field_id or assignee_type (owner/creator) may be set", errors.New("ambiguous assignee parameters"))
 		return
 	}
 
@@ -1413,11 +1405,6 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		}
 		ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 		return
-	} else if params.AssigneeGroupID != "" {
-		if err := h.playbookRunService.SetGroupAssignee(id, userID, params.AssigneeGroupID, checklistNum, itemNum); err != nil {
-			h.HandleError(w, c.logger, err)
-			return
-		}
 	} else if params.AssigneeType == app.AssigneeTypeOwner || params.AssigneeType == app.AssigneeTypeCreator {
 		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
 			h.HandleError(w, c.logger, err)

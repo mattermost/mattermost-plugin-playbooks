@@ -20,9 +20,6 @@ func NormalizeAssigneeTypes(checklists []Checklist) error {
 			}
 			// Validate companion ID fields; reject non-empty IDs that fail format validation.
 			// Empty IDs are allowed (type set but no specific target selected yet).
-			if item.AssigneeType == AssigneeTypeGroup && item.AssigneeGroupID != "" && !model.IsValidId(item.AssigneeGroupID) {
-				return errors.Wrapf(ErrMalformedPlaybookRun, "checklist %d item %d: assignee_group_id is not a valid ID", ci, ii)
-			}
 			if item.AssigneeType == AssigneeTypePropertyUser && item.AssigneePropertyFieldID != "" && !model.IsValidId(item.AssigneePropertyFieldID) {
 				return errors.Wrapf(ErrMalformedPlaybookRun, "checklist %d item %d: assignee_property_field_id is not a valid ID", ci, ii)
 			}

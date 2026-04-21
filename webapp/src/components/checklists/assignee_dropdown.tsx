@@ -1,13 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
-import {useAllowReferenceGroups} from 'src/hooks/use_allow_reference_groups';
 import {ChecklistItem} from 'src/types/playbook';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 
@@ -26,23 +25,9 @@ interface Props {
 const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserIds, runOwnerUserId, runCreatorUserId, mode, propertyFields, propertyValues}: Props) => {
     const {formatMessage} = useIntl();
     const profilesInTeam = useProfilesInTeam();
-    const groups = useAllowReferenceGroups();
-    const [assignedGroupName, setAssignedGroupName] = useState<string>('');
     const [pendingPropertyUser, setPendingPropertyUser] = useState<boolean>(false);
 
     const assigneeType = checklistItem.assignee_type || '';
-
-    useEffect(() => {
-        if (assigneeType !== 'group' || !checklistItem.assignee_group_id) {
-            setAssignedGroupName('');
-            return;
-        }
-        const found = groups.find((g) => g.id === checklistItem.assignee_group_id);
-
-        // If not found in already-fetched list, leave assignedGroupName empty;
-        // the fallback label 'a Group' will be shown.
-        setAssignedGroupName(found?.display_name ?? '');
-    }, [assigneeType, checklistItem.assignee_group_id, groups]);
 
     const selectedRole = (assigneeType === 'owner' || assigneeType === 'creator' || assigneeType === 'property_user') ? assigneeType : 'none';
 
@@ -61,7 +46,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             ...checklistItem,
             assignee_type: value === 'none' ? '' : value,
             assignee_id: '',
-            assignee_group_id: '',
             assignee_property_field_id: '',
         });
     }, [checklistItem, onChanged]);
@@ -72,7 +56,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             ...checklistItem,
             assignee_type: fieldId ? 'property_user' : '',
             assignee_id: '',
-            assignee_group_id: '',
             assignee_property_field_id: fieldId,
         });
     }, [checklistItem, onChanged]);
@@ -85,28 +68,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             ...checklistItem,
             assignee_type: '',
             assignee_id: user?.id ?? '',
-            assignee_group_id: '',
-            assignee_property_field_id: '',
-        });
-    }, [checklistItem, onChanged]);
-
-    const handleGroupDropdownChange = useCallback((groupId: string) => {
-        setPendingPropertyUser(false);
-        if (!groupId) {
-            onChanged({
-                ...checklistItem,
-                assignee_type: '',
-                assignee_group_id: '',
-                assignee_id: '',
-                assignee_property_field_id: '',
-            });
-            return;
-        }
-        onChanged({
-            ...checklistItem,
-            assignee_type: 'group',
-            assignee_group_id: groupId,
-            assignee_id: '',
             assignee_property_field_id: '',
         });
     }, [checklistItem, onChanged]);
@@ -139,23 +100,16 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         );
     }
 
-    // In template or run mode with a group or property_user assignment, show the appropriate badge (read-only only)
-    if (!editable && (assigneeType === 'group' || assigneeType === 'property_user')) {
-        let badgeLabel: string;
-        let badgeTestId: string;
+    // In template or run mode with a property_user assignment, show the appropriate badge (read-only only)
+    if (!editable && assigneeType === 'property_user') {
+        const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
+        const badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
+        const badgeTestId = 'property-user-indicator-badge';
         let resolvedUserId: string | undefined;
-        if (assigneeType === 'group') {
-            badgeLabel = assignedGroupName || formatMessage({id: 'playbooks.assignee_dropdown.a_group', defaultMessage: 'a Group'});
-            badgeTestId = 'group-indicator-badge';
-        } else {
-            const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
-            badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
-            badgeTestId = 'property-user-indicator-badge';
-            if (mode === 'run') {
-                const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);
-                if (pv?.value && typeof pv.value === 'string') {
-                    resolvedUserId = pv.value;
-                }
+        if (mode === 'run') {
+            const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);
+            if (pv?.value && typeof pv.value === 'string') {
+                resolvedUserId = pv.value;
             }
         }
         return (
@@ -191,7 +145,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.person_section', defaultMessage: 'ASSIGN TO A PERSON'})}</SectionLabel>
             <ProfileSelector
                 testId={'assignee-profile-selector'}
-                selectedUserId={assigneeType === 'group' ? '' : checklistItem.assignee_id}
+                selectedUserId={checklistItem.assignee_id}
                 placeholder={
                     <PlaceholderDiv>
                         <i className={'icon-account-plus-outline icon-12'}/>
@@ -208,36 +162,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                     subsetLabel: formatMessage({id: 'playbooks.assignee_dropdown.participants', defaultMessage: 'PARTICIPANTS'}),
                 }}
             />
-            {groups.length > 0 && (
-                <>
-                    <Divider/>
-                    <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.group_section', defaultMessage: 'ASSIGN TO A GROUP'})}</SectionLabel>
-                    <SelectWrapper>
-                        <AssigneeSelect
-                            data-testid='group-options'
-                            aria-label={formatMessage({id: 'playbooks.assignee_dropdown.group_label', defaultMessage: 'Select group for assignee'})}
-                            value={assigneeType === 'group' ? (checklistItem.assignee_group_id ?? '') : ''}
-                            onChange={(e) => handleGroupDropdownChange(e.target.value)}
-                        >
-                            <option value=''>{formatMessage({id: 'playbooks.assignee_dropdown.group_none', defaultMessage: 'None'})}</option>
-                            {groups.map((group) => {
-                                const isGroupSelected = assigneeType === 'group' && checklistItem.assignee_group_id === group.id;
-                                const groupLabel = group.display_name;
-                                return (
-                                    <option
-                                        key={group.id}
-                                        value={group.id}
-                                        data-testid={`group-option-${group.id}`}
-                                        data-selected={isGroupSelected ? 'true' : 'false'}
-                                    >
-                                        {groupLabel}
-                                    </option>
-                                );
-                            })}
-                        </AssigneeSelect>
-                    </SelectWrapper>
-                </>
-            )}
             <Divider/>
             <SectionLabel>{formatMessage({id: 'playbooks.assignee_dropdown.role_section', defaultMessage: 'ASSIGN TO A ROLE'})}</SectionLabel>
             <SelectWrapper>

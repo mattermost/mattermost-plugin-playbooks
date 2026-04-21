@@ -320,10 +320,6 @@ export async function setAssignee(playbookRunId: string, checklistNum: number, i
     return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_id: assigneeId});
 }
 
-export async function setGroupAssignee(playbookRunId: string, checklistNum: number, itemNum: number, groupId: string) {
-    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_group_id: groupId});
-}
-
 export async function setRoleAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeType: string) {
     return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_type: assigneeType});
 }

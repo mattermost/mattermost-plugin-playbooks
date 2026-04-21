@@ -234,7 +234,6 @@ type UpdateChecklistItem struct {
 	AssigneeID              string            `json:"assignee_id"`
 	AssigneeModified        float64           `json:"assignee_modified"`
 	AssigneeType            string            `json:"assignee_type"`
-	AssigneeGroupID         string            `json:"assignee_group_id"`
 	AssigneePropertyFieldID string            `json:"assignee_property_field_id"`
 	Command                 string            `json:"command"`
 	CommandLastRun          float64           `json:"command_last_run"`

@@ -55,7 +55,6 @@ query Playbook($id: String!) {
 				condition_id: conditionID
 				condition_action: conditionAction
 				condition_reason: conditionReason
-				assignee_group_id: assigneeGroupID
 				assignee_property_field_id: assigneePropertyFieldID
 				task_actions: taskActions {
 					trigger: trigger {

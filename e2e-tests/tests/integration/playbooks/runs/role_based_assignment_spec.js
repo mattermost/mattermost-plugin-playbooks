@@ -499,12 +499,11 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 cy.wait('@UpdatePlaybook');
 
                 // * Server must have assignee_type cleared and assignee_id set;
-                //   assignee_group_id and assignee_property_field_id must also be cleared
+                //   assignee_property_field_id must also be cleared
                 cy.apiGetPlaybook(playbook.id).then((resp) => {
                     const item = resp.checklists[0].items[0];
                     expect(item.assignee_type).to.equal('');
                     expect(item.assignee_id).to.equal(testOwner.id);
-                    expect(item.assignee_group_id).to.equal('');
                     expect(item.assignee_property_field_id).to.equal('');
                 });
             });

@@ -132,7 +132,6 @@ export interface ChecklistItem {
     condition_id: string;
     condition_action: string;
     condition_reason: string;
-    assignee_group_id: string;
     assignee_property_field_id?: string;
 }
 
@@ -245,7 +244,6 @@ export function emptyChecklistItem(): ChecklistItem {
         condition_id: '',
         condition_action: '',
         condition_reason: '',
-        assignee_group_id: '',
         assignee_property_field_id: '',
     };
 }
@@ -265,7 +263,6 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     condition_id: '',
     condition_action: '',
     condition_reason: '',
-    assignee_group_id: '',
     assignee_property_field_id: '',
 });
 

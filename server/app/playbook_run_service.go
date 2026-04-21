@@ -2222,85 +2222,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	return nil
 }
 
-// SetGroupAssignee sets a Mattermost group as the assignee for the specified checklist item
-// Idempotent, will not perform any actions if the checklist item is already assigned to groupID
-func (s *PlaybookRunServiceImpl) SetGroupAssignee(playbookRunID, userID, groupID string, checklistNumber, itemNumber int) error {
-	auditRec := plugin.MakeAuditRecord("setChecklistItemGroupAssignee", model.AuditStatusFail)
-	defer s.api.LogAuditRec(auditRec)
-
-	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-	model.AddEventParameterToAuditRec(auditRec, "groupID", groupID)
-	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
-	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
-
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
-	if err != nil {
-		return err
-	}
-
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.Wrap(ErrMalformedPlaybookRun, "invalid checklist item indices")
-	}
-
-	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
-
-	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
-	model.AddEventParameterToAuditRec(auditRec, "currentAssigneeGroupID", itemToCheck.AssigneeGroupID)
-
-	// Validate the group exists
-	if groupID == "" {
-		return errors.Wrap(ErrMalformedPlaybookRun, "assigneeGroupID cannot be empty")
-	}
-	if !model.IsValidId(groupID) {
-		return errors.Wrap(ErrMalformedPlaybookRun, "invalid group ID format")
-	}
-	if _, err = s.pluginAPI.Group.GetMemberUsers(groupID, 0, 1); err != nil {
-		return errors.Wrapf(err, "failed to validate group %s", groupID)
-	}
-
-	var originalRun *PlaybookRun
-	if s.configService.IsIncrementalUpdatesEnabled() {
-		originalRun = playbookRunToModify.Clone()
-	}
-
-	if applyGroupAssigneeUpdate(itemToCheck, groupID) {
-		auditRec.Success()
-		return nil
-	}
-
-	timestamp := model.GetMillis()
-	itemToCheck.AssigneeModified = timestamp
-	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
-
-	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
-	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
-	}
-
-	modifyMessage := fmt.Sprintf("set group assignee of checklist item **%s** to group", stripmd.Strip(itemToCheck.Title))
-	event := &TimelineEvent{
-		PlaybookRunID: playbookRunID,
-		CreateAt:      itemToCheck.AssigneeModified,
-		EventAt:       itemToCheck.AssigneeModified,
-		EventType:     AssigneeChanged,
-		Summary:       modifyMessage,
-		SubjectUserID: userID,
-	}
-
-	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return errors.Wrap(err, "failed to create timeline event")
-	}
-
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRunToModify)
-
-	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "assigneeModified", itemToCheck.AssigneeModified)
-	auditRec.AddEventResultState(*playbookRunToModify)
-
-	return nil
-}
-
 // SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
 // property field resolves to on this run.
 func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(userID, playbookRunID string, checklistNumber, itemNumber int, propertyFieldID string) error {
@@ -2390,7 +2311,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	model.AddEventParameterToAuditRec(auditRec, "checklistNumber", checklistNumber)
 	model.AddEventParameterToAuditRec(auditRec, "itemNumber", itemNumber)
 
-	if !IsValidAssigneeType(assigneeType) || assigneeType == AssigneeTypeSpecificUser || assigneeType == AssigneeTypeGroup || assigneeType == AssigneeTypePropertyUser {
+	if !IsValidAssigneeType(assigneeType) || assigneeType == AssigneeTypeSpecificUser || assigneeType == AssigneeTypePropertyUser {
 		return errors.Wrap(ErrMalformedPlaybookRun, "invalid role assignee type: must be 'owner' or 'creator'")
 	}
 
@@ -2407,7 +2328,7 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 
 	model.AddEventParameterToAuditRec(auditRec, "taskTitle", itemToCheck.Title)
 
-	if itemToCheck.AssigneeType == assigneeType && itemToCheck.AssigneeGroupID == "" {
+	if itemToCheck.AssigneeType == assigneeType {
 		auditRec.Success()
 		return nil
 	}
@@ -2420,7 +2341,6 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeType = assigneeType
 	itemToCheck.AssigneeID = ""
-	itemToCheck.AssigneeGroupID = ""
 	itemToCheck.AssigneePropertyFieldID = ""
 	itemToCheck.AssigneeModified = timestamp
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
@@ -5406,18 +5326,8 @@ func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
 // and reports whether no store write is needed (i.e., both the assignee ID and type were
 // already correct before the call). The caller should skip the store write when true is returned.
 func applyAssigneeUpdate(item *ChecklistItem, assigneeID string) (noChangeNeeded bool) {
-	noChangeNeeded = assigneeID == item.AssigneeID && item.AssigneeType == AssigneeTypeSpecificUser && item.AssigneeGroupID == "" && item.AssigneePropertyFieldID == ""
+	noChangeNeeded = assigneeID == item.AssigneeID && item.AssigneeType == AssigneeTypeSpecificUser && item.AssigneePropertyFieldID == ""
 	item.AssigneeType = AssigneeTypeSpecificUser
-	item.AssigneeGroupID = ""
-	item.AssigneePropertyFieldID = ""
-	return noChangeNeeded
-}
-
-func applyGroupAssigneeUpdate(item *ChecklistItem, groupID string) (noChangeNeeded bool) {
-	noChangeNeeded = groupID == item.AssigneeGroupID && item.AssigneeType == AssigneeTypeGroup && item.AssigneePropertyFieldID == ""
-	item.AssigneeType = AssigneeTypeGroup
-	item.AssigneeGroupID = groupID
-	item.AssigneeID = ""
 	item.AssigneePropertyFieldID = ""
 	return noChangeNeeded
 }
@@ -5430,7 +5340,6 @@ func applyPropertyUserAssigneeUpdate(item *ChecklistItem, propertyFieldID string
 		resolvedUserID == item.AssigneeID
 	item.AssigneeType = AssigneeTypePropertyUser
 	item.AssigneePropertyFieldID = propertyFieldID
-	item.AssigneeGroupID = ""
 	item.AssigneeID = resolvedUserID
 	return noChangeNeeded
 }

@@ -172,7 +172,6 @@ type ChecklistItemUpdates struct {
 	DueDate                 float64             `json:"dueDate"`
 	TaskActions             []TaskActionUpdates `json:"taskActions"`
 	ConditionID             string              `json:"conditionID"`
-	AssigneeGroupID         string              `json:"assigneeGroupID"`
 	AssigneePropertyFieldID string              `json:"assigneePropertyFieldID"`
 }
 
@@ -269,7 +268,6 @@ type ChecklistItem struct {
 	ConditionID             string       `json:"conditionID"`
 	ConditionAction         string       `json:"conditionAction"`
 	ConditionReason         string       `json:"conditionReason"`
-	AssigneeGroupID         string       `json:"assigneeGroupID"`
 	AssigneePropertyFieldID string       `json:"assigneePropertyFieldID"`
 }
 

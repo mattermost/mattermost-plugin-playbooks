@@ -101,7 +101,6 @@ describe('websocket event actions', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
-                        assignee_group_id: '',
                     },
                 ],
             },
