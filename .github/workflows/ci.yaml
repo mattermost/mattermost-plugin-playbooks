@@ -106,7 +106,7 @@ jobs:
     container:
       image: mattermostdevelopment/mattermost-build-server:${{ needs.go.outputs.version }}
     env:
-      GO_BUILD_FLAGS: '-ldflags=-s -w'
+      GO_BUILD_FLAGS: '-ldflags="-s -w"'
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -143,7 +143,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_DEV_TOKEN }}
     env:
       FIPS_ENABLED: true
-      GO_BUILD_FLAGS: '-ldflags=-s -w'
+      GO_BUILD_FLAGS: '-ldflags="-s -w"'
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
