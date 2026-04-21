@@ -170,25 +170,27 @@ export const useBulkActions = ({
         });
 
         if (playbookRun) {
-            // Build delete promises grouped by checklist, with indices sorted descending
-            // to avoid index shifting issues on the server
-            const deletePromises: Array<Promise<void>> = [];
+            // Delete sequentially in descending index order to avoid index shifting.
+            // Using Promise.allSettled here would cause race conditions since the
+            // server API uses array indices, not stable IDs.
+            let deleteFailures = 0;
+            let deleteTotal = 0;
             for (const [checklistIndex, itemIndices] of selectedByChecklist.entries()) {
                 const sortedIndices = [...itemIndices].sort((a, b) => b - a);
                 for (const idx of sortedIndices) {
-                    deletePromises.push(
-                        clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx),
-                    );
+                    deleteTotal++;
+                    try {
+                        await clientDeleteChecklistItem(playbookRun.id, checklistIndex, idx); // eslint-disable-line no-await-in-loop
+                    } catch {
+                        deleteFailures++;
+                    }
                 }
             }
-
-            const results = await Promise.allSettled(deletePromises);
-            const failures = results.filter((r) => r.status === 'rejected');
-            if (failures.length > 0) {
+            if (deleteFailures > 0) {
                 addToast({
                     content: formatMessage(
                         {defaultMessage: 'Failed to delete {count} of {total} tasks'},
-                        {count: failures.length, total: results.length},
+                        {count: deleteFailures, total: deleteTotal},
                     ),
                     toastStyle: ToastStyle.Failure,
                 });

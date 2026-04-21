@@ -83,46 +83,45 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     const getTask = (index) => getAllTasks().eq(index);
 
     /**
-     * Hover over a task row and click its circular selection checkbox
-     * (the one with border-radius: 50%, separate from the task-completion checkbox)
+     * Enter bulk edit mode by clicking the "Bulk edit" button
+     */
+    const enterBulkEditMode = () => {
+        cy.findByText('Bulk edit').click();
+    };
+
+    /**
+     * Click a task row to toggle its selection (must be in bulk edit mode)
      */
     const selectTask = (index) => {
-        getTask(index).trigger('mouseover');
-
-        // The selection checkbox is the first input[type=checkbox] in the row
-        // (task-completion checkbox is the second one)
-        getTask(index).find('input[type=checkbox]').first().click({force: true});
+        getTask(index).click({force: true});
     };
 
     const getActionBar = () => cy.get('[data-testid="multi-select-action-bar"]');
 
     // ──────────────────────────────────────────────────────────────────
-    // Selection checkbox visibility
+    // Bulk edit mode toggle
     // ──────────────────────────────────────────────────────────────────
 
-    describe('selection checkbox visibility', () => {
-        it('selection checkbox is hidden by default on tasks', () => {
-            // * The first input in each task row is the selection checkbox (opacity:0 / not visible by default)
-            // We check that it exists but is not visible to the user before hover
-            getTask(0).find('input[type=checkbox]').first().should('exist');
-            getTask(0).find('input[type=checkbox]').first().should('have.css', 'opacity', '0');
+    describe('bulk edit mode toggle', () => {
+        it('shows the Bulk edit button', () => {
+            cy.findByText('Bulk edit').should('be.visible');
         });
 
-        it('selection checkbox becomes visible on hover', () => {
-            // # Hover over the first task
-            getTask(0).trigger('mouseover');
+        it('clicking Bulk edit toggles to Exit bulk edit', () => {
+            // # Enter bulk edit mode
+            enterBulkEditMode();
 
-            // * The selection checkbox should now be visible (opacity:1)
-            getTask(0).find('input[type=checkbox]').first().should('have.css', 'opacity', '1');
+            // * Button changes to "Exit bulk edit"
+            cy.findByText('Exit bulk edit').should('be.visible');
         });
 
-        it('selection checkbox stays visible on all tasks when any task is selected', () => {
-            // # Select the first task
-            selectTask(0);
+        it('clicking Exit bulk edit returns to normal mode', () => {
+            // # Enter then exit bulk edit mode
+            enterBulkEditMode();
+            cy.findByText('Exit bulk edit').click();
 
-            // * All other tasks should now show their selection checkboxes permanently
-            getTask(1).find('input[type=checkbox]').first().should('have.css', 'opacity', '1');
-            getTask(2).find('input[type=checkbox]').first().should('have.css', 'opacity', '1');
+            // * Button returns to "Bulk edit"
+            cy.findByText('Bulk edit').should('be.visible');
         });
     });
 
@@ -131,6 +130,11 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     // ──────────────────────────────────────────────────────────────────
 
     describe('selecting tasks', () => {
+        beforeEach(() => {
+            // # Enter bulk edit mode before each selection test
+            enterBulkEditMode();
+        });
+
         it('selecting one task shows the action bar', () => {
             // # Select the first task
             selectTask(0);
@@ -149,15 +153,7 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             cy.findByText('3 tasks selected').should('be.visible');
         });
 
-        it('selecting a task marks its checkbox as checked', () => {
-            // # Select the first task
-            selectTask(0);
-
-            // * The selection checkbox should be checked
-            getTask(0).find('input[type=checkbox]').first().should('be.checked');
-        });
-
-        it('deselecting a task unchecks it and updates the count', () => {
+        it('deselecting a task updates the count', () => {
             // # Select two tasks
             selectTask(0);
             selectTask(1);
@@ -170,9 +166,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
 
             // * Bar should now show 1
             cy.findByText('1 task selected').should('be.visible');
-
-            // * The first task's selection checkbox is unchecked
-            getTask(0).find('input[type=checkbox]').first().should('not.be.checked');
         });
 
         it('clicking × in the action bar clears the selection and hides the bar', () => {
@@ -188,9 +181,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
 
             // * The action bar disappears
             cy.findByText('tasks selected').should('not.exist');
-
-            // * Selection checkboxes go back to hidden state (opacity 0)
-            getTask(0).find('input[type=checkbox]').first().should('have.css', 'opacity', '0');
         });
     });
 
@@ -200,7 +190,8 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
 
     describe('action bar buttons', () => {
         beforeEach(() => {
-            // # Select two tasks before each test in this block
+            // # Enter bulk edit mode and select two tasks
+            enterBulkEditMode();
             selectTask(0);
             selectTask(1);
         });
@@ -223,6 +214,11 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     // ──────────────────────────────────────────────────────────────────
 
     describe('bulk delete', () => {
+        beforeEach(() => {
+            // # Enter bulk edit mode before each delete test
+            enterBulkEditMode();
+        });
+
         it('deletes a single selected task', () => {
             // * Confirm initial task count
             getAllTasks().should('have.length', 5);
@@ -304,6 +300,11 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     // ──────────────────────────────────────────────────────────────────
 
     describe('bulk assign', () => {
+        beforeEach(() => {
+            // # Enter bulk edit mode before each assign test
+            enterBulkEditMode();
+        });
+
         it('opens a user picker when Assign is clicked', () => {
             // # Select a task
             selectTask(0);
@@ -349,19 +350,76 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     });
 
     // ──────────────────────────────────────────────────────────────────
+    // Bulk due date
+    // ──────────────────────────────────────────────────────────────────
+
+    describe('bulk due date', () => {
+        beforeEach(() => {
+            // # Enter bulk edit mode before each due date test
+            enterBulkEditMode();
+        });
+
+        it('opens a date picker when Due date is clicked', () => {
+            // # Select a task
+            selectTask(0);
+
+            // # Click Due date in the action bar
+            getActionBar().findByText('Due date').click({force: true});
+
+            // * The date picker dropdown should open
+            cy.get('.playbook-react-select').should('be.visible');
+        });
+
+        it('sets a due date on multiple selected tasks', () => {
+            // # Select two tasks
+            selectTask(0);
+            selectTask(1);
+
+            cy.findByText('2 tasks selected').should('be.visible');
+
+            // # Click Due date in the action bar
+            getActionBar().findByText('Due date').click({force: true});
+
+            // # Select "Today" from the dropdown
+            cy.get('.playbook-react-select').within(() => {
+                cy.findByText('Today').click();
+            });
+
+            // * Due date indicators should appear on both tasks
+            getTask(0).find('.checklist-item-due-date').should('exist');
+            getTask(1).find('.checklist-item-due-date').should('exist');
+        });
+
+        it('clears the selection after setting due date', () => {
+            // # Select a task, then set a due date
+            selectTask(0);
+            getActionBar().findByText('Due date').click({force: true});
+            cy.get('.playbook-react-select').within(() => {
+                cy.findByText('Today').click();
+            });
+
+            // * Action bar disappears
+            cy.findByText('tasks selected').should('not.exist');
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────
     // Selection does not interfere with task completion checkbox
     // ──────────────────────────────────────────────────────────────────
 
     describe('selection vs task completion', () => {
-        it('clicking the task-completion checkbox does not select the task', () => {
-            // # Click the task-completion (status) checkbox — the second input in the row
+        it('clicking the task-completion checkbox outside bulk edit does not select the task', () => {
+            // # Click the task-completion (status) checkbox
             getTask(0).find('.checkbox').check({force: true});
 
             // * The action bar should NOT appear (task was marked done, not selected)
             cy.findByText('tasks selected').should('not.exist');
         });
 
-        it('can mark tasks as done while others are selected', () => {
+        it('can mark tasks as done while others are selected in bulk edit mode', () => {
+            // # Enter bulk edit mode
+            enterBulkEditMode();
+
             // # Select task 1
             selectTask(1);
 
@@ -376,21 +434,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             // * The selection bar still shows task 1 selected
             cy.findByText('1 task selected').should('be.visible');
         });
-
-        it('selected tasks can still be marked as done via their status checkbox', () => {
-            // # Select task 0
-            selectTask(0);
-
-            // # Also check the same task's status checkbox
-            getTask(0).find('.checkbox').check({force: true});
-
-            // * Task is both selected and done
-            getTask(0).find('.checkbox').should('be.checked');
-            getTask(0).find('input[type=checkbox]').first().should('be.checked');
-
-            // * Bar still shows task as selected
-            cy.findByText('1 task selected').should('be.visible');
-        });
     });
 
     // ──────────────────────────────────────────────────────────────────
@@ -398,13 +441,14 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     // ──────────────────────────────────────────────────────────────────
 
     describe('accessibility', () => {
-        it('selection checkbox has accessible label via its type', () => {
-            // * Each task has two checkboxes: first is selection, second is status completion
-            getTask(0).find('input[type=checkbox]').should('have.length', 2);
+        it('task has a completion checkbox', () => {
+            // * Each task has one checkbox for task completion
+            getTask(0).find('input[type=checkbox]').should('have.length', 1);
         });
 
         it('clear-selection button has an accessible aria-label', () => {
-            // # Select a task to show the bar
+            // # Enter bulk edit mode and select a task to show the bar
+            enterBulkEditMode();
             selectTask(0);
 
             // * The × button is labeled

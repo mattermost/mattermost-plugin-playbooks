@@ -61,6 +61,7 @@ export enum ChecklistParent {
 const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
+    const [bulkEditMode, setBulkEditMode] = useState(false);
     const stateKey = parentContainer + '_' + playbookRun.id;
     const allCollapsed = useSelector(currentChecklistAllCollapsed(stateKey));
     const checklistsState = useSelector(currentChecklistCollapsedState(stateKey));
@@ -228,6 +229,18 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                                 {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
                             </OverdueTasksToggle>
                         }
+                        {!readOnly && (
+                            <BulkEditButton
+                                $active={bulkEditMode}
+                                onClick={() => setBulkEditMode(!bulkEditMode)}
+                            >
+                                <i className={bulkEditMode ? 'icon icon-close' : 'icon icon-pencil-outline'}/>
+                                {bulkEditMode ?
+                                    formatMessage({defaultMessage: 'Exit bulk edit'}) :
+                                    formatMessage({defaultMessage: 'Bulk edit'})
+                                }
+                            </BulkEditButton>
+                        )}
                         {
                             showMenu &&
                             <HoverRow>
@@ -263,6 +276,8 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 onReadOnlyInteract={onReadOnlyInteract}
                 autoAddTask={autoAddTask}
                 onTaskAdded={onTaskAdded}
+                bulkEditMode={bulkEditMode}
+                onExitBulkEdit={() => setBulkEditMode(false)}
             />
             <RHSFooter
                 playbookRun={playbookRun}
@@ -365,6 +380,31 @@ const OverdueTasksToggle = styled.div<{toggled: boolean}>`
 `;
 
 export default RHSChecklistList;
+
+const BulkEditButton = styled.button<{$active: boolean}>`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    background: ${({$active}) => ($active ? 'var(--button-bg-08)' : 'transparent')};
+    color: ${({$active}) => ($active ? 'var(--button-bg)' : 'var(--center-channel-color-56)')};
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    white-space: nowrap;
+
+    &:hover {
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    }
+
+    i {
+        font-size: 14px;
+    }
+`;
 
 const overdueTasks = (checklists: Checklist[]) => {
     let count = 0;
