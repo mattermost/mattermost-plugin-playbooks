@@ -201,7 +201,7 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
         });
 
         it('shows Delete button', () => {
-            getActionBar().findByText('Delete').should('be.visible');
+            getActionBar().findByLabelText('Delete selected tasks').should('exist');
         });
 
         it('shows the correct selected count', () => {
@@ -227,7 +227,10 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             selectTask(0);
 
             // # Click Delete in the action bar
-            getActionBar().findByText('Delete').click({force: true});
+            getActionBar().findByLabelText('Delete selected tasks').click({force: true});
+
+            // # Confirm the deletion in the modal
+            cy.findByText('Delete').click();
 
             // * Task count decreases by 1
             getAllTasks().should('have.length', 4);
@@ -247,7 +250,10 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             cy.findByText('2 tasks selected').should('be.visible');
 
             // # Click Delete
-            getActionBar().findByText('Delete').click({force: true});
+            getActionBar().findByLabelText('Delete selected tasks').click({force: true});
+
+            // # Confirm the deletion in the modal
+            cy.findByText('Delete').click();
 
             // * Two tasks removed
             getAllTasks().should('have.length', 3);
@@ -264,7 +270,10 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             cy.findByText('2 tasks selected').should('be.visible');
 
             // # Click Delete
-            getActionBar().findByText('Delete').click({force: true});
+            getActionBar().findByLabelText('Delete selected tasks').click({force: true});
+
+            // # Confirm the deletion in the modal
+            cy.findByText('Delete').click();
 
             // * Two tasks removed — one from each section
             getAllTasks().should('have.length', 3);
@@ -279,7 +288,10 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             cy.findByText('3 tasks selected').should('be.visible');
 
             // # Click Delete
-            getActionBar().findByText('Delete').click({force: true});
+            getActionBar().findByLabelText('Delete selected tasks').click({force: true});
+
+            // # Confirm the deletion in the modal
+            cy.findByText('Delete').click();
 
             // * Only the 2 tasks from the "Investigation" section remain
             getAllTasks().should('have.length', 2);
@@ -288,7 +300,10 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
         it('clears the selection after bulk delete', () => {
             // # Select a task and delete it
             selectTask(0);
-            getActionBar().findByText('Delete').click({force: true});
+            getActionBar().findByLabelText('Delete selected tasks').click({force: true});
+
+            // # Confirm the deletion in the modal
+            cy.findByText('Delete').click();
 
             // * Action bar disappears
             cy.findByText('tasks selected').should('not.exist');
