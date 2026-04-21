@@ -145,6 +145,8 @@ describe('incremental updates', () => {
         current_status: PlaybookRunStatus.InProgress,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        task_total: 0,
+        task_completed: 0,
     };
 
     describe('handleWebsocketPlaybookRunUpdatedIncremental', () => {
