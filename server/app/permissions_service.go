@@ -17,11 +17,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
-// ErrNoPermissions if the error is caused by the user not having permissions
-var ErrNoPermissions = errors.New("does not have permissions")
-
-// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
-var ErrLicensedFeature = errors.New("not covered by current server license")
 
 type LicenseChecker interface {
 	PlaybookAllowed(isPlaybookPublic bool) bool

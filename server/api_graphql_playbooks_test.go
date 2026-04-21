@@ -141,6 +141,9 @@ func TestGraphQLPlaybooks(t *testing.T) {
 				"lastSkipped":      104,
 				"dueDate":          100,
 				"conditionID":      "",
+				"assigneeType":            "",
+				"assigneeGroupID":         "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 
@@ -196,6 +199,9 @@ func TestGraphQLPlaybooks(t *testing.T) {
 				"lastSkipped":      0,
 				"dueDate":          0,
 				"conditionID":      "",
+				"assigneeType":            "",
+				"assigneeGroupID":         "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
@@ -248,6 +254,9 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"lastSkipped":      0,
 				"dueDate":          0,
 				"conditionID":      "",
+				"assigneeType":            "",
+				"assigneeGroupID":         "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
@@ -274,6 +283,9 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"lastSkipped":      0,
 				"dueDate":          0,
 				"conditionID":      "",
+				"assigneeType":            "",
+				"assigneeGroupID":         "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
@@ -300,6 +312,9 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"lastSkipped":      0,
 				"dueDate":          0,
 				"conditionID":      "",
+				"assigneeType":            "",
+				"assigneeGroupID":         "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
@@ -327,6 +342,9 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"lastSkipped":      0,
 				"dueDate":          0,
 				"conditionID":      "",
+				"assigneeType":            "",
+				"assigneeGroupID":         "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{
@@ -359,6 +377,9 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"lastSkipped":      0,
 				"dueDate":          0,
 				"conditionID":      "",
+				"assigneeType":            "",
+				"assigneeGroupID":         "",
+				"assigneePropertyFieldID": "",
 			},
 		}
 		err := gqlTestPlaybookUpdate(e, t, e.BasicPlaybook.ID, map[string]interface{}{

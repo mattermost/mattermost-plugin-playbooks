@@ -345,7 +345,7 @@ func TestConditionService_Delete(t *testing.T) {
 
 		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
 		require.Error(t, err)
-		require.Equal(t, dbError, err)
+		require.ErrorIs(t, err, dbError)
 	})
 }
 
@@ -550,7 +550,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -614,7 +614,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -676,7 +676,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -739,7 +739,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -803,7 +803,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -836,7 +836,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Empty(t, result.ChecklistChanges)
@@ -854,7 +854,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return(nil, errors.New("database error"))
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.Error(t, err)
 		require.Nil(t, result)
 		require.Contains(t, err.Error(), "failed to get conditions for playbook run")
@@ -939,7 +939,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition1, condition2}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 

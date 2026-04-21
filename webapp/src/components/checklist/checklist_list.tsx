@@ -80,6 +80,27 @@ interface Props {
     onTaskAdded?: () => void;
 }
 
+// mapChecklistItemToInput converts a ChecklistItem from the frontend type to the
+// GraphQL PlaybookUpdates input shape. Every field used by the server must appear
+// here; omitting a field causes it to be silently dropped from the mutation payload
+// and the server will reset it to its zero value.
+export const mapChecklistItemToInput = (ci: ChecklistItem) => ({
+    title: ci.title,
+    description: ci.description,
+    state: ci.state,
+    stateModified: ci.state_modified || 0,
+    assigneeID: ci.assignee_id || '',
+    assigneeType: ci.assignee_type || '',
+    assigneeGroupID: ci.assignee_group_id || '',
+    assigneePropertyFieldID: ci.assignee_property_field_id || '',
+    assigneeModified: ci.assignee_modified || 0,
+    command: ci.command,
+    commandLastRun: ci.command_last_run,
+    dueDate: ci.due_date,
+    taskActions: ci.task_actions,
+    conditionID: ci.condition_id,
+});
+
 const ChecklistList = ({
     playbookRun,
     playbook: inPlaybook,
@@ -106,19 +127,7 @@ const ChecklistList = ({
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
-            items: cl.items.map((ci) => ({
-                title: ci.title,
-                description: ci.description,
-                state: ci.state,
-                stateModified: ci.state_modified || 0,
-                assigneeID: ci.assignee_id || '',
-                assigneeModified: ci.assignee_modified || 0,
-                command: ci.command,
-                commandLastRun: ci.command_last_run,
-                dueDate: ci.due_date,
-                taskActions: ci.task_actions,
-                conditionID: ci.condition_id,
-            })),
+            items: cl.items.map(mapChecklistItemToInput),
         }));
         const updates: PlaybookUpdates = {
             checklists: updatedChecklists,
@@ -163,6 +172,7 @@ const ChecklistList = ({
                         state_modified: ci.state_modified || 0,
                         assignee_id: ci.assignee_id || '',
                         assignee_modified: ci.assignee_modified || 0,
+                        assignee_property_field_id: ci.assignee_property_field_id || '',
                     };
                 }),
             };

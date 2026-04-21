@@ -686,8 +686,12 @@ func TestRunPostStatusUpdateDialog(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), "POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/"+e.BasicRun.ID+"/update-status-dialog", string(dialogRequestBytes), nil)
-		require.Error(t, err)
-		assert.Equal(t, http.StatusForbidden, result.StatusCode)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, result.StatusCode)
+		var dialogResp model.SubmitDialogResponse
+		decodeErr := json.NewDecoder(result.Body).Decode(&dialogResp)
+		require.NoError(t, decodeErr)
+		require.NotEmpty(t, dialogResp.Error, "expected permission error in dialog response")
 
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)

@@ -54,6 +54,12 @@ const (
 	SortByMetric1 SortField = "metric1"
 	SortByMetric2 SortField = "metric2"
 	SortByMetric3 SortField = "metric3"
+
+	// SortByEventAt sorts by the timeline event timestamp.
+	SortByEventAt SortField = "event_at"
+
+	// SortByEventType sorts by timeline event type.
+	SortByEventType SortField = "event_type"
 )
 
 // SortDirection is the type used to specify the ascending or descending order of returned results.

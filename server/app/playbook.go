@@ -335,6 +335,17 @@ type ChecklistItem struct {
 
 	// ConditionReason is a string representation of the condition.
 	ConditionReason string `json:"condition_reason" export:"-"`
+
+	// AssigneeType indicates how the assignee is determined. Empty string means a specific user
+	// (existing behavior). "owner" and "creator" are resolved at run creation time.
+	AssigneeType string `json:"assignee_type" export:"assignee_type"`
+
+	// AssigneeGroupID is the group ID when AssigneeType=="group".
+	AssigneeGroupID string `json:"assignee_group_id" export:"assignee_group_id"`
+
+	// AssigneePropertyFieldID is the property field ID when AssigneeType=="property_user".
+	// The resolved user ID is cached in AssigneeID and refreshed on property value changes.
+	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"-"`
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
@@ -536,6 +547,25 @@ const (
 	ChecklistItemStateClosed     = "closed"
 	ChecklistItemStateSkipped    = "skipped"
 )
+
+const (
+	AssigneeTypeSpecificUser = ""              // zero value — a specific person is assigned (existing behaviour)
+	AssigneeTypeOwner        = "owner"         // resolved from PlaybookRun.OwnerUserID at run creation / owner change
+	AssigneeTypeCreator      = "creator"       // resolved from PlaybookRun.ReporterUserID at run creation
+	AssigneeTypeGroup        = "group"         // assigned to a Mattermost group; membership checked at completion time
+	AssigneeTypePropertyUser = "property_user" // resolved from a User-type property field value; cached in AssigneeID
+)
+
+// IsValidAssigneeType reports whether the provided assignee type is valid.
+// Valid types are: AssigneeTypeSpecificUser (specific user), AssigneeTypeOwner,
+// AssigneeTypeCreator, AssigneeTypeGroup, and AssigneeTypePropertyUser.
+func IsValidAssigneeType(assigneeType string) bool {
+	return assigneeType == AssigneeTypeSpecificUser ||
+		assigneeType == AssigneeTypeOwner ||
+		assigneeType == AssigneeTypeCreator ||
+		assigneeType == AssigneeTypeGroup ||
+		assigneeType == AssigneeTypePropertyUser
+}
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
