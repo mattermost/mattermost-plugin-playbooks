@@ -192,7 +192,12 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             <ProfileSelector
                 testId={'assignee-profile-selector'}
                 selectedUserId={assigneeType === 'group' ? '' : checklistItem.assignee_id}
-                placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
+                placeholder={
+                    <PlaceholderDiv>
+                        <i className={'icon-account-plus-outline icon-12'}/>
+                        {formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
+                    </PlaceholderDiv>
+                }
                 enableEdit={editable}
                 getAllUsers={getAllUsersInTeam}
                 onSelectedChange={handleUserSelect}
@@ -352,6 +357,12 @@ const RoleBadge = styled.span`
     border-radius: 4px;
     padding: 2px 6px;
     white-space: nowrap;
+`;
+
+const PlaceholderDiv = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
 `;
 
 export default AssigneeDropdown;

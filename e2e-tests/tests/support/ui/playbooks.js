@@ -276,3 +276,93 @@ Cypress.Commands.add('assertRunDetailsPageRenderComplete', (expectedRunOwner) =>
         cy.findAllByTestId('profile-option', {exact: false}).should('have.length.of.at.least', 1);
     });
 });
+
+Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
+    cy.apiGetChannel(run.channel_id).then(({channel}) => {
+        cy.visit(`/${teamName}/channels/${channel.name}`);
+    });
+});
+
+Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName, propertyValues) => {
+    cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
+    cy.findByTestId('run-playbook').click();
+
+    cy.findByTestId('run-name-input').then(($input) => {
+        if (!$input.attr('readonly')) {
+            cy.wrap($input).clear().type(runName);
+        }
+    });
+
+    if (propertyValues) {
+        for (const [fieldName, optionLabel] of Object.entries(propertyValues)) {
+            cy.findByText(fieldName).should('be.visible');
+            cy.findByText('Select...').click();
+            cy.findByText(optionLabel).click();
+        }
+    }
+
+    cy.findByTestId('modal-confirm-button').click();
+    cy.url().should('include', '/playbooks/runs/');
+});
+
+Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
+        if (req.body && req.body.operationName === operationName) {
+            req.alias = operationName;
+        }
+    });
+});
+
+Cypress.Commands.add('playbooksInterceptPropertyFieldMutation', (method, aliasOverride) => {
+    const aliasMap = {POST: 'AddPropertyField', PUT: 'SavePropertyField', DELETE: 'DeletePropertyField'};
+    const urlMap = {
+        POST: '/plugins/playbooks/api/v0/playbooks/*/property_fields',
+        PUT: '/plugins/playbooks/api/v0/playbooks/*/property_fields/*',
+        DELETE: '/plugins/playbooks/api/v0/playbooks/*/property_fields/*',
+    };
+    const alias = aliasOverride || aliasMap[method];
+    if (!urlMap[method]) {
+        throw new Error(`playbooksInterceptPropertyFieldMutation: unsupported method "${method}"`);
+    }
+    cy.intercept(method, urlMap[method]).as(alias);
+});
+
+Cypress.Commands.add('playbooksOpenTaskAssigneeEditor', (playbookId, taskTitle) => {
+    cy.visit('/playbooks/playbooks/' + playbookId + '/outline');
+    cy.get('#checklists').within(() => {
+        cy.findByText(taskTitle).trigger('mouseover');
+        cy.findByTestId('hover-menu-edit-button').click();
+    });
+});
+
+Cypress.Commands.add('playbooksAddPropertyFieldViaUI', (playbookId, fieldName, fieldType = 'text') => {
+    cy.visit('/playbooks/playbooks/' + playbookId + '/attributes');
+
+    cy.playbooksInterceptPropertyFieldMutation('POST');
+    cy.findByRole('button', {name: /add.*attribute/i}).click();
+    cy.wait('@AddPropertyField');
+
+    cy.findAllByTestId('property-field-row').last().within(() => {
+        cy.findByLabelText('Attribute name').clear().type(fieldName);
+    });
+    cy.playbooksInterceptPropertyFieldMutation('PUT', 'SavePropertyFieldName');
+    cy.get('body').click(0, 0);
+    cy.wait('@SavePropertyFieldName');
+
+    if (fieldType !== 'text') {
+        cy.findAllByTestId('property-field-row').last().within(() => {
+            cy.findByRole('button', {name: 'Change attribute type'}).trigger('click');
+        });
+        cy.playbooksInterceptPropertyFieldMutation('PUT', 'SavePropertyFieldType');
+        cy.findByText(new RegExp('^' + fieldType + '$', 'i')).click();
+        cy.wait('@SavePropertyFieldType');
+    }
+});
+
+Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
+    cy.url().should('include', '/playbooks/runs/');
+    return cy.url().then((url) => {
+        const runId = url.split('/playbooks/runs/')[1].split('?')[0];
+        return cy.wrap(runId);
+    });
+});

@@ -633,3 +633,40 @@ Cypress.Commands.add('apiAttachConditionToTask', (playbookId, checklistIndex, it
         return cy.apiUpdatePlaybook(playbook);
     });
 });
+
+Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode = StatusOK) => {
+    return cy.apiGetPlaybook(playbookId).then((fullPlaybook) => {
+        return cy.apiUpdatePlaybook({...fullPlaybook, ...updates}, expectedHttpCode);
+    });
+});
+
+/**
+ * Create a custom user group via the Mattermost API
+ * @param {String} displayName - The group display name
+ * @param {String} name - The group name (unique identifier)
+ * @param {Array} userIds - Array of user IDs to add to the group
+ */
+Cypress.Commands.add('apiCreateCustomGroup', (displayName, name, userIds = []) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/groups',
+        method: 'POST',
+        body: {
+            name,
+            display_name: displayName,
+            source: 'custom',
+            allow_reference: true,
+            user_ids: userIds,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(StatusCreated);
+        cy.wrap(response.body);
+    });
+});
+
+Cypress.Commands.add('apiCreateAndAddUserToTeam', (teamId) => {
+    return cy.apiCreateUser().then(({user}) => {
+        cy.apiAddUserToTeam(teamId, user.id);
+        return cy.wrap(user);
+    });
+});
