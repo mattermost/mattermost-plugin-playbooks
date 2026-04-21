@@ -283,6 +283,29 @@ Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
     });
 });
 
+Cypress.Commands.add('playbooksVisitRun', (runId) => {
+    cy.visit(`/playbooks/runs/${runId}`);
+    cy.findByTestId('run-header-section').should('exist');
+});
+
+Cypress.Commands.add('playbooksInterceptChecklistItemState', (alias = 'SetChecklistItemState') => {
+    cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/checklists/*/item/*/state').as(alias);
+});
+
+Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
+    const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
+
+    cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
+
+    cy.findByTestId(testId).within(() => {
+        cy.findByTestId('property-value').click();
+    });
+
+    cy.contains('.property-select__option', value).click();
+
+    cy.wait('@SetRunPropertyValue');
+});
+
 Cypress.Commands.add('playbooksConfirmModal', () => {
     cy.get('#confirmModal').should('be.visible');
     cy.get('#confirmModal').find('#confirmModalButton').click();

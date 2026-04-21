@@ -2989,7 +2989,7 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 
 // TestRunFinish_OwnerGroupOnlyActions tests the OwnerGroupOnlyActions playbook flag that restricts
 // who is allowed to finish (end) a run.
-func TestRunFinish_OwnerGroupOnlyActions(t *testing.T) {
+func TestOwnerGroupOnlyActions(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
@@ -3121,16 +3121,6 @@ func TestRunFinish_OwnerGroupOnlyActions(t *testing.T) {
 		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
 	})
-}
-
-// TestRunFinish_PlaybookAdminNotParticipant verifies that a playbook admin who is NOT a
-// run participant gets 403 on finish/restore/changeOwner. This is by design:
-// checkEditPermissions middleware enforces RunManageProperties (owner/participant/sysadmin)
-// and is intentionally NOT modified — OwnerGroupOnlyActions is a restriction on participants,
-// not an expansion of access to non-participants.
-func TestRunFinish_PlaybookAdminNotParticipant(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
 
 	t.Run("playbook admin who is not a participant gets 403 on finish", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -3227,12 +3217,6 @@ func TestRunFinish_PlaybookAdminNotParticipant(t *testing.T) {
 		err = e.PlaybooksClient2.PlaybookRuns.Restore(context.Background(), run.ID)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
-}
-
-// TestRunRestore_OwnerGroupOnlyActions tests the OwnerGroupOnlyActions flag enforcement on restore operations.
-func TestRunRestore_OwnerGroupOnlyActions(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
 
 	t.Run("owner can restore when OwnerGroupOnlyActions true", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -3342,13 +3326,6 @@ func TestRunRestore_OwnerGroupOnlyActions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, string(client.StatusInProgress), restored.CurrentStatus)
 	})
-}
-
-// TestChangeOwner_OwnerGroupOnlyActions tests that the OwnerGroupOnlyActions flag is respected when
-// changing ownership of a run.
-func TestChangeOwner_OwnerGroupOnlyActions(t *testing.T) {
-	e := Setup(t)
-	e.CreateBasic()
 
 	t.Run("owner can change owner when OwnerGroupOnlyActions true", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{

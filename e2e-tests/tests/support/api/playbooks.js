@@ -651,3 +651,11 @@ Cypress.Commands.add('apiCreateAndAddUserToTeam', (teamId) => {
         return cy.wrap(user);
     });
 });
+
+Cypress.Commands.add('apiGetPropertyFieldByName', (playbookId, fieldName) => {
+    return cy.apiGetPropertyFields(playbookId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `property field "${fieldName}" should exist on playbook`).to.not.be.undefined;
+        return cy.wrap(field);
+    });
+});
