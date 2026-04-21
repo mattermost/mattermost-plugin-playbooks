@@ -608,9 +608,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 					}
 				}
 			} else {
-				// Persist property_user assignee resolutions when conditions are not licensed.
 				if _, err := s.store.UpdatePlaybookRun(playbookRun); err != nil {
-					logger.WithError(err).Warn("failed to persist property_user assignee resolution at run creation")
+					logger.WithError(err).Warn("failed to update run at creation")
 				}
 			}
 		}
@@ -2041,8 +2040,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 
 	// Re-read the run to pick up any changes from AddParticipants before sending the WS event.
 	// Use the service-level GetPlaybookRun (not store-level) so PropertyFields/PropertyValues
-	// are populated — otherwise DetectChangedFields sees them as removed and sends null to the
-	// frontend, wiping the property data that the AssigneeDropdown needs to resolve Run User assignees.
+	// are populated — otherwise DetectChangedFields sees them as removed and sends null to the frontend.
 	updatedRun, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to re-read playbook run after ChangeOwner for WS event")

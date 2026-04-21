@@ -337,6 +337,10 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
+		if errors.Is(err, app.ErrDuplicateEntry) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

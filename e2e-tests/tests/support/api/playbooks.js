@@ -812,27 +812,6 @@ Cypress.Commands.add('apiAttachConditionToTask', (playbookId, checklistIndex, it
 });
 
 /**
- * Assign a checklist item to a user group via the plugin API
- * @param {String} playbookRunId - The run ID
- * @param {Number} checklistNum - The checklist index (0-based)
- * @param {Number} itemNum - The item index within the checklist (0-based)
- * @param {String} groupId - The Mattermost group ID
- */
-Cypress.Commands.add('apiSetGroupAssignee', (playbookRunId, checklistNum, itemNum, groupId) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`,
-        method: 'PUT',
-        body: {
-            assignee_group_id: groupId,
-        },
-    }).then((response) => {
-        expect(response.status).to.equal(StatusOK);
-        cy.wrap(response);
-    });
-});
-
-/**
  * Create a user via API and immediately add them to a team.
  * Replaces the repeated cy.apiCreateUser().then / cy.apiAddUserToTeam pattern.
  * @param {String} teamId - The team to add the user to
