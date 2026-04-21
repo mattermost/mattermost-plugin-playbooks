@@ -134,6 +134,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 <Retrospective
                     playbook={playbook}
                     refetch={refetch}
+                    disabled={archived}
                 />
             </Section>
             <Section

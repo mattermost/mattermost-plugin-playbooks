@@ -4,8 +4,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -2514,6 +2516,122 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 	})
+
+	t.Run("disable retrospective via PATCH persists", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro On Playbook For Disable Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabled(t, e, playbookID, true)
+
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Disable PATCH Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.True(t, testRun.RetrospectiveEnabled, "run should start with retro enabled")
+
+		disabled := false
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			RetrospectiveEnabled: &disabled,
+		})
+		require.NoError(t, err)
+		assert.False(t, updatedRun.RetrospectiveEnabled)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled, "RetrospectiveEnabled=false must persist after PATCH")
+	})
+
+	t.Run("re-enable retrospective via PATCH persists", func(t *testing.T) {
+		// Create a run from a playbook with retro disabled
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro Off Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabled(t, e, playbookID, false)
+
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Re-enable PATCH Test",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.False(t, testRun.RetrospectiveEnabled, "run should inherit retro disabled from playbook")
+
+		enabled := true
+		updatedRun, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			RetrospectiveEnabled: &enabled,
+		})
+		require.NoError(t, err)
+		assert.True(t, updatedRun.RetrospectiveEnabled)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "RetrospectiveEnabled=true must persist after PATCH")
+	})
+
+	t.Run("disabling retrospective mid-run via PATCH prevents reminder on finish", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro On Playbook For Mid-Run Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+		setRetrospectiveEnabled(t, e, playbookID, true)
+
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Disable Before Finish",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.True(t, testRun.RetrospectiveEnabled)
+
+		disabled := false
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			RetrospectiveEnabled: &disabled,
+		})
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.Finish(context.Background(), testRun.ID)
+		require.NoError(t, err)
+
+		// Verify the run is finished and retro is still disabled
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		assert.Equal(t, app.StatusFinished, fetched.CurrentStatus)
+		assert.False(t, fetched.RetrospectiveEnabled, "retro must still be disabled after finish")
+	})
 }
 
 func TestRunGetMetadata(t *testing.T) {
@@ -2985,4 +3103,110 @@ func TestCrossTeamRunCreationWithPermission(t *testing.T) {
 	require.NoError(t, err, "cross-team run creation should succeed when user has run_create in the target team")
 	require.NotNil(t, run)
 	assert.Equal(t, e.BasicTeam2.Id, run.TeamID)
+}
+
+// playbookWithRetro is a minimal struct used to PUT a playbook body that includes
+// retrospective_enabled, which is not present in the exported client.Playbook type.
+type playbookWithRetro struct {
+	client.Playbook
+	RetrospectiveEnabled bool `json:"retrospective_enabled"`
+}
+
+// setRetrospectiveEnabled performs a raw PUT /plugins/playbooks/api/v0/playbooks/{id}
+// with the retrospective_enabled flag set, using the provided Mattermost auth token.
+func setRetrospectiveEnabled(t *testing.T, e *TestEnvironment, playbookID string, enabled bool) {
+	t.Helper()
+
+	pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+	require.NoError(t, err)
+
+	body := playbookWithRetro{
+		Playbook:             *pb,
+		RetrospectiveEnabled: enabled,
+	}
+	bodyBytes, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
+	endpoint := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks/%s", siteURL, playbookID)
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, endpoint, bytes.NewReader(bodyBytes))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Mattermost-User-ID", e.AdminUser.Id)
+	req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+// TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on
+// a playbook is propagated to runs created from that playbook.
+func TestRetrospectiveDisabled_RunCreation(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("run inherits retrospective_enabled=false from playbook", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro Disabled Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		setRetrospectiveEnabled(t, e, playbookID, false)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Disabled Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.False(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=false from playbook")
+	})
+
+	t.Run("run inherits retrospective_enabled=true from playbook", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Retro Enabled Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun:                 true,
+			CreateChannelMemberOnNewParticipant:     true,
+			RemoveChannelMemberOnRemovedParticipant: true,
+		})
+		require.NoError(t, err)
+
+		setRetrospectiveEnabled(t, e, playbookID, true)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Retro Enabled Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.True(t, fetched.RetrospectiveEnabled, "run should inherit retrospective_enabled=true from playbook")
+	})
 }

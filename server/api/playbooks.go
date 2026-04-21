@@ -171,7 +171,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if playbook.ReminderTimerDefaultSeconds <= 0 {
+	if playbook.RetrospectiveEnabled && playbook.ReminderTimerDefaultSeconds <= 0 {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
 		return
 	}

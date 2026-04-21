@@ -262,6 +262,10 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 
+	if updates.RetrospectiveEnabled != nil {
+		fieldsToUpdate["RetrospectiveEnabled"] = *updates.RetrospectiveEnabled
+	}
+
 	// Update using GraphqlUpdate
 	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
 		h.HandleError(w, c.logger, err)
