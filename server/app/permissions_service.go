@@ -17,12 +17,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
-// ErrNoPermissions if the error is caused by the user not having permissions
-var ErrNoPermissions = errors.New("does not have permissions")
-
-// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
-var ErrLicensedFeature = errors.New("not covered by current server license")
-
 type LicenseChecker interface {
 	PlaybookAllowed(isPlaybookPublic bool) bool
 	RetrospectiveAllowed() bool
@@ -76,7 +70,7 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	if playbook.Public {
 		// Public playbooks are public to those who can list channels on a team. (Not guests)
 		if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionListTeamChannels) {
-			if playbook.DefaultPlaybookMemberRole == "" {
+			if playbook.DefaultPlaybookMemberRole != "" {
 				return []string{playbook.DefaultPlaybookMemberRole}
 			}
 			return []string{PlaybookRoleMember}
@@ -668,3 +662,4 @@ func (p *PermissionsService) isChannelArchived(channelID string) bool {
 	}
 	return channel.DeleteAt > 0
 }
+

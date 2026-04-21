@@ -28,6 +28,7 @@ import Following from 'src/components/backstage/playbook_runs/playbook_run/follo
 import AssignTo from 'src/components/checklist_item/assign_to';
 import {UserList} from 'src/components/rhs/rhs_participants';
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
+import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {setOwner as clientSetOwner, requestJoinChannel} from 'src/client';
 import {pluginUrl} from 'src/browser_routing';
@@ -136,7 +137,14 @@ const RHSInfoOverview = ({run, role, channel, channelDeleted, runMetadata, follo
 
     return (
         <Section>
-            <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}/>
+            <SectionHeader title={formatMessage({defaultMessage: 'Overview'})}>
+                {run.run_number != null && run.run_number > 0 && run.sequential_id && (
+                    <SequentialIdDisplay
+                        runNumber={run.run_number}
+                        sequentialId={run.sequential_id}
+                    />
+                )}
+            </SectionHeader>
             {run.playbook_id && playbook && (
                 <Item
                     id='runinfo-playbook'

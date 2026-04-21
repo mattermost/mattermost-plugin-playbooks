@@ -94,7 +94,8 @@ export async function createPlaybookRun(
     name: string,
     summary: string,
     channel_id?: string,
-    create_public_run?: boolean
+    create_public_run?: boolean,
+    property_values?: Record<string, unknown>
 ) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
@@ -104,6 +105,7 @@ export async function createPlaybookRun(
         playbook_id,
         channel_id,
         create_public_run,
+        property_values,
     }));
     return run as PlaybookRun;
 }

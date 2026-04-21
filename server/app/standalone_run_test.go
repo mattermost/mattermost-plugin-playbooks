@@ -15,7 +15,6 @@ func TestStandaloneRunCreation(t *testing.T) {
 
 	t.Run("create standalone run with empty PlaybookID", func(t *testing.T) {
 		standaloneRun := PlaybookRun{
-			ID:          "test-run-id",
 			Name:        "Test Standalone Run",
 			TeamID:      "team-id",
 			ChannelID:   "channel-id",

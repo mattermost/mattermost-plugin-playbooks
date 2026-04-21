@@ -42,6 +42,22 @@ var createUniquePGIndex = func(indexName, tableName, columns string) string {
 	`, indexName, indexName, tableName, columns)
 }
 
+// createPGUniquePartialIndex returns a PG-idempotent DDL statement that creates a unique
+// partial index (with a WHERE clause). Neither createPGIndex nor createUniquePGIndex support
+// partial indexes, so this helper fills that gap.
+var createPGUniquePartialIndex = func(indexName, tableName, columns, whereClause string) string {
+	return fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			IF to_regclass('%s') IS NULL THEN
+				CREATE UNIQUE INDEX %s ON %s (%s) WHERE %s;
+			END IF;
+		END
+		$$;
+	`, indexName, indexName, tableName, columns, whereClause)
+}
+
 var createPGGINIndex = func(indexName, tableName, column string) string {
 	return fmt.Sprintf(`
 		DO

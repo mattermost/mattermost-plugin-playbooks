@@ -12,6 +12,7 @@ import styled from 'styled-components';
 import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -28,21 +29,26 @@ import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    disabled?: boolean;
+    fieldNames?: string[];
+    restPlaybook?: PlaybookWithChecklist;
 }
 
-const LegacyActionsEdit = ({playbook}: Props) => {
+const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
-    const archived = playbook.delete_at !== 0;
 
+    // Use restPlaybook for CreateAChannel since it needs run_number_prefix/next_run_number (REST-only fields)
+    const channelPlaybookSource = restPlaybook ?? playbook;
     const [
         playbookForCreateChannel,
         setPlaybookForCreateChannel,
-    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(playbook, useCallback((update) => {
+    ] = useProxyState<ComponentProps<typeof CreateAChannel>['playbook']>(channelPlaybookSource as ComponentProps<typeof CreateAChannel>['playbook'], useCallback((update) => {
         updatePlaybook({
             createPublicPlaybookRun: update.create_public_playbook_run,
             channelNameTemplate: update.channel_name_template,
+            runNumberPrefix: update.run_number_prefix,
             channelMode: update.channel_mode,
             channelId: update.channel_id,
         });
@@ -52,13 +58,13 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         return getDistinctAssignees(playbook.checklists);
     }, [playbook.checklists]);
 
-    const searchUsers = (term: string) => {
+    const searchUsers = useCallback((term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbook.team_id}));
-    };
+    }, [dispatch, playbook.team_id]);
 
-    const getUsers = () => {
+    const getUsers = useCallback(() => {
         return dispatch(getProfilesInTeam(playbook.team_id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
-    };
+    }, [dispatch, playbook.team_id]);
 
     const handleAddUserInvited = (userId: string) => {
         if (!playbook.invited_user_ids.includes(userId)) {
@@ -111,6 +117,10 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 stateModified: ci.state_modified || 0,
                 assigneeID: '',
                 assigneeModified: ci.assignee_modified || 0,
+                assigneeType: '',
+                assigneeGroupID: '',
+                assigneePropertyFieldID: '',
+                restrictCompletionToAssignee: false,
                 command: ci.command,
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
@@ -167,11 +177,13 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     <CreateAChannel
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
+                        fieldNames={fieldNames}
+                        disabled={disabled}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
-                        disabled={archived}
+                        disabled={disabled}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -186,7 +198,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
-                        disabled={archived}
+                        disabled={disabled}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -197,7 +209,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
-                        disabled={archived}
+                        disabled={disabled}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -223,7 +235,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
@@ -245,7 +257,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={archived}
+                            disabled={disabled}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({

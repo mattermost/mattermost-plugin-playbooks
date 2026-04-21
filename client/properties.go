@@ -39,9 +39,10 @@ type PropertyFieldRequest struct {
 // PropertyFieldAttrsInput represents property field attributes for input
 type PropertyFieldAttrsInput struct {
 	Visibility *string                `json:"visibility,omitempty"`
-	SortOrder  *float64               `json:"sortOrder,omitempty"`
+	SortOrder  *float64               `json:"sort_order,omitempty"`
 	Options    *[]PropertyOptionInput `json:"options,omitempty"`
-	ParentID   *string                `json:"parentID,omitempty"`
+	ParentID   *string                `json:"parent_id,omitempty"`
+	ValueType  *string                `json:"value_type,omitempty"`
 }
 
 // PropertyOptionInput represents a property option for input

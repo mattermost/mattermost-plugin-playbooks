@@ -60,6 +60,8 @@ export interface PlaybookRun {
     items_order: string[];
 
     type: PlaybookRunType;
+    run_number: number;
+    sequential_id: string;
 
     /** Property fields associated with this run (only included when requested) */
     property_fields?: PropertyField[];
@@ -103,6 +105,32 @@ export interface FetchPlaybookRunsReturn {
     items: PlaybookRun[];
 }
 
+export interface PlaybookTimelineEvent extends TimelineEvent {
+    playbook_run_name: string;
+    run_number: number;
+    sequential_id: string;
+}
+
+export interface FetchPlaybookTimelineEventsParams {
+    page: number;
+    per_page: number;
+    team_id?: string;
+    sort?: string;
+    direction?: string;
+    search_term?: string;
+    statuses?: string[];
+    event_types?: string[];
+    user_ids?: string[];
+    run_ids?: string[];
+}
+
+export interface FetchPlaybookTimelineEventsReturn {
+    total_count: number;
+    page_count: number;
+    has_more: boolean;
+    items: PlaybookTimelineEvent[];
+}
+
 export interface RunMetricData {
     metric_config_id: string;
     value: number | null;
@@ -129,6 +157,8 @@ export interface FetchPlaybookRunsParams {
     active_lt?: number;
     started_gte?: number;
     started_lt?: number;
+    property_field_id?: string;
+    property_value_filter?: string;
 }
 
 export interface FetchPlaybookRunsParamsTime {

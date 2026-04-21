@@ -136,6 +136,8 @@ describe('websocket event actions', () => {
         current_status: 'InProgress' as any,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        run_number: 1,
+        sequential_id: 'TEST-00001',
     };
 
     const makeStateWithRun = (run: PlaybookRun) => ({

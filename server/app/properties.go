@@ -5,6 +5,8 @@ package app
 
 import (
 	"encoding/json"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -16,13 +18,13 @@ const (
 	PropertyAttrsVisibility = "visibility"
 	PropertyAttrsParentID   = "parent_id"
 	PropertyAttrsValueType  = "value_type"
-
 	// Visibility
 	PropertyFieldVisibilityHidden  = "hidden"
 	PropertyFieldVisibilityWhenSet = "when_set"
 	PropertyFieldVisibilityAlways  = "always"
 	PropertyFieldVisibilityDefault = PropertyFieldVisibilityWhenSet
 
+	PropertyFieldNameMaxLength   = 128
 	PropertyOptionNameMaxLength  = 128
 	PropertyOptionColorMaxLength = 128
 
@@ -80,7 +82,34 @@ func (p *PropertyField) SupportsOptions() bool {
 	}
 }
 
+// IsValidPropertyFieldType returns true if the given type is a recognized property field type.
+func IsValidPropertyFieldType(t model.PropertyFieldType) bool {
+	switch t {
+	case model.PropertyFieldTypeText,
+		model.PropertyFieldTypeSelect,
+		model.PropertyFieldTypeMultiselect,
+		model.PropertyFieldTypeDate,
+		model.PropertyFieldTypeUser,
+		model.PropertyFieldTypeMultiuser:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *PropertyField) SanitizeAndValidate() error {
+	p.Name = strings.TrimSpace(p.Name)
+	if p.Name == "" {
+		return errors.New("property field name must not be empty")
+	}
+	if utf8.RuneCountInString(p.Name) > PropertyFieldNameMaxLength {
+		return errors.Errorf("property field name must not exceed %d characters", PropertyFieldNameMaxLength)
+	}
+
+	if !IsValidPropertyFieldType(p.Type) {
+		return errors.Errorf("invalid property field type: %s", p.Type)
+	}
+
 	// first we clean unused attributes depending on the field type
 	if !p.SupportsOptions() {
 		p.Attrs.Options = nil
@@ -99,11 +128,11 @@ func (p *PropertyField) SanitizeAndValidate() error {
 
 		// Validate option names and colors
 		for _, option := range options {
-			if len(option.GetName()) > PropertyOptionNameMaxLength {
+			if utf8.RuneCountInString(option.GetName()) > PropertyOptionNameMaxLength {
 				return errors.New("option name exceeds maximum length")
 			}
 			if colorValue := option.GetValue("color"); colorValue != "" {
-				if len(colorValue) > PropertyOptionColorMaxLength {
+				if utf8.RuneCountInString(colorValue) > PropertyOptionColorMaxLength {
 					return errors.New("option color exceeds maximum length")
 				}
 			}
@@ -147,15 +176,19 @@ func (p *PropertyField) ToMattermostPropertyField() *model.PropertyField {
 }
 
 func NewPropertyFieldFromMattermostPropertyField(mmpf *model.PropertyField) (*PropertyField, error) {
+	if mmpf == nil {
+		return nil, errors.New("property field cannot be nil")
+	}
+
 	attrsJSON, err := json.Marshal(mmpf.Attrs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to marshal property field attrs")
 	}
 
 	var attrs Attrs
 	err = json.Unmarshal(attrsJSON, &attrs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to unmarshal property field attrs")
 	}
 
 	return &PropertyField{
@@ -192,6 +225,9 @@ type PropertyServiceReader interface {
 }
 
 type PropertyService interface {
+	// GetGroupID returns the property group ID used by the playbooks plugin.
+	GetGroupID() string
+
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
@@ -208,8 +244,20 @@ type PropertyService interface {
 	CopyPlaybookPropertiesToRun(playbookID, runID string) (*PropertyCopyResult, error)
 	CopyPlaybookPropertiesToPlaybook(sourcePlaybookID, targetPlaybookID string) (*PropertyCopyResult, error)
 	UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
+	// UpsertRunPropertyValueWithField upserts using an already-loaded field, avoiding a DB lookup.
+	// Use this when the field is already known (e.g. from CopyPlaybookPropertiesToRun) to avoid
+	// the GetPropertyField round-trip which fails for run-scoped fields immediately after creation.
+	UpsertRunPropertyValueWithField(runID string, field *PropertyField, value json.RawMessage) (*PropertyValue, error)
 
 	// Bulk methods for retrieving properties for multiple runs
 	GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error)
 	GetRunsPropertyValues(runIDs []string) (map[string][]PropertyValue, error)
+
+	// GetRunIDsByPropertyValue returns the IDs of all runs that have the given property field
+	// set to the given option ID value. Used for filtering the runs list by custom status.
+	GetRunIDsByPropertyValue(fieldID, optionID string) ([]string, error)
+
+	// SanitizePropertyValue sanitizes a raw property value for the given field type.
+	// Returns the sanitized value or an error if the value is invalid.
+	SanitizePropertyValue(fieldType model.PropertyFieldType, raw json.RawMessage) (json.RawMessage, error)
 }

@@ -18,9 +18,7 @@ export function applyIncrementalUpdate(currentRun: PlaybookRun, update: Playbook
 
     // Create a new run object with the timestamp update
     // If update timestamp is 0 or missing, preserve original timestamp
-    const newUpdateAt = update.playbook_run_updated_at && update.playbook_run_updated_at > 0 ?
-        update.playbook_run_updated_at :
-        currentRun.update_at;
+    const newUpdateAt = update.playbook_run_updated_at && update.playbook_run_updated_at > 0 ? update.playbook_run_updated_at : currentRun.update_at;
 
     let updatedRun = {
         ...currentRun,

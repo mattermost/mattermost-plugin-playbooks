@@ -152,6 +152,7 @@ type PlaybookUpdates struct {
 	RemoveChannelMemberOnRemovedParticipant *bool              `json:"removeChannelMemberOnRemovedParticipant"`
 	ChannelId                               *string            `json:"channelId"`
 	ChannelMode                             *string            `json:"channelMode"`
+	RunNumberPrefix                         *string            `json:"runNumberPrefix"`
 }
 
 type ChecklistUpdates struct {
@@ -160,17 +161,21 @@ type ChecklistUpdates struct {
 }
 
 type ChecklistItemUpdates struct {
-	Title            string              `json:"title"`
-	Description      string              `json:"description"`
-	State            string              `json:"state"`
-	StateModified    float64             `json:"stateModified"`
-	AssigneeID       string              `json:"assigneeID"`
-	AssigneeModified float64             `json:"assigneeModified"`
-	Command          string              `json:"command"`
-	CommandLastRun   float64             `json:"commandLastRun"`
-	DueDate          float64             `json:"dueDate"`
-	TaskActions      []TaskActionUpdates `json:"taskActions"`
-	ConditionID      string              `json:"conditionID"`
+	Title                        string              `json:"title"`
+	Description                  string              `json:"description"`
+	State                        string              `json:"state"`
+	StateModified                float64             `json:"stateModified"`
+	AssigneeID                   string              `json:"assigneeID"`
+	AssigneeModified             float64             `json:"assigneeModified"`
+	AssigneeType                 string              `json:"assigneeType"`
+	Command                      string              `json:"command"`
+	CommandLastRun               float64             `json:"commandLastRun"`
+	DueDate                      float64             `json:"dueDate"`
+	TaskActions                  []TaskActionUpdates `json:"taskActions"`
+	ConditionID                  string              `json:"conditionID"`
+	RestrictCompletionToAssignee bool                `json:"restrictCompletionToAssignee"`
+	AssigneeGroupID              string              `json:"assigneeGroupID"`
+	AssigneePropertyFieldID      string              `json:"assigneePropertyFieldID"`
 }
 
 type TaskActionUpdates struct {
@@ -252,19 +257,23 @@ type Member struct {
 }
 
 type ChecklistItem struct {
-	Title            string       `json:"title"`
-	Description      string       `json:"description"`
-	State            string       `json:"state"`
-	StateModified    float64      `json:"stateModified"`
-	AssigneeID       string       `json:"assigneeID"`
-	AssigneeModified float64      `json:"assigneeModified"`
-	Command          string       `json:"command"`
-	CommandLastRun   float64      `json:"commandLastRun"`
-	DueDate          float64      `json:"dueDate"`
-	TaskActions      []TaskAction `json:"taskActions"`
-	ConditionID      string       `json:"conditionID"`
-	ConditionAction  string       `json:"conditionAction"`
-	ConditionReason  string       `json:"conditionReason"`
+	Title                        string       `json:"title"`
+	Description                  string       `json:"description"`
+	State                        string       `json:"state"`
+	StateModified                float64      `json:"stateModified"`
+	AssigneeID                   string       `json:"assigneeID"`
+	AssigneeModified             float64      `json:"assigneeModified"`
+	AssigneeType                 string       `json:"assigneeType"`
+	Command                      string       `json:"command"`
+	CommandLastRun               float64      `json:"commandLastRun"`
+	DueDate                      float64      `json:"dueDate"`
+	TaskActions                  []TaskAction `json:"taskActions"`
+	ConditionID                  string       `json:"conditionID"`
+	ConditionAction              string       `json:"conditionAction"`
+	ConditionReason              string       `json:"conditionReason"`
+	RestrictCompletionToAssignee bool         `json:"restrictCompletionToAssignee"`
+	AssigneeGroupID              string       `json:"assigneeGroupID"`
+	AssigneePropertyFieldID      string       `json:"assigneePropertyFieldID"`
 }
 
 type TaskAction struct {

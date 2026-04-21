@@ -68,6 +68,63 @@ Cypress.Commands.add('apiGetPlaybookRun', (playbookRunId) => {
 });
 
 /**
+ * Assert that a run's name is resolved (non-empty and contains expected fragment).
+ * Guards against channel name template resolution failures that silently produce
+ * "malformed" or empty names while still returning HTTP 200.
+ *
+ * @param {String} playbookRunId
+ * @param {String} expectedFragment - substring expected in the resolved run name
+ */
+Cypress.Commands.add('assertRunNameResolved', (playbookRunId, expectedFragment) => {
+    cy.apiGetPlaybookRun(playbookRunId).then(({body: run}) => {
+        expect(run.name, 'run name should be non-empty').to.not.be.empty;
+        if (expectedFragment) {
+            expect(run.name, `run name should contain "${expectedFragment}"`).to.include(expectedFragment);
+        }
+    });
+});
+
+/**
+ * Assert that a run's property_values array is non-empty (i.e. values survived creation).
+ * Guards against translateOptionIDs silently dropping property values.
+ *
+ * @param {String} playbookRunId
+ */
+Cypress.Commands.add('assertRunHasPropertyValues', (playbookRunId) => {
+    cy.apiGetPlaybookRun(playbookRunId).then(({body: run}) => {
+        expect(run.property_values, 'run should have property values').to.have.length.greaterThan(0);
+    });
+});
+
+/**
+ * Assert a specific property value is stored on the run by looking up the run-level
+ * field ID from /runs/:id/property_fields and matching it in property_values.
+ * Guards against property values being dropped during run-scoped field creation.
+ *
+ * @param {String} playbookRunId
+ * @param {String} fieldName - the property field name to look up
+ * @param {String|null} expectedValue - if provided, also assert the stored value equals this
+ */
+Cypress.Commands.add('assertRunPropertyValueStored', (playbookRunId, fieldName, expectedValue = null) => {
+    cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/property_fields`,
+        method: 'GET',
+    }).then(({body: runFields}) => {
+        const field = runFields.find((f) => f.name === fieldName);
+        expect(field, `run-level field "${fieldName}" should exist`).to.exist;
+
+        cy.apiGetPlaybookRun(playbookRunId).then(({body: run}) => {
+            const pv = (run.property_values || []).find((v) => v.field_id === field.id);
+            expect(pv, `property value for field "${fieldName}" should be stored`).to.exist;
+            if (expectedValue !== null) {
+                expect(pv.value, `property value for "${fieldName}" should equal expected`).to.equal(expectedValue);
+            }
+        });
+    });
+});
+
+/**
  * Start a playbook run directly via API.
  */
 Cypress.Commands.add('apiRunPlaybook', (
@@ -205,8 +262,6 @@ Cypress.Commands.add('verifyPlaybookRunActive', (teamId, playbookRunName, playbo
         assert.equal(playbookRun.end_at, 0);
         assert.equal(playbookRun.name, playbookRunName);
 
-        cy.log('test 1');
-
         // Only check the description if provided. The server may supply a default depending
         // on how the playbook run was started.
         if (playbookRunDescription) {
@@ -233,6 +288,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         description,
         createPublicPlaybookRun,
         createChannelMemberOnNewParticipant = true,
+        removeChannelMemberOnRemovedParticipant,
         checklists,
         memberIDs,
         makePublic = true,
@@ -275,6 +331,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             team_id: teamId,
             create_public_playbook_run: createPublicPlaybookRun,
             create_channel_member_on_new_participant: createChannelMemberOnNewParticipant,
+            remove_channel_member_on_removed_participant: removeChannelMemberOnRemovedParticipant,
             checklists,
             public: makePublic,
             members: memberIDs?.map((val) => ({user_id: val, roles: ['playbook_member', 'playbook_admin']})),
@@ -505,7 +562,40 @@ Cypress.Commands.add('apiAddPropertyField', (playbookId, propertyField) => {
     };
     return doGraphqlQuery(query, 'AddPlaybookPropertyField', vars).then((response) => {
         expect(response.status).to.equal(StatusOK);
-        cy.wrap(response.body);
+        const body = typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
+        expect(body.errors, `addPlaybookPropertyField failed: ${JSON.stringify(body.errors)}`).to.be.undefined;
+        return cy.wrap(body.data.addPlaybookPropertyField);
+    });
+});
+
+/**
+ * Create a playbook, add property fields to it, optionally patch additional settings,
+ * then yield the final playbook object. Eliminates the deeply-nested
+ * apiCreatePlaybook→apiAddPropertyField→apiPatchPlaybook→apiGetPlaybook chains
+ * that appear in many spec files.
+ *
+ * @param {Object} playbookConfig  - Passed directly to apiCreatePlaybook
+ * @param {Array}  propertyFields  - Array of field objects passed to apiAddPropertyField (may be empty)
+ * @param {Object} [patchUpdates]  - Optional additional fields merged via apiPatchPlaybook after fields are added
+ * @returns Cypress chain yielding the final playbook object
+ */
+Cypress.Commands.add('apiCreatePlaybookWithProperties', (playbookConfig, propertyFields = [], patchUpdates = null) => {
+    return cy.apiCreatePlaybook(playbookConfig).then((playbook) => {
+        // Add each property field sequentially
+        const addFields = (fields) => {
+            if (fields.length === 0) {
+                return cy.wrap(playbook);
+            }
+            const [head, ...tail] = fields;
+            return cy.apiAddPropertyField(playbook.id, head).then(() => addFields(tail));
+        };
+
+        return addFields(propertyFields).then(() => {
+            if (patchUpdates) {
+                return cy.apiPatchPlaybook(playbook.id, patchUpdates).then(() => cy.apiGetPlaybook(playbook.id));
+            }
+            return cy.apiGetPlaybook(playbook.id);
+        });
     });
 });
 
@@ -526,20 +616,107 @@ Cypress.Commands.add('apiGetPropertyFields', (playbookId) => {
 });
 
 /**
+ * Get a single property field by name from a playbook. Fails if not found.
+ * Yields the full field object (including id, attrs.options, etc.)
+ * @param {String} playbookId - The playbook ID
+ * @param {String} fieldName  - The property field name to find
+ */
+Cypress.Commands.add('apiGetPropertyFieldByName', (playbookId, fieldName) => {
+    return cy.apiGetPropertyFields(playbookId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `property field "${fieldName}" should exist on playbook`).to.not.be.undefined;
+        return cy.wrap(field);
+    });
+});
+
+/**
+ * Set a property value on a run via REST API.
+ * @param {String} runId - The run ID
+ * @param {String} fieldId - The property field ID (run-scoped)
+ * @param {*} value - The value to set (will be JSON-serialised as the "value" field)
+ */
+Cypress.Commands.add('apiSetRunPropertyValue', (runId, fieldId, value) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${runId}/property_fields/${fieldId}/value`,
+        method: 'PUT',
+        body: {value},
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Set a property value on a run by field name (looks up the run-scoped field ID internally).
+ * Eliminates the repeated apiGetRunPropertyFields → find → apiSetRunPropertyValue pattern
+ * that appears in multiple spec files for text, user, and date property types.
+ * @param {String} runId - The run ID
+ * @param {String} fieldName - The property field name to look up
+ * @param {*} value - The value to set (user ID for user-type, ISO string for date-type, text string for text-type)
+ */
+Cypress.Commands.add('apiSetRunPropertyValueByName', (runId, fieldName, value) => {
+    return cy.apiGetRunPropertyFields(runId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `run-level field "${fieldName}" should exist`).to.exist;
+        return cy.apiSetRunPropertyValue(runId, field.id, value);
+    });
+});
+
+/**
+ * Set a select property value on a run by field name and option display name.
+ * Looks up both the run-scoped field ID and the option ID internally.
+ * Eliminates the repeated apiGetRunPropertyFields → find field → find option → apiSetRunPropertyValue
+ * pattern that appears in multiple spec files for select property types.
+ * @param {String} runId - The run ID
+ * @param {String} fieldName - The property field name
+ * @param {String} optionName - The display name of the option to select
+ */
+Cypress.Commands.add('apiSetRunSelectPropertyValueByName', (runId, fieldName, optionName) => {
+    return cy.apiGetRunPropertyFields(runId).then((fields) => {
+        const field = fields.find((f) => f.name === fieldName);
+        expect(field, `run-level field "${fieldName}" should exist`).to.exist;
+        const option = ((field.attrs && field.attrs.options) || []).find((o) => o.name === optionName);
+        expect(option, `option "${optionName}" should exist in field "${fieldName}"`).to.exist;
+        return cy.apiSetRunPropertyValue(runId, field.id, option.id);
+    });
+});
+
+/**
+ * Get property fields for a run via REST API.
+ * @param {String} runId - The run ID
+ * @returns {Array} Array of property field objects with run-scoped IDs
+ */
+Cypress.Commands.add('apiGetRunPropertyFields', (runId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${runId}/property_fields`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
+/**
  * Create a condition for a playbook via REST API
  * @param {String} playbookId - The playbook ID
  * @param {Object} conditionExpr - The condition expression object
  * @returns {Object} The created condition with ID
  */
-Cypress.Commands.add('apiCreatePlaybookCondition', (playbookId, conditionExpr) => {
+Cypress.Commands.add('apiCreatePlaybookCondition', (playbookId, conditionExpr, actions) => {
+    const body = {
+        version: 1,
+        condition_expr: conditionExpr,
+    };
+    if (actions) {
+        body.actions = actions;
+    }
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `/plugins/playbooks/api/v0/playbooks/${playbookId}/conditions`,
         method: 'POST',
-        body: {
-            version: 1,
-            condition_expr: conditionExpr,
-        },
+        body,
     }).then((response) => {
         expect(response.status).to.equal(201);
         cy.wrap(response.body);
@@ -631,5 +808,149 @@ Cypress.Commands.add('apiAttachConditionToTask', (playbookId, checklistIndex, it
     return cy.apiGetPlaybook(playbookId).then((playbook) => {
         playbook.checklists[checklistIndex].items[itemIndex].condition_id = conditionId;
         return cy.apiUpdatePlaybook(playbook);
+    });
+});
+
+/**
+ * Assign a checklist item to a user group via the plugin API
+ * @param {String} playbookRunId - The run ID
+ * @param {Number} checklistNum - The checklist index (0-based)
+ * @param {Number} itemNum - The item index within the checklist (0-based)
+ * @param {String} groupId - The Mattermost group ID
+ */
+Cypress.Commands.add('apiSetGroupAssignee', (playbookRunId, checklistNum, itemNum, groupId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`,
+        method: 'PUT',
+        body: {
+            assignee_group_id: groupId,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Create a user via API and immediately add them to a team.
+ * Replaces the repeated cy.apiCreateUser().then / cy.apiAddUserToTeam pattern.
+ * @param {String} teamId - The team to add the user to
+ * @returns {Object} The created user object
+ */
+Cypress.Commands.add('apiCreateAndAddUserToTeam', (teamId) => {
+    return cy.apiCreateUser().then(({user}) => {
+        cy.apiAddUserToTeam(teamId, user.id);
+        return cy.wrap(user);
+    });
+});
+
+/**
+ * Patch a playbook by fetching it and merging updates.
+ * Replaces the repeated "get, mutate field, update" pattern.
+ * @param {String} playbookId - The playbook ID
+ * @param {Object} updates - Fields to merge into the playbook before updating
+ */
+Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode = StatusOK) => {
+    return cy.apiGetPlaybook(playbookId).then((fullPlaybook) => {
+        return cy.apiUpdatePlaybook({...fullPlaybook, ...updates}, expectedHttpCode);
+    });
+});
+
+/**
+ * Create a custom user group via the Mattermost API
+ * @param {String} displayName - The group display name
+ * @param {String} name - The group name (unique identifier)
+ * @param {Array} userIds - Array of user IDs to add to the group
+ */
+Cypress.Commands.add('apiCreateCustomGroup', (displayName, name, userIds = []) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/groups',
+        method: 'POST',
+        body: {
+            name,
+            display_name: displayName,
+            source: 'custom',
+            allow_reference: true,
+            user_ids: userIds,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(StatusCreated);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Remove members from a custom group via the Mattermost API.
+ * @param {String} groupId - The group ID
+ * @param {Array} userIds - Array of user IDs to remove
+ */
+Cypress.Commands.add('apiRemoveGroupMembers', (groupId, userIds) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/api/v4/groups/${groupId}/members`,
+        method: 'DELETE',
+        body: {user_ids: userIds},
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Add members to a custom group via the Mattermost API.
+ * Idempotent: if a user is already a member the server returns 200 and the
+ * call still succeeds, so this is safe to call in beforeEach as a restore step.
+ * @param {String} groupId - The group ID
+ * @param {Array} userIds - Array of user IDs to add
+ */
+Cypress.Commands.add('apiAddGroupMembers', (groupId, userIds) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/api/v4/groups/${groupId}/members`,
+        method: 'POST',
+        body: {user_ids: userIds},
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
+/**
+ * Fetch members of a custom group via the Mattermost API.
+ * @param {String} groupId - The group ID
+ * @returns {{members: Array}} Object with a members array
+ */
+Cypress.Commands.add('apiGetGroupMembers', (groupId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/api/v4/groups/${groupId}/members`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+
+        // The endpoint may return an array of GroupMember objects directly, or an object
+        // with a nested members array (e.g. {members: [...], totalMemberCount: N}).
+        const body = response.body;
+        const members = Array.isArray(body) ? body : (body.members || []);
+        cy.wrap({members});
+    });
+});
+
+/**
+ * Fetch the text message of a post by ID.
+ * Used to verify server-side template resolution in status update posts.
+ * @param {String} postId - The Mattermost post ID
+ * @returns {String} The post message string
+ */
+Cypress.Commands.add('apiGetPostMessage', (postId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/api/v4/posts/${postId}`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body.message);
     });
 });

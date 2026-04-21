@@ -95,6 +95,7 @@ input PlaybookUpdates {
 	removeChannelMemberOnRemovedParticipant: Boolean
 	channelId: String
 	channelMode: String
+	runNumberPrefix: String
 }
 
 input ChecklistUpdates {

@@ -4,13 +4,16 @@
 package sqlstore
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -47,6 +50,12 @@ type playbookMember struct {
 	MemberID   string
 	Roles      string
 }
+
+// pgUniqueViolation is the PostgreSQL error code for unique constraint violations.
+const pgUniqueViolation = "23505"
+
+// txDefaultTimeout is the context timeout applied to every short transactional query.
+const txDefaultTimeout = 10 * time.Second
 
 // definied to call a common insights query builder for both user and team insights
 const insightsQueryTypeUser = "insights_query_type_user"
@@ -163,6 +172,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.RemoveChannelMemberOnRemovedParticipant",
 			"p.ChannelID",
 			"p.ChannelMode",
+			"p.RunNumberPrefix",
+			"p.NextRunNumber",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
@@ -272,8 +283,18 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
+			// NextRunNumber is intentionally not set here; the DB default (1) is always
+			// correct for newly created playbooks. Use IncrementRunNumber to advance it.
 		}))
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
+			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
+				return "", errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already in use by another playbook on this team")
+			}
+			return "", errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
 
@@ -366,6 +387,8 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 			CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 		) AS NumActions`,
 		"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+		"p.RunNumberPrefix",
+		"p.NextRunNumber",
 		"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 		"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 		"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -382,8 +405,8 @@ func selectAllPlaybooks(builder sq.StatementBuilderType) sq.SelectBuilder {
 // GetPlaybooks retrieves all playbooks that are not deleted.
 // Members are not retrieved for this as the query would be large and we don't need it for this for now.
 func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
-	var playbooks []app.Playbook
-	err := p.store.selectBuilder(p.store.db, &playbooks,
+	var rawPlaybooks []sqlPlaybook
+	err := p.store.selectBuilder(p.store.db, &rawPlaybooks,
 		selectAllPlaybooks(p.store.builder).Where(sq.Eq{"p.DeleteAt": 0}),
 	)
 	if err == sql.ErrNoRows {
@@ -392,14 +415,22 @@ func (p *playbookStore) GetActivePlaybooks() ([]app.Playbook, error) {
 		return nil, errors.Wrap(err, "failed to get playbooks")
 	}
 
+	playbooks := make([]app.Playbook, 0, len(rawPlaybooks))
+	for _, raw := range rawPlaybooks {
+		pb, convErr := toPlaybook(raw)
+		if convErr != nil {
+			return nil, errors.Wrap(convErr, "failed to convert playbook")
+		}
+		playbooks = append(playbooks, pb)
+	}
 	return playbooks, nil
 }
 
 // GetPlaybooks retrieves all playbooks, even deleted ones.
 // Members are not retrieved for this as the query would be large and we don't need it for this for now.
 func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
-	var playbooks []app.Playbook
-	err := p.store.selectBuilder(p.store.db, &playbooks,
+	var rawPlaybooks []sqlPlaybook
+	err := p.store.selectBuilder(p.store.db, &rawPlaybooks,
 		selectAllPlaybooks(p.store.builder),
 	)
 	if err == sql.ErrNoRows {
@@ -408,6 +439,14 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 		return nil, errors.Wrap(err, "failed to get playbooks")
 	}
 
+	playbooks := make([]app.Playbook, 0, len(rawPlaybooks))
+	for _, raw := range rawPlaybooks {
+		pb, convErr := toPlaybook(raw)
+		if convErr != nil {
+			return nil, errors.Wrap(convErr, "failed to convert playbook")
+		}
+		playbooks = append(playbooks, pb)
+	}
 	return playbooks, nil
 }
 
@@ -456,6 +495,8 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.RemoveChannelMemberOnRemovedParticipant THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+			"p.RunNumberPrefix",
+			"p.NextRunNumber",
 			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
 			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
 			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
@@ -504,12 +545,21 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		queryForTotal = queryForTotal.Where(sq.Eq{"DeleteAt": 0})
 	}
 
-	var playbooks []app.Playbook
-	err = p.store.selectBuilder(p.store.db, &playbooks, queryForResults)
+	var rawPlaybooks []sqlPlaybook
+	err = p.store.selectBuilder(p.store.db, &rawPlaybooks, queryForResults)
 	if err == sql.ErrNoRows {
 		return app.GetPlaybooksResults{}, errors.Wrap(app.ErrNotFound, "no playbooks found")
 	} else if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks")
+	}
+
+	playbooks := make([]app.Playbook, 0, len(rawPlaybooks))
+	for _, raw := range rawPlaybooks {
+		pb, convErr := toPlaybook(raw)
+		if convErr != nil {
+			return app.GetPlaybooksResults{}, errors.Wrap(convErr, "failed to convert playbook")
+		}
+		playbooks = append(playbooks, pb)
 	}
 
 	var total int
@@ -517,7 +567,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
 	}
 
-	ids := make([]string, len(playbooks))
+	ids := make([]string, 0, len(playbooks))
 	for _, pb := range playbooks {
 		ids = append(ids, pb.ID)
 	}
@@ -637,7 +687,17 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 	// if checklists are passed and len (as string) is bigger than limit -> fails
 	if _, exists := setmap["ChecklistsJSON"]; exists {
 		if len(string(setmap["ChecklistsJSON"].([]uint8))) > maxJSONLength {
-			return fmt.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
+			return errors.Errorf("failed update playbook with id '%s': json too long (max %d)", id, maxJSONLength)
+		}
+	}
+
+	if raw, exists := setmap["CreationRulesJSON"]; exists {
+		s, ok := raw.(string)
+		if !ok {
+			return errors.Errorf("failed update playbook with id '%s': CreationRulesJSON must be a string, got %T", id, raw)
+		}
+		if len(s) > maxJSONLength {
+			return errors.Errorf("failed update playbook with id '%s': creation rules json too long (max %d)", id, maxJSONLength)
 		}
 	}
 
@@ -647,6 +707,13 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
+			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
+				return errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already used by another playbook in this team")
+			}
+			return errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
+		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", id)
 	}
 
@@ -713,10 +780,18 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"RunNumberPrefix":                         rawPlaybook.RunNumberPrefix,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
+			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
+				return errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already used by another playbook in this team")
+			}
+			return errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
+		}
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
 
@@ -744,6 +819,10 @@ func (p *playbookStore) Archive(id string) error {
 	_, err := p.store.execBuilder(p.store.db, sq.
 		Update("IR_Playbook").
 		Set("DeleteAt", model.GetMillis()).
+		// RunNumberPrefix is intentionally preserved so that a restored playbook retains
+		// its sequential ID sequence. The partial unique index (WHERE RunNumberPrefix != ''
+		// AND DeleteAt = 0) already excludes archived rows, so no uniqueness conflict can
+		// arise while the playbook is archived.
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
@@ -765,6 +844,13 @@ func (p *playbookStore) Restore(id string) error {
 		Where(sq.Eq{"ID": id}))
 
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
+			if pqErr.Constraint == "ir_playbook_teamid_runnumberprefix_unique" {
+				return errors.Wrap(app.ErrDuplicateEntry, "run_number_prefix is already in use by another playbook on this team")
+			}
+			return errors.Wrap(app.ErrDuplicateEntry, err.Error())
+		}
 		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
 	}
 
@@ -1246,5 +1332,94 @@ func (p *playbookStore) BumpPlaybookUpdatedAt(playbookID string) error {
 		return errors.Wrapf(err, "failed to bump UpdateAt for playbook '%s'", playbookID)
 	}
 
+	return nil
+}
+
+func (p *playbookStore) IncrementRunNumber(playbookID string) (int64, error) {
+	if playbookID == "" {
+		return 0, errors.New("playbookID cannot be empty")
+	}
+
+	var runNumber int64
+	// Raw SQL with RETURNING is used here instead of the squirrel builder because we need
+	// atomic increment-and-read in a single statement. A two-query approach (UPDATE + SELECT)
+	// would introduce a race condition between concurrent run creations.
+	// Rebind is omitted: New() enforces PostgreSQL-only so $N placeholders need no translation.
+	if err := p.store.db.Get(
+		&runNumber,
+		`UPDATE IR_Playbook SET NextRunNumber = NextRunNumber + 1 WHERE ID = $1 AND DeleteAt = 0 RETURNING NextRunNumber - 1`,
+		playbookID,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or archived", playbookID)
+		}
+		return 0, errors.Wrapf(err, "failed to increment run number for playbook %s", playbookID)
+	}
+	return runNumber, nil
+}
+
+func (p *playbookStore) UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error {
+	// Guard before acquiring any lock: transformFn must not be nil.
+	// transformFn is called while holding the IR_Playbook row lock (FOR UPDATE), so any
+	// blocking operation inside it would hold that lock for its full duration. The nil check
+	// is a fast precondition that belongs before the transaction begins.
+	if transformFn == nil {
+		return errors.New("transformFn cannot be nil")
+	}
+	if playbookID == "" {
+		return errors.New("playbookID cannot be empty")
+	}
+
+	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
+	defer txCancel()
+	tx, err := p.store.db.BeginTxx(txCtx, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to begin transaction for playbook '%s'", playbookID)
+	}
+	defer p.store.finalizeTransaction(tx)
+
+	if _, err := tx.Exec("SET LOCAL lock_timeout = '4s'"); err != nil {
+		return errors.Wrap(err, "failed to set lock timeout")
+	}
+
+	selectBuilder := p.store.builder.
+		Select("COALESCE(ChannelNameTemplate, '')").
+		From("IR_Playbook").
+		Where(sq.Eq{"ID": playbookID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Suffix("FOR UPDATE")
+
+	var channelNameTemplate string
+	if err = p.store.getBuilder(tx, &channelNameTemplate, selectBuilder); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.Wrapf(app.ErrNotFound, "playbook '%s' not found or is archived", playbookID)
+		}
+		return errors.Wrapf(err, "failed to load name templates for playbook '%s'", playbookID)
+	}
+
+	// NOTE: transformFn is invoked while the IR_Playbook row lock is held.
+	// Keep transformFn pure (no I/O, no DB calls) to avoid blocking other writers.
+	newChannelNameTemplate := transformFn(channelNameTemplate)
+
+	// Skip the write if the template did not change
+	if newChannelNameTemplate == channelNameTemplate {
+		if err := tx.Commit(); err != nil {
+			return errors.Wrapf(err, "failed to commit transaction for playbook '%s'", playbookID)
+		}
+		return nil
+	}
+
+	if _, err := p.store.execBuilder(tx, sq.
+		Update("IR_Playbook").
+		Set("ChannelNameTemplate", newChannelNameTemplate).
+		Set("UpdateAt", model.GetMillis()).
+		Where(sq.Eq{"ID": playbookID}).
+		Where(sq.Eq{"DeleteAt": 0}),
+	); err != nil {
+		return errors.Wrapf(err, "failed to update channel name template for playbook '%s'", playbookID)
+	}
+	if err := tx.Commit(); err != nil {
+		return errors.Wrapf(err, "failed to commit transaction for playbook '%s'", playbookID)
+	}
 	return nil
 }

@@ -1742,4 +1742,65 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		// Adds all columns and indexes introduced by the sequential run ID feature.
+		// Every operation is idempotent (IF NOT EXISTS / IF to_regclass IS NULL),
+		// so this migration is safe to re-run on environments that already have
+		// some or all of these schema changes (e.g. after a version-counter reset).
+		fromVersion: semver.MustParse("0.67.0"),
+		toVersion:   semver.MustParse("0.68.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Sequential ID system: prefix stored on playbook, counter and display ID on run.
+			if err := addColumnToPGTable(e, "IR_Playbook", "RunNumberPrefix", "VARCHAR(32) NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding RunNumberPrefix to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Playbook", "NextRunNumber", "BIGINT NOT NULL DEFAULT 1"); err != nil {
+				return errors.Wrapf(err, "failed adding NextRunNumber to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "RunNumber", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+				return errors.Wrapf(err, "failed adding RunNumber to IR_Incident")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "SequentialID", "VARCHAR(64) NOT NULL DEFAULT ''"); err != nil {
+				return errors.Wrapf(err, "failed adding SequentialID to IR_Incident")
+			}
+			if _, err := e.Exec(createPGIndex("idx_ir_incident_sequential_id", "IR_Incident", "SequentialID")); err != nil {
+				return errors.Wrapf(err, "failed creating index idx_ir_incident_sequential_id")
+			}
+
+			// Prefix must be unique per team among active (non-archived) playbooks only.
+			if _, err := e.Exec(createPGUniquePartialIndex(
+				"IR_Playbook_TeamID_RunNumberPrefix_Unique",
+				"IR_Playbook",
+				"TeamID, RunNumberPrefix",
+				"RunNumberPrefix != '' AND DeleteAt = 0",
+			)); err != nil {
+				return errors.Wrapf(err, "failed creating unique index IR_Playbook_TeamID_RunNumberPrefix_Unique")
+			}
+			// Run numbers come from an ever-incrementing counter; partial index covers live runs only.
+			if _, err := e.Exec(createPGUniquePartialIndex(
+				"IR_Incident_PlaybookID_RunNumber_Unique",
+				"IR_Incident",
+				"PlaybookID, RunNumber",
+				"RunNumber > 0 AND DeleteAt = 0",
+			)); err != nil {
+				return errors.Wrapf(err, "failed creating unique index IR_Incident_PlaybookID_RunNumber_Unique")
+			}
+
+			// Backfill: playbooks with status updates enabled and a zero-or-negative reminder
+			// interval. The column default is 0 (added before validation was enforced), so
+			// existing rows may have 0 which ValidateStatusUpdateConfig auto-coerces to
+			// defaultReminderTimerSeconds (900) at runtime; this migration aligns the stored
+			// DB value with that runtime behaviour.
+			if _, err := sqlStore.execBuilder(e, sq.
+				Update("IR_Playbook").
+				Set("ReminderTimerDefaultSeconds", 900).
+				Where(sq.Eq{"StatusUpdateEnabled": true}).
+				Where(sq.LtOrEq{"ReminderTimerDefaultSeconds": 0}),
+			); err != nil {
+				return errors.Wrapf(err, "failed to backfill ReminderTimerDefaultSeconds for status-update-enabled playbooks")
+			}
+
+			return nil
+		},
+	},
 }

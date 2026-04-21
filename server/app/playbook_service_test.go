@@ -330,7 +330,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID).Times(2)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
@@ -427,7 +427,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Equal(t, "", resultID)
-		assert.Equal(t, expectedError, err)
+		assert.ErrorIs(t, err, expectedError)
 	})
 
 	t.Run("does not copy conditions if property copying fails", func(t *testing.T) {
@@ -577,7 +577,7 @@ func TestPlaybookService_Import(t *testing.T) {
 					"ConditionAction should be cleared before Create")
 				return newPlaybookID, nil
 			})
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
+		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 
 		createdField := &app.PropertyField{
 			PropertyField: model.PropertyField{ID: newFieldID, Name: "Status", Type: model.PropertyFieldTypeSelect},

@@ -71,6 +71,8 @@ describe('playbook_run_updates utilities', () => {
         current_status: PlaybookRunStatus.InProgress,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        run_number: 0,
+        sequential_id: '',
     };
 
     describe('applyIncrementalUpdate', () => {
@@ -105,6 +107,68 @@ describe('playbook_run_updates utilities', () => {
             expect(result).not.toBe(testPlaybookRun); // Different objects
             expect(testPlaybookRun.name).toBe('Test Run'); // Original unchanged
             expect(result.name).toBe('Updated Name'); // Result changed
+        });
+
+        it('should preserve property_values when owner changes and properties are not in changed_fields', () => {
+            // This tests the correct server behavior: after the fix, the server
+            // uses service-level GetPlaybookRun for both originalRun and updatedRun,
+            // so property_values are NOT included in changed_fields (they didn't change).
+            const runWithProperties = {
+                ...testPlaybookRun,
+                property_fields: [
+                    {id: 'field1', name: 'Oncall', type: 'user', attrs: {}} as any,
+                ],
+                property_values: [
+                    {id: 'val1', field_id: 'field1', value: 'user-abc', target_id: 'run_123', target_type: 'run', group_id: '', create_at: 0, update_at: 0, delete_at: 0},
+                ],
+            };
+
+            const update = {
+                id: runWithProperties.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    owner_user_id: 'new-owner',
+                },
+            };
+
+            const result = applyIncrementalUpdate(runWithProperties, update);
+
+            expect(result.owner_user_id).toBe('new-owner');
+            expect(result.property_values).toEqual(runWithProperties.property_values);
+            expect(result.property_fields).toEqual(runWithProperties.property_fields);
+        });
+
+        it('should wipe property_values if server incorrectly includes null property_values in changed_fields', () => {
+            // This documents the bug behavior before the server fix: if the server
+            // uses store-level GetPlaybookRun (nil properties) for updatedRun,
+            // DetectChangedFields sends property_values: null, which overwrites the
+            // existing values on the frontend. The server fix prevents this, but this
+            // test documents the frontend's pass-through behavior.
+            const runWithProperties = {
+                ...testPlaybookRun,
+                property_fields: [
+                    {id: 'field1', name: 'Oncall', type: 'user', attrs: {}} as any,
+                ],
+                property_values: [
+                    {id: 'val1', field_id: 'field1', value: 'user-abc', target_id: 'run_123', target_type: 'run', group_id: '', create_at: 0, update_at: 0, delete_at: 0},
+                ],
+            };
+
+            const update = {
+                id: runWithProperties.id,
+                playbook_run_updated_at: 2000,
+                changed_fields: {
+                    owner_user_id: 'new-owner',
+                    property_values: null as any,
+                },
+            };
+
+            const result = applyIncrementalUpdate(runWithProperties, update);
+
+            expect(result.owner_user_id).toBe('new-owner');
+
+            // null overwrites the existing array — this is the bug symptom on the frontend
+            expect(result.property_values).toBeNull();
         });
     });
 });

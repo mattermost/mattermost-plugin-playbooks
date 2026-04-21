@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -20,6 +22,12 @@ import (
 // The tag export supports the export/import feature. If the field makes sense for export, the value should be
 // the JSON name of the item in the export format. If the field should not be exported the value should be "-".
 // Fields should be exported if they are not server specific like InvitedUserIDs or are tracking metadata like CreateAt.
+//
+// Schema note: most fields map 1:1 to columns in IR_Playbook.  When adding a direct column, search
+// for "When adding a Playbook column" to find all the places in sqlstore/playbook.go that must be updated
+// (SELECT list, INSERT columns, UPDATE set-map, and rawPlaybook scanner). The following fields are
+// instead stored as JSON blobs and do NOT require a migration when their sub-types gain new fields:
+//   - Checklists      → IR_Playbook.ChecklistsJSON
 type Playbook struct {
 	ID                                      string                 `json:"id" export:"-"`
 	Title                                   string                 `json:"title" export:"title"`
@@ -76,6 +84,9 @@ type Playbook struct {
 
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
+
+	RunNumberPrefix string `json:"run_number_prefix" export:"run_number_prefix"`
+	NextRunNumber   int64  `json:"next_run_number" export:"-"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
@@ -448,6 +459,34 @@ type PlaybookService interface {
 
 	// ReorderPropertyFields reorders property fields for a playbook and bumps the playbook's updated_at
 	ReorderPropertyFields(playbookID, fieldID string, targetPosition int) ([]PropertyField, error)
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// GraphqlUpdate updates a playbook via a setmap and publishes a WS event on success.
+	GraphqlUpdate(playbookID string, setmap map[string]interface{}) error
+
+	// AddPlaybookMember adds a user as a member to a playbook and publishes a WS event on success.
+	AddPlaybookMember(playbookID, userID string) error
+
+	// RemovePlaybookMember removes a user from a playbook and publishes a WS event on success.
+	RemovePlaybookMember(playbookID, userID string) error
+
+	// AddMetric adds a metric to a playbook and publishes a WS event on success.
+	AddMetric(playbookID string, config PlaybookMetricConfig) error
+
+	// GetMetric retrieves a metric by ID.
+	GetMetric(metricID string) (*PlaybookMetricConfig, error)
+
+	// UpdateMetric updates a metric and publishes a WS event on success.
+	UpdateMetric(metricID string, setmap map[string]interface{}) error
+
+	// DeleteMetric deletes a metric and publishes a WS event on success.
+	DeleteMetric(metricID string) error
+
+	// UpdateChannelNameTemplateAtomically atomically reads and updates the channel name template
+	// using a SELECT FOR UPDATE transaction, preventing lost-update races on concurrent edits.
+	UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -528,6 +567,17 @@ type PlaybookStore interface {
 
 	// BumpPlaybookUpdatedAt updates the UpdateAt timestamp for a playbook
 	BumpPlaybookUpdatedAt(playbookID string) error
+
+	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
+	IncrementRunNumber(playbookID string) (int64, error)
+
+	// UpdateChannelNameTemplateAtomically locks the row, applies transformFn to the current
+	// ChannelNameTemplate, and writes back the result. The transformation function is supplied
+	// by the caller so that all string/business logic stays in the app layer.
+	// CONTRACT: transformFn MUST be a pure in-memory computation (no I/O, no DB calls, no goroutines).
+	// It is invoked while the IR_Playbook row lock is held; blocking work inside it delays all
+	// concurrent writers on the same playbook row.
+	UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error
 }
 
 const (
@@ -536,6 +586,50 @@ const (
 	ChecklistItemStateClosed     = "closed"
 	ChecklistItemStateSkipped    = "skipped"
 )
+
+const (
+	// MaxRunNumberPrefixLength is the maximum length for a RunNumberPrefix.
+	MaxRunNumberPrefixLength = 32
+
+	// MaxChannelNameTemplateLength is the maximum length for a ChannelNameTemplate.
+	MaxChannelNameTemplateLength = 1024
+)
+
+var runNumberPrefixRegex = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$`)
+
+// NormalizeRunNumberPrefix trims whitespace and leading/trailing hyphens from a prefix.
+// Callers should normalize before storing or validating.
+func NormalizeRunNumberPrefix(prefix string) string {
+	return strings.Trim(strings.TrimSpace(prefix), "-")
+}
+
+// ValidateRunNumberPrefix checks that a RunNumberPrefix is alphanumeric + hyphens, max 32 chars.
+// Empty string is valid (means no prefix).
+func ValidateRunNumberPrefix(prefix string) error {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		return nil
+	}
+	if utf8.RuneCountInString(prefix) > MaxRunNumberPrefixLength {
+		return errors.Errorf("run_number_prefix must be at most %d characters", MaxRunNumberPrefixLength)
+	}
+	if !runNumberPrefixRegex.MatchString(prefix) {
+		return errors.New("run_number_prefix must start and end with an alphanumeric character and contain only alphanumeric characters and hyphens")
+	}
+	return nil
+}
+
+// ValidateChannelNameTemplate checks that a ChannelNameTemplate does not exceed the max length
+// and is not whitespace-only.
+func ValidateChannelNameTemplate(tmpl string) error {
+	if strings.TrimSpace(tmpl) == "" && tmpl != "" {
+		return errors.New("channel_name_template must not be whitespace-only")
+	}
+	if utf8.RuneCountInString(tmpl) > MaxChannelNameTemplateLength {
+		return errors.Errorf("channel_name_template must be at most %d characters", MaxChannelNameTemplateLength)
+	}
+	return nil
+}
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||

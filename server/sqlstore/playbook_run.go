@@ -4,6 +4,7 @@
 package sqlstore
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 
@@ -50,7 +52,6 @@ type playbookRunStore struct {
 	queryBuilder                     sq.StatementBuilderType
 	playbookRunSelect                sq.SelectBuilder
 	statusPostsSelect                sq.SelectBuilder
-	timelineEventsSelect             sq.SelectBuilder
 	metricsDataSelectSingleRun       sq.SelectBuilder
 	sqlMetricsDataSelectMultipleRuns sq.SelectBuilder
 }
@@ -182,12 +183,13 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.UpdateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
-			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
-			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
-			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
-			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type").
+			"COALESCE(i.ReminderMessageTemplate, '') ReminderMessageTemplate", "i.ReminderTimerDefaultSeconds", "i.StatusUpdateEnabled",
+			"i.ConcatenatedInvitedUserIDs", "i.ConcatenatedInvitedGroupIDs", "i.DefaultCommanderID AS DefaultOwnerID",
+			"i.ConcatenatedBroadcastChannelIDs", "i.ConcatenatedWebhookOnCreationURLs", "i.Retrospective", "i.RetrospectiveEnabled", "i.MessageOnJoin", "i.RetrospectivePublishedAt", "i.RetrospectiveReminderIntervalSeconds",
+			"i.RetrospectiveWasCanceled", "i.ConcatenatedWebhookOnStatusUpdateURLs", "i.StatusUpdateBroadcastChannelsEnabled", "i.StatusUpdateBroadcastWebhooksEnabled",
+			"i.CreateChannelMemberOnNewParticipant", "i.RemoveChannelMemberOnRemovedParticipant",
+			"COALESCE(i.CategoryName, '') CategoryName", "i.SummaryModifiedAt", "i.RunType AS Type",
+			"i.RunNumber", "i.SequentialID").
 		Column(participantsCol).
 		From("IR_Incident AS i")
 
@@ -195,33 +197,6 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 		Select("sp.IncidentID AS PlaybookRunID", "p.ID", "p.CreateAt", "p.DeleteAt").
 		From("IR_StatusPosts as sp").
 		Join("Posts as p ON sp.PostID = p.Id")
-
-	timelineEventsSelect := sqlStore.builder.
-		Select(
-			"te.ID",
-			"te.IncidentID AS PlaybookRunID",
-			"te.CreateAt",
-			"te.DeleteAt",
-			"te.EventAt",
-		).
-		// Map "commander_changed" to "owner_changed", preserving database compatibility
-		// without complicating the code.
-		Column(
-			sq.Alias(
-				sq.Case().
-					When(sq.Eq{"te.EventType": legacyEventTypeCommanderChanged}, sq.Expr("?", app.OwnerChanged)).
-					Else("te.EventType"),
-				"EventType",
-			),
-		).
-		Columns(
-			"te.Summary",
-			"te.Details",
-			"te.PostID",
-			"te.SubjectUserID",
-			"te.CreatorUserID",
-		).
-		From("IR_TimelineEvent as te")
 
 	metricsDataSelectSingleRun := sqlStore.builder.
 		Select("MetricConfigID", "Value").
@@ -242,7 +217,6 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 		queryBuilder:                     sqlStore.builder,
 		playbookRunSelect:                playbookRunSelect,
 		statusPostsSelect:                statusPostsSelect,
-		timelineEventsSelect:             timelineEventsSelect,
 		metricsDataSelectSingleRun:       metricsDataSelectSingleRun,
 		sqlMetricsDataSelectMultipleRuns: sqlMetricsDataSelectMultipleRuns,
 	}
@@ -329,6 +303,11 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	if options.OmitEnded {
 		queryForResults = queryForResults.Where(sq.Eq{"i.EndAt": 0})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
+	}
+
+	if len(options.RunIDs) > 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"i.ID": options.RunIDs})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.ID": options.RunIDs})
 	}
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
@@ -448,10 +427,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, err
 	}
 
-	if rawPlaybookRun.Type != app.RunTypeChannelChecklist && rawPlaybookRun.Type != app.RunTypePlaybook {
-		rawPlaybookRun.Type = app.RunTypePlaybook
-	}
-
 	// When adding a PlaybookRun column #2: add to the SetMap
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
@@ -495,6 +470,8 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
 			"RunType":                                 rawPlaybookRun.Type,
+			"RunNumber":                               rawPlaybookRun.RunNumber,
+			"SequentialID":                            rawPlaybookRun.SequentialID,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -503,6 +480,13 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		}))
 
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
+			if pqErr.Constraint == "ir_incident_playbookid_runnumber_unique" {
+				return nil, errors.Wrap(app.ErrDuplicateEntry, "run number already exists for this playbook")
+			}
+			return nil, errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
+		}
 		return nil, errors.Wrapf(err, "failed to store new playbook run")
 	}
 
@@ -644,6 +628,158 @@ func (s *playbookRunStore) BumpRunUpdatedAt(playbookRunID string) error {
 		Set("UpdateAt", model.GetMillis()).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
 		return errors.Wrapf(err, "failed to bump UpdateAt for playbook run '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
+// UpdatePlaybookRunOwner atomically updates CommanderUserID and applies checklistTransform
+// inside a SELECT FOR UPDATE transaction. Reading the current checklists inside the lock
+// prevents TOCTOU races: a concurrent SetAssignee or ModifyCheckedState that commits
+// between the caller's last GetPlaybookRun and this write would otherwise be silently
+// overwritten by pre-computed checklists.
+func (s *playbookRunStore) UpdatePlaybookRunOwner(playbookRunID, ownerUserID string, checklistTransform func([]app.Checklist) []app.Checklist) error {
+	if playbookRunID == "" {
+		return errors.New("playbookRunID cannot be empty")
+	}
+	if ownerUserID == "" {
+		return errors.New("ownerUserID cannot be empty")
+	}
+
+	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
+	defer txCancel()
+	tx, err := s.store.db.BeginTxx(txCtx, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to begin transaction for playbook run '%s'", playbookRunID)
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	if _, err := tx.Exec("SET LOCAL lock_timeout = '4s'"); err != nil {
+		return errors.Wrap(err, "failed to set lock timeout")
+	}
+
+	// SELECT FOR UPDATE serializes concurrent ChangeOwner calls on the same run.
+	// We also read the current ChecklistsJSON here — inside the lock — so the
+	// transform sees the latest state and concurrent checklist mutations are not lost.
+	lockQuery := s.store.builder.
+		Select("checklistsjson").
+		From("IR_Incident").
+		Where(sq.Eq{"ID": playbookRunID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Suffix("FOR UPDATE")
+
+	var checklistsJSONRaw []byte
+	if err := s.store.getBuilder(tx, &checklistsJSONRaw, lockQuery); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.Wrapf(app.ErrNotFound, "playbook run '%s' not found", playbookRunID)
+		}
+		return errors.Wrapf(err, "failed to lock playbook run '%s'", playbookRunID)
+	}
+
+	// Deserialise, transform, re-serialise inside the lock.
+	var checklists []app.Checklist
+	if err := json.Unmarshal(checklistsJSONRaw, &checklists); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal checklists for playbook run '%s'", playbookRunID)
+	}
+	if checklistTransform != nil {
+		checklists = checklistTransform(checklists)
+	}
+	if checklists == nil {
+		checklists = []app.Checklist{}
+	}
+	checklistsJSON, err := checklistsToJSON(checklists)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal checklists for playbook run '%s'", playbookRunID)
+	}
+
+	if _, err := s.store.execBuilder(tx, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"CommanderUserID": ownerUserID,
+			"ChecklistsJSON":  checklistsJSON,
+			"UpdateAt":        model.GetMillis(),
+		}).
+		Where(sq.Eq{"ID": playbookRunID}).
+		Where(sq.Eq{"DeleteAt": 0})); err != nil {
+		return errors.Wrapf(err, "failed to update owner for playbook run '%s'", playbookRunID)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrapf(err, "failed to commit owner update for playbook run '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
+// UpdatePlaybookRunChecklistsAtomic applies transform to the run's checklists inside
+// a SELECT FOR UPDATE transaction. Reading the current checklists inside the lock
+// prevents TOCTOU races: a concurrent SetAssignee or ModifyCheckedState that commits
+// between the caller's last GetPlaybookRun and this write would otherwise be silently
+// overwritten by pre-computed checklists.
+func (s *playbookRunStore) UpdatePlaybookRunChecklistsAtomic(playbookRunID string, transform func([]app.Checklist) []app.Checklist) error {
+	if playbookRunID == "" {
+		return errors.New("playbookRunID cannot be empty")
+	}
+
+	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
+	defer txCancel()
+	tx, err := s.store.db.BeginTxx(txCtx, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to begin transaction for playbook run '%s'", playbookRunID)
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	if _, err := tx.Exec("SET LOCAL lock_timeout = '4s'"); err != nil {
+		return errors.Wrap(err, "failed to set lock timeout")
+	}
+
+	// SELECT FOR UPDATE serializes concurrent writes on the same run.
+	// We read the current ChecklistsJSON here — inside the lock — so the
+	// transform sees the latest state and concurrent checklist mutations are not lost.
+	lockQuery := s.store.builder.
+		Select("checklistsjson").
+		From("IR_Incident").
+		Where(sq.Eq{"ID": playbookRunID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Suffix("FOR UPDATE")
+
+	var checklistsJSONRaw []byte
+	if err := s.store.getBuilder(tx, &checklistsJSONRaw, lockQuery); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.Wrapf(app.ErrNotFound, "playbook run '%s' not found", playbookRunID)
+		}
+		return errors.Wrapf(err, "failed to lock playbook run '%s'", playbookRunID)
+	}
+
+	// Deserialise, transform, re-serialise inside the lock.
+	var checklists []app.Checklist
+	if err := json.Unmarshal(checklistsJSONRaw, &checklists); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal checklists for playbook run '%s'", playbookRunID)
+	}
+	if transform != nil {
+		checklists = transform(checklists)
+	}
+	if checklists == nil {
+		checklists = []app.Checklist{}
+	}
+	checklistsJSON, err := checklistsToJSON(checklists)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal checklists for playbook run '%s'", playbookRunID)
+	}
+
+	if _, err := s.store.execBuilder(tx, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"ChecklistsJSON": checklistsJSON,
+			"UpdateAt":       model.GetMillis(),
+		}).
+		Where(sq.Eq{"ID": playbookRunID}).
+		Where(sq.Eq{"DeleteAt": 0})); err != nil {
+		return errors.Wrapf(err, "failed to update checklists for playbook run '%s'", playbookRunID)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrapf(err, "failed to commit checklists update for playbook run '%s'", playbookRunID)
 	}
 
 	return nil
@@ -830,10 +966,37 @@ func (s *playbookRunStore) getStatusPostsForPlaybookRun(q sqlx.Queryer, playbook
 	return statusPosts, nil
 }
 
+func (s *playbookRunStore) timelineEventsBaseQuery() sq.SelectBuilder {
+	return s.queryBuilder.
+		Select(
+			"te.ID",
+			"te.IncidentID AS PlaybookRunID",
+			"te.CreateAt",
+			"te.DeleteAt",
+			"te.EventAt",
+		).
+		Column(
+			sq.Alias(
+				sq.Case().
+					When(sq.Eq{"te.EventType": legacyEventTypeCommanderChanged}, sq.Expr("?", app.OwnerChanged)).
+					Else("te.EventType"),
+				"EventType",
+			),
+		).
+		Columns(
+			"te.Summary",
+			"te.Details",
+			"te.PostID",
+			"te.SubjectUserID",
+			"te.CreatorUserID",
+		).
+		From("IR_TimelineEvent as te")
+}
+
 func (s *playbookRunStore) getTimelineEventsForPlaybookRun(q sqlx.Queryer, playbookRunIDs []string) ([]app.TimelineEvent, error) {
 	var timelineEvents []app.TimelineEvent
 
-	timelineEventsSelect := s.timelineEventsSelect.
+	timelineEventsSelect := s.timelineEventsBaseQuery().
 		OrderBy("te.EventAt ASC").
 		Where(sq.And{sq.Eq{"te.IncidentID": playbookRunIDs}, sq.Eq{"te.DeleteAt": 0}})
 
@@ -863,7 +1026,7 @@ func (s *playbookRunStore) getMetricsForPlaybookRun(q sqlx.Queryer, playbookRunI
 func (s *playbookRunStore) GetTimelineEvent(playbookRunID, eventID string) (*app.TimelineEvent, error) {
 	var event app.TimelineEvent
 
-	timelineEventSelect := s.timelineEventsSelect.
+	timelineEventSelect := s.timelineEventsBaseQuery().
 		Where(sq.And{sq.Eq{"te.IncidentID": playbookRunID}, sq.Eq{"te.ID": eventID}})
 
 	err := s.store.getBuilder(s.store.db, &event, timelineEventSelect)
@@ -1275,6 +1438,92 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 	return s.updateFollowing(playbookRunID, userID, false)
 }
 
+// followUnfollowBatchSize is the maximum number of rows per INSERT to avoid
+// PostgreSQL's limit on bind parameters and keep individual statements bounded.
+const followUnfollowBatchSize = 500
+
+func (s *playbookRunStore) UnfollowMultiple(playbookRunID string, userIDs []string) error {
+	if playbookRunID == "" {
+		return errors.New("playbookRunID cannot be empty")
+	}
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
+	defer txCancel()
+	tx, err := s.store.db.BeginTxx(txCtx, nil)
+	if err != nil {
+		return errors.Wrap(err, "could not begin transaction for UnfollowMultiple")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
+		end := i + followUnfollowBatchSize
+		if end > len(userIDs) {
+			end = len(userIDs)
+		}
+		chunk := userIDs[i:end]
+
+		insert := sq.Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower")
+		for _, userID := range chunk {
+			insert = insert.Values(playbookRunID, userID, false)
+		}
+		insert = insert.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", false)
+
+		if _, err := s.store.execBuilder(tx, insert); err != nil {
+			return errors.Wrapf(err, "failed to batch unfollow users for run '%s'", playbookRunID)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "could not commit UnfollowMultiple transaction")
+	}
+	return nil
+}
+
+func (s *playbookRunStore) FollowBatch(playbookRunID string, userIDs []string) error {
+	if playbookRunID == "" {
+		return errors.New("playbookRunID cannot be empty")
+	}
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
+	defer txCancel()
+	tx, err := s.store.db.BeginTxx(txCtx, nil)
+	if err != nil {
+		return errors.Wrap(err, "could not begin transaction for FollowBatch")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
+		end := i + followUnfollowBatchSize
+		if end > len(userIDs) {
+			end = len(userIDs)
+		}
+		chunk := userIDs[i:end]
+
+		insert := sq.Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower")
+		for _, userID := range chunk {
+			insert = insert.Values(playbookRunID, userID, true)
+		}
+		insert = insert.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", true)
+
+		if _, err := s.store.execBuilder(tx, insert); err != nil {
+			return errors.Wrapf(err, "failed to batch follow users for run '%s'", playbookRunID)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "could not commit FollowBatch transaction")
+	}
+	return nil
+}
+
 func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Run_Participants").
@@ -1488,24 +1737,32 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		return nil
 	}
 
-	query := sq.
-		Insert("IR_Run_Participants").
-		Columns("IncidentID", "UserID", "IsParticipant")
+	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
+		end := i + followUnfollowBatchSize
+		if end > len(userIDs) {
+			end = len(userIDs)
+		}
+		chunk := userIDs[i:end]
 
-	for _, userID := range userIDs {
-		query = query.Values(playbookRunID, userID, isParticipating)
+		query := sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsParticipant")
+
+		for _, userID := range chunk {
+			query = query.Values(playbookRunID, userID, isParticipating)
+		}
+
+		_, err := s.store.execBuilder(
+			s.store.db,
+			query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
+		)
+
+		if err != nil {
+			return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", chunk, playbookRunID)
+		}
 	}
 
-	_, err := s.store.execBuilder(
-		s.store.db,
-		query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
-	)
-
-	if err != nil {
-		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
-	}
-
-	if err = s.touchPlaybookRun(playbookRunID); err != nil {
+	if err := s.touchPlaybookRun(playbookRunID); err != nil {
 		return errors.Wrapf(err, "failed to touch playbook run '%s'", playbookRunID)
 	}
 
@@ -1694,6 +1951,49 @@ func queryStartedBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq
 
 	// both were zero, don't apply a filter:
 	return query
+}
+
+// GetRunIDsByParentFieldValue finds runs whose run-level property value matches
+// a playbook-level option. Run-level fields and options get new IDs when copied
+// from the playbook; the link is maintained via parent_id on both the field
+// (attrs->>'parent_id') and each option (opt->>'parent_id').
+//
+// Raw SQL is used because squirrel cannot express CTEs or jsonb_array_elements.
+//
+// NOTE: This query joins directly against MM core's propertyfields and propertyvalues tables.
+// If MM renames or restructures these tables, this query will break. Review when upgrading
+// the mattermost-plugin dependency.
+func (s *playbookRunStore) GetRunIDsByParentFieldValue(groupID, parentFieldID, parentOptionID string, limit int) ([]string, error) {
+	if groupID == "" || parentFieldID == "" || parentOptionID == "" {
+		return nil, errors.New("groupID, parentFieldID, and parentOptionID cannot be empty")
+	}
+	// Raw SQL: squirrel cannot express the cross-schema JOIN to core Mattermost
+	// propertyfields/propertyvalues tables. This read-only cross-DB dependency is
+	// intentional — we never write to core tables.
+	query := `
+WITH child_options AS (
+    SELECT pf.id AS field_id, opt->>'id' AS option_id
+    FROM propertyfields pf, jsonb_array_elements(pf.attrs->'options') AS opt
+    WHERE pf.groupid = $3
+      AND pf.attrs->>'parent_id' = $1
+      AND pf.deleteat = 0
+      AND opt->>'parent_id' = $2
+)
+SELECT DISTINCT pv.targetid
+FROM propertyvalues pv
+JOIN child_options co ON pv.fieldid = co.field_id
+WHERE pv.value = to_jsonb(co.option_id)
+  AND pv.deleteat = 0
+  AND pv.targettype = 'run'
+  AND pv.targetid IN (SELECT ID FROM IR_Incident WHERE DeleteAt = 0)
+LIMIT $4`
+
+	var runIDs []string
+	if err := s.store.db.Select(&runIDs, query, parentFieldID, parentOptionID, groupID, limit); err != nil {
+		return nil, errors.Wrap(err, "failed to query run IDs by parent field value")
+	}
+
+	return runIDs, nil
 }
 
 func queryStarted(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {

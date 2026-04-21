@@ -243,30 +243,40 @@ export function useThing<T extends NonNullable<any>>(
     const [isFetching, setIsFetching] = useState<boolean>(true);
 
     useEffect(() => {
+        let cancelled = false;
         if (!id) {
             setIsFetching(false);
             setThing(null);
             setError(null);
-            return;
+            return undefined;
         }
 
         if (thingFromState) {
             setThing(thingFromState);
             setIsFetching(false);
-            return;
+            return undefined;
         }
 
+        setIsFetching(true);
         fetchFunc(id)
             .then((res) => {
-                setThing(res);
+                if (!cancelled) {
+                    setThing(res);
+                    setIsFetching(false);
+                }
             })
             .catch((err) => {
-                if (err instanceof ClientError) {
-                    setError(err);
+                if (!cancelled) {
+                    if (err instanceof ClientError) {
+                        setError(err);
+                    }
+                    setThing(null);
+                    setIsFetching(false);
                 }
-                setThing(null);
             });
-        setIsFetching(false);
+        return () => {
+            cancelled = true;
+        };
     }, [thingFromState, id, ...deps]);
 
     const metadata = {
@@ -656,4 +666,18 @@ export function useTextOverflow(ref: MutableRefObject<HTMLElement | null>) {
     }, [ref]);
 
     return isOverflowing;
+}
+
+// useUserDisplayNameMap builds a userId→displayName map for all profiles in the current team.
+// Shared by components that need to resolve user IDs to display names for template previews.
+export function useUserDisplayNameMap(): Record<string, string> {
+    const profilesInTeam = useProfilesInTeam();
+    const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    return useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const profile of profilesInTeam) {
+            map[profile.id] = displayUsername(profile, teammateNameDisplaySetting);
+        }
+        return map;
+    }, [profilesInTeam, teammateNameDisplaySetting]);
 }

@@ -7,7 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -20,6 +23,9 @@ const (
 	PropertySearchPerPage     = 20
 	PropertyBulkSearchPerPage = 1000
 	MaxPropertiesPerPlaybook  = 20
+	MaxPropertyValueLength    = 1024
+	MaxMultiuserValues        = 50
+	MaxMultiselectValues      = 50
 )
 
 type propertyService struct {
@@ -44,7 +50,15 @@ func NewPropertyService(api *pluginapi.Client, conditionStore ConditionStore) (P
 	return service, nil
 }
 
+func (s *propertyService) GetGroupID() string {
+	return s.groupID
+}
+
 func (s *propertyService) CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
+
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "invalid property field")
 	}
@@ -64,6 +78,31 @@ func (s *propertyService) CreatePropertyField(playbookID string, propertyField P
 		return nil, errors.Wrap(err, "failed to create property field")
 	}
 
+	// Re-check limit after creation to handle concurrent requests (compensating action).
+	// If a concurrent request also created a field, we may now exceed the limit.
+	//
+	// Known race window: between the create (line above) and this re-check, a concurrent
+	// reader may observe the over-limit field. This window is intentionally accepted because:
+	//   1. The excess field is immediately rolled back (deleted) if detected.
+	//   2. Property fields are rarely created concurrently in practice.
+	//   3. A true atomic solution would require a serializable transaction wrapping
+	//      the MM Property API, which is not currently supported.
+	// If hard consistency is needed, the caller should hold a higher-level advisory lock.
+	postCreateCount, countErr := s.GetPropertyFieldsCount(playbookID)
+	if countErr != nil {
+		// Cannot confirm we're within limits — roll back to be safe.
+		if delErr := s.api.Property.DeletePropertyField(s.groupID, createdField.ID); delErr != nil {
+			s.api.Log.Error("failed to roll back property field after count check failure; manual cleanup may be required", "err", delErr.Error(), "field_id", createdField.ID, "playbook_id", playbookID)
+		}
+		return nil, errors.Wrap(countErr, "failed to verify property field count after creation; field rolled back")
+	} else if postCreateCount > MaxPropertiesPerPlaybook {
+		// Roll back: delete the just-created field
+		if delErr := s.api.Property.DeletePropertyField(s.groupID, createdField.ID); delErr != nil {
+			s.api.Log.Error("failed to roll back property field after limit exceeded; manual deletion of this field may be required", "err", delErr.Error(), "field_id", createdField.ID, "playbook_id", playbookID)
+		}
+		return nil, errors.Wrapf(ErrPropertyLimitExceeded, "cannot create property field: playbook already has %d property fields (max %d)", postCreateCount, MaxPropertiesPerPlaybook)
+	}
+
 	resultField, err := NewPropertyFieldFromMattermostPropertyField(createdField)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert created property field")
@@ -80,7 +119,7 @@ func (s *propertyService) validatePropertyLimit(playbookID string) error {
 	}
 
 	if currentCount >= MaxPropertiesPerPlaybook {
-		return errors.Errorf("cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
+		return errors.Wrapf(ErrPropertyLimitExceeded, "cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
 	}
 
 	return nil
@@ -153,6 +192,10 @@ func (s *propertyService) GetRunPropertyFieldsSince(runID string, updatedSince i
 }
 
 func (s *propertyService) UpdatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
+	if err := validateReservedFieldName(propertyField.Name); err != nil {
+		return nil, err
+	}
+
 	if err := propertyField.SanitizeAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "invalid property field")
 	}
@@ -161,6 +204,9 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 	existingField, err := s.api.Property.GetPropertyField(s.groupID, propertyField.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing property field")
+	}
+	if existingField == nil {
+		return nil, errors.Wrap(ErrNotFound, "property field not found")
 	}
 
 	// Check if the type is changing and validate it's allowed
@@ -186,7 +232,7 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 
 			if len(optionsInUse) > 0 {
 				optionNames := s.getOptionNames(existingPropertyField.Attrs.Options, optionsInUse)
-				return nil, errors.Wrapf(ErrPropertyOptionsInUse, "cannot remove property options: %s. Please remove or update the conditions before removing these options", optionNames)
+				return nil, errors.Wrapf(ErrPropertyOptionsInUse, "%s are referenced by conditions. Remove or update the conditions before removing these options", optionNames)
 			}
 		}
 	}
@@ -218,11 +264,17 @@ func (s *propertyService) UpdatePropertyField(playbookID string, propertyField P
 func (s *propertyService) findRemovedOptions(oldOptions, newOptions model.PropertyOptions[*model.PluginPropertyOption]) []string {
 	newOptionIDs := make(map[string]bool)
 	for _, option := range newOptions {
+		if option == nil {
+			continue
+		}
 		newOptionIDs[option.GetID()] = true
 	}
 
 	var removedIDs []string
 	for _, option := range oldOptions {
+		if option == nil {
+			continue
+		}
 		if !newOptionIDs[option.GetID()] {
 			removedIDs = append(removedIDs, option.GetID())
 		}
@@ -234,6 +286,9 @@ func (s *propertyService) findRemovedOptions(oldOptions, newOptions model.Proper
 func (s *propertyService) getOptionNames(options model.PropertyOptions[*model.PluginPropertyOption], optionsInUse map[string]int) string {
 	var names []string
 	for _, option := range options {
+		if option == nil {
+			continue
+		}
 		if count, exists := optionsInUse[option.GetID()]; exists {
 			var countStr string
 			if count == 1 {
@@ -267,11 +322,7 @@ func (s *propertyService) DeletePropertyField(playbookID string, propertyID stri
 	}
 
 	if count > 0 {
-		field, err := s.GetPropertyField(propertyID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get property field")
-		}
-		return errors.Wrapf(ErrPropertyFieldInUse, "cannot delete property field '%s': it is referenced by %d condition(s). Please remove or update the conditions before deleting this field", field.Name, count)
+		return errors.Wrapf(ErrPropertyFieldInUse, "referenced by %d condition(s). Remove or update the conditions before deleting this field", count)
 	}
 
 	err = s.api.Property.DeletePropertyField(s.groupID, propertyID)
@@ -398,6 +449,8 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 	optionMappings := make(map[string]string)
 	var copiedFields []PropertyField
 
+	// N+1: one CreatePropertyField call per field. Bounded by MaxPropertiesPerPlaybook (20).
+	// TODO: replace with a batch create once the plugin API exposes one.
 	for _, playbookProperty := range playbookProperties {
 		runProperty, err := s.copyPropertyFieldForRun(playbookProperty, runID)
 		if err != nil {
@@ -437,11 +490,7 @@ func (s *propertyService) CopyPlaybookPropertiesToRun(playbookID, runID string) 
 		}
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"playbook_id":   playbookID,
-		"run_id":        runID,
-		"fields_copied": len(playbookProperties),
-	}).Info("copied playbook properties to run")
+	s.api.Log.Info("copied playbook properties to run", "playbook_id", playbookID, "run_id", runID, "fields_copied", len(playbookProperties))
 
 	return &PropertyCopyResult{
 		FieldMappings:  fieldMappings,
@@ -513,6 +562,7 @@ func (s *propertyService) copyPropertyFieldForPlaybook(sourceProperty *model.Pro
 	}
 
 	propertyField.ID = ""
+	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypePlaybook
 	propertyField.TargetID = targetPlaybookID
 
@@ -536,13 +586,22 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 	}
 
 	propertyField.ID = ""
+	propertyField.GroupID = s.groupID
 	propertyField.TargetType = PropertyTargetTypeRun
 	propertyField.TargetID = runID
 	propertyField.Attrs.ParentID = playbookProperty.ID
 
 	if propertyField.SupportsOptions() {
 		for i := range propertyField.Attrs.Options {
-			propertyField.Attrs.Options[i].SetID("")
+			// Store the playbook-level option ID as parent_id before clearing,
+			// so we can map between playbook-level and run-level option IDs
+			// (e.g. for runs list filtering by select attribute value).
+			opt := propertyField.Attrs.Options[i]
+			if opt == nil {
+				continue
+			}
+			opt.Data["parent_id"] = opt.GetID()
+			opt.SetID("")
 		}
 	}
 
@@ -593,14 +652,34 @@ func (s *propertyService) GetRunPropertyValueByFieldID(runID, propertyFieldID st
 }
 
 func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error) {
-	// Get the property field to validate against
-	propertyField, err := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get property field")
+	// Get the property field to validate against.
+	// GetPropertyField filters by the playbook group scope, so run-level fields (targettype=run)
+	// may return "no rows". When that happens, fall back to searching the run's property fields
+	// directly to find the matching field.
+	mmPropertyField, getErr := s.api.Property.GetPropertyField(s.groupID, propertyFieldID)
+	var propertyField *model.PropertyField
+	if getErr != nil {
+		runFields, rfErr := s.GetRunPropertyFields(runID)
+		if rfErr != nil {
+			return nil, errors.Wrap(getErr, "failed to get property field")
+		}
+		for _, rf := range runFields {
+			if rf.ID == propertyFieldID {
+				propertyField = rf.ToMattermostPropertyField()
+				break
+			}
+		}
+		if propertyField == nil {
+			return nil, errors.Wrap(getErr, "failed to get property field")
+		}
+	} else if mmPropertyField == nil {
+		return nil, ErrNotFound
+	} else {
+		propertyField = mmPropertyField
 	}
 
 	// Sanitize and validate the value based on field type
-	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value)
+	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to sanitize and validate property value")
 	}
@@ -624,7 +703,30 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 	return (*PropertyValue)(upsertedValue), nil
 }
 
-func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage) (json.RawMessage, error) {
+// UpsertRunPropertyValueWithField upserts a property value using an already-loaded field,
+// avoiding the GetPropertyField DB round-trip that fails for run-scoped fields immediately
+// after creation (the MM property API only finds playbook-scoped fields by direct ID lookup).
+func (s *propertyService) UpsertRunPropertyValueWithField(runID string, field *PropertyField, value json.RawMessage) (*PropertyValue, error) {
+	mmField := field.ToMattermostPropertyField()
+	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(mmField, value, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to sanitize and validate property value")
+	}
+	propertyValue := &model.PropertyValue{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		TargetID:   runID,
+		FieldID:    field.ID,
+		Value:      sanitizedValue,
+	}
+	upsertedValue, err := s.api.Property.UpsertPropertyValue(propertyValue)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upsert property value")
+	}
+	return (*PropertyValue)(upsertedValue), nil
+}
+
+func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage, validateOptions bool) (json.RawMessage, error) {
 	if len(value) == 0 || string(value) == "null" {
 		return value, nil
 	}
@@ -645,20 +747,103 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		if err := json.Unmarshal(value, &stringValue); err != nil {
 			return nil, errors.New("select field value must be a string")
 		}
-		return value, s.validateSelectValue(propertyField, stringValue)
+		if validateOptions {
+			return value, s.validateSelectValue(propertyField, stringValue)
+		}
+		return value, nil
 	case model.PropertyFieldTypeMultiselect:
 		var arrayValue []string
 		if err := json.Unmarshal(value, &arrayValue); err != nil {
 			return nil, errors.New("multiselect field value must be an array of strings")
 		}
-		return value, s.validateMultiselectValue(propertyField, arrayValue)
+		if len(arrayValue) > MaxMultiselectValues {
+			return nil, errors.Errorf("multiselect field value must not contain more than %d values", MaxMultiselectValues)
+		}
+		if validateOptions {
+			return value, s.validateMultiselectValue(propertyField, arrayValue)
+		}
+		return value, nil
+	case model.PropertyFieldTypeDate:
+		normalized, err := normalizeDateValue(value)
+		if err != nil {
+			return nil, err
+		}
+		return normalized, nil
+	case model.PropertyFieldTypeUser:
+		var stringValue string
+		if err := json.Unmarshal(value, &stringValue); err != nil {
+			return nil, errors.New("user field value must be a string")
+		}
+		if !model.IsValidId(stringValue) {
+			return nil, errors.New("user field value must be a valid 26-character ID")
+		}
+		return value, nil
+	case model.PropertyFieldTypeMultiuser:
+		var arrayValue []string
+		if err := json.Unmarshal(value, &arrayValue); err != nil {
+			return nil, errors.New("multiuser field value must be an array of strings")
+		}
+		if len(arrayValue) > MaxMultiuserValues {
+			return nil, errors.Errorf("multiuser field exceeds maximum of %d users", MaxMultiuserValues)
+		}
+		for _, userID := range arrayValue {
+			if !model.IsValidId(userID) {
+				return nil, errors.New("multiuser field value must contain valid 26-character user IDs")
+			}
+		}
+		return value, nil
 	default:
 		return nil, errors.Errorf("property field type '%s' is not supported", propertyField.Type)
 	}
 }
 
+// SanitizePropertyValue sanitizes a raw property value for the given field type.
+// Unlike sanitizeAndValidatePropertyValue, this does not validate option membership
+// for select/multiselect fields. It is intended for pre-sanitization of template
+// values before full validation occurs.
+func (s *propertyService) SanitizePropertyValue(fieldType model.PropertyFieldType, raw json.RawMessage) (json.RawMessage, error) {
+	// Build a minimal PropertyField with just the type for sanitization without option validation.
+	field := &model.PropertyField{Type: fieldType}
+	return s.sanitizeAndValidatePropertyValue(field, raw, false)
+}
+
+// normalizeDateValue accepts a JSON date value that is either an RFC3339 string,
+// a numeric string of milliseconds since epoch, or a JSON number of milliseconds
+// since epoch. It always returns the value encoded as an RFC3339 string for
+// consistent storage.
+func normalizeDateValue(value json.RawMessage) (json.RawMessage, error) {
+	// Try JSON number first (e.g. 1710000000000)
+	var millis int64
+	if err := json.Unmarshal(value, &millis); err == nil {
+		t := time.UnixMilli(millis).UTC()
+		return json.Marshal(t.Format(time.RFC3339))
+	}
+
+	// Must be a string — try RFC3339 then numeric string
+	var stringValue string
+	if err := json.Unmarshal(value, &stringValue); err != nil {
+		return nil, errors.New("date field value must be a string or a millisecond timestamp")
+	}
+
+	if _, err := time.Parse(time.RFC3339, stringValue); err == nil {
+		// Already a valid RFC3339 string — return as-is
+		return value, nil
+	}
+
+	if ms, err := strconv.ParseInt(stringValue, 10, 64); err == nil {
+		t := time.UnixMilli(ms).UTC()
+		return json.Marshal(t.Format(time.RFC3339))
+	}
+
+	return nil, errors.New("date field value must be a valid RFC3339 date string or a millisecond timestamp")
+}
+
 func (s *propertyService) sanitizeTextValue(value string) (string, error) {
-	return strings.TrimSpace(value), nil
+	value = strings.TrimSpace(model.SanitizeUnicode(value))
+	if utf8.RuneCountInString(value) > MaxPropertyValueLength {
+		return "", errors.Errorf("text value exceeds maximum length of %d characters", MaxPropertyValueLength)
+	}
+	return value, nil
 }
 
 func (s *propertyService) validateSelectValue(propertyField *model.PropertyField, value string) error {
@@ -713,6 +898,26 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 	return registeredGroup.ID, nil
 }
 
+var reservedFieldNames = []struct {
+	token string
+	desc  string
+}{
+	{"SEQ", "the built-in sequential ID placeholder"},
+	{"OWNER", "the built-in run owner placeholder"},
+	{"CREATOR", "the built-in run creator placeholder"},
+}
+
+// validateReservedFieldName rejects field names that would conflict with built-in
+// template placeholders or system fields. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
+func validateReservedFieldName(name string) error {
+	for _, r := range reservedFieldNames {
+		if strings.EqualFold(name, r.token) {
+			return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+r.token+"' is reserved for "+r.desc)
+		}
+	}
+	return nil
+}
+
 // GetRunsPropertyFields retrieves all property fields for multiple runs efficiently
 func (s *propertyService) GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error) {
 	return s.getRunsPropertyFields(runIDs, PropertyBulkSearchPerPage, 0)
@@ -759,7 +964,7 @@ func (s *propertyService) getRunsPropertyFields(runIDs []string, pageSize int, u
 	for _, mmField := range allFields {
 		pf, err := NewPropertyFieldFromMattermostPropertyField(mmField)
 		if err != nil {
-			logrus.WithError(err).Warn("Failed to convert property field")
+			s.api.Log.Warn("Failed to convert property field", "err", err.Error())
 			continue
 		}
 		result[mmField.TargetID] = append(result[mmField.TargetID], *pf)
@@ -807,4 +1012,46 @@ func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int, u
 	}
 
 	return result, nil
+}
+
+// maxRunIDsForPropertyFilter is one more than the service-layer cap (maxPropertyValueFilterRunIDs)
+// so the caller can detect "too many results" without fetching the entire result set.
+const maxRunIDsForPropertyFilter = 1001
+
+// GetRunIDsByPropertyValue returns the IDs of all runs that have the given property field
+// set to the given option ID value. Used to filter the runs list by custom status.
+func (s *propertyService) GetRunIDsByPropertyValue(fieldID, optionID string) ([]string, error) {
+	value, err := json.Marshal(optionID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal option ID")
+	}
+
+	opts := model.PropertyValueSearchOpts{
+		GroupID:    s.groupID,
+		TargetType: PropertyTargetTypeRun,
+		FieldID:    fieldID,
+		Value:      value,
+		PerPage:    PropertyBulkSearchPerPage,
+	}
+
+	var runIDs []string
+	for {
+		values, err := s.api.Property.SearchPropertyValues(s.groupID, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to search property values by field value")
+		}
+		for _, v := range values {
+			runIDs = append(runIDs, v.TargetID)
+		}
+		if len(runIDs) >= maxRunIDsForPropertyFilter {
+			break
+		}
+		if len(values) < PropertyBulkSearchPerPage {
+			break
+		}
+		opts.Cursor.PropertyValueID = values[len(values)-1].ID
+		opts.Cursor.CreateAt = values[len(values)-1].CreateAt
+	}
+
+	return runIDs, nil
 }

@@ -330,6 +330,7 @@ export type PlaybookUpdates = {
   retrospectiveEnabled?: InputMaybe<Scalars['Boolean']>;
   retrospectiveReminderIntervalSeconds?: InputMaybe<Scalars['Float']>;
   retrospectiveTemplate?: InputMaybe<Scalars['String']>;
+  runNumberPrefix?: InputMaybe<Scalars['String']>;
   runSummaryTemplate?: InputMaybe<Scalars['String']>;
   runSummaryTemplateEnabled?: InputMaybe<Scalars['Boolean']>;
   signalAnyKeywords?: InputMaybe<Array<Scalars['String']>>;
