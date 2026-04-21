@@ -322,7 +322,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	}
 
 	if len(setmap) > 0 {
-		if err := c.playbookService.GraphqlUpdate(args.ID, setmap); err != nil {
+		if err := c.playbookStore.GraphqlUpdate(args.ID, setmap); err != nil {
 			return "", err
 		}
 	}
@@ -353,7 +353,7 @@ func (r *PlaybookRootResolver) AddPlaybookMember(ctx context.Context, args struc
 		return "", errors.New("archived playbooks can not be modified")
 	}
 
-	if err := c.playbookService.AddPlaybookMember(args.PlaybookID, args.UserID); err != nil {
+	if err := c.playbookStore.AddPlaybookMember(args.PlaybookID, args.UserID); err != nil {
 		return "", errors.Wrap(err, "unable to add playbook member")
 	}
 
@@ -386,7 +386,7 @@ func (r *PlaybookRootResolver) RemovePlaybookMember(ctx context.Context, args st
 		}
 	}
 
-	if err := c.playbookService.RemovePlaybookMember(args.PlaybookID, args.UserID); err != nil {
+	if err := c.playbookStore.RemovePlaybookMember(args.PlaybookID, args.UserID); err != nil {
 		return "", errors.Wrap(err, "unable to remove playbook member")
 	}
 
@@ -426,7 +426,7 @@ func (r *PlaybookRootResolver) AddMetric(ctx context.Context, args struct {
 		target = null.IntFrom(int64(*args.Target))
 	}
 
-	if err := c.playbookService.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
+	if err := c.playbookStore.AddMetric(args.PlaybookID, app.PlaybookMetricConfig{
 		Title:       args.Title,
 		Description: args.Description,
 		Type:        args.Type,
@@ -450,7 +450,7 @@ func (r *PlaybookRootResolver) UpdateMetric(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentMetric, err := c.playbookService.GetMetric(args.ID)
+	currentMetric, err := c.playbookStore.GetMetric(args.ID)
 	if err != nil {
 		return "", err
 	}
@@ -475,7 +475,7 @@ func (r *PlaybookRootResolver) UpdateMetric(ctx context.Context, args struct {
 		setmap["Target"] = null.IntFrom(int64(*args.Target))
 	}
 	if len(setmap) > 0 {
-		if err := c.playbookService.UpdateMetric(args.ID, setmap); err != nil {
+		if err := c.playbookStore.UpdateMetric(args.ID, setmap); err != nil {
 			return "", err
 		}
 	}
@@ -492,7 +492,7 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 	}
 	userID := c.r.Header.Get("Mattermost-User-ID")
 
-	currentMetric, err := c.playbookService.GetMetric(args.ID)
+	currentMetric, err := c.playbookStore.GetMetric(args.ID)
 	if err != nil {
 		return "", err
 	}
@@ -506,7 +506,7 @@ func (r *PlaybookRootResolver) DeleteMetric(ctx context.Context, args struct {
 		return "", err
 	}
 
-	if err := c.playbookService.DeleteMetric(args.ID); err != nil {
+	if err := c.playbookStore.DeleteMetric(args.ID); err != nil {
 		return "", err
 	}
 

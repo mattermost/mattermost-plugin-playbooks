@@ -39,24 +39,9 @@ type Playbook struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
-	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
-	AdminOnlyEdit                           bool                   `json:"admin_only_edit"`
-	NewChannelOnly                          bool                   `json:"new_channel_only"`
-	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 	RunNumberPrefix                         string                 `json:"run_number_prefix"`
 	NextRunNumber                           int64                  `json:"next_run_number"` // exposed as Float! in GraphQL (GraphQL Int is 32-bit; Float is used for 64-bit integers)
 	ChannelNameTemplate                     string                 `json:"channel_name_template"`
-	CreationRules                           []CreationRule         `json:"creation_rules"`
-}
-
-// CreationRule maps a condition to a set of actions applied at run creation time.
-// Rules are evaluated in order; for SetOwnerID and SetChannelID, first match wins
-// (later rules do not override); InviteUserIDs accumulate across all matching rules.
-type CreationRule struct {
-	Condition     *ConditionExprV1 `json:"condition,omitempty"`
-	SetOwnerID    string           `json:"set_owner_id,omitempty"`
-	SetChannelID  string           `json:"set_channel_id,omitempty"`
-	InviteUserIDs []string         `json:"invite_user_ids,omitempty"`
 }
 
 type PlaybookMember struct {
@@ -87,10 +72,6 @@ type ChecklistItem struct {
 	StateModified                int64        `json:"state_modified"`
 	AssigneeID                   string       `json:"assignee_id"`
 	AssigneeModified             int64        `json:"assignee_modified"`
-	AssigneeType                 string       `json:"assignee_type"`
-	AssigneeGroupID              string       `json:"assignee_group_id"`
-	AssigneePropertyFieldID      string       `json:"assignee_property_field_id"`
-	RestrictCompletionToAssignee bool         `json:"restrict_completion_to_assignee"`
 	Command                      string       `json:"command"`
 	CommandLastRun               int64        `json:"command_last_run"`
 	Description                  string       `json:"description"`
@@ -139,14 +120,9 @@ type PlaybookCreateOptions struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"remove_channel_member_on_removed_participant"`
 	ChannelID                               string                 `json:"channel_id" export:"channel_id"`
 	ChannelMode                             ChannelPlaybookMode    `json:"channel_mode" export:"channel_mode"`
-	OwnerGroupOnlyActions                   bool                   `json:"owner_group_only_actions"`
-	AdminOnlyEdit                           bool                   `json:"admin_only_edit"`
-	NewChannelOnly                          bool                   `json:"new_channel_only"`
-	AutoArchiveChannel                      bool                   `json:"auto_archive_channel"`
 	RunNumberPrefix                         string                 `json:"run_number_prefix"`
 	NextRunNumber                           int64                  `json:"next_run_number"`
 	ChannelNameTemplate                     string                 `json:"channel_name_template"`
-	CreationRules                           []CreationRule         `json:"creation_rules"`
 }
 
 type PlaybookMetricConfig struct {

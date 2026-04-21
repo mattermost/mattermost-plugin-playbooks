@@ -16,7 +16,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -83,25 +82,19 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
-	// These routes are intentionally outside playbookRunRouterAuthorized: each handler
-	// performs its own permission check (RunChangeOwner, RunFinish, RunRestore) which may
-	// be stricter than the middleware's RunManageProperties when OwnerGroupOnlyActions is set.
-	// Dialog handlers must also return SubmitDialogResponse (HTTP 200) on all paths,
-	// which the middleware's error-format would break.
-	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
-	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
-	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
-	playbookRunRouter.HandleFunc("/finish-dialog", withContext(handler.finishDialog)).Methods(http.MethodPost)
-	playbookRunRouter.HandleFunc("/update-status-dialog", withContext(handler.updateStatusDialog)).Methods(http.MethodPost)
-
 	playbookRunRouterAuthorized := playbookRunRouter.PathPrefix("").Subrouter()
 	playbookRunRouterAuthorized.Use(handler.checkEditPermissions)
 	playbookRunRouterAuthorized.HandleFunc("", withContext(handler.updatePlaybookRun)).Methods(http.MethodPatch)
+	playbookRunRouterAuthorized.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/status", withContext(handler.status)).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/finish-dialog", withContext(handler.finishDialog)).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", withContext(handler.updateStatusDialog)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", withContext(handler.reminderButtonUpdate)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder", withContext(handler.reminderReset)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", withContext(handler.noRetrospectiveButton)).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
+	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel/{channel_id:[A-Za-z0-9]+}").Subrouter()
@@ -183,44 +176,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
-	if playbookRunCreateOptions.Name != "" {
-		trimmedName, err := app.ValidateRunNameUpdate(playbookRunCreateOptions.Name)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run name", err)
-			return
-		}
-		playbookRunCreateOptions.Name = trimmedName
-	}
-	if playbookRunCreateOptions.Summary != "" {
-		trimmedSummary, err := app.ValidateRunSummaryUpdate(playbookRunCreateOptions.Summary)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run summary", err)
-			return
-		}
-		playbookRunCreateOptions.Summary = trimmedSummary
-	}
-
-	if playbookRunCreateOptions.PlaybookID != "" && !model.IsValidId(playbookRunCreateOptions.PlaybookID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid playbook ID", errors.New("invalid playbook ID"))
-		return
-	}
-	if playbookRunCreateOptions.TeamID != "" && !model.IsValidId(playbookRunCreateOptions.TeamID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid team ID", errors.New("invalid team ID"))
-		return
-	}
-	if playbookRunCreateOptions.ChannelID != "" && !model.IsValidId(playbookRunCreateOptions.ChannelID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid channel ID", errors.New("invalid channel ID"))
-		return
-	}
-	if playbookRunCreateOptions.OwnerUserID != "" && !model.IsValidId(playbookRunCreateOptions.OwnerUserID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid owner user ID", errors.New("invalid owner user ID"))
-		return
-	}
-	if playbookRunCreateOptions.PostID != "" && !model.IsValidId(playbookRunCreateOptions.PostID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid post ID", errors.New("invalid post ID"))
-		return
-	}
-
 	// Set the run type based on whether a playbook ID is provided
 	runType := app.RunTypeChannelChecklist
 	if playbookRunCreateOptions.PlaybookID != "" {
@@ -241,8 +196,17 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
 		app.RunSourcePost,
-		playbookRunCreateOptions.PropertyValues,
 	)
+	if errors.Is(err, app.ErrNoPermissions) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
+		return
+	}
+
+	if errors.Is(err, app.ErrMalformedPlaybookRun) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
+		return
+	}
+
 	if err != nil {
 		h.HandleError(w, c.logger, errors.Wrapf(err, "unable to create playbook run"))
 		return
@@ -266,8 +230,9 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		return
 	}
 
-	// NOTE: RunManageProperties is already enforced by the checkEditPermissions middleware
-	// on playbookRunRouterAuthorized; no need to check again here.
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+		return
+	}
 
 	var updates client.PlaybookRunUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
@@ -276,84 +241,25 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	}
 
 	// Prevent updates on finished runs
-	if err := app.ValidateRunUpdateOnFinished(oldPlaybookRun.CurrentStatus, updates.Name != nil, updates.Summary != nil); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", err)
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Summary != nil) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", app.ErrPlaybookRunNotActive)
 		return
 	}
 
 	// If name is being updated, validate and apply the change
 	if updates.Name != nil {
-		trimmed, err := app.ValidateRunNameUpdate(*updates.Name)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run name", err)
+		fieldsToUpdate["Name"] = strings.TrimSpace(*updates.Name)
+		if fieldsToUpdate["Name"] == "" {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
 			return
 		}
-		fieldsToUpdate["Name"] = trimmed
 	}
 
-	// If summary is being updated, validate and apply the change
+	// If summary is being updated, apply the change (empty is allowed)
 	if updates.Summary != nil {
-		trimmed, err := app.ValidateRunSummaryUpdate(*updates.Summary)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run summary", err)
-			return
-		}
-		fieldsToUpdate["Description"] = trimmed
+		trimmedSummary := strings.TrimSpace(*updates.Summary)
+		fieldsToUpdate["Description"] = trimmedSummary
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
-	}
-
-	addToSetmap(fieldsToUpdate, "CreateChannelMemberOnNewParticipant", updates.CreateChannelMemberOnNewParticipant)
-	addToSetmap(fieldsToUpdate, "RemoveChannelMemberOnRemovedParticipant", updates.RemoveChannelMemberOnRemovedParticipant)
-	addToSetmap(fieldsToUpdate, "StatusUpdateBroadcastChannelsEnabled", updates.StatusUpdateBroadcastChannelsEnabled)
-	addToSetmap(fieldsToUpdate, "StatusUpdateBroadcastWebhooksEnabled", updates.StatusUpdateBroadcastWebhooksEnabled)
-
-	if updates.ChannelID != nil {
-		if !model.IsValidId(*updates.ChannelID) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid channel ID", errors.New("invalid channel ID"))
-			return
-		}
-		channel, err := h.pluginAPI.Channel.Get(*updates.ChannelID)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to get channel", err)
-			return
-		}
-
-		if channel.TeamId != oldPlaybookRun.TeamID {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "channel not in given team", app.ErrMalformedPlaybookRun)
-			return
-		}
-
-		permission := model.PermissionManagePublicChannelProperties
-		permissionMessage := "You are not able to manage public channel properties"
-		if channel.Type == model.ChannelTypePrivate {
-			permission = model.PermissionManagePrivateChannelProperties
-			permissionMessage = "You are not able to manage private channel properties"
-		} else if channel.IsGroupOrDirect() {
-			permission = model.PermissionReadChannel
-			permissionMessage = "You do not have access to this channel"
-		}
-
-		if !h.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, permissionMessage, app.ErrNoPermissions)
-			return
-		}
-		fieldsToUpdate["ChannelID"] = *updates.ChannelID
-	}
-
-	if updates.BroadcastChannelIDs != nil {
-		if err := h.permissions.NoAddedBroadcastChannelsWithoutPermission(userID, *updates.BroadcastChannelIDs, oldPlaybookRun.BroadcastChannelIDs); err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "you don't have permission to add one or more of the broadcast channels", err)
-			return
-		}
-		addConcatToSetmap(fieldsToUpdate, "ConcatenatedBroadcastChannelIDs", updates.BroadcastChannelIDs)
-	}
-
-	if updates.WebhookOnStatusUpdateURLs != nil {
-		if err := app.ValidateWebhookURLs(*updates.WebhookOnStatusUpdateURLs); err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid webhook URL", err)
-			return
-		}
-		addConcatToSetmap(fieldsToUpdate, "ConcatenatedWebhookOnStatusUpdateURLs", updates.WebhookOnStatusUpdateURLs)
 	}
 
 	// Update using GraphqlUpdate
@@ -380,28 +286,19 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	var request *model.SubmitDialogRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("createPlaybookRunFromDialog: failed to decode SubmitDialogRequest")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Failed to decode the dialog request.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
 	}
 
 	if userID != request.UserId {
-		c.logger.WithField("user_id", userID).Error("createPlaybookRunFromDialog: interactive dialog's userID must be the same as the requester's userID")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "User ID mismatch in the dialog request.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
 		return
 	}
 
 	var state app.DialogState
 	err = json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("createPlaybookRunFromDialog: failed to unmarshal dialog state")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Failed to process the dialog state.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal dialog state", err)
 		return
 	}
 
@@ -413,19 +310,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
-	if name != "" {
-		trimmed, err := app.ValidateRunNameUpdate(name)
-		if err != nil {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Errors: map[string]string{
-					app.DialogFieldNameKey: err.Error(),
-				},
-			}, http.StatusOK)
-			return
-		}
-		name = trimmed
-	}
-
 	channelID := ""
 	runType := app.RunTypeChannelChecklist
 
@@ -433,15 +317,11 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	if playbookID != "" {
 		playbook, err := h.playbookService.Get(playbookID)
 		if err != nil {
-			c.logger.WithError(err).WithField("user_id", userID).Error("createPlaybookRunFromDialog: unable to get playbook")
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "Unable to load the selected playbook.",
-			}, http.StatusOK)
+			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get playbook", err)
 			return
 		}
 		channelID = playbook.GetRunChannelID()
 		runType = app.RunTypePlaybook
-
 	}
 
 	playbookRun, err := h.createPlaybookRun(
@@ -457,29 +337,15 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		request.UserId,
 		nil,
 		app.RunSourceDialog,
-		nil, // initialPropertyValues: not supported via dialog submission
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Errors: map[string]string{
-					app.DialogFieldNameKey: "The run name is invalid. Please use a valid name.",
-				},
-			}, http.StatusOK)
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
 			return
 		}
 
 		if errors.Is(err, app.ErrNoPermissions) {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "You are not authorized to make runs from this playbook.",
-			}, http.StatusOK)
-			return
-		}
-
-		if errors.Is(err, app.ErrPlaybookArchived) {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "This playbook is archived and cannot be used to create runs.",
-			}, http.StatusOK)
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to make runs from this playbook", err)
 			return
 		}
 
@@ -490,41 +356,23 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		}
 
 		if msg != "" {
-			ReturnJSON(w, &model.SubmitDialogResponse{
+			resp := &model.SubmitDialogResponse{
 				Errors: map[string]string{
 					app.DialogFieldNameKey: msg,
 				},
-			}, http.StatusOK)
+			}
+			respBytes, _ := json.Marshal(resp)
+			_, _ = w.Write(respBytes)
 			return
 		}
 
-		if errors.Is(err, app.ErrNotFound) {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "The playbook was deleted. Please refresh and try again.",
-			}, http.StatusOK)
-			return
-		}
-
-		if errors.Is(err, app.ErrLicensedFeature) {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "This feature is not available with your current license.",
-			}, http.StatusOK)
-			return
-		}
-
-		c.logger.WithError(err).WithField("user_id", userID).Error("createPlaybookRunFromDialog: failed to create run")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "An internal error occurred. Please try again.",
-		}, http.StatusOK)
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
 	channel, err := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("createPlaybookRunFromDialog: failed to get new channel")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "An internal error occurred after creating the run. Please check the runs list.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to get new channel", err)
 		return
 	}
 
@@ -542,8 +390,8 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	}()
 
 	if err := h.postPlaybookRunCreatedMessage(playbookRun, request.ChannelId); err != nil {
-		c.logger.WithError(err).WithField("user_id", userID).Warn("createPlaybookRunFromDialog: failed to post created message")
-		// Don't fail the dialog over a notification-post error; the run was already created.
+		h.HandleError(w, c.logger, err)
+		return
 	}
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
@@ -554,10 +402,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 // corresponding post action.
 func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWriter, r *http.Request) {
 	if !h.licenseChecker.TimelineAllowed() {
-		c.logger.Warn("addToTimelineDialog: timeline feature is not covered by current server license")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Timeline feature is not available with the current license.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
 		return
 	}
 
@@ -566,18 +411,12 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	var request *model.SubmitDialogRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("addToTimelineDialog: failed to decode SubmitDialogRequest")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Failed to decode the dialog request.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
 	}
 
 	if userID != request.UserId {
-		c.logger.WithField("user_id", userID).Error("addToTimelineDialog: interactive dialog's userID must be the same as the requester's userID")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "User ID mismatch in the dialog request.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
 		return
 	}
 
@@ -591,44 +430,24 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 
 	playbookRun, incErr := h.playbookRunService.GetPlaybookRun(playbookRunID)
 	if incErr != nil {
-		c.logger.WithError(incErr).WithField("user_id", userID).Error("addToTimelineDialog: failed to get playbook run")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "An internal error occurred. Please try again.",
-		}, http.StatusOK)
+		h.HandleError(w, c.logger, incErr)
 		return
 	}
 
-	if err := h.permissions.RunManageProperties(userID, playbookRun.ID); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
-			c.logger.WithError(err).WithField("user_id", userID).Warn("addToTimelineDialog: permission denied")
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "You do not have permission to add to the timeline.",
-			}, http.StatusOK)
-		} else {
-			c.logger.WithError(err).WithField("user_id", userID).Error("addToTimelineDialog: error checking permission")
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "An internal error occurred. Please try again.",
-			}, http.StatusOK)
-		}
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
 		return
 	}
 
 	var state app.DialogStateAddToTimeline
 	err = json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("addToTimelineDialog: failed to unmarshal dialog state")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Failed to process the dialog state.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal dialog state", err)
 		return
 	}
 
 	post, err := h.pluginAPI.Post.GetPost(state.PostID)
 	if err != nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("addToTimelineDialog: couldn't get post")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Could not find the specified post.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "couldn't get post ID", err)
 		return
 	}
 
@@ -637,32 +456,14 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	}
 
 	if err = h.playbookRunService.AddPostToTimeline(playbookRun, userID, post, summary); err != nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("addToTimelineDialog: failed to add post to timeline")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Failed to add the post to the timeline. Please try again.",
-		}, http.StatusOK)
+		h.HandleError(w, c.logger, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string, initialPropertyValues map[string]json.RawMessage) (*app.PlaybookRun, error) {
-	if len(initialPropertyValues) > app.MaxPropertiesPerPlaybook {
-		return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "too many initial property values (%d), maximum is %d", len(initialPropertyValues), app.MaxPropertiesPerPlaybook)
-	}
-	// Coarse first-pass guard: reject obviously oversized raw JSON payloads early.
-	// Use 4x the rune limit to account for multi-byte UTF-8 characters.
-	// The authoritative rune-based validation happens downstream in sanitizeAndValidatePropertyValue.
-	for key, val := range initialPropertyValues {
-		if !model.IsValidId(key) {
-			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "property value key %q is not a valid field ID", key)
-		}
-		if len(val) > 4*app.MaxPropertyValueLength {
-			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "property value for %q exceeds maximum length", key)
-		}
-	}
-
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -716,7 +517,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbook = &pb
 
 		if playbook.DeleteAt != 0 {
-			return nil, errors.Wrap(app.ErrPlaybookArchived, "playbook is archived, cannot create a new run using an archived playbook")
+			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
 		}
 
 		if err = h.permissions.RunCreate(userID, *playbook, playbookRun.TeamID); err != nil {
@@ -816,7 +617,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	channelIDBeforeResolve := playbookRun.ChannelID
 	var resolvedChannelName string
 	if playbook != nil {
-		resolvedChannelName, err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, initialPropertyValues, source)
+		resolvedChannelName, err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, nil, source)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to resolve run creation params")
 		}
@@ -845,7 +646,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public, source, resolvedChannelName, initialPropertyValues)
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public, source, resolvedChannelName, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create playbook run")
 	}
@@ -1031,7 +832,7 @@ func (h *PlaybookRunHandler) getChannels(c *Context, w http.ResponseWriter, r *h
 
 	playbookRuns, err := h.playbookRunService.GetPlaybookRuns(requesterInfo, *filterOptions)
 	if err != nil {
-		h.HandleError(w, c.logger, err)
+		h.HandleError(w, c.logger, errors.Wrapf(err, "failed to get playbookRuns"))
 		return
 	}
 
@@ -1043,13 +844,9 @@ func (h *PlaybookRunHandler) getChannels(c *Context, w http.ResponseWriter, r *h
 	ReturnJSON(w, channelIDs, http.StatusOK)
 }
 
-// changeOwner handles the /runs/{id}/owner api endpoint.
+// changeOwner handles the /runs/{id}/change-owner api endpoint.
 func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	if !model.IsValidId(vars["id"]) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run ID", errors.New("invalid run ID"))
-		return
-	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
@@ -1060,35 +857,10 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if err := app.ValidateOwnerID(params.OwnerID); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid owner ID", err)
-		return
-	}
-
-	if err := h.permissions.RunManageProperties(userID, vars["id"]); err != nil {
-		// Return 403 for both ErrNotFound and ErrNoPermissions to avoid leaking run existence.
-		// Other errors (e.g., DB failures) are returned as 500.
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to change the owner of this run.", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
-		return
-	}
-
 	if err := h.playbookRunService.ChangeOwner(vars["id"], userID, params.OwnerID); err != nil {
-		if errors.Is(err, app.ErrNotFound) {
-			// Return 403 (not 404) to stay consistent with the permission check above
-			// and avoid leaking run existence in a race where the run is deleted
-			// between the permission check and the service call.
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to change the owner of this run.", err)
-			return
-		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	c.logger.WithField("run_id", vars["id"]).WithField("user_id", userID).WithField("new_owner_id", params.OwnerID).Info("playbook run owner changed")
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
@@ -1104,18 +876,11 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// options.Reminder arrives as integer seconds from the JSON body; convert to time.Duration.
-	options.Reminder = options.Reminder * time.Second
-
-	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options, c.logger); internalErr != nil {
+	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
 		if errors.Is(internalErr, app.ErrNoPermissions) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
-		} else if errors.Is(internalErr, app.ErrNotFound) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, publicMsg, internalErr)
-		} else if errors.Is(internalErr, app.ErrMalformedPlaybookRun) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
 		} else {
-			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, publicMsg, internalErr)
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
 		}
 		return
 	}
@@ -1125,52 +890,32 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 }
 
 // updateStatus returns a publicMessage and an internal error
-func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions, logger logrus.FieldLogger) (string, error) {
-	if options.FinishRun {
-		if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
-			return "You don't have permission to finish this run.", err
-		}
-	} else {
-		// Require participant access for status updates.
-		if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
-			return "Not authorized", err
-		}
+func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
+
+	// user must be a participant to be able to post an update
+	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
+		return "Not authorized", err
 	}
 
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
-		return "message must not be empty", errors.Wrap(app.ErrMalformedPlaybookRun, "message field empty")
+		return "message must not be empty", errors.New("message field empty")
 	}
 
 	if options.Reminder <= 0 && !options.FinishRun {
-		return "the reminder must be set and not 0", errors.Wrap(app.ErrMalformedPlaybookRun, "reminder was 0")
+		return "the reminder must be set and not 0", errors.New("reminder was 0")
 	}
-
-	// Save the original reminder before normalization so we can restore it if FinishPlaybookRun fails.
-	originalReminder := options.Reminder
-
 	if options.Reminder < 0 || options.FinishRun {
 		options.Reminder = 0
 	}
+	options.Reminder = options.Reminder * time.Second
 
 	if err := h.playbookRunService.UpdateStatus(playbookRunID, userID, options); err != nil {
-		if errors.Is(err, app.ErrNotFound) {
-			return "The run was not found.", err
-		}
 		return "An internal error has occurred. Check app server logs for details.", err
 	}
 
-	// Finish after the status update so the status post is created while the run
-	// is still InProgress, avoiding duplicate channel announcements.
 	if options.FinishRun {
 		if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
-			// Restore the reminder since FinishPlaybookRun failed and the run stays InProgress.
-			// Use originalReminder because options.Reminder was normalized to 0 for FinishRun.
-			if originalReminder > 0 {
-				if restoreErr := h.playbookRunService.SetNewReminder(playbookRunID, originalReminder); restoreErr != nil {
-					logger.WithError(restoreErr).WithField("playbook_run_id", playbookRunID).Warn("failed to restore reminder after FinishPlaybookRun failure")
-				}
-			}
 			return "An internal error has occurred. Check app server logs for details.", err
 		}
 	}
@@ -1181,36 +926,12 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 // updateStatusD handles the POST /runs/{id}/finish endpoint, user has edit permissions
 func (h *PlaybookRunHandler) finish(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
-	if !model.IsValidId(playbookRunID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run ID", errors.New("invalid run ID"))
-		return
-	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
-		// Return 403 for both ErrNotFound and ErrNoPermissions to avoid leaking run existence.
-		// Other errors (e.g., DB failures) are returned as 500.
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to finish this run.", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
-		return
-	}
-
 	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			// Return 403 (not 404) to stay consistent with the permission check above
-			// and avoid leaking run existence in a race where the run is deleted
-			// between the permission check and the service call.
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to finish this run.", err)
-			return
-		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	c.logger.WithField("run_id", playbookRunID).WithField("user_id", userID).Info("playbook run finished")
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
@@ -1228,6 +949,7 @@ func (h *PlaybookRunHandler) getStatusUpdates(c *Context, w http.ResponseWriter,
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to get status updates", nil)
 		return
 	}
 
@@ -1260,39 +982,15 @@ func (h *PlaybookRunHandler) getStatusUpdates(c *Context, w http.ResponseWriter,
 	ReturnJSON(w, posts, http.StatusOK)
 }
 
-// restore "un-finishes" a playbook run.
+// restore "un-finishes" a playbook run
 func (h *PlaybookRunHandler) restore(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
-	if !model.IsValidId(playbookRunID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run ID", errors.New("invalid run ID"))
-		return
-	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
-		// Return 403 for both ErrNotFound and ErrNoPermissions to avoid leaking run existence.
-		// Other errors (e.g., DB failures) are returned as 500.
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to restore this run.", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
-		return
-	}
-
 	if err := h.playbookRunService.RestorePlaybookRun(playbookRunID, userID); err != nil {
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			// Return 403 (not 404) to stay consistent with the permission check above
-			// and avoid leaking run existence in a race where the run is deleted
-			// between the permission check and the service call.
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to restore this run.", err)
-			return
-		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	c.logger.WithField("run_id", playbookRunID).WithField("user_id", userID).Info("playbook run restored")
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
@@ -1304,6 +1002,7 @@ func (h *PlaybookRunHandler) requestUpdate(c *Context, w http.ResponseWriter, r 
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to post update request", nil)
 		return
 	}
 
@@ -1320,6 +1019,7 @@ func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWrite
 
 	// user must be a participant to be able to request to join the channel
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not authorized to request join channel", nil)
 		return
 	}
 
@@ -1329,38 +1029,26 @@ func (h *PlaybookRunHandler) requestJoinChannel(c *Context, w http.ResponseWrite
 	}
 }
 
-// finishDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
+// updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
 // user submits the Finish Run dialog.
 func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !model.IsValidId(playbookRunID) {
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Invalid run ID.",
-		}, http.StatusOK)
+	playbookRun, incErr := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if incErr != nil {
+		h.HandleError(w, c.logger, incErr)
 		return
 	}
 
-	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
-		// Always return the same message regardless of underlying cause (not-found vs
-		// no-permission) to avoid leaking whether the run ID exists.
-		c.logger.WithError(err).WithField("user_id", userID).Warn("finishDialog: permission denied or run not found")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "You don't have permission to finish this run.",
-		}, http.StatusOK)
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRun.ID)) {
 		return
 	}
 
 	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("finishDialog: failed to finish playbook run")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Failed to finish the run. Please try again.",
-		}, http.StatusOK)
+		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) toggleStatusUpdates(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -1391,28 +1079,10 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !model.IsValidId(playbookRunID) {
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Invalid run ID.",
-		}, http.StatusOK)
-		return
-	}
-
 	var request *model.SubmitDialogRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
-		c.logger.WithError(err).WithField("user_id", userID).Error("updateStatusDialog: failed to decode SubmitDialogRequest")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "Failed to decode the request. Please try again.",
-		}, http.StatusOK)
-		return
-	}
-
-	if userID != request.UserId {
-		c.logger.WithField("user_id", userID).Error("updateStatusDialog: interactive dialog's userID must be the same as the requester's userID")
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: "User ID mismatch in the dialog request.",
-		}, http.StatusOK)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
 	}
 
@@ -1420,9 +1090,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	if message, ok := request.Submission[app.DialogFieldMessageKey]; ok {
 		messageStr, valid := message.(string)
 		if !valid {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "Message must be a string.",
-			}, http.StatusOK)
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "message must be a string", nil)
 			return
 		}
 		options.Message = messageStr
@@ -1431,20 +1099,16 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	if reminderI, ok := request.Submission[app.DialogFieldReminderInSecondsKey]; ok {
 		reminderStr, valid := reminderI.(string)
 		if !valid {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "Reminder must be a string.",
-			}, http.StatusOK)
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "reminder must be a string", nil)
 			return
 		}
 		var reminder int
 		reminder, err = strconv.Atoi(reminderStr)
 		if err != nil {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Error: "Invalid reminder value.",
-			}, http.StatusOK)
+			h.HandleError(w, c.logger, err)
 			return
 		}
-		options.Reminder = time.Duration(reminder) * time.Second
+		options.Reminder = time.Duration(reminder)
 	}
 
 	if finishB, ok := request.Submission[app.DialogFieldFinishRun]; ok {
@@ -1454,15 +1118,8 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 		}
 	}
 
-	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options, c.logger); internalErr != nil {
-		if errors.Is(internalErr, app.ErrNoPermissions) {
-			c.logger.WithError(internalErr).WithField("user_id", userID).Warn("updateStatusDialog: permission denied")
-		} else {
-			c.logger.WithError(internalErr).WithField("user_id", userID).Error("updateStatusDialog: failed to update status")
-		}
-		ReturnJSON(w, &model.SubmitDialogResponse{
-			Error: publicMsg,
-		}, http.StatusOK)
+	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
 		return
 	}
 
@@ -1480,17 +1137,12 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(c *Context, w http.ResponseWri
 		return
 	}
 
-	// NOTE: RunManageProperties is already enforced by the checkEditPermissions middleware.
-	// Verify that the body-supplied UserId matches the authenticated session user to prevent
-	// confused-deputy attacks (the middleware validated the session user, not requestData.UserId).
-	userID := r.Header.Get("Mattermost-User-ID")
-	if requestData.UserId != userID {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "interactive request user does not match authenticated user", nil)
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(requestData.UserId, playbookRunID)) {
 		return
 	}
 
 	if err = h.playbookRunService.OpenUpdateStatusDialog(playbookRunID, requestData.UserId, requestData.TriggerId); err != nil {
-		h.HandleError(w, c.logger, errors.Wrap(err, "reminderButtonUpdate failed to open update status dialog"))
+		h.HandleError(w, c.logger, errors.New("reminderButtonUpdate failed to open update status dialog"))
 		return
 	}
 
@@ -1501,6 +1153,7 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(c *Context, w http.ResponseWri
 // user clicks on the reminder custom_update_status time selector
 func (h *PlaybookRunHandler) reminderReset(c *Context, w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
 	var payload struct {
 		NewReminderSeconds int `json:"new_reminder_seconds"`
 	}
@@ -1514,12 +1167,20 @@ func (h *PlaybookRunHandler) reminderReset(c *Context, w http.ResponseWriter, r 
 		return
 	}
 
-	// NOTE: RunManageProperties is already enforced by the checkEditPermissions middleware
-	// on playbookRunRouterAuthorized; no need to re-fetch the run or check again here.
+	storedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		err = errors.Wrapf(err, "reminderReset: no playbook run for path's playbookRunID: %s", playbookRunID)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "no playbook run for path's playbookRunID", err)
+		return
+	}
 
-	if err := h.playbookRunService.ResetReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error removing reminder post",
-			errors.Wrapf(err, "reminderReset: error setting new reminder for playbookRunID %s", playbookRunID))
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, storedPlaybookRun.ID)) {
+		return
+	}
+
+	if err = h.playbookRunService.ResetReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
+		err = errors.Wrapf(err, "reminderReset: error setting new reminder for playbookRunID %s", playbookRunID)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "error removing reminder post", err)
 		return
 	}
 
@@ -1530,10 +1191,17 @@ func (h *PlaybookRunHandler) noRetrospectiveButton(c *Context, w http.ResponseWr
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	// NOTE: RunManageProperties is already enforced by the checkEditPermissions middleware
-	// on playbookRunRouterAuthorized; no need to re-fetch the run or check again here.
+	playbookRunToCancelRetro, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
 
-	if err := h.playbookRunService.CancelRetrospective(playbookRunID, userID); err != nil {
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunToCancelRetro.ID)) {
+		return
+	}
+
+	if err := h.playbookRunService.CancelRetrospective(playbookRunToCancelRetro.ID, userID); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, "unable to cancel retrospective", err)
 		return
 	}
@@ -1722,10 +1390,6 @@ func (h *PlaybookRunHandler) itemSetState(c *Context, w http.ResponseWriter, r *
 	}
 
 	if err := h.playbookRunService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "not permitted to modify this task", err)
-			return
-		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -1753,11 +1417,6 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
-		return
-	}
-
-	if params.AssigneeID != "" && !model.IsValidId(params.AssigneeID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid assignee_id", errors.New("invalid assignee_id"))
 		return
 	}
 
@@ -2203,6 +1862,10 @@ func (h *PlaybookRunHandler) renameChecklist(c *Context, w http.ResponseWriter, 
 	}
 
 	if err := h.playbookRunService.RenameChecklist(id, userID, checklistNum, modificationParams.NewTitle); err != nil {
+		if errors.Is(err, app.ErrPlaybookRunNotActive) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -2381,10 +2044,6 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	if err != nil {
 		return nil, errors.Wrapf(err, "bad parameter 'per_page'")
 	}
-	const maxPerPage = 1000 // run list queries allow a larger page than the condition-list cap (MaxPerPage)
-	if perPage > maxPerPage {
-		perPage = maxPerPage
-	}
 
 	sort := u.Query().Get("sort")
 	direction := u.Query().Get("direction")
@@ -2455,15 +2114,6 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	omitEndedParam := u.Query().Get("omit_ended")
 	omitEnded := omitEndedParam == "true" // Default to false if not specified or invalid
 
-	propertyFieldID := u.Query().Get("property_field_id")
-	if propertyFieldID != "" && !model.IsValidId(propertyFieldID) {
-		return nil, errors.New("bad parameter 'property_field_id': must be 26 characters or blank")
-	}
-	propertyValueFilter := u.Query().Get("property_value_filter")
-	if propertyValueFilter != "" && !model.IsValidId(propertyValueFilter) {
-		return nil, errors.New("bad parameter 'property_value_filter': must be 26 characters or blank")
-	}
-
 	options := app.PlaybookRunFilterOptions{
 		TeamID:                  teamID,
 		Page:                    page,
@@ -2484,8 +2134,6 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		Types:                   types,
 		ActivitySince:           activitySince,
 		OmitEnded:               omitEnded,
-		PropertyFieldID:         propertyFieldID,
-		PropertyValueFilter:     propertyValueFilter,
 	}
 
 	options, err = options.Validate()
@@ -2496,20 +2144,13 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	return &options, nil
 }
 
-func (h *PlaybookRunHandler) requirePlaybookAttributesLicense(w http.ResponseWriter, logger logrus.FieldLogger) bool {
-	return checkPlaybookAttributesLicense(h.licenseChecker, w, logger)
-}
-
 func (h *PlaybookRunHandler) getRunPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.requirePlaybookAttributesLicense(w, c.logger) {
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
@@ -2538,11 +2179,8 @@ func (h *PlaybookRunHandler) getRunPropertyValues(c *Context, w http.ResponseWri
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.requirePlaybookAttributesLicense(w, c.logger) {
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
+	if err := h.permissions.RunView(userID, playbookRunID); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
@@ -2572,21 +2210,8 @@ func (h *PlaybookRunHandler) setRunPropertyValue(c *Context, w http.ResponseWrit
 	fieldID := vars["fieldID"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !model.IsValidId(playbookRunID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run ID", nil)
-		return
-	}
-
-	if !model.IsValidId(fieldID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid field ID", nil)
-		return
-	}
-
-	if !h.requirePlaybookAttributesLicense(w, c.logger) {
-		return
-	}
-
-	if !h.PermissionsCheck(w, c.logger, h.permissions.RunManageProperties(userID, playbookRunID)) {
+	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
@@ -2595,14 +2220,6 @@ func (h *PlaybookRunHandler) setRunPropertyValue(c *Context, w http.ResponseWrit
 	}
 	if err := json.NewDecoder(r.Body).Decode(&valueRequest); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
-		return
-	}
-
-	// Coarse byte-size guard: the authoritative rune-count check is in the service layer.
-	// Use 4x multiplier to account for multi-byte UTF-8 and JSON encoding overhead.
-	if len(valueRequest.Value) > 4*app.MaxPropertyValueLength {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest,
-			fmt.Sprintf("property value exceeds maximum size of %d characters", app.MaxPropertyValueLength), nil)
 		return
 	}
 

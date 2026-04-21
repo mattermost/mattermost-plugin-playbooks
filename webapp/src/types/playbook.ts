@@ -68,13 +68,10 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_mode: string;
     channel_id: string;
 
-    owner_group_only_actions: boolean;
-    admin_only_edit: boolean;
     new_channel_only: boolean;
     auto_archive_channel: boolean;
     run_number_prefix: string;
     next_run_number: number;
-    creation_rules: CreationRule[];
 
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
@@ -82,13 +79,6 @@ export interface PlaybookWithChecklist extends Playbook {
 
     // Property fields from GraphQL
     propertyFields: TemplatePropertyField[];
-}
-
-export interface CreationRule {
-    condition?: Record<string, unknown>;
-    set_owner_id?: string;
-    set_channel_id?: string;
-    invite_user_ids?: string[];
 }
 
 export interface Metric {
@@ -231,13 +221,10 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
-        owner_group_only_actions: false,
-        admin_only_edit: false,
         new_channel_only: false,
         auto_archive_channel: false,
         run_number_prefix: '',
         next_run_number: 1,
-        creation_rules: [],
         propertyFields: [],
     };
 }

@@ -51,13 +51,12 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		svc, mockStore, mockPoster := makeService(ctrl)
+		svc, mockStore, _ := makeService(ctrl)
 
 		updated := basePlaybook
 		updated.RunNumberPrefix = "CHANGED"
 
 		mockStore.EXPECT().Update(gomock.Any()).Return(nil)
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
 
 		err := svc.Update(updated, "user1")
 		require.NoError(t, err)
@@ -67,70 +66,14 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		svc, mockStore, mockPoster := makeService(ctrl)
+		svc, mockStore, _ := makeService(ctrl)
 
 		updated := basePlaybook
 		updated.RunNumberPrefix = "NEW"
 
 		mockStore.EXPECT().Update(gomock.Any()).Return(nil)
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
 
 		err := svc.Update(updated, "user1")
-		require.NoError(t, err)
-	})
-}
-
-func TestPlaybookService_GraphqlUpdateRunNumberPrefixMutable(t *testing.T) {
-	makeService := func(ctrl *gomock.Controller) (app.PlaybookService, *mock_app.MockPlaybookStore, *mock_bot.MockPoster) {
-		mockStore := mock_app.NewMockPlaybookStore(ctrl)
-		mockPoster := mock_bot.NewMockPoster(ctrl)
-		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
-		mockConditionService := mock_app.NewMockConditionService(ctrl)
-
-		svc := app.NewPlaybookService(
-			mockStore,
-			mockPoster,
-			nil,
-			nil,
-			&metrics.Metrics{},
-			mockPropertyService,
-			mockConditionService,
-		)
-		return svc, mockStore, mockPoster
-	}
-
-	basePlaybook := app.Playbook{
-		ID:              "pb1",
-		Title:           "Test Playbook",
-		TeamID:          "team1",
-		RunNumberPrefix: "INC",
-	}
-
-	t.Run("prefix change allowed via GraphqlUpdate even when runs exist", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		svc, mockStore, mockPoster := makeService(ctrl)
-
-		mockStore.EXPECT().Get("pb1").Return(basePlaybook, nil)
-		mockStore.EXPECT().GraphqlUpdate("pb1", gomock.Any()).Return(nil)
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
-
-		err := svc.GraphqlUpdate("pb1", map[string]interface{}{"RunNumberPrefix": "CHANGED"})
-		require.NoError(t, err)
-	})
-
-	t.Run("non-RunNumberPrefix fields work normally", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		svc, mockStore, mockPoster := makeService(ctrl)
-
-		mockStore.EXPECT().Get("pb1").Return(basePlaybook, nil)
-		mockStore.EXPECT().GraphqlUpdate("pb1", gomock.Any()).Return(nil)
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
-
-		err := svc.GraphqlUpdate("pb1", map[string]interface{}{"Title": "New Title"})
 		require.NoError(t, err)
 	})
 }

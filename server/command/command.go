@@ -40,10 +40,7 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
 
-const (
-	confirmPrompt       = "CONFIRM"
-	openRunModalWSEvent = "playbook_open_run_modal"
-)
+const confirmPrompt = "CONFIRM"
 
 // Register is a function that allows the runner to register commands with the mattermost server.
 type Register func(*model.Command) error
@@ -253,10 +250,40 @@ func (r *Runner) warnUserAndLogErrorf(format string, args ...interface{}) {
 }
 
 func (r *Runner) actionRun(args []string) {
-	r.poster.PublishWebsocketEventToUser(openRunModalWSEvent, map[string]interface{}{
-		"team_id":            r.args.TeamId,
-		"trigger_channel_id": r.args.ChannelId,
-	}, r.args.UserId)
+	clientID := ""
+	if len(args) > 0 {
+		clientID = args[0]
+	}
+
+	postID := ""
+	if len(args) == 2 {
+		postID = args[1]
+	}
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  r.args.UserId,
+		TeamID:  r.args.TeamId,
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
+	}
+
+	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
+		app.PlaybookFilterOptions{
+			Sort:      app.SortByTitle,
+			Direction: app.DirectionAsc,
+			Page:      0,
+			PerPage:   app.PerPageDefault,
+		})
+	if err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
+	filteredItems := r.permissions.FilterPlaybooksByViewPermission(r.args.UserId, playbooksResults.Items)
+
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, filteredItems); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
 }
 
 // actionRunPlaybook is intended for scripting use, not use by the end user (they would have
@@ -578,11 +605,7 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 	targetOwnerUsername := strings.TrimLeft(args[index], "@")
 
 	if err := r.permissions.RunManageProperties(r.args.UserId, playbookRuns[run].ID); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
-			r.postCommandResponse("You do not have permission to change the owner of this run.")
-		} else {
-			r.warnUserAndLogErrorf("Error checking change-owner permissions: %v", err)
-		}
+		r.postCommandResponse("Become a participant to interact with this run.")
 		return
 	}
 
@@ -599,11 +622,6 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 
 	if currentPlaybookRun.OwnerUserID == targetOwnerUser.Id {
 		r.postCommandResponse(fmt.Sprintf("User @%s is already owner of this playbook run.", targetOwnerUsername))
-		return
-	}
-
-	if err := app.ValidateOwnerID(targetOwnerUser.Id); err != nil {
-		r.postCommandResponse(fmt.Sprintf("Invalid owner user ID for @%s.", targetOwnerUsername))
 		return
 	}
 
@@ -744,10 +762,10 @@ func (r *Runner) actionFinishByID(args []string) {
 
 	if err := r.permissions.RunManageProperties(r.args.UserId, args[0]); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
-			r.postCommandResponse("You do not have permission to finish this run.")
-		} else {
-			r.warnUserAndLogErrorf("Error checking finish permissions: %v", err)
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
 		}
+		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
 	}
 
@@ -1976,7 +1994,6 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	}
 
 	for i := 0; i < numEndedPlaybookRuns; i++ {
-		// OwnerGroupOnlyActions intentionally bypassed: test-data generation path, EnableTesting-gated
 		err := r.playbookRunService.FinishPlaybookRun(playbookRuns[i].ID, r.args.UserId)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error ending the playbook run: %v", err)

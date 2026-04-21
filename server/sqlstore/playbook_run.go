@@ -305,11 +305,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
 	}
 
-	if len(options.RunIDs) > 0 {
-		queryForResults = queryForResults.Where(sq.Eq{"i.ID": options.RunIDs})
-		queryForTotal = queryForTotal.Where(sq.Eq{"i.ID": options.RunIDs})
-	}
-
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		// PostgreSQL performs a case-sensitive search, so we need to lowercase
@@ -1438,92 +1433,6 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 	return s.updateFollowing(playbookRunID, userID, false)
 }
 
-// followUnfollowBatchSize is the maximum number of rows per INSERT to avoid
-// PostgreSQL's limit on bind parameters and keep individual statements bounded.
-const followUnfollowBatchSize = 500
-
-func (s *playbookRunStore) UnfollowMultiple(playbookRunID string, userIDs []string) error {
-	if playbookRunID == "" {
-		return errors.New("playbookRunID cannot be empty")
-	}
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
-	defer txCancel()
-	tx, err := s.store.db.BeginTxx(txCtx, nil)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction for UnfollowMultiple")
-	}
-	defer s.store.finalizeTransaction(tx)
-
-	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
-		end := i + followUnfollowBatchSize
-		if end > len(userIDs) {
-			end = len(userIDs)
-		}
-		chunk := userIDs[i:end]
-
-		insert := sq.Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsFollower")
-		for _, userID := range chunk {
-			insert = insert.Values(playbookRunID, userID, false)
-		}
-		insert = insert.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", false)
-
-		if _, err := s.store.execBuilder(tx, insert); err != nil {
-			return errors.Wrapf(err, "failed to batch unfollow users for run '%s'", playbookRunID)
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit UnfollowMultiple transaction")
-	}
-	return nil
-}
-
-func (s *playbookRunStore) FollowBatch(playbookRunID string, userIDs []string) error {
-	if playbookRunID == "" {
-		return errors.New("playbookRunID cannot be empty")
-	}
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
-	defer txCancel()
-	tx, err := s.store.db.BeginTxx(txCtx, nil)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction for FollowBatch")
-	}
-	defer s.store.finalizeTransaction(tx)
-
-	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
-		end := i + followUnfollowBatchSize
-		if end > len(userIDs) {
-			end = len(userIDs)
-		}
-		chunk := userIDs[i:end]
-
-		insert := sq.Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsFollower")
-		for _, userID := range chunk {
-			insert = insert.Values(playbookRunID, userID, true)
-		}
-		insert = insert.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", true)
-
-		if _, err := s.store.execBuilder(tx, insert); err != nil {
-			return errors.Wrapf(err, "failed to batch follow users for run '%s'", playbookRunID)
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit FollowBatch transaction")
-	}
-	return nil
-}
-
 func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Run_Participants").
@@ -1737,32 +1646,24 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		return nil
 	}
 
-	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
-		end := i + followUnfollowBatchSize
-		if end > len(userIDs) {
-			end = len(userIDs)
-		}
-		chunk := userIDs[i:end]
+	query := sq.
+		Insert("IR_Run_Participants").
+		Columns("IncidentID", "UserID", "IsParticipant")
 
-		query := sq.
-			Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsParticipant")
-
-		for _, userID := range chunk {
-			query = query.Values(playbookRunID, userID, isParticipating)
-		}
-
-		_, err := s.store.execBuilder(
-			s.store.db,
-			query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
-		)
-
-		if err != nil {
-			return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", chunk, playbookRunID)
-		}
+	for _, userID := range userIDs {
+		query = query.Values(playbookRunID, userID, isParticipating)
 	}
 
-	if err := s.touchPlaybookRun(playbookRunID); err != nil {
+	_, err := s.store.execBuilder(
+		s.store.db,
+		query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
+	)
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
+	}
+
+	if err = s.touchPlaybookRun(playbookRunID); err != nil {
 		return errors.Wrapf(err, "failed to touch playbook run '%s'", playbookRunID)
 	}
 
@@ -1951,49 +1852,6 @@ func queryStartedBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq
 
 	// both were zero, don't apply a filter:
 	return query
-}
-
-// GetRunIDsByParentFieldValue finds runs whose run-level property value matches
-// a playbook-level option. Run-level fields and options get new IDs when copied
-// from the playbook; the link is maintained via parent_id on both the field
-// (attrs->>'parent_id') and each option (opt->>'parent_id').
-//
-// Raw SQL is used because squirrel cannot express CTEs or jsonb_array_elements.
-//
-// NOTE: This query joins directly against MM core's propertyfields and propertyvalues tables.
-// If MM renames or restructures these tables, this query will break. Review when upgrading
-// the mattermost-plugin dependency.
-func (s *playbookRunStore) GetRunIDsByParentFieldValue(groupID, parentFieldID, parentOptionID string, limit int) ([]string, error) {
-	if groupID == "" || parentFieldID == "" || parentOptionID == "" {
-		return nil, errors.New("groupID, parentFieldID, and parentOptionID cannot be empty")
-	}
-	// Raw SQL: squirrel cannot express the cross-schema JOIN to core Mattermost
-	// propertyfields/propertyvalues tables. This read-only cross-DB dependency is
-	// intentional — we never write to core tables.
-	query := `
-WITH child_options AS (
-    SELECT pf.id AS field_id, opt->>'id' AS option_id
-    FROM propertyfields pf, jsonb_array_elements(pf.attrs->'options') AS opt
-    WHERE pf.groupid = $3
-      AND pf.attrs->>'parent_id' = $1
-      AND pf.deleteat = 0
-      AND opt->>'parent_id' = $2
-)
-SELECT DISTINCT pv.targetid
-FROM propertyvalues pv
-JOIN child_options co ON pv.fieldid = co.field_id
-WHERE pv.value = to_jsonb(co.option_id)
-  AND pv.deleteat = 0
-  AND pv.targettype = 'run'
-  AND pv.targetid IN (SELECT ID FROM IR_Incident WHERE DeleteAt = 0)
-LIMIT $4`
-
-	var runIDs []string
-	if err := s.store.db.Select(&runIDs, query, parentFieldID, parentOptionID, groupID, limit); err != nil {
-		return nil, errors.Wrap(err, "failed to query run IDs by parent field value")
-	}
-
-	return runIDs, nil
 }
 
 func queryStarted(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {

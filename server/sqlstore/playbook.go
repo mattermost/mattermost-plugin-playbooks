@@ -691,16 +691,6 @@ func (p *playbookStore) GraphqlUpdate(id string, setmap map[string]interface{}) 
 		}
 	}
 
-	if raw, exists := setmap["CreationRulesJSON"]; exists {
-		s, ok := raw.(string)
-		if !ok {
-			return errors.Errorf("failed update playbook with id '%s': CreationRulesJSON must be a string, got %T", id, raw)
-		}
-		if len(s) > maxJSONLength {
-			return errors.Errorf("failed update playbook with id '%s': creation rules json too long (max %d)", id, maxJSONLength)
-		}
-	}
-
 	_, err := p.store.execBuilder(p.store.db, sq.
 		Update("IR_Playbook").
 		SetMap(setmap).

@@ -44,11 +44,6 @@ const (
 	playbookRunUpdatedIncrementalWSEvent = "playbook_run_updated_incremental"
 
 	noAssigneeName = "No Assignee"
-
-	// maxPropertyValueFilterRunIDs caps the number of run IDs resolved by a property value
-	// filter before passing them to the store as an IN clause. Exceeding this limit prevents
-	// unbounded IN clauses that degrade database performance.
-	maxPropertyValueFilterRunIDs = 1000
 )
 
 // PropertyChangedDetails represents the details of a property change timeline event
@@ -237,13 +232,6 @@ func NewPlaybookRunService(
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
-	if err := s.resolvePropertyValueFilterRunIDs(&options); err != nil {
-		return nil, err
-	}
-	if options.PropertyFieldID != "" && options.PropertyValueFilter != "" && len(options.RunIDs) == 0 {
-		return &GetPlaybookRunsResults{Items: []PlaybookRun{}, TotalCount: 0, PageCount: 0, HasMore: false}, nil
-	}
-
 	results, err := s.store.GetPlaybookRuns(requesterInfo, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get playbook runs")
@@ -282,48 +270,6 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	}
 
 	return results, nil
-}
-
-func (s *PlaybookRunServiceImpl) resolvePropertyValueFilterRunIDs(options *PlaybookRunFilterOptions) error {
-	if options.PropertyFieldID == "" || options.PropertyValueFilter == "" {
-		return nil
-	}
-
-	matchingIDs, err := s.store.GetRunIDsByParentFieldValue(
-		s.propertyService.GetGroupID(),
-		options.PropertyFieldID,
-		options.PropertyValueFilter,
-		maxPropertyValueFilterRunIDs+1,
-	)
-	if err != nil {
-		return errors.Wrap(err, "failed to resolve property value filter to run IDs")
-	}
-	if len(matchingIDs) > maxPropertyValueFilterRunIDs {
-		return errors.Wrapf(ErrFilterTooWide, "property value filter matched too many runs (%d); maximum is %d — please narrow the filter", len(matchingIDs), maxPropertyValueFilterRunIDs)
-	}
-
-	options.RunIDs = matchingIDs
-	return nil
-}
-
-func (s *PlaybookRunServiceImpl) resolveUserFilterUsernames(options *PlaybookRunFilterOptions) error {
-	if len(options.UserIDs) == 0 {
-		return nil
-	}
-
-	usernames := make([]string, 0, len(options.UserIDs))
-	for _, userID := range options.UserIDs {
-		user, err := s.pluginAPI.User.Get(userID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to resolve user filter for %s", userID)
-		}
-		if user.Username != "" {
-			usernames = append(usernames, strings.ToLower(user.Username))
-		}
-	}
-
-	options.Usernames = usernames
-	return nil
 }
 
 func (s *PlaybookRunServiceImpl) getSiteURL() string {
@@ -795,7 +741,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			auditRec.AddErrorDesc(err.Error())
 			return nil, err
 		}
-		s.followBatch(playbookRun.ID, autoFollows, *playbookRun)
+		for _, autoFollow := range autoFollows {
+			if err = s.Follow(playbookRun.ID, autoFollow); err != nil {
+				logger.WithError(err).WithFields(logrus.Fields{
+					"playbook_run_id": playbookRun.ID,
+					"auto_follow":     autoFollow,
+				}).Warn("failed to follow the playbook run")
+			}
+		}
 	}
 
 	if len(playbookRun.WebhookOnCreationURLs) != 0 {
@@ -4360,11 +4313,6 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		}
 	}
 
-	// N+1: one pluginAPI.User.Get per invited user. The pluginAPI wrapper does not
-	// expose a batch GetUsersByIds method; until it does, the per-user call is
-	// unavoidable. The caller caps invitedUserIDs to maxInvitedUsers (1000) so the
-	// worst-case fan-out is bounded.
-	// TODO: replace with a single GetUsersByIds call once the wrapper exposes it.
 	users := make([]*model.User, 0)
 	for _, userID := range usersToInvite {
 		user := requesterUser
@@ -4379,14 +4327,10 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		if shouldAddToChannel {
 			s.participateActions(playbookRun, user)
 		}
-	}
 
-	// Participate implies following the run. Batch all follow writes into a single
-	// store call instead of calling Follow() once per user (which triggers 2
-	// GetPlaybookRun calls per iteration).
-	if len(usersToInvite) > 0 {
-		if err = s.store.FollowBatch(playbookRunID, usersToInvite); err != nil {
-			return errors.Wrap(err, "failed to make participants follow run")
+		// Participate implies following the run
+		if err = s.Follow(playbookRunID, userID); err != nil {
+			return errors.Wrap(err, "failed to make participant follow run")
 		}
 	}
 
@@ -4549,36 +4493,6 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 	return nil
 }
 
-// maxAutoFollowBatchSize caps the number of users auto-followed per run creation.
-// Prevents unbounded IN-clause sizes for playbooks with very large auto-follow lists.
-const maxAutoFollowBatchSize = 1000
-
-// followBatch follows multiple users to a run, sending a single WS event instead of N.
-// originalRun is snapshotted by value at call time to avoid stale-pointer races.
-func (s *PlaybookRunServiceImpl) followBatch(playbookRunID string, userIDs []string, originalRun PlaybookRun) {
-	if len(userIDs) == 0 {
-		return
-	}
-
-	if len(userIDs) > maxAutoFollowBatchSize {
-		logrus.WithField("playbook_run_id", playbookRunID).WithField("count", len(userIDs)).
-			Warn("auto-follow list exceeds cap; truncating to maxAutoFollowBatchSize")
-		userIDs = userIDs[:maxAutoFollowBatchSize]
-	}
-
-	if err := s.store.FollowBatch(playbookRunID, userIDs); err != nil {
-		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to batch follow the playbook run")
-		return
-	}
-
-	playbookRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		logrus.WithError(err).WithField("playbook_run_id", playbookRunID).Warn("failed to get playbook run after batch follow")
-		return
-	}
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, &originalRun, playbookRun, userIDs...)
-}
-
 // UnFollow method lets user unfollow a specific playbook run
 func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	auditRec := plugin.MakeAuditRecord("unfollowPlaybookRun", model.AuditStatusFail)
@@ -4608,42 +4522,6 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userID)
 
 	// Mark success and add result state for audit
-	auditRec.Success()
-	auditRec.AddEventResultState(*playbookRun)
-
-	return nil
-}
-
-// UnfollowMultiple unfollows multiple users from a run in one batch operation.
-func (s *PlaybookRunServiceImpl) UnfollowMultiple(playbookRunID string, userIDs []string) error {
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	auditRec := plugin.MakeAuditRecord("unfollowPlaybookRunBatch", model.AuditStatusFail)
-	defer s.api.LogAuditRec(auditRec)
-
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
-	model.AddEventParameterToAuditRec(auditRec, "userIDsCount", len(userIDs))
-
-	originalRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	model.AddEventParameterToAuditRec(auditRec, "teamID", originalRun.TeamID)
-
-	if err := s.store.UnfollowMultiple(playbookRunID, userIDs); err != nil {
-		return errors.Wrapf(err, "users `%+v` failed to batch unfollow the run `%s`", userIDs, playbookRunID)
-	}
-
-	playbookRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
-	}
-
-	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, playbookRun, userIDs...)
-
 	auditRec.Success()
 	auditRec.AddEventResultState(*playbookRun)
 
@@ -5164,10 +5042,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 			propertyField = &pf
 			break
 		}
-	}
-
-	if propertyField == nil {
-		return nil, errors.Wrap(ErrPropertyFieldNotOnRun, "property field does not belong to this run")
 	}
 
 	var currentValue json.RawMessage

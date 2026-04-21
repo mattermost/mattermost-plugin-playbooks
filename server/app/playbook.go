@@ -463,27 +463,6 @@ type PlaybookService interface {
 	// IncrementRunNumber atomically increments NextRunNumber on the playbook and returns the allocated number.
 	IncrementRunNumber(playbookID string) (int64, error)
 
-	// GraphqlUpdate updates a playbook via a setmap and publishes a WS event on success.
-	GraphqlUpdate(playbookID string, setmap map[string]interface{}) error
-
-	// AddPlaybookMember adds a user as a member to a playbook and publishes a WS event on success.
-	AddPlaybookMember(playbookID, userID string) error
-
-	// RemovePlaybookMember removes a user from a playbook and publishes a WS event on success.
-	RemovePlaybookMember(playbookID, userID string) error
-
-	// AddMetric adds a metric to a playbook and publishes a WS event on success.
-	AddMetric(playbookID string, config PlaybookMetricConfig) error
-
-	// GetMetric retrieves a metric by ID.
-	GetMetric(metricID string) (*PlaybookMetricConfig, error)
-
-	// UpdateMetric updates a metric and publishes a WS event on success.
-	UpdateMetric(metricID string, setmap map[string]interface{}) error
-
-	// DeleteMetric deletes a metric and publishes a WS event on success.
-	DeleteMetric(metricID string) error
-
 	// UpdateChannelNameTemplateAtomically atomically reads and updates the channel name template
 	// using a SELECT FOR UPDATE transaction, preventing lost-update races on concurrent edits.
 	UpdateChannelNameTemplateAtomically(playbookID string, transformFn func(current string) string) error
