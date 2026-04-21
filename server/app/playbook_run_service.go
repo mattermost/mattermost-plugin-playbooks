@@ -5751,35 +5751,6 @@ func remapAssigneePropertyFieldIDs(checklists []Checklist, fieldMappings map[str
 	}
 }
 
-// interpolateTaskTitlesFromRun resolves {FieldName} placeholders in checklist item
-// titles using the run's in-memory PropertyFields and PropertyValues.
-// Interpolation is one-shot at creation time; unknown tokens are left as-is.
-func (s *PlaybookRunServiceImpl) interpolateTaskTitlesFromRun(run *PlaybookRun) {
-	if run == nil || len(run.PropertyFields) == 0 {
-		return
-	}
-	valuesMap := make(map[string]json.RawMessage, len(run.PropertyValues))
-	for _, pv := range run.PropertyValues {
-		valuesMap[pv.FieldID] = pv.Value
-	}
-	systemTokens := s.buildSystemTokens(run)
-	formatFunc := s.makeRunNameFormatFunc()
-	for ci := range run.Checklists {
-		for ii := range run.Checklists[ci].Items {
-			item := &run.Checklists[ci].Items[ii]
-			if item.Title == "" {
-				continue
-			}
-			resolved, _ := ResolveTemplate(item.Title, ResolveOptions{
-				Fields:       run.PropertyFields,
-				Values:       valuesMap,
-				SystemTokens: systemTokens,
-				FormatFunc:   formatFunc,
-			})
-			item.Title = resolved
-		}
-	}
-}
 
 // formatPropertyValueForDisplay formats a property value for display in bot messages
 // Returns the display string and a boolean indicating if the value is empty

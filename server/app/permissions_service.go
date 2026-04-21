@@ -17,7 +17,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
-
 type LicenseChecker interface {
 	PlaybookAllowed(isPlaybookPublic bool) bool
 	RetrospectiveAllowed() bool

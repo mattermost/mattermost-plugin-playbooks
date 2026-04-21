@@ -45,9 +45,6 @@ type sqlRunMetricData struct {
 	Value          null.Int
 }
 
-type sqlPlaybookTimelineEvent struct {
-	app.PlaybookTimelineEvent
-}
 
 // playbookRunStore holds the information needed to fulfill the methods in the store interface.
 type playbookRunStore struct {

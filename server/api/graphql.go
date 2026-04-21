@@ -7,9 +7,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/dataloader/v7"
@@ -56,38 +54,6 @@ func isGraphQLErrorable(err error) bool {
 	return errors.As(err, &graphqlErr) && graphqlErr.IsGraphQLErrorable()
 }
 
-// classifyAppError maps app-layer sentinel errors to a user-facing GraphQL error.
-// For sentinel errors it uses the safe public message from the sentinel table.
-// When the sentinel was wrapped with additional user-facing context (e.g. condition counts,
-// option names), that context is appended so the client can act on it.
-func classifyAppError(err error) error {
-	s := findSentinelError(err)
-	if s == nil {
-		return err
-	}
-
-	// Walk to the layer that directly wraps the sentinel; only its context is safe to expose.
-	// Use errors.Is instead of string comparison to stay robust to sentinel renaming.
-	type causer interface{ Cause() error }
-	current := err
-	for {
-		c, ok := current.(causer)
-		if !ok {
-			break
-		}
-		if errors.Is(c.Cause(), s.sentinel) {
-			fullMsg := current.Error()
-			suffix := ": " + s.sentinel.Error()
-			if strings.HasSuffix(fullMsg, suffix) && len(fullMsg) > len(suffix) {
-				extraContext := strings.TrimSuffix(fullMsg, suffix)
-				return newGraphQLError(fmt.Errorf("%s %s", s.publicMsg, extraContext))
-			}
-			break
-		}
-		current = c.Cause()
-	}
-	return newGraphQLError(errors.New(s.publicMsg))
-}
 
 type GraphQLHandler struct {
 	*ErrorHandler
