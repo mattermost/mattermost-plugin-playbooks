@@ -1,10 +1,6 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
-
-export {MetricType};
-
 export interface Playbook {
     id: string;
     title: string;
@@ -76,6 +72,10 @@ export interface PlaybookWithChecklist extends Playbook {
     // Property fields from GraphQL
     propertyFields: PropertyField[];
 }
+
+import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
+
+export {MetricType};
 
 export interface Metric {
     id: string;

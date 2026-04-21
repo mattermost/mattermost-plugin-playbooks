@@ -1,8 +1,6 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useEffect, useMemo} from 'react';
-
 import {
     getRoles,
     haveIChannelPermission,
@@ -54,29 +52,9 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
     const currentUserId = useSelector(getCurrentUserId);
     const roles = useSelector(getRoles);
     const specificPermission = makeGeneralPermissionSpecific(permission, playbook?.public || false);
-    const hasTeamPermission = useHasTeamPermission(playbook?.team_id || '', specificPermission);
+    const hasTeamPermision = useHasTeamPermission(playbook?.team_id || '', specificPermission);
 
-    const userRoles = useMemo(() => {
-        const m = playbook?.members?.find((val: PlaybookPermissionsMember) => val.user_id === currentUserId);
-        if (m) {
-            return m.scheme_roles || [];
-        }
-        if (playbook?.public) {
-            return [playbook.default_playbook_member_role];
-        }
-        return [];
-    }, [currentUserId, playbook?.members, playbook?.public, playbook?.default_playbook_member_role]);
-
-    // Dispatch loadRolesIfNeeded in an effect so it does not run during the render phase.
-    // Calling dispatch() inline during render violates React's Rules of Hooks and can
-    // trigger a re-render loop in StrictMode.
-    useEffect(() => {
-        if (userRoles.length > 0) {
-            dispatch(loadRolesIfNeeded(userRoles));
-        }
-    }, [dispatch, userRoles]);
-
-    if (hasTeamPermission) {
+    if (hasTeamPermision) {
         return true;
     }
 
@@ -84,9 +62,20 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
         return false;
     }
 
-    if (userRoles.length === 0) {
+    const member = playbook?.members.find((val: PlaybookPermissionsMember) => val.user_id === currentUserId);
+
+    let userRoles: string[] = [];
+    if (member) {
+        userRoles = member.scheme_roles || [];
+    } else if (playbook.public) {
+        userRoles = [playbook.default_playbook_member_role];
+    }
+
+    if (!userRoles) {
         return false;
     }
+
+    dispatch(loadRolesIfNeeded(userRoles));
 
     for (const userRole of userRoles) {
         const role = roles[userRole];

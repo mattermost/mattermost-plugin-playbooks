@@ -68,10 +68,9 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 
 	// Public playbooks
 	if playbook.Public {
-		// Public playbooks are accessible to all team members who can list channels (non-guests).
-		// When DefaultPlaybookMemberRole is set, use it; otherwise grant PlaybookRoleMember.
+		// Public playbooks are public to those who can list channels on a team. (Not guests)
 		if p.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionListTeamChannels) {
-			if playbook.DefaultPlaybookMemberRole != "" {
+			if playbook.DefaultPlaybookMemberRole == "" {
 				return []string{playbook.DefaultPlaybookMemberRole}
 			}
 			return []string{PlaybookRoleMember}
@@ -669,14 +668,11 @@ func (p *PermissionsService) isChannelChecklist(run *PlaybookRun) bool {
 	return run.Type == RunTypeChannelChecklist
 }
 
-// isChannelArchived returns true if the channel has been archived/deleted.
-// On any error (including 404), it returns false to avoid false denials caused by
-// transient API failures or misconfiguration; server-side permission checks provide
-// the underlying safety net.
+// isChannelArchived returns true if the channel has been archived/deleted
 func (p *PermissionsService) isChannelArchived(channelID string) bool {
 	channel, err := p.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		logrus.WithError(err).WithField("channel_id", channelID).Warn("failed to get channel, assuming not archived")
+		logrus.WithError(err).WithField("channel_id", channelID).Error("failed to get channel")
 		return false
 	}
 	return channel.DeleteAt > 0
