@@ -112,7 +112,7 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
 
             cy.uiPostMessageQuickly('/playbook finish');
-            cy.verifyEphemeralMessage(`userID \`${testParticipant.id}\` is not an admin or channel member`);
+            cy.verifyEphemeralMessage('You do not have permission to finish this run.');
 
             // * Assert backend: run is still active (not finished)
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {

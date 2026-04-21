@@ -771,7 +771,7 @@ func (r *Runner) actionFinishByID(args []string) {
 
 	if err := r.permissions.RunFinish(r.args.UserId, args[0]); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
-			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			r.postCommandResponse("You do not have permission to finish this run.")
 		} else {
 			r.warnUserAndLogErrorf("Error checking finish permissions: %v", err)
 		}
