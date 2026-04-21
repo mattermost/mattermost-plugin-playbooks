@@ -411,23 +411,6 @@ func newPluginAPIAllowingAdmins(t *testing.T, adminIDs ...string) *pluginapi.Cli
 	return pluginapi.NewClient(mockAPI, nil)
 }
 
-// newPluginAPIGrantingTeamAccess returns a *pluginapi.Client whose underlying
-// plugin.API grants PermissionViewTeam and PermissionListTeamChannels to the
-// given user on the given team. Used for getPlaybookRole tests where the
-// method needs canViewTeam and HasPermissionToTeam to return true.
-func newPluginAPIGrantingTeamAccess(t *testing.T, userID, teamID string) *pluginapi.Client {
-	t.Helper()
-	mockAPI := &plugintest.API{}
-
-	mockAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).
-		Return(true).Maybe()
-	mockAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionListTeamChannels).
-		Return(true).Maybe()
-
-	t.Cleanup(func() { mockAPI.AssertExpectations(t) })
-	return pluginapi.NewClient(mockAPI, nil)
-}
-
 // ---------------------------------------------------------------------------
 // TestLoadRunAndPlaybook
 // ---------------------------------------------------------------------------
