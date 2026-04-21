@@ -45,7 +45,6 @@ type sqlRunMetricData struct {
 	Value          null.Int
 }
 
-
 // playbookRunStore holds the information needed to fulfill the methods in the store interface.
 type playbookRunStore struct {
 	pluginAPI                        PluginAPIClient
@@ -498,7 +497,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateBroadcastWebhooksEnabled":    rawPlaybookRun.StatusUpdateBroadcastWebhooksEnabled,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
-			"RunType": rawPlaybookRun.Type,
+			"RunType":                                 rawPlaybookRun.Type,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",

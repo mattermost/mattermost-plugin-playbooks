@@ -616,4 +616,3 @@ func (s *playbookService) ReorderPropertyFields(playbookID, fieldID string, targ
 
 	return reorderedFields, nil
 }
-

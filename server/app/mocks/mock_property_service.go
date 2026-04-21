@@ -66,8 +66,6 @@ func (mr *MockPropertyServiceMockRecorder) CopyPlaybookPropertiesToRun(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CopyPlaybookPropertiesToRun", reflect.TypeOf((*MockPropertyService)(nil).CopyPlaybookPropertiesToRun), arg0, arg1)
 }
 
-
-
 // CreatePropertyField mocks base method.
 func (m *MockPropertyService) CreatePropertyField(arg0 string, arg1 app.PropertyField) (*app.PropertyField, error) {
 	m.ctrl.T.Helper()
