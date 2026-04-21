@@ -589,7 +589,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.Wrapf(err, "failed to get playbook run original post")
 		}
 		if !h.pluginAPI.User.HasPermissionToChannel(userID, post.ChannelId, model.PermissionReadChannel) {
-			return nil, errors.Wrap(app.ErrNoPermissions, "user does not have access to the channel containing the playbook run's original post")
+			return nil, errors.New("user does not have access to the channel containing the playbook run's original post")
 		}
 	}
 

@@ -5044,6 +5044,10 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
+	if propertyField == nil {
+		return nil, errors.Errorf("field %s does not belong to run %s", propertyFieldID, playbookRunID)
+	}
+
 	var currentValue json.RawMessage
 	for _, pfv := range run.PropertyValues {
 		if pfv.FieldID == propertyFieldID {
