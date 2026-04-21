@@ -1,0 +1,1 @@
+ALTER TABLE ir_playbook ADD COLUMN IF NOT EXISTS OwnerGroupOnlyActions BOOLEAN NOT NULL DEFAULT false;

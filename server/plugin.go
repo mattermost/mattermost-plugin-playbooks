@@ -228,6 +228,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
 		p.playbookService,
+		p.playbookRunService,
 		p.propertyService,
 		pluginAPIClient,
 		p.config,

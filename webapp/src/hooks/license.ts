@@ -67,3 +67,8 @@ export function useAllowPlaybookAttributes() {
 export function useAllowConditionalPlaybooks() {
     return useSelector(isEnterpriseLicensedOrDevelopment);
 }
+
+// useAllowTimelineEvents returns whether the timeline feature is licensed.
+export function useAllowTimelineEvents() {
+    return useSelector(isProfessionalLicensedOrDevelopment);
+}

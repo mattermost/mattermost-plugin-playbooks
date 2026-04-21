@@ -19,6 +19,10 @@ func (r *PlaybookResolver) ChannelMode(ctx context.Context) string {
 	return fmt.Sprint(r.Playbook.ChannelMode)
 }
 
+func (r *PlaybookResolver) OwnerGroupOnlyActions(ctx context.Context) bool {
+	return r.Playbook.OwnerGroupOnlyActions
+}
+
 func (r *PlaybookResolver) IsFavorite(ctx context.Context) (bool, error) {
 	c, err := getContext(ctx)
 	if err != nil {

@@ -51,6 +51,7 @@ interface Props {
     autoAddTask?: boolean;
     onTaskAdded?: () => void;
     onBackClick?: () => void;
+    ownerGroupOnlyActions?: boolean;
 }
 
 export enum ChecklistParent {
@@ -58,7 +59,7 @@ export enum ChecklistParent {
     RunDetails = 'run_details',
 }
 
-const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick}: Props) => {
+const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick, ownerGroupOnlyActions}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const stateKey = parentContainer + '_' + playbookRun.id;
@@ -275,6 +276,8 @@ const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnl
                 showParticipateConfirm={showParticipateConfirm}
                 handleResume={handleResume}
                 onBackClick={onBackClick}
+                ownerGroupOnlyActions={ownerGroupOnlyActions ?? false}
+                isOwner={playbookRun.owner_user_id === myUser.id}
             />
             {showRunDetailsChecklistsStep && (
                 <TutorialTourTip

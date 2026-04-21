@@ -60,9 +60,10 @@ interface Props {
     toggleFavorite: () => void;
     onRenameClick: () => void;
     location?: ContextMenuLocation;
+    ownerGroupOnlyActions?: boolean;
 }
 
-export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick, location = CONTEXT_MENU_LOCATION.BACKSTAGE}: Props) => {
+export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick, location = CONTEXT_MENU_LOCATION.BACKSTAGE, ownerGroupOnlyActions}: Props) => {
     const dispatch = useDispatch();
     const currentUserId = useSelector(getCurrentUserId);
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
@@ -163,11 +164,15 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                         playbookRun={playbookRun}
                         role={role}
                         location={location}
+                        ownerGroupOnlyActions={ownerGroupOnlyActions}
+                        isOwner={playbookRun.owner_user_id === currentUserId}
                     />
                     <RestoreRunMenuItem
                         playbookRun={playbookRun}
                         role={role}
                         location={location}
+                        ownerGroupOnlyActions={ownerGroupOnlyActions}
+                        isOwner={playbookRun.owner_user_id === currentUserId}
                     />
                     <ToggleRunStatusUpdateMenuItem
                         playbookRun={playbookRun}

@@ -238,6 +238,7 @@ type Playbook struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"removeChannelMemberOnRemovedParticipant"`
 	ChannelID                               string                 `json:"channelID"`
 	ChannelMode                             string                 `json:"channelMode"`
+	OwnerGroupOnlyActions                   bool                   `json:"ownerGroupOnlyActions"`
 }
 
 type Checklist struct {

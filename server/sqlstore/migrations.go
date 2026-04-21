@@ -1742,4 +1742,15 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.67.0"),
+		toVersion:   semver.MustParse("0.68.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec(`ALTER TABLE IR_Playbook ADD COLUMN IF NOT EXISTS OwnerGroupOnlyActions BOOLEAN NOT NULL DEFAULT false`); err != nil {
+				return errors.Wrapf(err, "failed adding column OwnerGroupOnlyActions to IR_Playbook")
+			}
+
+			return nil
+		},
+	},
 }

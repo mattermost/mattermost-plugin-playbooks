@@ -12,7 +12,6 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {
@@ -23,19 +22,22 @@ import {
     useRunFollowers,
     useRunMetadata,
 } from 'src/hooks';
+import {useIsSystemAdmin} from 'src/hooks/permissions';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import RHSAboutTitle from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import PropertiesList from 'src/components/rhs/properties_list';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {setRHSAboutCollapsedState} from 'src/actions';
-import {useUpdateRun} from 'src/graphql/hooks';
+import {useManageRunMembership, useUpdateRun} from 'src/graphql/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
     readOnly?: boolean;
     onReadOnlyInteract?: () => void
     setShowParticipants: React.Dispatch<React.SetStateAction<boolean>>
+    ownerGroupOnlyActions?: boolean;
+    isPlaybookAdmin?: boolean;
 }
 
 const RHSAbout = (props: Props) => {
@@ -44,8 +46,12 @@ const RHSAbout = (props: Props) => {
     const collapsedFromStore = useSelector(currentRHSAboutCollapsedState(props.playbookRun.id));
     const profilesInTeam = useProfilesInTeam();
     const updateRun = useUpdateRun(props.playbookRun.id);
+    const {changeRunOwner} = useManageRunMembership(props.playbookRun.id);
 
     const myUserId = useSelector(getCurrentUserId);
+    const isOwner = props.playbookRun.owner_user_id === myUserId;
+    const isSystemAdmin = useIsSystemAdmin();
+    const canChangeOwner = !props.ownerGroupOnlyActions || isOwner || isSystemAdmin || (props.isPlaybookAdmin ?? false);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
     // Hooks for favorite and follow state
@@ -67,23 +73,11 @@ const RHSAbout = (props: Props) => {
         return profilesInTeam;
     };
 
-    const setOwnerUtil = async (userId?: string) => {
-        if (!userId) {
-            return;
-        }
-        const response = await setOwner(props.playbookRun.id, userId);
-        if (response.error) {
-            // eslint-disable-next-line no-warning-comments
-            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
-            console.log(response.error); // eslint-disable-line no-console
-        }
-    };
-
     const onSelectedProfileChange = (user?: UserProfile) => {
         if (!user) {
             return;
         }
-        setOwnerUtil(user?.id);
+        changeRunOwner(user.id);
     };
 
     const onTitleEdit = (value: string) => {
@@ -133,8 +127,8 @@ const RHSAbout = (props: Props) => {
                                     placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
                                     placeholderButtonClass={'NoAssignee-button'}
                                     profileButtonClass={'Assigned-button'}
-                                    enableEdit={!isFinished && !props.readOnly}
-                                    onEditDisabledClick={props.onReadOnlyInteract}
+                                    enableEdit={!isFinished && !props.readOnly && canChangeOwner}
+                                    onEditDisabledClick={props.readOnly ? props.onReadOnlyInteract : undefined}
                                     getAllUsers={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
                                     selfIsFirstOption={true}

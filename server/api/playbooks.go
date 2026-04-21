@@ -26,12 +26,13 @@ import (
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	*ErrorHandler
-	playbookService app.PlaybookService
-	propertyService app.PropertyServiceReader
-	pluginAPI       *pluginapi.Client
-	config          config.Service
-	permissions     *app.PermissionsService
-	licenseChecker  app.LicenseChecker
+	playbookService    app.PlaybookService
+	playbookRunService app.PlaybookRunService
+	propertyService    app.PropertyServiceReader
+	pluginAPI          *pluginapi.Client
+	config             config.Service
+	permissions        *app.PermissionsService
+	licenseChecker     app.LicenseChecker
 }
 
 const SettingsKey = "global_settings"
@@ -58,15 +59,16 @@ type PropertyFieldRequest struct {
 }
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, propertyService app.PropertyServiceReader, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, playbookRunService app.PlaybookRunService, propertyService app.PropertyServiceReader, api *pluginapi.Client, configService config.Service, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *PlaybookHandler {
 	handler := &PlaybookHandler{
-		ErrorHandler:    &ErrorHandler{},
-		playbookService: playbookService,
-		propertyService: propertyService,
-		pluginAPI:       api,
-		config:          configService,
-		permissions:     permissions,
-		licenseChecker:  licenseChecker,
+		ErrorHandler:       &ErrorHandler{},
+		playbookService:    playbookService,
+		playbookRunService: playbookRunService,
+		propertyService:    propertyService,
+		pluginAPI:          api,
+		config:             configService,
+		permissions:        permissions,
+		licenseChecker:     licenseChecker,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
