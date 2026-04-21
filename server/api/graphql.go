@@ -54,7 +54,6 @@ func isGraphQLErrorable(err error) bool {
 	return errors.As(err, &graphqlErr) && graphqlErr.IsGraphQLErrorable()
 }
 
-
 type GraphQLHandler struct {
 	*ErrorHandler
 	playbookService    app.PlaybookService

@@ -37,7 +37,6 @@ const (
 	RunTypeChannelChecklist = "channelChecklist"
 )
 
-
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
@@ -213,9 +212,7 @@ type PlaybookRun struct {
 
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
-
 }
-
 
 func (r PlaybookRun) GetItemsOrder() []string {
 	if len(r.Checklists) == 0 {
@@ -1085,7 +1082,6 @@ type GetPlaybookRunsResults struct {
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
 }
-
 
 type SQLStatusPost struct {
 	PlaybookRunID string

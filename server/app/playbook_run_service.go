@@ -5751,7 +5751,6 @@ func remapAssigneePropertyFieldIDs(checklists []Checklist, fieldMappings map[str
 	}
 }
 
-
 // formatPropertyValueForDisplay formats a property value for display in bot messages
 // Returns the display string and a boolean indicating if the value is empty
 func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *PropertyField, value json.RawMessage) (string, bool) {
@@ -5841,5 +5840,3 @@ func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *P
 	})
 	return resolved
 }
-
-
