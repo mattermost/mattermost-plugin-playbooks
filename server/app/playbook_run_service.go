@@ -263,6 +263,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 		if values, exists := valuesMap[runID]; exists {
 			results.Items[i].PropertyValues = values
 		}
+		results.Items[i].ComputeTaskProgress()
 	}
 
 	return results, nil
@@ -642,6 +643,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if len(playbookRun.WebhookOnCreationURLs) != 0 {
 		s.sendWebhooksOnCreation(*playbookRun)
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	if playbookRun.PostID == "" {
 		auditRec.Success()
@@ -1673,6 +1676,8 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRun(playbookRunID string) (*Playbook
 		}
 		playbookRun.PropertyValues = propertyValues
 	}
+
+	playbookRun.ComputeTaskProgress()
 
 	return playbookRun, nil
 }

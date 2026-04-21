@@ -61,6 +61,8 @@ type PlaybookRun struct {
 	MetricsData                             []RunMetricData `json:"metrics_data"`
 	CreateChannelMemberOnNewParticipant     bool            `json:"create_channel_member_on_new_participant"`
 	RemoveChannelMemberOnRemovedParticipant bool            `json:"remove_channel_member_on_removed_participant"`
+	TaskTotal                               int             `json:"task_total"`
+	TaskCompleted                           int             `json:"task_completed"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the

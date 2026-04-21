@@ -663,5 +663,6 @@
   "zl6378": "Configure metrics in Retrospective",
   "zx0myy": "Participants",
   "zxj2Gh": "Last updated {time}",
-  "zz6ObK": "Restore"
+  "zz6ObK": "Restore",
+  "playbooks.task_progress.label": "{completed}/{total} tasks"
 }

@@ -24,10 +24,11 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
+import TaskProgress from 'src/components/backstage/runs_list/task_progress';
 import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
-    margin: 5px 0;
+    margin: 2px 0 0;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 11px;
     font-weight: 400;
@@ -58,17 +59,62 @@ const SmallStatusBadge = styled(StatusBadge)`
     line-height: 16px;
 `;
 
-const RunName = styled.div`
+const NameCell = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    padding: 0 6px;
+    min-width: 0;
+`;
+
+const RunName = styled.span`
     font-size: 14px;
     font-weight: 600;
-    line-height: 16px;
+    line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const FlexCol = styled.div`
+    padding: 0 6px;
+    min-width: 0;
+`;
+
+const StatusCell = styled.div`
+    flex: 0 0 150px;
+    max-width: 150px;
+    padding: 0 6px;
+`;
+
+const DurationCell = styled.div`
+    flex: 0 0 150px;
+    max-width: 150px;
+    padding: 0 6px;
+`;
+
+const TasksCell = styled.div`
+    flex: 0 0 150px;
+    max-width: 150px;
+    min-width: 120px;
+    padding: 0 6px;
+`;
+
+const ActionCell = styled.div`
+    flex: 0 0 100px;
+    max-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 8px 0 6px;
 `;
 
 const PlaybookRunItem = styled.div`
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding: 6px 0;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     margin: 0;
     background-color: var(--center-channel-bg);
@@ -107,25 +153,23 @@ const Row = (props: Props) => {
 
     return (
         <PlaybookRunItem
-            className='row'
             key={props.playbookRun.id}
+            data-testid='run-list-item'
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
-            <div className='col-sm-4'>
+            <NameCell style={{flex: 4}}>
                 <RunName>{props.playbookRun.name}</RunName>
                 {infoLine}
-            </div>
-            <div className='col-sm-2'>
+            </NameCell>
+            <StatusCell>
                 <SmallStatusBadge
                     status={BadgeType[props.playbookRun.current_status]}
                 />
                 <SmallText>
                     {DateTime.fromMillis(findLastUpdatedWithDefault(props.playbookRun)).toRelative()}
                 </SmallText>
-            </div>
-            <div
-                className='col-sm-2'
-            >
+            </StatusCell>
+            <DurationCell>
                 <NormalText>
                     <FormattedDuration
                         from={props.playbookRun.create_at}
@@ -135,8 +179,14 @@ const Row = (props: Props) => {
                 <SmallText>
                     {formatDate(props.playbookRun.create_at)}
                 </SmallText>
-            </div>
-            <div className='col-sm-2'>
+            </DurationCell>
+            <TasksCell>
+                <TaskProgress
+                    taskTotal={props.playbookRun.task_total}
+                    taskCompleted={props.playbookRun.task_completed}
+                />
+            </TasksCell>
+            <FlexCol style={{flex: 2}}>
                 <SmallProfile userId={props.playbookRun.owner_user_id}/>
                 <SmallText>
                     <FormattedMessage
@@ -144,10 +194,10 @@ const Row = (props: Props) => {
                         values={{numParticipants: props.playbookRun.participant_ids.length}}
                     />
                 </SmallText>
-            </div>
-            <div className='col-sm-2'>
+            </FlexCol>
+            <ActionCell>
                 <FollowPlaybookRun id={props.playbookRun.id}/>
-            </div>
+            </ActionCell>
         </PlaybookRunItem>
     );
 };

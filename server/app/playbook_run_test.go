@@ -1473,3 +1473,91 @@ func TestPlaybookRun_MarshalJSON_ItemsOrder(t *testing.T) {
 		require.NotContains(t, itemsOrder, "wrong_id")
 	})
 }
+
+func TestComputeTaskProgress(t *testing.T) {
+	makeItem := func(state string, conditionAction ConditionAction) ChecklistItem {
+		return ChecklistItem{State: state, ConditionAction: conditionAction}
+	}
+
+	t.Run("no checklists gives zero totals", func(t *testing.T) {
+		run := &PlaybookRun{}
+		run.ComputeTaskProgress()
+		require.Equal(t, 0, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("all open items", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("closed items count as completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateClosed, ConditionActionNone),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 1, run.TaskCompleted)
+	})
+
+	t.Run("skipped items count as completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateSkipped, ConditionActionNone),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 1, run.TaskCompleted)
+	})
+
+	t.Run("in-progress items are not completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateInProgress, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 1, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("hidden items are excluded from total and completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateClosed, ConditionActionHidden),
+			makeItem(ChecklistItemStateOpen, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 1, run.TaskTotal)
+		require.Equal(t, 0, run.TaskCompleted)
+	})
+
+	t.Run("multiple checklists are summed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{
+			{Items: []ChecklistItem{
+				makeItem(ChecklistItemStateClosed, ConditionActionNone),
+				makeItem(ChecklistItemStateOpen, ConditionActionNone),
+			}},
+			{Items: []ChecklistItem{
+				makeItem(ChecklistItemStateSkipped, ConditionActionNone),
+				makeItem(ChecklistItemStateInProgress, ConditionActionNone),
+			}},
+		}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 4, run.TaskTotal)
+		require.Equal(t, 2, run.TaskCompleted)
+	})
+
+	t.Run("all tasks completed", func(t *testing.T) {
+		run := &PlaybookRun{Checklists: []Checklist{{Items: []ChecklistItem{
+			makeItem(ChecklistItemStateClosed, ConditionActionNone),
+			makeItem(ChecklistItemStateSkipped, ConditionActionNone),
+		}}}}
+		run.ComputeTaskProgress()
+		require.Equal(t, 2, run.TaskTotal)
+		require.Equal(t, 2, run.TaskCompleted)
+	})
+}
