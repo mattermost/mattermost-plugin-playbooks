@@ -808,4 +808,3 @@ func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int, u
 
 	return result, nil
 }
-
