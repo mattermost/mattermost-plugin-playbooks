@@ -2025,29 +2025,23 @@ func TestAdminOnlyEdit_Duplicate(t *testing.T) {
 
 // TestAdminOnlyEdit_Import verifies that non-sysadmins cannot import a playbook
 // that has AdminOnlyEdit enabled.
+// Note: AdminOnlyEdit is excluded from exports (export:"-"), so we craft a raw
+// JSON payload with admin_only_edit: true to exercise the import guard directly.
 func TestAdminOnlyEdit_Import(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	// Export a playbook that has AdminOnlyEdit=true so we can attempt to import it.
-	sourceID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:         "AdminOnlyEdit Import Source",
-		TeamID:        e.BasicTeam.Id,
-		Public:        true,
-		AdminOnlyEdit: true,
-	})
-	require.NoError(t, err)
-
-	data, err := e.PlaybooksAdminClient.Playbooks.Export(context.Background(), sourceID)
-	require.NoError(t, err)
+	// Craft a minimal valid import payload with admin_only_edit enabled.
+	// version must match app.CurrentPlaybookExportVersion (1).
+	payload := []byte(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":1}`)
 
 	t.Run("regular user importing AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
-		_, err := e.PlaybooksClient.Playbooks.Import(context.Background(), data, e.BasicTeam.Id)
+		_, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("system admin importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
-		newID, err := e.PlaybooksAdminClient.Playbooks.Import(context.Background(), data, e.BasicTeam.Id)
+		newID, err := e.PlaybooksAdminClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
 		require.NoError(t, err)
 		require.NotEmpty(t, newID)
 	})
