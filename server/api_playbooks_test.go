@@ -1955,3 +1955,150 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		assert.Equal(t, "System Admin Edit", updated.Title)
 	})
 }
+
+// TestAdminOnlyEdit_Create verifies that only system admins can create a playbook
+// with AdminOnlyEdit pre-enabled.
+func TestAdminOnlyEdit_Create(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("regular user creating playbook with AdminOnlyEdit=true returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:         "Non-Admin AdminOnlyEdit Playbook",
+			TeamID:        e.BasicTeam.Id,
+			Public:        true,
+			AdminOnlyEdit: true,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("system admin creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
+		id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:         "Admin AdminOnlyEdit Playbook",
+			TeamID:        e.BasicTeam.Id,
+			Public:        true,
+			AdminOnlyEdit: true,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, id)
+	})
+
+	t.Run("regular user creating playbook with AdminOnlyEdit=false succeeds", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:         "Regular Playbook",
+			TeamID:        e.BasicTeam.Id,
+			Public:        true,
+			AdminOnlyEdit: false,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, id)
+	})
+}
+
+// TestAdminOnlyEdit_Duplicate verifies that non-sysadmins cannot duplicate a playbook
+// that has AdminOnlyEdit enabled.
+func TestAdminOnlyEdit_Duplicate(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:         "AdminOnlyEdit Duplicate Source",
+		TeamID:        e.BasicTeam.Id,
+		Public:        true,
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("regular user duplicating AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("system admin duplicating AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+		newID, err := e.PlaybooksAdminClient.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
+		require.NotEqual(t, playbookID, newID)
+	})
+}
+
+// TestAdminOnlyEdit_Import verifies that non-sysadmins cannot import a playbook
+// that has AdminOnlyEdit enabled.
+func TestAdminOnlyEdit_Import(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Export a playbook that has AdminOnlyEdit=true so we can attempt to import it.
+	sourceID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:         "AdminOnlyEdit Import Source",
+		TeamID:        e.BasicTeam.Id,
+		Public:        true,
+		AdminOnlyEdit: true,
+	})
+	require.NoError(t, err)
+
+	data, err := e.PlaybooksAdminClient.Playbooks.Export(context.Background(), sourceID)
+	require.NoError(t, err)
+
+	t.Run("regular user importing AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Import(context.Background(), data, e.BasicTeam.Id)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("system admin importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+		newID, err := e.PlaybooksAdminClient.Playbooks.Import(context.Background(), data, e.BasicTeam.Id)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
+	})
+}
+
+// TestPropertyFieldValidation verifies input validation on property field endpoints.
+func TestPropertyFieldValidation(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	e := Setup(t)
+	e.CreateBasic()
+	e.SetEnterpriseLicence()
+
+	playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "Property Field Validation Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("CreatePropertyField with empty name returns 400", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "",
+			Type: "text",
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("CreatePropertyField with whitespace-only name returns 400", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "   ",
+			Type: "text",
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("UpdatePropertyField with empty name returns 400", func(t *testing.T) {
+		// Create a valid field first.
+		field, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
+			Name: "Valid Field",
+			Type: "text",
+		})
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, field.ID, client.PropertyFieldRequest{
+			Name: "",
+			Type: "text",
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+}
