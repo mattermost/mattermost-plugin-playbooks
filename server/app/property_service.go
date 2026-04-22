@@ -902,13 +902,12 @@ var reservedFieldNames = []struct {
 	token string
 	desc  string
 }{
-	{"SEQ", "the built-in sequential ID placeholder"},
-	{"OWNER", "the built-in run owner placeholder"},
+{"OWNER", "the built-in run owner placeholder"},
 	{"CREATOR", "the built-in run creator placeholder"},
 }
 
 // validateReservedFieldName rejects field names that would conflict with built-in
-// template placeholders or system fields. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
+// template placeholders or system fields. Reserved names: OWNER, CREATOR (case-insensitive).
 func validateReservedFieldName(name string) error {
 	for _, r := range reservedFieldNames {
 		if strings.EqualFold(name, r.token) {

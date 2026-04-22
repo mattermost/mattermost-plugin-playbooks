@@ -181,7 +181,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
                     expect(runData.owner_user_id, 'owner set at creation').to.equal(testOwner.id);
                 });
 
-                // # Change owner via the RHS profile selector in the channel view
+                // # Change owner via the RHS owner selector
                 cy.apiLogin(testOwner);
                 cy.apiAddUsersToRun(run.id, [testNewOwner.id]);
 
@@ -234,7 +234,7 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
                         expect(runData.name).to.include(creatorName);
                     });
 
-                    // # Change owner via RHS profile selector
+                    // # Change owner via the RHS owner selector
                     cy.apiLogin(testOwner);
                     cy.apiAddUsersToRun(run.id, [testNewOwner.id]);
 

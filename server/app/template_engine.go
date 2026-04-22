@@ -15,9 +15,6 @@ import (
 
 var placeholderRegex = regexp.MustCompile(`\{([^}]+)\}`)
 
-// seqTokenRegex matches {SEQ} case-insensitively with optional surrounding whitespace,
-// consistent with the whitespace-trimming behaviour of ResolveTemplate.
-var seqTokenRegex = regexp.MustCompile(`(?i)\{\s*SEQ\s*\}`)
 
 var (
 	collapseOrphanedSeparatorsRe = regexp.MustCompile(`\s*-\s*-\s*`)
@@ -44,13 +41,13 @@ type FormatFunc func(field *PropertyField, raw json.RawMessage) (string, bool)
 type ResolveOptions struct {
 	Fields       []PropertyField
 	Values       map[string]json.RawMessage
-	SystemTokens map[string]string // Pre-resolved built-in tokens (SEQ, OWNER, CREATOR); take precedence over field names.
+	SystemTokens map[string]string // Pre-resolved built-in tokens (OWNER, CREATOR); take precedence over field names.
 	FormatFunc   FormatFunc        // Nil uses DefaultFormatPropertyValue.
 }
 
 // systemTokenNames are built-in token names recognized by ValidateTemplate.
 // These are always valid in templates, even when no fields are provided.
-var systemTokenNames = []string{"SEQ", "OWNER", "CREATOR"}
+var systemTokenNames = []string{"OWNER", "CREATOR"}
 
 // isSystemToken checks if a name matches a built-in system token (case-insensitive).
 func isSystemToken(name string) bool {
@@ -139,7 +136,7 @@ func ResolveTemplate(template string, opts ResolveOptions) (string, []string) {
 
 // ValidateTemplate checks if all {FieldName} placeholders in a template reference known
 // fields or system tokens. Returns the list of unrecognized placeholder names.
-// System tokens (SEQ, OWNER, CREATOR) are always recognized as valid.
+// System tokens (OWNER, CREATOR) are always recognized as valid.
 func ValidateTemplate(template string, opts ResolveOptions) []string {
 	if template == "" {
 		return nil
@@ -165,11 +162,6 @@ func ValidateTemplate(template string, opts ResolveOptions) []string {
 	return unknown
 }
 
-// TemplateUsesSeqToken reports whether a template contains a {SEQ} placeholder
-// (case-insensitive, matching the resolution behaviour of ResolveTemplate).
-func TemplateUsesSeqToken(tmpl string) bool {
-	return seqTokenRegex.MatchString(tmpl)
-}
 
 // StripFieldFromTemplate removes all occurrences of {fieldName} from a template string
 // and cleans up orphaned separators and whitespace.

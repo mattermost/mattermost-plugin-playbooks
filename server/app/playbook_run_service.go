@@ -426,13 +426,16 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	}
 
-	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && playbookRun.Name == "" && pb.ChannelNameTemplate != "" {
+	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && pb.ChannelNameTemplate != "" {
 		systemTokens := s.buildSystemTokens(playbookRun)
 		resolved, _ := ResolveTemplate(pb.ChannelNameTemplate, ResolveOptions{SystemTokens: systemTokens})
-		if strings.TrimSpace(resolved) != "" {
+		resolved = strings.TrimSpace(resolved)
+		if resolved != "" && resolved != pb.ChannelNameTemplate {
+			// Template contained tokens that resolved — always use the resolved name.
 			playbookRun.Name = resolved
-		} else {
-			playbookRun.Name = pb.ChannelNameTemplate
+		} else if playbookRun.Name == "" && resolved != "" {
+			// Literal template (no tokens) — use as fallback when no name was provided.
+			playbookRun.Name = resolved
 		}
 	}
 
@@ -5692,7 +5695,7 @@ func (s *PlaybookRunServiceImpl) resolveMessageForRun(msg string, run *PlaybookR
 	return s.resolveAttributePlaceholders(msg, run)
 }
 
-// resolveAttributePlaceholders replaces {FieldName} and system tokens ({SEQ}, {OWNER}, {CREATOR})
+// resolveAttributePlaceholders replaces {FieldName} and system tokens ({OWNER}, {CREATOR})
 // in msg with the run's current property values and run metadata. Unknown tokens are left as-is (lenient resolution).
 // Uses run.PropertyFields and run.PropertyValues (populated by GetPlaybookRun) to avoid redundant DB calls.
 func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *PlaybookRun) string {
