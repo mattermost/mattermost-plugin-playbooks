@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useCallback,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
 
@@ -12,6 +17,9 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {savePlaybook} from 'src/client';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -22,16 +30,19 @@ import Section from './section';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    restPlaybook?: PlaybookWithChecklist;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch}: Props) => {
+const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
+    const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
@@ -53,6 +64,16 @@ const Outline = ({playbook, refetch}: Props) => {
             broadcastEnabled: !playbook.status_update_enabled,
         });
     };
+
+    const handleAutoArchiveChange = useCallback((updated: {auto_archive_channel: boolean}) => {
+        if (!archived && restPlaybook) {
+            const prev = restPlaybook.auto_archive_channel;
+            setAutoArchiveOverride(updated.auto_archive_channel);
+            savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel}).catch(() => {
+                setAutoArchiveOverride(prev);
+            });
+        }
+    }, [archived, restPlaybook]);
 
     const toggleRetrospective = () => {
         if (archived || !retrospectiveAccess) {
@@ -144,6 +165,20 @@ const Outline = ({playbook, refetch}: Props) => {
                     playbook={playbook}
                 />
             </Section>
+            {restPlaybook && (
+                <Section
+                    id={'auto-archive'}
+                    title={''}
+                >
+                    <div data-testid='auto-archive-channel-toggle'>
+                        <AutoArchiveToggle
+                            playbook={{...restPlaybook, auto_archive_channel: effectiveAutoArchive}}
+                            disabled={archived}
+                            onChange={handleAutoArchiveChange}
+                        />
+                    </div>
+                </Section>
+            )}
             <PlaybookActionsModal
                 playbook={playbook}
                 readOnly={false}

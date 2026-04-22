@@ -404,6 +404,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		playbookRun.ChannelID = channel.Id
+		playbookRun.ChannelCreatedByRun = true
 		createdChannel = true
 	} else {
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -1312,6 +1313,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 	}
 
+	s.tryAutoArchiveChannel(playbookRunToModify, logger)
+
 	// Mark success and add result state for audit
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "endAt", endAt)
@@ -1474,6 +1477,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
+	// Un-archive the channel before posting so the message lands in an active channel.
+	s.tryAutoUnarchiveChannel(playbookRunToRestore, logger)
+
 	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
@@ -1520,6 +1526,66 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	auditRec.AddEventResultState(*playbookRunToRestore)
 
 	return nil
+}
+
+// tryAutoArchiveChannel archives the run's channel if the playbook has AutoArchiveChannel=true
+// and the channel was created by the run. Best-effort: errors are logged and ignored.
+// NOTE: AutoArchiveChannel is read from the current playbook state at finish time, not from a
+// snapshot taken at run creation. Toggling the flag on a playbook immediately affects all
+// in-progress runs — no per-run grandfathering.
+func (s *PlaybookRunServiceImpl) tryAutoArchiveChannel(run *PlaybookRun, logger *logrus.Entry) {
+	if !run.ChannelCreatedByRun || run.ChannelID == "" || run.PlaybookID == "" {
+		return
+	}
+	pb, err := s.playbookService.Get(run.PlaybookID)
+	if err != nil {
+		logger.WithError(err).Warn("failed to load playbook for auto-archive check; channel will not be archived")
+		return
+	}
+	if !pb.AutoArchiveChannel {
+		return
+	}
+	if err := s.pluginAPI.Channel.Delete(run.ChannelID); err != nil {
+		logger.WithError(err).Warn("failed to auto-archive channel on run finish")
+	}
+}
+
+// tryAutoUnarchiveChannel un-archives the run's channel if it was auto-archived on finish.
+// Must be called before posting to the channel so the message lands in an active channel.
+// Best-effort: errors are logged and ignored.
+// NOTE: The plugin API does not expose a RestoreChannel method, so we clear DeleteAt manually
+// via Channel.Update. This emits WebsocketEventChannelUpdated but NOT WebsocketEventChannelRestored,
+// and does NOT post the system "channel un-archived" message. Clients will see the channel reappear
+// after a reload rather than immediately. TODO: request RestoreChannel from the platform plugin API.
+func (s *PlaybookRunServiceImpl) tryAutoUnarchiveChannel(run *PlaybookRun, logger *logrus.Entry) {
+	if !run.ChannelCreatedByRun || run.ChannelID == "" || run.PlaybookID == "" {
+		return
+	}
+	pb, err := s.playbookService.Get(run.PlaybookID)
+	if err != nil {
+		logger.WithError(err).Warn("failed to load playbook for auto-unarchive check; channel will not be un-archived")
+		return
+	}
+	if !pb.AutoArchiveChannel {
+		return
+	}
+	// NOTE: Get→mutate→Update is not atomic. A concurrent restore can race and produce
+	// a duplicate no-op Update, which is harmless. However, Channel.Update sends the full
+	// channel object, so any concurrent channel property edit (display name, purpose) made
+	// between Get and Update will be silently overwritten. This is acceptable as a best-effort
+	// operation until the plugin API exposes a dedicated RestoreChannel method.
+	ch, err := s.pluginAPI.Channel.Get(run.ChannelID)
+	if err != nil {
+		logger.WithError(err).Warn("failed to get channel for un-archive on run restore")
+		return
+	}
+	if ch.DeleteAt == 0 {
+		return
+	}
+	ch.DeleteAt = 0
+	if err := s.pluginAPI.Channel.Update(ch); err != nil {
+		logger.WithError(err).Warn("failed to un-archive channel on run restore")
+	}
 }
 
 // updateAllChecklistsAndItemsTimestamps sets the UpdateAt field for all checklist items in the given checklists

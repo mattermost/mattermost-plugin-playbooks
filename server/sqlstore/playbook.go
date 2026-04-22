@@ -163,6 +163,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Playboo
 			"p.RemoveChannelMemberOnRemovedParticipant",
 			"p.ChannelID",
 			"p.ChannelMode",
+			"p.AutoArchiveChannel",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
 			"p.RunSummaryTemplateEnabled",
@@ -272,6 +273,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -713,6 +715,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybook.RemoveChannelMemberOnRemovedParticipant,
 			"ChannelID":                               rawPlaybook.ChannelID,
 			"ChannelMode":                             rawPlaybook.ChannelMode,
+			"AutoArchiveChannel":                      rawPlaybook.AutoArchiveChannel,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

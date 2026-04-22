@@ -20,6 +20,13 @@ import (
 // The tag export supports the export/import feature. If the field makes sense for export, the value should be
 // the JSON name of the item in the export format. If the field should not be exported the value should be "-".
 // Fields should be exported if they are not server specific like InvitedUserIDs or are tracking metadata like CreateAt.
+//
+// Schema note: most fields map 1:1 to columns in IR_Playbook.  When adding a direct column, search
+// for "When adding a Playbook column" to find all the places in sqlstore/playbook.go that must be updated
+// (SELECT list, INSERT columns, UPDATE set-map, and rawPlaybook scanner). The following fields are
+// instead stored as JSON blobs and do NOT require a migration when their sub-types gain new fields:
+//   - Checklists      → IR_Playbook.ChecklistsJSON
+//   - CreationRules   → IR_Playbook.CreationRulesJSON
 type Playbook struct {
 	ID                                      string                 `json:"id" export:"-"`
 	Title                                   string                 `json:"title" export:"title"`
@@ -76,6 +83,8 @@ type Playbook struct {
 
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
+
+	AutoArchiveChannel bool `json:"auto_archive_channel" export:"auto_archive_channel"`
 
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`

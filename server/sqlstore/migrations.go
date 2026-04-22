@@ -1742,4 +1742,44 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.67.0"),
+		toVersion:   semver.MustParse("0.68.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := addColumnToPGTable(e, "IR_Playbook", "AutoArchiveChannel", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column AutoArchiveChannel to IR_Playbook")
+			}
+			if err := addColumnToPGTable(e, "IR_Incident", "ChannelCreatedByRun", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+				return errors.Wrapf(err, "failed adding column ChannelCreatedByRun to IR_Incident")
+			}
+
+			// Backfill: runs whose playbook currently has ChannelMode = 'create_new_channel' are
+			// assumed to have had their channel created by the run at the time they were started.
+			// Raw SQL is used here because squirrel cannot express UPDATE...FROM multi-table joins.
+			// This backfill must run inside the migration transaction (e) — the preceding
+			// ALTER TABLE IR_Incident holds an AccessExclusiveLock for the duration of the transaction,
+			// so using a separate connection would deadlock. Running both operations on the same
+			// transaction executor avoids the deadlock.
+			//
+			// KNOWN LIMITATION: Playbooks that switched ChannelMode from 'create_new_channel' to
+			// 'link_existing_channel' after creating runs will NOT have ChannelCreatedByRun = TRUE
+			// for those pre-switch runs, even though their channels were originally created by the run.
+			// Impact is limited to auto-archiving: those channels won't be auto-archived on run finish.
+			// Fixing this would require joining on a historical snapshot of ChannelMode that does
+			// not currently exist in the schema.
+			if _, err := e.Exec(`
+    UPDATE IR_Incident
+    SET ChannelCreatedByRun = TRUE
+    FROM IR_Playbook
+    WHERE IR_Incident.PlaybookID = IR_Playbook.ID
+      AND IR_Playbook.ChannelMode = 'create_new_channel'
+      AND IR_Playbook.DeleteAt = 0
+      AND IR_Incident.DeleteAt = 0
+`); err != nil {
+				return errors.Wrapf(err, "failed to backfill ChannelCreatedByRun for existing runs")
+			}
+
+			return nil
+		},
+	},
 }

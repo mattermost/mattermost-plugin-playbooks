@@ -33,6 +33,7 @@ import {SemiBoldHeading} from 'src/styles/headings';
 import {HorizontalBG} from 'src/components/checklist/collapsible_checklist';
 import CopyLink from 'src/components/widgets/copy_link';
 import {usePlaybook, useUpdatePlaybook, useUpdatePlaybookFavorite} from 'src/graphql/hooks';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import MarkdownEdit from 'src/components/markdown_edit';
 import TextEdit from 'src/components/text_edit';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -49,6 +50,7 @@ const PlaybookEditor = () => {
     const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
+    const [restPlaybook] = useRestPlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
@@ -286,6 +288,7 @@ const PlaybookEditor = () => {
                     <Outline
                         playbook={playbook}
                         refetch={refetch}
+                        restPlaybook={restPlaybook ?? undefined}
                     />
                 </Route>
                 <Route

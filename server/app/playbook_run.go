@@ -211,6 +211,10 @@ type PlaybookRun struct {
 
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
+
+	// ChannelCreatedByRun indicates whether the channel was created by this run.
+	// Used by auto-archive to avoid archiving linked channels.
+	ChannelCreatedByRun bool `json:"-"`
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
