@@ -426,7 +426,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	}
 
-	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && pb.ChannelNameTemplate != "" {
+	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && playbookRun.Name == "" && pb.ChannelNameTemplate != "" {
 		systemTokens := s.buildSystemTokens(playbookRun)
 		resolved, _ := ResolveTemplate(pb.ChannelNameTemplate, ResolveOptions{SystemTokens: systemTokens})
 		if strings.TrimSpace(resolved) != "" {
