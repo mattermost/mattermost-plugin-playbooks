@@ -62,36 +62,6 @@ func ValidateRunUpdateOnFinished(currentStatus string, hasNameUpdate, hasSummary
 	return nil
 }
 
-// GovernanceFlagChanges describes which governance flags the caller is attempting to change.
-type GovernanceFlagChanges struct {
-	EnableAdminOnlyEdit         bool // false→true transition
-	DisableAdminOnlyEdit        bool // true→false transition
-	ToggleOwnerGroupOnlyActions bool // change in either direction
-	ToggleNewChannelOnly        bool // change in either direction
-	ToggleAutoArchiveChannel    bool // change in either direction
-}
-
-// ValidateGovernanceFlags checks whether the calling user has the required role to
-// toggle governance flags (AdminOnlyEdit, OwnerGroupOnlyActions, NewChannelOnly, AutoArchiveChannel).
-func ValidateGovernanceFlags(isSystemAdmin, isPlaybookAdmin bool, changes GovernanceFlagChanges) error {
-	if isSystemAdmin || isPlaybookAdmin {
-		return nil
-	}
-	if changes.EnableAdminOnlyEdit || changes.DisableAdminOnlyEdit {
-		return errors.Wrap(ErrNoPermissions, "only playbook admins or system admins can change admin-only edit")
-	}
-	if changes.ToggleOwnerGroupOnlyActions {
-		return errors.Wrap(ErrNoPermissions, "only playbook admins or system admins can toggle owner-group-only actions")
-	}
-	if changes.ToggleNewChannelOnly {
-		return errors.Wrap(ErrNoPermissions, "only playbook admins or system admins can toggle new-channel-only")
-	}
-	if changes.ToggleAutoArchiveChannel {
-		return errors.Wrap(ErrNoPermissions, "only playbook admins or system admins can toggle auto-archive channel")
-	}
-	return nil
-}
-
 // ValidateTemplateAfterFieldDeletion checks whether channelNameTemplate still
 // references deletedFieldID after it has been removed. Returns an error if it does.
 func ValidateTemplateAfterFieldDeletion(channelNameTemplate, deletedFieldID string, allFields []PropertyField) error {

@@ -146,7 +146,7 @@ func (s *playbookService) Import(data PlaybookImportData, userID string) (string
 
 // GetPlaybookConditionsForExport retrieves all conditions for a playbook for export purposes.
 func (s *playbookService) GetPlaybookConditionsForExport(playbookID string) ([]Condition, error) {
-	result, err := s.conditionService.GetPlaybookConditions(playbookID, 0, MaxConditionsPerPlaybook)
+	result, err := s.conditionService.GetPlaybookConditions("", playbookID, 0, MaxConditionsPerPlaybook)
 	if err != nil {
 		return nil, err
 	}

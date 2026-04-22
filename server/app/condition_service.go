@@ -12,6 +12,13 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 )
 
+// Websocket event constants disabled until we implement proper user targeting
+// const (
+// 	conditionCreatedWSEvent = "condition_created"
+// 	conditionUpdatedWSEvent = "condition_updated"
+// 	conditionDeletedWSEvent = "condition_deleted"
+// )
+
 type conditionService struct {
 	store           ConditionStore
 	propertyService PropertyService
@@ -252,7 +259,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	}
 
 	if condition.RunID != "" {
-		err := errors.Wrap(ErrMalformedCondition, "cannot create conditions with RunID - run conditions are system managed")
+		err := errors.New("cannot create conditions with RunID - run conditions are system managed")
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
@@ -265,7 +272,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	}
 
 	if currentCount >= MaxConditionsPerPlaybook {
-		err := errors.Wrapf(ErrMalformedCondition, "cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
+		err := errors.Errorf("cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
@@ -275,8 +282,14 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	createdCondition, err := s.store.CreateCondition(condition.PlaybookID, condition)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, errors.Wrap(err, "failed to create condition")
+		return nil, err
 	}
+
+	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
+	// if err := s.sendConditionCreatedWS(createdCondition, teamID); err != nil {
+	// 	// Log but don't fail the operation for websocket errors
+	// 	logrus.WithError(err).WithField("condition_id", createdCondition.ID).Error("failed to send condition created websocket event")
+	// }
 
 	auditRec.Success()
 	auditRec.AddEventResultState(createdCondition)
@@ -285,10 +298,10 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 }
 
 // GetPlaybookCondition retrieves a stored playbook condition by ID
-func (s *conditionService) GetPlaybookCondition(playbookID, conditionID string) (*Condition, error) {
+func (s *conditionService) GetPlaybookCondition(userID, playbookID, conditionID string) (*Condition, error) {
 	condition, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get condition")
+		return nil, err
 	}
 	return condition, nil
 }
@@ -306,17 +319,17 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 	existing, err := s.store.GetCondition(condition.PlaybookID, condition.ID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, errors.Wrap(err, "failed to get condition")
+		return nil, err
 	}
 
 	if existing.RunID != "" {
-		err := errors.Wrap(ErrMalformedCondition, "cannot modify conditions associated with a run - run conditions are read-only")
+		err := errors.New("cannot modify conditions associated with a run - run conditions are read-only")
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
 
 	if condition.RunID != "" {
-		err := errors.Wrap(ErrMalformedCondition, "cannot associate existing condition with a run - run conditions are system managed")
+		err := errors.New("cannot associate existing condition with a run - run conditions are system managed")
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
@@ -342,8 +355,14 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 	updatedCondition, err := s.store.UpdateCondition(condition.PlaybookID, condition)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, errors.Wrap(err, "failed to update condition")
+		return nil, err
 	}
+
+	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
+	// if err := s.sendConditionUpdatedWS(updatedCondition, teamID); err != nil {
+	// 	// Log but don't fail the operation for websocket errors
+	// 	logrus.WithError(err).WithField("condition_id", updatedCondition.ID).Error("failed to send condition updated websocket event")
+	// }
 
 	auditRec.Success()
 	auditRec.AddEventResultState(updatedCondition)
@@ -364,13 +383,13 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 	existing, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return errors.Wrap(err, "failed to get condition")
+		return err
 	}
 
 	model.AddEventParameterAuditableToAuditRec(auditRec, "condition", existing)
 
 	if existing.RunID != "" {
-		err := errors.Wrap(ErrMalformedCondition, "cannot delete conditions associated with a run - run conditions are read-only")
+		err := errors.New("cannot delete conditions associated with a run - run conditions are read-only")
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -378,8 +397,14 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 	err = s.store.DeleteCondition(playbookID, conditionID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return errors.Wrap(err, "failed to delete condition")
+		return err
 	}
+
+	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
+	// if err := s.sendConditionDeletedWS(existing, teamID); err != nil {
+	// 	// Log but don't fail the operation for websocket errors
+	// 	logrus.WithError(err).WithField("condition_id", existing.ID).Error("failed to send condition deleted websocket event")
+	// }
 
 	auditRec.Success()
 
@@ -387,7 +412,7 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 }
 
 // GetPlaybookConditions retrieves stored conditions for a playbook
-func (s *conditionService) GetPlaybookConditions(playbookID string, page, perPage int) (*GetConditionsResults, error) {
+func (s *conditionService) GetPlaybookConditions(userID, playbookID string, page, perPage int) (*GetConditionsResults, error) {
 	fetchConditions := func() ([]Condition, error) {
 		return s.store.GetPlaybookConditions(playbookID, page, perPage)
 	}
@@ -400,7 +425,7 @@ func (s *conditionService) GetPlaybookConditions(playbookID string, page, perPag
 }
 
 // GetRunConditions retrieves stored conditions for a run
-func (s *conditionService) GetRunConditions(playbookID, runID string, page, perPage int) (*GetConditionsResults, error) {
+func (s *conditionService) GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error) {
 	fetchConditions := func() ([]Condition, error) {
 		return s.store.GetRunConditions(playbookID, runID, page, perPage)
 	}
@@ -420,7 +445,7 @@ func (s *conditionService) getConditions(
 ) (*GetConditionsResults, error) {
 	conditions, err := fetchConditions()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get conditions")
+		return nil, err
 	}
 
 	totalCount, err := fetchCount()
@@ -429,9 +454,6 @@ func (s *conditionService) getConditions(
 	}
 
 	// Calculate pagination info
-	if perPage <= 0 {
-		perPage = conditionsDefaultPerPage
-	}
 	pageCount := (totalCount + perPage - 1) / perPage
 	if pageCount == 0 {
 		pageCount = 1
@@ -479,7 +501,11 @@ func (s *conditionService) applyConditionResults(
 
 			// Initialize checklist changes if not exists
 			if result.ChecklistChanges[checklist.Title] == nil {
-				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{}
+				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{
+					Added:      0,
+					Hidden:     0,
+					hasChanges: false,
+				}
 			}
 
 			item.ConditionReason = res.Reason
@@ -565,3 +591,19 @@ func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun)
 	conditionResults := s.evaluateConditions(playbookRun, conditions)
 	return s.applyConditionResults(playbookRun, conditionResults), nil
 }
+
+// Websocket helper functions disabled until we implement proper user targeting
+// func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionCreatedWSEvent, condition, teamID)
+// 	return nil
+// }
+//
+// func (s *conditionService) sendConditionUpdatedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionUpdatedWSEvent, condition, teamID)
+// 	return nil
+// }
+//
+// func (s *conditionService) sendConditionDeletedWS(condition *Condition, teamID string) error {
+// 	s.poster.PublishWebsocketEventToTeam(conditionDeletedWSEvent, condition, teamID)
+// 	return nil
+// }

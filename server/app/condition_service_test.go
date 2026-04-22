@@ -345,7 +345,7 @@ func TestConditionService_Delete(t *testing.T) {
 
 		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, dbError)
+		require.Equal(t, dbError, err)
 	})
 }
 

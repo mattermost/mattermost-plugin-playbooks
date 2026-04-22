@@ -200,27 +200,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		playbookRunCreateOptions.Summary = trimmedSummary
 	}
 
-	if playbookRunCreateOptions.PlaybookID != "" && !model.IsValidId(playbookRunCreateOptions.PlaybookID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid playbook ID", errors.New("invalid playbook ID"))
-		return
-	}
-	if playbookRunCreateOptions.TeamID != "" && !model.IsValidId(playbookRunCreateOptions.TeamID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid team ID", errors.New("invalid team ID"))
-		return
-	}
-	if playbookRunCreateOptions.ChannelID != "" && !model.IsValidId(playbookRunCreateOptions.ChannelID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid channel ID", errors.New("invalid channel ID"))
-		return
-	}
-	if playbookRunCreateOptions.OwnerUserID != "" && !model.IsValidId(playbookRunCreateOptions.OwnerUserID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid owner user ID", errors.New("invalid owner user ID"))
-		return
-	}
-	if playbookRunCreateOptions.PostID != "" && !model.IsValidId(playbookRunCreateOptions.PostID) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid post ID", errors.New("invalid post ID"))
-		return
-	}
-
 	// Set the run type based on whether a playbook ID is provided
 	runType := app.RunTypeChannelChecklist
 	if playbookRunCreateOptions.PlaybookID != "" {
@@ -243,6 +222,14 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		app.RunSourcePost,
 		playbookRunCreateOptions.PropertyValues,
 	)
+	if errors.Is(err, app.ErrNoPermissions) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
+		return
+	}
+	if errors.Is(err, app.ErrMalformedPlaybookRun) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
+		return
+	}
 	if err != nil {
 		h.HandleError(w, c.logger, errors.Wrapf(err, "unable to create playbook run"))
 		return
@@ -407,11 +394,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 	if name != "" {
 		trimmed, err := app.ValidateRunNameUpdate(name)
 		if err != nil {
-			ReturnJSON(w, &model.SubmitDialogResponse{
-				Errors: map[string]string{
-					app.DialogFieldNameKey: err.Error(),
-				},
-			}, http.StatusOK)
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
 			return
 		}
 		name = trimmed

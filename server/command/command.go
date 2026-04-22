@@ -605,11 +605,7 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 	targetOwnerUsername := strings.TrimLeft(args[index], "@")
 
 	if err := r.permissions.RunManageProperties(r.args.UserId, playbookRuns[run].ID); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
-			r.postCommandResponse("You do not have permission to change the owner of this run.")
-		} else {
-			r.warnUserAndLogErrorf("Error checking change-owner permissions: %v", err)
-		}
+		r.postCommandResponse("Become a participant to interact with this run.")
 		return
 	}
 
@@ -771,10 +767,10 @@ func (r *Runner) actionFinishByID(args []string) {
 
 	if err := r.permissions.RunManageProperties(r.args.UserId, args[0]); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
-			r.postCommandResponse("You do not have permission to finish this run.")
-		} else {
-			r.warnUserAndLogErrorf("Error checking finish permissions: %v", err)
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
 		}
+		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
 		return
 	}
 
