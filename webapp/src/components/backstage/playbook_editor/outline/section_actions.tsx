@@ -113,7 +113,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                 stateModified: ci.state_modified || 0,
                 assigneeID: '',
                 assigneeType: '',
-                assigneeGroupID: '',
                 assigneePropertyFieldID: '',
                 assigneeModified: ci.assignee_modified || 0,
                 command: ci.command,

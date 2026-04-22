@@ -4,8 +4,6 @@
 package app
 
 import (
-	"encoding/json"
-
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 	"github.com/pkg/errors"
@@ -530,7 +528,7 @@ func (s *conditionService) evaluateConditions(playbookRun *PlaybookRun, conditio
 	return conditionResults
 }
 
-func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string, oldValue json.RawMessage) (*ConditionEvaluationResult, error) {
+func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
 	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get conditions for playbook run")

@@ -122,7 +122,7 @@ const ChecklistList = ({
 
     const updatePlaybook = useUpdatePlaybook(inPlaybook?.id);
     const {conditions, createCondition} = usePlaybookConditions(inPlaybook?.id || '');
-    const propertyFields = usePlaybookAttributes(inPlaybook?.id || '');
+    const propertyFields = usePlaybookAttributes(inPlaybook?.id || '') ?? playbookRun?.property_fields;
     const [playbook, setPlaybook] = useProxyState(inPlaybook, useCallback((updatedPlaybook) => {
         const updatedChecklists = updatedPlaybook?.checklists.map((cl) => ({
             ...cl,
@@ -628,6 +628,7 @@ const ChecklistList = ({
                                                     onReadOnlyInteract={onReadOnlyInteract}
                                                     conditions={conditions}
                                                     propertyFields={propertyFields || []}
+                                                    propertyValues={playbookRun?.property_values}
                                                     onDeleteCondition={onDeleteCondition}
                                                     onCreateCondition={(expr, itemIndex) => onCreateCondition(checklistIndex, itemIndex, expr)}
                                                     onUpdateCondition={onUpdateCondition}

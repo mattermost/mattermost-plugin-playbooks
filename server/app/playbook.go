@@ -301,6 +301,10 @@ type ChecklistItem struct {
 	// AssigneeModified is the timestamp, in milliseconds since epoch, of the last time the item's
 	// assignee was modified. 0 if it was never modified.
 	AssigneeModified int64 `json:"assignee_modified" export:"-"`
+	// AssigneeType determines how the assignee is resolved. Empty string means a specific user (AssigneeID).
+	AssigneeType string `json:"assignee_type" export:"assignee_type"`
+	// AssigneePropertyFieldID is the property field whose value is used when AssigneeType == AssigneeTypePropertyUser.
+	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"-"`
 
 	// Command, if not empty, is the slash command that can be run as part of this item.
 	Command string `json:"command" export:"command"`
@@ -335,14 +339,6 @@ type ChecklistItem struct {
 
 	// ConditionReason is a string representation of the condition.
 	ConditionReason string `json:"condition_reason" export:"-"`
-
-	// AssigneeType indicates how the assignee is determined. Empty string means a specific user
-	// (existing behavior). "owner" and "creator" are resolved at run creation time.
-	AssigneeType string `json:"assignee_type" export:"assignee_type"`
-
-	// AssigneePropertyFieldID is the property field ID when AssigneeType=="property_user".
-	// The resolved user ID is cached in AssigneeID and refreshed on property value changes.
-	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"-"`
 }
 
 func (ci *ChecklistItem) GetAssigneeID() string {
@@ -546,14 +542,13 @@ const (
 )
 
 const (
-	AssigneeTypeSpecificUser = ""              // zero value — a specific person is assigned (existing behaviour)
-	AssigneeTypeOwner        = "owner"         // resolved from PlaybookRun.OwnerUserID at run creation / owner change
-	AssigneeTypeCreator      = "creator"       // resolved from PlaybookRun.ReporterUserID at run creation
-	AssigneeTypePropertyUser = "property_user" // resolved from a User-type property field value; cached in AssigneeID
+	AssigneeTypeSpecificUser = ""              // assigned to a specific user identified by AssigneeID
+	AssigneeTypeOwner        = "owner"         // resolved to the run owner at assignment time
+	AssigneeTypeCreator      = "creator"       // resolved to the run creator at assignment time
+	AssigneeTypePropertyUser = "property_user" // resolved via a User-type property field
 )
 
-// IsValidAssigneeType reports whether the provided assignee type is valid.
-// Valid types are: AssigneeTypeSpecificUser (specific user), AssigneeTypeOwner,
+// IsValidAssigneeType returns true for all recognised AssigneeType values.
 // AssigneeTypeCreator, and AssigneeTypePropertyUser.
 func IsValidAssigneeType(assigneeType string) bool {
 	return assigneeType == AssigneeTypeSpecificUser ||

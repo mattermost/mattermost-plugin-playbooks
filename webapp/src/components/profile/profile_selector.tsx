@@ -85,15 +85,7 @@ interface Props {
      * - one with defaultLabel and the rest of the users
      */
     userGroups?: UserGroup;
-
-    /**
-     * Additional non-user sections (e.g. roles, groups) shown below the user sections.
-     */
     extraSections?: ExtraSection[];
-
-    /**
-     * Called when a non-user option from extraSections is selected.
-     */
     onExtraOptionSelected?: (value: string) => void;
 }
 
@@ -282,34 +274,16 @@ export default function ProfileSelector(props: Props) {
     } : noDropdown;
 
     const getSelectOptions = () => {
-        let groups: Array<{label: string; options: AnyOption[]}> = [];
-
         if (!props.userGroups) {
-            groups = [{label: '', options: userNotInSubsetOptions}];
-        } else if (userNotInSubsetOptions.length === 0) {
-            groups = [{label: '', options: userInSubsetOptions}];
-        } else {
-            groups = [
-                {label: props.userGroups.subsetLabel, options: userInSubsetOptions},
-                {label: props.userGroups.defaultLabel, options: userNotInSubsetOptions},
-            ];
+            return userNotInSubsetOptions;
         }
-
-        if (props.extraSections) {
-            for (const section of props.extraSections) {
-                if (section.options.length > 0) {
-                    groups.push({label: section.label, options: section.options});
-                }
-            }
+        if (userNotInSubsetOptions.length === 0) {
+            return userInSubsetOptions;
         }
-
-        // If there's only one unlabeled group with no extra sections, return flat
-        if (groups.length === 1 && !groups[0].label) {
-            return groups[0].options;
-        }
-
-        // Filter out empty unlabeled groups
-        return groups.filter((g) => g.label || g.options.length > 0);
+        return [
+            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
+            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
+        ];
     };
 
     return (
@@ -357,11 +331,6 @@ const selectStyles: StylesConfig<Option, boolean> = {
     groupHeading: (provided) => ({
         ...provided,
         fontWeight: 600,
-        fontSize: '11px',
-        letterSpacing: '0.02em',
-        textTransform: 'uppercase' as const,
-        color: 'rgba(var(--center-channel-color-rgb), 0.56)',
-        padding: '8px 12px 4px',
     }),
 };
 

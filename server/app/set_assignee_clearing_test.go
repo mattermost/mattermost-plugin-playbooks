@@ -131,5 +131,4 @@ func TestApplyAssigneeUpdate(t *testing.T) {
 			})
 		}
 	})
-
 }

@@ -416,7 +416,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
         });
     });
 
-    describe('switching from role/group assignment to a user', () => {
+    describe('switching from role assignment to a user', () => {
         it('switching from role assignment to a specific user clears the role', () => {
             cy.apiLogin(testOwner);
 

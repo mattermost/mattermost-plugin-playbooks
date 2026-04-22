@@ -150,7 +150,6 @@ describe('AssigneeDropdown', () => {
             ...item,
             assignee_type: 'owner',
             assignee_id: '',
-            assignee_group_id: '',
             assignee_property_field_id: '',
         });
     });
@@ -176,7 +175,6 @@ describe('AssigneeDropdown', () => {
             ...item,
             assignee_type: 'creator',
             assignee_id: '',
-            assignee_group_id: '',
             assignee_property_field_id: '',
         });
     });
@@ -202,7 +200,6 @@ describe('AssigneeDropdown', () => {
             ...item,
             assignee_type: '',
             assignee_id: '',
-            assignee_group_id: '',
             assignee_property_field_id: '',
         });
     });
@@ -324,143 +321,6 @@ describe('AssigneeDropdown', () => {
         const instance = component.root;
         const allNodes = instance.findAll((node) => node.props['data-testid'] === 'resolved-user-avatar');
         expect(allNodes.length).toBe(0);
-    });
-
-    // --- Group assignment ---
-
-    const makeGroupsMap = (groups: Array<{id: string; display_name: string; allow_reference: boolean}>) =>
-        Object.fromEntries(groups.map((g) => [g.id, g]));
-
-    const withGroups = (groupsMap: Record<string, unknown>) => {
-        (useSelector as jest.Mock).mockReturnValue(groupsMap);
-    };
-
-    it('shows group options when groups with allow_reference=true are available', () => {
-        const onChanged = jest.fn();
-        const item = makeChecklistItem();
-        withGroups(makeGroupsMap([
-            {id: 'g1', display_name: 'Engineers', allow_reference: true},
-            {id: 'g2', display_name: 'Marketing', allow_reference: false},
-        ]));
-
-        const component = renderer.create(
-            <AssigneeDropdown
-                checklistItem={item}
-                editable={true}
-                onChanged={onChanged}
-                participantUserIds={[]}
-            />,
-        );
-
-        const instance = component.root;
-
-        // Only the allow_reference=true group should appear
-        const engineersBtn = instance.findByProps({'data-testid': 'group-option-g1'});
-        expect(engineersBtn).toBeTruthy();
-        const allGroupBtns = instance.findAll((n) => n.props['data-testid'] === 'group-option-g2');
-        expect(allGroupBtns.length).toBe(0);
-    });
-
-    it('selecting a group calls onChanged with assignee_type=group and the group id', () => {
-        const onChanged = jest.fn();
-        const item = makeChecklistItem({assignee_id: 'user-1', assignee_type: ''});
-        withGroups(makeGroupsMap([{id: 'g1', display_name: 'Engineers', allow_reference: true}]));
-
-        const component = renderer.create(
-            <AssigneeDropdown
-                checklistItem={item}
-                editable={true}
-                onChanged={onChanged}
-                participantUserIds={[]}
-            />,
-        );
-
-        const instance = component.root;
-        const select = instance.findByProps({'data-testid': 'group-options'});
-        select.props.onChange({target: {value: 'g1'}});
-
-        expect(onChanged).toHaveBeenCalledWith({
-            ...item,
-            assignee_type: 'group',
-            assignee_group_id: 'g1',
-            assignee_id: '',
-            assignee_property_field_id: '',
-        });
-    });
-
-    it('currently selected group is reflected in the dropdown value', () => {
-        const onChanged = jest.fn();
-        const item = makeChecklistItem({assignee_type: 'group', assignee_group_id: 'g1'});
-        withGroups(makeGroupsMap([
-            {id: 'g1', display_name: 'Engineers', allow_reference: true},
-            {id: 'g2', display_name: 'Design', allow_reference: true},
-        ]));
-
-        const component = renderer.create(
-            <AssigneeDropdown
-                checklistItem={item}
-                editable={true}
-                onChanged={onChanged}
-                participantUserIds={[]}
-            />,
-        );
-
-        const instance = component.root;
-        const select = instance.findByProps({'data-testid': 'group-options'});
-        expect(select.props.value).toBe('g1');
-    });
-
-    it('selecting None from the group dropdown clears the group assignment', () => {
-        const onChanged = jest.fn();
-        const item = makeChecklistItem({assignee_type: 'group', assignee_group_id: 'g1'});
-        withGroups(makeGroupsMap([
-            {id: 'g1', display_name: 'Engineers', allow_reference: true},
-        ]));
-
-        const component = renderer.create(
-            <AssigneeDropdown
-                checklistItem={item}
-                editable={true}
-                onChanged={onChanged}
-                participantUserIds={[]}
-            />,
-        );
-
-        const instance = component.root;
-        const select = instance.findByProps({'data-testid': 'group-options'});
-        select.props.onChange({target: {value: ''}});
-
-        expect(onChanged).toHaveBeenCalledWith({
-            ...item,
-            assignee_type: '',
-            assignee_group_id: '',
-            assignee_id: '',
-            assignee_property_field_id: '',
-        });
-    });
-
-    it('shows group badge in read-only mode when assignee_type is group', () => {
-        const onChanged = jest.fn();
-        const item = makeChecklistItem({assignee_type: 'group', assignee_group_id: 'g1'});
-        withGroups(makeGroupsMap([{id: 'g1', display_name: 'Engineers', allow_reference: true}]));
-
-        const component = renderer.create(
-            <AssigneeDropdown
-                checklistItem={item}
-                editable={false}
-                onChanged={onChanged}
-                participantUserIds={[]}
-                mode='run'
-            />,
-        );
-
-        const instance = component.root;
-        const badge = instance.findByProps({'data-testid': 'group-indicator-badge'});
-        expect(badge).toBeTruthy();
-
-        // Badge text is either the resolved group name or the fallback
-        const treeStr = JSON.stringify(component.toJSON());
-        expect(treeStr.includes('Engineers') || treeStr.includes('a Group')).toBe(true);
     });
 
     // --- Run User (property_user) assignment ---
@@ -638,7 +498,6 @@ describe('AssigneeDropdown', () => {
             ...item,
             assignee_type: 'property_user',
             assignee_property_field_id: 'f1',
-            assignee_group_id: '',
             assignee_id: '',
         });
     });
@@ -692,7 +551,6 @@ describe('AssigneeDropdown', () => {
             ...item,
             assignee_type: '',
             assignee_property_field_id: '',
-            assignee_group_id: '',
             assignee_id: '',
         });
     });

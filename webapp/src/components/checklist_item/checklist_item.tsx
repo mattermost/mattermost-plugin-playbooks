@@ -417,7 +417,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
         const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
         const isPropertyUserAssignee = assigneeType === 'property_user';
-
         if (!assigneeID && !isRoleAssignee && !isPropertyUserAssignee) {
             // hide when nothing is set
             return null;

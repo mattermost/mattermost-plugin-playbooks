@@ -201,12 +201,6 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	app.CleanUpChecklists(playbook.Checklists)
 
-	// Normalize unrecognized AssigneeType values and validate companion ID fields.
-	if err := app.NormalizeAssigneeTypes(playbook.Checklists); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
-		return
-	}
-
 	if err := validatePreAssignment(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid pre-assignment", err)
 		return
@@ -287,12 +281,6 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 	}
 
 	app.CleanUpChecklists(playbook.Checklists)
-
-	// Normalize unrecognized AssigneeType values and validate companion ID fields.
-	if err = app.NormalizeAssigneeTypes(playbook.Checklists); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
-		return
-	}
 
 	if err = validatePreAssignment(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Invalid user pre-assignment", err)

@@ -5,7 +5,6 @@
 package mock_app
 
 import (
-	json "encoding/json"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -125,18 +124,18 @@ func (mr *MockConditionServiceMockRecorder) EvaluateAllConditionsForRun(arg0 int
 }
 
 // EvaluateConditionsOnValueChanged mocks base method.
-func (m *MockConditionService) EvaluateConditionsOnValueChanged(arg0 *app.PlaybookRun, arg1 string, arg2 json.RawMessage) (*app.ConditionEvaluationResult, error) {
+func (m *MockConditionService) EvaluateConditionsOnValueChanged(arg0 *app.PlaybookRun, arg1 string) (*app.ConditionEvaluationResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EvaluateConditionsOnValueChanged", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "EvaluateConditionsOnValueChanged", arg0, arg1)
 	ret0, _ := ret[0].(*app.ConditionEvaluationResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EvaluateConditionsOnValueChanged indicates an expected call of EvaluateConditionsOnValueChanged.
-func (mr *MockConditionServiceMockRecorder) EvaluateConditionsOnValueChanged(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockConditionServiceMockRecorder) EvaluateConditionsOnValueChanged(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EvaluateConditionsOnValueChanged", reflect.TypeOf((*MockConditionService)(nil).EvaluateConditionsOnValueChanged), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EvaluateConditionsOnValueChanged", reflect.TypeOf((*MockConditionService)(nil).EvaluateConditionsOnValueChanged), arg0, arg1)
 }
 
 // GetPlaybookCondition mocks base method.

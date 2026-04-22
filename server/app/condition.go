@@ -834,10 +834,7 @@ type ConditionService interface {
 	// Create conditions from exported data with property ID remapping, returns old condition ID to new condition mapping
 	CreateConditionsFromExport(playbookID string, exportConditions []ExportCondition, propertyMappings *PropertyCopyResult) (map[string]*Condition, error)
 
-	// Evaluate conditions for a run when a property field changes.
-	// oldValue is the previous value of the changed field, used to detect
-	// not-met → met transitions for triggering actions.
-	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string, oldValue json.RawMessage) (*ConditionEvaluationResult, error)
+	EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error)
 
 	// Evaluate all conditions for a run (typically called on run creation)
 	EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error)

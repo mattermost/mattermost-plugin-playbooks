@@ -14,7 +14,7 @@ import DraggableChecklistItem from 'src/components/checklist_item/checklist_item
 import {ButtonsFormat as ItemButtonsFormat} from 'src/components/checklist_item/checklist_item';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Condition, ConditionExprV1} from 'src/types/conditions';
-import {PropertyField} from 'src/types/properties';
+import {PropertyField, PropertyValue} from 'src/types/properties';
 import {clientDeleteChecklistItem} from 'src/client';
 
 import ConditionHeader from './condition_header';
@@ -36,6 +36,7 @@ interface Props {
     onReadOnlyInteract?: () => void;
     conditions?: Condition[];
     propertyFields?: PropertyField[];
+    propertyValues?: PropertyValue[];
     onDeleteCondition?: (conditionId: string) => void;
     onCreateCondition?: (expr: ConditionExprV1, itemIndex: number) => void;
     onUpdateCondition?: (conditionId: string, expr: ConditionExprV1) => void;
@@ -261,6 +262,9 @@ const GenericChecklist = (props: Props) => {
                 item={checklistItem}
                 itemIndex={index}
                 newItem={false}
+                currentUserId={myUser.id}
+                runOwnerId={props.playbookRun?.owner_user_id}
+                runCreatorId={props.playbookRun?.reporter_user_id}
                 cancelAddingItem={() => {
                     setAddingItem(false);
                 }}
@@ -303,6 +307,7 @@ const GenericChecklist = (props: Props) => {
                 })()}
                 conditions={props.conditions}
                 propertyFields={props.propertyFields}
+                propertyValues={props.propertyValues}
                 onEditingChange={(isEditing) => {
                     setEditingItemIndex(isEditing ? index : null);
                 }}

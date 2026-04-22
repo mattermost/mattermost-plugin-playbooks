@@ -283,6 +283,22 @@ Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
     });
 });
 
+Cypress.Commands.add('playbooksVisitRun', (runId) => {
+    cy.visit(`/playbooks/runs/${runId}`);
+    cy.findByTestId('run-header-section').should('exist');
+});
+
+Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
+    cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/owner').as('SetRunOwner');
+    cy.findByTestId('owner-profile-selector', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').click();
+
+    // Profiles are loaded asynchronously via useProfilesInTeam. The dropdown
+    // options refresh once the API response arrives and Redux updates, so we
+    // wait up to HALF_MIN for the option to become available.
+    cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
+    cy.wait('@SetRunOwner');
+});
+
 Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName, propertyValues) => {
     cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
     cy.findByTestId('run-playbook').click();
@@ -357,6 +373,11 @@ Cypress.Commands.add('playbooksAddPropertyFieldViaUI', (playbookId, fieldName, f
         cy.findByText(new RegExp('^' + fieldType + '$', 'i')).click();
         cy.wait('@SavePropertyFieldType');
     }
+});
+
+Cypress.Commands.add('playbooksFindTaskItem', (title) => {
+    return cy.findByTestId('run-checklist-section').findByText(title).
+        parents('[data-testid="checkbox-item-container"]');
 });
 
 Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {

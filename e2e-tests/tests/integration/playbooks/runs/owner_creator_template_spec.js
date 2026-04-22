@@ -156,55 +156,6 @@ describe('runs > {OWNER} and {CREATOR} template tokens', {testIsolation: true}, 
         });
     });
 
-    it('{SEQ}, {OWNER}, and {CREATOR} all resolve together in the same template', () => {
-        cy.apiLogin(testOwner);
-
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'All System Tokens Playbook ' + getRandomId(),
-            memberIDs: [testOwner.id, testCreator.id],
-            makePublic: true,
-        }).then((playbook) => {
-            createdPlaybookIds.push(playbook.id);
-
-            cy.apiPatchPlaybook(playbook.id, {run_number_prefix: 'TST', channel_name_template: '{SEQ} by {CREATOR} owned by {OWNER}'}).then(() => {
-                cy.apiLogin(testCreator);
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: playbook.id,
-                    playbookRunName: 'All Tokens Run ' + getRandomId(),
-                    ownerUserId: testOwner.id,
-                }).then((run) => {
-                    const ownerName = resolvedDisplayName(testOwner);
-                    const creatorName = resolvedDisplayName(testCreator);
-
-                    // * Visit run details page and verify resolved name (no raw tokens remain)
-                    cy.playbooksVisitRun(run.id);
-                    cy.get('h1').should('not.contain', '{SEQ}');
-                    cy.get('h1').should('not.contain', '{OWNER}');
-                    cy.get('h1').should('not.contain', '{CREATOR}');
-                    cy.get('h1').should('contain', 'TST-');
-
-                    cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
-                        // * All three system tokens must be resolved — no raw token remains
-                        expect(runData.name).to.not.include('{SEQ}');
-                        expect(runData.name).to.not.include('{OWNER}');
-                        expect(runData.name).to.not.include('{CREATOR}');
-
-                        // * Sequential ID prefix must appear
-                        expect(runData.name, 'SEQ token should resolve to prefix').to.include('TST-');
-                        expect(runData.name, 'owner name should appear').to.include(ownerName);
-                        expect(runData.name, 'creator name should appear').to.include(creatorName);
-
-                        // * sequential_id must be stored (not just rendered)
-                        expect(runData.sequential_id).to.not.be.empty;
-                        expect(runData.sequential_id).to.include('TST-');
-                    });
-                });
-            });
-        });
-    });
-
     it('reporter_user_id is immutable — stays as original creator after owner reassignment', () => {
         // This test verifies the invariant that drives CREATOR token immutability:
         // ReporterUserID is captured at run creation and never mutated by owner changes.

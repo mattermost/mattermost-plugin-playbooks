@@ -104,7 +104,6 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
     if (!editable && assigneeType === 'property_user') {
         const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
         const badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
-        const badgeTestId = 'property-user-indicator-badge';
         let resolvedUserId: string | undefined;
         if (mode === 'run') {
             const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);
@@ -123,7 +122,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                         selfIsFirstOption={false}
                     />
                 )}
-                <RoleBadge data-testid={badgeTestId}>
+                <RoleBadge data-testid='property-user-indicator-badge'>
                     {badgeLabel}
                 </RoleBadge>
             </Container>
@@ -146,12 +145,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
             <ProfileSelector
                 testId={'assignee-profile-selector'}
                 selectedUserId={checklistItem.assignee_id}
-                placeholder={
-                    <PlaceholderDiv>
-                        <i className={'icon-account-plus-outline icon-12'}/>
-                        {formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
-                    </PlaceholderDiv>
-                }
+                placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
                 enableEdit={editable}
                 getAllUsers={getAllUsersInTeam}
                 onSelectedChange={handleUserSelect}
@@ -281,12 +275,6 @@ const RoleBadge = styled.span`
     border-radius: 4px;
     padding: 2px 6px;
     white-space: nowrap;
-`;
-
-const PlaceholderDiv = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 4px;
 `;
 
 export default AssigneeDropdown;
