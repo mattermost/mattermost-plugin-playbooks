@@ -895,7 +895,7 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 					"Ordering":    i,
 					"DeleteAt":    0,
 				}).
-				Where(sq.Eq{"ID": m.ID}),
+				Where(sq.Eq{"ID": m.ID, "PlaybookID": playbook.ID}),
 			)
 		}
 		if err != nil {
