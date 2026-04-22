@@ -902,7 +902,7 @@ var reservedFieldNames = []struct {
 	token string
 	desc  string
 }{
-{"OWNER", "the built-in run owner placeholder"},
+	{"OWNER", "the built-in run owner placeholder"},
 	{"CREATOR", "the built-in run creator placeholder"},
 }
 

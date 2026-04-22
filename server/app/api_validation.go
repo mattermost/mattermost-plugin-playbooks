@@ -88,4 +88,3 @@ func ValidateTemplateAfterFieldDeletion(channelNameTemplate, deletedFieldID stri
 func UnknownTemplateFieldsError(unknown []string) string {
 	return fmt.Sprintf("channel name template references unknown field(s): %s", strings.Join(unknown, ", "))
 }
-

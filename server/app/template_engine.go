@@ -15,7 +15,6 @@ import (
 
 var placeholderRegex = regexp.MustCompile(`\{([^}]+)\}`)
 
-
 var (
 	collapseOrphanedSeparatorsRe = regexp.MustCompile(`\s*-\s*-\s*`)
 	collapseMultiSpaceRe         = regexp.MustCompile(`\s{2,}`)
@@ -161,7 +160,6 @@ func ValidateTemplate(template string, opts ResolveOptions) []string {
 	}
 	return unknown
 }
-
 
 // StripFieldFromTemplate removes all occurrences of {fieldName} from a template string
 // and cleans up orphaned separators and whitespace.
