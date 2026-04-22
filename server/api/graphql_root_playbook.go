@@ -190,6 +190,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		RemoveChannelMemberOnRemovedParticipant *bool
 		ChannelID                               *string
 		ChannelMode                             *string
+		NewChannelOnly                          *bool
 	}
 }) (string, error) {
 	c, err := getContext(ctx)
@@ -299,6 +300,7 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
+	addToSetmap(setmap, "NewChannelOnly", args.Updates.NewChannelOnly)
 
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {

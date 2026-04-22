@@ -77,6 +77,8 @@ type Playbook struct {
 	// ChannelMode is the playbook>run>channel flow used
 	ChannelMode ChannelPlaybookMode `json:"channel_mode" export:"channel_mode"`
 
+	NewChannelOnly bool `json:"new_channel_only" export:"new_channel_only"`
+
 	// Deprecated: preserved for backwards compatibility with v1.27
 	BroadcastEnabled             bool `json:"broadcast_enabled" export:"-"`
 	WebhookOnStatusUpdateEnabled bool `json:"webhook_on_status_update_enabled" export:"-"`
@@ -616,6 +618,15 @@ func ValidateWebhookURLs(urls []string) error {
 		}
 	}
 
+	return nil
+}
+
+// ValidateNewChannelOnlyMode checks that NewChannelOnly is not enabled when ChannelMode
+// is set to link an existing channel.
+func ValidateNewChannelOnlyMode(newChannelOnly bool, channelMode ChannelPlaybookMode) error {
+	if newChannelOnly && channelMode == PlaybookRunLinkExistingChannel {
+		return errors.New("NewChannelOnly cannot be enabled when ChannelMode is set to link an existing channel")
+	}
 	return nil
 }
 

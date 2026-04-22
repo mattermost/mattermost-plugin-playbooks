@@ -663,5 +663,10 @@
   "zl6378": "Configure metrics in Retrospective",
   "zx0myy": "Participants",
   "zxj2Gh": "Last updated {time}",
-  "zz6ObK": "Restore"
+  "zz6ObK": "Restore",
+  "playbooks.new_channel_only_toggle.confirm_button": "Confirm",
+  "playbooks.new_channel_only_toggle.confirm_message": "Enabling this will prevent runs from linking to existing channels. All future runs will create a new channel. Continue?",
+  "playbooks.new_channel_only_toggle.confirm_title": "Require new channel for all runs",
+  "playbooks.new_channel_only_toggle.label": "Require new channel for all runs",
+  "playbooks.run_playbook_modal.new_channel_only_hint": "This playbook requires a new channel for each run"
 }

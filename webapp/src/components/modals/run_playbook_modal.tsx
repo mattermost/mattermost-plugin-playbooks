@@ -88,9 +88,11 @@ const RunPlaybookModal = ({
 
     useEffect(() => {
         if (playbook) {
-            setChannelMode(playbook.channel_mode);
+            // new_channel_only forces create_new_channel regardless of the stored channel_mode
+            const effectiveMode = playbook.new_channel_only ? 'create_new_channel' : playbook.channel_mode;
+            setChannelMode(effectiveMode);
         }
-    }, [playbook, playbook?.channel_mode]);
+    }, [playbook, playbook?.channel_mode, playbook?.new_channel_only]);
 
     useEffect(() => {
         if (playbook) {
@@ -205,6 +207,7 @@ const RunPlaybookModal = ({
                         channelId={channelId}
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
+                        newChannelOnly={playbook?.new_channel_only ?? false}
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
@@ -298,26 +301,33 @@ type channelProps = {
     channelMode: string;
     channelId: string;
     createPublicRun: boolean;
+    newChannelOnly?: boolean;
     onSetCreatePublicRun: (val: boolean) => void;
     onSetChannelMode: (mode: 'link_existing_channel' | 'create_new_channel') => void;
     onSetChannelId: (channelId: string) => void;
 };
 
-const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, newChannelOnly = false, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
     const {formatMessage} = useIntl();
     const createNewChannel = channelMode === 'create_new_channel';
-    const linkExistingChannel = channelMode === 'link_existing_channel';
+    const linkExistingChannel = channelMode === 'link_existing_channel' && !newChannelOnly;
     return (
         <ChannelContainer>
-            <ChannelBlock>
+            <ChannelBlock aria-disabled={newChannelOnly}>
                 <StyledRadioInput
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={linkExistingChannel}
-                    onChange={() => onSetChannelMode('link_existing_channel')}
+                    disabled={newChannelOnly}
+                    onChange={() => { if (!newChannelOnly) { onSetChannelMode('link_existing_channel'); } }}
                 />
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
+            {newChannelOnly && (
+                <NewChannelOnlyHint id='new-channel-only-hint'>
+                    {formatMessage({id: 'playbooks.run_playbook_modal.new_channel_only_hint', defaultMessage: 'This playbook requires a new channel for each run'})}
+                </NewChannelOnlyHint>
+            )}
             {linkExistingChannel && (
                 <SelectorWrapper>
                     <StyledChannelSelector
@@ -514,6 +524,13 @@ const ErrorMessage = styled.div`
     font-size: 12px;
     font-weight: 400;
     line-height: 16px;
+`;
+
+const NewChannelOnlyHint = styled.span`
+    display: block;
+    margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-size: 12px;
 `;
 
 const ApolloWrappedModal = (props: Props) => {

@@ -95,6 +95,7 @@ input PlaybookUpdates {
 	removeChannelMemberOnRemovedParticipant: Boolean
 	channelId: String
 	channelMode: String
+	newChannelOnly: Boolean
 }
 
 input ChecklistUpdates {
@@ -181,6 +182,7 @@ type Playbook {
 	removeChannelMemberOnRemovedParticipant: Boolean!
 	channelID: String!
 	channelMode: String!
+	newChannelOnly: Boolean!
 }
 
 type Checklist {
