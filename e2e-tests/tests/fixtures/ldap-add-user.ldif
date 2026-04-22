@@ -5,4 +5,4 @@ sn: FourLDAP
 cn: TestLDAP
 uid: e2etest.four
 mail: e2etest.four@mmtest.com
-userPassword: Password1
+userPassword: Passwd4Testing!

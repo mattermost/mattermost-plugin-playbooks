@@ -194,6 +194,12 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Only system admins can create playbooks with AdminOnlyEdit pre-enabled.
+	if playbook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can enable admin-only edit", nil)
+		return
+	}
+
 	if err := h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
@@ -251,9 +257,14 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	// Force parsed playbook id to be URL parameter id
 	playbook.ID = vars["id"]
+
 	oldPlaybook, err := h.playbookService.Get(playbook.ID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
 		return
 	}
 
@@ -262,7 +273,9 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
+	// Only system admins can enable AdminOnlyEdit.
+	if playbook.AdminOnlyEdit && !oldPlaybook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can enable admin-only edit", nil)
 		return
 	}
 
@@ -507,9 +520,10 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'page': it should be a positive number")
 	}
 
+	const defaultPerPage = 1000
 	perPageParam := params.Get("per_page")
 	if perPageParam == "" || perPageParam == "0" {
-		perPageParam = "1000"
+		perPageParam = strconv.Itoa(defaultPerPage)
 	}
 	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
@@ -651,6 +665,12 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
+	// Only system admins can duplicate playbooks with AdminOnlyEdit enabled.
+	if playbook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can duplicate a playbook with admin-only edit enabled", nil)
+		return
+	}
+
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
@@ -688,6 +708,12 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	if importBlock.Version != app.CurrentPlaybookExportVersion {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "Unsupported import version", nil)
+		return
+	}
+
+	// Only system admins can import playbooks with AdminOnlyEdit enabled.
+	if playbook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can import a playbook with admin-only edit enabled", nil)
 		return
 	}
 
@@ -879,13 +905,37 @@ func GetStartOfDayForTimeRange(timeRange string, location *time.Location) (*time
 	return &resultTime, nil
 }
 
+func (h *PlaybookHandler) requirePlaybookAttributesLicense(w http.ResponseWriter, logger logrus.FieldLogger) bool {
+	return checkPlaybookAttributesLicense(h.licenseChecker, w, logger)
+}
+
+func (h *PlaybookHandler) authorisePropertyFieldEdit(w http.ResponseWriter, logger logrus.FieldLogger, userID, playbookID string) (app.Playbook, bool) {
+	if !model.IsValidId(playbookID) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid playbook ID", errors.New("invalid playbook ID"))
+		return app.Playbook{}, false
+	}
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, logger, err)
+		return app.Playbook{}, false
+	}
+	if err := h.permissions.PlaybookEdit(userID, playbook); err != nil {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
+		return app.Playbook{}, false
+	}
+	if playbook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+		return app.Playbook{}, false
+	}
+	return playbook, true
+}
+
 func (h *PlaybookHandler) getPlaybookPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	logger := c.logger.WithField("playbook_id", playbookID)
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
@@ -921,32 +971,24 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 	playbookID := vars["id"]
 	logger := c.logger.WithField("playbook_id", playbookID)
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	if _, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID); !ok {
 		return
 	}
 
 	var request PropertyFieldRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode request body", err)
+		return
+	}
+
+	if strings.TrimSpace(request.Name) == "" {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field name must not be empty", errors.New("property field name must not be empty"))
 		return
 	}
 
@@ -967,26 +1009,13 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 	fieldID := vars["fieldID"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	if _, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID); !ok {
 		return
 	}
 
@@ -1007,17 +1036,22 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
+	if strings.TrimSpace(request.Name) == "" {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field name must not be empty", errors.New("property field name must not be empty"))
+		return
+	}
+
 	propertyField := convertRequestToPropertyField(request)
 	propertyField.ID = fieldID
 
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
 	if err != nil {
 		if errors.Is(err, app.ErrPropertyOptionsInUse) {
-			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, "Property options are in use and cannot be deleted.", err)
 			return
 		}
 		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
-			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, "Property field type cannot be changed after creation.", err)
 			return
 		}
 		h.HandleError(w, logger, err)
@@ -1033,26 +1067,13 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	fieldID := vars["fieldID"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	if _, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID); !ok {
 		return
 	}
 
@@ -1069,7 +1090,7 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 
 	if err := h.playbookService.DeletePropertyField(playbookID, fieldID); err != nil {
 		if errors.Is(err, app.ErrPropertyFieldInUse) {
-			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, "Property field is in use and cannot be deleted.", err)
 			return
 		}
 		h.HandleError(w, logger, err)
@@ -1089,26 +1110,13 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 	playbookID := vars["id"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID})
 
-	if !h.licenseChecker.PlaybookAttributesAllowed() {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
+	if !h.requirePlaybookAttributesLicense(w, logger) {
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	currentPlaybook, err := h.playbookService.Get(playbookID)
-	if err != nil {
-		h.HandleError(w, logger, err)
-		return
-	}
-
-	if err := h.permissions.PlaybookManageProperties(userID, currentPlaybook); err != nil {
-		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "not authorized", err)
-		return
-	}
-
-	if currentPlaybook.DeleteAt != 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "archived playbooks cannot be modified", errors.New("archived playbooks cannot be modified"))
+	if _, ok := h.authorisePropertyFieldEdit(w, logger, userID, playbookID); !ok {
 		return
 	}
 
@@ -1120,6 +1128,11 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 
 	if request.FieldID == "" {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "field_id is required", errors.New("missing required field"))
+		return
+	}
+
+	if !model.IsValidId(request.FieldID) {
+		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid field ID", errors.New("invalid field ID"))
 		return
 	}
 

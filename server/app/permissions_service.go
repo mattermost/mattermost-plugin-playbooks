@@ -17,12 +17,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
-// ErrNoPermissions if the error is caused by the user not having permissions
-var ErrNoPermissions = errors.New("does not have permissions")
-
-// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
-var ErrLicensedFeature = errors.New("not covered by current server license")
-
 type LicenseChecker interface {
 	PlaybookAllowed(isPlaybookPublic bool) bool
 	RetrospectiveAllowed() bool
@@ -168,6 +162,39 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to playbook `%s`", userID, playbook.ID)
 }
 
+// IsPlaybookAdminMember returns true if the user holds the admin role on the given playbook.
+func IsPlaybookAdminMember(userID string, playbook Playbook) bool {
+	adminRole := playbook.DefaultPlaybookAdminRole
+	if adminRole == "" {
+		adminRole = PlaybookRoleAdmin
+	}
+	for _, member := range playbook.Members {
+		if member.UserID == userID {
+			return slices.Contains(member.SchemeRoles, adminRole)
+		}
+	}
+	return false
+}
+
+// PlaybookEdit checks whether the user can edit a playbook's configuration. When AdminOnlyEdit
+// is false (the default), it falls back to PlaybookManageProperties. When true, only system
+// admins and playbook admins may edit.
+func (p *PermissionsService) PlaybookEdit(userID string, playbook Playbook) error {
+	if !playbook.AdminOnlyEdit {
+		return p.PlaybookManageProperties(userID, playbook)
+	}
+	if IsSystemAdmin(userID, p.pluginAPI) {
+		return nil
+	}
+	if !p.canViewTeam(userID, playbook.TeamID) {
+		return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s (no team access)", userID, playbook.ID)
+	}
+	if IsPlaybookAdminMember(userID, playbook) {
+		return nil
+	}
+	return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s (admin-only)", userID, playbook.ID)
+}
+
 // PlaybookManageConditions returns an error if the user cannot manage conditions for the playbook
 func (p *PermissionsService) PlaybookManageConditions(userID string, playbook Playbook) error {
 	if !p.licenseChecker.ConditionalPlaybooksAllowed() {
@@ -201,7 +228,7 @@ func (p *PermissionsService) RunViewConditions(userID string, runID string) erro
 func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Playbook, oldPlaybook Playbook) error {
 	// It is assumed that if you are calling this function there are properties changes
 	// This means that you need the manage properties permission to manage members for now.
-	if err := p.PlaybookManageProperties(userID, oldPlaybook); err != nil {
+	if err := p.PlaybookEdit(userID, oldPlaybook); err != nil {
 		return err
 	}
 

@@ -1,7 +1,7 @@
 {
     "user1": {
         "username": "e2etest.one",
-        "password": "Password1",
+        "password": "Passwd4Testing!",
         "email": "e2etest.one@mmtest.com",
         "firstname": "TestSaml",
         "lastname": "OneSaml",
@@ -11,7 +11,7 @@
     },
     "user2": {
         "username": "e2etest.two",
-        "password": "Password1",
+        "password": "Passwd4Testing!",
         "email": "e2etest.two@mmtest.com",
         "firstname": "TestSaml",
         "lastname": "TwoSaml",
@@ -21,7 +21,7 @@
     },
     "user3": {
         "username": "e2etest.three.saml",
-        "password": "Password1",
+        "password": "Passwd4Testing!",
         "email": "e2etest.three@mmtest.com",
         "firstname": "FirstSaml",
         "lastname": "ThreeSaml",
@@ -31,7 +31,7 @@
     },
     "user4": {
         "username": "e2etest.four",
-        "password": "Password1",
+        "password": "Passwd4Testing!",
         "email": "e2etest.four@mmtest.com",
         "firstname": "TestSaml",
         "lastname": "FourSaml",

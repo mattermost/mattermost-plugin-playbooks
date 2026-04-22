@@ -95,7 +95,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  id,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("playbooks can be searched by title", func(t *testing.T) {
@@ -1888,4 +1888,70 @@ func removeFromPerms(permission string, perms []string) []string {
 		}
 	}
 	return result
+}
+
+// TestAdminOnlyEdit_APIEnforcement verifies that the AdminOnlyEdit flag restricts
+// playbook PUT requests to playbook admins only.
+func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook with AdminOnlyEdit=true.
+	// PlaybooksAdminClient (system admin) creates it and is also a playbook admin.
+	// RegularUser is a plain playbook member; RegularUser2 is not a member.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit Test Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit:                           true,
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("non-admin member PUT /playbooks/{id} returns 403", func(t *testing.T) {
+		// Fetch the playbook as admin so we have a full struct to PUT back
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// RegularUser is only a playbook_member — should be blocked by AdminOnlyEdit
+		pb.Title = "Non-Admin Attempted Edit"
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("admin member PUT /playbooks/{id} returns 200", func(t *testing.T) {
+		// Fetch the playbook as admin
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// AdminUser is a playbook_admin — should be allowed to edit
+		pb.Title = "Admin Allowed Edit"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// Verify the title was actually persisted
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "Admin Allowed Edit", updated.Title)
+	})
+
+	t.Run("system admin PUT /playbooks/{id} returns 200", func(t *testing.T) {
+		// Fetch the playbook
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// System admin always has access
+		pb.Title = "System Admin Edit"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "System Admin Edit", updated.Title)
+	})
 }
