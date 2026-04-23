@@ -78,26 +78,42 @@ export const useBulkActions = ({
 
     const handleBulkAssign = async (userId: string) => {
         if (playbookRun) {
+            const selectedEntries = [...selectedItems.values()];
             const results = await Promise.allSettled(
-                [...selectedItems.values()].map(({checklistIndex, itemIndex}) =>
+                selectedEntries.map(({checklistIndex, itemIndex}) =>
                     setAssignee(playbookRun.id, checklistIndex, itemIndex, userId),
                 ),
             );
-            const failures = results.filter((r) => r.status === 'rejected');
-            if (failures.length > 0) {
+
+            // Track which items succeeded — setAssignee returns {error} on failure
+            // instead of rejecting, so check both rejected and fulfilled-with-error
+            const succeeded = new Set<string>();
+            let failureCount = 0;
+            results.forEach((r, i) => {
+                const failed = r.status === 'rejected' ||
+                    (r.status === 'fulfilled' && r.value?.error);
+                if (failed) {
+                    failureCount++;
+                } else {
+                    const {checklistIndex, itemIndex} = selectedEntries[i];
+                    succeeded.add(`${checklistIndex}-${itemIndex}`);
+                }
+            });
+            if (failureCount > 0) {
                 addToast({
                     content: formatMessage(
                         {defaultMessage: 'Failed to assign {count} of {total} tasks'},
-                        {count: failures.length, total: results.length},
+                        {count: failureCount, total: results.length},
                     ),
                     toastStyle: ToastStyle.Failure,
                 });
             }
 
+            // Only update items that succeeded
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
                 items: cl.items.map((item, itemIdx) => {
-                    if (isSelectedIndex(clIdx, itemIdx)) {
+                    if (succeeded.has(`${clIdx}-${itemIdx}`)) {
                         return {...item, assignee_id: userId};
                     }
                     return item;
@@ -120,26 +136,42 @@ export const useBulkActions = ({
 
     const handleBulkDueDate = async (timestamp: number) => {
         if (playbookRun) {
+            const selectedEntries = [...selectedItems.values()];
             const results = await Promise.allSettled(
-                [...selectedItems.values()].map(({checklistIndex, itemIndex}) =>
+                selectedEntries.map(({checklistIndex, itemIndex}) =>
                     clientSetDueDate(playbookRun.id, checklistIndex, itemIndex, timestamp),
                 ),
             );
-            const failures = results.filter((r) => r.status === 'rejected');
-            if (failures.length > 0) {
+
+            // Track which items succeeded — clientSetDueDate returns {error} on
+            // failure instead of rejecting
+            const succeeded = new Set<string>();
+            let failureCount = 0;
+            results.forEach((r, i) => {
+                const failed = r.status === 'rejected' ||
+                    (r.status === 'fulfilled' && r.value?.error);
+                if (failed) {
+                    failureCount++;
+                } else {
+                    const {checklistIndex, itemIndex} = selectedEntries[i];
+                    succeeded.add(`${checklistIndex}-${itemIndex}`);
+                }
+            });
+            if (failureCount > 0) {
                 addToast({
                     content: formatMessage(
                         {defaultMessage: 'Failed to update due date for {count} of {total} tasks'},
-                        {count: failures.length, total: results.length},
+                        {count: failureCount, total: results.length},
                     ),
                     toastStyle: ToastStyle.Failure,
                 });
             }
 
+            // Only update items that succeeded
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
                 items: cl.items.map((item, itemIdx) => {
-                    if (isSelectedIndex(clIdx, itemIdx)) {
+                    if (succeeded.has(`${clIdx}-${itemIdx}`)) {
                         return {...item, due_date: timestamp};
                     }
                     return item;

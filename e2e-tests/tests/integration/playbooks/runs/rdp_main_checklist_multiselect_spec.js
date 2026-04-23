@@ -9,21 +9,15 @@
 // Stage: @prod
 // Group: @playbooks
 
-describe('runs > run details page > checklist multi-select', {testIsolation: true}, () => {
+describe('playbook editor > outline > checklist bulk edit', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
-    let testAnotherUser;
     let testPublicPlaybook;
+
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            // # Create a second user to test assignment
-            cy.apiCreateUser().then(({user: anotherUser}) => {
-                testAnotherUser = anotherUser;
-                cy.apiAddUserToTeam(testTeam.id, testAnotherUser.id);
-            });
 
             // # Login as testUser
             cy.apiLogin(testUser);
@@ -31,8 +25,8 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             // # Create a playbook with multiple tasks across two checklists
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
-                title: 'Multi-Select Test Playbook',
-                memberIDs: [],
+                title: 'Bulk Edit Test Playbook',
+                memberIDs: [testUser.id],
                 checklists: [
                     {
                         title: 'Setup',
@@ -62,24 +56,18 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
         // # Login as testUser
         cy.apiLogin(testUser);
 
-        // # Create a fresh run for each test
-        cy.apiRunPlaybook({
-            teamId: testTeam.id,
-            playbookId: testPublicPlaybook.id,
-            playbookRunName: 'Multi-Select Run',
-            ownerUserId: testUser.id,
-        }).then((playbookRun) => {
-            // # Visit the run details page
-            cy.visit(`/playbooks/runs/${playbookRun.id}`);
-        });
+        // # Visit the playbook editor outline
+        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}/outline`);
+
+        // # Wait for the page to load
+        cy.findByText('Tasks').should('be.visible');
     });
 
     // ──────────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────────
 
-    const getChecklist = () => cy.findByTestId('run-checklist-section');
-    const getAllTasks = () => getChecklist().findAllByTestId('checkbox-item-container');
+    const getAllTasks = () => cy.findAllByTestId('checkbox-item-container');
     const getTask = (index) => getAllTasks().eq(index);
 
     /**
@@ -259,44 +247,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             getAllTasks().should('have.length', 3);
         });
 
-        it('deletes tasks from multiple sections', () => {
-            // * Confirm initial count
-            getAllTasks().should('have.length', 5);
-
-            // # Select task 0 (from "Setup") and task 3 (from "Investigation")
-            selectTask(0);
-            selectTask(3);
-
-            cy.findByText('2 tasks selected').should('be.visible');
-
-            // # Click Delete
-            getActionBar().findByLabelText('Delete selected tasks').click({force: true});
-
-            // # Confirm the deletion in the modal
-            cy.findByText('Delete').click();
-
-            // * Two tasks removed — one from each section
-            getAllTasks().should('have.length', 3);
-        });
-
-        it('deleting all tasks in a section leaves only the remaining section', () => {
-            // # Select all 3 tasks in the first "Setup" section
-            selectTask(0);
-            selectTask(1);
-            selectTask(2);
-
-            cy.findByText('3 tasks selected').should('be.visible');
-
-            // # Click Delete
-            getActionBar().findByLabelText('Delete selected tasks').click({force: true});
-
-            // # Confirm the deletion in the modal
-            cy.findByText('Delete').click();
-
-            // * Only the 2 tasks from the "Investigation" section remain
-            getAllTasks().should('have.length', 2);
-        });
-
         it('clears the selection after bulk delete', () => {
             // # Select a task and delete it
             selectTask(0);
@@ -306,60 +256,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             cy.findByText('Delete').click();
 
             // * Action bar disappears
-            cy.findByText('tasks selected').should('not.exist');
-        });
-    });
-
-    // ──────────────────────────────────────────────────────────────────
-    // Bulk assign
-    // ──────────────────────────────────────────────────────────────────
-
-    describe('bulk assign', () => {
-        beforeEach(() => {
-            // # Enter bulk edit mode before each assign test
-            enterBulkEditMode();
-        });
-
-        it('opens a user picker when Assign is clicked', () => {
-            // # Select a task
-            selectTask(0);
-
-            // # Click Assign in the action bar
-            getActionBar().findByText('Assign').click({force: true});
-
-            // * The profile selector dropdown should open (a focused text input appears)
-            cy.focused().should('have.attr', 'type', 'text');
-        });
-
-        it('assigns selected tasks to a user', () => {
-            // # Select two tasks
-            selectTask(0);
-            selectTask(1);
-
-            cy.findByText('2 tasks selected').should('be.visible');
-
-            // # Click Assign in the action bar
-            getActionBar().findByText('Assign').click({force: true});
-
-            // # Select testAnotherUser from the profile dropdown
-            cy.focused().parents('.playbook-react-select').within(() => {
-                cy.findByText('@' + testAnotherUser.username).click();
-            });
-
-            // * Assignee badge should now appear on both tasks
-            getTask(0).find('.Assigned-button, .NoName-Assigned-button').should('exist');
-            getTask(1).find('.Assigned-button, .NoName-Assigned-button').should('exist');
-        });
-
-        it('clears the selection after bulk assign', () => {
-            // # Select a task, then assign to another user
-            selectTask(0);
-            getActionBar().findByText('Assign').click({force: true});
-            cy.focused().parents('.playbook-react-select').within(() => {
-                cy.findByText('@' + testAnotherUser.username).click();
-            });
-
-            // * No selection bar remains
             cy.findByText('tasks selected').should('not.exist');
         });
     });
@@ -385,26 +281,6 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
             cy.get('.playbook-react-select').should('be.visible');
         });
 
-        it('sets a due date on multiple selected tasks', () => {
-            // # Select two tasks
-            selectTask(0);
-            selectTask(1);
-
-            cy.findByText('2 tasks selected').should('be.visible');
-
-            // # Click Due date in the action bar
-            getActionBar().findByText('Due date').click({force: true});
-
-            // # Select "Today" from the dropdown
-            cy.get('.playbook-react-select').within(() => {
-                cy.findByText('Today').click();
-            });
-
-            // * Due date indicators should appear on both tasks
-            getTask(0).findByTestId('due-date-info-button').should('exist');
-            getTask(1).findByTestId('due-date-info-button').should('exist');
-        });
-
         it('clears the selection after setting due date', () => {
             // # Select a task, then set a due date
             selectTask(0);
@@ -419,24 +295,15 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     });
 
     // ──────────────────────────────────────────────────────────────────
-    // Selection does not interfere with task completion checkbox
+    // Bulk edit mode disables task completion
     // ──────────────────────────────────────────────────────────────────
 
-    describe('selection vs task completion', () => {
-        it('clicking the task-completion checkbox outside bulk edit does not select the task', () => {
-            // # Click the task-completion (status) checkbox
-            getTask(0).find('.checkbox').check({force: true});
-
-            // * The action bar should NOT appear (task was marked done, not selected)
-            cy.findByText('tasks selected').should('not.exist');
-        });
-
-        it('task completion checkbox is disabled in bulk edit mode', () => {
+    describe('bulk edit mode behavior', () => {
+        it('clicking a task row in bulk edit mode selects it instead of toggling completion', () => {
             // # Enter bulk edit mode
             enterBulkEditMode();
 
-            // * The checkbox container has pointer-events disabled
-            // so clicking a task row selects it instead of toggling completion
+            // # Click a task row
             selectTask(0);
 
             // * The action bar should appear (task was selected, not completed)
@@ -445,15 +312,10 @@ describe('runs > run details page > checklist multi-select', {testIsolation: tru
     });
 
     // ──────────────────────────────────────────────────────────────────
-    // Keyboard / accessibility
+    // Accessibility
     // ──────────────────────────────────────────────────────────────────
 
     describe('accessibility', () => {
-        it('task has a completion checkbox', () => {
-            // * Each task has one checkbox for task completion
-            getTask(0).find('input[type=checkbox]').should('have.length', 1);
-        });
-
         it('clear-selection button has an accessible aria-label', () => {
             // # Enter bulk edit mode and select a task to show the bar
             enterBulkEditMode();

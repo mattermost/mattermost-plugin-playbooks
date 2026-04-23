@@ -189,7 +189,7 @@ const MultiSelectActionBar = ({
 const BarContainer = styled.div`
     position: fixed;
     bottom: 36px;
-    left: 50%;
+    left: calc(50% + 100px);
     transform: translateX(-50%);
     display: flex;
     align-items: center;

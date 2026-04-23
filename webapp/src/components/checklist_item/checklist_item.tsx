@@ -398,7 +398,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 $isPlaybookEditor={isPlaybookEditor}
                 $bulkEditMode={props.bulkEditMode ?? false}
                 $isSelected={props.isSelected ?? false}
-                onClick={props.bulkEditMode && props.onItemSelect ? (e) => {
+                onClick={props.bulkEditMode && props.onItemSelect && !isEditing ? (e) => {
                     e.stopPropagation();
                     props.onItemSelect?.();
                 } : undefined}
