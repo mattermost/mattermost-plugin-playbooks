@@ -354,25 +354,41 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
+// validateRunCreationParams checks pre-creation constraints and resolves the PlaybookID.
+// Extracted so these guards can be unit-tested without a wired service.
+func validateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
+	if playbookRun == nil {
+		return errors.New("playbookRun cannot be nil")
+	}
+	if pb == nil {
+		return nil
+	}
+	if playbookRun.PlaybookID != "" && pb.ID != playbookRun.PlaybookID {
+		return errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
+	}
+	if playbookRun.PlaybookID == "" {
+		playbookRun.PlaybookID = pb.ID
+	}
+	if pb.NewChannelOnly && playbookRun.ChannelID != "" {
+		return errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires runs to use a new channel")
+	}
+	return nil
+}
+
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
-	// Add parameters and context
-	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	if playbookRun != nil {
-		model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
-	}
-	if pb != nil {
-		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
+	if err := validateRunCreationParams(playbookRun, pb); err != nil {
+		return nil, err
 	}
 
-	// Defense-in-depth: reject if a NewChannelOnly playbook is being used to link an existing channel.
-	// The API boundary (ResolveRunCreationParams) performs this check first; this guard prevents
-	// future internal callers from bypassing that constraint.
-	if pb != nil && pb.NewChannelOnly && playbookRun.ChannelID != "" {
-		return nil, errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires runs to use a new channel")
+	// Add parameters and context
+	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
+	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	if pb != nil {
+		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
 	}
 
 	if playbookRun.DefaultOwnerID != "" {
@@ -5036,29 +5052,4 @@ func (s *PlaybookRunServiceImpl) formatPropertyValueForDisplay(propertyField *Pr
 	default:
 		return string(value), false
 	}
-}
-
-// ResolveRunCreationParams validates pre-creation parameters and enforces the NewChannelOnly
-// constraint. Must be called before CreatePlaybookRun when a playbook is provided.
-func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (string, error) {
-	if playbookRun == nil {
-		return "", errors.New("playbookRun cannot be nil")
-	}
-	if pb == nil {
-		return "", nil
-	}
-
-	if playbookRun.PlaybookID != "" && pb.ID != playbookRun.PlaybookID {
-		return "", errors.Wrap(ErrMalformedPlaybookRun, "playbook ID mismatch between run and supplied playbook")
-	}
-	if playbookRun.PlaybookID == "" {
-		playbookRun.PlaybookID = pb.ID
-	}
-
-	// Enforce NewChannelOnly: reject if caller wants to link an existing channel.
-	if pb.NewChannelOnly && playbookRun.ChannelID != "" {
-		return "", errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires runs to use a new channel")
-	}
-
-	return "", nil
 }

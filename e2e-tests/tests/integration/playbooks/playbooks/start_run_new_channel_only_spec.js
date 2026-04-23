@@ -47,14 +47,8 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             }).then((playbook) => {
                 createdPlaybookIds.push(playbook.id);
 
-                // # Enable new_channel_only via the playbook editor UI toggle
-                cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
-                cy.playbooksToggleWithConfirmation('new-channel-only-toggle');
-
-                // * Verify new_channel_only was persisted via API
-                cy.apiGetPlaybook(playbook.id).then((pb) => {
-                    expect(pb.new_channel_only, 'new_channel_only should be true after toggle').to.equal(true);
-                });
+                // # Enable new_channel_only directly via API to avoid UI flakiness
+                cy.apiPatchPlaybook(playbook.id, {new_channel_only: true});
 
                 restrictedPlaybook = playbook;
             });
@@ -134,6 +128,36 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
                     cy.apiGetChannel(run.channel_id).then(({channel}) => {
                         expect(channel).to.exist;
                     });
+                });
+            });
+        });
+    });
+
+    describe('new_channel_only toggle in the playbook editor', () => {
+        it('persists the flag via the UI toggle', () => {
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Toggle Test Playbook ' + getRandomId(),
+                memberIDs: [testUser.id],
+                makePublic: true,
+            }).then((playbook) => {
+                createdPlaybookIds.push(playbook.id);
+
+                // * Assert initial state is false before toggling
+                cy.apiGetPlaybook(playbook.id).then((pb) => {
+                    expect(pb.new_channel_only, 'new_channel_only should default to false').to.equal(false);
+                });
+
+                // # Visit the playbook outline editor and wait for the page to load
+                cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+                cy.findByTestId('new-channel-only-toggle').should('exist');
+
+                // # Toggle new_channel_only on
+                cy.playbooksToggleWithConfirmation('new-channel-only-toggle');
+
+                // * Assert the flag was persisted via API
+                cy.apiGetPlaybook(playbook.id).then((pb) => {
+                    expect(pb.new_channel_only, 'new_channel_only should be true after toggle').to.equal(true);
                 });
             });
         });

@@ -1173,10 +1173,6 @@ type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
-	// ResolveRunCreationParams validates and resolves pre-creation parameters (e.g. NewChannelOnly enforcement).
-	// Must be called before CreatePlaybookRun when a playbook is provided.
-	ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (resolvedChannelName string, err error)
-
 	// CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 

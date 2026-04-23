@@ -6,18 +6,12 @@ import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
-import {useSelector} from 'react-redux';
-
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookRole} from 'src/types/permissions';
-import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_channel_only_toggle';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -37,9 +31,6 @@ const Outline = ({playbook, refetch}: Props) => {
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
-    const currentUserId = useSelector(getCurrentUserId);
-    const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
-    const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
@@ -152,21 +143,6 @@ const Outline = ({playbook, refetch}: Props) => {
                 <Actions
                     playbook={playbook}
                 />
-            </Section>
-            <Section
-                id={'channel-settings'}
-                title={formatMessage({defaultMessage: 'Channel Settings'})}
-            >
-                <div data-testid='new-channel-only-toggle'>
-                    <NewChannelOnlyToggle
-                        playbook={playbook}
-                        isPlaybookAdmin={isPlaybookAdmin}
-                        disabled={archived}
-                        onChange={({new_channel_only}) => {
-                            updatePlaybook({newChannelOnly: new_channel_only});
-                        }}
-                    />
-                </div>
             </Section>
             <PlaybookActionsModal
                 playbook={playbook}

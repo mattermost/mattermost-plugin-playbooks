@@ -217,7 +217,7 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
             });
 
             // # Create a second channel to use as an existing channel
-            cy.apiCreateChannel(testTeam.id, 'existing-ch-slash', 'Existing Ch Slash').then(({channel}) => {
+            cy.apiCreateChannel(testTeam.id, `existing-ch-slash-${getRandomId()}`, 'Existing Ch Slash').then(({channel}) => {
                 // * Assert the API rejects run creation with existing channel_id
                 cy.request({
                     method: 'POST',

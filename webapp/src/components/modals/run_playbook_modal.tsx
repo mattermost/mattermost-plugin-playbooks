@@ -74,11 +74,13 @@ export const RunPlaybookModal = ({
         userId = playbook.default_owner_id;
     }
 
+    const effectiveChannelMode = playbook?.new_channel_only ? 'create_new_channel' : playbook?.channel_mode;
+
     useEffect(() => {
-        if (playbook?.channel_mode === 'create_new_channel') {
-            setRunName(playbook.channel_name_template);
+        if (effectiveChannelMode === 'create_new_channel') {
+            setRunName(playbook?.channel_name_template || '');
         }
-    }, [playbook, playbook?.channel_name_template, playbook?.channel_mode]);
+    }, [effectiveChannelMode, playbook?.channel_name_template]);
 
     useEffect(() => {
         if (playbook && playbook?.run_summary_template_enabled) {
@@ -87,12 +89,10 @@ export const RunPlaybookModal = ({
     }, [playbook, playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
 
     useEffect(() => {
-        if (playbook) {
-            // new_channel_only forces create_new_channel regardless of the stored channel_mode
-            const effectiveMode = playbook.new_channel_only ? 'create_new_channel' : playbook.channel_mode;
-            setChannelMode(effectiveMode);
+        if (effectiveChannelMode) {
+            setChannelMode(effectiveChannelMode);
         }
-    }, [playbook, playbook?.channel_mode, playbook?.new_channel_only]);
+    }, [effectiveChannelMode]);
 
     useEffect(() => {
         if (playbook) {

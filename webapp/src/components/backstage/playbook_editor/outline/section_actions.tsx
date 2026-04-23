@@ -4,9 +4,10 @@
 import React, {ComponentProps, useCallback, useMemo} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import styled from 'styled-components';
 import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
@@ -23,6 +24,9 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 
+import {PlaybookRole} from 'src/types/permissions';
+import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_channel_only_toggle';
+
 import {useProxyState} from 'src/hooks';
 import {getDistinctAssignees} from 'src/utils';
 
@@ -35,6 +39,9 @@ const LegacyActionsEdit = ({playbook}: Props) => {
     const dispatch = useDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
+    const currentUserId = useSelector(getCurrentUserId);
+    const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
+    const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
 
     const [
         playbookForCreateChannel,
@@ -168,6 +175,21 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         playbook={playbookForCreateChannel}
                         setPlaybook={setPlaybookForCreateChannel}
                     />
+                </Setting>
+                <Setting id={'new-channel-only'}>
+                    <div data-testid='new-channel-only-toggle'>
+                        <NewChannelOnlyToggle
+                            playbook={playbook}
+                            isPlaybookAdmin={isPlaybookAdmin}
+                            disabled={archived}
+                            onChange={({new_channel_only}) => {
+                                updatePlaybook({
+                                    newChannelOnly: new_channel_only,
+                                    ...(new_channel_only && {channelMode: 'create_new_channel'}),
+                                });
+                            }}
+                        />
+                    </div>
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
