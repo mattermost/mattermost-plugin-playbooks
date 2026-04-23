@@ -49,7 +49,7 @@ const RHSFooter = ({
     onBackClick,
 }: RHSFooterProps) => {
     const {formatMessage} = useIntl();
-    const onFinishRun = useOnFinishRun(playbookRun!, 'rhs');
+    const onFinishRun = useOnFinishRun(playbookRun, 'rhs');
 
     // Only show footers in RHS
     if (parentContainer !== ChecklistParent.RHS || !playbookRun) {

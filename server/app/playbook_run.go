@@ -1009,9 +1009,11 @@ const (
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
-	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
-	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
-	PropertyChanged        timelineEventType = "property_changed"
+	StatusUpdatesEnabled      timelineEventType = "status_updates_enabled"
+	StatusUpdatesDisabled     timelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled      timelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled     timelineEventType = "retrospective_disabled"
+	PropertyChanged           timelineEventType = "property_changed"
 )
 
 type TimelineEvent struct {
@@ -1381,7 +1383,7 @@ type PlaybookRunService interface {
 	GetPlaybookRunIDsForUser(userID string) ([]string, error)
 
 	// GraphqlUpdate taking a setmap for graphql
-	GraphqlUpdate(id string, setmap map[string]interface{}) error
+	GraphqlUpdate(id, userID string, setmap map[string]interface{}) (*PlaybookRun, error)
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
 	MessageHasBeenPosted(post *model.Post)

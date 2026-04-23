@@ -51,13 +51,16 @@ export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: Checklis
     return confirmationMessage;
 };
 
-export const useOnFinishRun = (playbookRun: PlaybookRun, location: string = 'backstage') => {
+export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string = 'backstage') => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
     const confirmationMessage = useFinishRunConfirmationMessage(playbookRun);
 
     return () => {
+        if (!playbookRun) {
+            return;
+        }
         const onConfirm = async () => {
             await finishRun(playbookRun.id);
 

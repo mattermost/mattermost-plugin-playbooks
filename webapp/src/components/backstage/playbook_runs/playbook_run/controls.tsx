@@ -19,6 +19,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import {isCurrentUserAdmin} from 'src/selectors';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
@@ -32,6 +33,7 @@ import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/
 import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
+import {useToggleRunRetrospective} from './enable_disable_retrospective';
 
 import {useOnFinishRun} from './finish_run';
 import {useOnRestoreRun} from './restore_run';
@@ -297,6 +299,31 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
                     </StyledDropdownMenuItem>
                 </>
             }
+        </>
+    );
+};
+
+export const ToggleRunRetrospectiveMenuItem = (props: {playbookRun: PlaybookRun}) => {
+    const toggleRetrospective = useToggleRunRetrospective(props.playbookRun);
+    const currentUserId = useSelector(getCurrentUserId);
+    const isAdmin = useSelector(isCurrentUserAdmin);
+
+    const retrospectiveEnabled = props.playbookRun.retrospective_enabled;
+    const isOwner = props.playbookRun.owner_user_id === currentUserId;
+
+    if (!isOwner && !isAdmin) {
+        return null;
+    }
+
+    return (
+        <>
+            <Separator/>
+            <StyledDropdownMenuItem
+                onClick={() => toggleRetrospective(!retrospectiveEnabled)}
+            >
+                <BookOutlineIcon size={18}/>
+                {retrospectiveEnabled ? <FormattedMessage defaultMessage={'Disable retrospective'}/> : <FormattedMessage defaultMessage={'Enable retrospective'}/>}
+            </StyledDropdownMenuItem>
         </>
     );
 };

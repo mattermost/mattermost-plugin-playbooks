@@ -41,6 +41,7 @@ import {
     RestoreRunMenuItem,
     RunActionsMenuItem,
     SaveAsPlaybookMenuItem,
+    ToggleRunRetrospectiveMenuItem,
     ToggleRunStatusUpdateMenuItem,
 } from './controls';
 
@@ -172,6 +173,9 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
                     <ToggleRunStatusUpdateMenuItem
                         playbookRun={playbookRun}
                         role={role}
+                    />
+                    <ToggleRunRetrospectiveMenuItem
+                        playbookRun={playbookRun}
                     />
                     <LeaveRunMenuItem
                         isFollowing={isFollowing}

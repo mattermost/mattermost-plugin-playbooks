@@ -241,7 +241,7 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 		addConcatToSetmap(setmap, "ConcatenatedWebhookOnStatusUpdateURLs", args.Updates.WebhookOnStatusUpdateURLs)
 	}
 
-	if err := c.playbookRunService.GraphqlUpdate(args.ID, setmap); err != nil {
+	if _, err := c.playbookRunService.GraphqlUpdate(args.ID, userID, setmap); err != nil {
 		return "", err
 	}
 

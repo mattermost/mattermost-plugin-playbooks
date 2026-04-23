@@ -298,6 +298,17 @@ export async function toggleRunStatusUpdates(playbookRunId: string, status_enabl
     }
 }
 
+export async function patchRun(playbookRunId: string, patch: {retrospective_enabled?: boolean}) {
+    try {
+        return await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patch),
+        });
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setOwner(playbookRunId: string, ownerId: string) {
     const body = `{"owner_id": "${ownerId}"}`;
     try {

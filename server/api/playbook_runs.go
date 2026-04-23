@@ -263,17 +263,15 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	}
 
 	if updates.RetrospectiveEnabled != nil {
+		// Only the run owner or a system admin can toggle this; GraphQL UpdateRun does not expose it.
+		if userID != oldPlaybookRun.OwnerUserID && !app.IsSystemAdmin(userID, h.pluginAPI) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the run owner or a system admin can change the retrospective setting", nil)
+			return
+		}
 		fieldsToUpdate["RetrospectiveEnabled"] = *updates.RetrospectiveEnabled
 	}
 
-	// Update using GraphqlUpdate
-	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
-		h.HandleError(w, c.logger, err)
-		return
-	}
-
-	// Retrieve the updated playbook run
-	updatedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	updatedPlaybookRun, err := h.playbookRunService.GraphqlUpdate(playbookRunID, userID, fieldsToUpdate)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return

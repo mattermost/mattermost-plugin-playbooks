@@ -54,8 +54,8 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             // * Assert the retrospective section exists in the outline
             cy.get('[id="retrospective"]').should('exist');
 
-            // * Assert the retrospective toggle (checkbox input) exists within the section
-            cy.get('[id="retrospective"]').find('input').first().should('exist');
+            // * Assert the retrospective toggle exists within the section
+            cy.get('[data-testid="retrospective-toggle"]').find('input').should('exist');
         });
     });
 
@@ -73,11 +73,11 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
 
             // # Scroll to the retrospective section and check the checkbox
             cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');
-            cy.get('[id="retrospective"]').find('input').first().should('be.checked');
+            cy.get('[data-testid="retrospective-toggle"]').find('input').should('be.checked');
 
             // * Assert toggle state persists after reload
             cy.reload();
-            cy.get('[id="retrospective"]').find('input').first().should('be.checked');
+            cy.get('[data-testid="retrospective-toggle"]').find('input').should('be.checked');
 
             // * Assert backend state: retrospective_enabled is true by default
             cy.apiGetPlaybook(playbook.id).then((pb) => {
@@ -100,16 +100,16 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
 
             // * Assert toggle is initially checked (enabled)
             cy.get('[id="retrospective"]').scrollIntoView().should('be.visible');
-            cy.get('[id="retrospective"]').find('input').first().should('be.checked');
+            cy.get('[data-testid="retrospective-toggle"]').find('input').should('be.checked');
 
             // # Intercept the GraphQL mutation so we can wait for the debounced save
             cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
             // # Click the toggle to disable retrospective
-            cy.get('[id="retrospective"]').find('label').first().click();
+            cy.get('[data-testid="retrospective-toggle"]').find('label').click();
 
             // * Assert toggle is now unchecked
-            cy.get('[id="retrospective"]').find('input').first().should('not.be.checked');
+            cy.get('[data-testid="retrospective-toggle"]').find('input').should('not.be.checked');
 
             // # Wait for the save to reach the server
             cy.wait('@UpdatePlaybook');
@@ -121,7 +121,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
 
             // # Reload to confirm persistence
             cy.reload();
-            cy.get('[id="retrospective"]').find('input').first().should('not.be.checked');
+            cy.get('[data-testid="retrospective-toggle"]').find('input').should('not.be.checked');
         });
     });
 
@@ -210,13 +210,22 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
         }).then((playbookRun) => {
             // # Finish the run via the UI
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
+
+            // # Intercept the finish API so we can wait for it to settle
+            cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/finish').as('FinishRun');
+
             cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
             cy.playbooksConfirmFinishModal();
-            cy.then(() => {
-                // * Assert no retrospective prompt bot message was posted
-                cy.findAllByTestId('postView').each(($el) => {
-                    expect($el.text()).not.to.include(RETRO_REMINDER_TEXT);
-                });
+
+            // # Wait for the finish request to complete, then for the UI to reflect the finished state
+            cy.wait('@FinishRun');
+            cy.findByTestId('rhs-finish-section').should('not.exist');
+
+            // * Assert no retrospective prompt bot message was posted. Wait for at least one
+            // post to be visible first so the channel list has settled before the negative check.
+            cy.findAllByTestId('postView').should('have.length.greaterThan', 0);
+            cy.findAllByTestId('postView').each(($el) => {
+                expect($el.text()).not.to.include(RETRO_REMINDER_TEXT);
             });
         });
     });
@@ -240,12 +249,18 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
         }).then((playbookRun) => {
             // # Finish the run via the UI
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
+
+            // # Intercept the finish API so we can wait for it to settle
+            cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/finish').as('FinishRun');
+
             cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
             cy.playbooksConfirmFinishModal();
-            cy.then(() => {
-                // * Assert the retrospective prompt bot message was posted
-                cy.findAllByText(new RegExp(RETRO_REMINDER_TEXT, 'i')).filter(':visible').first().should('be.visible');
-            });
+
+            // # Wait for the finish request to complete before asserting the bot post
+            cy.wait('@FinishRun');
+
+            // * Assert the retrospective prompt bot message was posted
+            cy.findAllByText(new RegExp(RETRO_REMINDER_TEXT, 'i')).filter(':visible').first().should('be.visible');
         });
     });
 });
