@@ -5,19 +5,18 @@ import * as TIMEOUTS from '../../fixtures/timeouts';
 const playbookRunStartCommand = '/playbook run';
 
 Cypress.Commands.add('startPlaybookRun', (playbookName, playbookRunName) => {
-    // # Wait for the Run playbook modal (select-playbook step)
-    cy.get('#playbooks_run_playbook_dialog').should('exist');
+    cy.get('#appsModal').should('exist').within(() => {
+        // # Select playbook
+        cy.selectPlaybookFromDropdown(playbookName);
 
-    // # Click the playbook by name in the selector list
-    cy.get('#playbooks_run_playbook_dialog').findByText(playbookName).click();
+        // # Type playbook run name
+        cy.findByTestId('playbookRunNameinput').type(playbookRunName, {force: true});
 
-    // # Now in run-details step — fill in the run name
-    cy.findByTestId('run-name-input').clear().type(playbookRunName);
+        // # Submit
+        cy.get('#appsModalSubmit').click();
+    });
 
-    // # Submit
-    cy.findByRole('button', {name: /start run/i}).click();
-
-    cy.get('#playbooks_run_playbook_dialog').should('not.exist');
+    cy.get('#appsModal').should('not.exist');
 });
 
 // Opens playbook run dialog using the `/playbook run` slash command
