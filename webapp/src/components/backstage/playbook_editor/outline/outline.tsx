@@ -19,7 +19,6 @@ import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {savePlaybook} from 'src/client';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -67,11 +66,10 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
 
     const handleAutoArchiveChange = useCallback((updated: {auto_archive_channel: boolean}) => {
         if (!archived && restPlaybook) {
-            const prev = restPlaybook.auto_archive_channel;
+            const prev = restPlaybook.auto_archive_channel ?? false;
             setAutoArchiveOverride(updated.auto_archive_channel);
-            savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel}).catch(() => {
-                setAutoArchiveOverride(prev);
-            });
+            savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel})
+                .catch(() => setAutoArchiveOverride(prev));
         }
     }, [archived, restPlaybook]);
 
@@ -163,22 +161,11 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             >
                 <Actions
                     playbook={playbook}
+                    restPlaybook={restPlaybook}
+                    autoArchiveChannel={effectiveAutoArchive}
+                    onAutoArchiveChange={handleAutoArchiveChange}
                 />
             </Section>
-            {restPlaybook && (
-                <Section
-                    id={'auto-archive'}
-                    title={''}
-                >
-                    <div data-testid='auto-archive-channel-toggle'>
-                        <AutoArchiveToggle
-                            playbook={{...restPlaybook, auto_archive_channel: effectiveAutoArchive}}
-                            disabled={archived}
-                            onChange={handleAutoArchiveChange}
-                        />
-                    </div>
-                </Section>
-            )}
             <PlaybookActionsModal
                 playbook={playbook}
                 readOnly={false}

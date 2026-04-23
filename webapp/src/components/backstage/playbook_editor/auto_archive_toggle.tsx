@@ -8,8 +8,6 @@ import styled from 'styled-components';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import Tooltip from 'src/components/widgets/tooltip';
 
-import ToggleHint from './toggle_hint';
-
 interface PlaybookLike {
     auto_archive_channel?: boolean;
     channel_mode: string;
@@ -58,9 +56,6 @@ const AutoArchiveToggle = ({playbook, onChange, disabled}: Props) => {
                     {formatMessage({id: 'playbooks.auto_archive_toggle.banner_text', defaultMessage: 'The channel will be auto-archived when the run is finished.'})}
                 </ToggleBanner>
             )}
-            <ToggleHint>
-                {formatMessage({id: 'playbooks.auto_archive_toggle.hint_text', defaultMessage: 'Automatically archive the channel when the run is finished.'})}
-            </ToggleHint>
         </>
     );
 };

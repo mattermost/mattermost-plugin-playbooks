@@ -188,7 +188,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
 			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
 			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type",
-			"i.ChannelCreatedByRun").
+			"i.ChannelCreatedByRun", "i.AutoArchivedChannel").
 		Column(participantsCol).
 		From("IR_Incident AS i")
 
@@ -497,6 +497,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
 			"RunType":                                 rawPlaybookRun.Type,
 			"ChannelCreatedByRun":                     rawPlaybookRun.ChannelCreatedByRun,
+			"AutoArchivedChannel":                     rawPlaybookRun.AutoArchivedChannel,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -564,7 +565,9 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"StatusUpdateEnabled":                     rawPlaybookRun.StatusUpdateEnabled,
 			"CreateChannelMemberOnNewParticipant":     rawPlaybookRun.CreateChannelMemberOnNewParticipant,
 			"RemoveChannelMemberOnRemovedParticipant": rawPlaybookRun.RemoveChannelMemberOnRemovedParticipant,
-			"RunType":  rawPlaybookRun.Type,
+			"RunType":             rawPlaybookRun.Type,
+			"AutoArchivedChannel": rawPlaybookRun.AutoArchivedChannel,
+			// ChannelCreatedByRun is intentionally omitted — it is set once at creation and immutable.
 			"UpdateAt": rawPlaybookRun.UpdateAt,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))

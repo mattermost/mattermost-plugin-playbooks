@@ -215,6 +215,10 @@ type PlaybookRun struct {
 	// ChannelCreatedByRun indicates whether the channel was created by this run.
 	// Used by auto-archive to avoid archiving linked channels.
 	ChannelCreatedByRun bool `json:"-"`
+
+	// AutoArchivedChannel records whether this run actually auto-archived its channel on finish.
+	// Used by restore to decide whether to un-archive, independent of the current playbook flag.
+	AutoArchivedChannel bool `json:"-"`
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -1012,6 +1016,8 @@ const (
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
+	ChannelArchived        timelineEventType = "channel_archived"
+	ChannelUnarchived      timelineEventType = "channel_unarchived"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
 	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
 	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"

@@ -10,9 +10,10 @@
 // Group: @playbooks
 
 import {getRandomId} from '../../../../utils';
+import * as TIMEOUTS from '../../../../fixtures/timeouts';
 
-describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
-    const TOOLTIP_DISABLED_TEXT = 'auto-archived';
+describe('playbooks > edit > auto archive', () => {
+    const TOOLTIP_DISABLED_TEXT = 'cannot be auto-archived';
 
     let testTeam;
     let testUser;
@@ -73,12 +74,18 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             // # Visit the playbook outline editor
             cy.visitPlaybookEditor(playbook.id, 'outline');
 
+            // # Intercept the save request before clicking so the alias is registered
+            cy.playbooksInterceptPlaybookSave();
+
             // # Enable the auto-archive toggle
             cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
 
             // * Assert confirmation banner appears stating channels will be auto-archived
             cy.findByTestId('auto-archive-confirmation-banner').scrollIntoView().should('be.visible');
             cy.findByTestId('auto-archive-confirmation-banner').should('contain', 'auto-archived');
+
+            // # Wait for the PUT to complete before reloading or reading back via API
+            cy.wait('@SavePlaybook');
 
             // * Assert state persists after reload
             cy.reload();
@@ -90,8 +97,10 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
             });
 
             // # Toggle auto-archive off and verify banner disappears
+            cy.playbooksInterceptPlaybookSave();
             cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
             cy.findByTestId('auto-archive-confirmation-banner').should('not.exist');
+            cy.wait('@SavePlaybook');
         });
     });
 
@@ -110,10 +119,14 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
 
             // # Enable auto-archive via the playbook editor UI
             cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.playbooksInterceptPlaybookSave();
             cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
 
             // * Confirm the banner appears (guards against a silent toggle failure)
             cy.findByTestId('auto-archive-confirmation-banner').scrollIntoView().should('be.visible');
+
+            // # Wait for the PUT to complete before reading back via API
+            cy.wait('@SavePlaybook');
 
             // * Verify auto_archive_channel was persisted via API
             cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
@@ -131,21 +144,15 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
 
                 // # Finish the run via the RHS Finish button
                 cy.playbooksVisitRunChannel(testTeam.name, testRun);
+                cy.get('#channel-header').should('be.visible');
                 cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
                 cy.playbooksConfirmFinishModal();
 
                 // * Assert the run's channel is now archived (poll for async archive)
-                const checkArchived = () => {
-                    return cy.apiGetChannel(testRun.channel_id).then(({channel}) => {
-                        if (channel.delete_at === 0) {
-                            throw new Error('Channel not yet archived');
-                        }
-                        return channel;
-                    });
-                };
-                cy.waitUntil(checkArchived, {timeout: 10000, interval: 500}).then((channel) => {
-                    expect(channel.delete_at).to.be.greaterThan(0);
-                });
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                );
             });
         });
     });
@@ -217,14 +224,15 @@ describe('playbooks > edit > auto archive', {testIsolation: true}, () => {
 
                 // # Finish the run via the RHS Finish button
                 cy.playbooksVisitRunChannel(testTeam.name, testRun);
+                cy.get('#channel-header').should('be.visible');
                 cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
                 cy.playbooksConfirmFinishModal();
 
-                // * Assert the run is finished before checking channel state
-                cy.apiGetPlaybookRun(testRun.id).then(({body: finishedRun}) => {
-                    expect(finishedRun.current_status).to.equal('Finished');
-                    expect(finishedRun.end_at).to.be.greaterThan(0);
-                });
+                // * Wait for the server to commit the finish before reading back
+                cy.waitUntil(
+                    () => cy.apiGetPlaybookRun(testRun.id).then(({body: fetchedRun}) => fetchedRun.current_status === 'Finished'),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                );
 
                 // * Assert the run channel is NOT archived (delete_at === 0)
                 cy.apiGetChannel(testRun.channel_id).then(({channel}) => {

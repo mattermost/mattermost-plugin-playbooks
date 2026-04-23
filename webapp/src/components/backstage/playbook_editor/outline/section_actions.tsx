@@ -9,9 +9,16 @@ import {useDispatch} from 'react-redux';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
-import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
+import {
+    AccountMinusOutlineIcon,
+    AccountPlusOutlineIcon,
+    CheckCircleOutlineIcon,
+    PlayIcon,
+} from '@mattermost/compass-icons/components';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
 
 import {Section, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
@@ -28,9 +35,12 @@ import {getDistinctAssignees} from 'src/utils';
 
 interface Props {
     playbook: Loaded<FullPlaybook>;
+    restPlaybook?: PlaybookWithChecklist;
+    autoArchiveChannel: boolean;
+    onAutoArchiveChange: (updated: {auto_archive_channel: boolean}) => void;
 }
 
-const LegacyActionsEdit = ({playbook}: Props) => {
+const LegacyActionsEdit = ({playbook, restPlaybook, autoArchiveChannel, onAutoArchiveChange}: Props) => {
     const {formatMessage} = useIntl();
     const dispatch = useDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
@@ -258,6 +268,28 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     </AutomationTitle>
                 </Setting>
             </StyledSection>
+            {restPlaybook && (
+                <StyledSection>
+                    <StyledSectionTitle>
+                        <CheckCircleOutlineIcon size={22}/>
+                        <FormattedMessage
+                            id='V3tvkc'
+                            defaultMessage='When a run finishes'
+                        />
+                    </StyledSectionTitle>
+                    <Setting id={'run-finishes'}>
+                        <AutomationTitle>
+                            <div data-testid='auto-archive-channel-toggle'>
+                                <AutoArchiveToggle
+                                    playbook={{...restPlaybook, auto_archive_channel: autoArchiveChannel}}
+                                    disabled={archived}
+                                    onChange={onAutoArchiveChange}
+                                />
+                            </div>
+                        </AutomationTitle>
+                    </Setting>
+                </StyledSection>
+            )}
         </>
     );
 };
