@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ONE_SEC} from '../../../../fixtures/timeouts';
-
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -141,9 +139,6 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
         // # Click the filter for finished runs
         cy.findByTestId('dropdownmenu').findByText(`${numFinishedRuns}`).click();
 
-        // # Wait for filtering to complete - API needs time to apply include_ended=true
-        cy.wait(500);
-
         // * Verify exactly the number of finished runs are displayed
         cy.findByTestId('rhs-runs-list').children().should('have.length', numFinishedRuns);
     });
@@ -161,7 +156,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
 
     it('card has the basic info', () => {
         // # Find the run card by its name
-        cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', 'playbook-run-9').within(() => {
+        cy.playbooksGetRHSRunCard('playbook-run-9').within(() => {
             cy.findByText('playbook-run-9').should('be.visible');
             cy.findByText('The playbook name').should('be.visible');
             cy.findByText(testUser.username).should('be.visible');
@@ -170,7 +165,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
 
     it('can click through', () => {
         // # Click the run card with playbook-run-9
-        cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', 'playbook-run-9').click();
+        cy.playbooksGetRHSRunCard('playbook-run-9').click();
 
         // * Verify we made it to the run details at Channels RHS
         cy.get('#rhsContainer').should('exist').within(() => {
@@ -184,7 +179,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
     describe('dotmenu', () => {
         it('can navigate to RDP', () => {
             // # Click the run's dotmenu button
-            cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', privateRun.name).findByRole('button').click();
+            cy.playbooksGetRHSRunCard(privateRun.name).findByRole('button').click();
 
             // # Click on go to run
             cy.findByText('Go to overview').click();
@@ -196,15 +191,13 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
 
         it('can navigate to PBE', () => {
             // # Click the run's dotmenu button
-            cy.findByTestId('rhs-runs-list').contains('[data-testid="run-list-card"]', privateRun.name).findByRole('button').click();
+            cy.playbooksGetRHSRunCard(privateRun.name).findByRole('button').click();
 
             // # Click on go to playbook
             cy.findByText('Go to playbook').click();
 
-            cy.wait(5000);
-
             // * Assert we are in the PBE page
-            cy.findByTestId('playbook-editor-title').should('contain', privatePlaybook.title);
+            cy.findByTestId('playbook-editor-title', {timeout: 10000}).should('contain', privatePlaybook.title);
         });
 
         it('hides "Go to playbook" for standalone runs', () => {
@@ -233,7 +226,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             cy.findByText('In progress').should('be.visible');
 
             // # Find the private run card by its name and click its dotmenu
-            cy.findByTestId('rhs-runs-list').contains(privateRun.name).parents('div[data-testid="run-list-card"]').findByRole('button').click();
+            cy.playbooksGetRHSRunCard(privateRun.name).findByRole('button').click();
 
             // * Verify "Go to playbook" does not exist for user without access
             cy.findByTestId('dropdownmenu').within(() => {
@@ -257,10 +250,7 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
             // # Click save
             cy.findByTestId('modal-confirm-button').click();
 
-            // # Let the listing refresh
-            cy.wait(1000);
-
-            // * Verify we have the first page (8 cards)
+            // * Verify we have the first page (8 cards) — list refreshes after the move
             cy.findByTestId('rhs-runs-list').findAllByTestId('run-list-card').should('have.length', 8);
 
             // # Click the show-more button
@@ -303,7 +293,8 @@ describe('channels > rhs > runlist', {testIsolation: true}, () => {
                 // # Click on the move to a different channel option
                 cy.findByText('Move to a different channel').click();
 
-                cy.wait(ONE_SEC);
+                // # Wait for the channel selector to be ready before interacting
+                cy.get('#link_existing_channel_selector').should('be.visible');
 
                 // # Select town square channel
                 cy.get('#link_existing_channel_selector').click().type('Town Square{enter}');

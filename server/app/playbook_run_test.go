@@ -593,6 +593,142 @@ func TestDetectChangedFields(t *testing.T) {
 		changes = DetectChangedFields(prev, curr)
 		require.Empty(t, changes)
 	})
+
+	t.Run("property fields and values no changes", func(t *testing.T) {
+		fields := []PropertyField{
+			{PropertyField: model.PropertyField{ID: "field1", Name: "Priority", Type: "select"}},
+		}
+		values := []PropertyValue{
+			{ID: "val1", FieldID: "field1", Value: json.RawMessage(`"high"`)},
+		}
+		prev := &PlaybookRun{
+			ID:             "run1",
+			PropertyFields: fields,
+			PropertyValues: values,
+		}
+		curr := &PlaybookRun{
+			ID:             "run1",
+			PropertyFields: fields,
+			PropertyValues: values,
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Empty(t, changes)
+	})
+
+	t.Run("property values changed", func(t *testing.T) {
+		field := PropertyField{
+			PropertyField: model.PropertyField{ID: "field1", Name: "Oncall", Type: "user"},
+		}
+		prev := &PlaybookRun{
+			ID:             "run1",
+			PropertyFields: []PropertyField{field},
+			PropertyValues: []PropertyValue{
+				{ID: "val1", FieldID: "field1", Value: json.RawMessage(`"user-old"`)},
+			},
+		}
+		curr := &PlaybookRun{
+			ID:             "run1",
+			PropertyFields: []PropertyField{field},
+			PropertyValues: []PropertyValue{
+				{ID: "val1", FieldID: "field1", Value: json.RawMessage(`"user-new"`)},
+			},
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		pv, ok := changes["property_values"].([]PropertyValue)
+		require.True(t, ok)
+		require.Len(t, pv, 1)
+		require.Equal(t, json.RawMessage(`"user-new"`), pv[0].Value)
+	})
+
+	t.Run("property values nil vs populated causes spurious change", func(t *testing.T) {
+		// This scenario reproduces the bug where using s.store.GetPlaybookRun
+		// (which returns nil PropertyValues) instead of s.GetPlaybookRun
+		// (which returns populated PropertyValues) causes DetectChangedFields
+		// to report a false property change, wiping property data on the frontend.
+		field := PropertyField{
+			PropertyField: model.PropertyField{ID: "field1", Name: "Oncall", Type: "user"},
+		}
+		serviceRun := &PlaybookRun{
+			ID:             "run1",
+			OwnerUserID:    "owner1",
+			PropertyFields: []PropertyField{field},
+			PropertyValues: []PropertyValue{
+				{ID: "val1", FieldID: "field1", Value: json.RawMessage(`"user-abc"`)},
+			},
+		}
+		storeRun := &PlaybookRun{
+			ID:             "run1",
+			OwnerUserID:    "owner2",
+			PropertyFields: nil, // store-level GetPlaybookRun does not populate these
+			PropertyValues: nil, // store-level GetPlaybookRun does not populate these
+		}
+
+		changes := DetectChangedFields(serviceRun, storeRun)
+
+		// owner_user_id is the only real change; property_fields and property_values
+		// should NOT appear when both sides use the service-level GetPlaybookRun.
+		// This test documents that when they DO differ (nil vs populated), the diff
+		// incorrectly includes them — which is why callers must use the service-level
+		// GetPlaybookRun for both originalRun and updatedRun.
+		require.Contains(t, changes, "owner_user_id")
+		require.Contains(t, changes, "property_fields", "nil vs populated property_fields detected as changed — callers must use service-level GetPlaybookRun to avoid this")
+		require.Contains(t, changes, "property_values", "nil vs populated property_values detected as changed — callers must use service-level GetPlaybookRun to avoid this")
+	})
+
+	t.Run("property values empty slice vs empty slice no change", func(t *testing.T) {
+		// When both sides use the service-level GetPlaybookRun (which initializes
+		// to empty slices), DetectChangedFields should NOT report property changes.
+		prev := &PlaybookRun{
+			ID:             "run1",
+			OwnerUserID:    "owner1",
+			PropertyFields: []PropertyField{},
+			PropertyValues: []PropertyValue{},
+		}
+		curr := &PlaybookRun{
+			ID:             "run1",
+			OwnerUserID:    "owner2",
+			PropertyFields: []PropertyField{},
+			PropertyValues: []PropertyValue{},
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		require.Equal(t, "owner2", changes["owner_user_id"])
+		require.NotContains(t, changes, "property_fields")
+		require.NotContains(t, changes, "property_values")
+	})
+
+	t.Run("property values identical populated slices no change", func(t *testing.T) {
+		// When both sides use the service-level GetPlaybookRun and property data
+		// hasn't changed (e.g. during an owner change), no property diff should appear.
+		field := PropertyField{
+			PropertyField: model.PropertyField{ID: "field1", Name: "Oncall", Type: "user"},
+		}
+		values := []PropertyValue{
+			{ID: "val1", FieldID: "field1", Value: json.RawMessage(`"user-abc"`)},
+		}
+		prev := &PlaybookRun{
+			ID:             "run1",
+			OwnerUserID:    "owner1",
+			PropertyFields: []PropertyField{field},
+			PropertyValues: values,
+		}
+		curr := &PlaybookRun{
+			ID:             "run1",
+			OwnerUserID:    "owner2",
+			PropertyFields: []PropertyField{field},
+			PropertyValues: values,
+		}
+
+		changes := DetectChangedFields(prev, curr)
+		require.Len(t, changes, 1)
+		require.Equal(t, "owner2", changes["owner_user_id"])
+		require.NotContains(t, changes, "property_fields")
+		require.NotContains(t, changes, "property_values")
+	})
 }
 
 func TestPlaybookRunFilterOptions_Validate(t *testing.T) {

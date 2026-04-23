@@ -173,7 +173,6 @@ func TestUpdateChecklistItemTimestamps(t *testing.T) {
 func TestUpdateAt_ModifyCheckedState(t *testing.T) {
 	t.Run("UpdateAt field is set when modifying checked state", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -220,7 +219,6 @@ func TestUpdateAt_ModifyCheckedState(t *testing.T) {
 func TestUpdateAt_SetAssignee(t *testing.T) {
 	t.Run("UpdateAt field is set when setting assignee", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -267,7 +265,6 @@ func TestUpdateAt_SetAssignee(t *testing.T) {
 func TestUpdateAt_RunChecklistItemSlashCommand(t *testing.T) {
 	t.Run("UpdateAt field is set when running slash command", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -313,7 +310,6 @@ func TestUpdateAt_RunChecklistItemSlashCommand(t *testing.T) {
 func TestUpdateAt_SetCommandToChecklistItem(t *testing.T) {
 	t.Run("UpdateAt field is set when changing command", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -360,7 +356,6 @@ func TestUpdateAt_SetCommandToChecklistItem(t *testing.T) {
 func TestUpdateAt_SetDueDate(t *testing.T) {
 	t.Run("UpdateAt field is set when setting due date", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -403,7 +398,6 @@ func TestUpdateAt_SetDueDate(t *testing.T) {
 func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 	t.Run("UpdateAt field is set when setting task actions", func(t *testing.T) {
 		playbookRun := PlaybookRun{
-			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",

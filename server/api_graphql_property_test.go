@@ -876,7 +876,7 @@ func TestPropertyFieldDeletionWithConditions(t *testing.T) {
 	}, &deleteResponse)
 	require.NoError(t, err)
 	require.NotEmpty(t, deleteResponse.Errors)
-	require.Contains(t, deleteResponse.Errors[0].Message, "property field is in use")
+	require.Contains(t, deleteResponse.Errors[0].Message, "Property field is in use")
 	require.Contains(t, deleteResponse.Errors[0].Message, "1 condition(s)")
 
 	err = e.PlaybooksClient.PlaybookConditions.Delete(context.Background(), playbookID, createdCondition.ID)
@@ -929,7 +929,7 @@ func TestPropertyOptionRemovalWithConditions(t *testing.T) {
 			{"id": blockedID, "name": "Blocked"},
 		})
 		require.NotEmpty(t, response.Errors)
-		require.Contains(t, response.Errors[0].Message, "property options are in use")
+		require.Contains(t, response.Errors[0].Message, "Property options are in use")
 		require.Contains(t, response.Errors[0].Message, "Todo")
 		require.Contains(t, response.Errors[0].Message, "Done")
 		require.Contains(t, response.Errors[0].Message, "Archived")

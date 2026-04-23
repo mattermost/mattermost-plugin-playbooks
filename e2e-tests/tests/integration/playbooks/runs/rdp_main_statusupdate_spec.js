@@ -9,7 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
-/* eslint-disable no-only-tests/no-only-tests */
+import {getRandomId} from '../../../utils';
 
 describe('runs > run details page > status update', {testIsolation: true}, () => {
     let testTeam;
@@ -51,9 +51,9 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
         // # Login as testUser
         cy.apiLogin(testUser);
 
-        const now = Date.now();
-        const playbookRunName = 'Playbook Run (' + now + ')';
-        playbookRunChannelName = 'playbook-run-' + now;
+        const runId = getRandomId();
+        const playbookRunName = 'Playbook Run (' + runId + ')';
+        playbookRunChannelName = 'playbook-run-' + runId;
 
         cy.apiRunPlaybook({
             teamId: testTeam.id,
@@ -87,7 +87,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                 cy.findByTestId('run-statusupdate-section').findByTestId('post-update-button').should('be.visible');
 
                 // # Click finish button and confirm modal
-                cy.findByTestId('run-finish-section').find('button').click();
+                cy.findByTestId('run-finish-section').findByRole('button', {name: /Finish/i}).click();
                 cy.get('#confirmModal').get('#confirmModalButton').click();
 
                 // * Check that post update button does not exist anymore
@@ -134,7 +134,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
                     cy.assertRunDetailsPageRenderComplete(testUser.username);
 
                     // # Click on kebab menu
-                    cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                    cy.findByTestId('run-statusupdate-section').find('[class^="Kebab-"]').click();
 
                     // # click on request update option (force because is disabled)
                     cy.findByText('Request update...').click({force: true});
@@ -146,7 +146,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
 
             it('requests and confirm', () => {
                 // # Click on kebab menu
-                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                cy.findByTestId('run-statusupdate-section').find('[class^="Kebab-"]').click();
 
                 cy.findByTestId('dropdownmenu').within(($dropdown) => {
                     cy.wrap($dropdown).children().should('have.length', 2);
@@ -167,7 +167,7 @@ describe('runs > run details page > status update', {testIsolation: true}, () =>
 
             it('requests and cancel', () => {
                 // # Click on kebab menu
-                cy.findByTestId('run-statusupdate-section').getStyledComponent('Kebab').click();
+                cy.findByTestId('run-statusupdate-section').find('[class^="Kebab-"]').click();
                 cy.findByTestId('dropdownmenu').within(($dropdown) => {
                     cy.wrap($dropdown).children().should('have.length', 2);
 

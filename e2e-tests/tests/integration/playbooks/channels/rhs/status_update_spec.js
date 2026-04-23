@@ -11,8 +11,6 @@
 
 /* eslint-disable no-only-tests/no-only-tests */
 
-import * as TIMEOUTS from '../../../../fixtures/timeouts';
-
 describe('channels > rhs > status update', {testIsolation: true}, () => {
     const defaultReminderMessage = '# Default reminder message';
     let testTeam;
@@ -92,13 +90,13 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
                 cy.findByTestId('update_run_status_textbox').clear().type(' {enter} {enter}  ');
 
                 // * Verify submit is disabled.
-                cy.get('button.confirm').should('be.disabled');
+                cy.findByTestId('modal-confirm-button').should('be.disabled');
 
                 // # Enter valid data
                 cy.findByTestId('update_run_status_textbox').type('valid update');
 
                 // # Submit the dialog.
-                cy.get('button.confirm').click();
+                cy.findByTestId('modal-confirm-button').click();
             });
 
             // * Verify that the Post update dialog has gone.
@@ -148,7 +146,7 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
                     cy.findByTestId('update_run_status_textbox').type(updateMessage);
 
                     // # Submit the dialog.
-                    cy.get('button.confirm').click();
+                    cy.findByTestId('modal-confirm-button').click();
                 });
 
                 // * Verify that the Post update dialog has gone.
@@ -186,7 +184,7 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
                 cy.findByTestId('mark-run-as-finished').click({force: true});
 
                 // # Submit the dialog.
-                cy.get('button.confirm').click();
+                cy.findByTestId('modal-confirm-button').click();
             });
 
             // * Confirmation should appear
@@ -211,7 +209,7 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
                 });
 
                 // # Submit the dialog.
-                cy.get('button.confirm').click();
+                cy.findByTestId('modal-confirm-button').click();
             });
 
             // * Confirmation should appear
@@ -248,12 +246,11 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
                     cy.findByTestId('modal-cancel-button').click();
                 });
 
-                // # Delay in between the modal switch to ensure the
-                // # animation has fully happened
-                cy.wait(TIMEOUTS.TWO_SEC);
+                // * Assert the status update dialog is visible again before submitting
+                cy.getStatusUpdateDialog().should('be.visible');
 
                 // # Submit the dialog.
-                cy.get('button.confirm').click();
+                cy.findByTestId('modal-confirm-button').click();
 
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');
@@ -279,12 +276,11 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
                     cy.findByTestId('modal-cancel-button').click();
                 });
 
-                // # Delay in between the modal switch to ensure the
-                // # animation has fully happened
-                cy.wait(TIMEOUTS.TWO_SEC);
+                // * Assert the status update dialog is visible again before submitting
+                cy.getStatusUpdateDialog().should('be.visible');
 
                 // # Submit the dialog.
-                cy.get('button.confirm').click();
+                cy.findByTestId('modal-confirm-button').click();
 
                 // * Verify that the Post update and unsaved changes modals have gone.
                 cy.getStatusUpdateDialog().should('not.exist');
@@ -306,7 +302,7 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
 
                 // * Discard explicitly from unsaved changes
                 cy.get('#confirm-modal-light').within(() => {
-                    cy.get('button.confirm').click();
+                    cy.findByTestId('modal-confirm-button').click();
                 });
 
                 // * Verify that the Post update and unsaved changes modals have gone.
@@ -329,7 +325,7 @@ describe('channels > rhs > status update', {testIsolation: true}, () => {
 
                 // * Discard explicitly from unsaved changes
                 cy.get('#confirm-modal-light').within(() => {
-                    cy.get('button.confirm').click();
+                    cy.findByTestId('modal-confirm-button').click();
                 });
 
                 // * Assert that we are at run overview page.

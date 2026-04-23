@@ -334,8 +334,19 @@ describe('channels > rhs', {testIsolation: true}, () => {
 
             cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
 
+            // # Navigate to the run's channel (run creation navigates to backstage by default)
+            cy.apiGetPlaybookRunByName(testTeam.id, playbookRunName).then(({body}) => {
+                const playbookRun = body.items.find((run) => run.name === playbookRunName);
+                expect(playbookRun, `Expected run "${playbookRunName}" to exist`).to.exist;
+                return cy.apiGetChannel(playbookRun.channel_id);
+            }).then(({channel}) => {
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
+            });
+
             // * Verify the playbook run RHS is open.
-            cy.findByTestId('menuButton').contains(playbookRunName);
+            cy.get('#rhsContainer').within(() => {
+                cy.findByTestId('menuButton').contains(playbookRunName);
+            });
         });
 
         it('when starting a playbook run when rhs is already open', () => {
@@ -357,8 +368,19 @@ describe('channels > rhs', {testIsolation: true}, () => {
             const playbookRunName = 'Playbook Run (' + now + ')';
             cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
 
+            // # Navigate to the run's channel (run creation navigates to backstage by default)
+            cy.apiGetPlaybookRunByName(testTeam.id, playbookRunName).then(({body}) => {
+                const playbookRun = body.items.find((run) => run.name === playbookRunName);
+                expect(playbookRun, `Expected run "${playbookRunName}" to exist`).to.exist;
+                return cy.apiGetChannel(playbookRun.channel_id);
+            }).then(({channel}) => {
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
+            });
+
             // * Verify the playbook run RHS is open.
-            cy.findByTestId('menuButton').contains(playbookRunName);
+            cy.get('#rhsContainer').within(() => {
+                cy.findByTestId('menuButton').contains(playbookRunName);
+            });
         });
 
         it('when navigating directly to a finished playbook run channel and clicking on the button', () => {

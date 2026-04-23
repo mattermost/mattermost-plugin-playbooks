@@ -34,6 +34,11 @@ export function useAllowRetrospectiveAccess() {
     return useSelector(isProfessionalLicensedOrDevelopment);
 }
 
+// useAllowTimelineEvents returns whether the timeline feature is licensed.
+export function useAllowTimelineEvents() {
+    return useSelector(isProfessionalLicensedOrDevelopment);
+}
+
 // useAllowPrivatePlaybooks returns whether the server is licenced for
 // creating private playbooks
 export function useAllowPrivatePlaybooks() {

@@ -9,10 +9,6 @@
 // Stage: @prod
 // Group: @playbooks
 
-/* eslint-disable no-only-tests/no-only-tests */
-
-import * as TIMEOUTS from '../../../../fixtures/timeouts';
-
 // assumes that E20 license is uploaded
 describe('playbooks > edit', {testIsolation: true}, () => {
     let testTeam;
@@ -22,6 +18,9 @@ describe('playbooks > edit', {testIsolation: true}, () => {
     let testUser3;
 
     const openCategorySelector = () => {
+        // When called inside a within('user-joins-channel-categorize') scope,
+        // query the input directly — re-querying the parent testid would fail
+        // because within() scopes to children only.
         cy.get('.channel-selector__control input').click({force: true});
     };
     const selectCategory = (name) => {
@@ -78,7 +77,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                     // # select the actions section.
                     cy.get('#actions').within(() => {
                         // * Verify that the toggle is checked
-                        cy.get('#create-new-channel label input').should('be.checked');
+                        cy.get('#create-new-channel').find('input').first().should('be.checked');
                     });
                 });
             });
@@ -154,7 +153,11 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add one user
                             cy.addInvitedUser(testUser2.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser2.username).should('exist');
+                            });
 
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control').
@@ -202,7 +205,11 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add a new user
                             cy.addInvitedUser(testUser3.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser3.username).should('exist');
+                            });
 
                             cy.get('.invite-users-selector__control').
                                 after('content').
@@ -240,28 +247,29 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add a couple of users
                             cy.addInvitedUser(testUser2.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser2.username).should('exist');
+                            });
                             cy.addInvitedUser(testUser3.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that both users appear as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser3.username).should('exist');
+                            });
 
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control').
                                 after('content').
                                 should('eq', '2 SELECTED');
 
-                            // # Remove the first users added
-                            cy.get('.invite-users-selector__option').
-                                eq(0).
-                                within(() => {
-                                    cy.findByText('Remove').click();
-                                });
-                            cy.wait(TIMEOUTS.ONE_SEC);
+                            // # Remove testUser2 by targeting its username rather than index
+                            cy.get('.invite-users-selector__option').contains(testUser2.username).parents('.invite-users-selector__option').within(() => {
+                                cy.findByText('Remove').click();
+                            });
 
                             // * Verify that there is only one user, the one not removed
-                            cy.get('.invite-users-selector__control').
-                                after('content').
-                                should('eq', '1 SELECTED');
-
                             cy.findByText('SELECTED').
                                 parent().
                                 within(() => {
@@ -269,6 +277,10 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                         should('have.length', 1).
                                         contains(testUser3.username);
                                 });
+
+                            cy.get('.invite-users-selector__control').
+                                after('content').
+                                should('eq', '1 SELECTED');
                         });
                     });
                 });
@@ -294,9 +306,17 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                             // # Add a couple of users
                             cy.addInvitedUser(testUser2.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that the user appears as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser2.username).should('exist');
+                            });
                             cy.addInvitedUser(testUser3.username);
-                            cy.wait(TIMEOUTS.ONE_SEC);
+
+                            // * Verify that both users appear as selected in the list
+                            cy.findByText('SELECTED').parent().within(() => {
+                                cy.findByText(testUser3.username).should('exist');
+                            });
 
                             // * Verify that the badge in the selector shows the correct number of members
                             cy.get('.invite-users-selector__control').
@@ -337,7 +357,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                                 parent().
                                 within(() => {
                                     cy.findByText(testUser2.username);
-                                    cy.findByText(testUser2.username);
+                                    cy.findByText(testUser3.username);
                                 });
                         });
                     });
@@ -370,11 +390,12 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                         // # Visit the selected playbook
                         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify user is pre-assigned
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByText(`@${testUser.username}`).should('exist');
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.contains(`@${testUser.username}`).should('exist');
                         });
 
                         cy.get('#actions').within(() => {
@@ -410,12 +431,13 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                         cy.reload();
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify that user is not pre-assigned anymore
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByTestId('assignee-profile-selector').should('exist');
-                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.findByTestId('checklist-item-save-button').should('be.visible');
+                            cy.contains(`@${testUser.username}`).should('not.exist');
                         });
 
                         cy.get('#actions').within(() => {
@@ -432,11 +454,12 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                         // # Visit the selected playbook
                         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify user is pre-assigned
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByText(`@${testUser.username}`).should('exist');
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.contains(`@${testUser.username}`).should('exist');
                         });
 
                         cy.get('#actions').within(() => {
@@ -468,12 +491,13 @@ describe('playbooks > edit', {testIsolation: true}, () => {
 
                         cy.reload();
 
+                        cy.get('#checklists').scrollIntoView();
                         cy.get('#checklists').within(() => {
                             // * Verify that user is not pre-assigned
-                            cy.findByText('Untitled task').trigger('mouseover');
-                            cy.findByTestId('hover-menu-edit-button').click();
-                            cy.findByTestId('assignee-profile-selector').should('exist');
-                            cy.get('.icon-account-plus-outline').should('exist'); // Icon shows when no assignee
+                            cy.get('[data-testid="checkbox-item-container"]').trigger('mouseover');
+                            cy.get('[data-testid="hover-menu-edit-button"]').click({force: true});
+                            cy.findByTestId('checklist-item-save-button').should('be.visible');
+                            cy.contains(`@${testUser.username}`).should('not.exist');
                         });
 
                         cy.get('#actions').within(() => {
@@ -671,7 +695,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
                 cy.get('#actions #create-new-channel').within(() => {
                     // * Verify that the toggle is unchecked and inputs are disabled
                     cy.get('input[type=radio]').eq(0).should('not.be.checked');
-                    cy.get('label input[type=radio]').should('be.disabled');
+                    cy.get('input[type=radio]').should('be.disabled');
                     cy.get('button').should('be.disabled');
                 });
             });
@@ -866,7 +890,13 @@ describe('playbooks > edit', {testIsolation: true}, () => {
             beforeEach(() => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-                cy.findByTestId('playbook-channel-actions-button').click();
+
+                // # Scroll actions section into view before clicking
+                cy.get('#actions').scrollIntoView();
+                cy.findByTestId('playbook-channel-actions-button').should('be.visible').click();
+
+                // * Wait for the modal to render
+                cy.findByTestId('user-joins-channel-categorize').should('exist');
             });
 
             describe('add the channel to a sidebar category', () => {
@@ -1025,7 +1055,7 @@ describe('playbooks > edit', {testIsolation: true}, () => {
             it('is enabled in a new playbook', () => {
                 cy.get('#retrospective').within(() => {
                     // * Verify that the toggle is checked
-                    cy.get('input[type=checkbox]').should('be.checked');
+                    cy.get('input').first().should('be.checked');
                 });
             });
 

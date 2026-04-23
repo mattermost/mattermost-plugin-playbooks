@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../utils';
+
 describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -28,7 +30,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Create a fresh playbook for each test
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
-            title: 'Attributes Test Playbook (' + Date.now() + ')',
+            title: 'Attributes Test Playbook (' + getRandomId() + ')',
             userId: testUser.id,
         }).then((playbook) => {
             testPlaybook = playbook;
@@ -54,10 +56,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             navigateToAttributes();
 
             // # Click add button in empty state
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByRole('button', {name: /add.*first attribute/i}).click();
 
             // # Wait for attribute to be created
-            cy.wait(500);
+            cy.wait('@AddPropertyField');
 
             // * Verify empty state is gone
             cy.findByText(/no attributes yet/i).should('not.exist');
@@ -66,13 +69,14 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findAllByTestId('property-field-row').should('have.length', 1);
 
             // # Edit the default name
-            cy.findAllByTestId('property-field-row').first().within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByLabelText('Attribute name').clear().type('Priority');
             });
 
             // # Save by clicking outside
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.wait('@SavePropertyField');
 
             // * Verify attribute is displayed with correct name
             verifyAttribute(0, 'Priority');
@@ -95,6 +99,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify attribute persists
             verifyAttribute(0, 'Customer Name');
+
+            // * Verify attribute was persisted via API
+            cy.apiGetPropertyFieldByName(testPlaybook.id, 'Customer Name');
         });
 
         it('can create a select attribute with options', () => {
@@ -109,10 +116,10 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify options are present
             cy.get('table tbody tr').eq(0).within(() => {
-                cy.findByText('Critical').should('exist');
-                cy.findByText('High').should('exist');
-                cy.findByText('Medium').should('exist');
-                cy.findByText('Low').should('exist');
+                cy.findByText('Critical').should('be.visible');
+                cy.findByText('High').should('be.visible');
+                cy.findByText('Medium').should('be.visible');
+                cy.findByText('Low').should('be.visible');
             });
         });
 
@@ -128,9 +135,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify options are present
             cy.get('table tbody tr').eq(0).within(() => {
-                cy.findByText('Security').should('exist');
-                cy.findByText('Performance').should('exist');
-                cy.findByText('Bug').should('exist');
+                cy.findByText('Security').should('be.visible');
+                cy.findByText('Performance').should('be.visible');
+                cy.findByText('Bug').should('be.visible');
             });
         });
 
@@ -169,6 +176,13 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify change persists
             verifyAttribute(0, 'New Name');
+
+            // * Verify rename was persisted via API
+            cy.apiGetPropertyFieldByName(testPlaybook.id, 'New Name');
+            cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
+                const oldField = fields.find((f) => f.name === 'Old Name');
+                expect(oldField, 'Old Name field should not exist in API').to.be.undefined;
+            });
         });
 
         it('can change attribute type', () => {
@@ -177,19 +191,20 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Flexible Field', 'text');
 
             // # Click on type button to change type
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByRole('button', {name: 'Change attribute type'}).click();
             });
 
             // # Select new type
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.findByText(/^select$/i).click();
 
-            // # Wait for GraphQL mutation
-            cy.wait(500);
+            // # Wait for REST PUT
+            cy.wait('@SavePropertyField');
 
             // * Verify type changed (should now have property values input)
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
-                cy.findByTestId('property-values-input').should('exist');
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
+                cy.findByTestId('property-values-input').should('be.visible');
             });
         });
 
@@ -199,18 +214,19 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Status', 'select', ['Open']);
 
             // # Add another option
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 addNewOption('Closed');
             });
 
             // # Click outside to save
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.wait('@SavePropertyField');
 
             // * Verify both options exist
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
-                cy.findByText('Open').should('exist');
-                cy.findByText('Closed').should('exist');
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
+                cy.findByText('Open').should('be.visible');
+                cy.findByText('Closed').should('be.visible');
             });
         });
 
@@ -220,7 +236,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Priority', 'select', ['Low', 'High']);
 
             // # Click on an existing option to edit it
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 getOptionEditor('Low').within(() => {
                     cy.findByPlaceholderText('Enter value name').clear().type('Medium{enter}');
                 });
@@ -229,14 +245,15 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.waitForGraphQLQueries();
 
             // # Click outside to save
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.wait('@SavePropertyField');
 
             // * Verify the option was updated
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
-                cy.findByText('Medium').should('exist');
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
+                cy.findByText('Medium').should('be.visible');
                 cy.findByText('Low').should('not.exist');
-                cy.findByText('High').should('exist');
+                cy.findByText('High').should('be.visible');
             });
         });
 
@@ -246,7 +263,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Status', 'select', ['Open', 'In Progress', 'Closed']);
 
             // # Click on an option to open the dropdown and delete it
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 getOptionEditor('In Progress').within(() => {
                     cy.findByText('Delete').click();
                 });
@@ -255,14 +272,15 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.waitForGraphQLQueries();
 
             // # Click outside to save
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.wait('@SavePropertyField');
 
             // * Verify the option was deleted
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
-                cy.findByText('Open').should('exist');
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
+                cy.findByText('Open').should('be.visible');
                 cy.findByText('In Progress').should('not.exist');
-                cy.findByText('Closed').should('exist');
+                cy.findByText('Closed').should('be.visible');
             });
         });
 
@@ -272,7 +290,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Category', 'select', ['Single']);
 
             // # Click on the only option to open the dropdown
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 // * Verify the Delete option is not available
                 getOptionEditor('Single').within(() => {
                     cy.findByText('Delete').should('not.exist');
@@ -285,8 +303,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         it('can delete an attribute', () => {
             // # Navigate and create two attributes
             navigateToAttributes();
-            addAttribute('Attribute 1', 'text');
-            addAttribute('Attribute 2', 'text');
+            addAttribute('Alpha Field', 'text');
+            addAttribute('Beta Field', 'text');
 
             // * Verify both exist
             cy.findAllByTestId('property-field-row').should('have.length', 2);
@@ -296,7 +314,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // * Verify only one attribute remains
             cy.findAllByTestId('property-field-row').should('have.length', 1);
-            verifyAttribute(0, 'Attribute 2');
+            verifyAttribute(0, 'Beta Field');
         });
 
         it('shows confirmation modal when deleting', () => {
@@ -305,7 +323,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Important Field', 'text');
 
             // # Click the dot menu for the attribute
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByTestId('menuButton').click();
             });
 
@@ -421,19 +439,20 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Original Field', 'text');
 
             // # Duplicate the attribute
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByTestId('menuButton').click();
             });
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait(500);
+            cy.wait('@AddPropertyField');
 
             // * Verify duplicate was created with "Copy" suffix
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByLabelText('Attribute name').should('have.value', 'Original Field');
             });
-            cy.findAllByTestId('property-field-row').eq(1).within(() => {
+            cy.playbooksGetPropertyFieldRow(1).within(() => {
                 cy.findByLabelText('Attribute name').should('have.value', 'Original Field Copy');
             });
 
@@ -447,20 +466,21 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Priority', 'select', ['High', 'Medium', 'Low']);
 
             // # Duplicate the attribute
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByTestId('menuButton').click();
             });
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait(500);
+            cy.wait('@AddPropertyField');
 
             // * Verify duplicate has the same options
-            cy.findAllByTestId('property-field-row').eq(1).within(() => {
+            cy.playbooksGetPropertyFieldRow(1).within(() => {
                 cy.findByLabelText('Attribute name').should('have.value', 'Priority Copy');
-                cy.findByText('High').should('exist');
-                cy.findByText('Medium').should('exist');
-                cy.findByText('Low').should('exist');
+                cy.findByText('High').should('be.visible');
+                cy.findByText('Medium').should('be.visible');
+                cy.findByText('Low').should('be.visible');
             });
         });
 
@@ -470,13 +490,14 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             addAttribute('Original', 'text');
 
             // # Duplicate it
-            cy.findAllByTestId('property-field-row').eq(0).within(() => {
+            cy.playbooksGetPropertyFieldRow(0).within(() => {
                 cy.findByTestId('menuButton').click();
             });
+            cy.playbooksInterceptPropertyFieldMutation('POST');
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait(500);
+            cy.wait('@AddPropertyField');
 
             // # Edit the duplicate's name
             editAttributeName(1, 'Modified Copy');
@@ -557,20 +578,18 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function addAttribute(name = null, type = 'text', options = []) {
         // # Click add attribute button
+        cy.playbooksInterceptPropertyFieldMutation('POST');
         cy.findByRole('button', {name: /add.*attribute/i}).click();
-
-        // # Wait for GraphQL mutation
-        cy.wait(500);
+        cy.wait('@AddPropertyField');
 
         // # Fill in the name only if provided
         if (name) {
             cy.findAllByTestId('property-field-row').last().within(() => {
                 cy.findByLabelText('Attribute name').clear().type(name);
             });
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.get('body').click(0, 0);
-
-            // # Wait for GraphQL mutation
-            cy.wait(500);
+            cy.wait('@SavePropertyField');
         }
 
         // # Change type if not text
@@ -580,8 +599,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
 
             // # Select the type from dropdown
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
             cy.findByText(new RegExp(`^${type}$`, 'i')).click();
-            cy.wait(500);
+            cy.wait('@SavePropertyField');
         }
 
         // # Add options for select types
@@ -595,11 +615,15 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
                     addNewOption(options[i]);
                 }
             });
-        }
 
-        // # Click outside to save (trigger blur)
-        cy.get('body').click(0, 0);
-        cy.wait(500);
+            // # Click outside to save the options list
+            cy.playbooksInterceptPropertyFieldMutation('PUT');
+            cy.get('body').click(0, 0);
+            cy.wait('@SavePropertyField');
+        } else {
+            // # Click outside to defocus any remaining input
+            cy.get('body').click(0, 0);
+        }
     }
 
     /**
@@ -608,7 +632,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      * @param {string} name - Expected attribute name
      */
     function verifyAttribute(index, name) {
-        cy.findAllByTestId('property-field-row').eq(index).within(() => {
+        cy.playbooksGetPropertyFieldRow(index).within(() => {
             cy.findByLabelText('Attribute name').should('have.value', name);
         });
     }
@@ -619,7 +643,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function deleteAttribute(index) {
         // # Click the dot menu for the attribute
-        cy.findAllByTestId('property-field-row').eq(index).within(() => {
+        cy.playbooksGetPropertyFieldRow(index).within(() => {
             cy.findByTestId('menuButton').click();
         });
 
@@ -628,8 +652,9 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
         // # Confirm deletion in modal
         cy.get('#confirm-property-delete-modal').should('be.visible');
+        cy.playbooksInterceptPropertyFieldMutation('DELETE');
         cy.findByRole('button', {name: /delete/i}).click();
-        cy.wait(500);
+        cy.wait('@DeletePropertyField');
     }
 
     /**
@@ -638,12 +663,13 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      * @param {string} newName - The new name for the attribute
      */
     function editAttributeName(index, newName) {
-        cy.findAllByTestId('property-field-row').eq(index).within(() => {
+        cy.playbooksGetPropertyFieldRow(index).within(() => {
             cy.findByLabelText('Attribute name').clear().type(newName);
         });
 
         // # Click outside to trigger save
+        cy.playbooksInterceptPropertyFieldMutation('PUT');
         cy.get('body').click(0, 0);
-        cy.wait(500);
+        cy.wait('@SavePropertyField');
     }
 });

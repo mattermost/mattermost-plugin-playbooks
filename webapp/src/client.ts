@@ -13,6 +13,8 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {
     FetchPlaybookRunsParams,
     FetchPlaybookRunsReturn,
+    FetchPlaybookTimelineEventsParams,
+    FetchPlaybookTimelineEventsReturn,
     Metadata,
     PlaybookRun,
     RunMetricData,
@@ -77,6 +79,17 @@ export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     return data as FetchPlaybookRunsReturn;
 }
 
+export async function fetchPlaybookTimelineEvents(playbookID: string, params: FetchPlaybookTimelineEventsParams) {
+    const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
+
+    let data = await doGet(`${apiUrl}/playbooks/${playbookID}/timeline_events${queryParams}`);
+    if (!data) {
+        data = {items: [], total_count: 0, page_count: 0, has_more: false} as FetchPlaybookTimelineEventsReturn;
+    }
+
+    return data as FetchPlaybookTimelineEventsReturn;
+}
+
 export async function fetchPlaybookRun(id: string) {
     const data = await doGet(`${apiUrl}/runs/${id}`);
 
@@ -94,7 +107,8 @@ export async function createPlaybookRun(
     name: string,
     summary: string,
     channel_id?: string,
-    create_public_run?: boolean
+    create_public_run?: boolean,
+    property_values?: Record<string, unknown>
 ) {
     const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
         owner_user_id,
@@ -104,6 +118,7 @@ export async function createPlaybookRun(
         playbook_id,
         channel_id,
         create_public_run,
+        property_values,
     }));
     return run as PlaybookRun;
 }
@@ -138,12 +153,8 @@ export async function postStatusUpdate(
         },
     });
 
-    try {
-        const data = await doPost(`${apiUrl}/runs/${playbookRunId}/update-status-dialog`, body);
-        return data;
-    } catch (error) {
-        return {error};
-    }
+    const data = await doPost(`${apiUrl}/runs/${playbookRunId}/update-status-dialog`, body);
+    return data;
 }
 
 export async function fetchPlaybookRunMetadata(id: string) {
@@ -308,13 +319,35 @@ export async function setOwner(playbookRunId: string, ownerId: string) {
     }
 }
 
-export async function setAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
-    const body = JSON.stringify({assignee_id: assigneeId});
+async function putAssignee(playbookRunId: string, checklistNum: number, itemNum: number, body: Record<string, unknown>) {
     try {
-        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, JSON.stringify(body));
     } catch (error) {
         return {error};
     }
+}
+
+export async function setAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_id: assigneeId});
+}
+
+export async function setGroupAssignee(playbookRunId: string, checklistNum: number, itemNum: number, groupId: string) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_group_id: groupId});
+}
+
+export async function setRoleAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeType: string) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {assignee_type: assigneeType});
+}
+
+export async function setPropertyUserAssignee(
+    playbookRunId: string,
+    checklistNum: number,
+    itemNum: number,
+    propertyFieldId: string,
+) {
+    return putAssignee(playbookRunId, checklistNum, itemNum, {
+        assignee_property_field_id: propertyFieldId,
+    });
 }
 
 export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {
@@ -326,11 +359,9 @@ export async function setDueDate(playbookRunId: string, checklistNum: number, it
     }
 }
 
-export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState, itemID?: string) {
-    // Include item ID in request body when available (for incremental updates)
+export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
     const body = JSON.stringify({
         new_state: newState,
-        ...(itemID && {item_id: itemID}),
     });
     try {
         return await doPut<void>(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`, body);

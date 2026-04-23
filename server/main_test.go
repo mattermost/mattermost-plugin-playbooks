@@ -240,6 +240,16 @@ func Setup(t *testing.T) *TestEnvironment {
 		}
 	}
 
+	// Prevent syncPlugins from auto-activating a stale plugin bundle from the
+	// file store during server.Start(). The plugin is explicitly uploaded and
+	// enabled below with the freshly-built binary.
+	// This must come after any config file overrides to ensure the plugin
+	// starts disabled regardless of what the test config file specifies.
+	if config.PluginSettings.PluginStates == nil {
+		config.PluginSettings.PluginStates = make(map[string]*model.PluginState)
+	}
+	config.PluginSettings.PluginStates["playbooks"] = &model.PluginState{Enable: false}
+
 	_, _, err = configStore.Set(config)
 	require.NoError(t, err)
 

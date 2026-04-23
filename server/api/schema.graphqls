@@ -95,6 +95,7 @@ input PlaybookUpdates {
 	removeChannelMemberOnRemovedParticipant: Boolean
 	channelId: String
 	channelMode: String
+	runNumberPrefix: String
 }
 
 input ChecklistUpdates {
@@ -109,6 +110,10 @@ input ChecklistItemUpdates {
 	stateModified: Float!
 	assigneeID: String!
 	assigneeModified: Float!
+	assigneeType: String!
+	assigneeGroupID: String!
+	assigneePropertyFieldID: String!
+	restrictCompletionToAssignee: Boolean!
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
@@ -201,6 +206,7 @@ type ChecklistItem {
 	stateModified: Float!
 	assigneeID: String!
 	assigneeModified: Float!
+	assigneeType: String!
 	command: String!
 	commandLastRun: Float!
 	dueDate: Float!
@@ -208,6 +214,9 @@ type ChecklistItem {
 	conditionID: String!
 	conditionAction: String!
 	conditionReason: String!
+	restrictCompletionToAssignee: Boolean!
+	assigneeGroupID: String!
+	assigneePropertyFieldID: String!
 }
 
 type TaskAction {

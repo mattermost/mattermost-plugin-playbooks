@@ -228,18 +228,22 @@ func (c UpdateChecklist) GetItems() []app.ChecklistItemCommon {
 }
 
 type UpdateChecklistItem struct {
-	Title            string            `json:"title"`
-	State            string            `json:"state"`
-	StateModified    float64           `json:"state_modified"`
-	AssigneeID       string            `json:"assignee_id"`
-	AssigneeModified float64           `json:"assignee_modified"`
-	Command          string            `json:"command"`
-	CommandLastRun   float64           `json:"command_last_run"`
-	Description      string            `json:"description"`
-	LastSkipped      float64           `json:"delete_at"`
-	DueDate          float64           `json:"due_date"`
-	TaskActions      *[]app.TaskAction `json:"task_actions"`
-	ConditionID      string            `json:"condition_id"`
+	Title                        string            `json:"title"`
+	State                        string            `json:"state"`
+	StateModified                float64           `json:"state_modified"`
+	AssigneeID                   string            `json:"assignee_id"`
+	AssigneeModified             float64           `json:"assignee_modified"`
+	AssigneeType                 string            `json:"assignee_type"`
+	AssigneeGroupID              string            `json:"assignee_group_id"`
+	AssigneePropertyFieldID      string            `json:"assignee_property_field_id"`
+	RestrictCompletionToAssignee bool              `json:"restrict_completion_to_assignee"`
+	Command                      string            `json:"command"`
+	CommandLastRun               float64           `json:"command_last_run"`
+	Description                  string            `json:"description"`
+	LastSkipped                  float64           `json:"delete_at"`
+	DueDate                      float64           `json:"due_date"`
+	TaskActions                  *[]app.TaskAction `json:"task_actions"`
+	ConditionID                  string            `json:"condition_id"`
 }
 
 func (ci *UpdateChecklistItem) GetAssigneeID() string {

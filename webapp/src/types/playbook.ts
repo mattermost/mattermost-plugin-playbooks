@@ -1,6 +1,11 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {MetricType} from 'src/graphql/generated/graphql';
+import {TemplatePropertyField} from 'src/utils/template_utils';
+
+export {MetricType};
+
 export interface Playbook {
     id: string;
     title: string;
@@ -63,17 +68,28 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_mode: string;
     channel_id: string;
 
+    owner_group_only_actions: boolean;
+    admin_only_edit: boolean;
+    new_channel_only: boolean;
+    auto_archive_channel: boolean;
+    run_number_prefix: string;
+    next_run_number: number;
+    creation_rules: CreationRule[];
+
     // Deprecated: preserved for backwards compatibility with v1.27
     broadcast_enabled: boolean;
     webhook_on_creation_enabled: boolean;
 
     // Property fields from GraphQL
-    propertyFields: PropertyField[];
+    propertyFields: TemplatePropertyField[];
 }
 
-import {MetricType, PropertyField} from 'src/graphql/generated/graphql';
-
-export {MetricType};
+export interface CreationRule {
+    condition?: Record<string, unknown>;
+    set_owner_id?: string;
+    set_channel_id?: string;
+    invite_user_ids?: string[];
+}
 
 export interface Metric {
     id: string;
@@ -122,6 +138,7 @@ export interface ChecklistItem {
     state: ChecklistItemState | string;
     state_modified: number;
     assignee_id: string;
+    assignee_type: string;
     assignee_modified: number;
     command: string;
     command_last_run: number;
@@ -131,6 +148,9 @@ export interface ChecklistItem {
     condition_id: string;
     condition_action: string;
     condition_reason: string;
+    restrict_completion_to_assignee: boolean;
+    assignee_group_id: string;
+    assignee_property_field_id?: string;
 }
 
 export interface TaskAction {
@@ -215,6 +235,13 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
+        owner_group_only_actions: false,
+        admin_only_edit: false,
+        new_channel_only: false,
+        auto_archive_channel: false,
+        run_number_prefix: '',
+        next_run_number: 1,
+        creation_rules: [],
         propertyFields: [],
     };
 }
@@ -238,9 +265,13 @@ export function emptyChecklistItem(): ChecklistItem {
         state_modified: 0,
         assignee_modified: 0,
         assignee_id: '',
+        assignee_type: '',
         condition_id: '',
         condition_action: '',
         condition_reason: '',
+        restrict_completion_to_assignee: false,
+        assignee_group_id: '',
+        assignee_property_field_id: '',
     };
 }
 
@@ -255,9 +286,13 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state_modified: 0,
     assignee_modified: 0,
     assignee_id: '',
+    assignee_type: '',
     condition_id: '',
     condition_action: '',
     condition_reason: '',
+    restrict_completion_to_assignee: false,
+    assignee_group_id: '',
+    assignee_property_field_id: '',
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {

@@ -10,19 +10,17 @@ import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entit
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
-import {Condition} from 'src/types/conditions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
     actionSetGlobalSettings,
-    conditionCreated,
-    conditionDeleted,
-    conditionUpdated,
+    openPlaybookRunModal,
     playbookArchived,
     playbookCreated,
     playbookRestored,
     playbookRunCreated,
     playbookRunUpdated,
+    playbookUpdated,
     receivedTeamPlaybookRuns,
     removedFromPlaybookRunChannel,
     websocketPlaybookRunIncrementalUpdateReceived,
@@ -39,11 +37,12 @@ import {
     globalSettings,
     myPlaybookRunsMap,
 } from 'src/selectors';
-import {PlaybookRunUpdate} from 'src/types/websocket_events';
+import {PlaybookRunOpenModalPayload, PlaybookRunUpdate, PlaybookUpdatedPayload} from 'src/types/websocket_events';
 export const websocketSubscribersToPlaybookRunUpdate = new Set<(playbookRun: PlaybookRun) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
     return async (): Promise<void> => {
+        clearRunFetchSets();
         const currentTeam = getCurrentTeam(getState());
         const currentUserId = getCurrentUserId(getState());
 
@@ -102,7 +101,7 @@ export function handleWebsocketPlaybookRunUpdatedIncremental(getState: GetStateF
         if (!currentRun) {
             // If we don't have the current state, fetch the full playbook run
             // This ensures we don't lose updates due to missing state
-            fetchAndUpdatePlaybookRun(data.id, dispatch);
+            fetchAndUpdatePlaybookRun(data.id, dispatch, getState);
             return;
         }
 
@@ -174,6 +173,23 @@ export function handleWebsocketPlaybookRestored(getState: GetStateFunc, dispatch
     };
 }
 
+export function handleWebsocketPlaybookUpdated(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+        try {
+            const payload = JSON.parse(msg.data.payload) as PlaybookUpdatedPayload;
+            if (!payload.teamID || !payload.playbookID) {
+                return;
+            }
+            dispatch(playbookUpdated(payload.teamID, payload.playbookID));
+        } catch {
+            // ignore malformed payloads
+        }
+    };
+}
+
 export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispatch) {
     return async (msg: WebSocketMessage<{ team_id: string, user_id: string }>) => {
         const currentUserId = getCurrentUserId(getState());
@@ -240,23 +256,59 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
 
         // Fetch the updated playbook run, since some metadata (like playbook run name) comes directly
         // from the channel, and the plugin cannot detect channel update events for itself.
-        const playbookRun = await fetchPlaybookRunByChannel(channel.id);
+        let playbookRun;
+        try {
+            playbookRun = await fetchPlaybookRunByChannel(channel.id);
+        } catch {
+            // Best-effort update; ignore fetch errors.
+            return;
+        }
         if (playbookRun) {
             dispatch(playbookRunUpdated(playbookRun));
         }
     };
 };
 
-// Helper function to fetch and update a playbook run when state is missing
-function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch) {
+// Track in-flight fetches per runId to avoid duplicate concurrent requests.
+const runFetchInFlight = new Set<string>();
+
+// Track runIds that received a WS event while a fetch was already in-flight.
+// A follow-up fetch is issued after the current one settles so we don't drop updates.
+const runFetchPendingRetry = new Set<string>();
+
+export function clearRunFetchSets() {
+    runFetchInFlight.clear();
+    runFetchPendingRetry.clear();
+}
+
+function fetchAndUpdatePlaybookRun(runId: string, dispatch: Dispatch, getState: GetStateFunc) {
+    if (runFetchInFlight.has(runId)) {
+        // A fetch is already running; record that another event arrived so we
+        // issue a follow-up fetch once the current one completes.
+        runFetchPendingRetry.add(runId);
+        return;
+    }
+    runFetchInFlight.add(runId);
     fetchPlaybookRun(runId)
         .then((playbookRun) => {
-            dispatch(playbookRunUpdated(playbookRun));
+            const current = getRun(runId)(getState());
+            if (!current || playbookRun.update_at > current.update_at) {
+                dispatch(playbookRunUpdated(playbookRun));
+            }
         })
         .catch(() => {
-            // Error fetching playbook run
+            // Best-effort update; ignore fetch errors to avoid surfacing noise to users.
+        })
+        .finally(() => {
+            runFetchInFlight.delete(runId);
+            if (runFetchPendingRetry.has(runId)) {
+                runFetchPendingRetry.delete(runId);
+                fetchAndUpdatePlaybookRun(runId, dispatch, getState);
+            }
         });
 }
+
+let settingsFetchPromise: Promise<void> | null = null;
 
 export function handleWebsocketSettingsChanged(getState: GetStateFunc, dispatch: Dispatch) {
     return async (msg: WebSocketMessage<{ payload: string }>): Promise<void> => {
@@ -267,45 +319,52 @@ export function handleWebsocketSettingsChanged(getState: GetStateFunc, dispatch:
         const settingsUpdate = JSON.parse(msg.data.payload);
         const currentSettings = globalSettings(getState());
         if (currentSettings) {
-            const updatedSettings = {...currentSettings, ...settingsUpdate};
+            // Only merge known settings keys to prevent unexpected wire payload keys
+            // from contaminating Redux state.
+            const allowedKeys = ['enable_experimental_features'] as const;
+            type AllowedKey = typeof allowedKeys[number];
+            const safeUpdate = allowedKeys.reduce((acc, key) => {
+                if (key in settingsUpdate) {
+                    acc[key] = settingsUpdate[key as AllowedKey];
+                }
+                return acc;
+            }, {} as Partial<typeof currentSettings>);
+            const updatedSettings = {...currentSettings, ...safeUpdate};
             dispatch(actionSetGlobalSettings(updatedSettings));
-        } else {
-            const freshSettings = await fetchGlobalSettings();
-            dispatch(actionSetGlobalSettings(freshSettings));
+        } else if (!settingsFetchPromise) {
+            settingsFetchPromise = fetchGlobalSettings()
+                .then((freshSettings) => {
+                    dispatch(actionSetGlobalSettings(freshSettings));
+                })
+                .catch(() => {
+                    // Best-effort; ignore fetch errors for settings.
+                })
+                .finally(() => {
+                    settingsFetchPromise = null;
+                });
         }
     };
 }
 
-// Condition websocket handlers
-export function handleWebsocketConditionCreated(getState: GetStateFunc, dispatch: Dispatch) {
+export function handleWebsocketOpenRunModal(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
 
-        const condition = JSON.parse(msg.data.payload) as Condition;
-        dispatch(conditionCreated(condition));
-    };
-}
-
-export function handleWebsocketConditionUpdated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
-        if (!msg.data.payload) {
+        let payload: PlaybookRunOpenModalPayload;
+        try {
+            payload = JSON.parse(msg.data.payload) as PlaybookRunOpenModalPayload;
+        } catch {
             return;
         }
-
-        const condition = JSON.parse(msg.data.payload) as Condition;
-        dispatch(conditionUpdated(condition));
-    };
-}
-
-export function handleWebsocketConditionDeleted(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{ payload: string }>): void => {
-        if (!msg.data.payload) {
+        if (!payload.team_id || !payload.trigger_channel_id) {
             return;
         }
-
-        const condition = JSON.parse(msg.data.payload) as Condition;
-        dispatch(conditionDeleted(condition.id, condition.playbook_id));
+        dispatch(openPlaybookRunModal({
+            teamId: payload.team_id,
+            triggerChannelId: payload.trigger_channel_id,
+            onRunCreated: () => { /* navigation handled by run created websocket event */ },
+        }));
     };
 }

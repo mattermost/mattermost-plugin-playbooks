@@ -34,6 +34,12 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 		return
 	}
 
+	// If retrospectives are disabled, cancel any recurring schedule and stop.
+	if !playbookRunToRemind.RetrospectiveEnabled {
+		s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
+		return
+	}
+
 	// In the meantime we did publish a retrospective, so no reminder.
 	if playbookRunToRemind.RetrospectivePublishedAt != 0 {
 		return
@@ -96,7 +102,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	}
 
 	post := &model.Post{
-		Message:   fmt.Sprintf("@%s, please provide a status update for [%s](%s).", owner.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID)),
+		Message:   fmt.Sprintf("@%s, please provide a status update for [%s](%s).", owner.Username, playbookRunToModify.Name, getRunDetailsURL(s.getSiteURL(), playbookRunID)),
 		ChannelId: playbookRunToModify.ChannelID,
 		Type:      "custom_update_status",
 		Props: map[string]any{
@@ -141,8 +147,8 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 		return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
 	}
 
-	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
-		channel.DisplayName, team.Name, channel.Name, playbookRun.ID, ownerUserName)
+	message := fmt.Sprintf("Status update is overdue for [%s](%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
+		channel.DisplayName, getChannelURL(s.getSiteURL(), team.Name, channel.Name), playbookRun.ID, ownerUserName)
 
 	return message, nil
 }

@@ -9,8 +9,6 @@
 // Stage: @prod
 // Group: @playbooks
 
-/* eslint-disable no-only-tests/no-only-tests */
-
 describe('playbooks > edit_metrics', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -77,6 +75,9 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
                 // Refresh the page
                 cy.reload();
 
+                // # Scroll retro section into view after reload
+                cy.get('#retrospective').scrollIntoView();
+
                 // * Verify we saved the metrics
                 verifyViewMetric(0, 'test duration', '1 minute per run', 'test description');
                 verifyViewMetric(1, 'test dollars', '2 per run', 'test description 2');
@@ -85,16 +86,16 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // # Edit all 4 metrics and repeat the test
                 cy.findAllByTestId('edit-metric').eq(0).click();
-                cy.get('input[type=text]').eq(2).clear().type('12:8:97');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('12:8:97');
                 saveMetric();
                 cy.findAllByTestId('edit-metric').eq(1).click();
-                cy.get('textarea').eq(0).clear().type('a new description');
+                cy.get('#retrospective-metrics textarea').eq(0).clear().type('a new description');
                 saveMetric();
                 cy.findAllByTestId('edit-metric').eq(2).click();
-                cy.get('input[type=text]').eq(2).clear().type('7777777');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('7777777');
                 saveMetric();
                 cy.findAllByTestId('edit-metric').eq(3).click();
-                cy.get('input[type=text]').eq(1).clear().type('test duration 2!!!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear().type('test duration 2!!!');
                 saveMetric();
 
                 // # Refresh the page
@@ -113,31 +114,31 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
                 cy.findAllByTestId('edit-metric').eq(0).click();
 
                 // * Metrics need a title
-                cy.get('input[type=text]').eq(1).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear();
                 saveMetric();
                 cy.getStyledComponent('ErrorText').contains('Please add a title for your metric.');
 
                 // * Metrics need a unique title
-                cy.get('input[type=text]').eq(1).type('test dollars');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).type('test dollars');
                 saveMetric();
                 cy.getStyledComponent('ErrorText').
                     contains('A metric with the same name already exists. Please add a unique name for each metric.');
 
                 // * A duration target needs to be in the correct format (no letters)
-                cy.get('input[type=text]').eq(1).clear().wait(100).type('test duration again');
-                cy.get('input[type=text]').eq(2).clear().type('a');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear().wait(100).type('test duration again');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('a');
                 saveMetric();
                 cy.getStyledComponent('ErrorText').
                     contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
 
                 // * A duration target needs to be in the correct format (mm:dd:ss)
-                cy.get('input[type=text]').eq(2).clear().type('0:123:0');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('0:123:0');
                 saveMetric();
                 cy.getStyledComponent('ErrorText').
                     contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
 
                 // # A duration can have 1 or 2 numbers in each position
-                cy.get('input[type=text]').eq(2).clear().type('2:12:1');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('2:12:1');
                 saveMetric();
                 verifyViewMetric(0, 'test duration again', '2 days, 12 hours, 1 minute per run', 'test description');
 
@@ -194,48 +195,38 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // # Add metric
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Cost').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Cost').click();
 
                 // # Don't fill in the metric's details
-                cy.get('input[type=text]').eq(1).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear();
 
                 // * Metrics need a title
-                cy.get('input[type=text]').eq(1).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear();
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Integer').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Integer').click();
                 cy.getStyledComponent('ErrorText').contains('Please add a title for your metric.');
 
                 // * Metrics need a unique title
-                cy.get('input[type=text]').eq(1).type('test integer!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).type('test integer!');
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Integer').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Integer').click();
                 cy.getStyledComponent('ErrorText').
                     contains('A metric with the same name already exists. Please add a unique name for each metric.');
 
                 // # Fill in title
-                cy.get('input[type=text]').eq(1).clear().type('test currency!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear().type('test currency!');
 
                 // * A Currency target cannot be text
-                cy.get('input[type=text]').eq(2).clear().type('z');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('z');
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Integer').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Integer').click();
                 cy.getStyledComponent('ErrorText').contains('Please enter a number, or leave the target blank.');
 
                 // * A Currency target /can/ be blank, so can the description, and Add next Integer metric
-                cy.get('input[type=text]').eq(2).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear();
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Integer').click();
-                });
-                cy.getStyledComponent('EditContainer').should('be.visible');
+                cy.get('[data-testid="dropdownmenu"]').contains('Integer').click();
+                cy.getStyledComponent('EditContainer').should('exist');
 
                 // * Verify metric was added without target or description.
                 verifyViewMetric(1, 'test currency!', '', '');
@@ -247,29 +238,29 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
                 // # (using the previous state)
 
                 // # Don't fill in the metric's details
-                cy.get('input[type=text]').eq(1).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear();
 
                 // * Metrics need a title
-                cy.get('input[type=text]').eq(1).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear();
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.getStyledComponent('ErrorText').contains('Please add a title for your metric.');
 
                 // * Metrics need a unique title
-                cy.get('input[type=text]').eq(1).type('test currency!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).type('test currency!');
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.getStyledComponent('ErrorText').
                     contains('A metric with the same name already exists. Please add a unique name for each metric.');
 
                 // # Fill in title
-                cy.get('input[type=text]').eq(1).clear().type('test integer #2!!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear().type('test integer #2!!');
 
                 // * An Integer target cannot be text
-                cy.get('input[type=text]').eq(2).clear().type('arsoton');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('arsoton');
                 cy.findAllByTestId('edit-metric').eq(0).click();
                 cy.getStyledComponent('ErrorText').contains('Please enter a number, or leave the target blank.');
 
                 // * An Integer target /can/ be blank, so can the description, and edit first metric
-                cy.get('input[type=text]').eq(2).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear();
                 cy.findAllByTestId('edit-metric').eq(0).click();
 
                 // * Verify we're editing the first metric, and only this metric
@@ -304,34 +295,32 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // # Add metric
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Cost').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Cost').click();
 
                 // # Don't fill in the metric's details
-                cy.get('input[type=text]').eq(1).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear();
 
                 // * Metrics need a title
-                cy.get('input[type=text]').eq(1).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear();
                 cy.findAllByTestId('delete-metric').eq(0).click();
                 cy.getStyledComponent('ErrorText').contains('Please add a title for your metric.');
 
                 // * Metrics need a unique title
-                cy.get('input[type=text]').eq(1).type('test integer!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).type('test integer!');
                 cy.findAllByTestId('delete-metric').eq(0).click();
                 cy.getStyledComponent('ErrorText').
                     contains('A metric with the same name already exists. Please add a unique name for each metric.');
 
                 // # Fill in title
-                cy.get('input[type=text]').eq(1).clear().type('test currency!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear().type('test currency!');
 
                 // * A Currency target cannot be text
-                cy.get('input[type=text]').eq(2).clear().type('z');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('z');
                 cy.findAllByTestId('delete-metric').eq(0).click();
                 cy.getStyledComponent('ErrorText').contains('Please enter a number, or leave the target blank.');
 
                 // # Remove error text and type another invalid entry
-                cy.get('input[type=text]').eq(2).clear().type('invalid');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear().type('invalid');
 
                 // * Verify that we're allowed to delete a metric we are currently editing (even if it's invalid)
                 cy.findAllByTestId('delete-metric').eq(1).click();
@@ -345,7 +334,7 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
                 cy.findByRole('button', {name: 'Cancel'}).click();
 
                 // * A Currency target /can/ be blank, so can the description, try to delete first metric
-                cy.get('input[type=text]').eq(2).clear();
+                cy.get('#retrospective-metrics input[type=text]').eq(1).clear();
                 cy.findAllByTestId('delete-metric').eq(0).click();
 
                 cy.get('#confirm-modal-light').
@@ -365,35 +354,29 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
                 cy.findAllByTestId('delete-metric').eq(1).click();
                 cy.findByRole('button', {name: 'Delete metric'}).click();
                 cy.findAllByTestId('edit-metric').eq(0).click();
-                cy.get('input[type=text]').eq(1).clear().type('test currency 2!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear().type('test currency 2!');
                 saveMetric();
                 verifyViewsAndEdits(1, 0);
                 verifyViewMetric(0, 'test currency 2!', '', '');
 
                 // # Make sure we can add a metric and then delete it, then can keep editing
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Cost').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Cost').click();
                 cy.findAllByTestId('delete-metric').eq(1).click();
                 cy.findByRole('button', {name: 'Delete metric'}).click();
                 cy.findAllByTestId('edit-metric').eq(0).click();
-                cy.get('input[type=text]').eq(1).clear().type('test currency 3!');
+                cy.get('#retrospective-metrics input[type=text]').eq(0).clear().type('test currency 3!');
                 saveMetric();
                 verifyViewsAndEdits(1, 0);
                 verifyViewMetric(0, 'test currency 3!', '', '');
 
                 // # Make sure we can add a metric and then delete it, then can keep adding
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Cost').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Cost').click();
                 cy.findAllByTestId('delete-metric').eq(1).click();
                 cy.findByRole('button', {name: 'Delete metric'}).click();
                 cy.findByRole('button', {name: 'Add Metric'}).click();
-                cy.findByTestId('dropdownmenu').within(() => {
-                    cy.findByText('Cost').click();
-                });
+                cy.get('[data-testid="dropdownmenu"]').contains('Cost').click();
                 cy.findAllByTestId('delete-metric').eq(1).click();
                 cy.findByRole('button', {name: 'Delete metric'}).click();
                 verifyViewsAndEdits(1, 0);
@@ -438,7 +421,7 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // # Verify it shows 0:0:0, then turn it into null.
                 cy.findAllByTestId('edit-metric').eq(0).click();
-                cy.get('input[type=text]').eq(2).should('have.value', '00:00:00').
+                cy.get('#retrospective-metrics input[type=text]').eq(1).should('have.value', '00:00:00').
                     clear();
                 saveMetric();
 
@@ -451,7 +434,7 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // * Verify it has null value when editing again.
                 cy.findAllByTestId('edit-metric').eq(0).click();
-                cy.get('input[type=text]').eq(2).should('have.value', '');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).should('have.value', '');
                 saveMetric();
 
                 // # Add and verify currency
@@ -461,7 +444,7 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // # Verify it shows 0, then turn it into null.
                 cy.findAllByTestId('edit-metric').eq(1).click();
-                cy.get('input[type=text]').eq(2).should('have.value', '0').
+                cy.get('#retrospective-metrics input[type=text]').eq(1).should('have.value', '0').
                     clear();
                 saveMetric();
                 cy.getStyledComponent('ViewContainer').should('have.length', 2).eq(1).within(() => {
@@ -474,7 +457,7 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // * Verify it has null value when editing again.
                 cy.findAllByTestId('edit-metric').eq(1).click();
-                cy.get('input[type=text]').eq(2).should('have.value', '');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).should('have.value', '');
                 saveMetric();
 
                 // # Add and verify Integer
@@ -484,7 +467,7 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // # Verify it shows 0, then turn it into null.
                 cy.findAllByTestId('edit-metric').eq(2).click();
-                cy.get('input[type=text]').eq(2).should('have.value', '0').
+                cy.get('#retrospective-metrics input[type=text]').eq(1).should('have.value', '0').
                     clear();
                 saveMetric();
                 cy.getStyledComponent('ViewContainer').should('have.length', 3).eq(2).within(() => {
@@ -497,7 +480,7 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 
                 // * Verify it has null value when editing again.
                 cy.findAllByTestId('edit-metric').eq(2).click();
-                cy.get('input[type=text]').eq(2).should('have.value', '');
+                cy.get('#retrospective-metrics input[type=text]').eq(1).should('have.value', '');
                 saveMetric();
 
                 // * Verify we have three valid metrics and are editing none.
@@ -518,14 +501,23 @@ describe('playbooks > edit_metrics', {testIsolation: true}, () => {
 const addMetric = (type, title, target, description) => {
     const fullType = type === 'Duration' ? 'Duration (in dd:hh:mm)' : type;
 
-    // # Add the requested metric
+    // # Add the requested metric — click "Add Metric" to open the dropdown
     cy.findByRole('button', {name: 'Add Metric'}).click();
-    cy.findByTestId('dropdownmenu').within(() => {
-        cy.findByText(fullType).click();
+
+    // # Select the metric type from the floating dropdown.
+    // Use cy.contains() on the dropdown portal element instead of
+    // findByText+within — Cypress 15's stricter event handling through
+    // FloatingPortal elements requires native Cypress commands.
+    cy.get('[data-testid="dropdownmenu"]').contains(fullType).click();
+
+    // * Wait for MetricEdit form to render after type selection
+    cy.get('#retrospective-metrics').within(() => {
+        cy.findByRole('button', {name: 'Save'}).should('exist');
     });
 
-    // # Fill in the metric's details
-    cy.get('input[type=text]').eq(1).type(title).
+    // # Fill in the metric's details — scope to #retrospective-metrics to avoid
+    // picking up unrelated text inputs elsewhere on the page
+    cy.get('#retrospective-metrics input[type=text]').eq(0).type(title).
         tab().type(target).
         tab().type(description);
 

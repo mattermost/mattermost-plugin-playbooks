@@ -95,7 +95,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  id,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("playbooks can be searched by title", func(t *testing.T) {
@@ -1888,4 +1888,275 @@ func removeFromPerms(permission string, perms []string) []string {
 		}
 	}
 	return result
+}
+
+// TestAdminOnlyEdit_APIEnforcement verifies that the AdminOnlyEdit flag restricts
+// playbook PUT requests to playbook admins only.
+func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create a playbook with AdminOnlyEdit=true.
+	// PlaybooksAdminClient (system admin) creates it and is also a playbook admin.
+	// RegularUser is a plain playbook member; RegularUser2 is not a member.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "AdminOnlyEdit Test Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		AdminOnlyEdit:                           true,
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("non-admin member PUT /playbooks/{id} returns 403", func(t *testing.T) {
+		// Fetch the playbook as admin so we have a full struct to PUT back
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// RegularUser is only a playbook_member — should be blocked by AdminOnlyEdit
+		pb.Title = "Non-Admin Attempted Edit"
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("admin member PUT /playbooks/{id} returns 200", func(t *testing.T) {
+		// Fetch the playbook as admin
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// AdminUser is a playbook_admin — should be allowed to edit
+		pb.Title = "Admin Allowed Edit"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// Verify the title was actually persisted
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "Admin Allowed Edit", updated.Title)
+	})
+
+	t.Run("system admin PUT /playbooks/{id} returns 200", func(t *testing.T) {
+		// Fetch the playbook
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		// System admin always has access
+		pb.Title = "System Admin Edit"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Equal(t, "System Admin Edit", updated.Title)
+	})
+}
+
+// TestNewChannelOnly_APIEnforcement verifies that the NewChannelOnly flag causes
+// the runs creation endpoint to reject requests that supply an existing channel_id.
+func TestNewChannelOnly_APIEnforcement(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	// Create an existing channel to use as the "existing channel" in tests.
+	existingChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+		DisplayName: "Existing Channel",
+		Name:        "existing-channel-newchonly",
+		Type:        model.ChannelTypeOpen,
+		TeamId:      e.BasicTeam.Id,
+	})
+	require.NoError(t, err)
+	_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), existingChannel.Id, e.RegularUser.Id)
+	require.NoError(t, err)
+
+	// Create a playbook with NewChannelOnly=true.
+	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "NewChannelOnly Playbook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+		NewChannelOnly:                          true,
+		CreatePublicPlaybookRun:                 true,
+		CreateChannelMemberOnNewParticipant:     true,
+		RemoveChannelMemberOnRemovedParticipant: true,
+	})
+	require.NoError(t, err)
+
+	t.Run("POST /runs with channel_id when NewChannelOnly=true returns 400", func(t *testing.T) {
+		// Supplying an existing channel_id is forbidden when NewChannelOnly=true
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Should Fail",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   existingChannel.Id,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("POST /runs without channel_id when NewChannelOnly=true returns 201", func(t *testing.T) {
+		// Omitting channel_id (new channel mode) is allowed
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "New Channel Run",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		assert.NotEmpty(t, run.ID)
+	})
+}
+
+func TestPutPlaybookCreationRules(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("creation rules are preserved when nil in PUT payload", func(t *testing.T) {
+		// Create a new playbook
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Preserve rules playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Get the playbook and set creation rules
+		playbook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		playbook.CreationRules = []client.CreationRule{
+			{SetOwnerID: e.AdminUser.Id},
+		}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *playbook)
+		require.NoError(t, err)
+
+		// Verify rules were saved
+		after, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.Len(t, after.CreationRules, 1)
+		assert.Equal(t, e.AdminUser.Id, after.CreationRules[0].SetOwnerID)
+
+		// Now PUT without CreationRules (nil = preserve)
+		after.CreationRules = nil
+		after.Title = "Preserve rules playbook - updated title"
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *after)
+		require.NoError(t, err)
+
+		// Verify the rules were preserved
+		final, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.Len(t, final.CreationRules, 1, "creation rules must be preserved when nil is sent in PUT")
+		assert.Equal(t, e.AdminUser.Id, final.CreationRules[0].SetOwnerID)
+	})
+
+	t.Run("creation rules are updated when new rules provided in PUT payload", func(t *testing.T) {
+		// Create a new playbook
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Update rules playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Set initial creation rules
+		playbook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		playbook.CreationRules = []client.CreationRule{
+			{SetOwnerID: e.AdminUser.Id},
+		}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *playbook)
+		require.NoError(t, err)
+
+		// Verify initial rules
+		after, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.Len(t, after.CreationRules, 1)
+		assert.Equal(t, e.AdminUser.Id, after.CreationRules[0].SetOwnerID)
+
+		// Now PUT with updated rules pointing to RegularUser2
+		after.CreationRules = []client.CreationRule{
+			{SetOwnerID: e.RegularUser2.Id},
+		}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *after)
+		require.NoError(t, err)
+
+		// Verify rules were updated
+		final, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.Len(t, final.CreationRules, 1)
+		assert.Equal(t, e.RegularUser2.Id, final.CreationRules[0].SetOwnerID,
+			"creation rules must be updated to the new value")
+	})
+
+	t.Run("creation rules can be cleared by sending empty slice", func(t *testing.T) {
+		// Create a new playbook
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Clear rules playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		// Set creation rules
+		playbook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		playbook.CreationRules = []client.CreationRule{
+			{SetOwnerID: e.AdminUser.Id},
+		}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *playbook)
+		require.NoError(t, err)
+
+		// Now send empty slice to clear rules
+		playbook, err = e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		playbook.CreationRules = []client.CreationRule{}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *playbook)
+		require.NoError(t, err)
+
+		// Verify rules were cleared
+		final, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.Empty(t, final.CreationRules, "sending empty slice must clear creation rules")
+	})
+
+	t.Run("creation rule with invalid owner ID is rejected", func(t *testing.T) {
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Invalid rule playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+		})
+		require.NoError(t, err)
+
+		playbook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		playbook.CreationRules = []client.CreationRule{
+			{SetOwnerID: "not-a-valid-id"},
+		}
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *playbook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
 }

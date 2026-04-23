@@ -29,6 +29,19 @@ export interface Option {
     user: UserProfile;
 }
 
+export interface ExtraOption {
+    value: string;
+    label: JSX.Element | string;
+    isExtraOption: true;
+}
+
+export interface ExtraSection {
+    label: string;
+    options: ExtraOption[];
+}
+
+type AnyOption = Option | ExtraOption;
+
 interface ActionObj {
     action: ActionTypes;
 }
@@ -72,13 +85,23 @@ interface Props {
      * - one with defaultLabel and the rest of the users
      */
     userGroups?: UserGroup;
+
+    /**
+     * Additional non-user sections (e.g. roles, groups) shown below the user sections.
+     */
+    extraSections?: ExtraSection[];
+
+    /**
+     * Called when a non-user option from extraSections is selected.
+     */
+    onExtraOptionSelected?: (value: string) => void;
 }
 
 export default function ProfileSelector(props: Props) {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
     const {formatMessage} = useIntl();
 
-    const [isOpen, setOpen] = useState(false);
+    const [isOpen, setOpen] = useState(props.controlledOpenToggle ?? false);
     const toggleOpen = () => {
         if (!isOpen) {
             fetchUsers();
@@ -108,7 +131,7 @@ export default function ProfileSelector(props: Props) {
     const [userInSubsetOptions, setUserInSubsetOptions] = useState<Option[]>([]);
     const [userNotInSubsetOptions, setUserNotInSubsetOptions] = useState<Option[]>([]);
 
-    async function fetchUsers() {
+    async function fetchUsers(signal?: {cancelled: boolean}) {
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
         };
@@ -119,6 +142,11 @@ export default function ProfileSelector(props: Props) {
 
         const subsetUserIds = props.userGroups?.subsetUserIds || [];
         const allUsers = await props.getAllUsers();
+
+        if (signal?.cancelled) {
+            return;
+        }
+
         const usersNotInSubset = allUsers.filter((user) => !subsetUserIds.find((userId) => userId === user.id));
 
         const userToOption = (user: UserProfile) => {
@@ -149,10 +177,14 @@ export default function ProfileSelector(props: Props) {
         setUserInSubsetOptions(optionSubsetGroup);
     }
 
-    // Fill in the userOptions on mount.
+    // Fill in the userOptions on mount and whenever the user source changes.
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        const signal = {cancelled: false};
+        fetchUsers(signal);
+        return () => {
+            signal.cancelled = true;
+        };
+    }, [props.getAllUsers]);
 
     const [selected, setSelected] = useState<Option | null>(null);
 
@@ -170,16 +202,21 @@ export default function ProfileSelector(props: Props) {
         }
     }, [userInSubsetOptions, props.selectedUserId]);
 
-    const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
+    const onSelectedChange = async (value: AnyOption | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
             return;
         }
         toggleOpen();
-        if (value?.user.id === selected?.user.id) {
+        if (value && 'isExtraOption' in value && value.isExtraOption) {
+            props.onExtraOptionSelected?.(value.value);
+            return;
+        }
+        const userOption = value as Option | undefined;
+        if (userOption?.user.id === selected?.user.id) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.user);
+            props.onSelectedChange(userOption?.user);
         }
     };
 
@@ -202,7 +239,8 @@ export default function ProfileSelector(props: Props) {
     } else if (props.placeholderButtonClass) {
         target = (
             <button
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     if (props.enableEdit) {
                         toggleOpen();
                     }
@@ -218,7 +256,8 @@ export default function ProfileSelector(props: Props) {
         target = (
             <FilterButton
                 $active={isOpen}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     if (props.enableEdit) {
                         toggleOpen();
                     }
@@ -254,16 +293,34 @@ export default function ProfileSelector(props: Props) {
     } : noDropdown;
 
     const getSelectOptions = () => {
+        let groups: Array<{label: string; options: AnyOption[]}> = [];
+
         if (!props.userGroups) {
-            return userNotInSubsetOptions;
+            groups = [{label: '', options: userNotInSubsetOptions}];
+        } else if (userNotInSubsetOptions.length === 0) {
+            groups = [{label: '', options: userInSubsetOptions}];
+        } else {
+            groups = [
+                {label: props.userGroups.subsetLabel, options: userInSubsetOptions},
+                {label: props.userGroups.defaultLabel, options: userNotInSubsetOptions},
+            ];
         }
-        if (userNotInSubsetOptions.length === 0) {
-            return userInSubsetOptions;
+
+        if (props.extraSections) {
+            for (const section of props.extraSections) {
+                if (section.options.length > 0) {
+                    groups.push({label: section.label, options: section.options});
+                }
+            }
         }
-        return [
-            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
-            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
-        ];
+
+        // If there's only one unlabeled group with no extra sections, return flat
+        if (groups.length === 1 && !groups[0].label) {
+            return groups[0].options;
+        }
+
+        // Filter out empty unlabeled groups
+        return groups.filter((g) => g.label || g.options.length > 0);
     };
 
     return (
@@ -286,7 +343,7 @@ export default function ProfileSelector(props: Props) {
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
-                onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
+                onChange={(option, action) => onSelectedChange(option as AnyOption, action as ActionObj)}
                 classNamePrefix='playbook-react-select'
                 className='playbook-react-select'
                 {...props.customControlProps}
@@ -297,7 +354,7 @@ export default function ProfileSelector(props: Props) {
 
 // styles for the select component
 const selectStyles: StylesConfig<Option, boolean> = {
-    control: (provided) => ({...provided, minWidth: 240, margin: 8}),
+    control: (provided) => ({...provided, minWidth: 280, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
         const hoverColor = 'rgba(20, 93, 191, 0.08)';
@@ -306,11 +363,17 @@ const selectStyles: StylesConfig<Option, boolean> = {
             ...provided,
             backgroundColor: state.isSelected ? hoverColor : bgHover,
             color: 'unset',
+            padding: '6px 12px',
         };
     },
     groupHeading: (provided) => ({
         ...provided,
         fontWeight: 600,
+        fontSize: '11px',
+        letterSpacing: '0.02em',
+        textTransform: 'uppercase' as const,
+        color: 'rgba(var(--center-channel-color-rgb), 0.56)',
+        padding: '8px 12px 4px',
     }),
 };
 
@@ -331,20 +394,30 @@ const getUserDescription = (firstName: string, lastName: string, nickName: strin
 };
 
 export const formatProfileName = (descriptionSuffix: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-        const name = '@' + userName;
-        const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
+        const fullName = getFullName(firstName, lastName) || preferredName;
+        const handle = '@' + userName;
         return (
             <>
-                <span>{name}</span>
-                {description && <Description className={'description'}>{description}</Description>}
+                <FullName>{fullName}{descriptionSuffix}</FullName>
+                <Handle className={'description'}>{handle}</Handle>
             </>
         );
     };
 };
 
-const Description = styled.span`
+const FullName = styled.span`
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+`;
+
+const Handle = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;

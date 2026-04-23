@@ -8,21 +8,28 @@ import {useSelector} from 'react-redux';
 import ReactSelect, {StylesConfig} from 'react-select';
 import {GlobalState} from '@mattermost/types/store';
 
-import {ConditionExprV1} from 'src/types/conditions';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {ConditionActionDef, ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
 import Tooltip from 'src/components/widgets/tooltip';
 import {getCondition} from 'src/selectors';
 import {useProxyState} from 'src/hooks';
 import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
 import {extractConditions, formatCondition} from 'src/utils/condition_format';
+import ProfileSelector from 'src/components/profile/profile_selector';
+import ChannelSelector from 'src/components/backstage/channel_selector';
+import {useProfilesInTeam} from 'src/hooks/general';
 
 interface ConditionHeaderProps {
     conditionId: string;
     propertyFields: PropertyField[];
     onUpdate?: (expr: ConditionExprV1) => void;
+    onUpdateActions?: (actions: ConditionActionDef[]) => void;
     onDelete?: () => void;
     checklistIndex: number;
     startEditing?: boolean;
+    actions?: ConditionActionDef[];
 }
 
 type SelectOption = {
@@ -34,10 +41,14 @@ const ConditionHeader = ({
     conditionId,
     propertyFields,
     onUpdate,
+    onUpdateActions,
     onDelete,
     startEditing = false,
+    actions: propActions = [],
 }: ConditionHeaderProps) => {
     const {formatMessage} = useIntl();
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const profilesInTeam = useProfilesInTeam();
 
     // Get condition from Redux store
     const condition = useSelector((state: GlobalState) => getCondition(state, conditionId));
@@ -378,6 +389,20 @@ const ConditionHeader = ({
         );
     };
 
+    const updateAction = (index: number, updates: Partial<ConditionActionDef>) => {
+        const newActions = [...propActions];
+        newActions[index] = {...newActions[index], ...updates};
+        onUpdateActions?.(newActions);
+    };
+
+    const addAction = () => {
+        onUpdateActions?.([...propActions, {type: 'set_owner'}]);
+    };
+
+    const removeAction = (index: number) => {
+        onUpdateActions?.(propActions.filter((_, i) => i !== index));
+    };
+
     // Render edit mode with full controls
     if (isEditing) {
         return (
@@ -386,6 +411,67 @@ const ConditionHeader = ({
                 <ConditionsWrapper>
                     {conditions.map((cond, index) => renderConditionRow(cond, index))}
                 </ConditionsWrapper>
+                {onUpdateActions && (
+                    <ActionsEditor>
+                        <ThenLabel>{formatMessage({defaultMessage: 'Then'})}</ThenLabel>
+                        {propActions.map((action, index) => (
+                            <ActionRow key={action.type + '-' + index}>
+                                <ActionTypeSelect
+                                    value={action.type}
+                                    onChange={(e) => updateAction(index, {
+                                        type: e.target.value as ConditionActionDef['type'],
+                                        set_owner_user_id: e.target.value === 'set_owner' ? action.set_owner_user_id : undefined,
+                                        notify_channel_ids: e.target.value === 'notify_channel' ? action.notify_channel_ids : undefined,
+                                        notify_message: e.target.value === 'notify_channel' ? action.notify_message : undefined,
+                                    })}
+                                >
+                                    <option value='set_owner'>{formatMessage({defaultMessage: 'Set owner'})}</option>
+                                    <option value='notify_channel'>{formatMessage({defaultMessage: 'Notify channel'})}</option>
+                                </ActionTypeSelect>
+                                {action.type === 'set_owner' && (
+                                    <PickerWrapper>
+                                        <ProfileSelector
+                                            selectedUserId={action.set_owner_user_id}
+                                            placeholder={formatMessage({defaultMessage: 'Select user'})}
+                                            enableEdit={true}
+                                            getAllUsers={async () => profilesInTeam}
+                                            selfIsFirstOption={true}
+                                            onSelectedChange={(user) => updateAction(index, {set_owner_user_id: user?.id || ''})}
+                                        />
+                                    </PickerWrapper>
+                                )}
+                                {action.type === 'notify_channel' && (
+                                    <>
+                                        <PickerWrapper>
+                                            <ChannelSelector
+                                                channelIds={action.notify_channel_ids || []}
+                                                onChannelsSelected={(ids) => updateAction(index, {notify_channel_ids: ids})}
+                                                isDisabled={false}
+                                                captureMenuScroll={true}
+                                                shouldRenderValue={true}
+                                                teamId={currentTeamId}
+                                                isMulti={true}
+                                                placeholder={formatMessage({defaultMessage: 'Select channels'})}
+                                            />
+                                        </PickerWrapper>
+                                        <ActionInput
+                                            value={action.notify_message || ''}
+                                            onChange={(e) => updateAction(index, {notify_message: e.target.value})}
+                                            placeholder={formatMessage({defaultMessage: 'Message (use curly braces around field names)'})}
+                                        />
+                                    </>
+                                )}
+                                <RemoveConditionButton onClick={() => removeAction(index)}>
+                                    <i className='icon-close'/>
+                                </RemoveConditionButton>
+                            </ActionRow>
+                        ))}
+                        <AddActionButton onClick={addAction}>
+                            <i className='icon-plus'/>
+                            <span>{formatMessage({defaultMessage: 'Add action'})}</span>
+                        </AddActionButton>
+                    </ActionsEditor>
+                )}
                 <Actions>
                     <Tooltip
                         id={`done-editing-${condition.id}`}
@@ -788,6 +874,87 @@ const DestructiveActionButton = styled(ActionButton)`
     &:hover {
         background: rgba(var(--error-text-color-rgb), 0.08);
         color: var(--error-text);
+    }
+`;
+
+const ActionsEditor = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    width: 100%;
+`;
+
+const ThenLabel = styled.span`
+    font-size: 13px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    flex-shrink: 0;
+`;
+
+const ActionRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+`;
+
+const ActionTypeSelect = styled.select`
+    height: 24px;
+    padding: 0 4px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-size: 12px;
+`;
+
+const ActionInput = styled.input`
+    padding: 4px 8px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-size: 12px;
+    height: 24px;
+    flex: 1;
+    min-width: 120px;
+
+    &:focus {
+        outline: none;
+        border-color: var(--button-bg);
+    }
+
+    &::placeholder {
+        color: rgba(var(--center-channel-color-rgb), 0.48);
+    }
+`;
+
+const PickerWrapper = styled.div`
+    min-width: 180px;
+    max-width: 280px;
+`;
+
+const AddActionButton = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-size: 12px;
+    cursor: pointer;
+    align-self: flex-start;
+
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+    }
+
+    i {
+        font-size: 12px;
     }
 `;
 

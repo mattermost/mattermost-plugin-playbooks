@@ -4,6 +4,8 @@
 package app
 
 import (
+	"encoding/json"
+
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 	"github.com/pkg/errors"
@@ -11,13 +13,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 )
-
-// Websocket event constants disabled until we implement proper user targeting
-// const (
-// 	conditionCreatedWSEvent = "condition_created"
-// 	conditionUpdatedWSEvent = "condition_updated"
-// 	conditionDeletedWSEvent = "condition_deleted"
-// )
 
 type conditionService struct {
 	store           ConditionStore
@@ -259,7 +254,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	}
 
 	if condition.RunID != "" {
-		err := errors.New("cannot create conditions with RunID - run conditions are system managed")
+		err := errors.Wrap(ErrMalformedCondition, "cannot create conditions with RunID - run conditions are system managed")
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
@@ -272,7 +267,7 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	}
 
 	if currentCount >= MaxConditionsPerPlaybook {
-		err := errors.Errorf("cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
+		err := errors.Wrapf(ErrMalformedCondition, "cannot create condition: playbook already has the maximum allowed number of conditions (%d)", MaxConditionsPerPlaybook)
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
@@ -282,14 +277,8 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 	createdCondition, err := s.store.CreateCondition(condition.PlaybookID, condition)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create condition")
 	}
-
-	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
-	// if err := s.sendConditionCreatedWS(createdCondition, teamID); err != nil {
-	// 	// Log but don't fail the operation for websocket errors
-	// 	logrus.WithError(err).WithField("condition_id", createdCondition.ID).Error("failed to send condition created websocket event")
-	// }
 
 	auditRec.Success()
 	auditRec.AddEventResultState(createdCondition)
@@ -298,10 +287,10 @@ func (s *conditionService) CreatePlaybookCondition(userID string, condition Cond
 }
 
 // GetPlaybookCondition retrieves a stored playbook condition by ID
-func (s *conditionService) GetPlaybookCondition(userID, playbookID, conditionID string) (*Condition, error) {
+func (s *conditionService) GetPlaybookCondition(playbookID, conditionID string) (*Condition, error) {
 	condition, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get condition")
 	}
 	return condition, nil
 }
@@ -319,17 +308,17 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 	existing, err := s.store.GetCondition(condition.PlaybookID, condition.ID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get condition")
 	}
 
 	if existing.RunID != "" {
-		err := errors.New("cannot modify conditions associated with a run - run conditions are read-only")
+		err := errors.Wrap(ErrMalformedCondition, "cannot modify conditions associated with a run - run conditions are read-only")
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
 
 	if condition.RunID != "" {
-		err := errors.New("cannot associate existing condition with a run - run conditions are system managed")
+		err := errors.Wrap(ErrMalformedCondition, "cannot associate existing condition with a run - run conditions are system managed")
 		auditRec.AddErrorDesc(err.Error())
 		return nil, err
 	}
@@ -355,14 +344,8 @@ func (s *conditionService) UpdatePlaybookCondition(userID string, condition Cond
 	updatedCondition, err := s.store.UpdateCondition(condition.PlaybookID, condition)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return nil, errors.Wrap(err, "failed to update condition")
 	}
-
-	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
-	// if err := s.sendConditionUpdatedWS(updatedCondition, teamID); err != nil {
-	// 	// Log but don't fail the operation for websocket errors
-	// 	logrus.WithError(err).WithField("condition_id", updatedCondition.ID).Error("failed to send condition updated websocket event")
-	// }
 
 	auditRec.Success()
 	auditRec.AddEventResultState(updatedCondition)
@@ -383,13 +366,13 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 	existing, err := s.store.GetCondition(playbookID, conditionID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return err
+		return errors.Wrap(err, "failed to get condition")
 	}
 
 	model.AddEventParameterAuditableToAuditRec(auditRec, "condition", existing)
 
 	if existing.RunID != "" {
-		err := errors.New("cannot delete conditions associated with a run - run conditions are read-only")
+		err := errors.Wrap(ErrMalformedCondition, "cannot delete conditions associated with a run - run conditions are read-only")
 		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
@@ -397,14 +380,8 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 	err = s.store.DeleteCondition(playbookID, conditionID)
 	if err != nil {
 		auditRec.AddErrorDesc(err.Error())
-		return err
+		return errors.Wrap(err, "failed to delete condition")
 	}
-
-	// Websocket events disabled until we implement proper user targeting to avoid leaking condition info
-	// if err := s.sendConditionDeletedWS(existing, teamID); err != nil {
-	// 	// Log but don't fail the operation for websocket errors
-	// 	logrus.WithError(err).WithField("condition_id", existing.ID).Error("failed to send condition deleted websocket event")
-	// }
 
 	auditRec.Success()
 
@@ -412,7 +389,7 @@ func (s *conditionService) DeletePlaybookCondition(userID, playbookID, condition
 }
 
 // GetPlaybookConditions retrieves stored conditions for a playbook
-func (s *conditionService) GetPlaybookConditions(userID, playbookID string, page, perPage int) (*GetConditionsResults, error) {
+func (s *conditionService) GetPlaybookConditions(playbookID string, page, perPage int) (*GetConditionsResults, error) {
 	fetchConditions := func() ([]Condition, error) {
 		return s.store.GetPlaybookConditions(playbookID, page, perPage)
 	}
@@ -425,7 +402,7 @@ func (s *conditionService) GetPlaybookConditions(userID, playbookID string, page
 }
 
 // GetRunConditions retrieves stored conditions for a run
-func (s *conditionService) GetRunConditions(userID, playbookID, runID string, page, perPage int) (*GetConditionsResults, error) {
+func (s *conditionService) GetRunConditions(playbookID, runID string, page, perPage int) (*GetConditionsResults, error) {
 	fetchConditions := func() ([]Condition, error) {
 		return s.store.GetRunConditions(playbookID, runID, page, perPage)
 	}
@@ -445,7 +422,7 @@ func (s *conditionService) getConditions(
 ) (*GetConditionsResults, error) {
 	conditions, err := fetchConditions()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get conditions")
 	}
 
 	totalCount, err := fetchCount()
@@ -454,6 +431,9 @@ func (s *conditionService) getConditions(
 	}
 
 	// Calculate pagination info
+	if perPage <= 0 {
+		perPage = conditionsDefaultPerPage
+	}
 	pageCount := (totalCount + perPage - 1) / perPage
 	if pageCount == 0 {
 		pageCount = 1
@@ -501,11 +481,7 @@ func (s *conditionService) applyConditionResults(
 
 			// Initialize checklist changes if not exists
 			if result.ChecklistChanges[checklist.Title] == nil {
-				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{
-					Added:      0,
-					Hidden:     0,
-					hasChanges: false,
-				}
+				result.ChecklistChanges[checklist.Title] = &ChecklistConditionChanges{}
 			}
 
 			item.ConditionReason = res.Reason
@@ -554,7 +530,7 @@ func (s *conditionService) evaluateConditions(playbookRun *PlaybookRun, conditio
 	return conditionResults
 }
 
-func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string) (*ConditionEvaluationResult, error) {
+func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *PlaybookRun, changedFieldID string, oldValue json.RawMessage) (*ConditionEvaluationResult, error) {
 	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get conditions for playbook run")
@@ -566,8 +542,142 @@ func (s *conditionService) EvaluateConditionsOnValueChanged(playbookRun *Playboo
 		}, nil
 	}
 
+	// Evaluate conditions against the OLD property values to detect transitions.
+	// The run's PropertyValues already contain the new value, so temporarily swap
+	// the changed field back to the old value for the "before" evaluation.
+	var oldResults map[string]conditionEvalResult
+	hasActions := false
+	for _, cond := range conditions {
+		if len(cond.Actions) > 0 {
+			hasActions = true
+			break
+		}
+	}
+	if hasActions {
+		oldResults = s.evaluateConditionsWithOverride(playbookRun, conditions, changedFieldID, oldValue)
+	}
+
 	conditionResults := s.evaluateConditions(playbookRun, conditions)
-	return s.applyConditionResults(playbookRun, conditionResults), nil
+	result := s.applyConditionResults(playbookRun, conditionResults)
+
+	// Collect triggered actions: conditions that transitioned from not-met → met.
+	if hasActions {
+		for _, cond := range conditions {
+			if len(cond.Actions) == 0 {
+				continue
+			}
+			newRes := conditionResults[cond.ID]
+			oldRes := oldResults[cond.ID]
+			if newRes.Met && !oldRes.Met {
+				result.TriggeredActions = append(result.TriggeredActions, cond.Actions...)
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// EvaluateConditionsForTransform pre-evaluates conditions for a changed field and
+// returns both the summary result (with triggered actions) and a pure checklist
+// transform closure. The closure captures the computed condition results by value
+// and can be safely passed to UpdatePlaybookRunChecklistsAtomic — it will be
+// invoked while the IR_Incident row lock is held, eliminating the TOCTOU race
+// that a plain UpdatePlaybookRun(run) would introduce when concurrent checklist
+// mutations occur.
+//
+// CONTRACT: the returned closure performs only in-memory computation; it must
+// not make any I/O or DB calls.
+func (s *conditionService) EvaluateConditionsForTransform(playbookRun *PlaybookRun, changedFieldID string, oldValue json.RawMessage) (*ConditionEvaluationResult, func([]Checklist) []Checklist, error) {
+	conditions, err := s.store.GetConditionsByRunAndFieldID(playbookRun.ID, changedFieldID)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get conditions for playbook run")
+	}
+
+	if len(conditions) == 0 {
+		empty := &ConditionEvaluationResult{
+			ChecklistChanges: make(map[string]*ChecklistConditionChanges),
+		}
+		identity := func(cls []Checklist) []Checklist { return cls }
+		return empty, identity, nil
+	}
+
+	// Evaluate conditions against the OLD property values to detect transitions.
+	var oldResults map[string]conditionEvalResult
+	hasActions := false
+	for _, cond := range conditions {
+		if len(cond.Actions) > 0 {
+			hasActions = true
+			break
+		}
+	}
+	if hasActions {
+		oldResults = s.evaluateConditionsWithOverride(playbookRun, conditions, changedFieldID, oldValue)
+	}
+
+	conditionResults := s.evaluateConditions(playbookRun, conditions)
+
+	// Apply to a deep copy of the run to build the summary (triggered actions,
+	// checklist change counts). The caller's run is not mutated.
+	runCopy := *playbookRun
+	clsCopy := make([]Checklist, len(playbookRun.Checklists))
+	copy(clsCopy, playbookRun.Checklists)
+	for i := range clsCopy {
+		items := make([]ChecklistItem, len(clsCopy[i].Items))
+		copy(items, clsCopy[i].Items)
+		clsCopy[i].Items = items
+	}
+	runCopy.Checklists = clsCopy
+	summary := s.applyConditionResults(&runCopy, conditionResults)
+
+	if hasActions {
+		for _, cond := range conditions {
+			if len(cond.Actions) == 0 {
+				continue
+			}
+			newRes := conditionResults[cond.ID]
+			oldRes := oldResults[cond.ID]
+			if newRes.Met && !oldRes.Met {
+				summary.TriggeredActions = append(summary.TriggeredActions, cond.Actions...)
+			}
+		}
+	}
+
+	// Capture conditionResults by value. The closure is a pure in-memory transform
+	// that can be called with the freshest checklists inside a DB transaction.
+	cr := conditionResults
+	transform := func(freshChecklists []Checklist) []Checklist {
+		tempRun := &PlaybookRun{Checklists: freshChecklists}
+		s.applyConditionResults(tempRun, cr)
+		return tempRun.Checklists
+	}
+
+	return summary, transform, nil
+}
+
+// evaluateConditionsWithOverride evaluates conditions after temporarily overriding
+// a single property field's value on the run. Used to compute the "before" state
+// for transition detection.
+func (s *conditionService) evaluateConditionsWithOverride(
+	playbookRun *PlaybookRun,
+	conditions []Condition,
+	fieldID string,
+	overrideValue json.RawMessage,
+) map[string]conditionEvalResult {
+	// Create a shallow copy of the run and its PropertyValues slice so the
+	// caller's data is never mutated during the "before" evaluation.
+	pvCopy := make([]PropertyValue, len(playbookRun.PropertyValues))
+	copy(pvCopy, playbookRun.PropertyValues)
+	tempRun := *playbookRun
+	tempRun.PropertyValues = pvCopy
+
+	for i, pv := range tempRun.PropertyValues {
+		if pv.FieldID == fieldID {
+			tempRun.PropertyValues[i].Value = overrideValue
+			break
+		}
+	}
+
+	return s.evaluateConditions(&tempRun, conditions)
 }
 
 func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun) (*ConditionEvaluationResult, error) {
@@ -589,21 +699,15 @@ func (s *conditionService) EvaluateAllConditionsForRun(playbookRun *PlaybookRun)
 	}
 
 	conditionResults := s.evaluateConditions(playbookRun, conditions)
-	return s.applyConditionResults(playbookRun, conditionResults), nil
-}
+	result := s.applyConditionResults(playbookRun, conditionResults)
 
-// Websocket helper functions disabled until we implement proper user targeting
-// func (s *conditionService) sendConditionCreatedWS(condition *Condition, teamID string) error {
-// 	s.poster.PublishWebsocketEventToTeam(conditionCreatedWSEvent, condition, teamID)
-// 	return nil
-// }
-//
-// func (s *conditionService) sendConditionUpdatedWS(condition *Condition, teamID string) error {
-// 	s.poster.PublishWebsocketEventToTeam(conditionUpdatedWSEvent, condition, teamID)
-// 	return nil
-// }
-//
-// func (s *conditionService) sendConditionDeletedWS(condition *Condition, teamID string) error {
-// 	s.poster.PublishWebsocketEventToTeam(conditionDeletedWSEvent, condition, teamID)
-// 	return nil
-// }
+	// At initial evaluation (run creation), all met conditions are "new" transitions.
+	// Collect their actions so the caller can execute them.
+	for _, cond := range conditions {
+		if len(cond.Actions) > 0 && conditionResults[cond.ID].Met {
+			result.TriggeredActions = append(result.TriggeredActions, cond.Actions...)
+		}
+	}
+
+	return result, nil
+}

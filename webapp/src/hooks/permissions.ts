@@ -1,6 +1,8 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {useEffect, useMemo} from 'react';
+
 import {
     getRoles,
     haveIChannelPermission,
@@ -11,6 +13,8 @@ import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import {GlobalState} from '@mattermost/types/store';
 import {useDispatch, useSelector} from 'react-redux';
+
+import {isCurrentUserAdmin} from 'src/selectors';
 
 import {PlaybookPermissionGeneral, makeGeneralPermissionSpecific} from 'src/types/permissions';
 
@@ -50,9 +54,29 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
     const currentUserId = useSelector(getCurrentUserId);
     const roles = useSelector(getRoles);
     const specificPermission = makeGeneralPermissionSpecific(permission, playbook?.public || false);
-    const hasTeamPermision = useHasTeamPermission(playbook?.team_id || '', specificPermission);
+    const hasTeamPermission = useHasTeamPermission(playbook?.team_id || '', specificPermission);
 
-    if (hasTeamPermision) {
+    const userRoles = useMemo(() => {
+        const m = playbook?.members?.find((val: PlaybookPermissionsMember) => val.user_id === currentUserId);
+        if (m) {
+            return m.scheme_roles || [];
+        }
+        if (playbook?.public) {
+            return [playbook.default_playbook_member_role];
+        }
+        return [];
+    }, [currentUserId, playbook?.members, playbook?.public, playbook?.default_playbook_member_role]);
+
+    // Dispatch loadRolesIfNeeded in an effect so it does not run during the render phase.
+    // Calling dispatch() inline during render violates React's Rules of Hooks and can
+    // trigger a re-render loop in StrictMode.
+    useEffect(() => {
+        if (userRoles.length > 0) {
+            dispatch(loadRolesIfNeeded(userRoles));
+        }
+    }, [dispatch, userRoles]);
+
+    if (hasTeamPermission) {
         return true;
     }
 
@@ -60,20 +84,9 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
         return false;
     }
 
-    const member = playbook?.members.find((val: PlaybookPermissionsMember) => val.user_id === currentUserId);
-
-    let userRoles: string[] = [];
-    if (member) {
-        userRoles = member.scheme_roles || [];
-    } else if (playbook.public) {
-        userRoles = [playbook.default_playbook_member_role];
-    }
-
-    if (!userRoles) {
+    if (userRoles.length === 0) {
         return false;
     }
-
-    dispatch(loadRolesIfNeeded(userRoles));
 
     for (const userRole of userRoles) {
         const role = roles[userRole];
@@ -83,4 +96,21 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
     }
 
     return false;
+};
+
+export const useIsSystemAdmin = (): boolean => {
+    return useSelector(isCurrentUserAdmin);
+};
+
+/**
+ * Returns true when the current user is blocked from finishing/restoring a run
+ * because OwnerGroupOnlyActions is enabled and they are not the run owner or a system admin.
+ *
+ * Note: this hook is scoped to finish/restore actions only. The backend RunChangeOwner
+ * permission additionally allows playbook admins through — do not reuse this hook for
+ * change-owner UI guards without adding a playbook-admin check.
+ */
+export const useIsBlockedByOwnerOnlyForFinishRestore = (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined): boolean => {
+    const isSystemAdmin = useSelector(isCurrentUserAdmin);
+    return Boolean(ownerGroupOnlyActions && !isOwner && !isSystemAdmin);
 };

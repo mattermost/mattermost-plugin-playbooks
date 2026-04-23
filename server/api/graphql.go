@@ -7,7 +7,9 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/dataloader/v7"
@@ -54,6 +56,39 @@ func isGraphQLErrorable(err error) bool {
 	return errors.As(err, &graphqlErr) && graphqlErr.IsGraphQLErrorable()
 }
 
+// classifyAppError maps app-layer sentinel errors to a user-facing GraphQL error.
+// For sentinel errors it uses the safe public message from the sentinel table.
+// When the sentinel was wrapped with additional user-facing context (e.g. condition counts,
+// option names), that context is appended so the client can act on it.
+func classifyAppError(err error) error {
+	s := findSentinelError(err)
+	if s == nil {
+		return err
+	}
+
+	// Walk to the layer that directly wraps the sentinel; only its context is safe to expose.
+	// Use errors.Is instead of string comparison to stay robust to sentinel renaming.
+	type causer interface{ Cause() error }
+	current := err
+	for {
+		c, ok := current.(causer)
+		if !ok {
+			break
+		}
+		if errors.Is(c.Cause(), s.sentinel) {
+			fullMsg := current.Error()
+			suffix := ": " + s.sentinel.Error()
+			if strings.HasSuffix(fullMsg, suffix) && len(fullMsg) > len(suffix) {
+				extraContext := strings.TrimSuffix(fullMsg, suffix)
+				return newGraphQLError(fmt.Errorf("%s %s", s.publicMsg, extraContext))
+			}
+			break
+		}
+		current = c.Cause()
+	}
+	return newGraphQLError(errors.New(s.publicMsg))
+}
+
 type GraphQLHandler struct {
 	*ErrorHandler
 	playbookService    app.PlaybookService
@@ -63,7 +98,6 @@ type GraphQLHandler struct {
 	pluginAPI          *pluginapi.Client
 	config             config.Service
 	permissions        *app.PermissionsService
-	playbookStore      app.PlaybookStore
 	runStore           app.PlaybookRunStore
 	licenceChecker     app.LicenseChecker
 
@@ -82,7 +116,6 @@ func NewGraphQLHandler(
 	api *pluginapi.Client,
 	configService config.Service,
 	permissions *app.PermissionsService,
-	playbookStore app.PlaybookStore,
 	runStore app.PlaybookRunStore,
 	licenceChecker app.LicenseChecker,
 ) *GraphQLHandler {
@@ -95,7 +128,6 @@ func NewGraphQLHandler(
 		pluginAPI:          api,
 		config:             configService,
 		permissions:        permissions,
-		playbookStore:      playbookStore,
 		runStore:           runStore,
 		licenceChecker:     licenceChecker,
 	}
@@ -132,7 +164,6 @@ type GraphQLContext struct {
 	r                    *http.Request
 	playbookService      app.PlaybookService
 	playbookRunService   app.PlaybookRunService
-	playbookStore        app.PlaybookStore
 	runStore             app.PlaybookRunStore
 	categoryService      app.CategoryService
 	propertyService      app.PropertyService
@@ -187,7 +218,6 @@ func (h *GraphQLHandler) graphQL(c *Context, w http.ResponseWriter, r *http.Requ
 		logger:               c.logger,
 		config:               h.config,
 		permissions:          h.permissions,
-		playbookStore:        h.playbookStore,
 		runStore:             h.runStore,
 		licenceChecker:       h.licenceChecker,
 		favoritesLoader:      favoritesLoader,

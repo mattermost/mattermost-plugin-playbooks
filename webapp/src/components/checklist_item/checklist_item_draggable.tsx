@@ -38,6 +38,9 @@ interface Props {
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
     isChannelChecklist?: boolean;
+    currentUserId?: string;
+    runOwnerId?: string;
+    runCreatorId?: string;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -57,7 +60,7 @@ const DraggableChecklistItem = (props: Props) => {
                     playbookId={props.playbookId}
                     participantUserIds={props.playbookRun?.participant_ids ?? []}
                     onChange={(newState: ChecklistItemState) => {
-                        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState, props.item.id);
+                        return props.playbookRun && setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
                     }}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging || snapshot.combineWith != null}
@@ -78,11 +81,15 @@ const DraggableChecklistItem = (props: Props) => {
                     availableConditions={props.availableConditions}
                     conditions={props.conditions}
                     propertyFields={props.propertyFields}
+                    propertyValues={props.playbookRun?.property_values}
                     onEditingChange={props.onEditingChange}
                     hasCondition={props.hasCondition}
                     conditionHeader={props.conditionHeader}
                     onSaveAndAddNew={props.onSaveAndAddNew}
                     isChannelChecklist={props.isChannelChecklist}
+                    currentUserId={props.currentUserId}
+                    runOwnerId={props.runOwnerId}
+                    runCreatorId={props.runCreatorId}
                 />
             )}
         </Draggable>

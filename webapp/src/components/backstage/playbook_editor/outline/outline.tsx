@@ -2,16 +2,35 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {Children, ReactNode, useState} from 'react';
+import React, {
+    Children,
+    ReactNode,
+    useCallback,
+    useState,
+} from 'react';
 
 import {useIntl} from 'react-intl';
+
+import {useSelector} from 'react-redux';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
+import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
+import {savePlaybook} from 'src/client';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {PlaybookRole} from 'src/types/permissions';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+import RetrospectiveToggle from 'src/components/backstage/playbook_editor/retrospective_toggle';
+import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_channel_only_toggle';
+import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
+import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
+import AutoArchiveToggle from 'src/components/backstage/playbook_editor/auto_archive_toggle';
+import {Section as BaseSection, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -22,29 +41,38 @@ import Section from './section';
 interface Props {
     playbook: Loaded<FullPlaybook>;
     refetch: () => void;
+    canEdit: boolean;
+    restPlaybook?: PlaybookWithChecklist;
 }
 
 type StyledAttrs = {className?: string};
 
-const Outline = ({playbook, refetch}: Props) => {
+type RestOnlyOverrides = Pick<PlaybookWithChecklist, 'admin_only_edit' | 'owner_group_only_actions' | 'new_channel_only' | 'auto_archive_channel'>;
+
+const Outline = ({playbook, refetch, canEdit, restPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
+    const currentUserId = useSelector(getCurrentUserId);
+    const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
+    const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const [restOverrides, setRestOverrides] = useState<Partial<RestOnlyOverrides>>({});
+    const effectiveRestPlaybook = restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
-    const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
-        setChecklistCollapseState({
-            ...checklistCollapseState,
+    const onChecklistCollapsedStateChange = useCallback((checklistIndex: number, state: boolean) => {
+        setChecklistCollapseState((prev) => ({
+            ...prev,
             [checklistIndex]: state,
-        });
-    };
-    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
+        }));
+    }, []);
+    const onEveryChecklistCollapsedStateChange = useCallback((state: Record<number, boolean>) => {
         setChecklistCollapseState(state);
-    };
+    }, []);
 
-    const toggleStatusUpdate = () => {
-        if (archived) {
+    const toggleStatusUpdate = useCallback(() => {
+        if (archived || !canEdit) {
             return;
         }
         updatePlaybook({
@@ -52,16 +80,61 @@ const Outline = ({playbook, refetch}: Props) => {
             webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
             broadcastEnabled: !playbook.status_update_enabled,
         });
-    };
+    }, [archived, canEdit, updatePlaybook, playbook.status_update_enabled]);
 
-    const toggleRetrospective = () => {
-        if (archived || !retrospectiveAccess) {
-            return;
+    const handleRetrospectiveChange = useCallback((updated: {retrospective_enabled: boolean}) => {
+        if (!archived && canEdit) {
+            updatePlaybook({
+                retrospectiveEnabled: updated.retrospective_enabled,
+            });
         }
-        updatePlaybook({
-            retrospectiveEnabled: !playbook.retrospective_enabled,
-        });
-    };
+    }, [archived, canEdit, updatePlaybook]);
+
+    const handleRetrospectiveHeaderClick = useCallback(() => {
+        if (!archived && canEdit && retrospectiveAccess) {
+            handleRetrospectiveChange({retrospective_enabled: !playbook.retrospective_enabled});
+        }
+    }, [archived, canEdit, retrospectiveAccess, handleRetrospectiveChange, playbook.retrospective_enabled]);
+
+    const handleAdminOnlyEditChange = useCallback((updated: {admin_only_edit: boolean}) => {
+        if (!archived && restPlaybook) {
+            const prev = restPlaybook.admin_only_edit;
+            setRestOverrides((o) => ({...o, admin_only_edit: updated.admin_only_edit}));
+            savePlaybook({...restPlaybook, ...restOverrides, admin_only_edit: updated.admin_only_edit}).catch(() => {
+                setRestOverrides((o) => ({...o, admin_only_edit: prev}));
+            });
+        }
+    }, [archived, restPlaybook, restOverrides]);
+
+    const handleOwnerGroupOnlyActionsChange = useCallback((updated: {owner_group_only_actions: boolean}) => {
+        if (!archived && restPlaybook) {
+            const prev = restPlaybook.owner_group_only_actions;
+            setRestOverrides((o) => ({...o, owner_group_only_actions: updated.owner_group_only_actions}));
+            savePlaybook({...restPlaybook, ...restOverrides, owner_group_only_actions: updated.owner_group_only_actions}).catch(() => {
+                setRestOverrides((o) => ({...o, owner_group_only_actions: prev}));
+            });
+        }
+    }, [archived, restPlaybook, restOverrides]);
+
+    const handleNewChannelOnlyChange = useCallback((updated: {new_channel_only: boolean}) => {
+        if (!archived && restPlaybook) {
+            const prev = restPlaybook.new_channel_only;
+            setRestOverrides((o) => ({...o, new_channel_only: updated.new_channel_only}));
+            savePlaybook({...restPlaybook, ...restOverrides, new_channel_only: updated.new_channel_only}).catch(() => {
+                setRestOverrides((o) => ({...o, new_channel_only: prev}));
+            });
+        }
+    }, [archived, restPlaybook, restOverrides]);
+
+    const handleAutoArchiveChange = useCallback((updated: {auto_archive_channel: boolean}) => {
+        if (!archived && restPlaybook) {
+            const prev = restPlaybook.auto_archive_channel;
+            setRestOverrides((o) => ({...o, auto_archive_channel: updated.auto_archive_channel}));
+            savePlaybook({...restPlaybook, ...restOverrides, auto_archive_channel: updated.auto_archive_channel}).catch(() => {
+                setRestOverrides((o) => ({...o, auto_archive_channel: prev}));
+            });
+        }
+    }, [archived, restPlaybook, restOverrides]);
 
     return (
         <Sections
@@ -72,7 +145,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 title={formatMessage({defaultMessage: 'Summary'})}
             >
                 <MarkdownEdit
-                    disabled={archived}
+                    disabled={archived || !canEdit}
                     placeholder={formatMessage({defaultMessage: 'Add a run summary template…'})}
                     value={(playbook.run_summary_template_enabled && playbook.run_summary_template) || ''}
                     onSave={(runSummaryTemplate) => {
@@ -91,7 +164,7 @@ const Outline = ({playbook, refetch}: Props) => {
                 headerRight={(
                     <HoverMenuContainer data-testid={'status-update-toggle'}>
                         <Toggle
-                            disabled={archived}
+                            disabled={archived || !canEdit}
                             isChecked={playbook.status_update_enabled}
                             onChange={toggleStatusUpdate}
                         />
@@ -101,6 +174,7 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <StatusUpdates
                     playbook={playbook}
+                    disabled={archived || !canEdit}
                 />
             </Section>
             <Section
@@ -109,7 +183,7 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <ChecklistList
                     playbook={playbook}
-                    isReadOnly={false}
+                    isReadOnly={!canEdit}
                     checklistsCollapseState={checklistCollapseState}
                     onChecklistCollapsedStateChange={onChecklistCollapsedStateChange}
                     onEveryChecklistCollapsedStateChange={onEveryChecklistCollapsedStateChange}
@@ -122,18 +196,19 @@ const Outline = ({playbook, refetch}: Props) => {
                 hoverEffect={true}
                 headerRight={(
                     <HoverMenuContainer>
-                        <Toggle
-                            disabled={archived || !retrospectiveAccess}
-                            isChecked={playbook.retrospective_enabled}
-                            onChange={toggleRetrospective}
+                        <RetrospectiveToggle
+                            playbook={playbook}
+                            onChange={handleRetrospectiveChange}
+                            disabled={archived || !canEdit || !retrospectiveAccess}
                         />
                     </HoverMenuContainer>
                 )}
-                onHeaderClick={toggleRetrospective}
+                onHeaderClick={handleRetrospectiveHeaderClick}
             >
                 <Retrospective
                     playbook={playbook}
                     refetch={refetch}
+                    disabled={archived || !canEdit}
                 />
             </Section>
             <Section
@@ -142,11 +217,58 @@ const Outline = ({playbook, refetch}: Props) => {
             >
                 <Actions
                     playbook={playbook}
+                    disabled={archived || !canEdit}
+                    fieldNames={restPlaybook?.propertyFields?.map((f: {name: string}) => f.name) ?? []}
+                    restPlaybook={restPlaybook}
                 />
             </Section>
+            {isPlaybookAdmin && effectiveRestPlaybook && (
+                <Section
+                    id={'settings'}
+                    title={''}
+                >
+                    <StyledSettingsSection>
+                        <StyledSettingsSectionTitle>
+                            <SettingsOutlineIcon size={22}/>
+                            {formatMessage({defaultMessage: 'Settings'})}
+                        </StyledSettingsSectionTitle>
+                        <SettingsRow data-testid='admin-only-edit-toggle'>
+                            <AdminOnlyEditToggle
+                                playbook={effectiveRestPlaybook}
+                                isAdmin={isPlaybookAdmin}
+                                disabled={archived}
+                                onChange={handleAdminOnlyEditChange}
+                            />
+                        </SettingsRow>
+                        <SettingsRow data-testid='owner-group-only-actions-toggle'>
+                            <OwnerGroupOnlyActionsToggle
+                                playbook={effectiveRestPlaybook}
+                                isPlaybookAdmin={isPlaybookAdmin}
+                                disabled={archived}
+                                onChange={handleOwnerGroupOnlyActionsChange}
+                            />
+                        </SettingsRow>
+                        <SettingsRow data-testid='new-channel-only-toggle'>
+                            <NewChannelOnlyToggle
+                                playbook={effectiveRestPlaybook}
+                                isPlaybookAdmin={isPlaybookAdmin}
+                                disabled={archived}
+                                onChange={handleNewChannelOnlyChange}
+                            />
+                        </SettingsRow>
+                        <SettingsRow data-testid='auto-archive-channel-toggle'>
+                            <AutoArchiveToggle
+                                playbook={effectiveRestPlaybook}
+                                disabled={archived}
+                                onChange={handleAutoArchiveChange}
+                            />
+                        </SettingsRow>
+                    </StyledSettingsSection>
+                </Section>
+            )}
             <PlaybookActionsModal
                 playbook={playbook}
-                readOnly={false}
+                readOnly={!canEdit}
             />
         </Sections>
     );
@@ -163,7 +285,8 @@ type SectionsProps = {
 const SectionsImpl = ({
     children,
     className,
-}: SectionsProps & StyledAttrs) => {
+    ...rest
+}: SectionsProps & StyledAttrs & React.HTMLAttributes<HTMLDivElement>) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -182,7 +305,10 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div className={className}>
+            <div
+                className={className}
+                {...rest}
+            >
                 {children}
             </div>
         </>
@@ -199,6 +325,31 @@ export const Sections = styled(SectionsImpl)`
     margin-bottom: 40px;
     background: var(--center-channel-bg);
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
+`;
+
+const StyledSettingsSection = styled(BaseSection)`
+    padding: 2rem;
+    padding-bottom: 0;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 8px;
+    margin: 0;
+`;
+
+const StyledSettingsSectionTitle = styled(SectionTitle)`
+    display: flex;
+    align-items: center;
+    margin: 0 0 24px;
+    font-size: 16px;
+    font-weight: 600;
+    gap: 8px;
+
+    svg {
+        color: rgba(var(--center-channel-color-rgb), 0.48);
+    }
+`;
+
+const SettingsRow = styled.div`
+    padding: 8px 0;
 `;
 
 const HoverMenuContainer = styled.div`

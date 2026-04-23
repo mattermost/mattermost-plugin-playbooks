@@ -44,7 +44,7 @@ const BarGraph = (props: BarGraphProps) => {
                         title: {
                             display: true,
                             text: props.title,
-                            fontColor: centerChannelFontColor,
+                            color: centerChannelFontColor,
                         },
                         tooltip: {
                             callbacks: {
@@ -87,8 +87,11 @@ const BarGraph = (props: BarGraphProps) => {
                                 color: centerChannelFontColor,
                             },
                             ticks: {
-                                callback: props.xAxesTicksCallback ? props.xAxesTicksCallback : (val: any, index: number) => {
-                                    return (index % 2) === 0 ? val : '';
+                                callback: props.xAxesTicksCallback ? props.xAxesTicksCallback : function formatXTick(this: any, val: any, index: number) {
+                                    if (index % 2 !== 0) {
+                                        return '';
+                                    }
+                                    return this.getLabelForValue(val);
                                 },
                                 color: centerChannelFontColor,
                                 maxRotation: 0,
@@ -102,8 +105,7 @@ const BarGraph = (props: BarGraphProps) => {
                             props.onClick(-1);
                             return;
                         }
-                        // eslint-disable-next-line no-underscore-dangle
-                        props.onClick(element[0]._index);
+                        props.onClick(element[0].index);
                     },
                     onHover(event: any) {
                         if (props.onClick) {

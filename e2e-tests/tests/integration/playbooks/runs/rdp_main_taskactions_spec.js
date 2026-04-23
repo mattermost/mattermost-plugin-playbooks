@@ -9,6 +9,7 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../utils';
 import * as TIMEOUTS from '../../../fixtures/timeouts';
 
 describe('runs > task actions', {testIsolation: true}, () => {
@@ -32,7 +33,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             // # Create a playbook
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
-                title: 'Playbook (' + Date.now() + ')',
+                title: 'Playbook (' + getRandomId() + ')',
                 checklists: [{
                     title: 'Test Checklist',
                     items: [
@@ -64,21 +65,21 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPlaybook.id,
-                playbookRunName: `the run name ${Date.now()}`,
+                playbookRunName: `the run name ${getRandomId()}`,
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
                 testPlaybookRun = playbookRun;
 
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
-                cy.wait(2000); // Wait for page to load
+                cy.findByTestId('run-checklist-section').should('be.visible');
             });
         });
 
         it('disallows no keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -105,7 +106,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
         it('allows a single keyword', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -136,19 +137,19 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('allows multiple keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -180,19 +181,19 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword2 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword2 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('allows multi-word phrases', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -223,19 +224,19 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and a phrase with multiple words happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and a phrase with multiple words happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('allows removing previously configured keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -278,30 +279,30 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action not activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword2 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword2 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('disables when all keywords removed', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -345,18 +346,18 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh keyword1 keyword2 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh keyword1 keyword2 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action not activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
         });
 
         it('disallows a user without keywords', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -390,7 +391,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
         it('allows a single user', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -429,30 +430,30 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action not activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser.username} checked off checklist item "Test Task"`);
         });
 
         it('allows configuring multiple users', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -495,35 +496,35 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser.username} checked off checklist item "Test Task"`);
 
             // # Reset-uncheck task
             cy.apiSetChecklistItemState(testPlaybookRun.id, 0, 0, '');
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
 
         it('rejects unknown user', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -565,19 +566,19 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser.username} checked off checklist item "Test Task"`);
         });
 
         it('allows removing previously configured users', () => {
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -631,23 +632,23 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser.id);
             cy.postMessageAs({
                 sender: testUser,
-                message: `hello from ${testUser.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action NOT activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('not.be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('not.be.checked');
 
             // # Attempt to activate trigger
             cy.apiAddUserToChannel(testPlaybookRun.channel_id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testPlaybookRun.channel_id,
             });
 
             // * Verify action activated
-            getChecklistTasks().eq(0).find('input[type="checkbox"]').should('be.checked');
+            getChecklistTasks().eq(0).findByTestId('task-checkbox').should('be.checked');
             cy.findAllByTestId('timeline-item task_state_modified').findByText(`${testUser2.username} checked off checklist item "Test Task"`);
         });
     });
@@ -666,7 +667,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
 
             // # Enter editing mode on the task first
             getChecklistTasks().eq(0).findByTestId('hover-menu-edit-button').click();
-            cy.wait(1000); // Wait for edit mode UI to render
+            getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').should('be.visible');
 
             // # Open the task actions modal (lightning bolt icon, no text label)
             getChecklistTasks().eq(0).find('.icon-lightning-bolt-outline').click();
@@ -702,7 +703,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: testPlaybook.id,
-                    playbookRunName: `the run name ${Date.now()}`,
+                    playbookRunName: `the run name ${getRandomId()}`,
                     ownerUserId: testUser.id,
                     channelId: testChannel.id,
                 }).then((playbookRun) => {
@@ -714,7 +715,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
                     playbookId: testPlaybook.id,
-                    playbookRunName: `the run name ${Date.now()}`,
+                    playbookRunName: `the run name ${getRandomId()}`,
                     ownerUserId: testUser.id,
                     channelId: testChannel.id,
                 }).then((playbookRun) => {
@@ -729,7 +730,7 @@ describe('runs > task actions', {testIsolation: true}, () => {
             cy.apiAddUserToChannel(testChannel.id, testUser2.id);
             cy.postMessageAs({
                 sender: testUser2,
-                message: `hello from ${testUser2.username}: ${Date.now()}, oh and keyword1 happened`,
+                message: `hello from ${testUser2.username}: ${getRandomId()}, oh and keyword1 happened`,
                 channelId: testChannel.id,
             });
 

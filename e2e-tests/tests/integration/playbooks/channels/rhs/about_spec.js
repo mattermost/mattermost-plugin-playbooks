@@ -63,12 +63,12 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
     describe('shows name', () => {
         it('of active playbook run', () => {
             // * Verify the title is displayed
-            cy.get('#rhsContainer').contains(playbookRunName);
+            cy.get('#rhsContainer').contains(playbookRunName).should('be.visible');
         });
 
         it('of renamed playbook run', () => {
             // * Verify the existing title is displayed
-            cy.get('#rhsContainer').contains(playbookRunName);
+            cy.get('#rhsContainer').contains(playbookRunName).should('be.visible');
 
             // # Rename the channel
             cy.apiPatchChannel(testPlaybookRun.channel_id, {
@@ -77,7 +77,7 @@ describe('channels > rhs > header', {testIsolation: true}, () => {
             });
 
             // * Verify the updated title is displayed
-            cy.get('#rhsContainer').contains(playbookRunName);
+            cy.get('#rhsContainer').contains(playbookRunName).should('be.visible');
         });
     });
 

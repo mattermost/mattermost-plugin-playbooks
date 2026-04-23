@@ -26,6 +26,7 @@ type conditionForDB struct {
 	ConditionExpr      string
 	PropertyFieldIDs   string
 	PropertyOptionsIDs string
+	Actions            string
 }
 
 // conditionStore is a sql store for conditions. Use NewConditionStore to create it.
@@ -50,6 +51,7 @@ func NewConditionStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Condit
 			"Version",
 			"PropertyFieldIDs",
 			"PropertyOptionsIDs",
+			"Actions",
 			"CreateAt",
 			"UpdateAt",
 			"DeleteAt",
@@ -100,6 +102,7 @@ func (c *conditionStore) CreateCondition(playbookID string, condition app.Condit
 			"Version":            dbCondition.Version,
 			"PropertyFieldIDs":   dbCondition.PropertyFieldIDs,
 			"PropertyOptionsIDs": dbCondition.PropertyOptionsIDs,
+			"Actions":            dbCondition.Actions,
 			"CreateAt":           dbCondition.CreateAt,
 			"UpdateAt":           dbCondition.UpdateAt,
 			"DeleteAt":           dbCondition.DeleteAt,
@@ -123,7 +126,7 @@ func (c *conditionStore) GetCondition(playbookID, conditionID string) (*app.Cond
 		}))
 
 	if err == sql.ErrNoRows {
-		return nil, errors.New("condition not found")
+		return nil, errors.Wrapf(app.ErrNotFound, "condition not found: %s in playbook %s", conditionID, playbookID)
 	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get condition")
@@ -158,6 +161,7 @@ func (c *conditionStore) UpdateCondition(playbookID string, condition app.Condit
 			"Version":            dbCondition.Version,
 			"PropertyFieldIDs":   dbCondition.PropertyFieldIDs,
 			"PropertyOptionsIDs": dbCondition.PropertyOptionsIDs,
+			"Actions":            dbCondition.Actions,
 			"UpdateAt":           dbCondition.UpdateAt,
 		}).
 		Where(sq.Eq{
@@ -206,9 +210,17 @@ func (c *conditionStore) fromConditionForDB(sqlCondition conditionForDB) (app.Co
 		return app.Condition{}, errors.Errorf("unsupported condition version: %d", sqlCondition.Version)
 	}
 
+	var actions []app.ConditionActionDef
+	if sqlCondition.Actions != "" && sqlCondition.Actions != "[]" {
+		if err := json.Unmarshal([]byte(sqlCondition.Actions), &actions); err != nil {
+			return app.Condition{}, errors.Wrap(err, "failed to unmarshal condition actions")
+		}
+	}
+
 	return app.Condition{
 		ID:            sqlCondition.ID,
 		ConditionExpr: conditionExpr,
+		Actions:       actions,
 		Version:       sqlCondition.Version,
 		PlaybookID:    sqlCondition.PlaybookID,
 		RunID:         sqlCondition.RunID,
@@ -228,6 +240,9 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 	if err != nil {
 		return conditionForDB{}, errors.Wrap(err, "failed to marshal condition expression")
 	}
+	if len(conditionExprJSON) > maxJSONLength {
+		return conditionForDB{}, errors.Errorf("condition expression json for condition id '%s' is too long (max %d)", condition.ID, maxJSONLength)
+	}
 
 	propertyFieldIDsJSON, err := json.Marshal(propertyFieldIDs)
 	if err != nil {
@@ -237,6 +252,18 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 	propertyOptionsIDsJSON, err := json.Marshal(propertyOptionsIDs)
 	if err != nil {
 		return conditionForDB{}, errors.Wrap(err, "failed to marshal property options IDs")
+	}
+
+	actionsJSON := []byte("[]")
+	if len(condition.Actions) > 0 {
+		var err2 error
+		actionsJSON, err2 = json.Marshal(condition.Actions)
+		if err2 != nil {
+			return conditionForDB{}, errors.Wrap(err2, "failed to marshal condition actions")
+		}
+	}
+	if len(actionsJSON) > maxJSONLength {
+		return conditionForDB{}, errors.Errorf("condition actions json for condition id '%s' is too long (max %d)", condition.ID, maxJSONLength)
 	}
 
 	return conditionForDB{
@@ -250,6 +277,7 @@ func (c *conditionStore) toConditionForDB(condition app.Condition) (conditionFor
 		ConditionExpr:      string(conditionExprJSON),
 		PropertyFieldIDs:   string(propertyFieldIDsJSON),
 		PropertyOptionsIDs: string(propertyOptionsIDsJSON),
+		Actions:            string(actionsJSON),
 	}, nil
 }
 
@@ -284,13 +312,8 @@ func (c *conditionStore) getConditionsWithFilter(playbookID, runID string, page,
 		}
 	}
 
-	sqlQuery, args, err := query.ToSql()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to build condition query for playbook %s runID %s", playbookID, runID)
-	}
-
 	var sqlConditions []conditionForDB
-	if err := c.store.db.Select(&sqlConditions, sqlQuery, args...); err != nil {
+	if err := c.store.selectBuilder(c.store.db, &sqlConditions, query); err != nil {
 		return nil, errors.Wrapf(err, "failed to get conditions for playbook %s runID %s", playbookID, runID)
 	}
 
@@ -331,13 +354,8 @@ func (c *conditionStore) getConditionCount(playbookID, runID string) (int, error
 		query = query.Where(sq.Eq{"RunID": ""})
 	}
 
-	sqlQuery, args, err := query.ToSql()
-	if err != nil {
-		return 0, errors.Wrapf(err, "failed to build condition count query for playbook %s runID %s", playbookID, runID)
-	}
-
 	var count int
-	if err := c.store.db.Get(&count, sqlQuery, args...); err != nil {
+	if err := c.store.getBuilder(c.store.db, &count, query); err != nil {
 		return 0, errors.Wrapf(err, "failed to get condition count for playbook %s runID %s", playbookID, runID)
 	}
 
@@ -358,13 +376,8 @@ func (c *conditionStore) CountConditionsUsingPropertyField(playbookID, propertyF
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Expr("PropertyFieldIDs @> ?::jsonb", string(propertyFieldIDJSON)))
 
-	sqlQuery, args, err := query.ToSql()
-	if err != nil {
-		return 0, errors.Wrapf(err, "failed to build count query for property field %s in playbook %s", propertyFieldID, playbookID)
-	}
-
 	var count int
-	if err := c.store.db.Get(&count, sqlQuery, args...); err != nil {
+	if err := c.store.getBuilder(c.store.db, &count, query); err != nil {
 		return 0, errors.Wrapf(err, "failed to count conditions using property field %s in playbook %s", propertyFieldID, playbookID)
 	}
 
@@ -382,21 +395,19 @@ func (c *conditionStore) CountConditionsUsingPropertyOptions(playbookID string, 
 		args[i] = optionID
 	}
 
+	// The PostgreSQL jsonb '?|' operator cannot be used via sq.Expr because squirrel
+	// (running in sq.Dollar mode) treats every '?' as a positional placeholder, turning
+	// '?|' into '$N|' — invalid SQL. Use jsonb_array_elements_text + ANY instead.
 	query := c.queryBuilder.
 		Select("PropertyOptionsIDs").
 		From("IR_Condition").
 		Where(sq.Eq{"PlaybookID": playbookID}).
 		Where(sq.Eq{"RunID": ""}).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Expr("PropertyOptionsIDs ??| ARRAY["+placeholders+"]", args...))
-
-	sqlQuery, sqlArgs, err := query.ToSql()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to build query for conditions in playbook %s", playbookID)
-	}
+		Where(sq.Expr("EXISTS (SELECT 1 FROM jsonb_array_elements_text(PropertyOptionsIDs) AS _opt WHERE _opt = ANY(ARRAY["+placeholders+"]))", args...))
 
 	var propertyOptionsIDsList []json.RawMessage
-	if err := c.store.db.Select(&propertyOptionsIDsList, sqlQuery, sqlArgs...); err != nil {
+	if err := c.store.selectBuilder(c.store.db, &propertyOptionsIDsList, query); err != nil {
 		return nil, errors.Wrapf(err, "failed to get conditions for playbook %s", playbookID)
 	}
 
@@ -440,15 +451,10 @@ func (c *conditionStore) GetConditionsByRunAndFieldID(runID, fieldID string) ([]
 	query := c.conditionSelect.
 		Where(sq.Eq{"RunID": runID}).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where("PropertyFieldIDs @> ?", string(fieldIDArray))
-
-	sqlQuery, args, err := query.ToSql()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to build condition query for runID %s fieldID %s", runID, fieldID)
-	}
+		Where(sq.Expr("PropertyFieldIDs @> ?::jsonb", string(fieldIDArray)))
 
 	var sqlConditions []conditionForDB
-	if err := c.store.db.Select(&sqlConditions, sqlQuery, args...); err != nil {
+	if err := c.store.selectBuilder(c.store.db, &sqlConditions, query); err != nil {
 		return nil, errors.Wrapf(err, "failed to get conditions for runID %s fieldID %s", runID, fieldID)
 	}
 

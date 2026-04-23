@@ -23,9 +23,12 @@ import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {pluginErrorUrl} from 'src/browser_routing';
-import {useForceDocumentTitle, useStats} from 'src/hooks';
-import {useAllowPlaybookAttributes} from 'src/hooks/license';
+import {useForceDocumentTitle, useIsSystemAdmin, useStats} from 'src/hooks';
+import {useAllowPlaybookAttributes, useAllowTimelineEvents} from 'src/hooks/license';
+import {PlaybookRole} from 'src/types/permissions';
+import {usePlaybook as useRestPlaybook} from 'src/hooks/crud';
 import {ErrorPageTypes} from 'src/constants';
+import PlaybookEvents from 'src/components/backstage/playbook_events';
 import PlaybookUsage from 'src/components/backstage/playbook_usage';
 import PlaybookProperties from 'src/components/backstage/playbook_properties/playbook_properties';
 import PlaybookKeyMetrics from 'src/components/backstage/metrics/playbook_key_metrics';
@@ -49,11 +52,14 @@ const PlaybookEditor = () => {
     const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
+    const [restPlaybook] = useRestPlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
     const currentUserId = useSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
+    const allowTimelineEvents = useAllowTimelineEvents();
+    const isSystemAdmin = useIsSystemAdmin();
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -74,6 +80,8 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
+    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const canEdit = !restPlaybook?.admin_only_edit || isPlaybookAdmin || isSystemAdmin;
 
     if (error) {
         // not found
@@ -127,7 +135,7 @@ const PlaybookEditor = () => {
                         />
                     </StarButton>
                     <TextEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Playbook name'})}
                         value={playbook.title}
                         onSave={(title) => updatePlaybook({title})}
@@ -226,7 +234,7 @@ const PlaybookEditor = () => {
                 </TextEdit>
                 <Description>
                     <MarkdownEdit
-                        disabled={archived}
+                        disabled={archived || !canEdit}
                         placeholder={formatMessage({defaultMessage: 'Add a description…'})}
                         value={playbook.description}
                         onSave={(description) => updatePlaybook({description})}
@@ -246,6 +254,13 @@ const PlaybookEditor = () => {
                         to={generatePath(path, {playbookId, tab: 'attributes'})}
                     >
                         {formatMessage({defaultMessage: 'Attributes'})}
+                    </NavItem>
+                )}
+                {allowTimelineEvents && (
+                    <NavItem
+                        to={generatePath(path, {playbookId, tab: 'events'})}
+                    >
+                        {formatMessage({defaultMessage: 'Events'})}
                     </NavItem>
                 )}
                 <NavItem
@@ -279,6 +294,14 @@ const PlaybookEditor = () => {
                         />
                     </Route>
                 )}
+                {allowTimelineEvents && (
+                    <Route
+                        path={generatePath(path, {playbookId, tab: 'events'})}
+                        exact={true}
+                    >
+                        <PlaybookEvents playbookID={playbook.id}/>
+                    </Route>
+                )}
                 <Route
                     path={generatePath(path, {playbookId, tab: 'outline'})}
                     exact={true}
@@ -286,6 +309,8 @@ const PlaybookEditor = () => {
                     <Outline
                         playbook={playbook}
                         refetch={refetch}
+                        canEdit={canEdit}
+                        restPlaybook={restPlaybook ?? undefined}
                     />
                 </Route>
                 <Route
@@ -512,6 +537,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
     }
 
     ${PlaybookUsage},
+    ${PlaybookEvents},
     ${PlaybookProperties},
     ${PlaybookKeyMetrics} {
         grid-area: aside/aside/aside-right/aside-right;
@@ -560,6 +586,7 @@ const Editor = styled.main<{$headingVisible: boolean}>`
         }
 
         ${PlaybookUsage},
+        ${PlaybookEvents},
         ${PlaybookProperties},
         ${PlaybookKeyMetrics} {
             grid-area: content;

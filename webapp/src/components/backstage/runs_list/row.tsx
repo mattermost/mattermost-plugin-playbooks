@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
 import styled from 'styled-components';
@@ -24,10 +29,13 @@ import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 
 import {InfoLine} from 'src/components/backstage/styles';
 import {useToaster} from 'src/components/backstage/toast_banner';
+import SequentialIdDisplay from 'src/components/backstage/runs_list/sequential_id_display';
+import TaskProgress from 'src/components/backstage/runs_list/task_progress';
+import AttributeColumns from 'src/components/backstage/runs_list/attribute_columns';
 import {ToastStyle} from 'src/components/backstage/toast';
 
 const SmallText = styled.div`
-    margin: 5px 0;
+    margin: 2px 0 0;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     font-size: 11px;
     font-weight: 400;
@@ -58,17 +66,69 @@ const SmallStatusBadge = styled(StatusBadge)`
     line-height: 16px;
 `;
 
-const RunName = styled.div`
+const NameCell = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    padding: 0 6px;
+    min-width: 0;
+`;
+
+const NameRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+`;
+
+const RunName = styled.span`
     font-size: 14px;
     font-weight: 600;
-    line-height: 16px;
+    line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const FlexCol = styled.div`
+    padding: 0 6px;
+    min-width: 0;
+`;
+
+const StatusCell = styled.div`
+    flex: 0 0 150px;
+    max-width: 150px;
+    padding: 0 6px;
+`;
+
+const DurationCell = styled.div`
+    flex: 0 0 150px;
+    max-width: 150px;
+    padding: 0 6px;
+`;
+
+const TasksCell = styled.div`
+    flex: 0 0 150px;
+    max-width: 150px;
+    min-width: 120px;
+    padding: 0 6px;
+`;
+
+const ActionCell = styled.div`
+    flex: 0 0 100px;
+    max-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 8px 0 6px;
 `;
 
 const PlaybookRunItem = styled.div`
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding: 6px 0;
     border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     margin: 0;
     background-color: var(--center-channel-bg);
@@ -79,9 +139,15 @@ const PlaybookRunItem = styled.div`
     }
 `;
 
+const AttributeColumnsRow = styled.div`
+    width: 100%;
+    padding: 2px 0 0 6px;
+`;
+
 interface Props {
     playbookRun: PlaybookRun
     fixedTeam?: boolean
+    selectedFieldIds?: string[]
 }
 
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId)?.display_name ?? '';
@@ -107,25 +173,31 @@ const Row = (props: Props) => {
 
     return (
         <PlaybookRunItem
-            className='row'
             key={props.playbookRun.id}
+            data-testid='run-list-item'
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
-            <div className='col-sm-4'>
-                <RunName>{props.playbookRun.name}</RunName>
+            <NameCell style={{flex: 4}}>
+                <NameRow>
+                    {(props.playbookRun.run_number ?? 0) > 0 && props.playbookRun.sequential_id && (
+                        <SequentialIdDisplay
+                            runNumber={props.playbookRun.run_number ?? 0}
+                            sequentialId={props.playbookRun.sequential_id ?? ''}
+                        />
+                    )}
+                    <RunName>{props.playbookRun.name}</RunName>
+                </NameRow>
                 {infoLine}
-            </div>
-            <div className='col-sm-2'>
+            </NameCell>
+            <StatusCell>
                 <SmallStatusBadge
                     status={BadgeType[props.playbookRun.current_status]}
                 />
                 <SmallText>
                     {DateTime.fromMillis(findLastUpdatedWithDefault(props.playbookRun)).toRelative()}
                 </SmallText>
-            </div>
-            <div
-                className='col-sm-2'
-            >
+            </StatusCell>
+            <DurationCell>
                 <NormalText>
                     <FormattedDuration
                         from={props.playbookRun.create_at}
@@ -135,8 +207,14 @@ const Row = (props: Props) => {
                 <SmallText>
                     {formatDate(props.playbookRun.create_at)}
                 </SmallText>
-            </div>
-            <div className='col-sm-2'>
+            </DurationCell>
+            <TasksCell>
+                <TaskProgress
+                    taskTotal={props.playbookRun.task_total}
+                    taskCompleted={props.playbookRun.task_completed}
+                />
+            </TasksCell>
+            <FlexCol style={{flex: 2}}>
                 <SmallProfile userId={props.playbookRun.owner_user_id}/>
                 <SmallText>
                     <FormattedMessage
@@ -144,10 +222,19 @@ const Row = (props: Props) => {
                         values={{numParticipants: props.playbookRun.participant_ids.length}}
                     />
                 </SmallText>
-            </div>
-            <div className='col-sm-2'>
+            </FlexCol>
+            <ActionCell>
                 <FollowPlaybookRun id={props.playbookRun.id}/>
-            </div>
+            </ActionCell>
+            {props.playbookRun.property_fields && props.playbookRun.property_fields.length > 0 && (
+                <AttributeColumnsRow>
+                    <AttributeColumns
+                        propertyFields={props.playbookRun.property_fields}
+                        propertyValues={props.playbookRun.property_values}
+                        selectedFieldIds={props.selectedFieldIds}
+                    />
+                </AttributeColumnsRow>
+            )}
         </PlaybookRunItem>
     );
 };
@@ -173,7 +260,14 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
     const [metadata] = useRunMetadata(id);
     const [followers, setFollowers] = useState(metadata?.followers || []);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
+    const [isToggling, setIsToggling] = useState(false);
     const addToast = useToaster().add;
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     useUpdateEffect(() => {
         const newFollowers = metadata?.followers || [];
@@ -181,22 +275,34 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
         setIsFollowing(newFollowers.includes(currentUser.id));
     }, [currentUser.id, JSON.stringify(metadata?.followers)]);
 
-    const toggleFollow = () => {
+    const toggleFollow = useCallback(() => {
+        if (isToggling) {
+            return;
+        }
+        setIsToggling(true);
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
         action(id)
             .then(() => {
+                if (!isMountedRef.current) {
+                    return;
+                }
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setIsFollowing(!isFollowing);
                 setFollowers(newFollowers);
+                setIsToggling(false);
             })
             .catch(() => {
+                if (!isMountedRef.current) {
+                    return;
+                }
                 setIsFollowing(isFollowing);
+                setIsToggling(false);
                 addToast({
                     content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
                     toastStyle: ToastStyle.Failure,
                 });
             });
-    };
+    }, [isToggling, isFollowing, id, followers, currentUser.id, addToast, formatMessage]);
 
     if (isFollowing) {
         return (
@@ -241,8 +347,8 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 };
 
 const FollowButton = styled(SecondaryButton)`
-    border: 1px solid var(--center-channel-color-08);
-    color: var(--center-channel-color-64);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const FollowingButton = styled(TertiaryButton)`

@@ -345,7 +345,7 @@ func TestConditionService_Delete(t *testing.T) {
 
 		err := service.DeletePlaybookCondition(userID, playbookID, conditionID, teamID)
 		require.Error(t, err)
-		require.Equal(t, dbError, err)
+		require.ErrorIs(t, err, dbError)
 	})
 }
 
@@ -550,7 +550,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -614,7 +614,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionHidden, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -676,7 +676,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionNone, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -739,7 +739,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -803,7 +803,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, app.ConditionActionShownBecauseModified, playbookRun.Checklists[0].Items[0].ConditionAction)
@@ -836,7 +836,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Empty(t, result.ChecklistChanges)
@@ -854,7 +854,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return(nil, errors.New("database error"))
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.Error(t, err)
 		require.Nil(t, result)
 		require.Contains(t, err.Error(), "failed to get conditions for playbook run")
@@ -939,7 +939,7 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 			GetConditionsByRunAndFieldID(runID, changedFieldID).
 			Return([]app.Condition{condition1, condition2}, nil)
 
-		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
@@ -957,6 +957,135 @@ func TestConditionService_EvaluateConditionsOnValueChanged(t *testing.T) {
 
 		require.True(t, result.AnythingChanged())
 		require.True(t, result.AnythingAdded())
+	})
+
+	t.Run("condition with actions - transition triggers actions", func(t *testing.T) {
+		actionConditionID := model.NewId()
+		ownerUserID := model.NewId()
+
+		condition := app.Condition{
+			ID:         actionConditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			Version:    1,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["high_opt"]`),
+				},
+			},
+			Actions: []app.ConditionActionDef{
+				{
+					Type:           app.ConditionActionTypeSetOwner,
+					SetOwnerUserID: ownerUserID,
+				},
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: []app.PropertyValue{
+				{FieldID: "severity_id", Value: json.RawMessage(`"high_opt"`)},
+			},
+			Checklists: []app.Checklist{},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		// Old value was "low_opt" — condition was NOT met before.
+		oldValue := json.RawMessage(`"low_opt"`)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, oldValue)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Len(t, result.TriggeredActions, 1)
+		require.Equal(t, app.ConditionActionTypeSetOwner, result.TriggeredActions[0].Type)
+		require.Equal(t, ownerUserID, result.TriggeredActions[0].SetOwnerUserID)
+	})
+
+	t.Run("condition with actions - already met does not trigger", func(t *testing.T) {
+		actionConditionID := model.NewId()
+		ownerUserID := model.NewId()
+
+		condition := app.Condition{
+			ID:         actionConditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			Version:    1,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["high_opt"]`),
+				},
+			},
+			Actions: []app.ConditionActionDef{
+				{
+					Type:           app.ConditionActionTypeSetOwner,
+					SetOwnerUserID: ownerUserID,
+				},
+			},
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: []app.PropertyValue{
+				{FieldID: "severity_id", Value: json.RawMessage(`"high_opt"`)},
+			},
+			Checklists: []app.Checklist{},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		// Old value was ALSO "high_opt" — condition was already met. No transition.
+		oldValue := json.RawMessage(`"high_opt"`)
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, oldValue)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Empty(t, result.TriggeredActions)
+	})
+
+	t.Run("condition without actions - no triggered actions", func(t *testing.T) {
+		noActionConditionID := model.NewId()
+
+		condition := app.Condition{
+			ID:         noActionConditionID,
+			PlaybookID: playbookID,
+			RunID:      runID,
+			Version:    1,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: "severity_id",
+					Value:   json.RawMessage(`["high_opt"]`),
+				},
+			},
+			// No Actions field
+		}
+
+		playbookRun := &app.PlaybookRun{
+			ID:             runID,
+			PlaybookID:     playbookID,
+			PropertyFields: propertyFields,
+			PropertyValues: []app.PropertyValue{
+				{FieldID: "severity_id", Value: json.RawMessage(`"high_opt"`)},
+			},
+			Checklists: []app.Checklist{},
+		}
+
+		mockStore.EXPECT().
+			GetConditionsByRunAndFieldID(runID, changedFieldID).
+			Return([]app.Condition{condition}, nil)
+
+		result, err := service.EvaluateConditionsOnValueChanged(playbookRun, changedFieldID, nil)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Empty(t, result.TriggeredActions)
 	})
 }
 
@@ -1468,4 +1597,66 @@ func TestConditionService_CopyPlaybookConditionsToPlaybook(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, result)
 	})
+}
+
+func TestConditionService_EvaluateConditionsForTransform_DoesNotMutateRun(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_app.NewMockConditionStore(ctrl)
+	mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+	mockPoster := mock_bot.NewMockPoster(ctrl)
+	mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+	service := app.NewConditionService(mockStore, mockPropertyService, mockPoster, mockAuditor)
+
+	condID := model.NewId()
+	runID := model.NewId()
+	fieldID := model.NewId()
+
+	// Build a run with one checklist item bound to the condition.
+	run := &app.PlaybookRun{
+		ID: runID,
+		Checklists: []app.Checklist{
+			{
+				Title: "Triage",
+				Items: []app.ChecklistItem{
+					{
+						ID:              model.NewId(),
+						Title:           "Investigate",
+						ConditionID:     condID,
+						ConditionAction: app.ConditionActionNone,
+					},
+				},
+			},
+		},
+	}
+
+	// Return a condition that is NOT met (run has no matching property values),
+	// so applyConditionResults would set ConditionAction = ConditionActionHidden
+	// on any mutable copy of the item.
+	conditions := []app.Condition{
+		{
+			ID:         condID,
+			PlaybookID: model.NewId(),
+			RunID:      runID,
+			ConditionExpr: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: fieldID,
+					Value:   json.RawMessage(`"expected"`),
+				},
+			},
+		},
+	}
+
+	mockStore.EXPECT().
+		GetConditionsByRunAndFieldID(runID, fieldID).
+		Return(conditions, nil)
+
+	_, _, err := service.EvaluateConditionsForTransform(run, fieldID, json.RawMessage(`"old"`))
+	require.NoError(t, err)
+
+	// The original run's checklist item must not be mutated.
+	require.Equal(t, app.ConditionActionNone, run.Checklists[0].Items[0].ConditionAction,
+		"EvaluateConditionsForTransform must not mutate the caller's run checklists")
 }

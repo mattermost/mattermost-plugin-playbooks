@@ -51,7 +51,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 testRun = run;
 
                 // # Navigate to run
-                cy.visit(`/playbooks/runs/${testRun.id}`);
+                cy.playbooksVisitRun(testRun.id);
             });
         });
 
@@ -129,8 +129,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
             it('can edit text attribute value', () => {
                 // # Edit text attribute
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editTextAttribute('Notes', 'Initial implementation notes');
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify value is displayed
                 verifyAttributeValue('Notes', 'Initial implementation notes');
@@ -145,8 +146,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             it('can edit URL attribute and displays as clickable link', () => {
                 // # Edit URL attribute with a real URL
                 const testUrl = 'https://docs.mattermost.com';
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editTextAttribute('Documentation', testUrl);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify URL is displayed as a clickable link
                 getAttributeRow('Documentation').within(() => {
@@ -194,8 +196,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 // # Update the URL
                 const newUrl = 'https://github.com/mattermost';
                 cy.focused().clear().type(newUrl);
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify new URL is displayed as a link
                 getAttributeRow('Documentation').within(() => {
@@ -217,15 +220,17 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
             it('can edit select attribute value', () => {
                 // # Edit select attribute
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editSelectAttribute('Priority', 'High');
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify selected value is displayed
                 verifyAttributeValue('Priority', 'High');
 
                 // # Change selection
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editSelectAttribute('Priority', 'Low');
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify updated value
                 verifyAttributeValue('Priority', 'Low');
@@ -238,8 +243,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 // # Select multiple options
                 cy.findByText('Bug').click();
                 cy.findByText('Enhancement').click();
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify both values are displayed
                 getAttributeRow('Labels').within(() => {
@@ -250,8 +256,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 // # Add another selection
                 clickAttributeToEdit('Labels');
                 cy.findByText('Feature').click();
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify all three values displayed
                 getAttributeRow('Labels').within(() => {
@@ -263,8 +270,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
             it('can clear text attribute value', () => {
                 // # Set a value first
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editTextAttribute('Notes', 'Test summary');
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify value is set
                 verifyAttributeValue('Notes', 'Test summary');
@@ -272,8 +280,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 // # Click to edit and clear
                 clickAttributeToEdit('Notes');
                 cy.focused().clear();
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify empty state returns
                 verifyAttributeValue('Notes', 'Empty');
@@ -281,8 +290,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
             it('can clear select attribute value', () => {
                 // # Set a value first
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editSelectAttribute('Priority', 'High');
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify value is set
                 verifyAttributeValue('Priority', 'High');
@@ -292,9 +302,11 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // # Click clear indicator
                 getAttributeRow('Priority').within(() => {
-                    cy.get('div.property-select__clear-indicator').click();
+                    cy.get('div.property-select__clear-indicator').should('be.visible').click();
                 });
-                cy.wait(500);
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
+                cy.get('body').click(0, 0);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify empty state returns
                 verifyAttributeValue('Priority', 'Empty');
@@ -305,8 +317,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 clickAttributeToEdit('Labels');
                 cy.findByText('Bug').click();
                 cy.findByText('Feature').click();
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify values are set
                 getAttributeRow('Labels').within(() => {
@@ -317,13 +330,13 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 // # Click to edit
                 clickAttributeToEdit('Labels');
 
-                cy.wait(500);
-
                 // # Click clear indicator
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 getAttributeRow('Labels').within(() => {
-                    cy.get('div.property-select__clear-indicator').realClick();
+                    cy.get('div.property-select__clear-indicator').should('be.visible').realClick();
                 });
-                cy.wait(500);
+                cy.get('body').click(0, 0);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify empty state returns
                 verifyAttributeValue('Labels', 'Empty');
@@ -340,8 +353,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
             it('can edit text attribute value', () => {
                 // # Edit text attribute
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editTextAttribute('Notes', 'Channel edit notes');
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify value is displayed
                 verifyAttributeValue('Notes', 'Channel edit notes');
@@ -350,8 +364,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             it('can edit URL attribute and displays as clickable link', () => {
                 // # Edit URL attribute with a real URL
                 const testUrl = 'https://docs.mattermost.com';
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editTextAttribute('Documentation', testUrl);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify URL is displayed as a clickable link
                 getAttributeRow('Documentation').within(() => {
@@ -399,8 +414,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
                 // # Update the URL
                 const newUrl = 'https://github.com/mattermost';
                 cy.focused().clear().type(newUrl);
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify new URL is displayed as a link
                 getAttributeRow('Documentation').within(() => {
@@ -412,8 +428,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
             it('can edit select attribute value', () => {
                 // # Edit select attribute
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 editSelectAttribute('Priority', 'Medium');
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify selected value is displayed
                 verifyAttributeValue('Priority', 'Medium');
@@ -425,8 +442,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
 
                 // # Select multiple options
                 cy.findByText('Feature').click();
+                cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
                 cy.get('body').click(0, 0);
-                cy.wait(500);
+                cy.wait('@SetRunPropertyValue');
 
                 // * Verify value is displayed
                 getAttributeRow('Labels').within(() => {
@@ -453,8 +471,9 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             navigateToRun();
 
             // # Set text property value
+            cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
             editTextAttribute('Environment', 'Production');
-            cy.wait(500);
+            cy.wait('@SetRunPropertyValue');
 
             // * Verify timeline entry exists with correct format
             cy.get('[data-testid="timeline-item property_changed"]').should('exist');
@@ -466,13 +485,15 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             navigateToRun();
 
             // # Set and then clear property
+            cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
             editTextAttribute('Environment', 'Staging');
-            cy.wait(500);
+            cy.wait('@SetRunPropertyValue');
 
             clickAttributeToEdit('Environment');
             cy.focused().clear();
+            cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.wait('@SetRunPropertyValue');
 
             // * Verify timeline entries exist
             cy.get('[data-testid="timeline-item property_changed"]').should('have.length.at.least', 2);
@@ -484,12 +505,14 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             navigateToRun();
 
             // # Set initial value
+            cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
             editSelectAttribute('Severity', 'Low');
-            cy.wait(500);
+            cy.wait('@SetRunPropertyValue');
 
             // # Update to different value
+            cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
             editSelectAttribute('Severity', 'High');
-            cy.wait(500);
+            cy.wait('@SetRunPropertyValue');
 
             // * Verify timeline entries exist
             cy.get('[data-testid="timeline-item property_changed"]').should('have.length.at.least', 2);
@@ -528,52 +551,45 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
             });
             cy.findByText(/delete/i).click();
             cy.get('#confirm-property-delete-modal').should('be.visible');
+            cy.playbooksInterceptPropertyFieldMutation('DELETE');
             cy.findByRole('button', {name: /delete/i}).click();
-            cy.wait(500);
+            cy.wait('@DeletePropertyField');
+            cy.get('#confirm-property-delete-modal').should('not.exist');
 
             // # Add new attribute
             cy.findByRole('button', {name: /add.*attribute/i}).click();
-            cy.wait(500);
 
             // # Set attribute name
             cy.findAllByTestId('property-field-row').last().within(() => {
-                cy.findByLabelText('Attribute name').clear().type('Environment');
+                cy.findByLabelText('Attribute name').should('be.visible').clear().type('Environment');
             });
             cy.get('body').click(0, 0);
-            cy.wait(500);
 
             // # Change type to select
             cy.findAllByTestId('property-field-row').last().within(() => {
                 cy.findByRole('button', {name: 'Change attribute type'}).trigger('click');
             });
             cy.findByText(/^select$/i).click();
-            cy.wait(500);
 
             // # Add options - rename Option 1 to Dev
             cy.findAllByTestId('property-field-row').last().within(() => {
-                cy.findByText('Option 1').click();
-                cy.wait(100);
+                cy.findByText('Option 1').should('be.visible').click();
             });
-            cy.findByPlaceholderText('Enter value name').clear().type('Dev{enter}');
-            cy.wait(100);
+            cy.findByPlaceholderText('Enter value name').should('be.visible').clear().type('Dev{enter}');
 
             // # Add Staging option
             cy.findAllByTestId('property-field-row').last().within(() => {
                 cy.findByRole('button', {name: 'Add value'}).click();
-                cy.wait(100);
+                cy.findAllByText(/^Option \d+$/).last().should('be.visible').click();
             });
-            cy.findAllByText(/^Option \d+$/).last().click();
-            cy.findByPlaceholderText('Enter value name').clear().type('Staging{enter}');
-            cy.wait(100);
+            cy.findByPlaceholderText('Enter value name').should('be.visible').clear().type('Staging{enter}');
 
             // # Add Prod option
             cy.findAllByTestId('property-field-row').last().within(() => {
                 cy.findByRole('button', {name: 'Add value'}).click();
-                cy.wait(100);
+                cy.findAllByText(/^Option \d+$/).last().should('be.visible').click();
             });
-            cy.findAllByText(/^Option \d+$/).last().click();
-            cy.findByPlaceholderText('Enter value name').clear().type('Prod{enter}');
-            cy.wait(100);
+            cy.findByPlaceholderText('Enter value name').should('be.visible').clear().type('Prod{enter}');
 
             // # Navigate back to run
             navigateToRun();
@@ -598,7 +614,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
      */
     function navigateToRun() {
         cy.then(() => {
-            cy.visit(`/playbooks/runs/${testRun.id}`);
+            cy.playbooksVisitRun(testRun.id);
         });
     }
 
@@ -686,7 +702,7 @@ describe('runs > run_attributes', {testIsolation: true}, () => {
      */
     function clickAttributeToEdit(attributeName) {
         getAttributeRow(attributeName).within(() => {
-            // Click on the property value (empty state or existing value)
+            // # Click on the property value (empty state or existing value)
             cy.findByTestId('property-value').click();
         });
     }

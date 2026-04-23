@@ -62,7 +62,7 @@ export const DateTimeSelector = ({
 }: Props) => {
     const {locale, formatMessage} = useIntl();
 
-    const [isOpen, realSetOpen] = useState(false);
+    const [isOpen, realSetOpen] = useState(props.controlledOpenToggle ?? false);
     const setOpen = (open: boolean) => {
         props.onOpenChange?.(open);
         realSetOpen(open);

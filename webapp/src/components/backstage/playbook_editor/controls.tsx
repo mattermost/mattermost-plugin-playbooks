@@ -12,6 +12,7 @@ import {
     CloseIcon,
     ContentCopyIcon,
     ExportVariantIcon,
+    GlobeIcon,
     LinkVariantIcon,
     LockOutlineIcon,
     PencilOutlineIcon,
@@ -63,6 +64,7 @@ import {StyledDropdownMenuItem} from 'src/components/backstage/shared';
 import {copyToClipboard} from 'src/utils';
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 import useConfirmPlaybookConvertPrivateModal from 'src/components/backstage/convert_private_playbook_modal';
+import useConfirmPlaybookConvertPublicModal from 'src/components/backstage/convert_public_playbook_modal';
 
 type ControlProps = {
     playbook: {
@@ -375,6 +377,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     });
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal((playbookId: string) => restorePlaybook(playbookId));
     const [confirmConvertPrivateModal, setShowMakePrivateConfirm] = useConfirmPlaybookConvertPrivateModal({playbookId: playbook.id, refetch});
+    const [confirmConvertPublicModal, setShowMakePublicConfirm] = useConfirmPlaybookConvertPublicModal({playbookId: playbook.id, refetch});
 
     const refreshLHS = useLHSRefresh();
     const {add: addToast} = useToaster();
@@ -388,6 +391,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
     const licenseToMakePrivate = useAllowMakePlaybookPrivate();
     const isEligibleToMakePrivate = currentUserMember && playbook.public && permissionToMakePrivate && licenseToMakePrivate;
+    const isEligibleToMakePublic = currentUserMember && !playbook.public;
 
     const {leave} = usePlaybookMembership(playbook.id, currentUserId);
 
@@ -465,8 +469,23 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
                         <LockOutlineIcon size={18}/>
                         <FormattedMessage defaultMessage='Convert to private playbook'/>
                     </DropdownMenuItemStyled>
-                )
-                }
+                )}
+                {isEligibleToMakePublic && (
+                    <DropdownMenuItemStyled
+                        role={'button'}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                        }}
+                        onClick={() => {
+                            setShowMakePublicConfirm(true);
+                        }}
+                    >
+                        <GlobeIcon size={18}/>
+                        <FormattedMessage defaultMessage='Convert to public playbook'/>
+                    </DropdownMenuItemStyled>
+                )}
                 {currentUserMember && (
                     <>
                         <div className='MenuGroup menu-divider'/>
@@ -509,6 +528,7 @@ const TitleMenuImpl = ({playbook, children, className, editTitle, refetch}: Titl
             {confirmArchiveModal}
             {confirmRestoreModal}
             {confirmConvertPrivateModal}
+            {confirmConvertPublicModal}
         </>
     );
 };

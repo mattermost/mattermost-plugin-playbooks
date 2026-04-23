@@ -79,7 +79,6 @@ const OuterContainer = styled.div`
 
 const InnerContainer = styled.div`
     display: flex;
-    max-width: 1120px;
     flex-direction: column;
     padding: 20px;
     margin: 0 auto;

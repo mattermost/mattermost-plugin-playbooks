@@ -5,6 +5,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -27,14 +28,30 @@ const (
 )
 
 const (
-	RunSourcePost   = "post"
-	RunSourceDialog = "dialog"
+	RunSourcePost    = "post"
+	RunSourceDialog  = "dialog"
+	RunSourceCommand = "command"
 )
 
 const (
 	RunTypePlaybook         = "playbook"
 	RunTypeChannelChecklist = "channelChecklist"
 )
+
+// FormatSequentialID returns the formatted sequential identifier string.
+// Returns empty string only when RunNumber == 0 (unset run).
+// Otherwise returns the formatted number (00001, 00042, etc), optionally prefixed with dash if prefix is configured.
+// Playbook-backed runs always have RunNumber >= 1 after the migration.
+func FormatSequentialID(prefix string, runNumber int64) string {
+	if runNumber == 0 {
+		return ""
+	}
+	n := fmt.Sprintf("%05d", runNumber)
+	if prefix == "" {
+		return n
+	}
+	return prefix + "-" + n
+}
 
 // PlaybookRun holds the detailed information of a playbook run.
 //
@@ -211,6 +228,42 @@ type PlaybookRun struct {
 
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
+
+	// RunNumber is the sequential number assigned to this run within its playbook.
+	// 0 means no sequential ID assigned (pre-feature runs or standalone runs).
+	RunNumber int64 `json:"run_number"`
+
+	// SequentialID is the human-readable sequential identifier (e.g., "INC-00042").
+	// Stored in IR_Incident at creation time via ResolveRunCreationParams/FormatSequentialID.
+	SequentialID string `json:"sequential_id"`
+
+	// ChannelCreatedByRun indicates whether the channel was created by this run.
+	// Used by auto-archive to avoid archiving linked channels.
+	ChannelCreatedByRun bool `json:"-"`
+
+	// TaskTotal is the total number of tasks across all checklists (computed, not stored).
+	TaskTotal int `json:"task_total"`
+
+	// TaskCompleted is the number of completed tasks across all checklists (computed, not stored).
+	TaskCompleted int `json:"task_completed"`
+}
+
+// ComputeTaskProgress computes TaskTotal and TaskCompleted from the run's Checklists.
+func (r *PlaybookRun) ComputeTaskProgress() {
+	total, completed := 0, 0
+	for _, cl := range r.Checklists {
+		for _, item := range cl.Items {
+			if item.ConditionAction == ConditionActionHidden {
+				continue
+			}
+			total++
+			if item.State == ChecklistItemStateClosed || item.State == ChecklistItemStateSkipped {
+				completed++
+			}
+		}
+	}
+	r.TaskTotal = total
+	r.TaskCompleted = completed
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {
@@ -698,6 +751,18 @@ func GetChecklistItemUpdates(previous, current []ChecklistItem) ItemChanges {
 			if prev.AssigneeModified != item.AssigneeModified {
 				fields["assignee_modified"] = item.AssigneeModified
 			}
+			if prev.AssigneeType != item.AssigneeType {
+				fields["assignee_type"] = item.AssigneeType
+			}
+			if prev.AssigneeGroupID != item.AssigneeGroupID {
+				fields["assignee_group_id"] = item.AssigneeGroupID
+			}
+			if prev.AssigneePropertyFieldID != item.AssigneePropertyFieldID {
+				fields["assignee_property_field_id"] = item.AssigneePropertyFieldID
+			}
+			if prev.RestrictCompletionToAssignee != item.RestrictCompletionToAssignee {
+				fields["restrict_completion_to_assignee"] = item.RestrictCompletionToAssignee
+			}
 			if prev.Command != item.Command {
 				fields["command"] = item.Command
 			}
@@ -1055,6 +1120,20 @@ type TimelineEvent struct {
 	CreatorUserID string `json:"creator_user_id"`
 }
 
+// PlaybookTimelineEvent represents a timeline event flattened with its parent run information.
+type PlaybookTimelineEvent struct {
+	TimelineEvent
+
+	// PlaybookRunName is the display name of the run the event belongs to.
+	PlaybookRunName string `json:"playbook_run_name"`
+
+	// RunNumber is the sequential number assigned to the run within its playbook.
+	RunNumber int64 `json:"run_number"`
+
+	// SequentialID is the formatted run identifier shown to users.
+	SequentialID string `json:"sequential_id"`
+}
+
 // GetPlaybookRunsResults collects the results of the GetPlaybookRuns call: the list of PlaybookRuns matching
 // the HeaderFilterOptions, and the TotalCount of the matching playbook runs before paging was applied.
 type GetPlaybookRunsResults struct {
@@ -1063,6 +1142,15 @@ type GetPlaybookRunsResults struct {
 	PerPage    int           `json:"per_page"`
 	HasMore    bool          `json:"has_more"`
 	Items      []PlaybookRun `json:"items"`
+}
+
+// GetPlaybookTimelineEventsResults collects the results of the GetPlaybookTimelineEvents call.
+type GetPlaybookTimelineEventsResults struct {
+	TotalCount int                     `json:"total_count"`
+	PageCount  int                     `json:"page_count"`
+	PerPage    int                     `json:"per_page"`
+	HasMore    bool                    `json:"has_more"`
+	Items      []PlaybookTimelineEvent `json:"items"`
 }
 
 type SQLStatusPost struct {
@@ -1173,8 +1261,23 @@ type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
-	// CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
-	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
+	// GetPlaybookTimelineEvents returns a flattened, paged list of timeline events for a playbook.
+	GetPlaybookTimelineEvents(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookTimelineEventsResults, error)
+
+	// CreatePlaybookRun persists a new playbook run. When a Playbook is supplied, callers MUST
+	// call ResolveRunCreationParams first to allocate the sequential run number and resolve
+	// template placeholders. Calling CreatePlaybookRun alone produces a run with RunNumber==0
+	// and unresolved template names. source identifies the creation path (RunSourcePost,
+	// RunSourceDialog, RunSourceCommand). channelDisplayName, when non-empty, overrides
+	// playbookRun.Name for the channel DisplayName. initialPropertyValues are playbook-scoped
+	// field ID → JSON value pairs upserted after property copy.
+	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool, source string, channelDisplayName string, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error)
+
+	// ResolveRunCreationParams allocates a sequential run number, evaluates creation rules,
+	// validates owner team membership, and resolves template placeholders in the run name
+	// and channel name. It MUST be called before CreatePlaybookRun when a Playbook is provided.
+	// Returns the resolved channel display name (empty when no channel name template is used).
+	ResolveRunCreationParams(playbookRun *PlaybookRun, pb *Playbook, initialValues map[string]json.RawMessage, source string) (resolvedChannelName string, err error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook) error
@@ -1238,6 +1341,16 @@ type PlaybookRunService interface {
 	// SetAssignee sets the assignee for the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
+
+	// SetGroupAssignee sets a Mattermost group as the assignee for the specified checklist item.
+	SetGroupAssignee(playbookRunID, userID, groupID string, checklistNumber, itemNumber int) error
+
+	// SetRoleAssignee sets a role-based assignee type ("owner" or "creator") for the specified checklist item.
+	SetRoleAssignee(playbookRunID, userID, assigneeType string, checklistNumber, itemNumber int) error
+
+	// SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
+	// property field resolves to on this run.
+	SetPropertyUserAssignee(userID, playbookRunID string, checklistNumber, itemNumber int, propertyFieldID string) error
 
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
@@ -1359,6 +1472,9 @@ type PlaybookRunService interface {
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
 
+	// UnfollowMultiple lets multiple users unfollow a specific playbook run in one batch
+	UnfollowMultiple(playbookRunID string, userIDs []string) error
+
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
@@ -1391,6 +1507,9 @@ type PlaybookRunService interface {
 type PlaybookRunStore interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
+
+	// GetPlaybookTimelineEvents returns flattened timeline events for the selected playbook.
+	GetPlaybookTimelineEvents(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookTimelineEventsResults, error)
 
 	// CreatePlaybookRun creates a new playbook run. If playbook run has an ID, that ID will be used.
 	CreatePlaybookRun(playbookRun *PlaybookRun) (*PlaybookRun, error)
@@ -1462,6 +1581,12 @@ type PlaybookRunStore interface {
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
 
+	// UnfollowMultiple lets multiple users unfollow a specific playbook run in one query
+	UnfollowMultiple(playbookRunID string, userIDs []string) error
+
+	// FollowBatch lets multiple users follow a specific playbook run in one query
+	FollowBatch(playbookRunID string, userIDs []string) error
+
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
@@ -1509,6 +1634,27 @@ type PlaybookRunStore interface {
 
 	// BumpRunUpdatedAt updates the UpdateAt timestamp for a playbook run
 	BumpRunUpdatedAt(playbookRunID string) error
+
+	// UpdatePlaybookRunOwner atomically updates CommanderUserID and applies the provided
+	// checklist transform inside a SELECT FOR UPDATE transaction, preventing TOCTOU races
+	// with concurrent checklist mutations.
+	// CONTRACT: checklistTransform MUST be a pure in-memory computation (no I/O, no DB calls).
+	// It is invoked while the IR_Incident row lock is held.
+	UpdatePlaybookRunOwner(playbookRunID, ownerUserID string, checklistTransform func([]Checklist) []Checklist) error
+
+	// UpdatePlaybookRunChecklistsAtomic applies the provided transform to the run's
+	// checklists inside a SELECT FOR UPDATE transaction. This prevents TOCTOU races
+	// when concurrent checklist mutations occur between property evaluation and write.
+	// CONTRACT: transform MUST be a pure in-memory computation (no I/O, no DB calls).
+	// It is invoked while the IR_Incident row lock is held.
+	UpdatePlaybookRunChecklistsAtomic(playbookRunID string, transform func([]Checklist) []Checklist) error
+
+	// GetRunIDsByParentFieldValue returns the IDs of runs whose run-level property field
+	// (identified by parent_id = parentFieldID) has a value matching the run-level option
+	// whose name equals the playbook-level option identified by parentOptionID.
+	// This bridges the playbook-level IDs used by the filter UI to the run-level IDs
+	// stored in the property system.
+	GetRunIDsByParentFieldValue(groupID, parentFieldID, parentOptionID string, limit int) ([]string, error)
 }
 
 type JobOnceScheduler interface {
@@ -1600,6 +1746,27 @@ type PlaybookRunFilterOptions struct {
 	// OmitEnded determines whether to omit runs that have ended (EndAt > 0).
 	// If true, only active runs (EndAt = 0) are returned.
 	OmitEnded bool `url:"omit_ended,omitempty"`
+
+	// PropertyFieldID filters runs to those that have the given property field set to PropertyValueFilter.
+	// When set, PropertyValueFilter must also be set.
+	PropertyFieldID string `url:"property_field_id,omitempty"`
+
+	// PropertyValueFilter is the option ID to match against the property field given by PropertyFieldID.
+	PropertyValueFilter string `url:"property_value_filter,omitempty"`
+
+	// EventTypes filters timeline event queries to the selected event kinds.
+	EventTypes []string
+
+	// UserIDs filters timeline event queries to events where the user is actor or target.
+	UserIDs []string
+
+	// Usernames is an internal helper used to match timeline events whose details
+	// only contain usernames for targets (for example multi-user participant changes).
+	Usernames []string
+
+	// RunIDs, when non-empty, restricts results to only the given run IDs.
+	// This is an internal filter used by the service layer (not exposed via URL).
+	RunIDs []string
 }
 
 // Clone duplicates the given options.
@@ -1610,6 +1777,18 @@ func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	}
 	if len(o.Types) > 0 {
 		newPlaybookRunFilterOptions.Types = append([]string{}, o.Types...)
+	}
+	if len(o.RunIDs) > 0 {
+		newPlaybookRunFilterOptions.RunIDs = append([]string{}, o.RunIDs...)
+	}
+	if len(o.EventTypes) > 0 {
+		newPlaybookRunFilterOptions.EventTypes = append([]string{}, o.EventTypes...)
+	}
+	if len(o.UserIDs) > 0 {
+		newPlaybookRunFilterOptions.UserIDs = append([]string{}, o.UserIDs...)
+	}
+	if len(o.Usernames) > 0 {
+		newPlaybookRunFilterOptions.Usernames = append([]string{}, o.Usernames...)
 	}
 
 	return newPlaybookRunFilterOptions
@@ -1689,6 +1868,14 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 
 	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'channel_id': must be 26 characters or blank")
+	}
+
+	if options.PropertyFieldID != "" && !model.IsValidId(options.PropertyFieldID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_field_id': must be 26 characters or blank")
+	}
+
+	if options.PropertyValueFilter != "" && !model.IsValidId(options.PropertyValueFilter) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_value_filter': must be 26 characters or blank")
 	}
 
 	for _, s := range options.Statuses {

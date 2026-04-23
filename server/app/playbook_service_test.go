@@ -63,6 +63,13 @@ func TestPlaybookService_CreatePropertyField(t *testing.T) {
 			BumpPlaybookUpdatedAt(playbookID).
 			Return(nil)
 
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "team1")
+
 		result, err := service.CreatePropertyField(playbookID, propertyField)
 
 		require.NoError(t, err)
@@ -72,6 +79,10 @@ func TestPlaybookService_CreatePropertyField(t *testing.T) {
 	t.Run("property service error - no bump called", func(t *testing.T) {
 		expectedError := errors.New("property service error")
 
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
 		mockPropertyService.EXPECT().
 			CreatePropertyField(playbookID, propertyField).
 			Return(nil, expectedError)
@@ -79,11 +90,11 @@ func TestPlaybookService_CreatePropertyField(t *testing.T) {
 		result, err := service.CreatePropertyField(playbookID, propertyField)
 
 		require.Error(t, err)
-		assert.Equal(t, expectedError, err)
+		assert.ErrorIs(t, err, expectedError)
 		assert.Nil(t, result)
 	})
 
-	t.Run("bump fails after property creation", func(t *testing.T) {
+	t.Run("bump fails - still succeeds with warning log", func(t *testing.T) {
 		expectedField := &app.PropertyField{
 			PropertyField: model.PropertyField{
 				ID:   "prop123",
@@ -101,11 +112,17 @@ func TestPlaybookService_CreatePropertyField(t *testing.T) {
 			BumpPlaybookUpdatedAt(playbookID).
 			Return(bumpError)
 
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "team1")
+
 		result, err := service.CreatePropertyField(playbookID, propertyField)
 
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to bump playbook timestamp")
-		assert.Nil(t, result)
+		require.NoError(t, err)
+		assert.Equal(t, expectedField, result)
 	})
 }
 
@@ -147,12 +164,23 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 		}
 
 		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{propertyField}, nil)
+
+		mockPropertyService.EXPECT().
 			UpdatePropertyField(playbookID, propertyField).
 			Return(expectedField, nil)
 
 		mockStore.EXPECT().
 			BumpPlaybookUpdatedAt(playbookID).
 			Return(nil)
+
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "team1")
 
 		result, err := service.UpdatePropertyField(playbookID, propertyField)
 
@@ -163,6 +191,14 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 	t.Run("property service error - no bump called", func(t *testing.T) {
 		expectedError := errors.New("property service error")
 
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{propertyField}, nil)
+
 		mockPropertyService.EXPECT().
 			UpdatePropertyField(playbookID, propertyField).
 			Return(nil, expectedError)
@@ -170,11 +206,11 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 		result, err := service.UpdatePropertyField(playbookID, propertyField)
 
 		require.Error(t, err)
-		assert.Equal(t, expectedError, err)
+		assert.ErrorContains(t, err, expectedError.Error())
 		assert.Nil(t, result)
 	})
 
-	t.Run("bump fails after property update", func(t *testing.T) {
+	t.Run("bump fails - still succeeds with warning log", func(t *testing.T) {
 		expectedField := &app.PropertyField{
 			PropertyField: model.PropertyField{
 				ID:   "prop123",
@@ -182,7 +218,10 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 				Type: model.PropertyFieldTypeText,
 			},
 		}
-		bumpError := errors.New("failed to bump playbook timestamp")
+
+		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{propertyField}, nil)
 
 		mockPropertyService.EXPECT().
 			UpdatePropertyField(playbookID, propertyField).
@@ -190,13 +229,19 @@ func TestPlaybookService_UpdatePropertyField(t *testing.T) {
 
 		mockStore.EXPECT().
 			BumpPlaybookUpdatedAt(playbookID).
-			Return(bumpError)
+			Return(errors.New("failed to bump playbook timestamp"))
+
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "team1")
 
 		result, err := service.UpdatePropertyField(playbookID, propertyField)
 
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to bump playbook timestamp")
-		assert.Nil(t, result)
+		require.NoError(t, err)
+		assert.Equal(t, expectedField, result)
 	})
 }
 
@@ -224,12 +269,27 @@ func TestPlaybookService_DeletePropertyField(t *testing.T) {
 
 	t.Run("success - property field deleted and playbook updated", func(t *testing.T) {
 		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{{PropertyField: model.PropertyField{ID: propertyID, Name: "SomeField"}}}, nil)
+
+		mockPropertyService.EXPECT().
 			DeletePropertyField(playbookID, propertyID).
+			Return(nil)
+
+		mockStore.EXPECT().
+			UpdateChannelNameTemplateAtomically(playbookID, gomock.Any()).
 			Return(nil)
 
 		mockStore.EXPECT().
 			BumpPlaybookUpdatedAt(playbookID).
 			Return(nil)
+
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "team1")
 
 		err := service.DeletePropertyField(playbookID, propertyID)
 
@@ -239,6 +299,14 @@ func TestPlaybookService_DeletePropertyField(t *testing.T) {
 	t.Run("property service error - no bump called", func(t *testing.T) {
 		expectedError := errors.New("property service error")
 
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{{PropertyField: model.PropertyField{ID: propertyID, Name: "SomeField"}}}, nil)
+
 		mockPropertyService.EXPECT().
 			DeletePropertyField(playbookID, propertyID).
 			Return(expectedError)
@@ -246,24 +314,32 @@ func TestPlaybookService_DeletePropertyField(t *testing.T) {
 		err := service.DeletePropertyField(playbookID, propertyID)
 
 		require.Error(t, err)
-		assert.Equal(t, expectedError, err)
+		assert.Contains(t, err.Error(), "property service error")
 	})
 
-	t.Run("bump fails after property deletion", func(t *testing.T) {
-		bumpError := errors.New("failed to bump playbook timestamp")
+	t.Run("strip fails after property deletion", func(t *testing.T) {
+		stripError := errors.New("failed to strip field from name templates")
+
+		mockStore.EXPECT().
+			Get(playbookID).
+			Return(app.Playbook{TeamID: "team1"}, nil)
+
+		mockPropertyService.EXPECT().
+			GetPropertyFields(playbookID).
+			Return([]app.PropertyField{{PropertyField: model.PropertyField{ID: propertyID, Name: "SomeField"}}}, nil)
 
 		mockPropertyService.EXPECT().
 			DeletePropertyField(playbookID, propertyID).
 			Return(nil)
 
 		mockStore.EXPECT().
-			BumpPlaybookUpdatedAt(playbookID).
-			Return(bumpError)
+			UpdateChannelNameTemplateAtomically(playbookID, gomock.Any()).
+			Return(stripError)
 
 		err := service.DeletePropertyField(playbookID, propertyID)
 
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to bump playbook timestamp")
+		assert.Contains(t, err.Error(), "failed to update name templates after field delete cascade")
 	})
 }
 
@@ -330,7 +406,8 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 			})
 
 		mockPoster.EXPECT().
-			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID)
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID).
+			Times(2)
 
 		mockPropertyService.EXPECT().
 			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
@@ -427,7 +504,7 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Equal(t, "", resultID)
-		assert.Equal(t, expectedError, err)
+		assert.True(t, errors.Is(err, expectedError))
 	})
 
 	t.Run("does not copy conditions if property copying fails", func(t *testing.T) {
@@ -448,6 +525,181 @@ func TestPlaybookService_Duplicate(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultID)
+	})
+
+	t.Run("should remap property IDs in creation rules during duplicate", func(t *testing.T) {
+		ownerID := model.NewId()
+		channelID := model.NewId()
+
+		playbookForCreate := app.Playbook{
+			ID:     originalPlaybookID,
+			Title:  "Playbook With Rules",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					SetOwnerID: ownerID,
+				},
+				{
+					SetChannelID: channelID,
+				},
+			},
+		}
+
+		playbookFromGet := app.Playbook{
+			ID:     "will-be-overwritten",
+			Title:  "Copy of Playbook With Rules",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					Condition: &app.ConditionExprV1{
+						Is: &app.ComparisonCondition{
+							FieldID: "old_field_id",
+							Value:   json.RawMessage(`["old_opt_id"]`),
+						},
+					},
+					SetOwnerID: ownerID,
+				},
+				{
+					SetChannelID: channelID,
+				},
+			},
+		}
+
+		var capturedPlaybookID string
+
+		propertyMappings := &app.PropertyCopyResult{
+			FieldMappings:  map[string]string{"old_field_id": "new_field_id"},
+			OptionMappings: map[string]string{"old_opt_id": "new_opt_id"},
+			CopiedFields: []app.PropertyField{
+				{
+					PropertyField: model.PropertyField{
+						ID:   "new_field_id",
+						Type: model.PropertyFieldTypeSelect,
+					},
+				},
+			},
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				capturedPlaybookID = model.NewId()
+				return capturedPlaybookID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID).
+			Times(2)
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(propertyMappings, nil)
+
+		mockConditionService.EXPECT().
+			CopyPlaybookConditionsToPlaybook(originalPlaybookID, gomock.Any(), propertyMappings).
+			Return(nil, nil)
+
+		mockStore.EXPECT().
+			Get(gomock.Any()).
+			DoAndReturn(func(id string) (app.Playbook, error) {
+				pb := playbookFromGet
+				pb.ID = id
+				return pb, nil
+			})
+
+		mockStore.EXPECT().
+			Update(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) error {
+				require.Len(t, pb.CreationRules, 2)
+
+				require.NotNil(t, pb.CreationRules[0].Condition)
+				assert.Equal(t, "new_field_id", pb.CreationRules[0].Condition.Is.FieldID)
+				assert.Contains(t, string(pb.CreationRules[0].Condition.Is.Value), "new_opt_id")
+
+				require.Nil(t, pb.CreationRules[1].Condition)
+
+				return nil
+			})
+
+		resultID, err := service.Duplicate(playbookForCreate, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, capturedPlaybookID, resultID)
+	})
+
+	t.Run("should still duplicate when creation rule has unmapped field", func(t *testing.T) {
+		ownerID := model.NewId()
+
+		playbookForCreate := app.Playbook{
+			ID:     originalPlaybookID,
+			Title:  "Playbook With Bad Rule",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					SetOwnerID: ownerID,
+				},
+			},
+		}
+
+		playbookFromGet := app.Playbook{
+			ID:     "will-be-overwritten",
+			Title:  "Copy of Playbook With Bad Rule",
+			TeamID: teamID,
+			CreationRules: []app.CreationRule{
+				{
+					Condition: &app.ConditionExprV1{
+						Is: &app.ComparisonCondition{
+							FieldID: "unmapped_field_id",
+							Value:   json.RawMessage(`["some_value"]`),
+						},
+					},
+					SetOwnerID: ownerID,
+				},
+			},
+		}
+
+		var capturedPlaybookID string
+
+		propertyMappings := &app.PropertyCopyResult{
+			FieldMappings:  map[string]string{},
+			OptionMappings: map[string]string{},
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(pb app.Playbook) (string, error) {
+				capturedPlaybookID = model.NewId()
+				return capturedPlaybookID, nil
+			})
+
+		mockPoster.EXPECT().
+			PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), teamID).
+			Times(2)
+
+		mockPropertyService.EXPECT().
+			CopyPlaybookPropertiesToPlaybook(originalPlaybookID, gomock.Any()).
+			Return(propertyMappings, nil)
+
+		mockConditionService.EXPECT().
+			CopyPlaybookConditionsToPlaybook(originalPlaybookID, gomock.Any(), propertyMappings).
+			Return(nil, nil)
+
+		mockStore.EXPECT().
+			Get(gomock.Any()).
+			DoAndReturn(func(id string) (app.Playbook, error) {
+				pb := playbookFromGet
+				pb.ID = id
+				return pb, nil
+			})
+
+		mockStore.EXPECT().
+			Update(gomock.Any()).
+			Return(nil)
+
+		resultID, err := service.Duplicate(playbookForCreate, userID)
+
+		require.NoError(t, err)
+		assert.Equal(t, capturedPlaybookID, resultID)
 	})
 }
 
@@ -577,7 +829,7 @@ func TestPlaybookService_Import(t *testing.T) {
 					"ConditionAction should be cleared before Create")
 				return newPlaybookID, nil
 			})
-		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any())
+		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 
 		createdField := &app.PropertyField{
 			PropertyField: model.PropertyField{ID: newFieldID, Name: "Status", Type: model.PropertyFieldTypeSelect},

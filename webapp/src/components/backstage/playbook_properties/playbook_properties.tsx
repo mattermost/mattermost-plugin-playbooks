@@ -18,6 +18,9 @@ import {
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {
+    AccountMultipleOutlineIcon,
+    AccountOutlineIcon,
+    CalendarOutlineIcon,
     ChevronDownCircleOutlineIcon,
     FormatListBulletedIcon,
     LinkVariantIcon,
@@ -113,10 +116,12 @@ const PlaybookProperties = ({playbookID}: Props) => {
         }
     }, [dispatch, playbookID, addToast]);
 
+    const [isAdding, setIsAdding] = useState(false);
     const addProperty = useCallback(async () => {
-        if (properties.length >= MAX_PROPERTIES_LIMIT) {
+        if (isAdding || properties.length >= MAX_PROPERTIES_LIMIT) {
             return;
         }
+        setIsAdding(true);
 
         // Find the highest number in existing "Attribute X" names
         const attributeNumbers = properties
@@ -145,8 +150,10 @@ const PlaybookProperties = ({playbookID}: Props) => {
                 toastStyle: ToastStyle.Failure,
                 duration: 8000,
             });
+        } finally {
+            setIsAdding(false);
         }
-    }, [dispatch, playbookID, properties, addToast]);
+    }, [isAdding, dispatch, playbookID, properties, addToast]);
 
     const handleDragEnd = useCallback(async (result: any) => {
         if (!result.destination) {
@@ -204,6 +211,12 @@ const PlaybookProperties = ({playbookID}: Props) => {
                             return <ChevronDownCircleOutlineIcon size={16}/>;
                         case 'multiselect':
                             return <FormatListBulletedIcon size={16}/>;
+                        case 'date':
+                            return <CalendarOutlineIcon size={16}/>;
+                        case 'user':
+                            return <AccountOutlineIcon size={16}/>;
+                        case 'multiuser':
+                            return <AccountMultipleOutlineIcon size={16}/>;
                         default:
                             return <MenuVariantIcon size={16}/>;
                         }

@@ -1,22 +1,24 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import styled from 'styled-components';
 import {useUpdateEffect} from 'react-use';
 
-import {PropertyField, PropertyValue} from 'src/types/properties';
+import {PropertyComponentProps} from 'src/types/properties';
 
 import PropertySelectInput from './property_select_input';
 
 import PropertyChip from './property_chip';
 import EmptyState from './empty_state';
 
-interface Props {
-    field: PropertyField;
-    value?: PropertyValue;
-    runID: string;
-    onValueChange: (value: string[] | null) => void;
+interface Props extends PropertyComponentProps {
+    onValueChange: (value: string[] | null) => Promise<void> | void;
 }
 
 const MultiselectProperty = (props: Props) => {
@@ -25,27 +27,44 @@ const MultiselectProperty = (props: Props) => {
         Array.isArray(props.value?.value) ? props.value.value : undefined
     );
     const [tempValue, setTempValue] = useState<string[] | null | undefined>(undefined);
+    const isMounted = useRef(true);
+    useEffect(() => () => {
+        isMounted.current = false;
+    }, []);
 
     useUpdateEffect(() => {
         const newValue = Array.isArray(props.value?.value) ? props.value.value : undefined;
         setDisplayValue(newValue);
     }, [props.value?.value]);
 
-    const handleValueChange = (newValue: string[] | null) => {
+    const handleValueChange = useCallback((newValue: string[] | null) => {
         setTempValue(newValue);
-    };
+    }, []);
 
-    const handleStartEdit = () => {
+    const handleStartEdit = useCallback(() => {
         setIsEditing(true);
         setTempValue(displayValue ?? null);
-    };
+    }, [displayValue]);
 
-    const handleStopEdit = () => {
+    const previousDisplayRef = useRef(displayValue);
+    useUpdateEffect(() => {
+        previousDisplayRef.current = displayValue;
+    }, [displayValue]);
+
+    const handleStopEdit = useCallback(() => {
         setIsEditing(false);
-        setDisplayValue(tempValue ?? undefined);
-        props.onValueChange(tempValue ?? null);
+        const previousDisplay = previousDisplayRef.current;
+        const committed = tempValue ?? undefined;
+        previousDisplayRef.current = committed;
+        setDisplayValue(committed);
+        props.onValueChange(tempValue ?? null)?.catch(() => {
+            if (isMounted.current) {
+                previousDisplayRef.current = previousDisplay;
+                setDisplayValue((current) => (current === committed ? previousDisplay : current));
+            }
+        });
         setTempValue(undefined);
-    };
+    }, [tempValue, props.onValueChange]);
 
     const selectOptions = props.field.attrs?.options?.map((option) => ({
         value: option.id,
@@ -72,6 +91,13 @@ const MultiselectProperty = (props: Props) => {
         return (
             <EmptyMultiselectDisplay
                 onClick={handleStartEdit}
+                role='button'
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        handleStartEdit();
+                    }
+                }}
                 data-testid='property-value'
             >
                 <EmptyState/>
@@ -79,19 +105,18 @@ const MultiselectProperty = (props: Props) => {
         );
     }
 
-    const selectedLabels = displayValue
-        .map((id) => selectOptions.find((option) => option.value === id)?.label)
-        .filter(Boolean);
-
     return (
         <ChipsContainer data-testid='property-value'>
-            {selectedLabels.map((label, index) => (
-                <PropertyChip
-                    key={index}
-                    label={label!}
-                    onClick={handleStartEdit}
-                />
-            ))}
+            {displayValue.map((id) => {
+                const label = selectOptions.find((option) => option.value === id)?.label;
+                return label ? (
+                    <PropertyChip
+                        key={id}
+                        label={label}
+                        onClick={handleStartEdit}
+                    />
+                ) : null;
+            })}
         </ChipsContainer>
     );
 };

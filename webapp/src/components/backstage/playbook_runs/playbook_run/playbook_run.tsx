@@ -20,6 +20,7 @@ import {
     useRunMetadata,
     useRunStatusUpdates,
 } from 'src/hooks';
+import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
 import {pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -114,7 +115,7 @@ const PlaybookRunDetails = () => {
         } else if (RHSUpdatesOpened && emptyUpdates) {
             RHS.open(RHSContent.RunInfo, RHSRunInfoTitle, playbookRun?.name);
         }
-    }, [playbookRun, RHS.section, RHS.isOpen]);
+    }, [playbookRun, RHS.section, RHS.isOpen, RHS.open, queryParams]);
 
     useEffect(() => {
         const teamId = playbookRun?.team_id;
@@ -146,7 +147,11 @@ const PlaybookRunDetails = () => {
 
     // loading state
     if (!playbookRun) {
-        return null;
+        return (
+            <LoadingContainer>
+                <LoadingSpinner/>
+            </LoadingContainer>
+        );
     }
 
     const onViewInfo = () => RHS.open(RHSContent.RunInfo, formatMessage({defaultMessage: 'Info'}), playbookRun.name);
@@ -204,6 +209,17 @@ const PlaybookRunDetails = () => {
     const onInfoClick = RHS.isOpen && RHS.section === RHSContent.RunInfo ? RHS.close : onViewInfo;
     const onTimelineClick = RHS.isOpen && RHS.section === RHSContent.RunTimeline ? RHS.close : onViewTimeline;
 
+    let participantContent: React.ReactNode = null;
+    if (role === Role.Participant) {
+        participantContent = (
+            <FinishRun
+                playbookRun={playbookRun}
+                ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
+                isOwner={myUser.id === playbookRun.owner_user_id}
+            />
+        );
+    }
+
     return (
         <Container>
             <MainWrapper>
@@ -217,6 +233,7 @@ const PlaybookRunDetails = () => {
                         hasPermanentViewerAccess={hasPermanentViewerAccess}
                         rhsSection={RHS.isOpen ? RHS.section : null}
                         isFollowing={followState.isFollowing}
+                        ownerGroupOnlyActions={playbook?.owner_group_only_actions ?? false}
                     />
                 </Header>
                 <Main>
@@ -252,7 +269,7 @@ const PlaybookRunDetails = () => {
                             role={role}
                             focusMetricId={retrospectiveMetricId}
                         />
-                        {role === Role.Participant ? <FinishRun playbookRun={playbookRun}/> : null}
+                        {participantContent}
                     </Body>
                 </Main>
             </MainWrapper>
@@ -310,4 +327,12 @@ const Header = styled.header`
     height: 56px;
     min-height: 56px;
     background-color: var(--center-channel-bg);
+`;
+
+const LoadingContainer = styled.div`
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
 `;

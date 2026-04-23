@@ -51,12 +51,14 @@ import {
     PLAYBOOK_RESTORED,
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
+    PLAYBOOK_UPDATED,
     PUBLISH_TEMPLATES,
     PlaybookArchived,
     PlaybookCreated,
     PlaybookRestored,
     PlaybookRunCreated,
     PlaybookRunUpdated,
+    PlaybookUpdated,
     PublishTemplates,
     RECEIVED_GLOBAL_SETTINGS,
     RECEIVED_PLAYBOOK_CONDITIONS,
@@ -179,7 +181,8 @@ export function openUpdateRunStatusModal(
     hasPermission: boolean,
     message?: string,
     reminderInSeconds?: number,
-    finishRunChecked?: boolean
+    finishRunChecked?: boolean,
+    initialError?: string,
 ) {
     return modals.openModal(makeUpdateRunStatusModalDefinition({
         playbookRunId,
@@ -188,6 +191,7 @@ export function openUpdateRunStatusModal(
         message,
         reminderInSeconds,
         finishRunChecked,
+        initialError,
     }));
 }
 
@@ -287,6 +291,12 @@ export const playbookArchived = (teamID: string): PlaybookArchived => ({
 export const playbookRestored = (teamID: string): PlaybookRestored => ({
     type: PLAYBOOK_RESTORED,
     teamID,
+});
+
+export const playbookUpdated = (teamID: string, playbookID: string): PlaybookUpdated => ({
+    type: PLAYBOOK_UPDATED,
+    teamID,
+    playbookID,
 });
 
 export const receivedPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedPlaybookRuns => ({
@@ -422,6 +432,11 @@ export const fetchPlaybookConditions = (playbookId: string) => async (dispatch: 
         }
     } catch (error) {
         console.error('Failed to fetch playbook conditions:', error); //eslint-disable-line no-console
+        dispatch({
+            type: RECEIVED_PLAYBOOK_CONDITIONS,
+            playbookId,
+            conditions: [],
+        } as ReceivedPlaybookConditions);
     }
 };
 
@@ -443,12 +458,22 @@ export const conditionDeleted = (conditionId: string, playbookId: string): Condi
 });
 
 export const fetchPlaybookPropertyFieldsAction = (playbookId: string) => async (dispatch: Dispatch<AnyAction>) => {
-    const result = await fetchPlaybookPropertyFields(playbookId);
-    dispatch({
-        type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
-        playbookId,
-        propertyFields: result,
-    });
+    try {
+        const result = await fetchPlaybookPropertyFields(playbookId);
+        dispatch({
+            type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
+            playbookId,
+            propertyFields: result,
+        });
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch playbook property fields:', error);
+        dispatch({
+            type: RECEIVED_PLAYBOOK_PROPERTY_FIELDS,
+            playbookId,
+            propertyFields: [],
+        });
+    }
 };
 
 export const addPlaybookPropertyFieldAction = (playbookId: string, propertyField: PropertyFieldInput) => async (dispatch: Dispatch<AnyAction>) => {
@@ -472,15 +497,13 @@ export const updatePlaybookPropertyFieldAction = (playbookId: string, fieldId: s
     }
 
     // Create optimistic update from input, filtering out options without IDs
-    const optimisticOptions = propertyField.attrs?.options ?
-        propertyField.attrs.options
-            .filter((opt) => opt.id !== undefined)
-            .map((opt) => ({
-                id: opt.id!,
-                name: opt.name,
-                color: opt.color,
-            })) :
-        originalField.attrs.options;
+    const optimisticOptions = propertyField.attrs?.options ? propertyField.attrs.options
+        .filter((opt) => opt.id !== undefined)
+        .map((opt) => ({
+            id: opt.id!,
+            name: opt.name,
+            color: opt.color,
+        })) : originalField.attrs.options;
 
     const optimistic: PropertyField = {
         ...originalField,

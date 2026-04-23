@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {useEffect, useMemo, useState} from 'react';
+import {
+    DependencyList,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import debounce from 'debounce';
 import {useIntl} from 'react-intl';
 
@@ -21,6 +26,7 @@ import {
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Category} from 'src/types/category';
+import {noopSelector} from 'src/selectors';
 
 import {useThing} from './general';
 
@@ -38,8 +44,8 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
  * @remarks lightweight alternative to {@link usePlaybooksCrud}
  * @returns undefined == loading; null == not found
  */
-export function usePlaybook(id: Playbook['id'] | undefined) {
-    return useThing(id, clientFetchPlaybook);
+export function usePlaybook(id: Playbook['id'] | undefined, deps: DependencyList = []) {
+    return useThing(id, clientFetchPlaybook, noopSelector, deps);
 }
 
 type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]

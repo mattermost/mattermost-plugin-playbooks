@@ -91,6 +91,7 @@ describe('websocket event actions', () => {
                         state: 'Open',
                         state_modified: 0,
                         assignee_id: '',
+                        assignee_type: '',
                         assignee_modified: 0,
                         command: '',
                         description: '',
@@ -100,6 +101,8 @@ describe('websocket event actions', () => {
                         condition_id: '',
                         condition_action: '',
                         condition_reason: '',
+                        restrict_completion_to_assignee: false,
+                        assignee_group_id: '',
                     },
                 ],
             },
@@ -136,6 +139,10 @@ describe('websocket event actions', () => {
         current_status: 'InProgress' as any,
         type: PlaybookRunType.Playbook,
         items_order: ['checklist_1'],
+        run_number: 0,
+        sequential_id: '',
+        task_total: 0,
+        task_completed: 0,
     };
 
     const makeStateWithRun = (run: PlaybookRun) => ({

@@ -218,6 +218,20 @@ export function useProfilesInTeam() {
     return profilesInTeam;
 }
 
+// useUserDisplayNameMap builds a userId→displayName map for all profiles in the current team.
+// Shared by components that need to resolve user IDs to display names for template previews.
+export function useUserDisplayNameMap(): Record<string, string> {
+    const profilesInTeam = useProfilesInTeam();
+    const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    return useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const profile of profilesInTeam) {
+            map[profile.id] = displayUsername(profile, teammateNameDisplaySetting);
+        }
+        return map;
+    }, [profilesInTeam, teammateNameDisplaySetting]);
+}
+
 /**
  * Use thing from API and/or Store
  *
@@ -243,30 +257,40 @@ export function useThing<T extends NonNullable<any>>(
     const [isFetching, setIsFetching] = useState<boolean>(true);
 
     useEffect(() => {
+        let cancelled = false;
         if (!id) {
             setIsFetching(false);
             setThing(null);
             setError(null);
-            return;
+            return undefined;
         }
 
         if (thingFromState) {
             setThing(thingFromState);
             setIsFetching(false);
-            return;
+            return undefined;
         }
 
+        setIsFetching(true);
         fetchFunc(id)
             .then((res) => {
-                setThing(res);
+                if (!cancelled) {
+                    setThing(res);
+                    setIsFetching(false);
+                }
             })
             .catch((err) => {
-                if (err instanceof ClientError) {
-                    setError(err);
+                if (!cancelled) {
+                    if (err instanceof ClientError) {
+                        setError(err);
+                    }
+                    setThing(null);
+                    setIsFetching(false);
                 }
-                setThing(null);
             });
-        setIsFetching(false);
+        return () => {
+            cancelled = true;
+        };
     }, [thingFromState, id, ...deps]);
 
     const metadata = {
@@ -351,7 +375,7 @@ export function useEnsureProfiles(userIds: string[]) {
         if (unknownIds.length > 0) {
             dispatch(getProfilesByIds(unknownIds));
         }
-    }, [userIds]);
+    }, [userIds, getUserFromStore, dispatch]);
 }
 
 export function useOpenContactSales() {
@@ -393,17 +417,21 @@ export function useOpenStartTrialFormModal() {
     };
 }
 
-export function useFormattedUsername(user: UserProfile) {
+export function useFormattedUsername(user: UserProfile | undefined) {
     const teamnameNameDisplaySetting =
         useSelector<GlobalState, string | undefined>(
             getTeammateNameDisplaySetting,
         ) || '';
 
+    if (!user) {
+        return '';
+    }
+
     return displayUsername(user, teamnameNameDisplaySetting);
 }
 
 export function useFormattedUsernameByID(userId: string) {
-    const user = useSelector<GlobalState, UserProfile>((state) =>
+    const user = useSelector<GlobalState, UserProfile | undefined>((state) =>
         getUser(state, userId),
     );
 
@@ -495,18 +523,23 @@ export const usePlaybookName = (playbookId: string) => {
     const [playbookName, setPlaybookName] = useState('');
 
     useEffect(() => {
-        const getPlaybookName = async () => {
-            if (playbookId !== '') {
-                try {
-                    const playbook = await clientFetchPlaybook(playbookId);
-                    setPlaybookName(playbook?.title || '');
-                } catch {
-                    setPlaybookName('');
-                }
-            }
+        let cancelled = false;
+        if (playbookId !== '') {
+            clientFetchPlaybook(playbookId)
+                .then((playbook) => {
+                    if (!cancelled) {
+                        setPlaybookName(playbook?.title || '');
+                    }
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        setPlaybookName('');
+                    }
+                });
+        }
+        return () => {
+            cancelled = true;
         };
-
-        getPlaybookName();
     }, [playbookId]);
 
     return playbookName;
@@ -516,16 +549,21 @@ export const useStats = (playbookId: string) => {
     const [stats, setStats] = useState(EmptyPlaybookStats);
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const ret = await fetchPlaybookStats(playbookId);
-                setStats(ret);
-            } catch {
-                setStats(EmptyPlaybookStats);
-            }
+        let cancelled = false;
+        fetchPlaybookStats(playbookId)
+            .then((ret) => {
+                if (!cancelled) {
+                    setStats(ret);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setStats(EmptyPlaybookStats);
+                }
+            });
+        return () => {
+            cancelled = true;
         };
-
-        fetchStats();
     }, [playbookId]);
 
     return stats;
@@ -634,8 +672,9 @@ export function useTextOverflow(ref: MutableRefObject<HTMLElement | null>) {
     const [isOverflowing, setIsOverflowing] = useState(false);
 
     useEffect(() => {
+        let alive = true;
         const checkOverflow = () => {
-            if (ref.current) {
+            if (alive && ref.current) {
                 setIsOverflowing(ref.current.scrollWidth > ref.current.clientWidth);
             }
         };
@@ -650,6 +689,7 @@ export function useTextOverflow(ref: MutableRefObject<HTMLElement | null>) {
         window.addEventListener('resize', checkOverflow);
 
         return () => {
+            alive = false;
             resizeObserver.disconnect();
             window.removeEventListener('resize', checkOverflow);
         };

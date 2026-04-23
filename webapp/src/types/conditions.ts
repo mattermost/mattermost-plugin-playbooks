@@ -3,10 +3,18 @@
 
 import {PropertyField, PropertyValue} from './properties';
 
+export type ConditionActionDef = {
+    type: 'set_owner' | 'notify_channel';
+    set_owner_user_id?: string;
+    notify_channel_ids?: string[];
+    notify_message?: string;
+}
+
 export type Condition = {
     id: string;
     version: number;
     condition_expr: ConditionExprV1;
+    actions?: ConditionActionDef[];
     playbook_id: string;
     run_id?: string;
     create_at: number;

@@ -118,6 +118,8 @@ describe('playbooks > list', {testIsolation: true}, () => {
     it('can duplicate playbook with attributes and conditions', () => {
         let priorityField;
         let statusField;
+        let originalPlaybookId;
+        let copyPlaybookId;
 
         // # Create a playbook with attributes and conditions
         cy.apiCreateTestPlaybook({
@@ -125,6 +127,8 @@ describe('playbooks > list', {testIsolation: true}, () => {
             title: 'Playbook with Attributes',
             userId: testUser.id,
         }).then((playbook) => {
+            originalPlaybookId = playbook.id;
+
             // # Add a text attribute
             cy.apiAddPropertyField(playbook.id, {
                 name: 'Customer Name',
@@ -194,25 +198,31 @@ describe('playbooks > list', {testIsolation: true}, () => {
         // # Switch to Playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click on the dot menu of the playbook with attributes
-        cy.contains('[data-testid="playbook-item"]', 'Playbook with Attributes').within(() => {
-            cy.findByTestId('menuButtonActions').click();
+        // # Click on the dot menu of the exact original playbook using its ID
+        cy.then(() => {
+            cy.get(`[data-testid="playbook-item"][data-playbook-id="${originalPlaybookId}"]`).within(() => {
+                cy.findByTestId('menuButtonActions').click();
+            });
         });
+
+        // # Intercept the duplicate API call to capture the new playbook ID
+        cy.intercept('POST', '/plugins/playbooks/api/v0/playbooks/*/duplicate').as('DuplicatePlaybook');
 
         // # Click on duplicate
         cy.findByText('Duplicate').click();
 
-        // * Verify that playbook got duplicated (there may be multiple from previous runs)
+        // # Wait for duplicate API and capture the copy's ID
+        cy.wait('@DuplicatePlaybook').then((interception) => {
+            copyPlaybookId = interception.response.body.id;
+        });
+
+        // * Verify that playbook got duplicated
         cy.contains('Copy of Playbook with Attributes', {timeout: 10000}).should('be.visible');
 
-        // # Click on the duplicated playbook to open it (use first match if multiple exist)
-        cy.get('[data-testid="playbook-title"]').
-            contains('Copy of Playbook with Attributes').
-            first().
-            click();
-
-        // # Navigate to attributes section
-        cy.findByText('Attributes').click();
+        // # Navigate directly to the duplicated playbook using its ID
+        cy.then(() => {
+            cy.visit(`/playbooks/playbooks/${copyPlaybookId}/attributes`);
+        });
 
         // * Verify all attributes were copied
         cy.findAllByTestId('property-field-row').should('have.length', 3);
@@ -278,21 +288,10 @@ describe('playbooks > list', {testIsolation: true}, () => {
             cy.findByText(/\bor\b/i).should('exist');
         });
 
-        // # Navigate back to playbooks list
-        cy.findByTestId('playbooksLHSButton').click();
-
-        // # Wait for playbook list to load
-        cy.findAllByTestId('playbook-item').should('have.length.at.least', 1);
-
-        // # Open the original playbook (not the "Copy of" version)
-        cy.get('[data-testid="playbook-title"]').
-            filter(':contains("Playbook with Attributes")').
-            not(':contains("Copy of")').
-            first().
-            click();
-
-        // # Navigate to attributes section
-        cy.findByText('Attributes').click();
+        // # Navigate directly to the original playbook's attributes section
+        cy.then(() => {
+            cy.visit(`/playbooks/playbooks/${originalPlaybookId}/attributes`);
+        });
 
         // * Verify original playbook still has its attributes unchanged
         cy.findAllByTestId('property-field-row').should('have.length', 3);

@@ -518,13 +518,13 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
             describe('Favorite', () => {
                 it('add and remove from LHS', () => {
                     // # Click fav icon
-                    getHeader().getStyledComponent('StarButton').click();
+                    getHeader().findByTestId('toggle-favorite').click();
 
                     // * Assert run appears in LHS
                     cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('exist');
 
                     // # Click fav icon again (unfav)
-                    getHeader().getStyledComponent('StarButton').click();
+                    getHeader().findByTestId('toggle-favorite').click();
 
                     // * Assert run disappeared from LHS
                     cy.findByTestId('lhs-navigation').findByText(playbookRunName).should('not.exist');
@@ -791,23 +791,9 @@ describe('runs > run details page > header', {testIsolation: true}, () => {
             });
 
             describe('run actions', () => {
-                describe('modal behaviour', () => {
-                    /* modal cannot be opened read-only from dropdown */
-                    // eslint-disable-next-line no-only-tests/no-only-tests
-                    it.skip('modal can be opened read-only', () => {
-                        // # Click on run actions
-                        getDropdownItemByText('Actions').click();
-
-                        // * Assert modal pop up
-                        cy.findByRole('dialog', {name: /Run Actions/i}).should('exist');
-
-                        // * Assert there are no buttons
-                        cy.findByRole('dialog', {name: /Run Actions/i}).findByTestId('modal-cancel-button').should('not.exist');
-                        cy.findByRole('button', {name: /Save/i}).should('not.exist');
-
-                        // # Close modal
-                        cy.findByRole('dialog', {name: /Run Actions/i}).find('.close').click();
-                    });
+                it('actions menu item is not available for non-participant viewers', () => {
+                    // * Assert that the Actions dropdown item does not exist for viewers
+                    getDropdownItemByText('Actions').should('not.exist');
                 });
             });
         });

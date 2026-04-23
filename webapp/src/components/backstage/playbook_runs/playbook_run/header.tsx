@@ -41,9 +41,10 @@ interface Props {
     onTimelineClick: () => void;
     rhsSection: RHSContent | null;
     isFollowing: boolean;
+    ownerGroupOnlyActions?: boolean;
 }
 
-export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
+export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection, ownerGroupOnlyActions}: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const updateRun = useUpdateRun(playbookRun.id);
@@ -56,7 +57,10 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
 
     return (
         <Container data-testid={'run-header-section'}>
-            <StarButton onClick={toggleFavorite}>
+            <StarButton
+                data-testid='toggle-favorite'
+                onClick={toggleFavorite}
+            >
                 <FavoriteIcon
                     size={18}
                     color={isFavoriteRun ? 'var(--sidebar-text-active-border)' : 'var(--center-channel-color-56)'}
@@ -92,6 +96,7 @@ export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPer
                             isFollowing={isFollowing}
                             toggleFavorite={toggleFavorite}
                             hasPermanentViewerAccess={hasPermanentViewerAccess}
+                            ownerGroupOnlyActions={ownerGroupOnlyActions}
                         />
                         <StyledBadge status={BadgeType[playbookRun.current_status]}/>
                         <HeaderButton

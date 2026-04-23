@@ -3,15 +3,10 @@
 
 // Types that match the actual HTTP API response structure for properties
 
-import type {
-    FieldVisibility,
-    PropertyField as PropertyFieldBase,
-    PropertyFieldOption,
-    PropertyValue as PropertyValueBase,
-} from '@mattermost/types/properties';
+import type {FieldVisibility, PropertyField as PropertyFieldBase, PropertyFieldOption} from '@mattermost/types/properties';
 
 export type PropertyField = PropertyFieldBase & {
-    target_type: 'playbook' | 'run';
+    target_type?: 'playbook' | 'run';
     attrs: {
         visibility: FieldVisibility;
         sort_order: number;
@@ -21,8 +16,16 @@ export type PropertyField = PropertyFieldBase & {
     };
 };
 
-export type PropertyValue = PropertyValueBase<string | string[]> & {
+export type PropertyValue = {
+    id: string;
     field_id: string;
+    value?: string | string[] | number;
+    target_id?: string;
+    target_type?: string;
+    group_id?: string;
+    create_at: number;
+    update_at: number;
+    delete_at: number;
 }
 
 export enum PropertyFieldType {
@@ -53,3 +56,9 @@ export type PropertyFieldInput = {
     type: PropertyField['type'];
     attrs?: PropertyFieldAttrsInput;
 };
+
+export interface PropertyComponentProps {
+    field: PropertyField;
+    value?: PropertyValue;
+    runID: string;
+}

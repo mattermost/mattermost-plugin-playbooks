@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../../utils';
+
 describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -32,26 +34,35 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
     describe('task visibility with simple condition', () => {
         it('hides task when condition not met', () => {
+            // # Create playbook with a task conditioned on Priority = High
             createPlaybookWithConditionalTask('High');
 
+            // # Start a run
             startRun();
 
+            // # Navigate to the run
             navigateToRun();
 
+            // * Verify task is hidden when no priority is set
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'Low');
+            // # Set priority to Low (condition not met)
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
+            // * Verify task remains hidden
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'High');
+            // # Set priority to High (condition met)
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
+            // * Verify task is now visible
             verifyTaskVisible('Conditional Task');
         });
     });
 
     describe('task visibility with AND logic', () => {
         it('evaluates AND condition correctly', () => {
+            // # Create playbook with Priority and Status fields
             createPlaybookWithAttributes();
 
             cy.then(() => {
@@ -72,21 +83,29 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
                     playbook.checklists[0].items[0].condition_id = testCondition.id;
                     return cy.apiUpdatePlaybook(playbook);
                 }).then(() => {
+                    // # Start a run and navigate to it
                     startRun();
                     navigateToRun();
 
+                    // * Verify task is hidden when no properties are set
                     verifyTaskHidden('AND Conditional Task');
 
-                    setPropertyValue('Priority', 'High');
+                    // # Set only Priority to High (Status condition not met)
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
+                    // * Verify task remains hidden (AND requires both conditions)
                     verifyTaskHidden('AND Conditional Task');
 
-                    setPropertyValue('Status', 'Active');
+                    // # Set Status to Active (both conditions now met)
+                    cy.playbooksSetRunPropertyViaRHS('Status', 'Active');
 
+                    // * Verify task is visible when both conditions are met
                     verifyTaskVisible('AND Conditional Task');
 
-                    setPropertyValue('Priority', 'Low');
+                    // # Set Priority back to Low (AND condition broken)
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
+                    // * Verify task is hidden again
                     verifyTaskHidden('AND Conditional Task');
                 });
             });
@@ -95,6 +114,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
     describe('task visibility with OR logic', () => {
         it('evaluates OR condition correctly', () => {
+            // # Create playbook with Priority field
             createPlaybookWithAttributes();
 
             cy.then(() => {
@@ -115,21 +135,29 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
                     playbook.checklists[0].items[0].condition_id = testCondition.id;
                     return cy.apiUpdatePlaybook(playbook);
                 }).then(() => {
+                    // # Start a run and navigate to it
                     startRun();
                     navigateToRun();
 
+                    // * Verify task is hidden when no priority is set
                     verifyTaskHidden('OR Conditional Task');
 
-                    setPropertyValue('Priority', 'Low');
+                    // # Set priority to Low (neither OR branch is met)
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
+                    // * Verify task remains hidden
                     verifyTaskHidden('OR Conditional Task');
 
-                    setPropertyValue('Priority', 'Medium');
+                    // # Set priority to Medium (one OR branch is met)
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'Medium');
 
+                    // * Verify task is visible
                     verifyTaskVisible('OR Conditional Task');
 
-                    setPropertyValue('Priority', 'High');
+                    // # Set priority to High (other OR branch is met)
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
+                    // * Verify task remains visible
                     verifyTaskVisible('OR Conditional Task');
                 });
             });
@@ -138,66 +166,89 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
     describe('modified task behavior', () => {
         it('shows warning indicator for modified task when condition no longer met', () => {
+            // # Create playbook with a task conditioned on Priority = High
             createPlaybookWithConditionalTask('High');
 
+            // # Start a run
             startRun();
 
+            // # Navigate to the run
             navigateToRun();
 
-            setPropertyValue('Priority', 'High');
+            // # Set priority to High so the task becomes visible
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
+            // * Verify task is visible
             verifyTaskVisible('Conditional Task');
+
+            // # Intercept the checklist item state REST call triggered by checking the task
+            cy.playbooksInterceptChecklistItemState('checklistItemState');
 
             cy.findByText('Conditional Task').closest('[data-testid="checkbox-item-container"]').within(() => {
                 cy.get('input[type="checkbox"]').check();
             });
 
-            cy.wait(500);
+            // * Wait for the task state update to complete before changing the property
+            cy.wait('@checklistItemState');
 
-            setPropertyValue('Priority', 'Low');
+            // # Set priority to Low (condition no longer met, but task was already modified)
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'Low');
 
-            cy.wait(500);
-
+            // * Verify task remains visible due to prior modification
             verifyTaskVisible('Conditional Task');
 
+            // * Verify the warning indicator is shown on the task
             cy.findByTestId('condition-indicator-error').should('exist');
         });
     });
 
     describe('real-time updates', () => {
         it('updates task visibility without page reload', () => {
+            // # Create playbook with a task conditioned on Priority = High
             createPlaybookWithConditionalTask('High');
 
+            // # Start a run
             startRun();
 
+            // # Navigate to the run
             navigateToRun();
 
+            // * Verify task is hidden initially
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'High');
+            // # Set priority to High (condition met)
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
+            // * Verify task becomes visible without a page reload
             verifyTaskVisible('Conditional Task');
 
-            setPropertyValue('Priority', 'Medium');
+            // # Change priority to Medium (condition no longer met)
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'Medium');
 
+            // * Verify task hides again
             verifyTaskHidden('Conditional Task');
 
-            setPropertyValue('Priority', 'High');
+            // # Set priority back to High
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
+            // * Verify task is visible again
             verifyTaskVisible('Conditional Task');
         });
     });
 
     describe('channel messages for conditional tasks', () => {
         it('posts channel message when property change adds new tasks', () => {
+            // # Create playbook with a task conditioned on Priority = High
             createPlaybookWithConditionalTask('High');
 
+            // # Start a run
             startRun();
 
+            // # Navigate to the run
             navigateToRun();
 
             // # Change property to trigger task addition
-            setPropertyValue('Priority', 'High');
+            cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
             // # Navigate to the run's channel
             cy.then(() => {
@@ -211,12 +262,13 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
         });
 
         it('posts message when multiple tasks are added', () => {
+            // # Create playbook with Priority field
             createPlaybookWithAttributes();
 
             cy.then(() => {
                 const highOptionId = priorityField.attrs.options.find((o) => o.name === 'High').id;
 
-                // Create condition and add multiple conditional tasks
+                // # Create condition and add multiple conditional tasks
                 cy.apiCreatePlaybookCondition(testPlaybook.id, {
                     is: {
                         field_id: priorityField.id,
@@ -227,7 +279,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
                     return cy.apiGetPlaybook(testPlaybook.id);
                 }).then((playbook) => {
-                    // Add multiple conditional tasks
+                    // # Add multiple conditional tasks
                     playbook.checklists[0].items = [
                         {
                             title: 'High Priority Task 1',
@@ -244,12 +296,14 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
                     ];
                     return cy.apiUpdatePlaybook(playbook);
                 }).then(() => {
+                    // # Start a run and navigate to it
                     startRun();
 
+                    // # Navigate to the run
                     navigateToRun();
 
                     // # Change property to trigger task additions
-                    setPropertyValue('Priority', 'High');
+                    cy.playbooksSetRunPropertyViaRHS('Priority', 'High');
 
                     // # Navigate to the run's channel
                     cy.then(() => {
@@ -273,7 +327,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
             cy.apiCreateTestPlaybook({
                 teamId: testTeam.id,
-                title: 'Text Condition Test ' + Date.now(),
+                title: 'Text Condition Test ' + getRandomId(),
                 userId: testUser.id,
             }).then((playbook) => {
                 testPlaybook = playbook;
@@ -289,8 +343,8 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
                     },
                 });
 
-                cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                    textField = fields.find((f) => f.name === 'Code');
+                cy.apiGetPropertyFieldByName(testPlaybook.id, 'Code').then((field) => {
+                    textField = field;
                 });
             });
 
@@ -327,19 +381,25 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
                 return cy.apiUpdatePlaybook(playbook);
             }).then(() => {
+                // # Start a run and navigate to it
                 startRun();
                 navigateToRun();
 
+                // * Verify IS task is hidden and IS NOT task is visible with no value set
                 verifyTaskHidden('Task when IS abc');
                 verifyTaskVisible('Task when NOT abc');
 
+                // # Set Code property to 'abc' (IS condition met)
                 setTextPropertyValue('Code', 'abc');
 
+                // * Verify IS task is now visible and IS NOT task is hidden
                 verifyTaskVisible('Task when IS abc');
                 verifyTaskHidden('Task when NOT abc');
 
+                // # Set Code property to 'xyz' (IS condition no longer met)
                 setTextPropertyValue('Code', 'xyz');
 
+                // * Verify IS task is hidden and IS NOT task is visible again
                 verifyTaskHidden('Task when IS abc');
                 verifyTaskVisible('Task when NOT abc');
             });
@@ -349,7 +409,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
     function createPlaybookWithAttributes() {
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
-            title: 'Condition User Test ' + Date.now(),
+            title: 'Condition User Test ' + getRandomId(),
             userId: testUser.id,
         }).then((playbook) => {
             testPlaybook = playbook;
@@ -383,9 +443,12 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
                 },
             });
 
-            cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                priorityField = fields.find((f) => f.name === 'Priority');
-                statusField = fields.find((f) => f.name === 'Status');
+            cy.apiGetPropertyFieldByName(testPlaybook.id, 'Priority').then((field) => {
+                priorityField = field;
+            });
+
+            cy.apiGetPropertyFieldByName(testPlaybook.id, 'Status').then((field) => {
+                statusField = field;
             });
         });
     }
@@ -428,26 +491,15 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
     function navigateToRun() {
         cy.then(() => {
-            cy.visit(`/playbooks/runs/${testRun.id}`);
+            cy.playbooksVisitRun(testRun.id);
         });
-    }
-
-    function setPropertyValue(propertyName, value) {
-        const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
-
-        cy.findByRole('complementary').within(() => {
-            cy.findByTestId(testId).within(() => {
-                cy.findByTestId('property-value').realClick();
-            });
-        });
-
-        cy.findByText(value).click();
-
-        cy.wait(500);
     }
 
     function setTextPropertyValue(propertyName, value) {
         const testId = `run-property-${propertyName.toLowerCase().replace(/\s+/g, '-')}`;
+
+        // # Intercept the SetRunPropertyValue mutation before triggering the UI action
+        cy.playbooksInterceptGraphQLMutation('SetRunPropertyValue');
 
         cy.findByRole('complementary').within(() => {
             cy.findByTestId(testId).within(() => {
@@ -458,7 +510,8 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
         cy.focused().clear().realType(value);
         cy.realPress('Tab');
 
-        cy.wait(500);
+        // * Wait for the text property value save to complete before proceeding
+        cy.wait('@SetRunPropertyValue');
     }
 
     function verifyTaskVisible(taskTitle) {

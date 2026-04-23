@@ -4,14 +4,17 @@
 package sqlstore
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
 
@@ -1723,6 +1726,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			DefaultPlaybookMemberRole: app.PlaybookRoleMember,
 			DefaultRunAdminRole:       app.RunRoleAdmin,
 			DefaultRunMemberRole:      app.RunRoleMember,
+			NextRunNumber:             1,
 		},
 	}
 }
@@ -2055,4 +2059,480 @@ func TestBumpPlaybookUpdatedAt(t *testing.T) {
 	updatedPlaybook, err := playbookStore.Get(id)
 	require.NoError(t, err)
 	require.Greater(t, updatedPlaybook.UpdateAt, int64(1))
+}
+
+func TestIncrementRunNumber(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	team1id := model.NewId()
+	playbook := NewPBBuilder().
+		WithTitle("Test Playbook").
+		WithTeamID(team1id).
+		ToPlaybook()
+
+	id, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+
+	t.Run("first increment returns 1", func(t *testing.T) {
+		runNumber, err := playbookStore.IncrementRunNumber(id)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), runNumber)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), updated.NextRunNumber)
+	})
+
+	t.Run("sequential increments return increasing values", func(t *testing.T) {
+		db2 := setupTestDB(t)
+		store2 := setupPlaybookStore(t, db2)
+
+		pb := NewPBBuilder().
+			WithTitle("Sequential Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+
+		pbID, err := store2.Create(pb)
+		require.NoError(t, err)
+
+		n1, err := store2.IncrementRunNumber(pbID)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), n1)
+
+		n2, err := store2.IncrementRunNumber(pbID)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), n2)
+
+		n3, err := store2.IncrementRunNumber(pbID)
+		require.NoError(t, err)
+		require.Equal(t, int64(3), n3)
+	})
+
+	t.Run("non-existent playbook returns ErrNotFound", func(t *testing.T) {
+		_, err := playbookStore.IncrementRunNumber(model.NewId())
+		require.Error(t, err)
+		require.True(t, errors.Is(err, app.ErrNotFound))
+	})
+
+	t.Run("empty playbookID returns error", func(t *testing.T) {
+		_, err := playbookStore.IncrementRunNumber("")
+		require.Error(t, err)
+	})
+}
+
+func TestUpdateChannelNameTemplateAtomically(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	t.Run("empty playbookID returns error", func(t *testing.T) {
+		err := playbookStore.UpdateChannelNameTemplateAtomically("", func(s string) string { return s })
+		require.Error(t, err)
+	})
+
+	t.Run("replaces field in ChannelNameTemplate", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Template Replace Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		pb.ChannelNameTemplate = "{Priority} - Channel"
+
+		pbID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		err = playbookStore.UpdateChannelNameTemplateAtomically(pbID, func(current string) string {
+			return app.ReplaceFieldInTemplate(current, "Priority", "Severity")
+		})
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.Equal(t, "{Severity} - Channel", updated.ChannelNameTemplate)
+	})
+
+	t.Run("strips field from ChannelNameTemplate", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Template Strip Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		pb.ChannelNameTemplate = "{SEQ} - {Priority}"
+
+		pbID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		err = playbookStore.UpdateChannelNameTemplateAtomically(pbID, func(current string) string {
+			return app.StripFieldFromTemplate(current, "Priority")
+		})
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.Equal(t, "{SEQ}", updated.ChannelNameTemplate)
+	})
+
+	t.Run("no-op when transform returns same value", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("Template NoOp Playbook").
+			WithTeamID(model.NewId()).
+			ToPlaybook()
+		pb.ChannelNameTemplate = "{SEQ} - Channel"
+
+		pbID, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		err = playbookStore.UpdateChannelNameTemplateAtomically(pbID, func(current string) string {
+			return current
+		})
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.Equal(t, "{SEQ} - Channel", updated.ChannelNameTemplate)
+	})
+
+	t.Run("not found returns error", func(t *testing.T) {
+		err := playbookStore.UpdateChannelNameTemplateAtomically("nonexistent-id", func(s string) string {
+			return "new"
+		})
+		require.Error(t, err)
+		require.ErrorIs(t, err, app.ErrNotFound)
+	})
+}
+
+func TestGraphqlUpdateGuards(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	pb := NewPBBuilder().
+		WithTitle("GraphqlUpdate Guard Playbook").
+		WithTeamID(model.NewId()).
+		ToPlaybook()
+
+	pbID, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	t.Run("legitimate field update succeeds", func(t *testing.T) {
+		err := playbookStore.GraphqlUpdate(pbID, map[string]interface{}{
+			"Title": "Updated Title",
+		})
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(pbID)
+		require.NoError(t, err)
+		require.Equal(t, "Updated Title", updated.Title)
+	})
+
+	t.Run("empty id returns error", func(t *testing.T) {
+		err := playbookStore.GraphqlUpdate("", map[string]interface{}{
+			"Title": "Whatever",
+		})
+		require.Error(t, err)
+	})
+}
+
+func TestPlaybookCreationRulesRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+	ownerID := model.NewId()
+	channelID := model.NewId()
+	invitedUserID := model.NewId()
+	fieldID := model.NewId()
+	optionID := model.NewId()
+
+	t.Run("empty rules slice persists as empty", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("playbook-creation-rules-empty").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.CreationRules = []app.CreationRule{}
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Empty(t, got.CreationRules, "empty CreationRules must round-trip as empty/nil")
+	})
+
+	t.Run("single rule with all fields persists correctly", func(t *testing.T) {
+		rule := app.CreationRule{
+			Condition: &app.ConditionExprV1{
+				Is: &app.ComparisonCondition{
+					FieldID: fieldID,
+					Value:   json.RawMessage(`["` + optionID + `"]`),
+				},
+			},
+			SetOwnerID:    ownerID,
+			SetChannelID:  channelID,
+			InviteUserIDs: []string{invitedUserID},
+		}
+
+		pb := NewPBBuilder().
+			WithTitle("playbook-creation-rules-single").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.CreationRules = []app.CreationRule{rule}
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Len(t, got.CreationRules, 1)
+
+		gotRule := got.CreationRules[0]
+		require.NotNil(t, gotRule.Condition)
+		require.NotNil(t, gotRule.Condition.Is)
+		assert.Equal(t, fieldID, gotRule.Condition.Is.FieldID)
+		assert.Equal(t, ownerID, gotRule.SetOwnerID)
+		assert.Equal(t, channelID, gotRule.SetChannelID)
+		require.Len(t, gotRule.InviteUserIDs, 1)
+		assert.Equal(t, invitedUserID, gotRule.InviteUserIDs[0])
+	})
+
+	t.Run("multiple rules persist in order", func(t *testing.T) {
+		fieldID2 := model.NewId()
+		optionID2 := model.NewId()
+		ownerID2 := model.NewId()
+
+		rules := []app.CreationRule{
+			{
+				Condition: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: fieldID,
+						Value:   json.RawMessage(`["` + optionID + `"]`),
+					},
+				},
+				SetOwnerID: ownerID,
+			},
+			{
+				Condition: &app.ConditionExprV1{
+					Is: &app.ComparisonCondition{
+						FieldID: fieldID2,
+						Value:   json.RawMessage(`["` + optionID2 + `"]`),
+					},
+				},
+				SetOwnerID: ownerID2,
+			},
+		}
+
+		pb := NewPBBuilder().
+			WithTitle("playbook-creation-rules-multiple").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.CreationRules = rules
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Len(t, got.CreationRules, 2)
+
+		assert.Equal(t, ownerID, got.CreationRules[0].SetOwnerID)
+		assert.Equal(t, fieldID, got.CreationRules[0].Condition.Is.FieldID)
+		assert.Equal(t, ownerID2, got.CreationRules[1].SetOwnerID)
+		assert.Equal(t, fieldID2, got.CreationRules[1].Condition.Is.FieldID)
+	})
+
+	t.Run("rule with nil condition persists and loads correctly", func(t *testing.T) {
+		rule := app.CreationRule{
+			Condition:  nil,
+			SetOwnerID: ownerID,
+		}
+
+		pb := NewPBBuilder().
+			WithTitle("playbook-creation-rules-nil-cond").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.CreationRules = []app.CreationRule{rule}
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Len(t, got.CreationRules, 1)
+		assert.Nil(t, got.CreationRules[0].Condition)
+		assert.Equal(t, ownerID, got.CreationRules[0].SetOwnerID)
+	})
+
+	t.Run("rule with complex and/or condition round-trips correctly", func(t *testing.T) {
+		fieldID2 := model.NewId()
+		optionID2 := model.NewId()
+
+		rule := app.CreationRule{
+			Condition: &app.ConditionExprV1{
+				And: []app.ConditionExprV1{
+					{Is: &app.ComparisonCondition{
+						FieldID: fieldID,
+						Value:   json.RawMessage(`["` + optionID + `"]`),
+					}},
+					{Or: []app.ConditionExprV1{
+						{Is: &app.ComparisonCondition{
+							FieldID: fieldID2,
+							Value:   json.RawMessage(`["` + optionID2 + `"]`),
+						}},
+					}},
+				},
+			},
+			SetOwnerID: ownerID,
+		}
+
+		pb := NewPBBuilder().
+			WithTitle("playbook-creation-rules-complex").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.CreationRules = []app.CreationRule{rule}
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+		require.Len(t, got.CreationRules, 1)
+
+		gotRule := got.CreationRules[0]
+		require.NotNil(t, gotRule.Condition)
+		require.Len(t, gotRule.Condition.And, 2)
+		require.NotNil(t, gotRule.Condition.And[0].Is)
+		assert.Equal(t, fieldID, gotRule.Condition.And[0].Is.FieldID)
+		require.Len(t, gotRule.Condition.And[1].Or, 1)
+		require.NotNil(t, gotRule.Condition.And[1].Or[0].Is)
+		assert.Equal(t, fieldID2, gotRule.Condition.And[1].Or[0].Is.FieldID)
+		assert.Equal(t, ownerID, gotRule.SetOwnerID)
+	})
+}
+
+func TestGovernanceFlagsRoundTrip(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	teamID := model.NewId()
+
+	t.Run("all governance flags persist through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("governance-flags-create").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.AdminOnlyEdit = true
+		pb.OwnerGroupOnlyActions = true
+		pb.NewChannelOnly = true
+		pb.AutoArchiveChannel = true
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		assert.True(t, got.AdminOnlyEdit)
+		assert.True(t, got.OwnerGroupOnlyActions)
+		assert.True(t, got.NewChannelOnly)
+		assert.True(t, got.AutoArchiveChannel)
+		assert.True(t, got.RetrospectiveEnabled)
+	})
+
+	t.Run("all governance flags persist through Update", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("governance-flags-update").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.AdminOnlyEdit = true
+		pb.OwnerGroupOnlyActions = true
+		pb.NewChannelOnly = true
+		pb.AutoArchiveChannel = true
+		pb.RetrospectiveEnabled = true
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		got.AdminOnlyEdit = false
+		got.OwnerGroupOnlyActions = false
+		got.NewChannelOnly = false
+		got.AutoArchiveChannel = false
+		got.RetrospectiveEnabled = false
+
+		err = playbookStore.Update(got)
+		require.NoError(t, err)
+
+		updated, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		assert.False(t, updated.AdminOnlyEdit)
+		assert.False(t, updated.OwnerGroupOnlyActions)
+		assert.False(t, updated.NewChannelOnly)
+		assert.False(t, updated.AutoArchiveChannel)
+		assert.False(t, updated.RetrospectiveEnabled)
+	})
+
+	t.Run("RetrospectiveEnabled false persists through Create", func(t *testing.T) {
+		pb := NewPBBuilder().
+			WithTitle("governance-retrospective-false").
+			WithTeamID(teamID).
+			ToPlaybook()
+		pb.RetrospectiveEnabled = false
+
+		id, err := playbookStore.Create(pb)
+		require.NoError(t, err)
+
+		got, err := playbookStore.Get(id)
+		require.NoError(t, err)
+
+		assert.False(t, got.RetrospectiveEnabled)
+	})
+}
+
+func TestConcurrentRunNumberIncrement(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+
+	pb := NewPBBuilder().
+		WithTitle("concurrent-run-number").
+		WithTeamID(model.NewId()).
+		ToPlaybook()
+
+	id, err := playbookStore.Create(pb)
+	require.NoError(t, err)
+
+	const numGoroutines = 10
+	results := make(chan int64, numGoroutines)
+
+	var wg sync.WaitGroup
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			n, err := playbookStore.IncrementRunNumber(id)
+			require.NoError(t, err)
+			results <- n
+		}()
+	}
+	wg.Wait()
+	close(results)
+
+	seen := make(map[int64]bool, numGoroutines)
+	var minVal, maxVal int64
+	first := true
+	for n := range results {
+		assert.False(t, seen[n], "duplicate run number %d", n)
+		seen[n] = true
+		if first || n < minVal {
+			minVal = n
+		}
+		if first || n > maxVal {
+			maxVal = n
+		}
+		first = false
+	}
+
+	assert.Equal(t, numGoroutines, len(seen))
+	assert.Equal(t, int64(1), minVal)
+	assert.Equal(t, int64(numGoroutines), maxVal)
 }

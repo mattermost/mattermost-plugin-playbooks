@@ -9,6 +9,8 @@
 // Stage: @prod
 // Group: @playbooks
 
+import {getRandomId} from '../../../../utils';
+
 describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -28,13 +30,11 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
         cy.apiCreateTestPlaybook({
             teamId: testTeam.id,
-            title: 'Condition Test Playbook ' + Date.now(),
+            title: 'Condition Test Playbook ' + getRandomId(),
             userId: testUser.id,
         }).then((playbook) => {
             testPlaybook = playbook;
-        });
 
-        cy.then(() => {
             cy.apiAddPropertyField(testPlaybook.id, {
                 name: 'Priority',
                 type: 'select',
@@ -47,24 +47,26 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                         {name: 'Low'},
                     ],
                 },
-            });
-
-            cy.apiAddPropertyField(testPlaybook.id, {
-                name: 'Status',
-                type: 'select',
-                attrs: {
-                    visibility: 'always',
-                    sortOrder: 2,
-                    options: [
-                        {name: 'Active'},
-                        {name: 'Inactive'},
-                    ],
-                },
-            });
-
-            cy.apiGetPropertyFields(testPlaybook.id).then((fields) => {
-                priorityField = fields.find((f) => f.name === 'Priority');
-                statusField = fields.find((f) => f.name === 'Status');
+            }).then(() => {
+                cy.apiAddPropertyField(testPlaybook.id, {
+                    name: 'Status',
+                    type: 'select',
+                    attrs: {
+                        visibility: 'always',
+                        sortOrder: 2,
+                        options: [
+                            {name: 'Active'},
+                            {name: 'Inactive'},
+                        ],
+                    },
+                }).then(() => {
+                    cy.apiGetPropertyFieldByName(testPlaybook.id, 'Priority').then((field) => {
+                        priorityField = field;
+                    });
+                    cy.apiGetPropertyFieldByName(testPlaybook.id, 'Status').then((field) => {
+                        statusField = field;
+                    });
+                });
             });
         });
 
@@ -75,20 +77,29 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
         it('can create a condition from task menu', () => {
             navigateToPlaybook(testPlaybook.id);
 
+            // # Scroll the checklists section into view so condition elements are visible
+            scrollToChecklists();
+
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
             cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
                 cy.findByTitle('More').click();
             });
 
+            // # Intercept the GraphQL mutation triggered by creating a condition and assigning it to the task
+            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+
             cy.findByTestId('task-menu-add-condition').click();
 
-            cy.wait(500);
+            // * Wait for the playbook save to complete before asserting
+            cy.wait('@UpdatePlaybook');
 
             cy.findByTestId('condition-header').should('be.visible');
 
             cy.reload();
 
+            // # After reload, scroll checklists into view and verify condition persisted
+            scrollToChecklists();
             cy.findByTestId('condition-header').should('be.visible');
         });
     });
@@ -107,6 +118,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition header is visible
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
 
                 cy.findByTestId('condition-header').within(() => {
@@ -116,20 +129,28 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.findByTestId('condition-header-edit-button').click();
 
-                cy.wait(500);
+                // * Wait for the condition editor to open
+                cy.contains('.condition-select__single-value', 'is').should('be.visible');
+
+                // # Intercept condition update REST calls triggered by expression changes
+                cy.playbooksInterceptConditionMutation('PUT');
 
                 cy.contains('.condition-select__single-value', 'is').click();
                 cy.get('.condition-select__menu').contains('is not').click();
 
-                cy.wait(500);
+                // * Wait for the condition update to complete before proceeding
+                cy.wait('@SaveCondition');
 
                 cy.contains('.condition-select__single-value', 'High').click();
                 cy.get('.condition-select__menu').contains('Medium').click();
 
-                cy.wait(500);
+                // * Wait for the second condition update to complete before reloading
+                cy.wait('@SaveCondition');
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify changes persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').within(() => {
                     cy.findByText('Priority').should('be.visible');
                     cy.findByText('is not').should('be.visible');
@@ -151,25 +172,31 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
-                cy.findByTestId('condition-header-edit-button').click();
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
 
-                cy.wait(500);
+                cy.findByTestId('condition-header-edit-button').click({force: true});
 
-                cy.findByTestId('condition-add-button').click();
-
-                cy.wait(500);
+                // * Wait for the condition editor to open
+                cy.findByTestId('condition-add-button').should('exist').click({force: true});
 
                 cy.findAllByTestId('condition-remove-button').should('have.length', 2);
+
+                // # Intercept condition update REST call triggered by selecting a field
+                cy.playbooksInterceptConditionMutation('PUT');
 
                 cy.contains('.condition-select__single-value', 'Priority').last().click();
                 cy.get('.condition-select__menu').contains('Status').click();
 
-                cy.wait(500);
+                // * Wait for the condition update to save
+                cy.wait('@SaveCondition');
 
                 cy.contains('.condition-select__single-value', 'OR').should('be.visible');
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify changes persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').within(() => {
                     cy.findByText('Priority').should('be.visible');
                     cy.findByText('Status').should('be.visible');
@@ -191,17 +218,27 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
+
                 cy.findByTestId('condition-header-edit-button').click();
 
-                cy.wait(500);
+                // * Wait for the condition editor to open
+                cy.contains('.condition-select__single-value', 'AND').should('be.visible');
+
+                // # Intercept condition update REST call triggered by changing the logical operator
+                cy.playbooksInterceptConditionMutation('PUT');
 
                 cy.contains('.condition-select__single-value', 'AND').click();
                 cy.get('.condition-select__menu').contains('OR').click();
 
-                cy.wait(500);
+                // * Wait for the condition update to complete before reloading
+                cy.wait('@SaveCondition');
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify changes persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').within(() => {
                     cy.findByText(/\bor\b/i).should('be.visible');
                 });
@@ -223,13 +260,19 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
 
                 cy.findByTestId('condition-header-delete-button').click();
 
+                // # Intercept the GraphQL mutation triggered after condition deletion
+                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+
                 cy.findByRole('button', {name: /remove/i}).click();
 
-                cy.wait(500);
+                // * Wait for the playbook save to complete before asserting deletion
+                cy.wait('@UpdatePlaybook');
 
                 cy.findByTestId('condition-header').should('not.exist');
 
@@ -237,6 +280,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify condition is gone
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('not.exist');
             });
         });
@@ -256,6 +301,9 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so task elements are visible
+                scrollToChecklists();
+
                 cy.findByText('Step 1').should('be.visible');
                 cy.findByText('Step 2').should('be.visible');
 
@@ -265,16 +313,23 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                     cy.findByTitle('More').click();
                 });
 
-                cy.wait(500);
+                // * Wait for the task context menu to open (exclude the non-clickable header)
+                cy.get('[data-testid^="task-menu-assign-condition-"]:not([data-testid="task-menu-assign-condition-header"])').first().should('exist');
 
-                cy.get('[data-testid^="task-menu-assign-condition-"]').first().click();
+                // # Intercept the GraphQL mutation triggered by assigning the task to a condition
+                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
-                cy.wait(500);
+                cy.get('[data-testid^="task-menu-assign-condition-"]:not([data-testid="task-menu-assign-condition-header"])').first().click({force: true});
+
+                // * Wait for the playbook save to complete before asserting
+                cy.wait('@UpdatePlaybook');
 
                 cy.findAllByTestId('condition-header').should('have.length', 1);
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify assignment persisted
+                scrollToChecklists();
                 cy.findAllByTestId('condition-header').should('have.length', 1);
             });
         });
@@ -293,6 +348,8 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
                 navigateToPlaybook(testPlaybook.id);
 
+                // # Scroll to checklists so condition elements are visible
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
 
                 cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
@@ -301,16 +358,23 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
                     cy.findByTitle('More').click();
                 });
 
-                cy.wait(500);
+                // * Wait for the task context menu to open
+                cy.findByTestId('task-menu-remove-condition').should('be.visible');
+
+                // # Intercept the GraphQL mutation triggered by removing the task from its condition
+                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
 
                 cy.findByTestId('task-menu-remove-condition').click();
 
-                cy.wait(500);
+                // * Wait for the playbook save to complete before asserting
+                cy.wait('@UpdatePlaybook');
 
                 cy.findByTestId('condition-header').should('be.visible');
 
                 cy.reload();
 
+                // # After reload, scroll to checklists and verify condition persisted
+                scrollToChecklists();
                 cy.findByTestId('condition-header').should('be.visible');
             });
         });
@@ -318,5 +382,15 @@ describe('playbooks > edit > conditions > admin', {testIsolation: true}, () => {
 
     function navigateToPlaybook(playbookId) {
         cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
+    }
+
+    /**
+     * Scroll the checklists section into view.
+     * Cypress 15 strict visibility checks require elements to be actionably
+     * visible; scrolling ensures condition headers within the Tasks section
+     * are not clipped or below the fold.
+     */
+    function scrollToChecklists() {
+        cy.get('#checklists').scrollIntoView();
     }
 });
