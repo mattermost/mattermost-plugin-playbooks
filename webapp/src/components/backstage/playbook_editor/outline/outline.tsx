@@ -6,14 +6,16 @@ import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 
+import {useSelector} from 'react-redux';
+
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {useSelector} from 'react-redux';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 import {PlaybookRole} from 'src/types/permissions';
 import NewChannelOnlyToggle from 'src/components/backstage/playbook_editor/new_channel_only_toggle';
 

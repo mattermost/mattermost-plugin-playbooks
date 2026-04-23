@@ -46,7 +46,7 @@ type Props = {
     onRunCreated: (runId: string, channelId: string, statsData: object) => void,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
-const RunPlaybookModal = ({
+export const RunPlaybookModal = ({
     playbookId,
     triggerChannelId,
     teamId,
@@ -319,7 +319,11 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     type='radio'
                     checked={linkExistingChannel}
                     disabled={newChannelOnly}
-                    onChange={() => { if (!newChannelOnly) { onSetChannelMode('link_existing_channel'); } }}
+                    onChange={() => {
+                        if (!newChannelOnly) {
+                            onSetChannelMode('link_existing_channel');
+                        }
+                    }}
                 />
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
