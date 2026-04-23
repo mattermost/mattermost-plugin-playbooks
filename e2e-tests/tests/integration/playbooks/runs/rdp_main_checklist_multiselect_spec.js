@@ -12,41 +12,42 @@
 describe('playbook editor > outline > checklist bulk edit', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
+
+    // Created fresh before every test so destructive tests (delete, due-date)
+    // never corrupt state for subsequent tests.
     let testPublicPlaybook;
+
+    const createFreshPlaybook = () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Bulk Edit Test Playbook',
+            memberIDs: [testUser.id],
+            checklists: [
+                {
+                    title: 'Setup',
+                    items: [
+                        {title: 'Task A'},
+                        {title: 'Task B'},
+                        {title: 'Task C'},
+                    ],
+                },
+                {
+                    title: 'Investigation',
+                    items: [
+                        {title: 'Task D'},
+                        {title: 'Task E'},
+                    ],
+                },
+            ],
+        }).then((playbook) => {
+            testPublicPlaybook = playbook;
+        });
+    };
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            // # Login as testUser
-            cy.apiLogin(testUser);
-
-            // # Create a playbook with multiple tasks across two checklists
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Bulk Edit Test Playbook',
-                memberIDs: [testUser.id],
-                checklists: [
-                    {
-                        title: 'Setup',
-                        items: [
-                            {title: 'Task A'},
-                            {title: 'Task B'},
-                            {title: 'Task C'},
-                        ],
-                    },
-                    {
-                        title: 'Investigation',
-                        items: [
-                            {title: 'Task D'},
-                            {title: 'Task E'},
-                        ],
-                    },
-                ],
-            }).then((playbook) => {
-                testPublicPlaybook = playbook;
-            });
         });
     });
 
@@ -55,6 +56,9 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
 
         // # Login as testUser
         cy.apiLogin(testUser);
+
+        // # Each test gets its own playbook so deletions/edits never bleed across tests
+        createFreshPlaybook();
 
         // # Visit the playbook editor outline
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}/outline`);
@@ -288,9 +292,10 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
             // # Select a task, then set a due date
             selectTask(0);
             getActionBar().findByText('Due date').click({force: true});
-            cy.get('.playbook-react-select').within(() => {
-                cy.findByText('Today').click();
-            });
+
+            // Use cy.contains (substring match) because the "Today" option label
+            // may include the date in child elements, e.g. "Today · Apr 23"
+            cy.get('.playbook-react-select').contains('Today').click();
 
             // * Action bar disappears
             cy.findByText('tasks selected').should('not.exist');
