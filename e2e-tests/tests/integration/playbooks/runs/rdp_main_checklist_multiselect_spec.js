@@ -59,8 +59,11 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
         // # Visit the playbook editor outline
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}/outline`);
 
-        // # Wait for the page to load
-        cy.findByText('Tasks').should('be.visible');
+        // # Wait for the Tasks section and Bulk edit button to be ready
+        // Use the section element directly to avoid the duplicate "Tasks" text
+        // that also appears in the scroll nav sidebar
+        cy.get('#checklists').should('be.visible');
+        cy.findByText('Bulk edit').should('be.visible');
     });
 
     // ──────────────────────────────────────────────────────────────────
