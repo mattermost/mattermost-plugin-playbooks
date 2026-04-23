@@ -6,7 +6,7 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
 
-import {usePlaybook} from 'src/hooks';
+import {usePlaybook} from 'src/graphql/hooks';
 
 import {RunPlaybookModal} from './run_playbook_modal';
 
@@ -42,7 +42,9 @@ jest.mock('react-redux', () => ({
     useDispatch: () => jest.fn(),
 }));
 
-jest.mock('src/graphql/hooks', () => ({}));
+jest.mock('src/graphql/hooks', () => ({
+    usePlaybook: jest.fn(),
+}));
 
 jest.mock('src/client', () => ({
     createPlaybookRun: jest.fn(),
@@ -54,7 +56,6 @@ jest.mock('src/actions', () => ({
 
 jest.mock('src/hooks', () => ({
     useCanCreatePlaybooksInTeam: () => true,
-    usePlaybook: jest.fn(),
     usePlaybookAttributes: jest.fn(() => null),
 }));
 
