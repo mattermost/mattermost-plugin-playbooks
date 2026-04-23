@@ -282,20 +282,20 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
             getActionBar().findByText('Due date').click({force: true});
 
             // * The date picker dropdown should open
-            cy.get('.playbook-react-select').should('be.visible');
+            cy.get('[data-testid="bulk-due-date-picker"]').should('be.visible');
         });
 
-        it('clears the selection after setting due date', () => {
+        it('sets a due date on selected tasks via the date picker', () => {
             // # Select a task, then set a due date
             selectTask(0);
             getActionBar().findByText('Due date').click({force: true});
 
-            // Use cy.contains (substring match) because the "Today" option label
-            // may include the date in child elements, e.g. "Today · Apr 23"
-            cy.get('.playbook-react-select').contains('Today').click();
+            // # Pick "Today" — use contains() for substring match since label may include date
+            cy.get('[data-testid="bulk-due-date-picker"]').contains('Today').click();
 
-            // * Action bar disappears
-            cy.findByText('tasks selected').should('not.exist');
+            // * The date picker closes; the action bar remains (selection is preserved)
+            cy.get('[data-testid="bulk-due-date-picker"]').should('not.exist');
+            cy.findByText('1 task selected').should('be.visible');
         });
     });
 

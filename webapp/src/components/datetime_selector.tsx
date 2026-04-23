@@ -28,6 +28,7 @@ export type DateTimeOption = Option & {labelRHS?: JSX.Element;}
 
 type Props = {
     testId?: string;
+    menuTestId?: string;
     date?: number;
     mode?: Mode.DateTimeValue | Mode.DurationValue;
     placeholder: React.ReactNode;
@@ -136,27 +137,29 @@ export const DateTimeSelector = ({
             target={targetWrapped}
             placement={props.placement}
         >
-            <ReactSelect
-                isMulti={false}
-                filterOption={null}
-                onInputChange={updateOptions}
-                autoFocus={true}
-                components={components}
-                controlShouldRenderValue={false}
-                backspaceRemovesValue={false}
-                tabSelectsValue={false}
-                hideSelectedOptions={false}
-                menuIsOpen={true}
-                options={options}
-                placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration ("8 hours", "3 days"...)'})}
-                styles={selectStyles}
-                noOptionsMessage={() => <InvalidLabel>{formatMessage({defaultMessage: 'Invalid time duration'})}</InvalidLabel>}
-                onChange={onSelectedChange}
-                classNamePrefix='playbook-react-select'
-                className='playbook-react-select'
-                formatOptionLabel={OptionLabel}
-                {...props.customControlProps}
-            />
+            <div data-testid={props.menuTestId}>
+                <ReactSelect
+                    isMulti={false}
+                    filterOption={null}
+                    onInputChange={updateOptions}
+                    autoFocus={true}
+                    components={components}
+                    controlShouldRenderValue={false}
+                    backspaceRemovesValue={false}
+                    tabSelectsValue={false}
+                    hideSelectedOptions={false}
+                    menuIsOpen={true}
+                    options={options}
+                    placeholder={mode === Mode.DateTimeValue ? formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'}) : formatMessage({defaultMessage: 'Specify duration (“8 hours”, “3 days”...)'})}
+                    styles={selectStyles}
+                    noOptionsMessage={() => <InvalidLabel>{formatMessage({defaultMessage: 'Invalid time duration'})}</InvalidLabel>}
+                    onChange={onSelectedChange}
+                    classNamePrefix='playbook-react-select'
+                    className='playbook-react-select'
+                    formatOptionLabel={OptionLabel}
+                    {...props.customControlProps}
+                />
+            </div>
         </Dropdown>
     );
 };
