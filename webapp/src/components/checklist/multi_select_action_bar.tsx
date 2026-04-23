@@ -391,7 +391,6 @@ const DueDateSelector = ({isPlaybookRun, hasAnyDueDate, onBulkDueDate}: {isPlayb
         <DateTimeSelector
             mode={mode}
             onlyPlaceholder={true}
-            menuTestId='bulk-due-date-picker'
             placeholder={
                 <BarButton>
                     <i className='icon icon-calendar-outline'/>
