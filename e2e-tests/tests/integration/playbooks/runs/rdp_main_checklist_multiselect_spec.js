@@ -17,7 +17,22 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
     // never corrupt state for subsequent tests.
     let testPublicPlaybook;
 
-    const createFreshPlaybook = () => {
+    before(() => {
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
+        });
+    });
+
+    beforeEach(() => {
+        cy.viewport('macbook-13');
+
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
+        // # Each test gets its own fresh playbook so deletions/edits never bleed across tests.
+        // The visit is chained inside .then() so testPublicPlaybook.id is not evaluated
+        // as a template literal before the API call has actually completed.
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
             title: 'Bulk Edit Test Playbook',
@@ -41,33 +56,15 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
             ],
         }).then((playbook) => {
             testPublicPlaybook = playbook;
+
+            // # Visit the playbook editor outline now that we have the ID
+            cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}/outline`);
+
+            // # Wait for the Tasks section and Bulk edit button to be ready.
+            // Use #checklists to avoid matching the duplicate "Tasks" text in the scroll nav sidebar.
+            cy.get('#checklists').should('be.visible');
+            cy.findByText('Bulk edit').should('be.visible');
         });
-    };
-
-    before(() => {
-        cy.apiInitSetup().then(({team, user}) => {
-            testTeam = team;
-            testUser = user;
-        });
-    });
-
-    beforeEach(() => {
-        cy.viewport('macbook-13');
-
-        // # Login as testUser
-        cy.apiLogin(testUser);
-
-        // # Each test gets its own playbook so deletions/edits never bleed across tests
-        createFreshPlaybook();
-
-        // # Visit the playbook editor outline
-        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}/outline`);
-
-        // # Wait for the Tasks section and Bulk edit button to be ready
-        // Use the section element directly to avoid the duplicate "Tasks" text
-        // that also appears in the scroll nav sidebar
-        cy.get('#checklists').should('be.visible');
-        cy.findByText('Bulk edit').should('be.visible');
     });
 
     // ──────────────────────────────────────────────────────────────────
