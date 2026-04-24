@@ -97,5 +97,5 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
 };
 
 export const useIsSystemAdmin = (): boolean => {
-    return useSelector(isCurrentUserAdmin);
+    return useAppSelector(isCurrentUserAdmin);
 };
