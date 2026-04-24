@@ -53,6 +53,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
     const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
     const [restOverrides, setRestOverrides] = useState<Partial<RestOnlyOverrides>>({});
+    const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
     const effectiveRestPlaybook = restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
@@ -86,15 +87,21 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         });
     }, [archived, retrospectiveAccess, updatePlaybook, playbook.retrospective_enabled]);
 
-    const handleOwnerGroupOnlyActionsChange = useCallback((updated: {owner_group_only_actions: boolean}) => {
-        if (!archived && restPlaybook) {
-            const prev = restPlaybook.owner_group_only_actions;
-            setRestOverrides((o) => ({...o, owner_group_only_actions: updated.owner_group_only_actions}));
-            savePlaybook({...restPlaybook, owner_group_only_actions: updated.owner_group_only_actions}).catch(() => {
-                setRestOverrides((o) => ({...o, owner_group_only_actions: prev}));
-            });
+    const handleOwnerGroupOnlyActionsChange = useCallback(async (updated: {owner_group_only_actions: boolean}) => {
+        if (archived || !restPlaybook || isSavingOwnerGroupOnlyActions) {
+            return;
         }
-    }, [archived, restPlaybook]);
+        const prev = effectiveRestPlaybook!.owner_group_only_actions;
+        setIsSavingOwnerGroupOnlyActions(true);
+        setRestOverrides((o) => ({...o, owner_group_only_actions: updated.owner_group_only_actions}));
+        try {
+            await savePlaybook({...restPlaybook, owner_group_only_actions: updated.owner_group_only_actions});
+        } catch {
+            setRestOverrides((o) => ({...o, owner_group_only_actions: prev}));
+        } finally {
+            setIsSavingOwnerGroupOnlyActions(false);
+        }
+    }, [archived, restPlaybook, isSavingOwnerGroupOnlyActions]);
 
     return (
         <Sections
@@ -191,7 +198,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                             <OwnerGroupOnlyActionsToggle
                                 playbook={effectiveRestPlaybook}
                                 isPlaybookAdmin={isPlaybookAdmin}
-                                disabled={archived}
+                                disabled={archived || isSavingOwnerGroupOnlyActions}
                                 onChange={handleOwnerGroupOnlyActionsChange}
                             />
                         </SettingsRow>

@@ -43,6 +43,9 @@ describe('playbooks > owner_group_only_actions toggle', {testIsolation: true}, (
                 find('input').
                 should('not.be.checked');
 
+            // # Intercept the persistence request so we can wait for it
+            cy.intercept('PUT', `**/api/v0/playbooks/${playbook.id}`).as('persistToggle');
+
             // # Enable the toggle (fires confirmation modal for false→true)
             cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
 
@@ -50,6 +53,9 @@ describe('playbooks > owner_group_only_actions toggle', {testIsolation: true}, (
             cy.findByTestId('owner-group-only-actions-toggle').
                 find('input').
                 should('be.checked');
+
+            // # Wait for the server to persist before reloading
+            cy.wait('@persistToggle').its('response.statusCode').should('be.oneOf', [200, 204]);
 
             // # Reload the page — state should come from the server, not memory
             cy.reload();
@@ -70,17 +76,23 @@ describe('playbooks > owner_group_only_actions toggle', {testIsolation: true}, (
             makePublic: true,
         }).then((playbook) => {
             cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+
+            cy.intercept('PUT', `**/api/v0/playbooks/${playbook.id}`).as('persistEnable');
             cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
             cy.findByTestId('owner-group-only-actions-toggle').
                 find('input').
                 should('be.checked');
+            cy.wait('@persistEnable').its('response.statusCode').should('be.oneOf', [200, 204]);
 
             // # Disable: true→false does not require confirmation
+            cy.intercept('PUT', `**/api/v0/playbooks/${playbook.id}`).as('persistDisable');
             cy.findByTestId('owner-group-only-actions-toggle').find('label').click();
 
             cy.findByTestId('owner-group-only-actions-toggle').
                 find('input').
                 should('not.be.checked');
+
+            cy.wait('@persistDisable').its('response.statusCode').should('be.oneOf', [200, 204]);
 
             // # Reload
             cy.reload();

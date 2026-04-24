@@ -3456,6 +3456,8 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 				{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleMember}},
 				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
 			},
+			InvitedUserIDs:                          []string{e.RegularUser2.Id},
+			InviteUsersEnabled:                      true,
 			OwnerGroupOnlyActions:                   true,
 			CreateChannelMemberOnNewParticipant:     true,
 			RemoveChannelMemberOnRemovedParticipant: true,
@@ -3470,6 +3472,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, run)
+		require.Contains(t, run.ParticipantIDs, e.RegularUser2.Id, "RegularUser2 must be a run participant so the 403 proves OwnerGroupOnlyActions enforcement")
 
 		// Non-owner (RegularUser2) tries to make themselves owner — should get 403
 		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
