@@ -10,10 +10,6 @@ import {makeBasePlaybook} from 'src/utils/test_helpers';
 
 import AdminOnlyEditToggle from './admin_only_edit_toggle';
 
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
-
 jest.mock('src/components/backstage/playbook_edit/automation/toggle', () => ({
     Toggle: ({isChecked, onChange, children}: {isChecked: boolean; onChange: () => void; children?: React.ReactNode}) => (
         <label
@@ -39,15 +35,7 @@ jest.mock('react-intl', () => {
     };
 });
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
 const makePlaybook = (adminOnlyEdit: boolean) => makeBasePlaybook({admin_only_edit: adminOnlyEdit});
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('AdminOnlyEditToggle', () => {
     it('renders toggle', () => {

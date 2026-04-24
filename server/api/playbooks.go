@@ -194,8 +194,7 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if playbook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can enable admin-only edit", nil)
+	if playbook.AdminOnlyEdit && !h.requireSysadminForAdminOnlyEdit(w, c.logger, userID, "enable admin-only edit") {
 		return
 	}
 
@@ -267,8 +266,7 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if playbook.AdminOnlyEdit && !oldPlaybook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can enable admin-only edit", nil)
+	if playbook.AdminOnlyEdit && !oldPlaybook.AdminOnlyEdit && !h.requireSysadminForAdminOnlyEdit(w, c.logger, userID, "enable admin-only edit") {
 		return
 	}
 
@@ -663,8 +661,7 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	if playbook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can duplicate a playbook with admin-only edit enabled", nil)
+	if playbook.AdminOnlyEdit && !h.requireSysadminForAdminOnlyEdit(w, c.logger, userID, "duplicate a playbook with admin-only edit enabled") {
 		return
 	}
 
@@ -708,8 +705,7 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if playbook.AdminOnlyEdit && !app.IsSystemAdmin(userID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only system admins can import a playbook with admin-only edit enabled", nil)
+	if playbook.AdminOnlyEdit && !h.requireSysadminForAdminOnlyEdit(w, c.logger, userID, "import a playbook with admin-only edit enabled") {
 		return
 	}
 
@@ -899,6 +895,14 @@ func GetStartOfDayForTimeRange(timeRange string, location *time.Location) (*time
 		return nil, errors.New("Invalid time range")
 	}
 	return &resultTime, nil
+}
+
+func (h *PlaybookHandler) requireSysadminForAdminOnlyEdit(w http.ResponseWriter, logger logrus.FieldLogger, userID, action string) bool {
+	if app.IsSystemAdmin(userID, h.pluginAPI) {
+		return true
+	}
+	h.HandleErrorWithCode(w, logger, http.StatusForbidden, "only system admins can "+action, nil)
+	return false
 }
 
 func (h *PlaybookHandler) requirePlaybookAttributesLicense(w http.ResponseWriter, logger logrus.FieldLogger) bool {

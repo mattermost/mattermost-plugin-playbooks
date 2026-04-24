@@ -36,15 +36,14 @@ interface Props {
     refetch: () => void;
     canEdit: boolean;
     restPlaybook?: PlaybookWithChecklist;
-    isSystemAdmin?: boolean;
-    isPlaybookAdmin?: boolean;
+    showAdminSettings?: boolean;
 }
 
 type StyledAttrs = {className?: string};
 
 type RestOnlyOverrides = Pick<PlaybookWithChecklist, 'admin_only_edit'>;
 
-const Outline = ({playbook, refetch, canEdit, restPlaybook, isSystemAdmin, isPlaybookAdmin = false}: Props) => {
+const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = false}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
@@ -177,7 +176,7 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, isSystemAdmin, isPla
                     playbook={playbook}
                 />
             </Section>
-            {(isPlaybookAdmin || isSystemAdmin) && effectiveRestPlaybook && (
+            {showAdminSettings && effectiveRestPlaybook && (
                 <Section
                     id={'settings'}
                     title={''}

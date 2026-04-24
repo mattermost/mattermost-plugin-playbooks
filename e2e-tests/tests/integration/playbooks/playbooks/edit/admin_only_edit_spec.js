@@ -63,8 +63,6 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         });
     });
 
-    // --- UI tests ---
-
     it('shows the admin-only-edit toggle in the Settings section for playbook admins', () => {
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
@@ -130,8 +128,6 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
             expect(pb.admin_only_edit).to.equal(false);
         });
     });
-
-    // --- REST API enforcement tests ---
 
     it('REST API: non-admin playbook member is blocked (403) when admin_only_edit is enabled', () => {
         // # Enable admin_only_edit via API as sysadmin (only sysadmins can enable it)

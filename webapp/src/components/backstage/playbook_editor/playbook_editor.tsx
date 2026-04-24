@@ -294,8 +294,7 @@ const PlaybookEditor = () => {
                         refetch={refetch}
                         canEdit={canEdit}
                         restPlaybook={restPlaybook ?? undefined}
-                        isSystemAdmin={isSystemAdmin}
-                        isPlaybookAdmin={isPlaybookAdmin}
+                        showAdminSettings={isSystemAdmin || isPlaybookAdmin}
                     />
                 </Route>
                 <Route
