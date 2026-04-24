@@ -291,8 +291,8 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name        *string `json:"name,omitempty"`
-	Summary     *string `json:"summary,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Summary *string `json:"summary,omitempty"`
 }
 
 type RunMetricData struct {
