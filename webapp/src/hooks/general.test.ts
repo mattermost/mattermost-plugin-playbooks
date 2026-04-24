@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import {renderHook} from '@testing-library/react-hooks';
-import * as redux from 'react-redux';
 import {getProfilesByIds, getProfilesInTeam} from 'mattermost-redux/actions/users';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import * as reduxHooks from 'src/hooks/redux';
 
 import {
     clearLocks,
@@ -22,11 +22,11 @@ jest.mock('mattermost-redux/actions/users', () => ({
 
 describe('useEnsureProfile', () => {
     it('dispatches at most once for the same data', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn();
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -43,11 +43,11 @@ describe('useEnsureProfile', () => {
     });
 
     it('dispatches at most once for changed data', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn();
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -68,7 +68,7 @@ describe('useEnsureProfile', () => {
     });
 
     it('dispatches only for unknown users', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn((userId) => {
             if (userId === 'unknown') {
                 return undefined;
@@ -78,7 +78,7 @@ describe('useEnsureProfile', () => {
         });
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -93,7 +93,7 @@ describe('useEnsureProfile', () => {
     });
 
     it('dispatches only once for unknown users', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn((userId) => {
             if (userId === 'unknown') {
                 return undefined;
@@ -103,7 +103,7 @@ describe('useEnsureProfile', () => {
         });
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -126,11 +126,11 @@ describe('useEnsureProfile', () => {
 
 describe('useEnsureProfiles', () => {
     it('dispatches at most once for the same data', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn();
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -147,11 +147,11 @@ describe('useEnsureProfiles', () => {
     });
 
     it('dispatches at most once for changed data', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn();
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -172,7 +172,7 @@ describe('useEnsureProfiles', () => {
     });
 
     it('dispatches only for unknown users', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn((userId) => {
             if (userId === 'unknown') {
                 return undefined;
@@ -182,7 +182,7 @@ describe('useEnsureProfiles', () => {
         });
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -197,7 +197,7 @@ describe('useEnsureProfiles', () => {
     });
 
     it('dispatches only once for unknown users', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const mockSelectFn = jest.fn((userId) => {
             if (userId === 'unknown') {
                 return undefined;
@@ -207,7 +207,7 @@ describe('useEnsureProfiles', () => {
         });
         useSelectorSpy.mockReturnValue(mockSelectFn);
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -230,7 +230,7 @@ describe('useEnsureProfiles', () => {
 
 describe('useProfilesInTeam', () => {
     it('dispatches if no team members have been loaded', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const profilesInCurrentTeam = [] as string[];
         const currentTeamId = 'team_id';
 
@@ -244,7 +244,7 @@ describe('useProfilesInTeam', () => {
             return currentTeamId;
         });
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -262,7 +262,7 @@ describe('useProfilesInTeam', () => {
     });
 
     it('dispatches if the current team changes', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const profilesInCurrentTeam = [] as string[];
         let currentTeamId = 'team_id';
 
@@ -275,7 +275,7 @@ describe('useProfilesInTeam', () => {
             return currentTeamId;
         });
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -298,7 +298,7 @@ describe('useProfilesInTeam', () => {
     });
 
     it('does not dispatch after loading team members', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         let profilesInCurrentTeam = [] as string[];
         const currentTeamId = 'team_id';
 
@@ -311,7 +311,7 @@ describe('useProfilesInTeam', () => {
             return currentTeamId;
         });
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -330,7 +330,7 @@ describe('useProfilesInTeam', () => {
     });
 
     it('does not dispatch if team members are already loaded', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const profilesInCurrentTeam = ['user_1', 'user_2'];
         const currentTeamId = 'team_id';
 
@@ -343,7 +343,7 @@ describe('useProfilesInTeam', () => {
             return currentTeamId;
         });
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 
@@ -360,7 +360,7 @@ describe('useProfilesInTeam', () => {
     });
 
     it('does not dispatch if already fetching', async () => {
-        const useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        const useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         const profilesInCurrentTeam = [] as string[];
         let currentTeamId = 'team_id';
 
@@ -373,7 +373,7 @@ describe('useProfilesInTeam', () => {
             return currentTeamId;
         });
 
-        const useDispatchSpy = jest.spyOn(redux, 'useDispatch');
+        const useDispatchSpy = jest.spyOn(reduxHooks, 'useAppDispatch');
         const mockDispatchFn = jest.fn();
         useDispatchSpy.mockReturnValue(mockDispatchFn);
 

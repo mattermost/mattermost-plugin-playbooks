@@ -5,11 +5,13 @@ import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {AccountPlusOutlineIcon} from '@mattermost/compass-icons/components';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {getProfilesByIds} from 'mattermost-redux/actions/users';
 import {UserProfile} from '@mattermost/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
 import Tooltip from 'src/components/widgets/tooltip';
@@ -35,12 +37,12 @@ interface Props {
 }
 
 export const Participants = ({playbookRun, role, teamName}: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const {formatMessage} = useIntl();
     const [manageMode, setManageMode] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const myUser = useSelector(getCurrentUser);
+    const myUser = useAppSelector(getCurrentUser);
     const [participantsProfiles, setParticipantsProfiles] = useState<UserProfile[]>([]);
     const [showAddParticipantsModal, setShowAddParticipantsModal] = useState(false);
 

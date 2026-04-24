@@ -3,9 +3,11 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import styled from 'styled-components';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
@@ -42,7 +44,7 @@ const UnfollowButton = styled(SecondaryButton)`
 export const FollowUnfollowButton = ({runID, followState}: Props) => {
     const {formatMessage} = useIntl();
     const addToast = useToaster().add;
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const refreshLHS = useLHSRefresh();
 
     if (followState === undefined) {

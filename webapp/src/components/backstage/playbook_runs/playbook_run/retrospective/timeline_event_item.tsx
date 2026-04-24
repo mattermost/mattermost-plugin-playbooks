@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {ReactNode, useState} from 'react';
-import {useDispatch} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 import {Team} from '@mattermost/types/teams';
 import {useIntl} from 'react-intl';
@@ -10,6 +10,8 @@ import {useIntl} from 'react-intl';
 import {DateTime} from 'luxon';
 
 import {ClockOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {
     ParticipantsChangedDetails,
@@ -147,7 +149,7 @@ interface Props {
 }
 
 const TimelineEventItem = (props: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const markdownOptions = {

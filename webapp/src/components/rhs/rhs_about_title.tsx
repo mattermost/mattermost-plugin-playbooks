@@ -2,13 +2,15 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useSelector} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {BookOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {CONTEXT_MENU_LOCATION, ContextMenu} from 'src/components/backstage/playbook_runs/playbook_run/context_menu';
@@ -33,7 +35,7 @@ interface Props {
 
 const RHSAboutTitle = (props: Props) => {
     const {formatMessage} = useIntl();
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // Determine role
     const isParticipant = props.playbookRun.participant_ids.includes(currentUserId);

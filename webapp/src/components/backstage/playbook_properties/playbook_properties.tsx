@@ -7,7 +7,7 @@ import React, {
     useMemo,
     useState,
 } from 'react';
-import {useDispatch} from 'react-redux';
+
 import styled from 'styled-components';
 import {
     createColumnHelper,
@@ -23,6 +23,8 @@ import {
     LinkVariantIcon,
     MenuVariantIcon,
 } from '@mattermost/compass-icons/components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {usePlaybook} from 'src/graphql/hooks';
 import {PropertyField, PropertyFieldInput, PropertyFieldType} from 'src/types/properties';
@@ -54,7 +56,7 @@ interface Props {
 const PlaybookProperties = ({playbookID}: Props) => {
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
     const [deletingProperty, setDeletingProperty] = useState<PropertyField | null>(null);

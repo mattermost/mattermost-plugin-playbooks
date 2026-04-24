@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import styled from 'styled-components';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {closeBackstageRHS} from 'src/actions';
 import {backstageRHS} from 'src/selectors';
@@ -13,10 +15,10 @@ import TaskInbox, {TaskInboxTitle} from './task_inbox/task_inbox';
 
 const BackstageRHS = () => {
     const sidebarRef = React.useRef(null);
-    const dispatch = useDispatch();
-    const isOpen = useSelector(backstageRHS.isOpen);
-    const viewMode = useSelector(backstageRHS.viewMode);
-    const section = useSelector(backstageRHS.section);
+    const dispatch = useAppDispatch();
+    const isOpen = useAppSelector(backstageRHS.isOpen);
+    const viewMode = useAppSelector(backstageRHS.viewMode);
+    const section = useAppSelector(backstageRHS.section);
 
     if (!isOpen) {
         return null;

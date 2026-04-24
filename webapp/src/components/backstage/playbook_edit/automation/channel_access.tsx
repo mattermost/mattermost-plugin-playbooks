@@ -4,9 +4,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
@@ -33,8 +35,8 @@ interface Props {
 
 export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-    const teamId = useSelector(getCurrentTeamId);
+    const dispatch = useAppDispatch();
+    const teamId = useAppSelector(getCurrentTeamId);
     const archived = playbook.delete_at !== 0;
 
     const handlePublicChange = (isPublic: boolean) => {

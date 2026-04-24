@@ -18,9 +18,11 @@ import {useIntersection} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {StarIcon, StarOutlineIcon} from '@mattermost/compass-icons/components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {pluginErrorUrl} from 'src/browser_routing';
 import {useForceDocumentTitle, useStats} from 'src/hooks';
@@ -45,14 +47,14 @@ import * as Controls from './controls';
 
 const PlaybookEditor = () => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {path, params: {playbookId}} = useRouteMatch<{playbookId: string}>();
 
     const [playbook, {error, loading, refetch}] = usePlaybook(playbookId);
     const updatePlaybook = useUpdatePlaybook(playbook?.id);
     const updatePlaybookFavorite = useUpdatePlaybookFavorite(playbook?.id);
     const stats = useStats(playbookId);
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const allowPlaybookAttributes = useAllowPlaybookAttributes();
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
