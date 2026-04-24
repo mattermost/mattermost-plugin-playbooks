@@ -319,6 +319,7 @@ export const ToggleRunRetrospectiveMenuItem = (props: {playbookRun: PlaybookRun}
         <>
             <Separator/>
             <StyledDropdownMenuItem
+                data-testid={retrospectiveEnabled ? 'disable-retrospective-menu-item' : 'enable-retrospective-menu-item'}
                 onClick={() => toggleRetrospective(!retrospectiveEnabled)}
             >
                 <BookOutlineIcon size={18}/>

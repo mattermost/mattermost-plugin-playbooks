@@ -341,6 +341,7 @@ input RunUpdates {
 	broadcastChannelIDs: [String!]
 	webhookOnStatusUpdateURLs: [String!]
 	channelID: String
+	retrospectiveEnabled: Boolean
 }
 
 enum PropertyFieldType {

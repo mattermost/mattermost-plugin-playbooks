@@ -313,6 +313,7 @@ describe('runs > run details page', {testIsolation: true}, () => {
 
                     // # Click outside to trigger autosave
                     cy.findByText('Retrospective').click({force: true});
+                    cy.wait('@UpdateRetro');
 
                     // * Validate if values persist in DOM
                     cy.get('input[type=text]').eq(0).should('have.value', '12:11:10');
@@ -329,7 +330,6 @@ describe('runs > run details page', {testIsolation: true}, () => {
                     cy.findByText('Retrospective').click({force: true});
                 });
 
-                // # Wait for the autosave of the new values to complete before reloading
                 cy.wait('@UpdateRetro');
 
                 // # Reload page

@@ -532,6 +532,7 @@ export type RunUpdates = {
   createChannelMemberOnNewParticipant?: InputMaybe<Scalars['Boolean']>;
   name?: InputMaybe<Scalars['String']>;
   removeChannelMemberOnRemovedParticipant?: InputMaybe<Scalars['Boolean']>;
+  retrospectiveEnabled?: InputMaybe<Scalars['Boolean']>;
   statusUpdateBroadcastChannelsEnabled?: InputMaybe<Scalars['Boolean']>;
   statusUpdateBroadcastWebhooksEnabled?: InputMaybe<Scalars['Boolean']>;
   summary?: InputMaybe<Scalars['String']>;

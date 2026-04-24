@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {renderHook, act} from '@testing-library/react-hooks';
+import {act, renderHook} from '@testing-library/react-hooks';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
@@ -9,8 +9,8 @@ import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {useToggleRunRetrospective} from './enable_disable_retrospective';
 
 const mockDispatch = jest.fn();
-const mockPatchRun = jest.fn().mockResolvedValue(undefined);
-const mockOpenModal = jest.fn(() => ({type: 'OPEN_MODAL'}));
+const mockPatchRun = jest.fn().mockResolvedValue({id: 'run-1'});
+const mockOpenModal: jest.Mock = jest.fn(() => ({type: 'OPEN_MODAL'}));
 const mockMakeConfirmModal = jest.fn((args) => args);
 
 jest.mock('react-redux', () => ({
@@ -27,15 +27,19 @@ jest.mock('react-intl', () => {
 });
 
 jest.mock('src/client', () => ({
-    patchRun: (...args: unknown[]) => mockPatchRun(...args),
+    patchRun: (...args: any[]) => mockPatchRun(...args),
+}));
+
+jest.mock('src/actions', () => ({
+    playbookRunUpdated: jest.fn((run) => ({type: 'PLAYBOOK_RUN_UPDATED', playbookRun: run})),
 }));
 
 jest.mock('src/webapp_globals', () => ({
-    modals: {openModal: (...args: unknown[]) => mockOpenModal(...args)},
+    modals: {openModal: (arg: any) => mockOpenModal(arg)},
 }));
 
 jest.mock('src/components/widgets/confirmation_modal', () => ({
-    makeUncontrolledConfirmModalDefinition: (...args: unknown[]) => mockMakeConfirmModal(...args),
+    makeUncontrolledConfirmModalDefinition: (arg: any) => mockMakeConfirmModal(arg),
 }));
 
 jest.mock('src/components/backstage/toast_banner', () => ({
@@ -113,6 +117,7 @@ describe('useToggleRunRetrospective', () => {
         const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
         await act(async () => {
             modalArgs.onConfirm();
+
             // Flush the promise chain from patchRun().then(...)
             await Promise.resolve();
         });
@@ -159,5 +164,69 @@ describe('useToggleRunRetrospective', () => {
 
         const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
         expect(modalArgs.title).toMatch(/enable/i);
+    });
+
+    it('dispatches playbookRunUpdated with the server response after disabling', async () => {
+        const updatedRun = makeRun({retrospective_enabled: false});
+        mockPatchRun.mockResolvedValueOnce(updatedRun);
+
+        const run = makeRun({retrospective_enabled: true});
+        const {result} = renderHook(() => useToggleRunRetrospective(run));
+
+        act(() => {
+            result.current(false);
+        });
+
+        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
+        await act(async () => {
+            modalArgs.onConfirm();
+            await Promise.resolve();
+        });
+
+        expect(mockDispatch).toHaveBeenCalledWith(
+            expect.objectContaining({type: 'PLAYBOOK_RUN_UPDATED', playbookRun: updatedRun}),
+        );
+    });
+
+    it('dispatches playbookRunUpdated with the server response after enabling', async () => {
+        const updatedRun = makeRun({retrospective_enabled: true});
+        mockPatchRun.mockResolvedValueOnce(updatedRun);
+
+        const run = makeRun({retrospective_enabled: false});
+        const {result} = renderHook(() => useToggleRunRetrospective(run));
+
+        act(() => {
+            result.current(true);
+        });
+
+        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
+        await act(async () => {
+            modalArgs.onConfirm();
+            await Promise.resolve();
+        });
+
+        expect(mockDispatch).toHaveBeenCalledWith(
+            expect.objectContaining({type: 'PLAYBOOK_RUN_UPDATED', playbookRun: updatedRun}),
+        );
+    });
+
+    it('does not dispatch playbookRunUpdated when patchRun returns an error', async () => {
+        mockPatchRun.mockResolvedValueOnce({error: new Error('server error')});
+
+        const run = makeRun({retrospective_enabled: true});
+        const {result} = renderHook(() => useToggleRunRetrospective(run));
+
+        act(() => {
+            result.current(false);
+        });
+
+        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
+        await act(async () => {
+            modalArgs.onConfirm();
+            await Promise.resolve();
+        });
+
+        const dispatchedTypes = mockDispatch.mock.calls.map((c) => c[0]?.type);
+        expect(dispatchedTypes).not.toContain('PLAYBOOK_RUN_UPDATED');
     });
 });

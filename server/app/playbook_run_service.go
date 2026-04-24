@@ -1571,7 +1571,8 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id, userID string, setmap map[str
 	model.AddEventParameterToAuditRec(auditRec, "fieldsUpdated", strings.Join(fieldNames, ","))
 
 	var originalRun *PlaybookRun
-	if s.configService.IsIncrementalUpdatesEnabled() {
+	_, hasRetroEnabled := setmap["RetrospectiveEnabled"]
+	if s.configService.IsIncrementalUpdatesEnabled() || hasRetroEnabled {
 		var err error
 		originalRun, err = s.GetPlaybookRun(id)
 		if err != nil {
@@ -1603,7 +1604,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id, userID string, setmap map[str
 		return nil, err
 	}
 
-	if enabled, ok := setmap["RetrospectiveEnabled"].(bool); ok {
+	if enabled, ok := setmap["RetrospectiveEnabled"].(bool); ok && enabled != originalRun.RetrospectiveEnabled {
 		if !enabled {
 			s.scheduler.Cancel(RetrospectivePrefix + id)
 		} else if s.licenseChecker.RetrospectiveAllowed() &&
@@ -1639,7 +1640,9 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id, userID string, setmap map[str
 		}
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, currentRun)
+	// Pass nil so the WS broadcast re-fetches the run from DB, ensuring any timeline
+	// events created above (e.g. retrospective toggle) are included in the payload.
+	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, nil)
 
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "updateAt", now)

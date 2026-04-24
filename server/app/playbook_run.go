@@ -1009,11 +1009,11 @@ const (
 	RunFinished            timelineEventType = "run_finished"
 	RunRestored            timelineEventType = "run_restored"
 	StatusUpdateSnoozed    timelineEventType = "status_update_snoozed"
-	StatusUpdatesEnabled      timelineEventType = "status_updates_enabled"
-	StatusUpdatesDisabled     timelineEventType = "status_updates_disabled"
-	RetrospectiveEnabled      timelineEventType = "retrospective_enabled"
-	RetrospectiveDisabled     timelineEventType = "retrospective_disabled"
-	PropertyChanged           timelineEventType = "property_changed"
+	StatusUpdatesEnabled   timelineEventType = "status_updates_enabled"
+	StatusUpdatesDisabled  timelineEventType = "status_updates_disabled"
+	RetrospectiveEnabled   timelineEventType = "retrospective_enabled"
+	RetrospectiveDisabled  timelineEventType = "retrospective_disabled"
+	PropertyChanged        timelineEventType = "property_changed"
 )
 
 type TimelineEvent struct {

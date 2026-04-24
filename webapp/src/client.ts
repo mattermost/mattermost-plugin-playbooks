@@ -300,10 +300,11 @@ export async function toggleRunStatusUpdates(playbookRunId: string, status_enabl
 
 export async function patchRun(playbookRunId: string, patch: {retrospective_enabled?: boolean}) {
     try {
-        return await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}`, {
+        const {data} = await doFetchWithResponse<PlaybookRun>(`${apiUrl}/runs/${playbookRunId}`, {
             method: 'PATCH',
             body: JSON.stringify(patch),
         });
+        return data;
     } catch (error) {
         return {error};
     }

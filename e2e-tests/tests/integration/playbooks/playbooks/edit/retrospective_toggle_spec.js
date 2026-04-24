@@ -23,6 +23,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             testTeam = team;
             testUser = user;
         });
+        cy.apiRequireLicense();
     });
 
     beforeEach(() => {
@@ -211,22 +212,21 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             // # Finish the run via the UI
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
 
-            // # Intercept the finish API so we can wait for it to settle
-            cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/finish').as('FinishRun');
+            // # Intercept post creation and the finish API before triggering the action
+            cy.intercept('POST', '/api/v4/posts').as('AnyPost');
+            cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/finish').as('FinishRun');
 
             cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
             cy.playbooksConfirmFinishModal();
 
-            // # Wait for the finish request to complete, then for the UI to reflect the finished state
+            // # Wait for the finish request to complete, then for the run-finished system
+            // post to arrive — this ensures the channel has settled before the negative check.
             cy.wait('@FinishRun');
-            cy.findByTestId('rhs-finish-section').should('not.exist');
+            cy.wait('@AnyPost');
 
-            // * Assert no retrospective prompt bot message was posted. Wait for at least one
-            // post to be visible first so the channel list has settled before the negative check.
+            // * Assert no retrospective prompt bot message was posted
             cy.findAllByTestId('postView').should('have.length.greaterThan', 0);
-            cy.findAllByTestId('postView').each(($el) => {
-                expect($el.text()).not.to.include(RETRO_REMINDER_TEXT);
-            });
+            cy.contains(RETRO_REMINDER_TEXT).should('not.exist');
         });
     });
 
@@ -251,7 +251,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
 
             // # Intercept the finish API so we can wait for it to settle
-            cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/finish').as('FinishRun');
+            cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/finish').as('FinishRun');
 
             cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
             cy.playbooksConfirmFinishModal();
@@ -259,8 +259,14 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             // # Wait for the finish request to complete before asserting the bot post
             cy.wait('@FinishRun');
 
+            // # Reload so the channel fetches all persisted posts from the server
+            cy.reload();
+
+            // # Wait for the channel to finish loading before asserting the bot post
+            cy.findAllByTestId('postView').should('have.length.greaterThan', 0);
+
             // * Assert the retrospective prompt bot message was posted
-            cy.findAllByText(new RegExp(RETRO_REMINDER_TEXT, 'i')).filter(':visible').first().should('be.visible');
+            cy.findByTestId('retrospective-reminder').should('be.visible');
         });
     });
 });
