@@ -212,20 +212,22 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
             // # Finish the run via the UI
             cy.playbooksVisitRunChannel(testTeam.name, playbookRun);
 
-            // # Intercept post creation and the finish API before triggering the action
-            cy.intercept('POST', '/api/v4/posts').as('AnyPost');
+            // # Intercept the finish API before triggering the action
             cy.intercept('PUT', '/plugins/playbooks/api/v0/runs/*/finish').as('FinishRun');
 
             cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
             cy.playbooksConfirmFinishModal();
 
-            // # Wait for the finish request to complete, then for the run-finished system
-            // post to arrive — this ensures the channel has settled before the negative check.
+            // # Wait for the finish request to complete
             cy.wait('@FinishRun');
-            cy.wait('@AnyPost');
+
+            // # Wait for the run-finished system post to arrive via WebSocket before
+            // asserting the reminder is absent. The "as finished" text is in the
+            // server-posted message and arrives asynchronously, so this is the
+            // positive sync point that ensures the channel has settled.
+            cy.contains('as finished', {timeout: 10000}).should('exist');
 
             // * Assert no retrospective prompt bot message was posted
-            cy.findAllByTestId('postView').should('have.length.greaterThan', 0);
             cy.contains(RETRO_REMINDER_TEXT).should('not.exist');
         });
     });
