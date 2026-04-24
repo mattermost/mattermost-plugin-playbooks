@@ -312,6 +312,11 @@ Cypress.Commands.add('playbooksCompleteTaskAtIndex', (index) => {
         findAllByTestId('checkbox-item-container').
         eq(index).
         find('input[type="checkbox"]').
-        click();
-    cy.wait('@SetChecklistItemState');
+        should('exist').
+        then(($checkbox) => {
+            if (!$checkbox.is(':checked')) {
+                cy.wrap($checkbox).click();
+                cy.wait('@SetChecklistItemState');
+            }
+        });
 });
