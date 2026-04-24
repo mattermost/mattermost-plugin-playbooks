@@ -7,8 +7,7 @@ import {useDispatch} from 'react-redux';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-
-import ToggleHint from './toggle_hint';
+import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
 export interface ConfirmationConfig {
     title: string;
@@ -25,9 +24,6 @@ interface Props {
     confirmationRequired?: ConfirmationConfig;
 }
 
-// BooleanToggle: use for a simple label + optional hint + optional confirm-on-enable toggle.
-// For toggles that need a Tooltip wrapper, confirmation banner, or custom label children,
-// compose with <Toggle> directly instead.
 const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequired}: Props) => {
     const dispatch = useDispatch();
     const pendingRef = useRef(false);
@@ -51,11 +47,6 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
                 onCancel: () => {
                     pendingRef.current = false;
                 },
-                onExited: () => {
-                    // Safety valve: reset pending state when the modal fully unmounts,
-                    // covering any dismiss path (ESC, backdrop, etc.) that bypasses onCancel.
-                    pendingRef.current = false;
-                },
             })));
             return;
         }
@@ -72,7 +63,7 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
             >
                 {label}
             </Toggle>
-            {hint && <ToggleHint>{hint}</ToggleHint>}
+            {hint && <HelpText>{hint}</HelpText>}
         </div>
     );
 };

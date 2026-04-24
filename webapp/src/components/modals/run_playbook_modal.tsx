@@ -25,6 +25,7 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import PlaybooksSelector from 'src/components/playbooks_selector';
 import {useCanCreatePlaybooksInTeam} from 'src/hooks';
 import {RUN_NAME_MAX_LENGTH} from 'src/constants';
+import {HelpText} from 'src/components/backstage/playbook_runs/shared';
 
 const ID = 'playbooks_run_playbook_dialog';
 
@@ -77,6 +78,10 @@ export const RunPlaybookModal = ({
     const effectiveChannelMode = playbook?.new_channel_only ? 'create_new_channel' : playbook?.channel_mode;
 
     useEffect(() => {
+        if (!effectiveChannelMode) {
+            return;
+        }
+        setChannelMode(effectiveChannelMode);
         if (effectiveChannelMode === 'create_new_channel') {
             setRunName(playbook?.channel_name_template || '');
         }
@@ -87,12 +92,6 @@ export const RunPlaybookModal = ({
             setRunSummary(playbook.run_summary_template);
         }
     }, [playbook, playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
-
-    useEffect(() => {
-        if (effectiveChannelMode) {
-            setChannelMode(effectiveChannelMode);
-        }
-    }, [effectiveChannelMode]);
 
     useEffect(() => {
         if (playbook) {
@@ -319,18 +318,14 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
                     type='radio'
                     checked={linkExistingChannel}
                     disabled={newChannelOnly}
-                    onChange={() => {
-                        if (!newChannelOnly) {
-                            onSetChannelMode('link_existing_channel');
-                        }
-                    }}
+                    onChange={() => onSetChannelMode('link_existing_channel')}
                 />
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
             </ChannelBlock>
             {newChannelOnly && (
-                <NewChannelOnlyHint id='new-channel-only-hint'>
+                <HelpText id='new-channel-only-hint'>
                     {formatMessage({id: 'playbooks.run_playbook_modal.new_channel_only_hint', defaultMessage: 'This playbook requires a new channel for each run'})}
-                </NewChannelOnlyHint>
+                </HelpText>
             )}
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -528,13 +523,6 @@ const ErrorMessage = styled.div`
     font-size: 12px;
     font-weight: 400;
     line-height: 16px;
-`;
-
-const NewChannelOnlyHint = styled.span`
-    display: block;
-    margin-top: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    font-size: 12px;
 `;
 
 const ApolloWrappedModal = (props: Props) => {

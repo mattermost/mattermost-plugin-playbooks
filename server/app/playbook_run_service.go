@@ -355,7 +355,6 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 }
 
 // validateRunCreationParams checks pre-creation constraints and resolves the PlaybookID.
-// Extracted so these guards can be unit-tested without a wired service.
 func validateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
 	if playbookRun == nil {
 		return errors.New("playbookRun cannot be nil")
