@@ -1502,26 +1502,33 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	}
 
 	// Un-archive the channel before posting so the message lands in an active channel.
-	if s.tryAutoUnarchiveChannel(playbookRunToRestore, logger) {
+	// Always clear AutoArchivedChannel when set — even if the channel was manually unarchived
+	// before the restore, the marker must be cleared so future finishes start fresh.
+	if playbookRunToRestore.AutoArchivedChannel && playbookRunToRestore.ChannelID != "" {
+		unarchived := s.restoreChannelByID(playbookRunToRestore.ChannelID, logger)
 		playbookRunToRestore.AutoArchivedChannel = false
 		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToRestore); err != nil {
-			// Persist failed: re-archive the channel so it matches the still-set run marker.
+			// Persist failed: re-archive only if we actually changed the channel state.
 			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore; re-archiving channel to stay in sync")
-			if !s.archiveChannelByID(playbookRunToRestore.ChannelID, logger) {
-				logger.WithField("channel_id", playbookRunToRestore.ChannelID).
-					Warn("channel re-archive rollback failed; channel is unarchived but AutoArchivedChannel=true in the database")
+			if unarchived {
+				if !s.archiveChannelByID(playbookRunToRestore.ChannelID, logger) {
+					logger.WithField("channel_id", playbookRunToRestore.ChannelID).
+						Warn("channel re-archive rollback failed; channel is unarchived but AutoArchivedChannel=true in the database")
+				}
 			}
 		} else {
 			playbookRunToRestore = updatedRun
-			unarchiveEvent := &TimelineEvent{
-				PlaybookRunID: playbookRunID,
-				CreateAt:      restoreAt + 1,
-				EventAt:       restoreAt + 1,
-				EventType:     ChannelUnarchived,
-				SubjectUserID: userID,
-			}
-			if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
-				logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
+			if unarchived {
+				unarchiveEvent := &TimelineEvent{
+					PlaybookRunID: playbookRunID,
+					CreateAt:      restoreAt + 1,
+					EventAt:       restoreAt + 1,
+					EventType:     ChannelUnarchived,
+					SubjectUserID: userID,
+				}
+				if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
+					logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
+				}
 			}
 		}
 	}
@@ -1595,16 +1602,6 @@ func (s *PlaybookRunServiceImpl) tryAutoArchiveChannel(run *PlaybookRun, logger 
 		return false
 	}
 	return true
-}
-
-// tryAutoUnarchiveChannel un-archives the run's channel if it was auto-archived on finish.
-// Must be called before posting to the channel so the message lands in an active channel.
-// Returns true if the channel was successfully un-archived.
-func (s *PlaybookRunServiceImpl) tryAutoUnarchiveChannel(run *PlaybookRun, logger *logrus.Entry) bool {
-	if !run.AutoArchivedChannel || run.ChannelID == "" {
-		return false
-	}
-	return s.restoreChannelByID(run.ChannelID, logger)
 }
 
 // restoreChannelByID clears DeleteAt on the given channel (un-archives it).

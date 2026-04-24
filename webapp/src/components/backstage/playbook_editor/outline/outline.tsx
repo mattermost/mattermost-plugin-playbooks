@@ -6,6 +6,7 @@ import React, {
     Children,
     ReactNode,
     useCallback,
+    useEffect,
     useState,
 } from 'react';
 
@@ -43,6 +44,13 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
 
+    // Clear the optimistic override once the server state has caught up to it.
+    useEffect(() => {
+        if (autoArchiveOverride !== undefined && restPlaybook?.auto_archive_channel === autoArchiveOverride) {
+            setAutoArchiveOverride(undefined);
+        }
+    }, [restPlaybook?.auto_archive_channel, autoArchiveOverride]);
+
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState({
             ...checklistCollapseState,
@@ -68,9 +76,14 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         if (!archived && restPlaybook) {
             const prev = restPlaybook.auto_archive_channel ?? false;
             setAutoArchiveOverride(updated.auto_archive_channel);
-            savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel})
-                .then(() => refetch())
-                .catch(() => setAutoArchiveOverride(prev));
+            savePlaybook({...restPlaybook, auto_archive_channel: updated.auto_archive_channel}).then(
+                () => {
+                    refetch();
+                },
+                () => {
+                    setAutoArchiveOverride(prev);
+                },
+            );
         }
     }, [archived, restPlaybook]);
 

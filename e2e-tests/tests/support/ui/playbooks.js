@@ -170,9 +170,8 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
         if (reminderQuery) {
             cy.get('#reminder_timer_datetime input').click({force: true}).realType(reminderQuery);
 
-            // Wait for the debounced option parsing (150ms debounce) to complete
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
-            cy.wait(500);
+            // Wait for the dropdown option to appear before pressing Enter.
+            cy.get('#reminder_timer_datetime').contains(reminderQuery);
             cy.get('#reminder_timer_datetime input').realType('{enter}');
         }
 
@@ -395,15 +394,13 @@ Cypress.Commands.add('playbooksSetRunPropertyViaUI', (fieldTestId, value, {type 
             cy.findByTestId('property-value').click();
         });
         cy.focused().clear().type(value);
-        cy.get('body').click(0, 0);
+        cy.focused().blur();
     } else if (type === 'multiselect') {
         cy.findByTestId(fieldTestId).within(() => {
             cy.findByTestId('property-value').click();
         });
         cy.findByText(value).click();
-
-        // Close the dropdown by clicking outside
-        cy.get('body').click(0, 0);
+        cy.realPress('Escape');
     } else if (type === 'clear') {
         cy.findByTestId(fieldTestId).within(() => {
             cy.findByTestId('property-value').click();
@@ -857,6 +854,6 @@ Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
  * @param {String} playbookId - The playbook ID
  * @param {String} [tab='outline'] - The tab to navigate to (e.g. 'outline', 'attributes')
  */
-Cypress.Commands.add('visitPlaybookEditor', (playbookId, tab = 'outline') => {
+Cypress.Commands.add('playbooksVisitEditor', (playbookId, tab = 'outline') => {
     cy.visit(`/playbooks/playbooks/${playbookId}/${tab}`);
 });

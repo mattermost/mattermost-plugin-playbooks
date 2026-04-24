@@ -3026,6 +3026,8 @@ func TestAutoArchiveChannel_RunFinish(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEqual(t, int64(0), channel.DeleteAt,
 			"channel must be archived (DeleteAt != 0) after finishing a run with AutoArchiveChannel=true")
+
+		assertHasTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelArchived)
 	})
 
 	t.Run("channel is not archived after run finish when AutoArchiveChannel=false", func(t *testing.T) {
@@ -3061,6 +3063,8 @@ func TestAutoArchiveChannel_RunFinish(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must not be archived after finishing a run with AutoArchiveChannel=false")
+
+		assertNoTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelArchived)
 	})
 
 	t.Run("linked channel is not archived after run finish even when AutoArchiveChannel=true", func(t *testing.T) {
@@ -3104,6 +3108,8 @@ func TestAutoArchiveChannel_RunFinish(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"pre-existing linked channel must not be archived even when AutoArchiveChannel=true")
+
+		assertNoTimelineEvent(t, e.PlaybooksAdminClient, run.ID, client.ChannelArchived)
 	})
 }
 
@@ -3154,6 +3160,8 @@ func TestAutoArchiveChannel_RunRestore(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must be unarchived (DeleteAt == 0) after restoring a run with AutoArchivedChannel=true")
+
+		assertHasTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
 	})
 
 	t.Run("channel is not touched after run restore when AutoArchivedChannel=false", func(t *testing.T) {
@@ -3192,5 +3200,35 @@ func TestAutoArchiveChannel_RunRestore(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must remain unarchived after restoring a run that was not auto-archived")
+
+		assertNoTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
 	})
+}
+
+// assertHasTimelineEvent fetches the run and asserts that at least one timeline event of the
+// given type exists.
+func assertHasTimelineEvent(t *testing.T, c *client.Client, runID string, eventType client.TimelineEventType) {
+	t.Helper()
+	run, err := c.PlaybookRuns.Get(context.Background(), runID)
+	require.NoError(t, err)
+	for _, ev := range run.TimelineEvents {
+		if ev.EventType == eventType {
+			return
+		}
+	}
+	assert.Failf(t, "missing timeline event", "expected a %q timeline event on run %s", eventType, runID)
+}
+
+// assertNoTimelineEvent fetches the run and asserts that no timeline event of the given type
+// exists.
+func assertNoTimelineEvent(t *testing.T, c *client.Client, runID string, eventType client.TimelineEventType) {
+	t.Helper()
+	run, err := c.PlaybookRuns.Get(context.Background(), runID)
+	require.NoError(t, err)
+	for _, ev := range run.TimelineEvents {
+		if ev.EventType == eventType {
+			assert.Failf(t, "unexpected timeline event", "did not expect a %q timeline event on run %s", eventType, runID)
+			return
+		}
+	}
 }

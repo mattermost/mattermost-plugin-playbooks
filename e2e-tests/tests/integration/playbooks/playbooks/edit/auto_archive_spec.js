@@ -50,7 +50,7 @@ describe('playbooks > edit > auto archive', () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(playbook.id, 'outline');
+            cy.playbooksVisitEditor(playbook.id, 'outline');
 
             // * Assert the auto-archive toggle is present
             cy.findByTestId('auto-archive-channel-toggle').should('exist');
@@ -72,7 +72,7 @@ describe('playbooks > edit > auto archive', () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(playbook.id, 'outline');
+            cy.playbooksVisitEditor(playbook.id, 'outline');
 
             // # Intercept the save request before clicking so the alias is registered
             cy.playbooksInterceptPlaybookSave();
@@ -118,7 +118,7 @@ describe('playbooks > edit > auto archive', () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Enable auto-archive via the playbook editor UI
-            cy.visitPlaybookEditor(testPlaybook.id, 'outline');
+            cy.playbooksVisitEditor(testPlaybook.id, 'outline');
             cy.playbooksInterceptPlaybookSave();
             cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
 
@@ -168,7 +168,7 @@ describe('playbooks > edit > auto archive', () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(playbook.id, 'outline');
+            cy.playbooksVisitEditor(playbook.id, 'outline');
 
             // * Assert the auto-archive toggle is disabled
             cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('be.disabled');
@@ -195,7 +195,7 @@ describe('playbooks > edit > auto archive', () => {
             createdPlaybookIds.push(playbook.id);
 
             // # Visit the playbook outline editor
-            cy.visitPlaybookEditor(playbook.id, 'outline');
+            cy.playbooksVisitEditor(playbook.id, 'outline');
 
             // * Assert the auto-archive toggle is enabled (not disabled)
             cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('not.be.disabled');
