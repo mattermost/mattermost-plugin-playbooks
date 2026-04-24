@@ -3028,7 +3028,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		assert.Equal(t, string(client.StatusFinished), finished.CurrentStatus)
 	})
 
-	t.Run("non-owner gets 403 when OwnerGroupOnlyActions true", func(t *testing.T) {
+	t.Run("non-owner gets 403 on finish when OwnerGroupOnlyActions true", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "OwnerGroupOnlyActions Playbook Non-Owner",
 			TeamID: e.BasicTeam.Id,
@@ -3097,6 +3097,10 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		// Non-owner participant can finish when OwnerGroupOnlyActions is false
 		err = e.PlaybooksClient2.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
+
+		finished, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusFinished), finished.CurrentStatus)
 	})
 
 	t.Run("admin can finish when OwnerGroupOnlyActions true", func(t *testing.T) {
@@ -3127,6 +3131,10 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		// Admin can always finish even when OwnerGroupOnlyActions is true
 		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
 		require.NoError(t, err)
+
+		finished, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, string(client.StatusFinished), finished.CurrentStatus)
 	})
 
 	t.Run("playbook admin who is not a participant gets 403 on finish", func(t *testing.T) {
@@ -3189,6 +3197,10 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		// as a handoff mechanism even when not a run participant.
 		err = e.PlaybooksClient2.PlaybookRuns.ChangeOwner(context.Background(), run.ID, e.RegularUser2.Id)
 		require.NoError(t, err)
+
+		updated, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		assert.Equal(t, e.RegularUser2.Id, updated.OwnerUserID)
 	})
 
 	t.Run("playbook admin who is not a participant gets 403 on restore", func(t *testing.T) {
@@ -3374,7 +3386,7 @@ func TestOwnerGroupOnlyActions(t *testing.T) {
 		assert.Equal(t, e.RegularUser2.Id, updated.OwnerUserID)
 	})
 
-	t.Run("non-owner gets 403 when OwnerGroupOnlyActions true", func(t *testing.T) {
+	t.Run("non-owner gets 403 on change-owner when OwnerGroupOnlyActions true", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "NonOwnerChangeOwner Playbook",
 			TeamID: e.BasicTeam.Id,
