@@ -853,8 +853,15 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
 
-	// user must be a participant to be able to post an update
-	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
+	// When the status update also finishes the run, enforce the owner-only
+	// restriction so non-owner participants cannot bypass it by finishing via
+	// the status endpoint or update-status dialog. RunFinish already includes
+	// the base participant check, so skip the redundant RunManageProperties call.
+	if options.FinishRun {
+		if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
+			return "Not authorized to finish this run", err
+		}
+	} else if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 		return "Not authorized", err
 	}
 

@@ -49,9 +49,15 @@ const RHSAbout = (props: Props) => {
     const {changeRunOwner} = useManageRunMembership(props.playbookRun.id);
 
     const myUserId = useSelector(getCurrentUserId);
+    const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const isOwner = props.playbookRun.owner_user_id === myUserId;
     const isSystemAdmin = useIsSystemAdmin();
-    const canChangeOwner = !props.ownerGroupOnlyActions || isOwner || isSystemAdmin || (props.isPlaybookAdmin ?? false);
+    const isPlaybookAdmin = props.isPlaybookAdmin ?? false;
+    const canChangeOwner = !props.ownerGroupOnlyActions || isOwner || isSystemAdmin || isPlaybookAdmin;
+    // readOnly reflects the generic run-modify gate (non-participant, non-owner users).
+    // System admins and playbook admins may need to hand off ownership even when they
+    // are not participants, so the readOnly gate is bypassed for them here.
+    const canEditOwner = !isFinished && canChangeOwner && (!props.readOnly || isSystemAdmin || isPlaybookAdmin);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
     // Hooks for favorite and follow state
@@ -90,7 +96,6 @@ const RHSAbout = (props: Props) => {
 
     const [editingSummary, setEditingSummary] = useState(false);
 
-    const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const {ParticipateConfirmModal, showParticipateConfirm} = useParticipateInRun(props.playbookRun);
     useEnsureProfiles(props.playbookRun.participant_ids);
 
@@ -127,7 +132,7 @@ const RHSAbout = (props: Props) => {
                                     placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
                                     placeholderButtonClass={'NoAssignee-button'}
                                     profileButtonClass={'Assigned-button'}
-                                    enableEdit={!isFinished && !props.readOnly && canChangeOwner}
+                                    enableEdit={canEditOwner}
                                     onEditDisabledClick={props.readOnly ? props.onReadOnlyInteract : undefined}
                                     getAllUsers={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}

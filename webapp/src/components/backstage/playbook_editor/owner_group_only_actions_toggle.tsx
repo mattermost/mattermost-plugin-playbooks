@@ -25,8 +25,8 @@ const OwnerGroupOnlyActionsToggle = ({playbook, isPlaybookAdmin, onChange, disab
     }, [onChange]);
 
     const confirmationRequired = useMemo(() => ({
-        title: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm_title', defaultMessage: 'Restrict finishing runs to owner only'}),
-        message: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm', defaultMessage: 'Enabling this will immediately restrict finishing runs to the run owner only. This applies to all active runs of this playbook. System admins can always finish runs. Continue?'}),
+        title: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm_title', defaultMessage: 'Restrict run management to owner only'}),
+        message: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm', defaultMessage: 'Enabling this will immediately restrict finishing, restoring, and reassigning ownership of runs to the run owner only. This applies to all active runs of this playbook. Playbook admins and system admins retain access. Continue?'}),
         confirmButtonText: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm_button', defaultMessage: 'Confirm'}),
     }), [formatMessage]);
 
@@ -36,8 +36,8 @@ const OwnerGroupOnlyActionsToggle = ({playbook, isPlaybookAdmin, onChange, disab
 
     return (
         <BooleanToggle
-            label={formatMessage({id: 'playbooks.owner_group_only_actions_toggle.label', defaultMessage: 'Only the run owner can finish runs'})}
-            hint={formatMessage({id: 'playbooks.owner_group_only_actions_toggle.hint', defaultMessage: 'Applies immediately to all active runs of this playbook. System admins can always finish runs.'})}
+            label={formatMessage({id: 'playbooks.owner_group_only_actions_toggle.label', defaultMessage: 'Only the run owner can finish, restore, or reassign runs'})}
+            hint={formatMessage({id: 'playbooks.owner_group_only_actions_toggle.hint', defaultMessage: 'Applies immediately to all active runs of this playbook. Playbook admins and system admins retain access.'})}
             value={playbook.owner_group_only_actions ?? false}
             onChange={handleChange}
             disabled={disabled}

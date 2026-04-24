@@ -712,6 +712,13 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 		}
 		// pkg/errors implements Unwrap(), so errors.Is traverses the chain correctly
 		if errors.Is(err, ErrNotFound) {
+			// Team-access gate: a former team member who still owns the run must
+			// not be able to act on it after losing team access. Matches the
+			// canViewTeam check enforced by runManagePropertiesWithPlaybookRun
+			// on the non-deleted path.
+			if !p.canViewTeam(userID, run.TeamID) {
+				return run, nil, errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
+			}
 			// Playbook deleted: fail-closed to run owner or system admin only.
 			// Team admins are intentionally excluded: deleting a playbook must not
 			// elevate privileges for users who had no lifecycle rights on the run.
@@ -726,10 +733,6 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 	if err := p.runManagePropertiesWithPlaybookRun(userID, run); err != nil {
 		return run, playbook, err
 	}
-	// OwnerGroupOnlyActions takes effect immediately for all in-progress runs of this playbook
-	// when enabled. Non-owner participants in ongoing runs will be blocked from finish/restore
-	// actions without prior warning. The flag is read from the current playbook state, not from
-	// a snapshot captured at run creation time, so toggling it affects existing runs immediately.
 	if playbook == nil || !playbook.OwnerGroupOnlyActions {
 		return run, playbook, nil
 	}

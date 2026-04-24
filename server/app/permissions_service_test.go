@@ -855,32 +855,12 @@ func TestRunChangeOwner(t *testing.T) {
 		Type:           RunTypePlaybook,
 	}
 
-	// newPermissivePluginAPI returns a pluginAPI that grants all team view
-	// permissions (needed by RunManageProperties) and admin checks.
-	newPermissivePluginAPI := func(t *testing.T, adminIDs ...string) *pluginapi.Client {
-		t.Helper()
-		mockAPI := &plugintest.API{}
-		mockAPI.On("HasPermissionToTeam", mock.AnythingOfType("string"), mock.AnythingOfType("string"), model.PermissionViewTeam).
-			Return(true).Maybe()
-		// Default: no user is a team admin unless explicitly configured.
-		mockAPI.On("HasPermissionToTeam", mock.AnythingOfType("string"), mock.AnythingOfType("string"), model.PermissionManageTeam).
-			Return(false).Maybe()
-		for _, id := range adminIDs {
-			mockAPI.On("HasPermissionTo", id, model.PermissionManageSystem).
-				Return(true).Maybe()
-		}
-		mockAPI.On("HasPermissionTo", mock.AnythingOfType("string"), model.PermissionManageSystem).
-			Return(false).Maybe()
-		t.Cleanup(func() { mockAPI.AssertExpectations(t) })
-		return pluginapi.NewClient(mockAPI, nil)
-	}
-
 	t.Run("OwnerGroupOnlyActions false allows any participant — no restriction", func(t *testing.T) {
 		pb := makePlaybook(false)
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: baseRun, err: nil},
 			&stubPlaybookService{playbook: pb, err: nil},
-			newPermissivePluginAPI(t),
+			newPluginAPIAllowingAdmins(t),
 		)
 
 		err := svc.RunChangeOwner(memberID, runID)
@@ -893,7 +873,7 @@ func TestRunChangeOwner(t *testing.T) {
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: baseRun, err: nil},
 			&stubPlaybookService{playbook: pb, err: nil},
-			newPermissivePluginAPI(t),
+			newPluginAPIAllowingAdmins(t),
 		)
 
 		err := svc.RunChangeOwner(ownerID, runID)
@@ -906,7 +886,7 @@ func TestRunChangeOwner(t *testing.T) {
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: baseRun, err: nil},
 			&stubPlaybookService{playbook: pb, err: nil},
-			newPermissivePluginAPI(t, adminID),
+			newPluginAPIAllowingAdmins(t, adminID),
 		)
 
 		err := svc.RunChangeOwner(adminID, runID)
@@ -919,7 +899,7 @@ func TestRunChangeOwner(t *testing.T) {
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: baseRun, err: nil},
 			&stubPlaybookService{playbook: pb, err: nil},
-			newPermissivePluginAPI(t),
+			newPluginAPIAllowingAdmins(t),
 		)
 
 		err := svc.RunChangeOwner(pbAdminID, runID)
@@ -940,7 +920,7 @@ func TestRunChangeOwner(t *testing.T) {
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: runWithOwnerOnly, err: nil},
 			&stubPlaybookService{playbook: pb, err: nil},
-			newPermissivePluginAPI(t),
+			newPluginAPIAllowingAdmins(t),
 		)
 
 		err := svc.RunChangeOwner(memberID, runID)
@@ -992,7 +972,7 @@ func TestRunChangeOwner(t *testing.T) {
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: standaloneRun, err: nil},
 			&stubPlaybookService{},
-			newPermissivePluginAPI(t),
+			newPluginAPIAllowingAdmins(t),
 		)
 
 		err := svc.RunChangeOwner(memberID, runID)
@@ -1012,7 +992,7 @@ func TestRunChangeOwner(t *testing.T) {
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: runWithDeletedPlaybook, err: nil},
 			&stubPlaybookService{playbook: Playbook{}, err: ErrNotFound},
-			newPermissivePluginAPI(t),
+			newPluginAPIAllowingAdmins(t),
 		)
 
 		err := svc.RunChangeOwner(ownerID, runID)
@@ -1032,7 +1012,7 @@ func TestRunChangeOwner(t *testing.T) {
 		svc := newPermissionsServiceForTest(
 			&stubRunService{run: runWithDeletedPlaybook, err: nil},
 			&stubPlaybookService{playbook: Playbook{}, err: ErrNotFound},
-			newPermissivePluginAPI(t),
+			newPluginAPIAllowingAdmins(t),
 		)
 
 		err := svc.RunChangeOwner(memberID, runID)

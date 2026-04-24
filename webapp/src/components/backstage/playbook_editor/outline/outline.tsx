@@ -90,11 +90,11 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         if (!archived && restPlaybook) {
             const prev = restPlaybook.owner_group_only_actions;
             setRestOverrides((o) => ({...o, owner_group_only_actions: updated.owner_group_only_actions}));
-            savePlaybook({...restPlaybook, ...restOverrides, owner_group_only_actions: updated.owner_group_only_actions}).catch(() => {
+            savePlaybook({...restPlaybook, owner_group_only_actions: updated.owner_group_only_actions}).catch(() => {
                 setRestOverrides((o) => ({...o, owner_group_only_actions: prev}));
             });
         }
-    }, [archived, restPlaybook, restOverrides]);
+    }, [archived, restPlaybook]);
 
     return (
         <Sections
