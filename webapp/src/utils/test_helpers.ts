@@ -25,5 +25,6 @@ export const makeBasePlaybook = <T extends Record<string, any>>(overrides: T = {
     default_owner_id: '',
     default_owner_enabled: false,
     run_summary_template_enabled: false,
+    new_channel_only: false,
     ...overrides,
 });

@@ -41,7 +41,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
     const archived = playbook.delete_at !== 0;
     const currentUserId = useSelector(getCurrentUserId);
     const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
-    const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const isPlaybookAdmin = currentMember?.roles?.includes(PlaybookRole.Admin) ?? false;
 
     const [
         playbookForCreateChannel,
@@ -176,21 +176,23 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         setPlaybook={setPlaybookForCreateChannel}
                     />
                 </Setting>
-                <Setting id={'new-channel-only'}>
-                    <div data-testid='new-channel-only-toggle'>
-                        <NewChannelOnlyToggle
-                            playbook={playbook}
-                            isPlaybookAdmin={isPlaybookAdmin}
-                            disabled={archived}
-                            onChange={({new_channel_only}) => {
-                                updatePlaybook({
-                                    newChannelOnly: new_channel_only,
-                                    ...(new_channel_only && {channelMode: 'create_new_channel'}),
-                                });
-                            }}
-                        />
-                    </div>
-                </Setting>
+                {isPlaybookAdmin && (
+                    <Setting id={'new-channel-only'}>
+                        <div data-testid='new-channel-only-toggle'>
+                            <NewChannelOnlyToggle
+                                playbook={playbook}
+                                isPlaybookAdmin={isPlaybookAdmin}
+                                disabled={archived}
+                                onChange={({new_channel_only}) => {
+                                    updatePlaybook({
+                                        newChannelOnly: new_channel_only,
+                                        ...(new_channel_only && {channelMode: 'create_new_channel'}),
+                                    });
+                                }}
+                            />
+                        </div>
+                    </Setting>
+                )}
                 <Setting id={'invite-users'}>
                     <InviteUsers
                         disabled={archived}

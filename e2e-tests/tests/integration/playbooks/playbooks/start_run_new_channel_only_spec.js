@@ -134,7 +134,9 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
     });
 
     describe('new_channel_only toggle in the playbook editor', () => {
-        it('persists the flag via the UI toggle', () => {
+        let togglePlaybook;
+
+        beforeEach(() => {
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Toggle Test Playbook ' + getRandomId(),
@@ -142,23 +144,45 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
                 makePublic: true,
             }).then((playbook) => {
                 createdPlaybookIds.push(playbook.id);
+                togglePlaybook = playbook;
+            });
+        });
 
-                // * Assert initial state is false before toggling
-                cy.apiGetPlaybook(playbook.id).then((pb) => {
-                    expect(pb.new_channel_only, 'new_channel_only should default to false').to.equal(false);
-                });
+        it('persists the flag via the UI toggle', () => {
+            cy.visit(`/playbooks/playbooks/${togglePlaybook.id}/outline`);
+            cy.playbooksToggleWithConfirmation('new-channel-only-toggle');
 
-                // # Visit the playbook outline editor and wait for the page to load
-                cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
-                cy.findByTestId('new-channel-only-toggle').should('exist');
+            cy.apiGetPlaybook(togglePlaybook.id).then((pb) => {
+                expect(pb.new_channel_only, 'new_channel_only should be true after toggle').to.equal(true);
+            });
+        });
 
-                // # Toggle new_channel_only on
-                cy.playbooksToggleWithConfirmation('new-channel-only-toggle');
+        it('shows a confirmation dialog with the correct title, message and button when enabling', () => {
+            cy.visit(`/playbooks/playbooks/${togglePlaybook.id}/outline`);
+            cy.findByTestId('new-channel-only-toggle').find('label').click();
 
-                // * Assert the flag was persisted via API
-                cy.apiGetPlaybook(playbook.id).then((pb) => {
-                    expect(pb.new_channel_only, 'new_channel_only should be true after toggle').to.equal(true);
-                });
+            cy.get('#confirmModal').within(() => {
+                cy.get('#confirmModalLabel').should('contain', 'Require new channel for all runs');
+                cy.get('#confirmModalBody').should('contain', 'Enabling this will prevent runs from linking to existing channels');
+                cy.get('#confirmModalButton').should('exist');
+            });
+            cy.get('#cancelModalButton').click();
+        });
+
+        it('disables the flag without a confirmation dialog', () => {
+            // Enable via API so we start with new_channel_only=true
+            cy.apiPatchPlaybook(togglePlaybook.id, {new_channel_only: true});
+
+            cy.visit(`/playbooks/playbooks/${togglePlaybook.id}/outline`);
+            cy.findByTestId('new-channel-only-toggle').find('label').click();
+
+            cy.get('#confirmModal').should('not.exist');
+
+            // Wait for the UI to reflect the update before querying the API — the PATCH is async
+            // and the API call would otherwise race against it and read stale state.
+            cy.findByTestId('new-channel-only-toggle').find('input').should('not.be.checked');
+            cy.apiGetPlaybook(togglePlaybook.id).then((pb) => {
+                expect(pb.new_channel_only, 'new_channel_only should be false after disabling').to.equal(false);
             });
         });
     });
