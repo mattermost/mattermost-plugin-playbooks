@@ -1215,6 +1215,61 @@ func TestUpdatePlaybook(t *testing.T) {
 	}
 }
 
+func TestUpdatePlaybook_DoesNotModifyOtherPlaybookMetrics(t *testing.T) {
+	db := setupTestDB(t)
+	playbookStore := setupPlaybookStore(t, db)
+	teamID := model.NewId()
+
+	victim := NewPBBuilder().
+		WithTitle("victim pb").
+		WithTeamID(teamID).
+		WithChecklists([]int{1}).
+		WithMetrics([]string{"victim-metric"}).
+		ToPlaybook()
+
+	attacker := NewPBBuilder().
+		WithTitle("attacker pb").
+		WithTeamID(teamID).
+		WithChecklists([]int{1}).
+		WithMetrics([]string{"attacker-metric"}).
+		ToPlaybook()
+
+	victimID, err := playbookStore.Create(victim)
+	require.NoError(t, err)
+	attackerID, err := playbookStore.Create(attacker)
+	require.NoError(t, err)
+
+	victimPB, err := playbookStore.Get(victimID)
+	require.NoError(t, err)
+	require.Len(t, victimPB.Metrics, 1)
+	originalVictimTitle := victimPB.Metrics[0].Title
+
+	attackerPB, err := playbookStore.Get(attackerID)
+	require.NoError(t, err)
+	require.Len(t, attackerPB.Metrics, 1)
+	victimMetricID := victimPB.Metrics[0].ID
+
+	// Simulates an import/update payload that supplies another playbook's metric ID (MM-68372).
+	attackerPB.Metrics = []app.PlaybookMetricConfig{
+		{
+			ID:          victimMetricID,
+			Title:       "MODIFIED_BY_ATTACKER",
+			Description: attackerPB.Metrics[0].Description,
+			Type:        attackerPB.Metrics[0].Type,
+			Target:      attackerPB.Metrics[0].Target,
+		},
+	}
+
+	err = playbookStore.Update(attackerPB)
+	require.NoError(t, err)
+
+	victimAfter, err := playbookStore.Get(victimID)
+	require.NoError(t, err)
+	require.Len(t, victimAfter.Metrics, 1)
+	require.Equal(t, originalVictimTitle, victimAfter.Metrics[0].Title,
+		"victim metric must not change when a different playbook update references its metric ID")
+}
+
 func TestDeletePlaybook(t *testing.T) {
 	team1id := model.NewId()
 
