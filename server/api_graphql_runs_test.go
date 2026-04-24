@@ -676,6 +676,149 @@ func TestGraphQLChangeRunParticipants(t *testing.T) {
 		sort.Strings(run.ParticipantIDs)
 		assert.Equal(t, expected, run.ParticipantIDs)
 	})
+
+	t.Run("add participants via group ID", func(t *testing.T) {
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                               "TestPlaybookGroupParticipants",
+			TeamID:                              e.BasicTeam.Id,
+			Public:                              true,
+			CreatePublicPlaybookRun:             true,
+			CreateChannelMemberOnNewParticipant: true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with group participants",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		// Create a group with AllowReference enabled and add user3 + RegularUser2
+		groupName := "test-group-participants"
+		group, appErr := e.A.CreateGroup(&model.Group{
+			Name:           &groupName,
+			DisplayName:    "Test Group Participants",
+			Source:         model.GroupSourceCustom,
+			AllowReference: true,
+		})
+		require.Nil(t, appErr)
+		require.NotNil(t, group)
+
+		_, appErr = e.A.UpsertGroupMember(group.Id, user3.Id)
+		require.Nil(t, appErr)
+		_, appErr = e.A.UpsertGroupMember(group.Id, e.RegularUser2.Id)
+		require.Nil(t, appErr)
+
+		// Add participants via groupIDs (no explicit userIDs)
+		response, err := addParticipantsWithGroups(e.PlaybooksClient, run.ID, []string{}, []string{group.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		// Verify all group members were added as participants
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 3) // owner + 2 group members
+		expected := []string{e.RegularUser.Id, e.RegularUser2.Id, user3.Id}
+		sort.Strings(expected)
+		sort.Strings(run.ParticipantIDs)
+		assert.Equal(t, expected, run.ParticipantIDs)
+
+		// Verify channel membership
+		for _, uid := range expected {
+			member, appErr := e.A.GetChannelMember(request.EmptyContext(nil), run.ChannelID, uid)
+			require.Nil(t, appErr)
+			assert.Equal(t, uid, member.UserId)
+		}
+	})
+
+	t.Run("add participants via group ID with deduplication", func(t *testing.T) {
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                               "TestPlaybookGroupDedup",
+			TeamID:                              e.BasicTeam.Id,
+			Public:                              true,
+			CreatePublicPlaybookRun:             true,
+			CreateChannelMemberOnNewParticipant: false,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with group dedup",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		// Create a group containing user3
+		groupName := "test-group-dedup"
+		group, appErr := e.A.CreateGroup(&model.Group{
+			Name:           &groupName,
+			DisplayName:    "Test Group Dedup",
+			Source:         model.GroupSourceCustom,
+			AllowReference: true,
+		})
+		require.Nil(t, appErr)
+
+		_, appErr = e.A.UpsertGroupMember(group.Id, user3.Id)
+		require.Nil(t, appErr)
+
+		// Pass user3 in both userIDs and groupIDs — should be deduplicated
+		response, err := addParticipantsWithGroups(e.PlaybooksClient, run.ID, []string{user3.Id}, []string{group.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 2) // owner + user3 (not duplicated)
+		expected := []string{e.RegularUser.Id, user3.Id}
+		sort.Strings(expected)
+		sort.Strings(run.ParticipantIDs)
+		assert.Equal(t, expected, run.ParticipantIDs)
+	})
+
+	t.Run("group with AllowReference=false is ignored", func(t *testing.T) {
+		pbID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:                               "TestPlaybookGroupNoRef",
+			TeamID:                              e.BasicTeam.Id,
+			Public:                              true,
+			CreatePublicPlaybookRun:             true,
+			CreateChannelMemberOnNewParticipant: false,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with no-ref group",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  pbID,
+		})
+		require.NoError(t, err)
+
+		// Create a group with AllowReference=false
+		groupName := "test-group-noref"
+		group, appErr := e.A.CreateGroup(&model.Group{
+			Name:           &groupName,
+			DisplayName:    "Test Group NoRef",
+			Source:         model.GroupSourceCustom,
+			AllowReference: false,
+		})
+		require.Nil(t, appErr)
+
+		_, appErr = e.A.UpsertGroupMember(group.Id, user3.Id)
+		require.Nil(t, appErr)
+
+		// Pass the no-ref group — should be silently skipped
+		response, err := addParticipantsWithGroups(e.PlaybooksClient, run.ID, []string{}, []string{group.Id})
+		require.Empty(t, response.Errors)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.TODO(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, run.ParticipantIDs, 1) // only the owner
+		assert.Equal(t, e.RegularUser.Id, run.ParticipantIDs[0])
+	})
 }
 
 func TestGraphQLChangeRunOwner(t *testing.T) {
@@ -1186,18 +1329,27 @@ func TestBadGraphQLRequest(t *testing.T) {
 
 // AddParticipants adds participants to the run
 func addParticipants(c *client.Client, playbookRunID string, userIDs []string) (graphql.Response, error) {
+	return addParticipantsWithGroups(c, playbookRunID, userIDs, nil)
+}
+
+// addParticipantsWithGroups adds participants to the run, optionally resolving group members
+func addParticipantsWithGroups(c *client.Client, playbookRunID string, userIDs []string, groupIDs []string) (graphql.Response, error) {
 	mutation := `
-	mutation AddRunParticipants($runID: String!, $userIDs: [String!]!) {
-		addRunParticipants(runID: $runID, userIDs: $userIDs)
+	mutation AddRunParticipants($runID: String!, $userIDs: [String!]!, $groupIDs: [String!]!) {
+		addRunParticipants(runID: $runID, userIDs: $userIDs, groupIDs: $groupIDs)
 	}
 	`
+	if groupIDs == nil {
+		groupIDs = []string{}
+	}
 	var response graphql.Response
 	err := c.DoGraphql(context.Background(), &client.GraphQLInput{
 		Query:         mutation,
 		OperationName: "AddRunParticipants",
 		Variables: map[string]interface{}{
-			"runID":   playbookRunID,
-			"userIDs": userIDs,
+			"runID":    playbookRunID,
+			"userIDs":  userIDs,
+			"groupIDs": groupIDs,
 		},
 	}, &response)
 

@@ -60,6 +60,11 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         return dispatch(getProfilesInTeam(playbook.team_id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
+    const [invitedGroupIDs, setInvitedGroupIDs] = useProxyState<string[]>(
+        playbook.invited_group_ids,
+        useCallback((ids) => updatePlaybook({invitedGroupIDs: ids}), [updatePlaybook]),
+    );
+
     const handleAddUserInvited = (userId: string) => {
         if (!playbook.invited_user_ids.includes(userId)) {
             updatePlaybook({
@@ -73,6 +78,16 @@ const LegacyActionsEdit = ({playbook}: Props) => {
         updatePlaybook({
             invitedUserIDs: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
         });
+    };
+
+    const handleAddGroupInvited = (groupId: string) => {
+        if (!invitedGroupIDs.includes(groupId)) {
+            setInvitedGroupIDs([...invitedGroupIDs, groupId]);
+        }
+    };
+
+    const handleRemoveGroupInvited = (groupId: string) => {
+        setInvitedGroupIDs(invitedGroupIDs.filter((id) => id !== groupId));
     };
 
     const handleRemovePreAssignedUserInvited = (userId: string) => {
@@ -177,9 +192,12 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         searchProfiles={searchUsers}
                         getProfiles={getUsers}
                         userIds={playbook.invited_user_ids}
+                        groupIds={invitedGroupIDs}
                         preAssignedUserIds={preAssignees}
                         onAddUser={handleAddUserInvited}
                         onRemoveUser={handleRemoveUserInvited}
+                        onAddGroup={handleAddGroupInvited}
+                        onRemoveGroup={handleRemoveGroupInvited}
                         onRemovePreAssignedUser={handleRemovePreAssignedUserInvited}
                         onRemovePreAssignedUsers={handleRemovePreAssignedUsers}
                     />
