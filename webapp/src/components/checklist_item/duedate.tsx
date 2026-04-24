@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useId, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import styled, {css} from 'styled-components';
@@ -75,6 +75,7 @@ export const DueDateHoverMenuButton = ({
     mode,
     ...props
 }: Props) => {
+    const tooltipId = useId();
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
     const makeOption = useMakeOption(Mode.DurationValue);
@@ -115,7 +116,7 @@ export const DueDateHoverMenuButton = ({
         hoverMenuButton
     ) : (
         <WithTooltip
-            id='due-date-tooltip'
+            id={`due-date-hover-menu-tooltip-${tooltipId}`}
             title={toolTip}
         >
             {hoverMenuButton}
@@ -148,6 +149,7 @@ export const DueDateButton = ({
     ignoreOverdue,
     ...props
 }: Props) => {
+    const tooltipId = useId();
     const {formatMessage} = useIntl();
     const dueDateEditAvailable = useAllowSetTaskDueDate();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -236,7 +238,7 @@ export const DueDateButton = ({
     if (date && mode === Mode.DateTimeValue && !props.editable) {
         dueDateButton = (
             <WithTooltip
-                id='due-date-tooltip'
+                id={`due-date-tooltip-${tooltipId}`}
                 title={dueDateToolTip}
             >
                 {dueDateButton}
@@ -249,7 +251,7 @@ export const DueDateButton = ({
         const tooltipText = mode === Mode.DurationValue ? addTimeFrameToolTip : dueDatePlaceholderToolTip;
         dueDateButton = (
             <WithTooltip
-                id='due-date-placeholder-tooltip'
+                id={`due-date-tooltip-${tooltipId}`}
                 title={tooltipText}
             >
                 {dueDateButton}

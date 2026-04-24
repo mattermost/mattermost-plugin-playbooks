@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useId} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled from 'styled-components';
@@ -149,9 +149,11 @@ interface BadgeProps {
 }
 
 const Badge = (props: BadgeProps) => {
+    const tooltipId = useId();
+
     return (
         <WithTooltip
-            id={'custom-status-post-badge-' + props.tooltipText}
+            id={`custom-status-post-badge-${tooltipId}`}
             title={props.tooltipText}
         >
             <BadgeContainer>
