@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import {useEffect} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
 
 import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {globalSettings} from 'src/selectors';
 import {actionSetGlobalSettings} from 'src/actions';
@@ -15,8 +15,8 @@ import {PlaybookRole} from 'src/types/permissions';
 // This component is meant to be registered as RootComponent.
 // It will be registered at initialize and "rendered" at login.
 const LoginHook = () => {
-    const dispatch = useDispatch();
-    const hasGlobalSettings = useSelector((state: GlobalState) => Boolean(globalSettings(state)));
+    const dispatch = useAppDispatch();
+    const hasGlobalSettings = useAppSelector((state) => Boolean(globalSettings(state)));
     const fetchAndStoreSettings = async () => dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
 
     useEffect(() => {

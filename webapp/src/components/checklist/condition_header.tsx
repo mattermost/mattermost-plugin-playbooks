@@ -4,9 +4,10 @@
 import React, {useCallback, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+
 import ReactSelect, {StylesConfig} from 'react-select';
-import {GlobalState} from '@mattermost/types/store';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {ConditionExprV1} from 'src/types/conditions';
 import {PropertyField} from 'src/types/properties';
@@ -40,7 +41,7 @@ const ConditionHeader = ({
     const {formatMessage} = useIntl();
 
     // Get condition from Redux store
-    const condition = useSelector((state: GlobalState) => getCondition(state, conditionId));
+    const condition = useAppSelector((state) => getCondition(state, conditionId));
 
     // State for managing editing mode
     const [isEditing, setIsEditing] = useState(startEditing);

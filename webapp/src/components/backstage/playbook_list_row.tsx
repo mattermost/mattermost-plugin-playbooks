@@ -5,7 +5,7 @@ import React, {Fragment, useMemo} from 'react';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {FormattedMessage, useIntl} from 'react-intl';
 import {
     AccountPlusOutlineIcon,
@@ -21,7 +21,8 @@ import {
 } from '@mattermost/compass-icons/components';
 import {Client4} from 'mattermost-redux/client';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-import {GlobalState} from '@mattermost/types/store';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useHasPlaybookPermission, useHasTeamPermission} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
@@ -115,9 +116,9 @@ const TIME_SPEC: React.ComponentProps<typeof Timestamp> = {
 };
 
 const PlaybookListRow = (props: Props) => {
-    const team = useSelector((state: GlobalState) => getTeam(state, props.playbook.team_id || ''));
-    const dispatch = useDispatch();
-    const currentUser = useSelector(getCurrentUser);
+    const team = useAppSelector((state) => getTeam(state, props.playbook.team_id || ''));
+    const dispatch = useAppDispatch();
+    const currentUser = useAppSelector(getCurrentUser);
     const currentUserPlaybookMember = useMemo(() => props.playbook?.members.find(({user_id}) => user_id === currentUser.id), [props.playbook?.members, currentUser.id]);
     const refreshLHS = useLHSRefresh();
 

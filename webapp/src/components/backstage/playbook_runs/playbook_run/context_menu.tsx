@@ -5,9 +5,11 @@ import styled from 'styled-components';
 
 import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {CheckAllIcon, PlayOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {useTextOverflow} from 'src/hooks';
 import {useCanModifyRun} from 'src/hooks/run_permissions';
@@ -64,11 +66,11 @@ interface Props {
 }
 
 export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavoriteRun, isFollowing, toggleFavorite, onRenameClick, location = CONTEXT_MENU_LOCATION.BACKSTAGE, ownerGroupOnlyActions}: Props) => {
-    const dispatch = useDispatch();
-    const currentUserId = useSelector(getCurrentUserId);
+    const dispatch = useAppDispatch();
+    const currentUserId = useAppSelector(getCurrentUserId);
     const {leaveRunConfirmModal, showLeaveRunConfirm} = useLeaveRun(hasPermanentViewerAccess, playbookRun.id, playbookRun.owner_user_id, isFollowing);
     const [showExportModal, setShowExportModal] = useState(false);
-    const showRunActionsFromRedux = useSelector(isRunActionsModalVisible);
+    const showRunActionsFromRedux = useAppSelector(isRunActionsModalVisible);
     const [showRunActionsFromMenu, setShowRunActionsFromMenu] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const titleTextRef = useRef<HTMLSpanElement>(null);
@@ -206,7 +208,7 @@ export const ContextMenu = ({playbookRun, hasPermanentViewerAccess, role, isFavo
 
 export const useLeaveRun = (hasPermanentViewerAccess: boolean, playbookRunId: string, ownerUserId: string, isFollowing: boolean) => {
     const {formatMessage} = useIntl();
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const addToast = useToaster().add;
     const [showLeaveRunConfirm, setLeaveRunConfirm] = useState(false);
     const {removeFromRun} = useManageRunMembership(playbookRunId);

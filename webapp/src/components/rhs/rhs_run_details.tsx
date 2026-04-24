@@ -8,13 +8,14 @@ import React, {
     useState,
 } from 'react';
 import Scrollbars from 'react-custom-scrollbars';
-import {useDispatch, useSelector} from 'react-redux';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {throttle} from 'lodash';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
 import {PlaybookRole} from 'src/types/permissions';
@@ -60,10 +61,10 @@ interface Props {
 }
 
 const RHSRunDetails = (props: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const scrollbarsRef = useRef<Scrollbars>(null);
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     const [playbookRun] = useRun(props.runID);
     const [playbook] = usePlaybook(playbookRun?.playbook_id ?? '');

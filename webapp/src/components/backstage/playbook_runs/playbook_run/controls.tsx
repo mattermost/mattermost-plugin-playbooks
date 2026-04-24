@@ -16,8 +16,10 @@ import {
 } from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
@@ -73,7 +75,7 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
 };
 
 export const RenameRunItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -133,7 +135,7 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
 };
 
 export const RunActionsMenuItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -179,7 +181,7 @@ export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportCli
 export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string, ownerGroupOnlyActions?: boolean, isOwner?: boolean}) => {
     const {formatMessage} = useIntl();
     const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const isBlockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
@@ -240,7 +242,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
     const {formatMessage} = useIntl();
     const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const isBlockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
@@ -278,7 +280,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
 
 export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
     const toggleRunStatusUpdates = useToggleRunStatusUpdate(props.playbookRun);
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     const statusUpdateEnabled = props.playbookRun.status_update_enabled;
 

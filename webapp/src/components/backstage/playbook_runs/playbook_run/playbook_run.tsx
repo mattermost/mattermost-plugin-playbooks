@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {useUpdateEffect} from 'react-use';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -10,6 +10,8 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {
     useChannel,
@@ -78,7 +80,7 @@ export enum PlaybookRunIDs {
 
 const PlaybookRunDetails = () => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const match = useRouteMatch<{playbookRunId: string}>();
     const playbookRunId = match.params.playbookRunId;
     const {hash: urlHash} = useLocation();
@@ -90,7 +92,7 @@ const PlaybookRunDetails = () => {
     const [metadata, metadataResult] = useRunMetadata(playbookRun?.id, [JSON.stringify(playbookRun?.participant_ids)]);
     const [statusUpdates] = useRunStatusUpdates(playbookRun?.id, [playbookRun?.status_posts.length]);
     const [channel, channelResult] = useChannel(playbookRun?.channel_id ?? '');
-    const myUser = useSelector(getCurrentUser);
+    const myUser = useAppSelector(getCurrentUser);
     const {options, selectOption, eventsFilter, resetFilters} = useFilter();
     const followState = useRunFollowers(metadata?.followers || []);
     const hasPermanentViewerAccess = playbook?.public || playbook?.members.find((m) => m.user_id === myUser.id) !== undefined;

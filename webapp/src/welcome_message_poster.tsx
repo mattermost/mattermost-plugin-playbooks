@@ -1,18 +1,18 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Store} from 'redux';
-import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {matchPath} from 'react-router-dom';
+
+import {Store} from 'src/types/store';
 
 import {hasViewedByChannelID} from 'src/selectors';
 import {fetchChannelActions, fetchCheckAndSendMessageOnJoin} from 'src/client';
 import {setHasViewedChannel} from 'src/actions';
 import {ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
 
-export function makeWelcomeMessagePoster(store: Store<GlobalState>): () => Promise<void> {
+export function makeWelcomeMessagePoster(store: Store): () => Promise<void> {
     let currentChannelId = '';
 
     return async () => {

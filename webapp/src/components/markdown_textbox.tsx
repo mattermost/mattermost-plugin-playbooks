@@ -10,14 +10,14 @@ import React, {
 } from 'react';
 import {useIntl} from 'react-intl';
 
-import {useSelector} from 'react-redux';
-
 import classNames from 'classnames';
 import styled from 'styled-components';
 
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {useEffectOnce} from 'react-use';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {Textbox} from 'src/webapp_globals';
 
@@ -51,7 +51,7 @@ const MarkdownTextbox = ({
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(previewByDefault);
-    const {MaxPostSize} = useSelector(getConfig);
+    const {MaxPostSize} = useAppSelector(getConfig);
     const textboxRef = useRef<{focus:() => void}>(null);
 
     const charLimit = parseInt(MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;

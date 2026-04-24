@@ -5,7 +5,7 @@ import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 
 import ReactSelect, {StylesConfig, ValueType} from 'react-select';
-import {useSelector} from 'react-redux';
+
 import {getMyChannels} from 'mattermost-redux/selectors/entities/channels';
 import General from 'mattermost-redux/constants/general';
 
@@ -13,6 +13,8 @@ import {Channel} from '@mattermost/types/channels';
 import {GlobalState} from '@mattermost/types/store';
 
 import {useIntl} from 'react-intl';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import Dropdown from 'src/components/dropdown';
 
@@ -66,7 +68,7 @@ const sortChannels = (allChannels: Channel[], selectedChannelIds: string[]): Cha
 
 const BroadcastChannels = (props: Props) => {
     const {formatMessage} = useIntl();
-    const selectableChannels = sortChannels(useSelector(getMyPublicAndPrivateChannels), props.channelIds);
+    const selectableChannels = sortChannels(useAppSelector(getMyPublicAndPrivateChannels), props.channelIds);
 
     const target = (
         <div >
