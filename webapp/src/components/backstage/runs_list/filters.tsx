@@ -5,11 +5,13 @@ import React, {useMemo, useState} from 'react';
 import debounce from 'debounce';
 import {ControlProps, components} from 'react-select';
 import styled from 'styled-components';
-import {useSelector} from 'react-redux';
+
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {UserProfile} from '@mattermost/types/users';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -73,7 +75,7 @@ const Filters = ({fetchParams, setFetchParams, fixedPlaybook, fixedFinished}: Pr
     const {formatMessage} = useIntl();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const [playbookSelectorToggle, setPlaybookSelectorToggle] = useState(false);
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
 
     const myRunsOnly = fetchParams.participant_or_follower_id === 'me';
     const setMyRunsOnly = (checked?: boolean) => {

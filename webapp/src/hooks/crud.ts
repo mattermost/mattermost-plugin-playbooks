@@ -5,9 +5,9 @@ import {useEffect, useMemo, useState} from 'react';
 import debounce from 'debounce';
 import {useIntl} from 'react-intl';
 
-import {useSelector} from 'react-redux';
-
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {
     archivePlaybook as clientArchivePlaybook,
@@ -66,7 +66,7 @@ export function usePlaybooksCrud(
     {infinitePaging} = {infinitePaging: false},
 ) {
     const {formatMessage} = useIntl();
-    const teamId = useSelector(getCurrentTeamId);
+    const teamId = useAppSelector(getCurrentTeamId);
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
     const [isLoading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(false);

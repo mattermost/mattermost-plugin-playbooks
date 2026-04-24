@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
+
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {ButtonIcon} from 'src/components/assets/buttons';
 import {navigateToUrl} from 'src/browser_routing';
@@ -16,8 +17,8 @@ interface Props {
 }
 
 export const SendMessageButton = (props: Props) => {
-    const dispatch = useDispatch();
-    const user = useSelector((state: GlobalState) => getUser(state, props.userId));
+    const dispatch = useAppDispatch();
+    const user = useAppSelector((state) => getUser(state, props.userId));
 
     useEffect(() => {
         if (!user) {

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useCallback, useEffect, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {useIntl} from 'react-intl';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/common';
@@ -13,7 +13,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {GlobalState} from '@mattermost/types/store';
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideChannelActionsModal} from 'src/actions';
@@ -76,11 +76,11 @@ const promptEmptyState = {id: undefined, enabled: false, payload: {playbook_id: 
 
 const ChannelActionsModal = () => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-    const show = useSelector(isChannelActionsModalVisible);
-    const channelID = useSelector(getCurrentChannelId);
-    const channel = useSelector((state: GlobalState) => getChannel(state, channelID));
-    const teamID = useSelector(getCurrentTeamId);
+    const dispatch = useAppDispatch();
+    const show = useAppSelector(isChannelActionsModalVisible);
+    const channelID = useAppSelector(getCurrentChannelId);
+    const channel = useAppSelector((state) => getChannel(state, channelID));
+    const teamID = useAppSelector(getCurrentTeamId);
     const publicChannelPermission = useHasChannelPermission(teamID, channelID, Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES);
     const privateChannelPermission = useHasChannelPermission(teamID, channelID, Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES);
 

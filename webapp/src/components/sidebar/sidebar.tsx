@@ -5,9 +5,11 @@ import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {useSelector} from 'react-redux';
+
 import {Team} from '@mattermost/types/teams';
 import Scrollbars from 'react-custom-scrollbars';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import Tooltip from 'src/components/widgets/tooltip';
 
@@ -43,7 +45,7 @@ interface SidebarProps {
 const selectTeam = (teamId: string) => (state: GlobalState): Team | undefined => getTeam(state, teamId);
 
 const Sidebar = (props: SidebarProps) => {
-    const team = useSelector(selectTeam(props.team_id));
+    const team = useAppSelector(selectTeam(props.team_id));
 
     const teamName = (
         <TeamName>

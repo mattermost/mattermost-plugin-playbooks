@@ -9,7 +9,7 @@
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "strictNullChecks": true,

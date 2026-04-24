@@ -4,8 +4,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
 import {FlagOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {TertiaryButton} from 'src/components/assets/buttons';
@@ -52,7 +54,7 @@ export const useFinishRunConfirmationMessage = (run: Maybe<{checklists: Checklis
 };
 
 export const useOnFinishRun = (playbookRun: PlaybookRun, location: string = 'backstage') => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
     const confirmationMessage = useFinishRunConfirmationMessage(playbookRun);
