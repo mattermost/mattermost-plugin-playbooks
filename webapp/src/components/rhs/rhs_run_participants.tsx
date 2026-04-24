@@ -2,9 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {RHSContainer, RHSContent} from 'src/components/rhs/rhs_shared';
 
@@ -18,9 +20,9 @@ interface Props {
 }
 
 const RHSRunParticipants = (props: Props) => {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
-    const team = useSelector(getCurrentTeam);
+    const team = useAppSelector(getCurrentTeam);
 
     if (!props.playbookRun) {
         return null;

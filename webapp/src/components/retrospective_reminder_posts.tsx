@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+
 import {DateTime} from 'luxon';
 import styled from 'styled-components';
 
@@ -12,6 +12,8 @@ import {Post} from '@mattermost/types/posts';
 import {getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
 
 import {GlobalState} from '@mattermost/types/store';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {currentPlaybookRun} from 'src/selectors';
 
@@ -63,10 +65,10 @@ interface ReminderCommonProps {
 const selectLatestReminderPost = (state: GlobalState) => getPostsInCurrentChannel(state)?.find((value: Post) => value.type?.startsWith('custom_retro'));
 
 const ReminderCommon = (props: ReminderCommonProps) => {
-    const playbookRun = useSelector(currentPlaybookRun);
+    const playbookRun = useAppSelector(currentPlaybookRun);
     const reminderDuration = playbookRun?.retrospective_reminder_interval_seconds || 0;
     const wasPublishedOrCanceled = playbookRun?.retrospective_published_at !== 0;
-    const latestReminderPost = useSelector(selectLatestReminderPost);
+    const latestReminderPost = useAppSelector(selectLatestReminderPost);
 
     const disableButtons = wasPublishedOrCanceled || latestReminderPost?.id !== props.post.id;
 

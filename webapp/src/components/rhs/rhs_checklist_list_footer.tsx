@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
+
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import styled from 'styled-components';
 import {DateTime} from 'luxon';

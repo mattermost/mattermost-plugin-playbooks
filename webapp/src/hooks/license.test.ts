@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {renderHook} from '@testing-library/react-hooks';
-import * as redux from 'react-redux';
 
+import * as reduxHooks from 'src/hooks/redux';
 import * as license from 'src/license';
 
 import {
@@ -26,7 +26,7 @@ describe('License Hooks', () => {
     let isEnterpriseLicensedOrDevelopmentSpy: jest.SpyInstance;
 
     beforeEach(() => {
-        useSelectorSpy = jest.spyOn(redux, 'useSelector');
+        useSelectorSpy = jest.spyOn(reduxHooks, 'useAppSelector');
         isProfessionalLicensedOrDevelopmentSpy = jest.spyOn(license, 'isProfessionalLicensedOrDevelopment');
         isEnterpriseLicensedOrDevelopmentSpy = jest.spyOn(license, 'isEnterpriseLicensedOrDevelopment');
     });

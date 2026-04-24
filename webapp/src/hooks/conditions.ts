@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {useCallback, useEffect} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {Condition} from 'src/types/conditions';
 import {fetchPlaybookConditions} from 'src/actions';
@@ -14,8 +14,8 @@ import {createPlaybookCondition} from 'src/client';
  * Hook to fetch and manage playbook conditions using Redux
  */
 export function usePlaybookConditions(playbookId: string) {
-    const dispatch = useDispatch();
-    const conditions = useSelector((state: GlobalState) => getConditionsByPlaybookId(state, playbookId));
+    const dispatch = useAppDispatch();
+    const conditions = useAppSelector((state) => getConditionsByPlaybookId(state, playbookId));
 
     const refetch = useCallback(() => {
         if (playbookId) {
