@@ -3062,4 +3062,47 @@ func TestAutoArchiveChannel_RunFinish(t *testing.T) {
 		assert.Equal(t, int64(0), channel.DeleteAt,
 			"channel must not be archived after finishing a run with AutoArchiveChannel=false")
 	})
+
+	t.Run("linked channel is not archived after run finish even when AutoArchiveChannel=true", func(t *testing.T) {
+		// Create a pre-existing channel to link to the run.
+		existingChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			TeamId:      e.BasicTeam.Id,
+			Type:        model.ChannelTypeOpen,
+			Name:        "existing-channel-" + model.NewId(),
+			DisplayName: "Existing Channel",
+		})
+		require.NoError(t, err)
+
+		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Auto Archive Linked Channel Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Members: []client.PlaybookMember{
+				{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+				{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			},
+			CreatePublicPlaybookRun: true,
+			AutoArchiveChannel:      true,
+		})
+		require.NoError(t, err)
+
+		run, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Auto Archive Linked Channel Run",
+			OwnerUserID: e.AdminUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  playbookID,
+			ChannelID:   existingChannel.Id,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		require.Equal(t, existingChannel.Id, run.ChannelID)
+
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), run.ID)
+		require.NoError(t, err)
+
+		channel, _, err := e.ServerAdminClient.GetChannel(context.Background(), existingChannel.Id, "")
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), channel.DeleteAt,
+			"pre-existing linked channel must not be archived even when AutoArchiveChannel=true")
+	})
 }
