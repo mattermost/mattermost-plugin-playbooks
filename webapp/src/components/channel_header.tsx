@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React, {ElementRef, useRef} from 'react';
-import {useSelector} from 'react-redux';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import PlaybooksProductIcon from 'src/components/assets/icons/playbooks_product_icon';
 
@@ -10,7 +11,7 @@ import {isPlaybookRunRHSOpen} from 'src/selectors';
 
 export const ChannelHeaderButton = () => {
     const myRef = useRef<ElementRef<typeof PlaybooksProductIcon>>(null);
-    const isRHSOpen = useSelector(isPlaybookRunRHSOpen);
+    const isRHSOpen = useAppSelector(isPlaybookRunRHSOpen);
 
     // If it has been mounted, we know our parent is always a button.
     const parent = myRef?.current ? myRef?.current?.parentNode as HTMLButtonElement : null;

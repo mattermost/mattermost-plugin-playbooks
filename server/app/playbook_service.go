@@ -92,6 +92,11 @@ func (s *playbookService) Import(data PlaybookImportData, userID string) (string
 	model.AddEventParameterToAuditRec(auditRec, "numConditions", len(data.Conditions))
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
 
+	// Strip metric IDs on import (export omits them); prevents treating foreign IDs as in-playbook updates.
+	for i := range playbook.Metrics {
+		playbook.Metrics[i].ID = ""
+	}
+
 	condRefs := saveAndClearConditionRefs(&playbook)
 
 	newPlaybookID, err := s.Create(playbook, userID)

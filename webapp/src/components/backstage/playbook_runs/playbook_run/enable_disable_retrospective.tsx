@@ -3,7 +3,8 @@
 
 import {useCallback} from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {patchRun} from 'src/client';
@@ -13,7 +14,7 @@ import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/con
 import {useToaster} from 'src/components/backstage/toast_banner';
 
 export const useToggleRunRetrospective = (playbookRun: PlaybookRun) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
 

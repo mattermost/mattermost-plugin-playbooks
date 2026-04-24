@@ -5,10 +5,11 @@ import React from 'react';
 import styled from 'styled-components';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from '@mattermost/types/store';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {useRunFollowers, useRunMetadata} from 'src/hooks';
 import LeftChevron from 'src/components/assets/icons/left_chevron';
@@ -38,7 +39,7 @@ const RHSRunDetailsTitle = (props: Props) => {
 
     const [metadata] = useRunMetadata(props.runID);
     const followState = useRunFollowers(metadata?.followers || []);
-    const currentChannelName = useSelector<GlobalState, string | undefined>(getCurrentChannelName);
+    const currentChannelName = useAppSelector(getCurrentChannelName);
 
     const tooltip = (
         <Tooltip id={'view-run-details'}>

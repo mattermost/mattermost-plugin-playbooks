@@ -3,12 +3,14 @@
 
 import React, {ComponentProps, useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {OptionTypeBase, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
 import {searchProfiles} from 'mattermost-redux/actions/users';
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import ActionsModal from 'src/components/actions_modal';
 import Action from 'src/components/actions_modal_action';
@@ -62,14 +64,14 @@ const TaskActionsModal = ({onTaskActionsChange, taskActions, ...modalProps}: Pro
     const actionPayload = markAsDonePayloadFromTaskAction(taskAction);
 
     const [show, setShow] = useState(true);
-    const users = useSelector(getUsers);
+    const users = useAppSelector(getUsers);
     const defaultUsers = triggerPayload.user_ids.map((user_id: string) => users[user_id]);
 
     const [newKeywords, setNewKeywords] = useState(triggerPayload.keywords);
     const [newUserIDs, setNewUserIDs] = useState(triggerPayload.user_ids);
     const [newIsEnabled, setNewEnabled] = useState(actionPayload.enabled);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term));
     };
