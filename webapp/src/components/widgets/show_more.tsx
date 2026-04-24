@@ -2,11 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useRef, useState} from 'react';
-import {useSelector} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 import {FormattedMessage} from 'react-intl';
 
 import {ChevronDownIcon, ChevronUpIcon} from '@mattermost/compass-icons/components';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {getIsRhsExpanded} from 'src/selectors';
 
@@ -131,7 +133,7 @@ const ShowMore = (props: Props) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isOverflow, setIsOverflow] = useState(false);
 
-    const isRHSExpanded = useSelector(getIsRhsExpanded);
+    const isRHSExpanded = useAppSelector(getIsRhsExpanded);
 
     const checkTextOverflow = () => {
         if (overflowRef.current) {

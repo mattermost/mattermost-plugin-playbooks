@@ -2,17 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
 
 import ReactSelect, {ControlProps} from 'react-select';
 
 import styled from 'styled-components';
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
-import {GlobalState} from '@mattermost/types/store';
+import {type ActionResult} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {useIntl} from 'react-intl';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import Profile from 'src/components/profile/profile';
 import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
@@ -21,8 +21,8 @@ import MenuList from 'src/components/backstage/playbook_edit/automation/menu_lis
 interface Props {
     ownerID: string;
     onAddUser: (userid: string) => void;
-    searchProfiles: (term: string) => ActionFuncAsync;
-    getProfiles: () => ActionFuncAsync;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles: () => Promise<ActionResult<UserProfile[]>>;
     isDisabled: boolean;
 }
 
@@ -30,7 +30,7 @@ const AssignOwnerSelector = (props: Props) => {
     const {formatMessage} = useIntl();
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const ownerUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.ownerID));
+    const ownerUser = useAppSelector((state) => getUser(state, props.ownerID));
 
     // Update the options whenever the owner ID or the search term are updated
     useEffect(() => {

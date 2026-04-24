@@ -2,9 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {useUpdateEffect} from 'react-use';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {isFavoriteItem} from 'src/client';
 import {useSetRunFavorite} from 'src/graphql/hooks';
@@ -48,7 +50,7 @@ export const useParticipateInRun = (playbookRun: PlaybookRun | undefined) => {
 };
 
 export const useRunFollowers = (metadataFollowers: string[]) => {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const [followers, setFollowers] = useState(metadataFollowers);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUserId));
 

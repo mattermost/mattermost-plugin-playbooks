@@ -17,6 +17,7 @@ import (
 	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
 	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"gopkg.in/guregu/null.v4"
 )
 
 func TestPlaybookService_CreatePropertyField(t *testing.T) {
@@ -807,6 +808,54 @@ func TestPlaybookService_Import(t *testing.T) {
 			}},
 		}, userID)
 
+		require.NoError(t, err)
+		assert.Equal(t, newPlaybookID, resultID)
+	})
+
+	t.Run("strips metric IDs before create", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock_app.NewMockPlaybookStore(ctrl)
+		mockPropertyService := mock_app.NewMockPropertyService(ctrl)
+		mockConditionService := mock_app.NewMockConditionService(ctrl)
+		mockPoster := mock_bot.NewMockPoster(ctrl)
+		mockAuditor := mock_app.NewMockAuditor(ctrl)
+
+		mockAuditor.EXPECT().
+			MakeAuditRecord(gomock.Any(), gomock.Any()).
+			Return(&model.AuditRecord{}).
+			AnyTimes()
+
+		mockAuditor.EXPECT().
+			LogAuditRec(gomock.Any()).
+			AnyTimes()
+
+		service := app.NewPlaybookService(
+			mockStore,
+			mockPoster,
+			nil,
+			mockAuditor,
+			nil,
+			mockPropertyService,
+			mockConditionService,
+		)
+
+		foreignID := "metric_id_from_another_playbook"
+		pb := basePlaybook
+		pb.Metrics = []app.PlaybookMetricConfig{
+			{ID: foreignID, Title: "m1", Type: app.MetricTypeInteger, Description: "d", Target: null.IntFrom(1)},
+		}
+
+		mockStore.EXPECT().
+			Create(gomock.Any()).
+			DoAndReturn(func(created app.Playbook) (string, error) {
+				require.Empty(t, created.Metrics[0].ID, "import must strip metric IDs so Create only inserts new metrics")
+				return newPlaybookID, nil
+			})
+		mockPoster.EXPECT().PublishWebsocketEventToTeam(gomock.Any(), gomock.Any(), basePlaybook.TeamID)
+
+		resultID, err := service.Import(app.PlaybookImportData{Playbook: pb}, userID)
 		require.NoError(t, err)
 		assert.Equal(t, newPlaybookID, resultID)
 	})

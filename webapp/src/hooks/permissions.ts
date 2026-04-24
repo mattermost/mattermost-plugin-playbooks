@@ -11,8 +11,8 @@ import {
 } from 'mattermost-redux/selectors/entities/roles';
 import {loadRolesIfNeeded} from 'mattermost-redux/actions/roles';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-import {GlobalState} from '@mattermost/types/store';
-import {useDispatch, useSelector} from 'react-redux';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {isCurrentUserAdmin} from 'src/selectors';
 
@@ -21,15 +21,15 @@ import {PlaybookPermissionGeneral, makeGeneralPermissionSpecific} from 'src/type
 import {usePlaybook} from './crud';
 
 export const useHasSystemPermission = (permission: string) => {
-    return useSelector((state: GlobalState) => haveISystemPermission(state, {permission}));
+    return useAppSelector((state) => haveISystemPermission(state, {permission}));
 };
 
 export const useHasTeamPermission = (teamID: string, permission: string) => {
-    return useSelector((state: GlobalState) => haveITeamPermission(state, teamID, permission));
+    return useAppSelector((state) => haveITeamPermission(state, teamID, permission));
 };
 
 export const useHasChannelPermission = (teamID: string, channelID: string, permission: string) => {
-    return useSelector((state: GlobalState) => haveIChannelPermission(state, teamID, channelID, permission));
+    return useAppSelector((state) => haveIChannelPermission(state, teamID, channelID, permission));
 };
 
 export const useHasPlaybookPermissionById = (permission: PlaybookPermissionGeneral, playbookId: string) => {
@@ -50,9 +50,9 @@ export interface PlaybookPermissionsParams {
 }
 
 export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, playbook: Maybe<PlaybookPermissionsParams>) => {
-    const dispatch = useDispatch();
-    const currentUserId = useSelector(getCurrentUserId);
-    const roles = useSelector(getRoles);
+    const dispatch = useAppDispatch();
+    const currentUserId = useAppSelector(getCurrentUserId);
+    const roles = useAppSelector(getRoles);
     const specificPermission = makeGeneralPermissionSpecific(permission, playbook?.public || false);
     const hasTeamPermission = useHasTeamPermission(playbook?.team_id || '', specificPermission);
 
