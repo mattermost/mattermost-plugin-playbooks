@@ -183,4 +183,124 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
             expect(pb.title).to.equal('Sysadmin Allowed Update');
         });
     });
+
+    it('REST API: playbook admin (non-sysadmin) cannot enable admin_only_edit (403)', () => {
+        // # admin_only_edit is false (reset by beforeEach); testAdminUser is playbook admin but not sysadmin
+        cy.apiLogin(testAdminUser);
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true}, 403);
+        });
+
+        // * Confirm admin_only_edit is still false
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            expect(pb.admin_only_edit).to.equal(false);
+        });
+    });
+
+    it('UI: toggle reverts when playbook admin tries to enable admin_only_edit', () => {
+        // # testAdminUser is playbook admin but not sysadmin — the server will reject enabling
+        cy.apiLogin(testAdminUser);
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+        // * Toggle starts unchecked
+        cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('not.be.checked');
+
+        // # Click to attempt enabling
+        cy.findByTestId('admin-only-edit-toggle').find('label').click();
+
+        // * Toggle should revert to unchecked after the server rejects the change
+        cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('not.be.checked');
+
+        // * API confirms admin_only_edit is still false
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            expect(pb.admin_only_edit).to.equal(false);
+        });
+    });
+
+    it('UI: editor fields are disabled for non-admin member when admin_only_edit is enabled', () => {
+        // # Enable admin_only_edit as sysadmin
+        cy.apiAdminLogin();
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
+        });
+
+        // # Login as non-admin member and open the outline
+        cy.apiLogin(testMemberUser);
+        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+
+        // * Status update toggle input is disabled
+        cy.findByTestId('status-update-toggle').find('input[type="checkbox"]').should('be.disabled');
+
+        // * Retrospective toggle input is disabled
+        cy.get('#retrospective').find('input[type="checkbox"]').should('be.disabled');
+
+        // * Add-checklist button is not rendered (checklist is read-only)
+        cy.get('#checklists').should('be.visible');
+        cy.findByTestId('add-a-checklist-button').should('not.exist');
+    });
+
+    it('REST API: non-sysadmin cannot create a playbook with admin_only_edit enabled (403)', () => {
+        // # testAdminUser is a playbook admin but not a sysadmin
+        cy.apiLogin(testAdminUser);
+
+        cy.request({
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            url: '/plugins/playbooks/api/v0/playbooks',
+            method: 'POST',
+            body: {
+                title: 'New Playbook With Admin Only Edit',
+                team_id: testTeam.id,
+                public: true,
+                admin_only_edit: true,
+                members: [{user_id: testAdminUser.id, roles: ['playbook_member', 'playbook_admin']}],
+                checklists: [],
+                reminder_timer_default_seconds: 86400,
+                status_update_enabled: true,
+                retrospective_enabled: true,
+                create_channel_member_on_new_participant: true,
+            },
+            failOnStatusCode: false,
+        }).then((response) => {
+            expect(response.status).to.equal(403);
+        });
+    });
+
+    it('REST API: non-sysadmin cannot duplicate a playbook with admin_only_edit enabled (403)', () => {
+        // # Enable admin_only_edit on the source playbook as sysadmin
+        cy.apiAdminLogin();
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
+        });
+
+        // # testAdminUser is playbook admin but not sysadmin — duplicate should be blocked
+        cy.apiLogin(testAdminUser);
+        cy.request({
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            url: `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`,
+            method: 'POST',
+            failOnStatusCode: false,
+        }).then((response) => {
+            expect(response.status).to.equal(403);
+        });
+    });
+
+    it('REST API: non-sysadmin cannot import a playbook with admin_only_edit enabled (403)', () => {
+        // # Export the playbook as sysadmin, then set admin_only_edit in the export data
+        cy.apiAdminLogin();
+        cy.apiExportPlaybook(testPlaybook.id).then((exportData) => {
+            const importBody = {...exportData, id: undefined, admin_only_edit: true};
+
+            // # Login as non-sysadmin and attempt import
+            cy.apiLogin(testAdminUser);
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: `/plugins/playbooks/api/v0/playbooks/import?team_id=${testTeam.id}`,
+                method: 'POST',
+                body: importBody,
+                failOnStatusCode: false,
+            }).then((response) => {
+                expect(response.status).to.equal(403);
+            });
+        });
+    });
 });
