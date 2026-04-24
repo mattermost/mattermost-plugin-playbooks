@@ -1304,19 +1304,25 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	if s.tryAutoArchiveChannel(playbookRunToModify, logger) {
 		playbookRunToModify.AutoArchivedChannel = true
 		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-			logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag on run")
+			// Persist failed: roll back the channel archive so the channel and the run marker stay in
+			// sync. Without rollback, restore would never know to unarchive the channel.
+			logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; rolling back channel archive")
+			if !s.restoreChannelByID(playbookRunToModify.ChannelID, logger) {
+				logger.WithField("channel_id", playbookRunToModify.ChannelID).
+					Error("channel archive rollback failed; channel is archived but AutoArchivedChannel=false — manual channel restore required")
+			}
 		} else {
 			playbookRunToModify = updatedRun
-		}
-		archiveEvent := &TimelineEvent{
-			PlaybookRunID: playbookRunID,
-			CreateAt:      endAt + 1,
-			EventAt:       endAt + 1,
-			EventType:     ChannelArchived,
-			SubjectUserID: userID,
-		}
-		if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
-			logger.WithError(err).Warn("failed to create channel_archived timeline event")
+			archiveEvent := &TimelineEvent{
+				PlaybookRunID: playbookRunID,
+				CreateAt:      endAt + 1,
+				EventAt:       endAt + 1,
+				EventType:     ChannelArchived,
+				SubjectUserID: userID,
+			}
+			if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
+				logger.WithError(err).Warn("failed to create channel_archived timeline event")
+			}
 		}
 	}
 
@@ -1499,19 +1505,24 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	if s.tryAutoUnarchiveChannel(playbookRunToRestore, logger) {
 		playbookRunToRestore.AutoArchivedChannel = false
 		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToRestore); err != nil {
-			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
+			// Persist failed: re-archive the channel so it matches the still-set run marker.
+			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore; re-archiving channel to stay in sync")
+			if !s.archiveChannelByID(playbookRunToRestore.ChannelID, logger) {
+				logger.WithField("channel_id", playbookRunToRestore.ChannelID).
+					Warn("channel re-archive rollback failed; channel is unarchived but AutoArchivedChannel=true in the database")
+			}
 		} else {
 			playbookRunToRestore = updatedRun
-		}
-		unarchiveEvent := &TimelineEvent{
-			PlaybookRunID: playbookRunID,
-			CreateAt:      restoreAt + 1,
-			EventAt:       restoreAt + 1,
-			EventType:     ChannelUnarchived,
-			SubjectUserID: userID,
-		}
-		if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
-			logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
+			unarchiveEvent := &TimelineEvent{
+				PlaybookRunID: playbookRunID,
+				CreateAt:      restoreAt + 1,
+				EventAt:       restoreAt + 1,
+				EventType:     ChannelUnarchived,
+				SubjectUserID: userID,
+			}
+			if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
+				logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
+			}
 		}
 	}
 
@@ -1589,23 +1600,23 @@ func (s *PlaybookRunServiceImpl) tryAutoArchiveChannel(run *PlaybookRun, logger 
 // tryAutoUnarchiveChannel un-archives the run's channel if it was auto-archived on finish.
 // Must be called before posting to the channel so the message lands in an active channel.
 // Returns true if the channel was successfully un-archived.
-// Best-effort: errors are logged and ignored.
-// NOTE: The plugin API does not expose a RestoreChannel method, so we clear DeleteAt manually
-// via Channel.Update. This emits WebsocketEventChannelUpdated but NOT WebsocketEventChannelRestored,
-// and does NOT post the system "channel un-archived" message. Clients will see the channel reappear
-// after a reload rather than immediately. TODO: request RestoreChannel from the platform plugin API.
 func (s *PlaybookRunServiceImpl) tryAutoUnarchiveChannel(run *PlaybookRun, logger *logrus.Entry) bool {
 	if !run.AutoArchivedChannel || run.ChannelID == "" {
 		return false
 	}
-	// NOTE: Get→mutate→Update is not atomic. Channel.Update sends the full channel object, so any
-	// concurrent channel property edit (display name, purpose) made between Get and Update will be
-	// silently overwritten. This is acceptable as a best-effort operation until the plugin API
-	// exposes a dedicated RestoreChannel method — file a request at https://github.com/mattermost/mattermost/issues
-	// to add pluginapi.Channel.Restore() so this can be replaced with an atomic unarchive call.
-	ch, err := s.pluginAPI.Channel.Get(run.ChannelID)
+	return s.restoreChannelByID(run.ChannelID, logger)
+}
+
+// restoreChannelByID clears DeleteAt on the given channel (un-archives it).
+// NOTE: Get→mutate→Update is not atomic. Channel.Update sends the full channel object, so any
+// concurrent channel property edit (display name, purpose) made between Get and Update will be
+// silently overwritten. This is acceptable as a best-effort operation until the plugin API
+// exposes a dedicated RestoreChannel method. TODO: replace with pluginapi.Channel.Restore() once
+// available — https://github.com/mattermost/mattermost/issues
+func (s *PlaybookRunServiceImpl) restoreChannelByID(channelID string, logger *logrus.Entry) bool {
+	ch, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		logger.WithError(err).Warn("failed to get channel for un-archive on run restore")
+		logger.WithError(err).Warn("failed to get channel for un-archive")
 		return false
 	}
 	if ch.DeleteAt == 0 {
@@ -1613,7 +1624,16 @@ func (s *PlaybookRunServiceImpl) tryAutoUnarchiveChannel(run *PlaybookRun, logge
 	}
 	ch.DeleteAt = 0
 	if err := s.pluginAPI.Channel.Update(ch); err != nil {
-		logger.WithError(err).Warn("failed to un-archive channel on run restore")
+		logger.WithError(err).Warn("failed to un-archive channel")
+		return false
+	}
+	return true
+}
+
+// archiveChannelByID archives the channel (sets DeleteAt). Returns true on success.
+func (s *PlaybookRunServiceImpl) archiveChannelByID(channelID string, logger *logrus.Entry) bool {
+	if err := s.pluginAPI.Channel.Delete(channelID); err != nil {
+		logger.WithError(err).Warn("failed to archive channel")
 		return false
 	}
 	return true

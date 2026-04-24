@@ -291,6 +291,7 @@ Cypress.Commands.add('playbooksVisitRun', (runId) => {
 Cypress.Commands.add('playbooksConfirmModal', () => {
     cy.get('#confirmModal').should('be.visible');
     cy.get('#confirmModal').find('#confirmModalButton').click();
+    cy.get('#confirmModal').should('not.exist');
 });
 
 /**
@@ -356,8 +357,9 @@ Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName, property
     // # Set property values in the modal if provided
     if (propertyValues) {
         for (const [fieldName, optionLabel] of Object.entries(propertyValues)) {
-            cy.findByText(fieldName).should('be.visible');
-            cy.findByText('Select...').click();
+            cy.findByText(fieldName).should('be.visible').closest('[data-testid]').within(() => {
+                cy.findByText('Select...').click();
+            });
             cy.findByText(optionLabel).click();
         }
     }

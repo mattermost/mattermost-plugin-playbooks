@@ -156,6 +156,7 @@ export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 
 // setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
 export const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     ...playbook,
+    auto_archive_channel: playbook.auto_archive_channel ?? false,
     title: playbook.title.trim() || 'Untitled playbook',
     checklists: playbook.checklists.map((checklist) => ({
         ...checklist,

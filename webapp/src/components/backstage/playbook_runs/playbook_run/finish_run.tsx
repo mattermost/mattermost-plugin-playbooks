@@ -59,13 +59,14 @@ export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string
     const refreshLHS = useLHSRefresh();
     const confirmationMessage = useFinishRunConfirmationMessage(playbookRun);
     const toaster = useToaster();
+    const playbookRunId = playbookRun?.id ?? null;
 
     return useCallback(() => {
-        if (!playbookRun) {
+        if (!playbookRunId) {
             return;
         }
         const onConfirm = async () => {
-            const result = await finishRun(playbookRun.id);
+            const result = await finishRun(playbookRunId!);
             if (result?.error) {
                 toaster.add({
                     content: formatMessage({id: 'playbooks.finish_run.error', defaultMessage: 'It wasn\'t possible to finish the run.'}),
@@ -87,7 +88,7 @@ export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string
             // eslint-disable-next-line no-empty-function
             onCancel: () => {},
         })));
-    }, [dispatch, formatMessage, refreshLHS, confirmationMessage, toaster, location, playbookRun]);
+    }, [dispatch, formatMessage, refreshLHS, confirmationMessage, toaster, location, playbookRunId]);
 };
 
 interface Props {
