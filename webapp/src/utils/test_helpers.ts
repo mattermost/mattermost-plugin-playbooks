@@ -25,25 +25,3 @@ export const makeBasePlaybook = (overrides: Partial<Playbook> = {}): Playbook =>
     admin_only_edit: false,
     ...overrides,
 });
-
-export const findNodeByTestId = (tree: any, testId: string): any => {
-    if (!tree) {
-        return null;
-    }
-    if (Array.isArray(tree)) {
-        for (const child of tree) {
-            const found = findNodeByTestId(child, testId);
-            if (found) {
-                return found;
-            }
-        }
-        return null;
-    }
-    if (tree.props?.['data-testid'] === testId) {
-        return tree;
-    }
-    if (tree.children) {
-        return findNodeByTestId(tree.children, testId);
-    }
-    return null;
-};

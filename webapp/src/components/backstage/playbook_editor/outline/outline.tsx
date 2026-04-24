@@ -6,13 +6,11 @@ import React, {
     Children,
     ReactNode,
     useCallback,
+    useMemo,
     useState,
 } from 'react';
 
 import {useIntl} from 'react-intl';
-
-import {useSelector} from 'react-redux';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
 import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 
@@ -23,7 +21,6 @@ import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {savePlaybook} from 'src/client';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookRole} from 'src/types/permissions';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import AdminOnlyEditToggle from 'src/components/backstage/playbook_editor/admin_only_edit_toggle';
 import {Section as BaseSection, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
@@ -40,22 +37,23 @@ interface Props {
     canEdit: boolean;
     restPlaybook?: PlaybookWithChecklist;
     isSystemAdmin?: boolean;
+    isPlaybookAdmin?: boolean;
 }
 
 type StyledAttrs = {className?: string};
 
 type RestOnlyOverrides = Pick<PlaybookWithChecklist, 'admin_only_edit'>;
 
-const Outline = ({playbook, refetch, canEdit, restPlaybook, isSystemAdmin}: Props) => {
+const Outline = ({playbook, refetch, canEdit, restPlaybook, isSystemAdmin, isPlaybookAdmin = false}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
-    const currentUserId = useSelector(getCurrentUserId);
-    const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
-    const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
     const [restOverrides, setRestOverrides] = useState<Partial<RestOnlyOverrides>>({});
-    const effectiveRestPlaybook = restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook;
+    const effectiveRestPlaybook = useMemo(
+        () => (restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook),
+        [restPlaybook, restOverrides],
+    );
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
     const onChecklistCollapsedStateChange = useCallback((checklistIndex: number, state: boolean) => {
@@ -92,11 +90,11 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, isSystemAdmin}: Prop
         if (!archived && restPlaybook && updated.admin_only_edit !== undefined) {
             const prev = restPlaybook.admin_only_edit;
             setRestOverrides((o) => ({...o, admin_only_edit: updated.admin_only_edit}));
-            savePlaybook({...restPlaybook, ...restOverrides, admin_only_edit: updated.admin_only_edit}).catch(() => {
+            savePlaybook({...restPlaybook, admin_only_edit: updated.admin_only_edit}).catch(() => {
                 setRestOverrides((o) => ({...o, admin_only_edit: prev}));
             });
         }
-    }, [archived, restPlaybook, restOverrides]);
+    }, [archived, restPlaybook]);
 
     return (
         <Sections
@@ -192,7 +190,6 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, isSystemAdmin}: Prop
                         <SettingsRow data-testid='admin-only-edit-toggle'>
                             <AdminOnlyEditToggle
                                 playbook={effectiveRestPlaybook}
-                                isAdmin={isPlaybookAdmin || Boolean(isSystemAdmin)}
                                 onChange={handleAdminOnlyEditChange}
                             />
                         </SettingsRow>

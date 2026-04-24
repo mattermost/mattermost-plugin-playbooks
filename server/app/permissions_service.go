@@ -162,23 +162,7 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have access to playbook `%s`", userID, playbook.ID)
 }
 
-// IsPlaybookAdminMember returns true if the user holds the admin role on the given playbook.
-func IsPlaybookAdminMember(userID string, playbook Playbook) bool {
-	adminRole := playbook.DefaultPlaybookAdminRole
-	if adminRole == "" {
-		adminRole = PlaybookRoleAdmin
-	}
-	for _, member := range playbook.Members {
-		if member.UserID == userID {
-			return slices.Contains(member.SchemeRoles, adminRole)
-		}
-	}
-	return false
-}
-
-// PlaybookEdit checks whether the user can edit a playbook's configuration. When AdminOnlyEdit
-// is false (the default), it falls back to PlaybookManageProperties. When true, only system
-// admins and playbook admins may edit.
+// PlaybookEdit checks whether the user can edit a playbook's configuration.
 func (p *PermissionsService) PlaybookEdit(userID string, playbook Playbook) error {
 	if !playbook.AdminOnlyEdit {
 		return p.PlaybookManageProperties(userID, playbook)
@@ -186,10 +170,11 @@ func (p *PermissionsService) PlaybookEdit(userID string, playbook Playbook) erro
 	if IsSystemAdmin(userID, p.pluginAPI) {
 		return nil
 	}
-	if !p.canViewTeam(userID, playbook.TeamID) {
-		return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s (no team access)", userID, playbook.ID)
+	adminRole := playbook.DefaultPlaybookAdminRole
+	if adminRole == "" {
+		adminRole = PlaybookRoleAdmin
 	}
-	if IsPlaybookAdminMember(userID, playbook) {
+	if slices.Contains(p.getPlaybookRole(userID, playbook), adminRole) {
 		return nil
 	}
 	return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s (admin-only)", userID, playbook.ID)

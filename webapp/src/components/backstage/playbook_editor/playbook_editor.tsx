@@ -295,6 +295,7 @@ const PlaybookEditor = () => {
                         canEdit={canEdit}
                         restPlaybook={restPlaybook ?? undefined}
                         isSystemAdmin={isSystemAdmin}
+                        isPlaybookAdmin={isPlaybookAdmin}
                     />
                 </Route>
                 <Route

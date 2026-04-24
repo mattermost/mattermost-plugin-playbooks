@@ -558,7 +558,7 @@
   "pKLw8O": "Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.",
   "pLfT7M": "Create checklist",
   "pjt3qA": "New checklist",
-  "playbooks.admin_only_edit_toggle.help_text": "When enabled, only admins can edit this playbook.",
+  "playbooks.admin_only_edit_toggle.help_text": "Members without admin role will have read-only access.",
   "playbooks.admin_only_edit_toggle.label": "Only admins can edit this playbook",
   "prs4kX": "When a message with specific keywords is posted",
   "pzTOmv": "Followers",

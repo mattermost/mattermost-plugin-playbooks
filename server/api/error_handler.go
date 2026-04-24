@@ -11,23 +11,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// sentinelError pairs an app-layer sentinel error with the HTTP status code and the
-// safe public message to send to clients. Order matters: more-specific sentinels must
-// appear before more-general ones so the first match wins during iteration.
+// sentinelError pairs an app-layer sentinel error with the HTTP status code and
+// the safe public message to send to clients.
 type sentinelError struct {
 	sentinel  error
 	status    int
 	publicMsg string
 }
 
-// sentinelErrors is the single source of truth for mapping app-layer errors to HTTP
-// responses. A slice (not a map) is used so that iteration order is deterministic —
-// map iteration in Go is randomized, which would cause non-deterministic status codes
-// if an error chain ever matched multiple sentinels.
-//
-// Note: RunFinish, RunRestore, and RunChangeOwner permission-check failures bypass
-// this table intentionally — they return 403 for ErrNotFound/ErrNoPermissions (to avoid
-// leaking run existence) and 500 for infrastructure errors.
+// sentinelErrors maps app-layer sentinel errors to HTTP status codes. A slice is used
+// so iteration order is deterministic — order matters when an error chain could match
+// multiple sentinels.
 var sentinelErrors = []sentinelError{
 	{app.ErrNotFound, http.StatusNotFound, "Not found."},
 	{app.ErrNoPermissions, http.StatusForbidden, "You don't have permission to perform this action."},
@@ -85,14 +79,4 @@ func (h *ErrorHandler) PermissionsCheck(w http.ResponseWriter, logger logrus.Fie
 	}
 
 	return true
-}
-
-// checkPlaybookAttributesLicense writes a 403 and returns false when the
-// PlaybookAttributes feature is not covered by the current server license.
-func checkPlaybookAttributesLicense(licenseChecker app.LicenseChecker, w http.ResponseWriter, logger logrus.FieldLogger) bool {
-	if licenseChecker.PlaybookAttributesAllowed() {
-		return true
-	}
-	HandleErrorWithCode(logger, w, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
-	return false
 }

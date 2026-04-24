@@ -50,11 +50,10 @@ const makePlaybook = (adminOnlyEdit: boolean) => makeBasePlaybook({admin_only_ed
 // ---------------------------------------------------------------------------
 
 describe('AdminOnlyEditToggle', () => {
-    it('renders toggle for admin users', () => {
+    it('renders toggle', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
                 playbook={makePlaybook(false)}
-                isAdmin={true}
                 onChange={jest.fn()}
             />,
         );
@@ -65,7 +64,6 @@ describe('AdminOnlyEditToggle', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
                 playbook={makePlaybook(true)}
-                isAdmin={true}
                 onChange={jest.fn()}
             />,
         );
@@ -77,7 +75,6 @@ describe('AdminOnlyEditToggle', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
                 playbook={makePlaybook(false)}
-                isAdmin={true}
                 onChange={jest.fn()}
             />,
         );
@@ -90,7 +87,6 @@ describe('AdminOnlyEditToggle', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
                 playbook={makePlaybook(false)}
-                isAdmin={true}
                 onChange={onChange}
             />,
         );
@@ -106,7 +102,6 @@ describe('AdminOnlyEditToggle', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
                 playbook={makePlaybook(true)}
-                isAdmin={true}
                 onChange={onChange}
             />,
         );
@@ -115,16 +110,5 @@ describe('AdminOnlyEditToggle', () => {
             tree.children[0].children[0].props.onChange();
         });
         expect(onChange).toHaveBeenCalledWith({admin_only_edit: false});
-    });
-
-    it('does not render for non-admin users', () => {
-        const component = renderer.create(
-            <AdminOnlyEditToggle
-                playbook={makePlaybook(false)}
-                isAdmin={false}
-                onChange={jest.fn()}
-            />,
-        );
-        expect(component.toJSON()).toBeNull();
     });
 });

@@ -67,9 +67,7 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
         return [];
     }, [currentUserId, playbook?.members, playbook?.public, playbook?.default_playbook_member_role]);
 
-    // Dispatch loadRolesIfNeeded in an effect so it does not run during the render phase.
-    // Calling dispatch() inline during render violates React's Rules of Hooks and can
-    // trigger a re-render loop in StrictMode.
+    // Dispatching inline during render violates Rules of Hooks and loops in StrictMode.
     useEffect(() => {
         if (userRoles.length > 0) {
             dispatch(loadRolesIfNeeded(userRoles));

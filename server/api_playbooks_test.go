@@ -1898,13 +1898,15 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 
 	// Create a playbook with AdminOnlyEdit=true.
 	// PlaybooksAdminClient (system admin) creates it and is also a playbook admin.
-	// RegularUser is a plain playbook member; RegularUser2 is not a member.
+	// RegularUser is a plain playbook member.
+	// RegularUser2 is a non-sysadmin playbook admin used to test the admin-member path.
 	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "AdminOnlyEdit Test Playbook",
 		TeamID: e.BasicTeam.Id,
 		Public: true,
 		Members: []client.PlaybookMember{
 			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
 			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
 		},
 		AdminOnlyEdit:                           true,
@@ -1914,38 +1916,34 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("non-admin member PUT /playbooks/{id} returns 403", func(t *testing.T) {
-		// Fetch the playbook as admin so we have a full struct to PUT back
+		// Fetch as admin so we have a full struct to PUT back (RegularUser lacks read permission when admin_only_edit=true)
 		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
 		require.NoError(t, err)
 
-		// RegularUser is only a playbook_member — should be blocked by AdminOnlyEdit
 		pb.Title = "Non-Admin Attempted Edit"
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("admin member PUT /playbooks/{id} returns 200", func(t *testing.T) {
-		// Fetch the playbook as admin
+		// Fetch as sysadmin so we have a full struct to PUT back.
 		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
 		require.NoError(t, err)
 
-		// AdminUser is a playbook_admin — should be allowed to edit
+		// Update as RegularUser2 (non-sysadmin playbook_admin) to verify the admin-member path.
 		pb.Title = "Admin Allowed Edit"
-		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
 		require.NoError(t, err)
 
-		// Verify the title was actually persisted
-		updated, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		updated, err := e.PlaybooksClient2.Playbooks.Get(context.Background(), playbookID)
 		require.NoError(t, err)
 		assert.Equal(t, "Admin Allowed Edit", updated.Title)
 	})
 
 	t.Run("system admin PUT /playbooks/{id} returns 200", func(t *testing.T) {
-		// Fetch the playbook
 		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
 		require.NoError(t, err)
 
-		// System admin always has access
 		pb.Title = "System Admin Edit"
 		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
 		require.NoError(t, err)
@@ -2031,8 +2029,7 @@ func TestAdminOnlyEdit_Import(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	// Craft a minimal valid import payload with admin_only_edit enabled.
-	// version must match app.CurrentPlaybookExportVersion (1).
+	// version must match app.CurrentPlaybookExportVersion.
 	payload := []byte(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":1}`)
 
 	t.Run("regular user importing AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
@@ -2093,6 +2090,23 @@ func TestPropertyFieldValidation(t *testing.T) {
 			Type: "text",
 		})
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("UpdatePropertyField with non-existent fieldID returns 404", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, model.NewId(), client.PropertyFieldRequest{
+			Name: "Valid Name",
+			Type: "text",
+		})
+		requireErrorWithStatusCode(t, err, http.StatusNotFound)
+	})
+
+	t.Run("UpdatePropertyField with malformed fieldID returns 404", func(t *testing.T) {
+		// The router regex [A-Za-z0-9]+ rejects IDs containing hyphens before reaching the handler.
+		_, err := e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, "not-a-valid-id", client.PropertyFieldRequest{
+			Name: "Valid Name",
+			Type: "text",
+		})
+		requireErrorWithStatusCode(t, err, http.StatusNotFound)
 	})
 
 }

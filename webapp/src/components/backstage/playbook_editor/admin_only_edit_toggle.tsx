@@ -10,19 +10,14 @@ import {Playbook} from 'src/types/playbook';
 
 type Props = {
     playbook: Playbook;
-    isAdmin: boolean;
     onChange: (update: Partial<Playbook>) => void;
 };
 
-const AdminOnlyEditToggle = ({playbook, isAdmin, onChange}: Props) => {
+const AdminOnlyEditToggle = ({playbook, onChange}: Props) => {
     const intl = useIntl();
 
-    if (!isAdmin) {
-        return null;
-    }
-
     return (
-        <div>
+        <>
             <Toggle
                 isChecked={playbook.admin_only_edit}
                 onChange={() => onChange({admin_only_edit: !playbook.admin_only_edit})}
@@ -34,11 +29,11 @@ const AdminOnlyEditToggle = ({playbook, isAdmin, onChange}: Props) => {
             </Toggle>
             <HelpText>
                 {intl.formatMessage({
-                    defaultMessage: 'When enabled, only admins can edit this playbook.',
+                    defaultMessage: 'Members without admin role will have read-only access.',
                     id: 'playbooks.admin_only_edit_toggle.help_text',
                 })}
             </HelpText>
-        </div>
+        </>
     );
 };
 
