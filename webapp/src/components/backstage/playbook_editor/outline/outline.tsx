@@ -85,7 +85,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 },
             );
         }
-    }, [archived, restPlaybook]);
+    }, [archived, restPlaybook, refetch]);
 
     const toggleRetrospective = () => {
         if (archived || !retrospectiveAccess) {

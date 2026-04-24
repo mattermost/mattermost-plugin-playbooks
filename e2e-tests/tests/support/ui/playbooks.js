@@ -562,7 +562,10 @@ Cypress.Commands.add('playbooksGetPropertyFieldRow', (index) => {
 Cypress.Commands.add('playbooksGetRunPropertyRow', (propertyName) => {
     return cy.findByTestId('run-properties-section').
         findAllByTestId('run-property-row').
-        filter(`:has([data-testid="property-label"]:contains("${propertyName}"))`);
+        filter((_, row) => {
+            const label = row.querySelector('[data-testid="property-label"]');
+            return label?.textContent?.trim() === propertyName;
+        });
 });
 
 /**
@@ -801,6 +804,7 @@ Cypress.Commands.add('playbooksFinishRunViaRHS', (teamName, run) => {
     cy.playbooksVisitRunChannel(teamName, run);
     cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
     cy.playbooksConfirmFinishModal();
+    cy.findByTestId('rhs-finish-section').should('not.exist');
 });
 
 /**

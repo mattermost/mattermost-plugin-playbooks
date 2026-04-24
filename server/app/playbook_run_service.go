@@ -1508,9 +1508,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		unarchived := s.restoreChannelByID(playbookRunToRestore.ChannelID, logger)
 		playbookRunToRestore.AutoArchivedChannel = false
 		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToRestore); err != nil {
-			// Persist failed: re-archive only if we actually changed the channel state.
-			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore; re-archiving channel to stay in sync")
+			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
 			if unarchived {
+				logger.WithField("channel_id", playbookRunToRestore.ChannelID).Warn("re-archiving channel to stay in sync")
 				if !s.archiveChannelByID(playbookRunToRestore.ChannelID, logger) {
 					logger.WithField("channel_id", playbookRunToRestore.ChannelID).
 						Warn("channel re-archive rollback failed; channel is unarchived but AutoArchivedChannel=true in the database")

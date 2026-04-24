@@ -3113,13 +3113,13 @@ func TestAutoArchiveChannel_RunFinish(t *testing.T) {
 	})
 }
 
-// TestAutoArchiveChannel_RunRestore verifies that when a run with AutoArchivedChannel=true is
+// TestAutoArchiveChannel_RunRestore verifies that when a run with AutoArchiveChannel=true is
 // restored, the channel is un-archived.
 func TestAutoArchiveChannel_RunRestore(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("channel is unarchived after run restore when AutoArchivedChannel=true", func(t *testing.T) {
+	t.Run("channel is unarchived after run restore when AutoArchiveChannel=true", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "Auto Archive Restore Playbook",
 			TeamID: e.BasicTeam.Id,
@@ -3159,12 +3159,12 @@ func TestAutoArchiveChannel_RunRestore(t *testing.T) {
 		channel, _, err = e.ServerAdminClient.GetChannel(context.Background(), run.ChannelID, "")
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), channel.DeleteAt,
-			"channel must be unarchived (DeleteAt == 0) after restoring a run with AutoArchivedChannel=true")
+			"channel must be unarchived (DeleteAt == 0) after restoring a run with AutoArchiveChannel=true")
 
 		assertHasTimelineEvent(t, e.PlaybooksClient, run.ID, client.ChannelUnarchived)
 	})
 
-	t.Run("channel is not touched after run restore when AutoArchivedChannel=false", func(t *testing.T) {
+	t.Run("channel is not touched after run restore when AutoArchiveChannel=false", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "No Auto Archive Restore Playbook",
 			TeamID: e.BasicTeam.Id,
