@@ -3,8 +3,7 @@
 
 /* eslint-disable formatjs/no-literal-string-in-jsx */
 
-import React from 'react';
-import {act} from 'react';
+import React, {act} from 'react';
 import renderer from 'react-test-renderer';
 
 import {savePlaybook} from 'src/client';

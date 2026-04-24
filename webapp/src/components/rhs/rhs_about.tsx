@@ -54,6 +54,7 @@ const RHSAbout = (props: Props) => {
     const isSystemAdmin = useIsSystemAdmin();
     const isPlaybookAdmin = props.isPlaybookAdmin ?? false;
     const canChangeOwner = !props.ownerGroupOnlyActions || isOwner || isSystemAdmin || isPlaybookAdmin;
+
     // readOnly reflects the generic run-modify gate (non-participant, non-owner users).
     // System admins and playbook admins may need to hand off ownership even when they
     // are not participants, so the readOnly gate is bypassed for them here.

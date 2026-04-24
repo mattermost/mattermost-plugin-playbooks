@@ -309,6 +309,7 @@ Cypress.Commands.add('playbooksSetRunPropertyViaRHS', (propertyName, value) => {
 Cypress.Commands.add('playbooksConfirmModal', () => {
     cy.get('#confirmModal').should('be.visible');
     cy.get('#confirmModal').find('#confirmModalButton').click();
+
     // Wait for dismissal so callers don't race a still-open modal on the next action.
     cy.get('#confirmModal').should('not.exist');
 });
