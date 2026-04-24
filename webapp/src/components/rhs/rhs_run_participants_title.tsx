@@ -28,8 +28,8 @@ const RHSRunParticipantsTitle = (props: Props) => {
             </RHSTitleButton>
 
             <WithTooltip
-                title={formatMessage({defaultMessage: 'Manage participants list'})}
                 id='view-run-overview'
+                title={formatMessage({defaultMessage: 'Manage participants list'})}
             >
                 <RHSTitleText>
                     {formatMessage({defaultMessage: 'Participants'})}

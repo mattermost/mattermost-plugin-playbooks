@@ -59,8 +59,8 @@ const TextWithTooltipWhenEllipsis = (props: Props) => {
     if (showTooltip) {
         return (
             <WithTooltip
-                title={props.text}
                 id={`${props.id}_name`}
+                title={props.text}
             >
                 {text}
             </WithTooltip>

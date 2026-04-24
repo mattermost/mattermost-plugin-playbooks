@@ -115,8 +115,8 @@ export const DueDateHoverMenuButton = ({
         hoverMenuButton
     ) : (
         <WithTooltip
-            title={toolTip}
             id='due-date-tooltip'
+            title={toolTip}
         >
             {hoverMenuButton}
         </WithTooltip>
@@ -236,8 +236,8 @@ export const DueDateButton = ({
     if (date && mode === Mode.DateTimeValue && !props.editable) {
         dueDateButton = (
             <WithTooltip
-                title={dueDateToolTip}
                 id='due-date-tooltip'
+                title={dueDateToolTip}
             >
                 {dueDateButton}
             </WithTooltip>
@@ -249,8 +249,8 @@ export const DueDateButton = ({
         const tooltipText = mode === Mode.DurationValue ? addTimeFrameToolTip : dueDatePlaceholderToolTip;
         dueDateButton = (
             <WithTooltip
-                title={tooltipText}
                 id='due-date-placeholder-tooltip'
+                title={tooltipText}
             >
                 {dueDateButton}
             </WithTooltip>

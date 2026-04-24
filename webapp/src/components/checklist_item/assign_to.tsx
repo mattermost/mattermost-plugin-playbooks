@@ -120,8 +120,8 @@ const AssignTo = (props: AssignedToProps) => {
     if (props.isEditing && !props.assignee_id) {
         assignToButton = (
             <WithTooltip
-                title={formatMessage({defaultMessage: 'Assignee'})}
                 id='assignee-tooltip'
+                title={formatMessage({defaultMessage: 'Assignee'})}
             >
                 {assignToButton}
             </WithTooltip>

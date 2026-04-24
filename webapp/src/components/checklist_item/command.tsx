@@ -139,8 +139,8 @@ const Command = (props: CommandProps) => {
         commandButton = (
             <div>
                 <WithTooltip
-                    title={tooltipText}
                     id='command-tooltip'
+                    title={tooltipText}
                 >
                     {commandButton}
                 </WithTooltip>

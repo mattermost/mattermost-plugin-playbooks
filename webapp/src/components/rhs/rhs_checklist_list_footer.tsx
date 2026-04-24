@@ -66,8 +66,8 @@ const RHSFooter = ({
                     <ParticipateText>{formatMessage({defaultMessage: 'Join to make changes or interact'})}</ParticipateText>
                     <ParticipateRightWrapper>
                         <WithTooltip
-                            title={formatMessage({defaultMessage: 'Join as a participant'})}
                             id='participate-tooltip'
+                            title={formatMessage({defaultMessage: 'Join as a participant'})}
                         >
                             <ParticipateButton onClick={showParticipateConfirm}>
                                 <AccountPlusOutlineIcon size={16}/>
@@ -142,8 +142,8 @@ const RHSFooter = ({
                             </ResumeButton>
                         ) : (
                             <WithTooltip
-                                title={playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})}
                                 id='resume-disabled-tooltip'
+                                title={playbookRun.type === PlaybookRunType.ChannelChecklist ? formatMessage({defaultMessage: 'Join as a participant to resume'}) : formatMessage({defaultMessage: 'Join as a participant to restart'})}
                             >
                                 <ResumeButtonWrapper>
                                     <ResumeButton

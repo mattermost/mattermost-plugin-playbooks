@@ -56,11 +56,11 @@ const RHSAboutTitle = (props: Props) => {
             {showPlaybookChip && (
                 <PlaybookChipContainer>
                     <WithTooltip
+                        id={`playbook-chip-${props.playbookRun.id}`}
                         title={formatMessage(
                             {defaultMessage: 'Created from {playbook} playbook'},
                             {playbook: playbookName}
                         )}
-                        id={`playbook-chip-${props.playbookRun.id}`}
                     >
                         <PlaybookChip
                             onClick={handlePlaybookChipClick}

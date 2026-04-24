@@ -111,8 +111,8 @@ const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
         <Dropdown>
             <>
                 <WithTooltip
-                    title={formatMessage({defaultMessage: 'Browse or create Playbooks and Runs'})}
                     id='create_playbook_dropdown_tooltip'
+                    title={formatMessage({defaultMessage: 'Browse or create Playbooks and Runs'})}
                 >
                     <Button
                         aria-label={formatMessage({defaultMessage: 'Create Playbook Dropdown'})}

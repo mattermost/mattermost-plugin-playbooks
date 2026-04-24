@@ -43,8 +43,8 @@ const RHSRunDetailsTitle = (props: Props) => {
     return (
         <RHSTitleContainer>
             <WithTooltip
-                title={formatMessage({defaultMessage: 'Back to checklists'})}
                 id='back-to-checklists'
+                title={formatMessage({defaultMessage: 'Back to checklists'})}
             >
                 <RHSTitleButton
                     onClick={props.onBackClick}
@@ -55,8 +55,8 @@ const RHSRunDetailsTitle = (props: Props) => {
             </WithTooltip>
 
             <WithTooltip
-                title={formatMessage({defaultMessage: 'Go to overview'})}
                 id='view-run-details'
+                title={formatMessage({defaultMessage: 'Go to overview'})}
             >
                 <RHSTitleLink
                     data-testid='rhs-title'

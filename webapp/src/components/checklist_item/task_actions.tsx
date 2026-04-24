@@ -59,8 +59,8 @@ const TaskActions = (props: TaskActionsProps) => {
     if (!hasEnabledActions) {
         taskActionsButton = (
             <WithTooltip
-                title={tooltipText}
                 id='task-actions-tooltip'
+                title={tooltipText}
             >
                 {taskActionsButton}
             </WithTooltip>
