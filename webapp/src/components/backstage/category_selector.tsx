@@ -3,11 +3,13 @@
 
 import React from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
-import {useSelector} from 'react-redux';
+
 import {makeGetCategoriesForTeam} from 'mattermost-redux/selectors/entities/channel_categories';
 
 import {ChannelCategory} from '@mattermost/types/channel_categories';
 import {GlobalState} from '@mattermost/types/store';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {StyledCreatable} from './styles';
 
@@ -28,7 +30,7 @@ const getCategoriesForTeam = makeGetCategoriesForTeam();
 const getMyCategories = (state: GlobalState) => getCategoriesForTeam(state, state.entities.teams.currentTeamId);
 
 const CategorySelector = (props: Props & { className?: string }) => {
-    const selectableCategories = useSelector(getMyCategories);
+    const selectableCategories = useAppSelector(getMyCategories);
 
     const options = React.useMemo(() => {
         return selectableCategories

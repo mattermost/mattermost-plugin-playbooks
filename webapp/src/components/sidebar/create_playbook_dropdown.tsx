@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -13,6 +13,8 @@ import {
     PlayBoxMultipleOutlineIcon,
     PlusIcon,
 } from '@mattermost/compass-icons/components';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {displayPlaybookCreateModal} from 'src/actions';
 import {useImportPlaybook} from 'src/components/backstage/import_playbook';
@@ -32,8 +34,8 @@ interface CreatePlaybookDropdownProps {
 
 const CreatePlaybookDropdown = (props: CreatePlaybookDropdownProps) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const dispatch = useAppDispatch();
+    const currentTeamId = useAppSelector(getCurrentTeamId);
     const teamId = props.team_id || currentTeamId;
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
 

@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import styled from 'styled-components';
 import {DateTime} from 'luxon';
@@ -14,6 +14,8 @@ import {
     FlagCheckeredIcon,
     FlagOutlineIcon,
 } from '@mattermost/compass-icons/components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -50,7 +52,7 @@ const RHSFooter = ({
     onBackClick,
 }: RHSFooterProps) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     // Only show footers in RHS
     if (parentContainer !== ChecklistParent.RHS || !playbookRun) {

@@ -4,7 +4,8 @@
 import React, {useCallback, useState} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {PrimaryButton, PrimaryButtonDestructive, TertiaryButton} from 'src/components/assets/buttons';
 import {modals} from 'src/webapp_globals';
@@ -330,7 +331,7 @@ interface ConfirmModalOptions {
  * };
  */
 export const useConfirmModal = () => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     return useCallback((options: ConfirmModalOptions) => {
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({

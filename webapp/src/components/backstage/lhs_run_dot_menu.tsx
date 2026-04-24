@@ -4,8 +4,10 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 import {DotsVerticalIcon} from '@mattermost/compass-icons/components';
-import {useSelector} from 'react-redux';
+
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {followPlaybookRun, unfollowPlaybookRun} from 'src/client';
 import DotMenu from 'src/components/dot_menu';
@@ -38,7 +40,7 @@ export const LHSRunDotMenu = ({playbookRunId, isFavorite, ownerUserId, participa
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
     const setRunFavorite = useSetRunFavorite(playbookRunId);
-    const currentUser = useSelector(getCurrentUser);
+    const currentUser = useAppSelector(getCurrentUser);
     const refreshLHS = useLHSRefresh();
 
     const followState = useRunFollowers(followerIDs);

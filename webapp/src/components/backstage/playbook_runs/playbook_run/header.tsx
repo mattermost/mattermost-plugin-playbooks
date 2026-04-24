@@ -11,9 +11,10 @@ import {
 } from '@mattermost/compass-icons/components';
 import React from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
 
 import styled, {css} from 'styled-components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {showRunActionsModal} from 'src/actions';
 import {getSiteUrl} from 'src/client';
@@ -44,7 +45,7 @@ interface Props {
 }
 
 export const RunHeader = ({playbookRun, playbookRunMetadata, isFollowing, hasPermanentViewerAccess, role, onInfoClick, onTimelineClick, rhsSection}: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const updateRun = useUpdateRun(playbookRun.id);
     const [isFavoriteRun, toggleFavorite] = useFavoriteRun(playbookRun.team_id, playbookRun.id);

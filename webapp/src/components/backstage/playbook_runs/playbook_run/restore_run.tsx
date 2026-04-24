@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -13,7 +14,7 @@ import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/con
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
 
 export const useOnRestoreRun = (playbookRun: PlaybookRun, location: string = 'backstage') => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const refreshLHS = useLHSRefresh();
     const isChannelChecklist = playbookRun?.type === PlaybookRunType.ChannelChecklist;

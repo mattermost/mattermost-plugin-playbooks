@@ -7,9 +7,9 @@
   "dependencies": {
     "@apollo/client": "3.7.3",
     "@floating-ui/react": "0.26.28",
-    "@mattermost/client": "10.9.0",
+    "@mattermost/client": "11.5.0",
     "@mattermost/compass-icons": "0.1.32",
-    "@mattermost/types": "10.9.0",
+    "@mattermost/types": "11.5.0",
     "@mdi/js": "^6.5.95",
     "@mdi/react": "1.5.0",
     "@tanstack/react-table": "8.10.7",
@@ -24,7 +24,7 @@
     "js-trim-multiline-string": "^1.0.8",
     "lodash": "4.17.21",
     "luxon": "3.6.1",
-    "mattermost-redux": "10.9.0",
+    "mattermost-redux": "11.5.0",
     "parse-duration": "2.1.4",
     "qs": "6.14.1",
     "react": "^18.2.0",
@@ -34,12 +34,12 @@
     "react-infinite-scroll-component": "^6.1.0",
     "react-infinite-scroller": "1.2.6",
     "react-intl": "7.1.11",
-    "react-redux": "7.2.6",
+    "react-redux": "9.2.0",
     "react-router-dom": "5.3.4",
     "react-router-hash-link": "2.4.3",
     "react-select": "4.3.1",
     "react-use": "17.3.2",
-    "redux": "4.1.2",
+    "redux": "5.0.1",
     "styled-components": "5.3.7",
     "typescript": "5.6.3"
   },
@@ -65,12 +65,11 @@
     "@types/react-custom-scrollbars": "4.0.10",
     "@types/react-dom": "^18.2.0",
     "@types/react-infinite-scroller": "1.2.3",
-    "@types/react-redux": "7.1.21",
     "@types/react-router-dom": "5.3.3",
     "@types/react-router-hash-link": "2.4.5",
     "@types/react-select": "3.1.2",
     "@types/react-test-renderer": "18.0.0",
-    "@types/redux-mock-store": "1.0.3",
+    "@types/redux-mock-store": "1.5.0",
     "@types/shallow-equals": "1.0.0",
     "@types/styled-components": "5.1.26",
     "@typescript-eslint/eslint-plugin": "8.32.0",
@@ -108,7 +107,7 @@
     "react-refresh": "0.11.0",
     "react-test-renderer": "18.2.0",
     "redux-mock-store": "1.5.4",
-    "redux-thunk": "2.4.1",
+    "redux-thunk": "3.1.0",
     "sass": "1.46.0",
     "sass-loader": "12.4.0",
     "style-loader": "3.3.1",
@@ -121,6 +120,12 @@
     "webpack-dev-server": "4.15.1"
   },
   "overrides": {
+    "@types/redux-mock-store": {
+      "redux": "$redux"
+    },
+    "react-beautiful-dnd": {
+      "react-redux": "$react-redux"
+    },
     "react-custom-scrollbars": {
       "react": "18.2.0",
       "react-dom": "18.2.0"

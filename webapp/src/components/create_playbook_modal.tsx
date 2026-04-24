@@ -4,11 +4,12 @@
 import React, {ComponentProps, useState} from 'react';
 
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {useHasTeamPermission, usePlaybooksRouting} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
@@ -50,7 +51,7 @@ const Body = styled.div`
 const PlaybookCreateModal = ({startingName, startingTemplate, startingDescription, startingPublic, ...modalProps}: PlaybookCreateModalProps) => {
     const {formatMessage} = useIntl();
     const [name, setName] = useState(startingName);
-    const teamId = useSelector(getCurrentTeamId);
+    const teamId = useAppSelector(getCurrentTeamId);
     const [template, setTemplate] = useState(startingTemplate);
     const [description, setDescription] = useState(startingDescription);
     const [makePublic, setMakePublic] = useState(startingPublic ?? true);

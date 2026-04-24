@@ -3,13 +3,12 @@
 
 import React, {useCallback, useEffect, useState} from 'react';
 
-import {useDispatch, useSelector} from 'react-redux';
-
 import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
-import {GlobalState} from '@mattermost/types/store';
 
 import {savePreferences as storeSavePreferences} from 'mattermost-redux/actions/preferences';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {FINISHED, SKIPPED, TTCategoriesMapToSteps} from 'src/components/tutorial/tours';
 
@@ -52,9 +51,9 @@ const useTutorialTourTipManager = ({
     const tourSteps = TTCategoriesMapToSteps[tutorialCategory];
 
     // Function to save the tutorial step in redux store start here which needs to be modified
-    const dispatch = useDispatch();
-    const currentUserId = useSelector(getCurrentUserId);
-    const currentStep = useSelector((state: GlobalState) => getInt(state, tutorialCategory, currentUserId, 0));
+    const dispatch = useAppDispatch();
+    const currentUserId = useAppSelector(getCurrentUserId);
+    const currentStep = useAppSelector((state) => getInt(state, tutorialCategory, currentUserId, 0));
     const savePreferences = useCallback(
         (userId: string, stepValue: string) => {
             const preferences = [
@@ -179,9 +178,9 @@ const useTutorialTourTipManager = ({
 export default useTutorialTourTipManager;
 
 export const useTutorialStepper = (category: string) => {
-    const currentUserId = useSelector(getCurrentUserId);
-    const currentStep = useSelector((state: GlobalState) => get(state, category, currentUserId, ''));
-    const dispatch = useDispatch();
+    const currentUserId = useAppSelector(getCurrentUserId);
+    const currentStep = useAppSelector((state) => get(state, category, currentUserId, ''));
+    const dispatch = useAppDispatch();
 
     return {
         currentStep,
