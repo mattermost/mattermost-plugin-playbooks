@@ -57,7 +57,7 @@ describe('TaskProgress', () => {
         expect(JSON.stringify(tree)).toContain('40/40');
     });
 
-    it('shows nothing or dash when task_total is 0', () => {
+    it('renders null when task_total is 0', () => {
         const component = renderer.create(
             <TaskProgress
                 taskTotal={0}
@@ -66,9 +66,7 @@ describe('TaskProgress', () => {
         );
         const tree = component.toJSON();
 
-        // When task_total is 0, the component renders null or a dash placeholder
-        const rendered = tree === null || JSON.stringify(tree).includes('—') || JSON.stringify(tree).includes('-');
-        expect(rendered).toBe(true);
+        expect(tree).toBeNull();
     });
 
     it('renders null when task_total is undefined', () => {

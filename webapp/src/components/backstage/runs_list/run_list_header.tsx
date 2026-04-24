@@ -20,41 +20,6 @@ const PlaybookRunListHeader = styled.div`
     line-height: 36px;
 `;
 
-const HeaderRow = styled.div`
-    display: flex;
-    align-items: center;
-`;
-
-const HeaderFlexCol = styled.div`
-    padding: 0 6px;
-    min-width: 0;
-`;
-
-const StatusCol = styled.div`
-    flex: 0 0 150px;
-    max-width: 150px;
-    padding: 0 6px;
-`;
-
-const DurationCol = styled.div`
-    flex: 0 0 150px;
-    max-width: 150px;
-    padding: 0 6px;
-`;
-
-const TasksCol = styled.div`
-    flex: 0 0 150px;
-    max-width: 150px;
-    min-width: 120px;
-    padding: 0 6px;
-`;
-
-const ActionsCol = styled.div`
-    flex: 0 0 100px;
-    max-width: 100px;
-    padding: 0 6px;
-`;
-
 interface Props {
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
@@ -85,41 +50,41 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
     }
     return (
         <PlaybookRunListHeader>
-            <HeaderRow>
-                <HeaderFlexCol style={{flex: 4}}>
+            <div className='row'>
+                <div className='col-sm-3'>
                     <SortableColHeader
                         name={formatMessage({defaultMessage: 'Name'})}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'name' : false}
                         onClick={() => colHeaderClicked('name')}
                     />
-                </HeaderFlexCol>
-                <StatusCol>
+                </div>
+                <div className='col-sm-2'>
                     <SortableColHeader
                         name={formatMessage({defaultMessage: 'Status / Last update'})}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'last_status_update_at' : false}
                         onClick={() => colHeaderClicked('last_status_update_at')}
                     />
-                </StatusCol>
-                <DurationCol>
+                </div>
+                <div className='col-sm-2'>
                     <SortableColHeader
                         name={formatMessage({defaultMessage: 'Duration / Started on'})}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'create_at' : false}
                         onClick={() => colHeaderClicked('create_at')}
                     />
-                </DurationCol>
-                <TasksCol>
+                </div>
+                <div className='col-sm-2'>
                     {formatMessage({defaultMessage: 'Tasks'})}
-                </TasksCol>
-                <HeaderFlexCol style={{flex: 2}}>
+                </div>
+                <div className='col-sm-2'>
                     {formatMessage({defaultMessage: 'Owner / Participants'})}
-                </HeaderFlexCol>
-                <ActionsCol>
+                </div>
+                <div className='col-sm-1'>
                     {formatMessage({defaultMessage: 'Actions'})}
-                </ActionsCol>
-            </HeaderRow>
+                </div>
+            </div>
         </PlaybookRunListHeader>
     );
 };

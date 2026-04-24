@@ -212,13 +212,12 @@ type PlaybookRun struct {
 	// PropertyValues is the list of property values for this run, included when requested
 	PropertyValues []PropertyValue `json:"property_values,omitempty"`
 
-	// TaskTotal is the total number of tasks across all checklists (computed, not stored).
-	TaskTotal int `json:"task_total"`
-	// TaskCompleted is the number of completed tasks across all checklists (computed, not stored).
+	// TaskTotal and TaskCompleted are computed from Checklists; not persisted. Hidden items are
+	// excluded; Skipped items count as completed. See ComputeTaskProgress.
+	TaskTotal     int `json:"task_total"`
 	TaskCompleted int `json:"task_completed"`
 }
 
-// ComputeTaskProgress computes TaskTotal and TaskCompleted from the run's Checklists.
 func (r *PlaybookRun) ComputeTaskProgress() {
 	total, completed := 0, 0
 	for _, cl := range r.Checklists {

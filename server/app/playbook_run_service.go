@@ -79,6 +79,8 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunObjectUpdatedWS(playbookRunID st
 			logger.WithError(err).Error("failed to get current state of playbook run")
 			return
 		}
+	} else {
+		currentRun.ComputeTaskProgress()
 	}
 
 	// Pre-calculate changed fields for incremental updates

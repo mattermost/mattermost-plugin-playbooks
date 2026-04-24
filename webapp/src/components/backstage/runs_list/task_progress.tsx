@@ -24,7 +24,7 @@ const TaskProgress = ({taskTotal, taskCompleted}: Props) => {
         <Container data-testid='task-progress-indicator'>
             <Label>
                 {formatMessage(
-                    {id: 'playbooks.task_progress.label', defaultMessage: '{completed}/{total} tasks'},
+                    {id: 'playbooks.task_progress.label', defaultMessage: '{completed, number}/{total, number} tasks'},
                     {completed, total: taskTotal},
                 )}
             </Label>

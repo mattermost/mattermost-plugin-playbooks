@@ -81,7 +81,6 @@ const RunList = ({
     return (
         <PlaybookRunList
             id='playbookRunList'
-            data-testid='playbookRunList'
             className='PlaybookRunList'
         >
             <Filters

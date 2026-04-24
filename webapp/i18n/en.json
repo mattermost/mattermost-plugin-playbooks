@@ -557,7 +557,7 @@
   "pKLw8O": "Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.",
   "pLfT7M": "Create checklist",
   "pjt3qA": "New checklist",
-  "playbooks.task_progress.label": "{completed}/{total} tasks",
+  "playbooks.task_progress.label": "{completed, number}/{total, number} tasks",
   "prs4kX": "When a message with specific keywords is posted",
   "pzTOmv": "Followers",
   "q/Qo8l": "Private playbooks are only available in Mattermost Enterprise",
