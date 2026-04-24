@@ -876,6 +876,8 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRun *PlaybookRun, use
 		CreatorUserID: userID,
 	}
 
+	playbookRun.ComputeTaskProgress()
+
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
 		originalRun = playbookRun.Clone()

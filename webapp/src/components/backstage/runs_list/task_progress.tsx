@@ -18,17 +18,22 @@ const TaskProgress = ({taskTotal, taskCompleted}: Props) => {
     }
 
     const completed = taskCompleted ?? 0;
-    const pct = Math.round((completed / taskTotal) * 100);
+    const pct = Math.round(Math.min((completed / taskTotal) * 100, 100));
 
     return (
         <Container data-testid='task-progress-indicator'>
             <Label>
                 {formatMessage(
-                    {id: 'playbooks.task_progress.label', defaultMessage: '{completed, number}/{total, number} tasks'},
+                    {id: 'pqR8tZ', defaultMessage: '{completed, number}/{total, number} tasks'},
                     {completed, total: taskTotal},
                 )}
             </Label>
-            <Bar>
+            <Bar
+                role='progressbar'
+                aria-valuenow={pct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+            >
                 <Fill style={{width: `${pct}%`}}/>
             </Bar>
         </Container>

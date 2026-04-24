@@ -67,11 +67,11 @@ export interface PlaybookRun {
     /** Property values for this run (only included when requested) */
     property_values?: PropertyValue[];
 
-    /** Total number of tasks across all checklists (computed server-side, hidden tasks excluded) */
-    task_total: number;
+    /** Computed server-side; hidden items excluded. */
+    task_total?: number;
 
-    /** Number of completed (closed or skipped) tasks across all checklists (computed server-side) */
-    task_completed: number;
+    /** Computed server-side; closed or skipped counts as completed. */
+    task_completed?: number;
 }
 
 export interface PlaybookRunConnection extends Partial<PlaybookRun> {

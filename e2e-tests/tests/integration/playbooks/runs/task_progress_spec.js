@@ -75,100 +75,108 @@ describe('runs > task progress', {testIsolation: true}, () => {
     });
 
     it('shows 0/4 progress in runs list when no tasks completed', () => {
-        // # Visit the runs list
-        cy.visit('/playbooks/runs');
+        cy.then(() => {
+            // # Visit the runs list
+            cy.visit('/playbooks/runs');
 
-        // # Find the run in the list and assert task progress
-        cy.playbooksGetRunListRow(testRun.name).within(() => {
-            // * Assert progress is visible before any action
-            cy.findByTestId('task-progress-indicator').should('be.visible').and('contain', `0/${TOTAL_TASKS}`);
-        });
+            // # Find the run in the list and assert task progress
+            cy.playbooksGetRunListRow(testRun.name).within(() => {
+                // * Assert progress is visible before any action
+                cy.findByTestId('task-progress-indicator').should('be.visible').and('contain', `0/${TOTAL_TASKS}`);
+            });
 
-        // * Assert backend state: all items are uncompleted
-        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-            const items = run.checklists[0].items;
-            expect(items[0].state).to.equal('');
-            expect(items[1].state).to.equal('');
-            expect(items[2].state).to.equal('');
-            expect(items[3].state).to.equal('');
+            // * Assert backend state: all items are uncompleted
+            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                const items = run.checklists[0].items;
+                expect(items[0].state).to.equal('');
+                expect(items[1].state).to.equal('');
+                expect(items[2].state).to.equal('');
+                expect(items[3].state).to.equal('');
+            });
         });
     });
 
     it('shows 2/4 progress after completing 2 tasks', () => {
-        // # Complete tasks 0 and 1 via UI
-        cy.playbooksVisitRun(testRun.id);
-        cy.playbooksCompleteTaskAtIndex(0);
-        cy.playbooksCompleteTaskAtIndex(1);
+        cy.then(() => {
+            // # Complete tasks 0 and 1 via UI
+            cy.playbooksVisitRun(testRun.id);
+            cy.playbooksCompleteTaskAtIndex(0);
+            cy.playbooksCompleteTaskAtIndex(1);
 
-        // # Visit the runs list
-        cy.visit('/playbooks/runs');
+            // # Visit the runs list
+            cy.visit('/playbooks/runs');
 
-        // # Find the run in the list and assert task progress
-        cy.playbooksGetRunListRow(testRun.name).within(() => {
-            // * Assert task progress shows 2/4
-            cy.findByTestId('task-progress-indicator').should('contain', `2/${TOTAL_TASKS}`);
-        });
+            // # Find the run in the list and assert task progress
+            cy.playbooksGetRunListRow(testRun.name).within(() => {
+                // * Assert task progress shows 2/4
+                cy.findByTestId('task-progress-indicator').should('contain', `2/${TOTAL_TASKS}`);
+            });
 
-        // * Assert backend state: items 0 and 1 are closed, items 2 and 3 are open
-        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-            const items = run.checklists[0].items;
-            expect(items[0].state).to.equal('closed');
-            expect(items[1].state).to.equal('closed');
-            expect(items[2].state).to.equal('');
-            expect(items[3].state).to.equal('');
+            // * Assert backend state: items 0 and 1 are closed, items 2 and 3 are open
+            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                const items = run.checklists[0].items;
+                expect(items[0].state).to.equal('closed');
+                expect(items[1].state).to.equal('closed');
+                expect(items[2].state).to.equal('');
+                expect(items[3].state).to.equal('');
+            });
         });
     });
 
     it('shows 3/4 progress after skipping a task (skipped counts as completed)', () => {
-        // # Complete tasks 0 and 1 via UI
-        cy.playbooksVisitRun(testRun.id);
-        cy.playbooksCompleteTaskAtIndex(0);
-        cy.playbooksCompleteTaskAtIndex(1);
+        cy.then(() => {
+            // # Complete tasks 0 and 1 via UI
+            cy.playbooksVisitRun(testRun.id);
+            cy.playbooksCompleteTaskAtIndex(0);
+            cy.playbooksCompleteTaskAtIndex(1);
 
-        // # Skip task 2 via API — no UI skip command available
-        cy.apiSetChecklistItemState(testRun.id, 0, 2, 'skipped');
+            // # Skip task 2 via API — no UI skip command available
+            cy.apiSetChecklistItemState(testRun.id, 0, 2, 'skipped');
 
-        // # Visit the runs list
-        cy.visit('/playbooks/runs');
+            // # Visit the runs list
+            cy.visit('/playbooks/runs');
 
-        // # Find the run in the list and assert task progress
-        cy.playbooksGetRunListRow(testRun.name).within(() => {
-            // * Assert task progress shows 3/4 (skipped counts toward completion)
-            cy.findByTestId('task-progress-indicator').should('contain', `3/${TOTAL_TASKS}`);
-        });
+            // # Find the run in the list and assert task progress
+            cy.playbooksGetRunListRow(testRun.name).within(() => {
+                // * Assert task progress shows 3/4 (skipped counts toward completion)
+                cy.findByTestId('task-progress-indicator').should('contain', `3/${TOTAL_TASKS}`);
+            });
 
-        // * Assert backend state: items 0 and 1 are closed, item 2 is skipped, item 3 is open
-        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-            const items = run.checklists[0].items;
-            expect(items[2].state).to.equal('skipped');
-            expect(items[3].state).to.equal('');
+            // * Assert backend state: items 0 and 1 are closed, item 2 is skipped, item 3 is open
+            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                const items = run.checklists[0].items;
+                expect(items[2].state).to.equal('skipped');
+                expect(items[3].state).to.equal('');
+            });
         });
     });
 
     it('shows 4/4 progress after all tasks are completed', () => {
-        // # Complete all 4 tasks via UI
-        cy.playbooksVisitRun(testRun.id);
-        cy.playbooksCompleteTaskAtIndex(0);
-        cy.playbooksCompleteTaskAtIndex(1);
-        cy.playbooksCompleteTaskAtIndex(2);
-        cy.playbooksCompleteTaskAtIndex(3);
+        cy.then(() => {
+            // # Complete all 4 tasks via UI
+            cy.playbooksVisitRun(testRun.id);
+            cy.playbooksCompleteTaskAtIndex(0);
+            cy.playbooksCompleteTaskAtIndex(1);
+            cy.playbooksCompleteTaskAtIndex(2);
+            cy.playbooksCompleteTaskAtIndex(3);
 
-        // # Visit the runs list
-        cy.visit('/playbooks/runs');
+            // # Visit the runs list
+            cy.visit('/playbooks/runs');
 
-        // # Find the run in the list and assert task progress
-        cy.playbooksGetRunListRow(testRun.name).within(() => {
-            // * Assert task progress shows 4/4
-            cy.findByTestId('task-progress-indicator').should('contain', `${TOTAL_TASKS}/${TOTAL_TASKS}`);
-        });
+            // # Find the run in the list and assert task progress
+            cy.playbooksGetRunListRow(testRun.name).within(() => {
+                // * Assert task progress shows 4/4
+                cy.findByTestId('task-progress-indicator').should('contain', `${TOTAL_TASKS}/${TOTAL_TASKS}`);
+            });
 
-        // * Assert backend state: all 4 items are closed
-        cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
-            const items = run.checklists[0].items;
-            expect(items[0].state).to.equal('closed');
-            expect(items[1].state).to.equal('closed');
-            expect(items[2].state).to.equal('closed');
-            expect(items[3].state).to.equal('closed');
+            // * Assert backend state: all 4 items are closed
+            cy.apiGetPlaybookRun(testRun.id).then(({body: run}) => {
+                const items = run.checklists[0].items;
+                expect(items[0].state).to.equal('closed');
+                expect(items[1].state).to.equal('closed');
+                expect(items[2].state).to.equal('closed');
+                expect(items[3].state).to.equal('closed');
+            });
         });
     });
 });
