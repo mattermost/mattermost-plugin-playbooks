@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {useIntl} from 'react-intl';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {hidePlaybookActionsModal} from 'src/actions';
 import {isPlaybookActionsModalVisible} from 'src/selectors';
@@ -20,8 +22,8 @@ interface Props {
 
 const PlaybookActionsModal = ({playbook, readOnly}: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
-    const show = useSelector(isPlaybookActionsModalVisible);
+    const dispatch = useAppDispatch();
+    const show = useAppSelector(isPlaybookActionsModalVisible);
     const updatePlaybook = useUpdatePlaybook(playbook.id);
 
     const [welcomeMessageEnabled, setWelcomeMessageEnabled] = useState(playbook.message_on_join_enabled);

@@ -2,13 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React, {ReactNode, ReactNodeArray} from 'react';
-import {useSelector} from 'react-redux';
 
-import {GlobalState} from '@mattermost/types/store';
 import {Team} from '@mattermost/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 
-import {ChannelNamesMap} from 'src/types/backstage';
+import {useAppSelector} from 'src/hooks/redux';
+
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
 
 interface Props {
@@ -19,7 +18,7 @@ interface Props {
 }
 
 const PostText = (props: Props) => {
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
 
     // @ts-ignore
     const {formatText, messageHtmlToComponent} = window.PostUtils;
