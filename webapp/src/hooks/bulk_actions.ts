@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
+import {DispatchFunc} from 'mattermost-redux/types/actions';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
@@ -37,7 +38,7 @@ export const useBulkActions = ({
     bulkEditMode,
     onExitBulkEdit,
 }: UseBulkActionsArgs) => {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<DispatchFunc>();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
 
