@@ -61,12 +61,9 @@ describe('AutoArchiveToggle', () => {
         );
         const tree = component.toJSON();
 
-        // Component wraps Toggle in a <div>, so tree.children[0] is the label (Toggle mock)
-        expect(tree).toBeTruthy();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            expect(label.props['data-checked']).toBe(false);
-        }
+        // tree is the label element (the Toggle mock)
+        expect(tree).not.toBeNull();
+        expect((tree as any)?.props?.['data-checked']).toBe(false);
     });
 
     it('renders toggle with auto_archive_channel=true', () => {
@@ -102,13 +99,12 @@ describe('AutoArchiveToggle', () => {
         );
         const tree = component.toJSON();
 
-        // Component uses a fragment, so toJSON() returns an array; first element is the Toggle label
+        // tree is the label element (the Toggle mock)
+        // tree.children[0] is the input element
         expect(tree).not.toBeNull();
-        if (Array.isArray(tree)) {
-            const label = tree[0] as any;
-            const input = label.children[0] as any;
-            input.props.onChange();
-        }
+        const label = tree as any;
+        const input = label?.children?.[0] as any;
+        input?.props?.onChange?.();
 
         expect(onChange).toHaveBeenCalledTimes(1);
         expect(onChange).toHaveBeenCalledWith({
@@ -233,10 +229,8 @@ describe('AutoArchiveToggle', () => {
         );
         const tree = component.toJSON();
 
+        // tree is the label element (the Toggle mock)
         expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            expect(label.props['data-disabled']).toBe(true);
-        }
+        expect((tree as any)?.props?.['data-disabled']).toBe(true);
     });
 });
