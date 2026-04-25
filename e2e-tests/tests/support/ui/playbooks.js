@@ -170,9 +170,9 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
         if (reminderQuery) {
             cy.get('#reminder_timer_datetime input').click({force: true}).realType(reminderQuery);
 
-            // Wait for the dropdown option to appear before pressing Enter.
-            cy.get('#reminder_timer_datetime').contains(reminderQuery);
-            cy.get('#reminder_timer_datetime input').realType('{enter}');
+            // Wait for the debounced option loader to fire and render the dynamic option.
+            cy.wait(TIMEOUTS.ONE_SEC);
+            cy.get('#reminder_timer_datetime input').type('{enter}');
         }
 
         // # Submit the dialog.
