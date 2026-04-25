@@ -302,6 +302,22 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 	addToSetmap(setmap, "NewChannelOnly", args.Updates.NewChannelOnly)
 
+	if args.Updates.NewChannelOnly != nil || args.Updates.ChannelMode != nil {
+		effectiveNewChannelOnly := currentPlaybook.NewChannelOnly
+		if args.Updates.NewChannelOnly != nil {
+			effectiveNewChannelOnly = *args.Updates.NewChannelOnly
+		}
+		effectiveChannelMode := currentPlaybook.ChannelMode
+		if args.Updates.ChannelMode != nil {
+			if err := effectiveChannelMode.UnmarshalText([]byte(*args.Updates.ChannelMode)); err != nil {
+				return "", errors.Wrap(err, "invalid channel_mode value")
+			}
+		}
+		if err := app.ValidateNewChannelOnlyMode(effectiveNewChannelOnly, effectiveChannelMode); err != nil {
+			return "", err
+		}
+	}
+
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {
 		app.CleanUpChecklists(*args.Updates.Checklists)
