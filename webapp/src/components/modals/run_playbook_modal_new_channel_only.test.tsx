@@ -29,8 +29,8 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('react-redux', () => ({
-    useSelector: jest.fn((selector: any) => {
+jest.mock('react-redux', () => {
+    const selectorFn = jest.fn((selector: any) => {
         if (selector.name === 'getCurrentUserId' || String(selector).includes('getCurrentUserId')) {
             return 'user-1';
         }
@@ -38,9 +38,12 @@ jest.mock('react-redux', () => ({
             return 'channel-1';
         }
         return null;
-    }),
-    useDispatch: () => jest.fn(),
-}));
+    });
+    return {
+        useSelector: Object.assign(selectorFn, {withTypes: () => selectorFn}),
+        useDispatch: Object.assign(() => jest.fn(), {withTypes: () => () => jest.fn()}),
+    };
+});
 
 jest.mock('src/graphql/hooks', () => ({
     usePlaybook: jest.fn(),

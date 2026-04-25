@@ -39,7 +39,8 @@ jest.mock('react-intl', () => {
 
 const mockDispatch = jest.fn();
 jest.mock('react-redux', () => ({
-    useDispatch: () => mockDispatch,
+    useDispatch: Object.assign(() => mockDispatch, {withTypes: () => () => mockDispatch}),
+    useSelector: Object.assign(jest.fn(), {withTypes: () => jest.fn()}),
 }));
 
 const mockOpenModal = jest.fn();
