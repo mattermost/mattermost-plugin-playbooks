@@ -56,7 +56,7 @@ describe('AdminOnlyEditToggle', () => {
             />,
         );
         const tree = component.toJSON() as any;
-        expect(tree.children[0].props['data-checked']).toBe(true);
+        expect(tree[0].props['data-checked']).toBe(true);
     });
 
     it('toggle is unchecked when admin_only_edit is false', () => {
@@ -67,7 +67,7 @@ describe('AdminOnlyEditToggle', () => {
             />,
         );
         const tree = component.toJSON() as any;
-        expect(tree.children[0].props['data-checked']).toBe(false);
+        expect(tree[0].props['data-checked']).toBe(false);
     });
 
     it('calls onChange with admin_only_edit: true when toggling on', () => {
@@ -80,7 +80,7 @@ describe('AdminOnlyEditToggle', () => {
         );
         const tree = component.toJSON() as any;
         act(() => {
-            tree.children[0].children[0].props.onChange();
+            tree[0].children[0].props.onChange();
         });
         expect(onChange).toHaveBeenCalledWith({admin_only_edit: true});
     });
@@ -95,7 +95,7 @@ describe('AdminOnlyEditToggle', () => {
         );
         const tree = component.toJSON() as any;
         act(() => {
-            tree.children[0].children[0].props.onChange();
+            tree[0].children[0].props.onChange();
         });
         expect(onChange).toHaveBeenCalledWith({admin_only_edit: false});
     });
