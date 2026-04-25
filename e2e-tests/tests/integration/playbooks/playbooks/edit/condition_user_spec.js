@@ -150,13 +150,10 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
 
             cy.findByText('Conditional Task').closest('[data-testid="checkbox-item-container"]').within(() => {
                 cy.get('input[type="checkbox"]').check();
+                cy.get('input[type="checkbox"]').should('be.checked');
             });
 
-            cy.wait(500);
-
             setPropertyValue('Priority', 'Low');
-
-            cy.wait(500);
 
             verifyTaskVisible('Conditional Task');
 
@@ -445,7 +442,7 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
             cy.findByText(value).click();
         });
 
-        cy.wait(500);
+        cy.get('.property-select__menu').should('not.exist');
     }
 
     function setTextPropertyValue(propertyName, value) {
@@ -462,7 +459,9 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
         });
         cy.realPress('Tab');
 
-        cy.wait(500);
+        cy.findByRole('complementary').within(() => {
+            cy.findByTestId(testId).find('input[type="text"]').should('not.exist');
+        });
     }
 
     function verifyTaskVisible(taskTitle) {
