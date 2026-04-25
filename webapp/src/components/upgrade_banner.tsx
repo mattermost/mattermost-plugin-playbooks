@@ -2,13 +2,15 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useSelector} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import General from 'mattermost-redux/constants/general';
 
 import {FormattedMessage} from 'react-intl';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import LoadingSpinner from 'src/components/assets/loading_spinner';
 import {isTeamEdition} from 'src/selectors';
@@ -118,12 +120,12 @@ interface Props {
 }
 
 const UpgradeBanner = (props: Props) => {
-    const isServerCloud = useSelector(isCloud);
+    const isServerCloud = useAppSelector(isCloud);
     const openContactSales = useOpenContactSales();
-    const currentUser = useSelector(getCurrentUser);
+    const currentUser = useAppSelector(getCurrentUser);
     const isCurrentUserAdmin = isSystemAdmin(currentUser.roles);
     const [actionState, setActionState] = useState(ActionState.Uninitialized);
-    const isServerTeamEdition = useSelector(isTeamEdition);
+    const isServerTeamEdition = useAppSelector(isTeamEdition);
     const openTrialFormModal = useOpenStartTrialFormModal();
 
     const endUserMainAction = async () => {

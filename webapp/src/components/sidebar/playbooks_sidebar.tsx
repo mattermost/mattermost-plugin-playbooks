@@ -3,11 +3,13 @@
 
 import React, {useEffect} from 'react';
 import styled from 'styled-components';
-import {useSelector} from 'react-redux';
+
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {useIntl} from 'react-intl';
 
 import {useQuery} from '@apollo/client';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {ReservedCategory, useReservedCategoryTitleMapper} from 'src/hooks';
 
@@ -233,7 +235,7 @@ const addViewAllsToGroups = (groups: SidebarGroup[]) => {
 };
 
 const PlaybooksSidebar = () => {
-    const teamID = useSelector(getCurrentTeamId);
+    const teamID = useAppSelector(getCurrentTeamId);
     const {groups, ready} = useLHSData(teamID);
 
     if (!ready) {

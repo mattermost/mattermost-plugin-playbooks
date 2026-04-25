@@ -4,9 +4,11 @@
 import React from 'react';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 import {CheckboxMultipleMarkedOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {closeBackstageRHS, openBackstageRHS} from 'src/actions';
 import {BackstageRHSSection, BackstageRHSViewMode} from 'src/types/backstage_rhs';
@@ -39,11 +41,11 @@ const UnreadBadge = styled.div<{$toggled: boolean}>`
 `;
 
 const GlobalHeaderRight = () => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
-    const isOpen = useSelector(backstageRHS.isOpen);
-    const section = useSelector(backstageRHS.section);
-    const hasOverdueTasks = useSelector(selectHasOverdueTasks);
+    const isOpen = useAppSelector(backstageRHS.isOpen);
+    const section = useAppSelector(backstageRHS.section);
+    const hasOverdueTasks = useAppSelector(selectHasOverdueTasks);
 
     const isTasksOpen = isOpen && section === BackstageRHSSection.TaskInbox;
 

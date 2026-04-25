@@ -3,15 +3,18 @@
 
 import React from 'react';
 import {Root, createRoot} from 'react-dom/client';
-import {Store, Unsubscribe} from 'redux';
+import {Unsubscribe} from 'redux';
+
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
+import {WebSocketEvents} from '@mattermost/client';
 import {GlobalState} from '@mattermost/types/store';
 import {Client4} from 'mattermost-redux/client';
-import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {General} from 'mattermost-redux/constants';
 import {FormattedMessage} from 'react-intl';
 import {ApolloClient, NormalizedCacheObject} from '@apollo/client';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+
+import {Store} from 'src/types/store';
 
 import appIcon from 'src/components/assets/app-bar-icon.png';
 import {isConfiguredForDevelopment} from 'src/license';
@@ -147,7 +150,7 @@ export default class Plugin {
     stylesContainer?: Element;
     stylesRoot?: Root;
 
-    doRegistrations(registry: any, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
+    doRegistrations(registry: any, store: Store, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -253,11 +256,11 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_CREATED, handleWebsocketConditionCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_UPDATED, handleWebsocketConditionUpdated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_CONDITION_DELETED, handleWebsocketConditionDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.UserAdded, handleWebsocketUserAdded(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.UserRemoved, handleWebsocketUserRemoved(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.PostDeleted, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.PostEdited, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebSocketEvents.ChannelUpdated, handleWebsocketChannelUpdated(store.getState, store.dispatch));
 
         // Local slash commands
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
@@ -306,7 +309,7 @@ export default class Plugin {
         document.addEventListener('click', this.activityFunc);
     }
 
-    public initialize(registry: any, store: Store<GlobalState>): void {
+    public initialize(registry: any, store: Store): void {
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         this.stylesRoot = createRoot(this.stylesContainer);

@@ -2,12 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {ArrowDownIcon, PlusIcon} from '@mattermost/compass-icons/components';
 import {FormattedMessage} from 'react-intl';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PresetTemplates} from 'src/components/templates/template_data';
 import {DraftPlaybookWithChecklist} from 'src/types/playbook';
@@ -106,8 +108,8 @@ const ListSection = styled.div`
 `;
 
 const RHSHome = () => {
-    const dispatch = useDispatch();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const dispatch = useAppDispatch();
+    const currentTeamId = useAppSelector(getCurrentTeamId);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(currentTeamId || '');
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         dispatch(displayPlaybookCreateModal({startingTemplate: template?.title}));
