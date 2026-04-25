@@ -57,7 +57,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findByRole('button', {name: /add.*first attribute/i}).click();
 
             // # Wait for attribute to be created
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
 
             // * Verify empty state is gone
             cy.findByText(/no attributes yet/i).should('not.exist');
@@ -72,7 +72,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Save by clicking outside
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
 
             // * Verify attribute is displayed with correct name
             verifyAttribute(0, 'Priority');
@@ -185,7 +185,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findByText(/^select$/i).click();
 
             // # Wait for GraphQL mutation
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
 
             // * Verify type changed (should now have property values input)
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
@@ -205,7 +205,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Click outside to save
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
 
             // * Verify both options exist
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
@@ -230,7 +230,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Click outside to save
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
 
             // * Verify the option was updated
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
@@ -256,7 +256,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Click outside to save
             cy.get('body').click(0, 0);
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
 
             // * Verify the option was deleted
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
@@ -427,7 +427,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait(500);
+            cy.findAllByTestId('property-field-row').should('have.length', 2);
 
             // * Verify duplicate was created with "Copy" suffix
             cy.findAllByTestId('property-field-row').eq(0).within(() => {
@@ -453,7 +453,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.findByText(/duplicate/i).click();
 
             // # Wait for duplication
-            cy.wait(500);
+            cy.findAllByTestId('property-field-row').should('have.length', 2);
 
             // * Verify duplicate has the same options
             cy.findAllByTestId('property-field-row').eq(1).within(() => {
@@ -475,8 +475,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
             cy.findByText(/duplicate/i).click();
 
-            // # Wait for duplication
-            cy.wait(500);
+            // # Wait for duplication to appear in DOM
+            cy.findAllByTestId('property-field-row').should('have.length', 2);
 
             // # Edit the duplicate's name
             editAttributeName(1, 'Modified Copy');
@@ -560,7 +560,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         cy.findByRole('button', {name: /add.*attribute/i}).click();
 
         // # Wait for GraphQL mutation
-        cy.wait(500);
+        cy.waitForGraphQLQueries();
 
         // # Fill in the name only if provided
         if (name) {
@@ -570,7 +570,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             cy.get('body').click(0, 0);
 
             // # Wait for GraphQL mutation
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
         }
 
         // # Change type if not text
@@ -581,7 +581,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
             // # Select the type from dropdown
             cy.findByText(new RegExp(`^${type}$`, 'i')).click();
-            cy.wait(500);
+            cy.waitForGraphQLQueries();
         }
 
         // # Add options for select types
@@ -599,7 +599,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
 
         // # Click outside to save (trigger blur)
         cy.get('body').click(0, 0);
-        cy.wait(500);
+        cy.waitForGraphQLQueries();
     }
 
     /**
@@ -629,7 +629,7 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
         // # Confirm deletion in modal
         cy.get('#confirm-property-delete-modal').should('be.visible');
         cy.findByRole('button', {name: /delete/i}).click();
-        cy.wait(500);
+        cy.get('#confirm-property-delete-modal').should('not.exist');
     }
 
     /**
@@ -639,11 +639,11 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
      */
     function editAttributeName(index, newName) {
         cy.findAllByTestId('property-field-row').eq(index).within(() => {
-            cy.findByLabelText('Attribute name').clear().type(newName);
+            cy.findByLabelText('Attribute name').clear().should('have.value', '').type(newName);
         });
 
         // # Click outside to trigger save
         cy.get('body').click(0, 0);
-        cy.wait(500);
+        cy.waitForGraphQLQueries();
     }
 });
