@@ -170,6 +170,9 @@ func (p *PermissionsService) PlaybookEdit(userID string, playbook Playbook) erro
 	if IsSystemAdmin(userID, p.pluginAPI) {
 		return nil
 	}
+	if !p.canViewTeam(userID, playbook.TeamID) {
+		return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s: no team access", userID, playbook.ID)
+	}
 	adminRole := playbook.DefaultPlaybookAdminRole
 	if adminRole == "" {
 		adminRole = PlaybookRoleAdmin
