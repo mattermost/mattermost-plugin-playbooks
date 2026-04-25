@@ -441,7 +441,9 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
             });
         });
 
-        cy.findByText(value).click();
+        cy.get('.property-select__menu').within(() => {
+            cy.findByText(value).click();
+        });
 
         cy.wait(500);
     }
@@ -455,7 +457,9 @@ describe('playbooks > edit > conditions > user', {testIsolation: true}, () => {
             });
         });
 
-        cy.focused().clear().realType(value);
+        cy.findByRole('complementary').within(() => {
+            cy.findByTestId(testId).find('input[type="text"]').clear().type(value);
+        });
         cy.realPress('Tab');
 
         cy.wait(500);

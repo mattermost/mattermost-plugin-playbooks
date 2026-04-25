@@ -87,13 +87,9 @@ describe('NewChannelOnlyToggle', () => {
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
 
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            expect(label.props['data-checked']).toBe(true);
-        }
+        const label = component.root.findByProps({'data-testid': 'new-channel-only-toggle'});
+        expect(label.props['data-checked']).toBe(true);
     });
 
     it('toggle is unchecked when new_channel_only is false', () => {
@@ -107,13 +103,9 @@ describe('NewChannelOnlyToggle', () => {
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
 
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            expect(label.props['data-checked']).toBe(false);
-        }
+        const label = component.root.findByProps({'data-testid': 'new-channel-only-toggle'});
+        expect(label.props['data-checked']).toBe(false);
     });
 
     it('dispatches confirmation modal when enabling (new_channel_only=false)', () => {
@@ -127,15 +119,8 @@ describe('NewChannelOnlyToggle', () => {
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
-
-        // BooleanToggle wraps Toggle in a <div>, so tree is div -> children[0] is label -> children[0] is input
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            const input = label.children[0] as any;
-            input.props.onChange();
-        }
+        const input = component.root.findByProps({'data-testid': 'new-channel-only-toggle'}).findByType('input');
+        input.props.onChange();
 
         // Enabling opens a confirmation modal — onChange is NOT called yet
         expect(onChange).not.toHaveBeenCalled();
@@ -160,14 +145,8 @@ describe('NewChannelOnlyToggle', () => {
                 onChange={onChange}
             />,
         );
-        const tree = component.toJSON();
-
-        expect(tree).not.toBeNull();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            const input = label.children[0] as any;
-            input.props.onChange();
-        }
+        const input = component.root.findByProps({'data-testid': 'new-channel-only-toggle'}).findByType('input');
+        input.props.onChange();
 
         expect(onChange).toHaveBeenCalledTimes(1);
         expect(onChange).toHaveBeenCalledWith({new_channel_only: false});
