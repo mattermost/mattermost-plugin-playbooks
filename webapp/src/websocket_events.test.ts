@@ -469,7 +469,7 @@ describe('incremental updates', () => {
                 data: {
                     payload: JSON.stringify(update),
                 },
-            } as BaseWebSocketMessage<{payload: string}>;
+            } as unknown as BaseWebSocketMessage<{payload: string}>;
 
             handler(msg);
 
