@@ -10,8 +10,8 @@ import styled from 'styled-components';
 import {
     getAllChannels,
     getChannelsInTeam,
+    getDirectAndGroupChannels,
     getMyChannelMemberships,
-    getMyChannels,
 } from 'mattermost-redux/selectors/entities/channels';
 import {IDMappedObjects, RelationOneToManyUnique, RelationOneToOne} from '@mattermost/types/utilities';
 import {
@@ -82,16 +82,10 @@ const getMyPublicAndPrivateChannelsInTeam = (teamId: string) => createSelector(
     },
 );
 
-// Selector for DM/GM channels (used when teamId is empty for DM/GM runs)
-const getMyDMAndGMChannels = createSelector(
-    'getMyDMAndGMChannels',
-    getMyChannels,
-    (channels: Channel[]): Channel[] => {
-        return channels.filter((channel) =>
-            (channel.type === General.DM_CHANNEL || channel.type === General.GM_CHANNEL) && channel.delete_at === 0
-        );
-    },
-);
+// DM/GM channels with resolved display names — mattermost-redux's
+// getDirectAndGroupChannels calls completeDirectChannelInfo internally,
+// so DM channels get their partner's name as display_name (instead of being
+// blank and falling through to the "Unknown Channel" fallback label).
 
 const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
     if (!channelIDs || !channels) {
@@ -123,7 +117,15 @@ const ChannelSelector = (props: Props & {className?: string}) => {
     // Get team channels - use run's team if available, otherwise current team
     const effectiveTeamId = props.teamId || currentTeamId;
     const teamChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(effectiveTeamId));
-    const dmgmChannels = useSelector(getMyDMAndGMChannels);
+    const allDmgmChannels = useSelector(getDirectAndGroupChannels);
+
+    // mattermost-redux's getDirectAndGroupChannels does NOT filter manually
+    // closed channels; we must drop them so closed DMs/GMs don't surface as
+    // link targets in the selector.
+    const dmgmChannels = useMemo(
+        () => allDmgmChannels.filter((c) => c.delete_at === 0),
+        [allDmgmChannels],
+    );
 
     // Combine team channels and DM/GM channels for unified selection
     const selectableChannels = props.excludeDMGM ? teamChannels : [...teamChannels, ...dmgmChannels];
