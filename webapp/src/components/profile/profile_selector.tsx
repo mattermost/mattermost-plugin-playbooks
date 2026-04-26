@@ -295,9 +295,9 @@ export default function ProfileSelector(props: Props) {
         }
 
         const userOptions = getUserOptions();
-        const userSections = Array.isArray(userOptions) && userOptions.length > 0 && 'options' in userOptions[0]
-            ? userOptions
-            : [{label: '', options: userOptions as Option[]}];
+        const userSections = (Array.isArray(userOptions) && userOptions.length > 0 && 'options' in userOptions[0]) ?
+            userOptions :
+            [{label: '', options: userOptions as Option[]}];
         return [...props.extraSections, ...userSections];
     };
 
