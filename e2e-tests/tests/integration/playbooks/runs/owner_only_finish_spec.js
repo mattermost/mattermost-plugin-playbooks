@@ -12,7 +12,6 @@
 import {getRandomId} from '../../../utils';
 
 describe('runs > owner only finish', {testIsolation: true}, () => {
-    // Team and users are shared between both modes.
     let testTeam;
     let testOwner;
     let testParticipant;
@@ -21,60 +20,55 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testOwner = user;
-
-            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-                testParticipant = newUser;
-            });
+        });
+        cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
+            testParticipant = newUser;
         });
     });
 
-    // ---------------------------------------------------------------
-    // Mode 1 — no custom status field configured
-    //
-    // rhs-finish-section is the finish surface (plain "Finish" button
-    // when no Status field is configured, or a status dropdown when the
-    // system auto-creates one). Either way it should be visible only to
-    // the owner.  The /playbook finish slash command is also owner-only.
-    // ---------------------------------------------------------------
+    // Helper to setup a playbook with owner-only actions enabled
+    const setupOwnerOnlyPlaybookRun = (result) => {
+        cy.viewport('macbook-13');
+        cy.apiLogin(testOwner);
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Owner Only Playbook ' + getRandomId(),
+            memberIDs: [],
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            result.playbook = playbook;
+            cy.visit(`/playbooks/playbooks/${playbook.id}/outline`);
+            cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Owner Only Run ' + getRandomId(),
+                ownerUserId: testOwner.id,
+            }).then((playbookRun) => {
+                result.run = playbookRun;
+                cy.apiAddUsersToRun(playbookRun.id, [testParticipant.id]);
+            });
+        });
+    };
+
     describe('without custom status field', () => {
         let testPlaybook;
         let testPlaybookRun;
 
-        // Assert that the current user can see the finish section in the RHS
         const assertCanFinish = () => {
             cy.findByTestId('rhs-finish-section').should('be.visible');
         };
 
-        // Assert that the current user cannot see the finish section in the RHS
         const assertCannotFinish = () => {
             cy.findByTestId('rhs-finish-section').should('not.exist');
         };
 
         beforeEach(() => {
-            cy.viewport('macbook-13');
-            cy.apiLogin(testOwner);
-
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Owner Only Playbook ' + getRandomId(),
-                memberIDs: [],
-                createPublicPlaybookRun: true,
-            }).then((playbook) => {
-                testPlaybook = playbook;
-
-                // # Enable owner_group_only_actions via the playbook editor UI toggle
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-                cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
-
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: testPlaybook.id,
-                    playbookRunName: 'Owner Only Run ' + getRandomId(),
-                    ownerUserId: testOwner.id,
-                }).then((playbookRun) => {
-                    testPlaybookRun = playbookRun;
-                    cy.apiAddUsersToRun(testPlaybookRun.id, [testParticipant.id]);
-                });
+            const setup = {};
+            setupOwnerOnlyPlaybookRun(setup);
+            cy.wrap(setup).then((s) => {
+                testPlaybook = s.playbook;
+                testPlaybookRun = s.run;
             });
         });
 
@@ -269,46 +263,19 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         });
     });
 
-    // ---------------------------------------------------------------
-    // Mode 2 — restore (un-finish) is equally owner-restricted
-    //
-    // When owner_group_only_actions is enabled, only the run owner or a
-    // system admin can restore (un-finish) a run. Non-owner participants
-    // are blocked at the API level with a 403.
-    // ---------------------------------------------------------------
     describe('restore is owner-restricted', () => {
         let testPlaybook;
         let testPlaybookRun;
 
         beforeEach(() => {
-            cy.viewport('macbook-13');
-            cy.apiLogin(testOwner);
-
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Owner Only Restore Playbook ' + getRandomId(),
-                memberIDs: [],
-                createPublicPlaybookRun: true,
-            }).then((playbook) => {
-                testPlaybook = playbook;
-
-                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-                cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
-
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: testPlaybook.id,
-                    playbookRunName: 'Owner Only Restore Run ' + getRandomId(),
-                    ownerUserId: testOwner.id,
-                }).then((playbookRun) => {
-                    testPlaybookRun = playbookRun;
-                    cy.apiAddUsersToRun(testPlaybookRun.id, [testParticipant.id]);
-
-                    // Finish the run so restore tests can proceed
-                    cy.apiAdminLogin();
-                    cy.apiFinishRun(testPlaybookRun.id);
-                    cy.apiLogin(testOwner);
-                });
+            const setup = {};
+            setupOwnerOnlyPlaybookRun(setup);
+            cy.wrap(setup).then((s) => {
+                testPlaybook = s.playbook;
+                testPlaybookRun = s.run;
+                cy.apiAdminLogin();
+                cy.apiFinishRun(testPlaybookRun.id);
+                cy.apiLogin(testOwner);
             });
         });
 

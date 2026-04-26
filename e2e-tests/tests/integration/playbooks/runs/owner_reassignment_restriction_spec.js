@@ -24,32 +24,24 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testOwner = user;
-
-            // # Create a participant then a new owner sequentially to ensure both are available before playbook setup
-            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-                testParticipant = newUser;
-
-                cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUserB) => {
-                    testNewOwner = newUserB;
-
-                    // # Login as testOwner to create playbook with owner_group_only_actions=true
-                    cy.apiLogin(testOwner);
-
-                    cy.apiCreatePlaybook({
-                        teamId: testTeam.id,
-                        title: 'Owner Reassignment Restricted Playbook ' + getRandomId(),
-                        memberIDs: [],
-                        makePublic: true,
-                        createPublicPlaybookRun: true,
-                    }).then((playbook) => {
-                        testPlaybook = playbook;
-
-                        // # Enable owner_group_only_actions via the playbook editor UI toggle
-                        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-                        cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
-                    });
-                });
-            });
+        });
+        cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
+            testParticipant = newUser;
+        });
+        cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUserB) => {
+            testNewOwner = newUserB;
+        });
+        cy.apiLogin(testOwner);
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Owner Reassignment Restricted Playbook ' + getRandomId(),
+            memberIDs: [],
+            makePublic: true,
+            createPublicPlaybookRun: true,
+        }).then((playbook) => {
+            testPlaybook = playbook;
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+            cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
         });
     });
 
@@ -178,7 +170,6 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
     });
 
     it('non-owner can reassign ownership when owner_group_only_actions is false', () => {
-        // # Create a playbook WITHOUT the owner_group_only_actions restriction
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
             title: 'Open Ownership Playbook ' + getRandomId(),
@@ -186,36 +177,20 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
             makePublic: true,
             createPublicPlaybookRun: true,
         }).then((playbook) => {
-            // # Start a run on the unrestricted playbook
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: playbook.id,
                 playbookRunName: 'Open Ownership Run ' + getRandomId(),
                 ownerUserId: testOwner.id,
             }).then((run) => {
-                // # Add participant and new owner to the run
                 cy.apiAddUsersToRun(run.id, [testParticipant.id, testNewOwner.id]);
-
-                // * Brief verification that users were added before navigating
-                cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
-                    expect(updatedRun.participant_ids).to.have.length.greaterThan(0);
-                });
-
-                // # Navigate to the run channel
                 cy.apiGetChannel(run.channel_id).then(({channel}) => {
-                    // # Login as participant (non-owner)
                     cy.apiLogin(testParticipant);
                     cy.visit(`/${testTeam.name}/channels/${channel.name}`);
-
-                    // # Change ownership via the owner profile selector
                     cy.playbooksChangeRunOwnerViaRHS(testNewOwner.username);
-
-                    // * Assert the reassignment succeeded — selector shows new owner's username
                     cy.findByTestId('owner-profile-selector').should('contain', testNewOwner.username);
-
-                    // * Assert via API that the ownership change was persisted server-side
                     cy.apiGetPlaybookRun(run.id).then(({body: updatedRun}) => {
-                        expect(updatedRun.owner_user_id, 'server should reflect the new owner').to.equal(testNewOwner.id);
+                        expect(updatedRun.owner_user_id).to.equal(testNewOwner.id);
                     });
                 });
             });
