@@ -2584,6 +2584,331 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		_, _, err = e.ServerAdminClient.AddTeamMember(context.Background(), e.BasicRun.TeamID, e.RegularUser.Id)
 		require.NoError(t, err)
 	})
+
+	t.Run("update ChannelID with malformed ID fails", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for malformed ChannelID",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		invalid := "not-a-valid-id"
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			ChannelID: &invalid,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update ChannelID with non-existent channel fails", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for missing channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		missing := model.NewId()
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			ChannelID: &missing,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update ChannelID to channel in different team fails", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for cross-team channel",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		otherTeamChannel, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
+			DisplayName: "other team channel",
+			Name:        "other-team-channel-" + model.NewId(),
+			Type:        model.ChannelTypeOpen,
+			TeamId:      e.BasicTeam2.Id,
+		})
+		require.NoError(t, err)
+
+		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), otherTeamChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			ChannelID: &otherTeamChannel.Id,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update ChannelID to private channel without permission fails", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for private channel without permission",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		// e.BasicPrivateChannel is in e.BasicTeam but RegularUser is not a member,
+		// so they lack ManagePrivateChannelProperties on it.
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			ChannelID: &e.BasicPrivateChannel.Id,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("update ChannelID to public channel with permission succeeds", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for public channel happy path",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		// e.BasicPublicChannel is in e.BasicTeam and RegularUser was added as a member
+		// during setup, so they have ManagePublicChannelProperties.
+		updated, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			ChannelID: &e.BasicPublicChannel.Id,
+		})
+		require.NoError(t, err)
+		require.Equal(t, e.BasicPublicChannel.Id, updated.ChannelID)
+
+		// Verify persistence
+		got, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, e.BasicPublicChannel.Id, got.ChannelID)
+	})
+
+	t.Run("update BroadcastChannelIDs adds channel without permission fails", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for broadcast permission",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		// RegularUser is not a member of e.BasicPrivateChannel and lacks CreatePost on it.
+		broadcasts := []string{e.BasicPrivateChannel.Id}
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			BroadcastChannelIDs: &broadcasts,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("update BroadcastChannelIDs with permitted channel succeeds", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for broadcast happy path",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		broadcasts := []string{e.BasicPublicChannel.Id}
+		updated, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			BroadcastChannelIDs: &broadcasts,
+		})
+		require.NoError(t, err)
+		require.ElementsMatch(t, broadcasts, updated.BroadcastChannelIDs)
+
+		// Verify persistence
+		got, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		require.ElementsMatch(t, broadcasts, got.BroadcastChannelIDs)
+	})
+
+	t.Run("update WebhookOnStatusUpdateURLs with invalid URL fails", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for invalid webhook URL",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		// Non-http(s) scheme is rejected by app.ValidateWebhookURLs.
+		webhooks := []string{"ftp://example.com/hook"}
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			WebhookOnStatusUpdateURLs: &webhooks,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+
+		// Garbage that fails url.ParseRequestURI is also rejected.
+		webhooks = []string{"not a url"}
+		_, err = e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			WebhookOnStatusUpdateURLs: &webhooks,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update WebhookOnStatusUpdateURLs with valid URLs succeeds", func(t *testing.T) {
+		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run for valid webhook URLs",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+
+		webhooks := []string{"https://example.com/hook", "http://internal.example/notify"}
+		updated, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
+			WebhookOnStatusUpdateURLs: &webhooks,
+		})
+		require.NoError(t, err)
+		require.ElementsMatch(t, webhooks, updated.WebhookOnStatusUpdateURLs)
+
+		// Verify persistence
+		got, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), testRun.ID)
+		require.NoError(t, err)
+		require.ElementsMatch(t, webhooks, got.WebhookOnStatusUpdateURLs)
+	})
+}
+
+// addPlaybookTextPropertyField creates a "text" property field on the given playbook
+// via GraphQL and returns its (playbook-level) field ID. Used by run-creation tests
+// that need to seed initialPropertyValues.
+func addPlaybookTextPropertyField(t *testing.T, e *TestEnvironment, playbookID, name string) string {
+	t.Helper()
+	const mutation = `
+		mutation AddPlaybookPropertyField($playbookID: String!, $propertyField: PropertyFieldInput!) {
+			addPlaybookPropertyField(playbookID: $playbookID, propertyField: $propertyField)
+		}
+	`
+	var resp struct {
+		Data struct {
+			AddPlaybookPropertyField string `json:"addPlaybookPropertyField"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err := e.PlaybooksClient.DoGraphql(context.Background(), &client.GraphQLInput{
+		Query:         mutation,
+		OperationName: "AddPlaybookPropertyField",
+		Variables: map[string]any{
+			"playbookID": playbookID,
+			"propertyField": map[string]any{
+				"name": name,
+				"type": "text",
+			},
+		},
+	}, &resp)
+	require.NoError(t, err)
+	require.Empty(t, resp.Errors)
+	require.NotEmpty(t, resp.Data.AddPlaybookPropertyField)
+	return resp.Data.AddPlaybookPropertyField
+}
+
+func TestRunCreationInitialPropertyValues(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("initial property values are stored on the run", func(t *testing.T) {
+		fieldID := addPlaybookTextPropertyField(t, e, e.BasicPlaybook.ID, "Severity")
+
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with initial property values",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			PropertyValues: map[string]json.RawMessage{
+				fieldID: json.RawMessage(`"sev-1"`),
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, run)
+
+		// Resolve the run-level field ID (it differs from the playbook field ID)
+		// and assert the expected value is set.
+		runFields, err := e.PlaybooksClient.PlaybookRuns.GetPropertyFields(context.Background(), run.ID)
+		require.NoError(t, err)
+		var runFieldID string
+		for _, f := range runFields {
+			if f.Name == "Severity" {
+				runFieldID = f.ID
+				break
+			}
+		}
+		require.NotEmpty(t, runFieldID, "expected Severity field to be copied to the run")
+
+		values, err := e.PlaybooksClient.PlaybookRuns.GetPropertyValues(context.Background(), run.ID)
+		require.NoError(t, err)
+		var got string
+		for _, v := range values {
+			if v.FieldID == runFieldID {
+				got = string(v.Value)
+				break
+			}
+		}
+		require.JSONEq(t, `"sev-1"`, got)
+	})
+
+	t.Run("rejects more than MaxPropertiesPerPlaybook initial values", func(t *testing.T) {
+		// Build a map with one entry over the limit. Keys do not need to refer to real
+		// fields — the API-layer guard runs before any field resolution.
+		over := make(map[string]json.RawMessage, app.MaxPropertiesPerPlaybook+1)
+		for i := 0; i <= app.MaxPropertiesPerPlaybook; i++ {
+			over[model.NewId()] = json.RawMessage(`"x"`)
+		}
+
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:           "Run with too many initial values",
+			OwnerUserID:    e.RegularUser.Id,
+			TeamID:         e.BasicTeam.Id,
+			PlaybookID:     e.BasicPlaybook.ID,
+			PropertyValues: over,
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("rejects invalid property value key", func(t *testing.T) {
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with invalid property key",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			PropertyValues: map[string]json.RawMessage{
+				"not-a-valid-id": json.RawMessage(`"x"`),
+			},
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("rejects oversized property value payload", func(t *testing.T) {
+		// 4*MaxPropertyValueLength is the API guard; build a JSON string just over it.
+		oversized := make([]byte, 4*app.MaxPropertyValueLength+10)
+		for i := range oversized {
+			oversized[i] = 'a'
+		}
+		raw := append([]byte(`"`), oversized...)
+		raw = append(raw, '"')
+
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run with oversized property value",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+			PropertyValues: map[string]json.RawMessage{
+				model.NewId(): raw,
+			},
+		})
+		require.Error(t, err)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
 }
 
 func TestRunGetMetadata(t *testing.T) {
