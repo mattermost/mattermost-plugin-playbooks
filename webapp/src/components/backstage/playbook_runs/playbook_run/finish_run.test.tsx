@@ -48,10 +48,14 @@ jest.mock('react-intl', () => {
 });
 
 const mockDispatch = jest.fn();
-jest.mock('react-redux', () => ({
-    useDispatch: () => mockDispatch,
-    useSelector: (selector: (state: any) => any) => selector({}),
-}));
+jest.mock('react-redux', () => {
+    const useDispatch = Object.assign(() => mockDispatch, {withTypes: () => useDispatch});
+    const useSelector = Object.assign(
+        (selector: (state: any) => any) => selector({}),
+        {withTypes: () => useSelector},
+    );
+    return {useDispatch, useSelector};
+});
 
 jest.mock('src/components/assets/buttons', () => ({
     TertiaryButton: ({children, onClick, disabled}: {children: React.ReactNode; onClick?: () => void; disabled?: boolean}) => (

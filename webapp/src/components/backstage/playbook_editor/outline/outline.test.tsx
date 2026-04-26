@@ -27,9 +27,11 @@ jest.mock('src/hooks', () => ({
     useAllowRetrospectiveAccess: () => true,
 }));
 
-jest.mock('react-redux', () => ({
-    useSelector: () => 'current-user-id',
-}));
+jest.mock('react-redux', () => {
+    const useDispatch = Object.assign(() => jest.fn(), {withTypes: () => useDispatch});
+    const useSelector = Object.assign(() => 'current-user-id', {withTypes: () => useSelector});
+    return {useDispatch, useSelector};
+});
 
 jest.mock('mattermost-redux/selectors/entities/common', () => ({
     getCurrentUserId: () => 'current-user-id',

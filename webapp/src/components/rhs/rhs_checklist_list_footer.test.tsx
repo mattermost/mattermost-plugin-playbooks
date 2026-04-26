@@ -26,10 +26,11 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('react-redux', () => ({
-    useDispatch: jest.fn(() => jest.fn()),
-    useSelector: jest.fn(() => false),
-}));
+jest.mock('react-redux', () => {
+    const useDispatch = Object.assign(jest.fn(() => jest.fn()), {withTypes: () => useDispatch});
+    const useSelector = Object.assign(jest.fn(() => false), {withTypes: () => useSelector});
+    return {useDispatch, useSelector};
+});
 
 jest.mock('react-bootstrap', () => ({
     OverlayTrigger: ({children}: {children: React.ReactNode}) => <>{children}</>,
