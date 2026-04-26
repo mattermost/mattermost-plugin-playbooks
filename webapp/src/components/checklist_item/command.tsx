@@ -3,9 +3,11 @@
 
 import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {clientRunChecklistItemSlashCommand} from 'src/client';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -41,7 +43,7 @@ const Command = (props: CommandProps) => {
     const commandRef = useRef(null);
     const [running, setRunning] = useState(false);
     const [command, setCommand] = useState(props.command);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const [playbookRun] = useRun(String(props.playbookRunId));
     const [commandOpen, setCommandOpen] = useState(false);

@@ -356,8 +356,9 @@ Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName, property
     // # Set property values in the modal if provided
     if (propertyValues) {
         for (const [fieldName, optionLabel] of Object.entries(propertyValues)) {
-            cy.findByText(fieldName).should('be.visible');
-            cy.findByText('Select...').click();
+            cy.findByText(fieldName).should('be.visible').closest('[class*="PropertyFieldRow"], div').within(() => {
+                cy.findByText('Select...').click();
+            });
             cy.findByText(optionLabel).click();
         }
     }

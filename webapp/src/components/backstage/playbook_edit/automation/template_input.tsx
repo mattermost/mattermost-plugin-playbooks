@@ -44,6 +44,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const cursorPosRef = useRef(0);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
     // Track whether the suggestion list is open and where the `{` trigger started
@@ -69,13 +70,13 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
         ...fieldOptions,
     ], [systemTokenOptions, fieldOptions]);
 
-    const query = triggerPos === null ? '' : input.slice(triggerPos + 1);
+    const query = triggerPos === null ? '' : input.slice(triggerPos + 1, cursorPosRef.current);
 
     const filteredOptions = useMemo(() => {
         if (triggerPos === null) {
             return [];
         }
-        const q = input.slice(triggerPos + 1).toLowerCase();
+        const q = input.slice(triggerPos + 1, cursorPosRef.current).toLowerCase();
         return allOptions.filter((opt) => opt.value.toLowerCase().includes(q));
     }, [triggerPos, input, allOptions]);
 
@@ -153,8 +154,8 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
 
     const findTrigger = useCallback((val: string, cursor: number): number | null => {
         for (let i = cursor - 1; i >= 0; i--) {
-            if (val[i] === '}' || val[i] === ' ') {
-                return null; // closed or broken — no trigger
+            if (val[i] === '}') {
+                return null; // closed — no trigger
             }
             if (val[i] === '{') {
                 return i;
@@ -166,6 +167,7 @@ export const TemplateInput = ({enabled, placeholderText, input, onChange, onBlur
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         const cursor = e.target.selectionStart ?? val.length;
+        cursorPosRef.current = cursor;
         onChange(val);
 
         // Detect or dismiss the trigger on every keystroke

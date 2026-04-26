@@ -76,6 +76,21 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 		err := svc.Update(updated, "user1")
 		require.NoError(t, err)
 	})
+
+	t.Run("store error ErrRunNumberPrefixImmutable is propagated", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc, mockStore, _ := makeService(ctrl)
+
+		updated := basePlaybook
+		updated.RunNumberPrefix = "CHANGED"
+
+		mockStore.EXPECT().Update(gomock.Any()).Return(app.ErrRunNumberPrefixImmutable)
+
+		err := svc.Update(updated, "user1")
+		require.ErrorIs(t, err, app.ErrRunNumberPrefixImmutable)
+	})
 }
 
 func TestPlaybookService_IncrementRunNumber(t *testing.T) {

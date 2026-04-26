@@ -12,13 +12,15 @@ import React, {
 
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {ArrowLeftIcon, CloseIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {useCanCreatePlaybooksInTeam, usePlaybook, usePlaybookAttributes} from 'src/hooks';
@@ -66,7 +68,7 @@ export const RunPlaybookModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {onHide, ...restModalProps} = modalProps;
 
     const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
@@ -82,6 +84,7 @@ export const RunPlaybookModal = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isSubmittingRef = useRef(false);
     const isMountedRef = useRef(true);
+    const initializedPlaybookIdRef = useRef<string | undefined>(undefined);
     useEffect(() => {
         return () => {
             isMountedRef.current = false;
@@ -91,11 +94,11 @@ export const RunPlaybookModal = ({
     const [propertyValues, setPropertyValues] = useState<Record<string, unknown>>({});
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
-    const currentChannelId = useSelector(getCurrentChannelId);
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentChannelId = useAppSelector(getCurrentChannelId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const userId = (playbook?.default_owner_enabled && playbook.default_owner_id) ? playbook.default_owner_id : currentUserId;
 
-    const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    const teammateNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
     const userMap = useUserDisplayNameMap();
 
     // pickerUserNames captures display names for users selected via the picker
@@ -120,10 +123,16 @@ export const RunPlaybookModal = ({
         }
 
         if (!playbook || playbook.id !== selectedPlaybookId) {
+            initializedPlaybookIdRef.current = undefined;
             setRunName('');
             setRunSummary('');
             return;
         }
+
+        if (playbook.id === initializedPlaybookIdRef.current) {
+            return;
+        }
+        initializedPlaybookIdRef.current = playbook.id;
 
         // Pre-fill with the channel_name_template so the user can see the raw template.
         // When a template is NOT set the input is required and starts empty.
@@ -133,7 +142,7 @@ export const RunPlaybookModal = ({
         setChannelMode(playbook.channel_mode);
         setChannelId(playbook.channel_id);
         setCreatePublicRun(playbook.create_public_playbook_run);
-    }, [playbook, selectedPlaybookId]);
+    }, [playbook?.id, selectedPlaybookId]);
 
     // Determine which property fields the template references
     const templateFieldNames = useMemo(() => {
@@ -158,6 +167,19 @@ export const RunPlaybookModal = ({
             return false;
         }) as unknown as TemplatePropertyField[];
     }, [playbookAttributes, templateFieldNames]);
+
+    // Track template field names that don't match any loaded attribute
+    const unmatchedTemplateNames = useMemo(() => {
+        if (!playbook?.channel_name_template || templateFieldNames.size === 0) {
+            return [];
+        }
+        if (!playbookAttributes) {
+            // Still loading — don't block submission
+            return [];
+        }
+        const loadedNames = new Set((playbookAttributes).map((f) => f.name.toLowerCase()));
+        return [...templateFieldNames].filter((n) => !loadedNames.has(n));
+    }, [templateFieldNames, playbookAttributes, playbook?.channel_name_template]);
 
     const hasTemplate = Boolean(playbook?.channel_name_template);
 
@@ -204,7 +226,7 @@ export const RunPlaybookModal = ({
         return true;
     });
 
-    const isFormValid = nameValid && requiredFieldsFilled && (createNewChannel || channelId !== '');
+    const isFormValid = nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = useCallback((mode: 'link_existing_channel' | 'create_new_channel') => {
         setChannelMode(mode);
@@ -790,9 +812,16 @@ function formatDateInputValue(value: string | number): string {
         return new Date(value).toISOString().split('T')[0];
     }
     if (typeof value === 'string' && value) {
-        const parsed = parseInt(value, 10);
-        if (!isNaN(parsed) && parsed > 0) {
-            return new Date(parsed).toISOString().split('T')[0];
+        if ((/^\d+$/).test(value)) {
+            const ms = parseInt(value, 10);
+            if (ms > 0) {
+                return new Date(ms).toISOString().split('T')[0];
+            }
+        }
+
+        const datePart = value.match((/^(\d{4}-\d{2}-\d{2})/));
+        if (datePart) {
+            return datePart[1];
         }
         return value;
     }

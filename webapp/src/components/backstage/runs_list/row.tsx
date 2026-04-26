@@ -14,8 +14,10 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from '@mattermost/types/store';
 import {BullhornOutlineIcon} from '@mattermost/compass-icons/components';
-import {useSelector} from 'react-redux';
+
 import {FormattedMessage, useIntl} from 'react-intl';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
@@ -140,7 +142,7 @@ const teamNameSelector = (teamId: string) => (state: GlobalState): string => get
 const Row = (props: Props) => {
     // This is not optimal. One network request for every row.
     const playbookName = usePlaybookName(props.fixedTeam ? '' : props.playbookRun.playbook_id);
-    const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
+    const teamName = useAppSelector(teamNameSelector(props.playbookRun.team_id));
 
     let infoLine: React.ReactNode = null;
     if (!props.fixedTeam) {
@@ -226,7 +228,7 @@ export default Row;
 // TODO: this should converge with src/hooks/run : useFollowRun
 const FollowPlaybookRun = ({id}: {id: string}) => {
     const {formatMessage} = useIntl();
-    const currentUser = useSelector(getCurrentUser);
+    const currentUser = useAppSelector(getCurrentUser);
     const [metadata] = useRunMetadata(id);
     const [followers, setFollowers] = useState(metadata?.followers || []);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));

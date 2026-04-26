@@ -9,16 +9,17 @@ import React, {
     useState,
 } from 'react';
 import {Link} from 'react-router-dom';
-import {useDispatch, useSelector} from 'react-redux';
+
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {DateTime, Duration} from 'luxon';
 
-import {GlobalState} from '@mattermost/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {ApolloProvider, useQuery} from '@apollo/client';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
@@ -164,9 +165,9 @@ const UpdateRunStatusModal = ({
     initialError: providedInitialError,
     ...modalProps
 }: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage, formatList} = useIntl();
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const {data} = useQuery(runStatusModalQueryDocument, {
         variables: {
             runID: playbookRunId,
@@ -200,7 +201,7 @@ const UpdateRunStatusModal = ({
     // Extract channel and follower names
     // The limit applied must be done at the end to consider the chance
     // that the names are hidden to us (channels we haven't joined or are private)
-    const broadcastChannelNames = useSelector((state: GlobalState) => {
+    const broadcastChannelNames = useAppSelector((state) => {
         return run?.broadcastChannelIDs.reduce<string[]>((result, id) => {
             const displayName = getChannel(state, id)?.display_name;
             if (displayName) {

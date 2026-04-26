@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
@@ -11,6 +11,8 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {DateTime} from 'luxon';
 import {GlobalState} from '@mattermost/types/store';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -59,14 +61,14 @@ export enum ChecklistParent {
 }
 
 const RHSChecklistList = ({id, playbookRun, parentContainer, readOnly, onReadOnlyInteract, autoAddTask, onTaskAdded, onBackClick}: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const stateKey = parentContainer + '_' + playbookRun.id;
-    const allCollapsed = useSelector(currentChecklistAllCollapsed(stateKey));
-    const checklistsState = useSelector(currentChecklistCollapsedState(stateKey));
-    const checklistItemsFilter = useSelector((state) => currentChecklistItemsFilter(state as GlobalState, stateKey));
-    const myUser = useSelector(getCurrentUser);
-    const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    const allCollapsed = useAppSelector(currentChecklistAllCollapsed(stateKey));
+    const checklistsState = useAppSelector(currentChecklistCollapsedState(stateKey));
+    const checklistItemsFilter = useAppSelector((state) => currentChecklistItemsFilter(state as GlobalState, stateKey));
+    const myUser = useAppSelector(getCurrentUser);
+    const teamnameNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
 

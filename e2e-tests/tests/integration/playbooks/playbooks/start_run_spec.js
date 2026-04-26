@@ -52,6 +52,7 @@ describe('playbooks > start a run', {testIsolation: true}, () => {
                     method: 'POST',
                     body: {term: channelNameToLink},
                 }).then((resp) => {
+                    expect(resp.body).to.have.length.greaterThan(0, `Channel "${channelNameToLink}" not found`);
                     const channel = resp.body[0];
                     cy.apiGetPlaybook(testPlaybook.id).then((fullPlaybook) => {
                         if (name) {

@@ -61,9 +61,11 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 
 	playbook.RunNumberPrefix = NormalizeRunNumberPrefix(playbook.RunNumberPrefix)
 	if err := ValidateRunNumberPrefix(playbook.RunNumberPrefix); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return "", err
 	}
 	if err := ValidateChannelNameTemplate(playbook.ChannelNameTemplate); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return "", err
 	}
 
@@ -99,6 +101,11 @@ func (s *playbookService) Import(data PlaybookImportData, userID string) (string
 	model.AddEventParameterToAuditRec(auditRec, "numProperties", len(data.Properties))
 	model.AddEventParameterToAuditRec(auditRec, "numConditions", len(data.Conditions))
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", playbook)
+
+	// Strip metric IDs on import (export omits them); prevents treating foreign IDs as in-playbook updates.
+	for i := range playbook.Metrics {
+		playbook.Metrics[i].ID = ""
+	}
 
 	condRefs := saveAndClearConditionRefs(&playbook)
 
@@ -309,9 +316,11 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 
 	playbook.RunNumberPrefix = NormalizeRunNumberPrefix(playbook.RunNumberPrefix)
 	if err := ValidateRunNumberPrefix(playbook.RunNumberPrefix); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 	if err := ValidateChannelNameTemplate(playbook.ChannelNameTemplate); err != nil {
+		auditRec.AddErrorDesc(err.Error())
 		return err
 	}
 

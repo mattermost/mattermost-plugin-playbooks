@@ -600,6 +600,9 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 			if opt == nil {
 				continue
 			}
+			if opt.Data == nil {
+				opt.Data = make(map[string]string)
+			}
 			opt.Data["parent_id"] = opt.GetID()
 			opt.SetID("")
 		}
@@ -826,8 +829,13 @@ func normalizeDateValue(value json.RawMessage) (json.RawMessage, error) {
 	}
 
 	if _, err := time.Parse(time.RFC3339, stringValue); err == nil {
-		// Already a valid RFC3339 string — return as-is
 		return value, nil
+	}
+
+	if _, err := time.Parse("2006-01-02", stringValue); err == nil {
+		// Bare YYYY-MM-DD — treat as UTC midnight and store as RFC3339
+		t, _ := time.Parse("2006-01-02", stringValue)
+		return json.Marshal(t.UTC().Format(time.RFC3339))
 	}
 
 	if ms, err := strconv.ParseInt(stringValue, 10, 64); err == nil {
@@ -835,7 +843,7 @@ func normalizeDateValue(value json.RawMessage) (json.RawMessage, error) {
 		return json.Marshal(t.Format(time.RFC3339))
 	}
 
-	return nil, errors.New("date field value must be a valid RFC3339 date string or a millisecond timestamp")
+	return nil, errors.New("date field value must be a valid RFC3339 date string, a YYYY-MM-DD date, or a millisecond timestamp")
 }
 
 func (s *propertyService) sanitizeTextValue(value string) (string, error) {

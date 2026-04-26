@@ -300,6 +300,13 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
+	if args.Updates.RunNumberPrefix != nil {
+		normalized := app.NormalizeRunNumberPrefix(*args.Updates.RunNumberPrefix)
+		if err := app.ValidateRunNumberPrefix(normalized); err != nil {
+			return "", errors.Wrap(err, "invalid RunNumberPrefix")
+		}
+		args.Updates.RunNumberPrefix = &normalized
+	}
 	addToSetmap(setmap, "RunNumberPrefix", args.Updates.RunNumberPrefix)
 
 	// Not optimal graphql. Stopgap measure. Should be updated separately.

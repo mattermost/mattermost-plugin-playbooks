@@ -147,7 +147,9 @@ export function resolveTemplatePreview(
             const isoDate = (/^\d{4}-\d{2}-\d{2}$/).test(val) ? val + 'T00:00:00Z' : val;
             const d = new Date(isoDate);
             if (!isNaN(d.getTime())) {
-                return d.toISOString().split('T')[0];
+                // Extract the date portion directly from the original string to avoid UTC conversion shifting the date
+                const dateMatch = val.match(/^(\d{4}-\d{2}-\d{2})/);
+                return dateMatch ? dateMatch[1] : d.toISOString().split('T')[0];
             }
             return val; // unknown format — return raw value as-is
         }

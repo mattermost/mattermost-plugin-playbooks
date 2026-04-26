@@ -12,8 +12,6 @@ import {
     useRouteMatch,
 } from 'react-router-dom';
 
-import {useDispatch, useSelector} from 'react-redux';
-
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
 import {useEffectOnce, useLocalStorage, useUpdateEffect} from 'react-use';
@@ -21,6 +19,8 @@ import {useEffectOnce, useLocalStorage, useUpdateEffect} from 'react-use';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 
@@ -32,12 +32,12 @@ import ErrorPage from 'src/components/error_page';
 import RunsPage from 'src/components/backstage/runs_page';
 
 const useInitTeamRoutingLogic = () => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const location = useLocation();
     const {url} = useRouteMatch();
-    const teams = useSelector(getMyTeams);
-    const currentTeamId = useSelector(getCurrentTeamId);
-    const currentUserId = useSelector(getCurrentUserId);
+    const teams = useAppSelector(getMyTeams);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // ? consider moving to multi-product or plugin infrastructure
     // see https://github.com/mattermost/mattermost-webapp/blob/25043262dbab1fc2f9ac6972b1f1b0b1f9c20ae0/stores/local_storage_store.jsx#L9
@@ -74,7 +74,7 @@ const useInitTeamRoutingLogic = () => {
  */
 export const useDefaultRedirectOnTeamChange = (teamScopedModelTeamId: string | undefined) => {
     const history = useHistory();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
     useUpdateEffect(() => {
         if (
             currentTeamId &&

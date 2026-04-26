@@ -4,9 +4,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/common';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {savePlaybook} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
@@ -71,8 +73,8 @@ const instantCreatePlaybook = async (template: PresetTemplate, teamID: string, u
 };
 
 const TemplateSelector = ({templates = PresetTemplates}: Props) => {
-    const teamId = useSelector(getCurrentTeamId);
-    const currentUser = useSelector(getCurrentUser);
+    const teamId = useAppSelector(getCurrentTeamId);
+    const currentUser = useAppSelector(getCurrentUser);
     const {edit} = usePlaybooksRouting();
     const refreshLHS = useLHSRefresh();
 

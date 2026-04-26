@@ -6,6 +6,7 @@ package app
 import (
 	"encoding/json"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -264,18 +265,26 @@ func DefaultFormatPropertyValue(field *PropertyField, raw json.RawMessage) (stri
 		return strings.Join(labels, ", "), false
 
 	case model.PropertyFieldTypeDate:
+		// First try unmarshaling as a number (JSON numeric date stored as millis)
+		var numValue float64
+		if json.Unmarshal(raw, &numValue) == nil && numValue > 0 {
+			return time.UnixMilli(int64(numValue)).UTC().Format("2006-01-02"), false
+		}
 		var stringValue string
 		if err := json.Unmarshal(raw, &stringValue); err != nil {
 			return string(raw), false
 		}
-		t, err := time.Parse(time.RFC3339, stringValue)
-		if err != nil {
-			t, err = time.Parse("2006-01-02", stringValue)
+		if t, err := time.Parse(time.RFC3339, stringValue); err == nil {
+			return t.Format("2006-01-02"), false
 		}
-		if err != nil {
-			return stringValue, false
+		if t, err := time.Parse("2006-01-02", stringValue); err == nil {
+			return t.Format("2006-01-02"), false
 		}
-		return t.Format("2006-01-02"), false
+		// Numeric-string millisecond timestamp
+		if ms, err := strconv.ParseInt(stringValue, 10, 64); err == nil && ms > 0 {
+			return time.UnixMilli(ms).UTC().Format("2006-01-02"), false
+		}
+		return stringValue, false
 
 	// NOTE: user and multiuser fields return raw Mattermost user IDs here.
 	// To resolve IDs to display names, pass a FormatFunc to ResolveTemplate

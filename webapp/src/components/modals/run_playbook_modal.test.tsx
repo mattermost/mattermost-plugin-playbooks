@@ -38,10 +38,13 @@ jest.mock('react-intl', () => {
     };
 });
 
-jest.mock('react-redux', () => ({
-    useDispatch: jest.fn(() => jest.fn()),
-    useSelector: jest.fn(() => 'mock-user-id'),
-}));
+jest.mock('react-redux', () => {
+    const mockDispatch = jest.fn(() => jest.fn());
+    const mockSelector = jest.fn(() => 'mock-user-id');
+    (mockDispatch as any).withTypes = () => mockDispatch;
+    (mockSelector as any).withTypes = () => mockSelector;
+    return {useDispatch: mockDispatch, useSelector: mockSelector};
+});
 
 jest.mock('src/graphql/hooks', () => ({}));
 

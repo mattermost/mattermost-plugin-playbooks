@@ -4,7 +4,7 @@
 import {GlobalState} from '@mattermost/types/store';
 import configureStore, {MockStoreEnhanced} from 'redux-mock-store';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {WebSocketMessage} from '@mattermost/client';
+import {BaseWebSocketMessage} from '@mattermost/client';
 
 import {handleReconnect, handleWebsocketPlaybookRunUpdatedIncremental} from './websocket_events';
 import {WEBSOCKET_PLAYBOOK_RUN_INCREMENTAL_UPDATE_RECEIVED} from './types/actions';
@@ -197,11 +197,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -222,7 +218,7 @@ describe('incremental updates', () => {
             // Create a WebSocket message without payload
             const msg = {
                 data: {},
-            } as WebSocketMessage<{payload: string}>;
+            } as BaseWebSocketMessage<{payload: string}>;
 
             // Call the handler
             handler(msg);
@@ -253,11 +249,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -322,11 +314,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -379,11 +367,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -424,11 +408,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -457,11 +437,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -571,11 +547,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -621,11 +593,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -671,11 +639,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -759,11 +723,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -847,11 +807,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -899,11 +855,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler
             handler(msg);
@@ -972,11 +924,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler - should not throw an error
             handler(msg);
@@ -1035,11 +983,7 @@ describe('incremental updates', () => {
             };
 
             // Create the WebSocket message
-            const msg = {
-                data: {
-                    payload: JSON.stringify(update),
-                },
-            } as WebSocketMessage<{payload: string}>;
+            const msg = makeWebSocketMessage(JSON.stringify(update));
 
             // Call the handler - should not throw an error
             handler(msg);
@@ -1116,11 +1060,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 // Call the handler
                 handler(msg);
@@ -1169,11 +1109,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 // Call the handler
                 handler(msg);
@@ -1219,11 +1155,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 handler(msg);
 
@@ -1289,11 +1221,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 handler(msg);
 
@@ -1354,11 +1282,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 handler(msg);
 
@@ -1437,11 +1361,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 handler(msg);
 
@@ -1457,11 +1377,7 @@ describe('incremental updates', () => {
                 const handler = handleWebsocketPlaybookRunUpdatedIncremental(testGetState, testDispatch);
 
                 // Malformed JSON
-                const msg = {
-                    data: {
-                        payload: 'invalid json {[',
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage('invalid json {[');
 
                 expect(() => handler(msg)).not.toThrow();
                 expect(testDispatch).not.toHaveBeenCalled();
@@ -1478,11 +1394,7 @@ describe('incremental updates', () => {
                     // Missing 'changed_fields' field
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 handler(msg);
 
@@ -1515,11 +1427,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 handler(msg);
 
@@ -1549,11 +1457,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const newerMsg = {
-                    data: {
-                        payload: JSON.stringify(newerUpdate),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const newerMsg = makeWebSocketMessage(JSON.stringify(newerUpdate));
 
                 handler(newerMsg);
 
@@ -1574,11 +1478,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const olderMsg = {
-                    data: {
-                        payload: JSON.stringify(olderUpdate),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const olderMsg = makeWebSocketMessage(JSON.stringify(olderUpdate));
 
                 handler(olderMsg);
 
@@ -1610,11 +1510,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 handler(msg);
 
@@ -1650,11 +1546,7 @@ describe('incremental updates', () => {
                     },
                 };
 
-                const msg = {
-                    data: {
-                        payload: JSON.stringify(update),
-                    },
-                } as WebSocketMessage<{payload: string}>;
+                const msg = makeWebSocketMessage(JSON.stringify(update));
 
                 const startTime = performance.now();
                 handler(msg);
@@ -1667,3 +1559,11 @@ describe('incremental updates', () => {
         });
     });
 });
+
+function makeWebSocketMessage(payload: string) {
+    return {
+        data: {
+            payload,
+        },
+    } as unknown as BaseWebSocketMessage<{payload: string}>;
+}

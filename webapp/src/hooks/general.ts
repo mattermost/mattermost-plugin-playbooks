@@ -12,7 +12,6 @@ import {
 } from 'react';
 import {useIntl} from 'react-intl';
 
-import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
@@ -31,6 +30,8 @@ import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {useUpdateEffect} from 'react-use';
 import {debounce, isEqual} from 'lodash';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
@@ -162,8 +163,8 @@ export function useClientRect() {
 }
 
 export function useCanCreatePlaybooksInTeam(teamId: string) {
-    return useSelector(
-        (state: GlobalState) => haveITeamPermission(state, teamId, 'playbook_public_create') || haveITeamPermission(state, teamId, 'playbook_private_create')
+    return useAppSelector(
+        (state) => haveITeamPermission(state, teamId, 'playbook_public_create') || haveITeamPermission(state, teamId, 'playbook_private_create')
     );
 }
 
@@ -193,9 +194,9 @@ export function clearLocks() {
 // A global lockProfilesInTeamFetch cache avoids the thundering herd problem of many components
 // wanting the same metadata.
 export function useProfilesInTeam() {
-    const dispatch = useDispatch();
-    const profilesInTeam = useSelector(getProfilesInCurrentTeam);
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const dispatch = useAppDispatch();
+    const profilesInTeam = useAppSelector(getProfilesInCurrentTeam);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
 
     useEffect(() => {
         if (profilesInTeam.length > 0) {
@@ -238,7 +239,7 @@ export function useThing<T extends NonNullable<any>>(
     deps: DependencyList = [],
 ) {
     const [thing, setThing] = useState<T | null>();
-    const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
+    const thingFromState = useAppSelector((state) => select?.(state, id || '') ?? null);
     const [error, setError] = useState<ClientError | null>(null);
     const [isFetching, setIsFetching] = useState<boolean>(true);
 
@@ -253,6 +254,7 @@ export function useThing<T extends NonNullable<any>>(
 
         if (thingFromState) {
             setThing(thingFromState);
+            setError(null);
             setIsFetching(false);
             return undefined;
         }
@@ -262,6 +264,7 @@ export function useThing<T extends NonNullable<any>>(
             .then((res) => {
                 if (!cancelled) {
                     setThing(res);
+                    setError(null);
                     setIsFetching(false);
                 }
             })
@@ -343,16 +346,14 @@ export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     return [dropdownPosition, toggleOpen] as const;
 }
 
-type StringToUserProfileFn = (id: string) => UserProfile;
-
 export function useEnsureProfile(userId: string) {
     const userIds = useMemo(() => [userId], [userId]);
     useEnsureProfiles(userIds);
 }
 
 export function useEnsureProfiles(userIds: string[]) {
-    const dispatch = useDispatch();
-    const getUserFromStore = useSelector<GlobalState, StringToUserProfileFn>(
+    const dispatch = useAppDispatch();
+    const getUserFromStore = useAppSelector(
         (state) => (id: string) => getUser(state, id),
     );
 
@@ -371,7 +372,7 @@ export function useOpenContactSales() {
 }
 
 export function useOpenStartTrialFormModal() {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     // @ts-ignore
     if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.START_TRIAL_FORM_MODAL || !window.Components?.StartTrialFormModal) {
@@ -405,7 +406,7 @@ export function useOpenStartTrialFormModal() {
 
 export function useFormattedUsername(user: UserProfile) {
     const teamnameNameDisplaySetting =
-        useSelector<GlobalState, string | undefined>(
+        useAppSelector(
             getTeammateNameDisplaySetting,
         ) || '';
 
@@ -413,7 +414,7 @@ export function useFormattedUsername(user: UserProfile) {
 }
 
 export function useFormattedUsernameByID(userId: string) {
-    const user = useSelector<GlobalState, UserProfile>((state) =>
+    const user = useAppSelector((state) =>
         getUser(state, userId),
     );
 
@@ -423,10 +424,10 @@ export function useFormattedUsernameByID(userId: string) {
 // Return the list of names of the users given a list of UserProfiles or userIds
 // It will respect teamnameNameDisplaySetting.
 export function useFormattedUsernames(usersOrUserIds?: Array<UserProfile | string>): string[] {
-    const teammateNameDisplaySetting = useSelector<GlobalState, string | undefined>(
+    const teammateNameDisplaySetting = useAppSelector(
         getTeammateNameDisplaySetting,
     ) || '';
-    const displayNames = useSelector((state: GlobalState) => {
+    const displayNames = useAppSelector((state) => {
         return usersOrUserIds?.map((user) => displayUsername(typeof user === 'string' ? getUser(state, user) : user, teammateNameDisplaySetting));
     });
     return displayNames || [];
@@ -460,7 +461,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams, routed 
     const [totalCount, setTotalCount] = useState(0);
     const history = useHistory();
     const location = useLocation();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
     const [fetchParams, setFetchParams] = useState(combineQueryParameters(defaultFetchParams, location.search));
 
     // Fetch the queried runs
@@ -611,7 +612,7 @@ export const useProxyState = <T>(
 
 export const useExportLogAvailable = () => {
     //@ts-ignore plugins state is a thing
-    return useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+    return useAppSelector((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
 };
 
 export enum ReservedCategory {
@@ -672,7 +673,7 @@ export function useTextOverflow(ref: MutableRefObject<HTMLElement | null>) {
 // Shared by components that need to resolve user IDs to display names for template previews.
 export function useUserDisplayNameMap(): Record<string, string> {
     const profilesInTeam = useProfilesInTeam();
-    const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    const teammateNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
     return useMemo(() => {
         const map: Record<string, string> = {};
         for (const profile of profilesInTeam) {

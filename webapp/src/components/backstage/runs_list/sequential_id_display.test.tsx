@@ -113,7 +113,7 @@ describe('SequentialIdDisplay', () => {
         const tree = component.toJSON();
 
         // Must render without throwing; sequential-id element may be absent or empty
-        expect(tree).not.toBeUndefined();
+        expect(tree).not.toBeNull();
     });
 
     it('does not render the sequential-id element when run_number is 0', () => {

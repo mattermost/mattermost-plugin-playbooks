@@ -94,7 +94,7 @@ describe('computeStatusMessagePreview', () => {
             .toBe(`[${SEQ_3}] Alpha zone update. Owner: Alice. Created by: Bob.`);
     });
 
-    it('returns empty string when message is partially resolved but mixed unknown tokens leave it unchanged', () => {
+    it('shows preview when message is partially resolved with unknown tokens remaining', () => {
         // {OWNER} resolves but {foo} stays — overall the message changes, so preview is shown
         const result = computeStatusMessagePreview('By {OWNER} re: {foo}', makeRun(), userMap);
         expect(result).toBe('By Alice re: {foo}');

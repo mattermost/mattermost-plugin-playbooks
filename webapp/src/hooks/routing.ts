@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 
 import {useEffect, useMemo} from 'react';
-import {useSelector} from 'react-redux';
 
 import {GlobalState} from '@mattermost/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {PresetTemplates} from 'src/components/templates/template_data';
 import {DraftPlaybookWithChecklist, Playbook, emptyPlaybook} from 'src/types/playbook';
@@ -50,7 +51,7 @@ function id(p: Playbook | Playbook['id']) {
 export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
     {urlOnly, onGo}: PlaybooksRoutingOptions<TParam> = {},
 ) {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     return useMemo(() => {
         function go(path: string, p?: TParam) {
@@ -110,7 +111,7 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
 const selectSiteName = (state: GlobalState) => getConfig(state).SiteName;
 
 export function useForceDocumentTitle(title: string) {
-    const siteName = useSelector(selectSiteName);
+    const siteName = useAppSelector(selectSiteName);
 
     // Restore original title
     useEffect(() => {

@@ -83,6 +83,8 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 		sort = "CurrentStatus"
 	case app.SortByLastStatusUpdateAt:
 		sort = "LastStatusUpdateAt"
+	case app.SortBySequentialID:
+		sort = "SequentialID"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -1022,7 +1024,7 @@ func (s *playbookRunStore) GetTimelineEvent(playbookRunID, eventID string) (*app
 	var event app.TimelineEvent
 
 	timelineEventSelect := s.timelineEventsBaseQuery().
-		Where(sq.And{sq.Eq{"te.IncidentID": playbookRunID}, sq.Eq{"te.ID": eventID}})
+		Where(sq.And{sq.Eq{"te.IncidentID": playbookRunID}, sq.Eq{"te.ID": eventID}, sq.Eq{"te.DeleteAt": 0}})
 
 	err := s.store.getBuilder(s.store.db, &event, timelineEventSelect)
 	if err == sql.ErrNoRows {
