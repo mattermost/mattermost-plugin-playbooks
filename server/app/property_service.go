@@ -600,7 +600,7 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 			if opt == nil {
 				continue
 			}
-			opt.Data["parent_id"] = opt.GetID()
+			opt.SetValue("parent_id", opt.GetID())
 			opt.SetID("")
 		}
 	}

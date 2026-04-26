@@ -4568,21 +4568,11 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 	return nil
 }
 
-// maxAutoFollowBatchSize caps the number of users auto-followed per run creation.
-// Prevents unbounded IN-clause sizes for playbooks with very large auto-follow lists.
-const maxAutoFollowBatchSize = 1000
-
 // followBatch follows multiple users to a run, sending a single WS event instead of N.
 // originalRun is snapshotted by value at call time to avoid stale-pointer races.
 func (s *PlaybookRunServiceImpl) followBatch(playbookRunID string, userIDs []string, originalRun PlaybookRun) {
 	if len(userIDs) == 0 {
 		return
-	}
-
-	if len(userIDs) > maxAutoFollowBatchSize {
-		logrus.WithField("playbook_run_id", playbookRunID).WithField("count", len(userIDs)).
-			Warn("auto-follow list exceeds cap; truncating to maxAutoFollowBatchSize")
-		userIDs = userIDs[:maxAutoFollowBatchSize]
 	}
 
 	if err := s.store.FollowBatch(playbookRunID, userIDs); err != nil {

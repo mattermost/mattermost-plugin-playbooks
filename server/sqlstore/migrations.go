@@ -1742,11 +1742,4 @@ var migrations = []Migration{
 			return nil
 		},
 	},
-	{
-		fromVersion: semver.MustParse("0.67.0"),
-		toVersion:   semver.MustParse("0.68.0"),
-		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			return nil
-		},
-	},
 }

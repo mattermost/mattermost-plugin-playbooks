@@ -277,16 +277,28 @@ export default function ProfileSelector(props: Props) {
     } : noDropdown;
 
     const getSelectOptions = () => {
-        if (!props.userGroups) {
-            return userNotInSubsetOptions;
+        const getUserOptions = () => {
+            if (!props.userGroups) {
+                return userNotInSubsetOptions;
+            }
+            if (userNotInSubsetOptions.length === 0) {
+                return userInSubsetOptions;
+            }
+            return [
+                {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
+                {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
+            ];
+        };
+
+        if (!props.extraSections || props.extraSections.length === 0) {
+            return getUserOptions();
         }
-        if (userNotInSubsetOptions.length === 0) {
-            return userInSubsetOptions;
-        }
-        return [
-            {label: props.userGroups?.subsetLabel, options: userInSubsetOptions},
-            {label: props.userGroups?.defaultLabel, options: userNotInSubsetOptions},
-        ];
+
+        const userOptions = getUserOptions();
+        const userSections = Array.isArray(userOptions) && userOptions.length > 0 && 'options' in userOptions[0]
+            ? userOptions
+            : [{label: '', options: userOptions as Option[]}];
+        return [...props.extraSections, ...userSections];
     };
 
     return (

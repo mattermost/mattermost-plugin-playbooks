@@ -1055,7 +1055,6 @@ func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options 
 			return "You don't have permission to finish this run.", err
 		}
 	} else {
-		// Require participant access for status updates.
 		if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
 			return "Not authorized", err
 		}

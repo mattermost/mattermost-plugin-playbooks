@@ -1441,6 +1441,19 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 // PostgreSQL's limit on bind parameters and keep individual statements bounded.
 const followUnfollowBatchSize = 500
 
+// deduplicateStrings returns a new slice with duplicate strings removed, preserving order.
+func deduplicateStrings(ss []string) []string {
+	seen := make(map[string]struct{}, len(ss))
+	out := make([]string, 0, len(ss))
+	for _, s := range ss {
+		if _, ok := seen[s]; !ok {
+			seen[s] = struct{}{}
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 func (s *playbookRunStore) UnfollowMultiple(playbookRunID string, userIDs []string) error {
 	if playbookRunID == "" {
 		return errors.New("playbookRunID cannot be empty")
@@ -1448,6 +1461,8 @@ func (s *playbookRunStore) UnfollowMultiple(playbookRunID string, userIDs []stri
 	if len(userIDs) == 0 {
 		return nil
 	}
+
+	userIDs = deduplicateStrings(userIDs)
 
 	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
 	defer txCancel()
@@ -1489,6 +1504,8 @@ func (s *playbookRunStore) FollowBatch(playbookRunID string, userIDs []string) e
 	if len(userIDs) == 0 {
 		return nil
 	}
+
+	userIDs = deduplicateStrings(userIDs)
 
 	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
 	defer txCancel()
@@ -1735,6 +1752,8 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 	if len(userIDs) == 0 {
 		return nil
 	}
+
+	userIDs = deduplicateStrings(userIDs)
 
 	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
 		end := i + followUnfollowBatchSize

@@ -163,7 +163,8 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                     data-testid='role-options'
                     aria-label={formatMessage({id: 'playbooks.assignee_dropdown.role_label', defaultMessage: 'Select role for assignee'})}
                     value={displayRole}
-                    onChange={(e) => handleRoleRadioChange(e.target.value)}
+                    onChange={editable ? (e) => handleRoleRadioChange(e.target.value) : undefined}
+                    disabled={!editable}
                 >
                     {roleOptions.map((opt) => (
                         <option
@@ -182,7 +183,8 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                         data-testid='property-user-field-options'
                         aria-label={formatMessage({id: 'playbooks.assignee_dropdown.property_user_field_label', defaultMessage: 'Select property field for assignee'})}
                         value={checklistItem.assignee_property_field_id ?? ''}
-                        onChange={(e) => handlePropertyUserFieldChange(e.target.value)}
+                        onChange={editable ? (e) => handlePropertyUserFieldChange(e.target.value) : undefined}
+                        disabled={!editable}
                     >
                         <option value=''>{formatMessage({id: 'playbooks.assignee_dropdown.select_attribute', defaultMessage: 'Select attribute...'})}</option>
                         {userPropertyFields.map((f) => (

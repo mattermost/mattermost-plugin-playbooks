@@ -44,12 +44,6 @@ var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run
 // ErrPlaybookArchived occurs when trying to modify an archived (deleted) playbook.
 var ErrPlaybookArchived = errors.New("playbook is archived")
 
-// ErrNoPermissions if the error is caused by the user not having permissions
-var ErrNoPermissions = errors.New("does not have permissions")
-
-// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
-var ErrLicensedFeature = errors.New("not covered by current server license")
-
 // ErrFilterTooWide occurs when a property value filter matches more runs than the allowed maximum.
 var ErrFilterTooWide = errors.New("filter matches too many results")
 

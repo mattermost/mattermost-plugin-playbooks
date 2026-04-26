@@ -1763,6 +1763,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_value_filter': must be 26 characters or blank")
 	}
 
+	if (options.PropertyFieldID == "") != (options.PropertyValueFilter == "") {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameters 'property_field_id' and 'property_value_filter': both must be set together")
+	}
+
 	for _, s := range options.Statuses {
 		if !validStatus(s) {
 			return PlaybookRunFilterOptions{}, errors.New("bad parameter in 'statuses': must be InProgress or Finished")
