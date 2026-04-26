@@ -281,8 +281,10 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
             // # Click Due date in the action bar
             getActionBar().findByText('Due date').click({force: true});
 
-            // * The date picker dropdown should open — react-select renders options with role="option"
-            cy.findByRole('option', {name: /Today/}).should('be.visible');
+            // * In playbook outline there is no run, so the due-date menu uses relative durations
+            //   (see DueDateSelector in webapp) — not absolute presets like "Today" on a run.
+            // * react-select renders choices with role="option"
+            cy.findByRole('option', {name: /1 day/}).should('be.visible');
         });
 
         it('sets a due date on selected tasks via the date picker', () => {
@@ -290,11 +292,11 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
             selectTask(0);
             getActionBar().findByText('Due date').click({force: true});
 
-            // # Pick "Today"
-            cy.findByRole('option', {name: /Today/}).click();
+            // # Pick a duration preset (1 day) — same menu as the test above
+            cy.findByRole('option', {name: /1 day/}).click();
 
             // * The date picker closes; the action bar remains (selection is preserved)
-            cy.findByRole('option', {name: /Today/}).should('not.exist');
+            cy.findByRole('option', {name: /1 day/}).should('not.exist');
             cy.findByText('1 task selected').should('be.visible');
         });
     });
