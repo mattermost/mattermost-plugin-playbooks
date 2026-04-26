@@ -24,24 +24,24 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testOwner = user;
-        });
-        cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-            testParticipant = newUser;
-        });
-        cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUserB) => {
-            testNewOwner = newUserB;
-        });
-        cy.apiLogin(testOwner);
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'Owner Reassignment Restricted Playbook ' + getRandomId(),
-            memberIDs: [],
-            makePublic: true,
-            createPublicPlaybookRun: true,
-        }).then((playbook) => {
-            testPlaybook = playbook;
-            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-            cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
+            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
+                testParticipant = newUser;
+                cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUserB) => {
+                    testNewOwner = newUserB;
+                    cy.apiLogin(testOwner);
+                    cy.apiCreatePlaybook({
+                        teamId: testTeam.id,
+                        title: 'Owner Reassignment Restricted Playbook ' + getRandomId(),
+                        memberIDs: [],
+                        makePublic: true,
+                        createPublicPlaybookRun: true,
+                    }).then((playbook) => {
+                        testPlaybook = playbook;
+                        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
+                        cy.playbooksToggleWithConfirmation('owner-group-only-actions-toggle');
+                    });
+                });
+            });
         });
     });
 

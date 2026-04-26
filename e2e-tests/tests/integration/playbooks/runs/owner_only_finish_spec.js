@@ -20,9 +20,9 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testOwner = user;
-        });
-        cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
-            testParticipant = newUser;
+            cy.apiCreateAndAddUserToTeam(testTeam.id).then((newUser) => {
+                testParticipant = newUser;
+            });
         });
     });
 
