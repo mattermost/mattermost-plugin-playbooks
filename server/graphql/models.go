@@ -3,6 +3,20 @@
 
 package graphql
 
+type EnumRunStatus string
+
+const EnumRunStatusInProgress EnumRunStatus = "InProgress"
+const EnumRunStatusFinished EnumRunStatus = "Finished"
+
+type EnumPropertyFieldType string
+
+const EnumPropertyFieldTypetext EnumPropertyFieldType = "text"
+const EnumPropertyFieldTypeselect EnumPropertyFieldType = "select"
+const EnumPropertyFieldTypemultiselect EnumPropertyFieldType = "multiselect"
+const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
+const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
+const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
+
 type Enum__TypeKind string
 
 const Enum__TypeKindSCALAR Enum__TypeKind = "SCALAR"
@@ -45,20 +59,6 @@ type EnumPlaybookRunType string
 
 const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
 const EnumPlaybookRunTypechannelChecklist EnumPlaybookRunType = "channelChecklist"
-
-type EnumRunStatus string
-
-const EnumRunStatusInProgress EnumRunStatus = "InProgress"
-const EnumRunStatusFinished EnumRunStatus = "Finished"
-
-type EnumPropertyFieldType string
-
-const EnumPropertyFieldTypetext EnumPropertyFieldType = "text"
-const EnumPropertyFieldTypeselect EnumPropertyFieldType = "select"
-const EnumPropertyFieldTypemultiselect EnumPropertyFieldType = "multiselect"
-const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
-const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
-const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`
@@ -166,13 +166,13 @@ type ChecklistItemUpdates struct {
 	StateModified           float64             `json:"stateModified"`
 	AssigneeID              string              `json:"assigneeID"`
 	AssigneeModified        float64             `json:"assigneeModified"`
-	AssigneeType            string              `json:"assigneeType"`
+	AssigneeType            *string             `json:"assigneeType"`
+	AssigneePropertyFieldID *string             `json:"assigneePropertyFieldID"`
 	Command                 string              `json:"command"`
 	CommandLastRun          float64             `json:"commandLastRun"`
 	DueDate                 float64             `json:"dueDate"`
 	TaskActions             []TaskActionUpdates `json:"taskActions"`
 	ConditionID             string              `json:"conditionID"`
-	AssigneePropertyFieldID string              `json:"assigneePropertyFieldID"`
 }
 
 type TaskActionUpdates struct {
@@ -259,8 +259,9 @@ type ChecklistItem struct {
 	State                   string       `json:"state"`
 	StateModified           float64      `json:"stateModified"`
 	AssigneeID              string       `json:"assigneeID"`
-	AssigneeModified        float64      `json:"assigneeModified"`
 	AssigneeType            string       `json:"assigneeType"`
+	AssigneePropertyFieldID string       `json:"assigneePropertyFieldID"`
+	AssigneeModified        float64      `json:"assigneeModified"`
 	Command                 string       `json:"command"`
 	CommandLastRun          float64      `json:"commandLastRun"`
 	DueDate                 float64      `json:"dueDate"`
@@ -268,7 +269,6 @@ type ChecklistItem struct {
 	ConditionID             string       `json:"conditionID"`
 	ConditionAction         string       `json:"conditionAction"`
 	ConditionReason         string       `json:"conditionReason"`
-	AssigneePropertyFieldID string       `json:"assigneePropertyFieldID"`
 }
 
 type TaskAction struct {

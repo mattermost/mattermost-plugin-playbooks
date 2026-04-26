@@ -54,8 +54,8 @@ export type ChecklistItem = {
 export type ChecklistItemUpdates = {
   assigneeID: Scalars['String'];
   assigneeModified: Scalars['Float'];
-  assigneePropertyFieldID: Scalars['String'];
-  assigneeType: Scalars['String'];
+  assigneePropertyFieldID?: InputMaybe<Scalars['String']>;
+  assigneeType?: InputMaybe<Scalars['String']>;
   command: Scalars['String'];
   commandLastRun: Scalars['Float'];
   conditionID: Scalars['String'];
