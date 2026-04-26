@@ -9,7 +9,7 @@ import {
 } from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
-import {DispatchFunc} from 'mattermost-redux/types/actions';
+import {AnyAction} from 'redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
@@ -38,7 +38,7 @@ export const useBulkActions = ({
     bulkEditMode,
     onExitBulkEdit,
 }: UseBulkActionsArgs) => {
-    const dispatch = useDispatch<DispatchFunc>();
+    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const {add: addToast} = useToaster();
 
@@ -120,7 +120,7 @@ export const useBulkActions = ({
                     return item;
                 }),
             }));
-            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
+            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}) as AnyAction);
         } else if (playbook) {
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,
@@ -178,7 +178,7 @@ export const useBulkActions = ({
                     return item;
                 }),
             }));
-            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}));
+            dispatch(playbookRunUpdated({...playbookRun, checklists: newChecklists}) as AnyAction);
         } else if (playbook) {
             const newChecklists = checklists.map((cl, clIdx) => ({
                 ...cl,

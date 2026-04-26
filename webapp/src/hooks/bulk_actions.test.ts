@@ -33,6 +33,14 @@ jest.mock('react-intl', () => {
     };
 });
 
+jest.mock('react-redux', () => {
+    const actual = jest.requireActual<typeof import('react-redux')>('react-redux');
+    return {
+        ...actual,
+        useDispatch: jest.fn(),
+    };
+});
+
 // --- Type helpers ---
 
 const makeItem = (overrides: Partial<ChecklistItem> = {}): ChecklistItem => ({
@@ -64,7 +72,7 @@ const mockDispatch = jest.fn();
 beforeEach(() => {
     jest.clearAllMocks();
     useToaster.mockReturnValue({add: mockAddToast});
-    jest.spyOn(redux, 'useDispatch').mockReturnValue(mockDispatch);
+    (redux.useDispatch as jest.Mock).mockReturnValue(mockDispatch);
     playbookRunUpdated.mockImplementation((run: any) => ({type: 'PLAYBOOK_RUN_UPDATED', run}));
 });
 
