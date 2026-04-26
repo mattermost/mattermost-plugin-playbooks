@@ -450,4 +450,3 @@ func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
 	})
 }
-
