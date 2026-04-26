@@ -1254,6 +1254,13 @@ type PlaybookRunService interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
+	// SetRoleAssignee sets a role-based assignee type ("owner" or "creator") for the specified checklist item.
+	SetRoleAssignee(playbookRunID, userID, assigneeType string, checklistNumber, itemNumber int) error
+
+	// SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
+	// property field resolves to on this run.
+	SetPropertyUserAssignee(userID, playbookRunID string, checklistNumber, itemNumber int, propertyFieldID string) error
+
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
 

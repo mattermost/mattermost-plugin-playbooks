@@ -1673,16 +1673,48 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		AssigneeID string `json:"assignee_id"`
+		AssigneeID              string `json:"assignee_id"`
+		AssigneeType            string `json:"assignee_type"`
+		AssigneePropertyFieldID string `json:"assignee_property_field_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
 
-	if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
-		h.HandleError(w, c.logger, err)
+	// At most one of the three assignment modes may be set in a single request.
+	modes := 0
+	if params.AssigneeID != "" {
+		modes++
+	}
+	if params.AssigneeType != "" {
+		modes++
+	}
+	if params.AssigneePropertyFieldID != "" {
+		modes++
+	}
+	if modes > 1 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "assignee_id, assignee_type, and assignee_property_field_id are mutually exclusive", errors.New("multiple assignee fields set"))
 		return
+	}
+
+	switch {
+	case params.AssigneePropertyFieldID != "":
+		if err := h.playbookRunService.SetPropertyUserAssignee(userID, id, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+	case params.AssigneeType != "":
+		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
+	default:
+		// Empty body / empty assignee_id keeps the existing "clear assignee" semantics.
+		if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
+			h.HandleError(w, c.logger, err)
+			return
+		}
 	}
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)

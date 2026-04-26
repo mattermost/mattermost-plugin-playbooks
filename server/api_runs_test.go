@@ -1897,6 +1897,72 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, e.RegularUser.Id, run.Checklists[0].Items[0].AssigneeID)
 	})
+
+	t.Run("set role assignee dispatches to SetRoleAssignee", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// Pre-seed a specific assignee so we can verify role assignment clears it.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
+		require.NoError(t, err)
+
+		err = e.PlaybooksClient.PlaybookRuns.SetItemRoleAssignee(context.Background(), run.ID, 0, 0, app.AssigneeTypeOwner)
+		require.NoError(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneeID)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("set property_user assignee dispatches to SetPropertyUserAssignee", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		// A non-existent property field must not silently succeed; if dispatch
+		// drops the field the handler would return 200 OK with no change.
+		err = e.PlaybooksClient.PlaybookRuns.SetItemPropertyUserAssignee(context.Background(), run.ID, 0, 0, "nonexistent000000000000000")
+		require.Error(t, err)
+
+		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
+	})
+
+	t.Run("mutually exclusive fields rejected with 400", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Run name",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		run = addSimpleChecklistToTun(t, run.ID)
+
+		body, err := json.Marshal(map[string]string{
+			"assignee_id":   e.RegularUser.Id,
+			"assignee_type": app.AssigneeTypeOwner,
+		})
+		require.NoError(t, err)
+
+		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
+		resp, _ := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		require.NotNil(t, resp)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
 }
 
 func TestChecklisItem_SetCommand(t *testing.T) {

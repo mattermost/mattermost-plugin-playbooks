@@ -336,6 +336,45 @@ func (s *PlaybookRunService) SetItemAssignee(ctx context.Context, playbookRunID 
 	return err
 }
 
+// SetItemRoleAssignee sets a role-based assignee ("owner" or "creator") on the specified checklist item.
+func (s *PlaybookRunService) SetItemRoleAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, assigneeType string) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		AssigneeType string `json:"assignee_type"`
+	}{assigneeType}
+
+	req, err := s.client.newAPIRequest(http.MethodPut, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
+// SetItemPropertyUserAssignee sets the assignee of the specified checklist item to whoever
+// the given User-type property field resolves to on this run.
+func (s *PlaybookRunService) SetItemPropertyUserAssignee(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, propertyFieldID string) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/assignee", playbookRunID, checklistIdx, itemIdx)
+	body := struct {
+		AssigneePropertyFieldID string `json:"assignee_property_field_id"`
+	}{propertyFieldID}
+
+	req, err := s.client.newAPIRequest(http.MethodPut, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.do(ctx, req, nil)
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
 func (s *PlaybookRunService) SetItemCommand(ctx context.Context, playbookRunID string, checklistIdx int, itemIdx int, newCommand string) error {
 	createURL := fmt.Sprintf("runs/%s/checklists/%d/item/%d/command", playbookRunID, checklistIdx, itemIdx)
 	body := struct {
