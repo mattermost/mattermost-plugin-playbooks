@@ -3,12 +3,6 @@
 
 package graphql
 
-type EnumMetricType string
-
-const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
-const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
-const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
-
 type EnumPlaybookRunType string
 
 const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
@@ -59,6 +53,12 @@ const Enum__DirectiveLocationENUM Enum__DirectiveLocation = "ENUM"
 const Enum__DirectiveLocationENUM_VALUE Enum__DirectiveLocation = "ENUM_VALUE"
 const Enum__DirectiveLocationINPUT_OBJECT Enum__DirectiveLocation = "INPUT_OBJECT"
 const Enum__DirectiveLocationINPUT_FIELD_DEFINITION Enum__DirectiveLocation = "INPUT_FIELD_DEFINITION"
+
+type EnumMetricType string
+
+const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
+const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
+const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`
