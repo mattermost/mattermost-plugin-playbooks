@@ -88,7 +88,7 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
 };
 
 export const useIsSystemAdmin = (): boolean => {
-    return useSelector(isCurrentUserAdmin);
+    return useAppSelector(isCurrentUserAdmin);
 };
 
 /**
@@ -100,6 +100,6 @@ export const useIsSystemAdmin = (): boolean => {
  * change-owner UI guards without adding a playbook-admin check.
  */
 export const useIsBlockedByOwnerOnlyForFinishRestore = (ownerGroupOnlyActions: boolean | undefined, isOwner: boolean | undefined): boolean => {
-    const isSystemAdmin = useSelector(isCurrentUserAdmin);
+    const isSystemAdmin = useAppSelector(isCurrentUserAdmin);
     return Boolean(ownerGroupOnlyActions && !isOwner && !isSystemAdmin);
 };

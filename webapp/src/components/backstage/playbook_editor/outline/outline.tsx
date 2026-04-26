@@ -11,10 +11,10 @@ import React, {
 
 import {useIntl} from 'react-intl';
 
-import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-
 import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import MarkdownEdit from 'src/components/markdown_edit';
 import ChecklistList from 'src/components/checklist/checklist_list';
@@ -49,7 +49,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
     const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
     const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
     const [restOverrides, setRestOverrides] = useState<Partial<RestOnlyOverrides>>({});

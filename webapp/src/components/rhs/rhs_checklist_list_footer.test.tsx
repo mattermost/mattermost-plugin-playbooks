@@ -5,7 +5,7 @@
 
 import React from 'react';
 import renderer from 'react-test-renderer';
-import {useSelector} from 'react-redux';
+import * as reduxModule from 'react-redux';
 
 jest.mock('./rhs_checklist_list', () => ({
     ChecklistParent: {
@@ -72,7 +72,7 @@ jest.mock('@mattermost/compass-icons/components', () => ({
     FlagOutlineIcon: () => null,
 }));
 
-const mockUseSelector = useSelector as jest.Mock;
+const mockUseSelector = reduxModule.useSelector as unknown as jest.Mock;
 
 const mockPlaybookRun = {
     id: 'run-1',
