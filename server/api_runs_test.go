@@ -1908,7 +1908,8 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 		run = addSimpleChecklistToTun(t, run.ID)
 
-		// Pre-seed a specific assignee so we can verify role assignment clears it.
+		// Pre-seed a specific assignee so we can verify role assignment overwrites it
+		// with the resolved role-user (the owner), not leaves the prior explicit value.
 		err = e.PlaybooksClient.PlaybookRuns.SetItemAssignee(context.Background(), run.ID, 0, 0, e.RegularUser2.Id)
 		require.NoError(t, err)
 
@@ -1918,7 +1919,11 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
 		require.NoError(t, err)
 		require.Equal(t, app.AssigneeTypeOwner, run.Checklists[0].Items[0].AssigneeType)
-		require.Empty(t, run.Checklists[0].Items[0].AssigneeID)
+		// SetRoleAssignee resolves AssigneeID to the role's concrete user immediately
+		// (see playbook_run_service.go SetRoleAssignee), so AssigneeID is the owner,
+		// not empty and not the previously explicit RegularUser2.
+		require.Equal(t, run.OwnerUserID, run.Checklists[0].Items[0].AssigneeID)
+		require.NotEqual(t, e.RegularUser2.Id, run.Checklists[0].Items[0].AssigneeID)
 		require.Empty(t, run.Checklists[0].Items[0].AssigneePropertyFieldID)
 	})
 
@@ -2665,6 +2670,12 @@ func TestUpdatePlaybookRun(t *testing.T) {
 	})
 
 	t.Run("update ChannelID to public channel with permission succeeds", func(t *testing.T) {
+		// Defensive: a prior sub-test ("no permissions to update run") removes RegularUser
+		// from BasicTeam and re-adds them, which evicts but does not restore their channel
+		// memberships. Re-add to BasicPublicChannel so this happy-path test is self-contained.
+		_, _, err := e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicPublicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Run for public channel happy path",
 			OwnerUserID: e.RegularUser.Id,
@@ -2673,8 +2684,8 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// e.BasicPublicChannel is in e.BasicTeam and RegularUser was added as a member
-		// during setup, so they have ManagePublicChannelProperties.
+		// e.BasicPublicChannel is in e.BasicTeam and RegularUser is (re)added above as a member,
+		// so they have ManagePublicChannelProperties.
 		updated, err := e.PlaybooksClient.PlaybookRuns.Update(context.Background(), testRun.ID, client.PlaybookRunUpdateOptions{
 			ChannelID: &e.BasicPublicChannel.Id,
 		})
@@ -2706,6 +2717,11 @@ func TestUpdatePlaybookRun(t *testing.T) {
 	})
 
 	t.Run("update BroadcastChannelIDs with permitted channel succeeds", func(t *testing.T) {
+		// Defensive: ensure RegularUser is a member of BasicPublicChannel so they have
+		// CreatePost on it (see the ChannelID happy-path test above for why this matters).
+		_, _, err := e.ServerAdminClient.AddChannelMember(context.Background(), e.BasicPublicChannel.Id, e.RegularUser.Id)
+		require.NoError(t, err)
+
 		testRun, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
 			Name:        "Run for broadcast happy path",
 			OwnerUserID: e.RegularUser.Id,

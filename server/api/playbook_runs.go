@@ -285,7 +285,10 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run summary", err)
 			return
 		}
-		fieldsToUpdate["Summary"] = trimmed
+		// IR_Incident's column is named "Description" — only SELECT aliases it as Summary
+		// (server/sqlstore/playbook_run.go:184: `i.Description AS Summary`).
+		// GraphqlUpdate.SetMap writes the key as a literal column name, so it must be "Description".
+		fieldsToUpdate["Description"] = trimmed
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 
