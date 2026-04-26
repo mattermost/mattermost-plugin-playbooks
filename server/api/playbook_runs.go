@@ -83,11 +83,11 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
-	// These routes are intentionally outside playbookRunRouterAuthorized: each handler
-	// performs its own permission check (RunChangeOwner, RunFinish, RunRestore) which may
-	// be stricter than the middleware's RunManageProperties when OwnerGroupOnlyActions is set.
-	// Dialog handlers must also return SubmitDialogResponse (HTTP 200) on all paths,
-	// which the middleware's error-format would break.
+	// These routes are intentionally outside playbookRunRouterAuthorized so that:
+	// (a) dialog handlers can return SubmitDialogResponse (HTTP 200) on all paths,
+	//     which the middleware's error-format would break, and
+	// (b) each handler performs its own RunManageProperties check directly,
+	//     keeping the door open for action-specific permission checks in the future.
 	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
@@ -285,7 +285,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run summary", err)
 			return
 		}
-		fieldsToUpdate["Description"] = trimmed
+		fieldsToUpdate["Summary"] = trimmed
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 

@@ -403,6 +403,21 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	createdChannel := false
 
 	if playbookRun.ChannelID == "" {
+		// Resolve the channel name template before creating the channel so both
+		// the run record and the channel itself use the same resolved name.
+		if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && pb.ChannelNameTemplate != "" {
+			systemTokens := s.buildSystemTokens(playbookRun)
+			resolved, _ := ResolveTemplate(pb.ChannelNameTemplate, ResolveOptions{SystemTokens: systemTokens})
+			resolved = strings.TrimSpace(resolved)
+			if resolved != "" && resolved != pb.ChannelNameTemplate {
+				// Template contained tokens that resolved — always use the resolved name.
+				playbookRun.Name = resolved
+			} else if playbookRun.Name == "" && resolved != "" {
+				// Literal template (no tokens) — use as fallback when no name was provided.
+				playbookRun.Name = resolved
+			}
+		}
+
 		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
 		if pb != nil {
 			overviewURL := GetRunDetailsRelativeURL(playbookRun.ID)
@@ -424,19 +439,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			return nil, err
 		}
 
-	}
-
-	if pb != nil && pb.ChannelMode == PlaybookRunCreateNewChannel && pb.ChannelNameTemplate != "" {
-		systemTokens := s.buildSystemTokens(playbookRun)
-		resolved, _ := ResolveTemplate(pb.ChannelNameTemplate, ResolveOptions{SystemTokens: systemTokens})
-		resolved = strings.TrimSpace(resolved)
-		if resolved != "" && resolved != pb.ChannelNameTemplate {
-			// Template contained tokens that resolved — always use the resolved name.
-			playbookRun.Name = resolved
-		} else if playbookRun.Name == "" && resolved != "" {
-			// Literal template (no tokens) — use as fallback when no name was provided.
-			playbookRun.Name = resolved
-		}
 	}
 
 	if pb != nil && pb.MessageOnJoinEnabled && pb.MessageOnJoin != "" {
@@ -561,13 +563,13 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 							logger.WithError(err).Warn("failed to evaluate conditions for run")
 						}
 					}
-
-					// Save the updated playbook run with correct condition IDs and visibility states
-					playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
-					if err != nil {
-						logger.WithError(err).Warn("failed to update playbook run with new condition IDs")
-					}
 				}
+			}
+
+			// Persist checklist remapping (and condition ID/visibility updates if any) in one write.
+			playbookRun, err = s.store.UpdatePlaybookRun(playbookRun)
+			if err != nil {
+				logger.WithError(err).Warn("failed to update playbook run with property field remapping")
 			}
 		}
 	}
@@ -2384,7 +2386,16 @@ func (s *PlaybookRunServiceImpl) SetRoleAssignee(playbookRunID, userID, assignee
 
 	timestamp := model.GetMillis()
 	itemToCheck.AssigneeType = assigneeType
-	itemToCheck.AssigneeID = ""
+	// Resolve the concrete user ID for the role so the assignee is immediately
+	// visible rather than appearing empty until a re-resolution event occurs.
+	switch assigneeType {
+	case AssigneeTypeOwner:
+		itemToCheck.AssigneeID = playbookRunToModify.OwnerUserID
+	case AssigneeTypeCreator:
+		itemToCheck.AssigneeID = playbookRunToModify.ReporterUserID
+	default:
+		itemToCheck.AssigneeID = ""
+	}
 	itemToCheck.AssigneePropertyFieldID = ""
 	itemToCheck.AssigneeModified = timestamp
 	updateChecklistAndItemTimestamp(&playbookRunToModify.Checklists[checklistNumber], itemToCheck, timestamp)
@@ -4360,7 +4371,9 @@ func (s *PlaybookRunServiceImpl) AddParticipants(playbookRunID string, userIDs [
 		}).Error("failed to get channel")
 	}
 
-	s.failedInvitedUserActions(usersFailedToInvite, channel)
+	if channel != nil {
+		s.failedInvitedUserActions(usersFailedToInvite, channel)
+	}
 
 	requesterUser, err := s.pluginAPI.User.Get(requesterUserID)
 	if err != nil {
@@ -5419,13 +5432,19 @@ func (s *PlaybookRunServiceImpl) buildSystemTokens(run *PlaybookRun) map[string]
 	}
 }
 
-// resolveUserDisplayName resolves a user ID to a display name, falling back to the raw ID.
+// resolveUserDisplayName resolves a user ID to a display name, respecting the
+// workspace's ShowFullName privacy setting and falling back to the raw ID on error.
 func (s *PlaybookRunServiceImpl) resolveUserDisplayName(userID string) string {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil || user == nil {
 		return userID
 	}
-	displayName := model.SanitizeUnicode(user.GetDisplayName(model.ShowNicknameFullName))
+	nameMode := model.ShowNicknameFullName
+	showFullName := s.pluginAPI.Configuration.GetConfig().PrivacySettings.ShowFullName
+	if showFullName != nil && !*showFullName {
+		nameMode = model.ShowUsername
+	}
+	displayName := model.SanitizeUnicode(user.GetDisplayName(nameMode))
 	if displayName == "" {
 		return user.Username
 	}

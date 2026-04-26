@@ -857,6 +857,9 @@ func (s *propertyService) validateSelectValue(propertyField *model.PropertyField
 	}
 
 	for _, option := range pf.Attrs.Options {
+		if option == nil {
+			continue
+		}
 		if option.GetID() == value {
 			return nil
 		}
@@ -877,6 +880,9 @@ func (s *propertyService) validateMultiselectValue(propertyField *model.Property
 
 	validOptions := make(map[string]struct{})
 	for _, option := range pf.Attrs.Options {
+		if option == nil {
+			continue
+		}
 		validOptions[option.GetID()] = struct{}{}
 	}
 
@@ -1041,9 +1047,9 @@ func (s *propertyService) GetRunIDsByPropertyValue(fieldID, optionID string) ([]
 		}
 		for _, v := range values {
 			runIDs = append(runIDs, v.TargetID)
-		}
-		if len(runIDs) >= maxRunIDsForPropertyFilter {
-			break
+			if len(runIDs) >= maxRunIDsForPropertyFilter {
+				return runIDs, nil
+			}
 		}
 		if len(values) < PropertyBulkSearchPerPage {
 			break

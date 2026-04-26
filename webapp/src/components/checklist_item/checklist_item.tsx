@@ -231,7 +231,10 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         setTaskActions(props.checklistItem.task_actions);
     }, [props.checklistItem.task_actions]);
 
+    const assigneeCallSeqRef = useRef(0);
+
     const onAssigneeChange = async (user?: UserProfile) => {
+        const seq = ++assigneeCallSeqRef.current;
         const userId = user?.id || '';
         const prevAssigneeID = assigneeID;
         const prevAssigneeType = assigneeType;
@@ -244,7 +247,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
         if (props.playbookRunId) {
             const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
-            if (response.error && isMounted.current) {
+            if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
                 setAssigneeID(prevAssigneeID);
                 setAssigneeType(prevAssigneeType);
                 setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
@@ -261,8 +264,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             props.onUpdateChecklistItem?.(newItem);
         }
     };
-
-    const assigneeCallSeqRef = useRef(0);
 
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
