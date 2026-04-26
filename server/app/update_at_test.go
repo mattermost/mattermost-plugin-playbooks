@@ -451,17 +451,3 @@ func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 	})
 }
 
-func TestUpdateAt_PlaybookRun(t *testing.T) {
-	t.Run("UpdateAt field is set when using GraphqlUpdate", func(t *testing.T) {
-		before := model.GetMillis()
-
-		// Create a setmap to simulate GraphqlUpdate
-		setmap := map[string]interface{}{
-			"Name":     "New Name",
-			"UpdateAt": model.GetMillis(),
-		}
-
-		// Check that UpdateAt is set to a valid timestamp
-		assert.GreaterOrEqual(t, setmap["UpdateAt"].(int64), before)
-	})
-}

@@ -47,7 +47,7 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 		RunNumberPrefix: "INC",
 	}
 
-	t.Run("prefix change allowed even when runs exist", func(t *testing.T) {
+	t.Run("prefix change is allowed", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -55,21 +55,6 @@ func TestPlaybookService_UpdateRunNumberPrefixMutable(t *testing.T) {
 
 		updated := basePlaybook
 		updated.RunNumberPrefix = "CHANGED"
-
-		mockStore.EXPECT().Update(gomock.Any()).Return(nil)
-
-		err := svc.Update(updated, "user1")
-		require.NoError(t, err)
-	})
-
-	t.Run("prefix change allowed when no runs exist", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		svc, mockStore, _ := makeService(ctrl)
-
-		updated := basePlaybook
-		updated.RunNumberPrefix = "NEW"
 
 		mockStore.EXPECT().Update(gomock.Any()).Return(nil)
 

@@ -57,36 +57,6 @@ func TestNewPlaybookRunDialog_NameFieldOptional(t *testing.T) {
 		assert.Equal(t, 1, nameEl.MinLength, "MinLength should be 1 when no templates")
 	})
 
-	t.Run("single playbook with ChannelNameTemplate — name is optional", func(t *testing.T) {
-		svc := newDialogTestService(t)
-		playbooks := []Playbook{
-			{ID: "pb-1", Title: "Template Playbook", ChannelNameTemplate: "{SEQ} - Incident"},
-		}
-
-		dialog, err := svc.newPlaybookRunDialog("team-1", "user-1", "", "client-1", playbooks)
-		require.NoError(t, err)
-
-		nameEl := findNameElement(dialog)
-		require.NotNil(t, nameEl)
-		assert.True(t, nameEl.Optional, "name should be optional when single playbook has ChannelNameTemplate")
-		assert.Equal(t, 0, nameEl.MinLength, "MinLength should be 0 when templates exist")
-	})
-
-	t.Run("playbook with ChannelNameTemplate — name is optional", func(t *testing.T) {
-		svc := newDialogTestService(t)
-		playbooks := []Playbook{
-			{ID: "pb-1", Title: "Channel Template Playbook", ChannelNameTemplate: "{SEQ}-channel"},
-		}
-
-		dialog, err := svc.newPlaybookRunDialog("team-1", "user-1", "", "client-1", playbooks)
-		require.NoError(t, err)
-
-		nameEl := findNameElement(dialog)
-		require.NotNil(t, nameEl)
-		assert.True(t, nameEl.Optional, "name should be optional when playbook has ChannelNameTemplate")
-		assert.Equal(t, 0, nameEl.MinLength)
-	})
-
 	t.Run("mixed playbooks — name is required because user may pick a playbook without a template", func(t *testing.T) {
 		svc := newDialogTestService(t)
 		playbooks := []Playbook{

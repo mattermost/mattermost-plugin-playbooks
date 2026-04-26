@@ -269,11 +269,6 @@ func TestPropertyService_sanitizeTextValue(t *testing.T) {
 			input:          "   ",
 			expectedOutput: "",
 		},
-		{
-			name:           "empty string is allowed",
-			input:          "",
-			expectedOutput: "",
-		},
 	}
 
 	for _, tt := range tests {

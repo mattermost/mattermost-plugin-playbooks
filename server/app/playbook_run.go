@@ -901,9 +901,9 @@ func (r *PlaybookRun) SetChecklistFromPlaybook(playbook Playbook) {
 // SetConfigurationFromPlaybook overwrites this run's configuration with the data from the provided playbook,
 // effectively snapshoting the playbook's configuration in this moment of time.
 func (r *PlaybookRun) SetConfigurationFromPlaybook(playbook Playbook, source string) {
-	// Runs created through managed dialog lack summary, and we should use the template (if enabled)
-	// Runs created though new modal would have filled the summary in the webapp
-	if playbook.RunSummaryTemplateEnabled && source == RunSourceDialog {
+	// Runs created through managed dialog or slash command lack summary, and we should use the template (if enabled)
+	// Runs created through new modal would have filled the summary in the webapp
+	if playbook.RunSummaryTemplateEnabled && (source == RunSourceDialog || source == RunSourceCommand) {
 		r.Summary = playbook.RunSummaryTemplate
 	}
 	r.ReminderMessageTemplate = playbook.ReminderMessageTemplate
