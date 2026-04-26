@@ -3,7 +3,7 @@
 
 import React, {useCallback, useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
 import styled from 'styled-components';
 import {
     DragDropContext,
@@ -18,6 +18,8 @@ import {
 import classNames from 'classnames';
 
 import {FloatingPortal} from '@floating-ui/react';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType, PlaybookUpdates} from 'src/graphql/generated/graphql';
@@ -113,7 +115,7 @@ const ChecklistList = ({
     autoAddTask,
     onTaskAdded,
 }: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [newChecklistName, setNewChecklistName] = useState('');

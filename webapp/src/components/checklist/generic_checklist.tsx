@@ -3,11 +3,13 @@
 
 import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+
 import styled from 'styled-components';
 import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {Checklist, ChecklistItem, emptyChecklistItem} from 'src/types/playbook';
 import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
@@ -50,7 +52,7 @@ interface Props {
 
 const GenericChecklist = (props: Props) => {
     const {formatMessage} = useIntl();
-    const myUser = useSelector(getCurrentUser);
+    const myUser = useAppSelector(getCurrentUser);
     const [addingItem, setAddingItem] = useState(props.autoAddTask ?? false);
     const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
     const [newItemKey, setNewItemKey] = useState(0);

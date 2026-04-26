@@ -4,12 +4,12 @@
 import React, {ComponentProps, useCallback, useMemo} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {useDispatch} from 'react-redux';
-
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import styled from 'styled-components';
 import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 
@@ -32,7 +32,7 @@ interface Props {
 
 const LegacyActionsEdit = ({playbook}: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
 

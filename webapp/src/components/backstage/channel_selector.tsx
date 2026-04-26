@@ -3,7 +3,7 @@
 
 import React, {useEffect} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {createSelector} from 'mattermost-redux/selectors/create_selector';
 import styled from 'styled-components';
 
@@ -16,6 +16,8 @@ import {Team} from '@mattermost/types/teams';
 import {fetchChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {StyledSelect} from './styles';
 
@@ -93,10 +95,10 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
 };
 
 const ChannelSelector = (props: Props & {className?: string}) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
-    const selectableChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(props.teamId));
-    const allPublicChannels = useSelector(getAllPublicChannelsInTeam(props.teamId));
+    const selectableChannels = useAppSelector(getMyPublicAndPrivateChannelsInTeam(props.teamId));
+    const allPublicChannels = useAppSelector(getAllPublicChannelsInTeam(props.teamId));
 
     useEffect(() => {
         if (props.teamId !== '' && selectableChannels.length === 0) {

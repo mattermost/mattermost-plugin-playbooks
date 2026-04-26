@@ -2,9 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 import {postMessageToAdmins} from 'src/client';
@@ -29,9 +30,9 @@ interface Props {
 
 const UpgradeModal = (props: Props) => {
     const openContactSales = useOpenContactSales();
-    const isServerCloud = useSelector(isCloud);
-    const isAdmin = useSelector(isCurrentUserAdmin);
-    const isServerTeamEdition = useSelector(isTeamEdition);
+    const isServerCloud = useAppSelector(isCloud);
+    const isAdmin = useAppSelector(isCurrentUserAdmin);
+    const isServerTeamEdition = useAppSelector(isTeamEdition);
     const openTrialFormModal = useOpenStartTrialFormModal();
 
     const [actionState, setActionState] = useState(ModalActionState.Uninitialized);
