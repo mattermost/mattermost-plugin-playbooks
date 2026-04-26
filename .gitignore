@@ -1,7 +1,3 @@
-.env.setup
-scripts/.env.local.setup
-scripts/.env.cloud.setup
-demo/seed-state.env
 .eslintcache
 .stylelintcache
 report.xml
