@@ -142,7 +142,6 @@ func TestGraphQLPlaybooks(t *testing.T) {
 				"dueDate":                 100,
 				"conditionID":             "",
 				"assigneeType":            "",
-				"assigneeGroupID":         "",
 				"assigneePropertyFieldID": "",
 			},
 		}
@@ -200,7 +199,6 @@ func TestGraphQLPlaybooks(t *testing.T) {
 				"dueDate":                 0,
 				"conditionID":             "",
 				"assigneeType":            "",
-				"assigneeGroupID":         "",
 				"assigneePropertyFieldID": "",
 			},
 		}
@@ -255,7 +253,6 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"dueDate":                 0,
 				"conditionID":             "",
 				"assigneeType":            "",
-				"assigneeGroupID":         "",
 				"assigneePropertyFieldID": "",
 			},
 		}
@@ -284,7 +281,6 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"dueDate":                 0,
 				"conditionID":             "",
 				"assigneeType":            "",
-				"assigneeGroupID":         "",
 				"assigneePropertyFieldID": "",
 			},
 		}
@@ -313,7 +309,6 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"dueDate":                 0,
 				"conditionID":             "",
 				"assigneeType":            "",
-				"assigneeGroupID":         "",
 				"assigneePropertyFieldID": "",
 			},
 		}
@@ -343,7 +338,6 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"dueDate":                 0,
 				"conditionID":             "",
 				"assigneeType":            "",
-				"assigneeGroupID":         "",
 				"assigneePropertyFieldID": "",
 			},
 		}
@@ -378,7 +372,6 @@ func TestGraphQLUpdatePlaybookFails(t *testing.T) {
 				"dueDate":                 0,
 				"conditionID":             "",
 				"assigneeType":            "",
-				"assigneeGroupID":         "",
 				"assigneePropertyFieldID": "",
 			},
 		}
