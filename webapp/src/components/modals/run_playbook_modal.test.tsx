@@ -532,9 +532,9 @@ describe('RunPlaybookModal — template mode', () => {
                 btn.props.onClick();
             });
 
-            expect(mockCreatePlaybookRun).toHaveBeenCalledTimes(1);
-            const args = mockCreatePlaybookRun.mock.calls[0];
-            expect(args[7]).toBeUndefined();
+            expect(mockCreatePlaybookRun).toHaveBeenCalledWith(
+                'playbook-1', 'mock-user-id', 'team-1', 'My Run', '', undefined, false, undefined,
+            );
         });
     });
 
@@ -682,30 +682,46 @@ describe('RunPlaybookModal — template mode', () => {
         });
 
         it('resets property values when a new playbook is selected', () => {
-            // First render with no playbookId
+            // altPlaybook has the same template token so the field stays rendered after switching,
+            // letting us verify the value was cleared (not just hidden).
+            const altPlaybook = {
+                ...basePlaybook,
+                id: 'playbook-2',
+                channel_name_template: '{Severity} - Alt Incident',
+                propertyFields: playbookWithTemplate.propertyFields,
+            };
+
             mockUsePlaybook.mockReturnValue([playbookWithTemplate, {isFetching: false, error: undefined}]);
             mockUsePlaybookAttributes.mockReturnValue(playbookWithTemplate.propertyFields);
 
             let component: renderer.ReactTestRenderer;
             act(() => {
-                component = renderer.create(<RunPlaybookModal {...{...defaultProps, playbookId: undefined}}/>);
+                component = renderer.create(<RunPlaybookModal {...defaultProps}/>);
             });
 
-            // Select a playbook — triggers handleSelectPlaybook('playbook-selected')
-            const tree = component!.toJSON();
-            const selector = findNodeByTestId(tree, 'playbooks-selector');
-            act(() => {
-                selector.props.onClick();
-            });
-
-            // Now on run-details step; property field should be visible and empty (not disabled)
-            const detailsTree = component!.toJSON();
-            const fieldInput = findNodeByTestId(detailsTree, 'property-field-field-sev');
+            // Populate the property field
+            const fieldInput = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
             expect(fieldInput).not.toBeNull();
+            act(() => {
+                fieldInput.props.onChange({target: {value: 'Critical'}});
+            });
 
-            // Confirm button should be disabled because the required field has no value yet
-            const btn = findNodeByTestId(detailsTree, 'confirm-button');
-            expect(btn.props.disabled).toBe(true);
+            // Confirm button enabled after filling required field
+            expect(findNodeByTestId(component!.toJSON(), 'confirm-button').props.disabled).toBe(false);
+
+            // Switch to a different playbook — changing playbook.id triggers the useEffect reset
+            mockUsePlaybook.mockReturnValue([altPlaybook, {isFetching: false, error: undefined}]);
+            act(() => {
+                component.update(<RunPlaybookModal {...defaultProps}/>);
+            });
+
+            // Property field still rendered (same template token) but value cleared by the reset
+            const resetField = findNodeByTestId(component!.toJSON(), 'property-field-field-sev');
+            expect(resetField).not.toBeNull();
+            expect(resetField.props.value).toBe('');
+
+            // Confirm button disabled because the required field is now empty
+            expect(findNodeByTestId(component!.toJSON(), 'confirm-button').props.disabled).toBe(true);
         });
     });
 });
