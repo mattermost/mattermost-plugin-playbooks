@@ -68,8 +68,6 @@ export interface PlaybookWithChecklist extends Playbook {
     channel_mode: string;
     channel_id: string;
 
-    new_channel_only: boolean;
-    auto_archive_channel: boolean;
     run_number_prefix: string;
     next_run_number: number;
 
@@ -221,8 +219,6 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         remove_channel_member_on_removed_participant: true,
         channel_id: '',
         channel_mode: 'create_new_channel',
-        new_channel_only: false,
-        auto_archive_channel: false,
         run_number_prefix: '',
         next_run_number: 1,
         propertyFields: [],

@@ -565,7 +565,6 @@
   "playbooks.run_playbook_modal.loading": "Loading playbook details…",
   "playbooks.run_playbook_modal.name_preview": "Preview: {preview}",
   "playbooks.run_playbook_modal.name_preview_too_long": "The resolved run name exceeds the {maxLength}-character limit. Shorten the field values used in the template.",
-  "playbooks.run_playbook_modal.new_channel_only_hint": "This playbook requires a new channel for each run",
   "playbooks.run_playbook_modal.optional_suffix": "(optional)",
   "playbooks.run_playbook_modal.run_name_label": "Run name{suffix}",
   "playbooks.run_playbook_modal.run_name_too_long": "The run name should not exceed {maxLength} characters",

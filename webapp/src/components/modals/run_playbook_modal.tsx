@@ -125,15 +125,12 @@ export const RunPlaybookModal = ({
             return;
         }
 
-        // Determine the effective channel mode first (new_channel_only forces create_new_channel)
-        const effectiveMode = playbook.new_channel_only ? 'create_new_channel' : playbook.channel_mode;
-
         // Pre-fill with the channel_name_template so the user can see the raw template.
         // When a template is NOT set the input is required and starts empty.
         setRunName(playbook.channel_name_template ?? '');
 
         setRunSummary(playbook.run_summary_template_enabled ? playbook.run_summary_template : '');
-        setChannelMode(effectiveMode);
+        setChannelMode(playbook.channel_mode);
         setChannelId(playbook.channel_id);
         setCreatePublicRun(playbook.create_public_playbook_run);
     }, [playbook, selectedPlaybookId]);
@@ -404,7 +401,6 @@ export const RunPlaybookModal = ({
                         channelId={channelId}
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
-                        newChannelOnly={playbook?.new_channel_only ?? false}
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
@@ -512,37 +508,25 @@ type channelProps = {
     channelMode: string;
     channelId: string;
     createPublicRun: boolean;
-    newChannelOnly: boolean;
     onSetCreatePublicRun: (val: boolean) => void;
     onSetChannelMode: (mode: 'link_existing_channel' | 'create_new_channel') => void;
     onSetChannelId: (channelId: string) => void;
 };
 
-const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, newChannelOnly, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
     const {formatMessage} = useIntl();
     const createNewChannel = channelMode === 'create_new_channel';
-    const linkExistingChannel = channelMode === 'link_existing_channel' && !newChannelOnly;
+    const linkExistingChannel = channelMode === 'link_existing_channel';
     return (
         <ChannelContainer>
-            <ChannelBlock aria-disabled={newChannelOnly}>
+            <ChannelBlock>
                 <StyledRadioInput
                     data-testid={'link-existing-channel-radio'}
                     type='radio'
                     checked={linkExistingChannel}
-                    disabled={newChannelOnly}
-                    aria-describedby={newChannelOnly ? 'new-channel-only-hint' : undefined}
-                    onChange={() => {
-                        if (!newChannelOnly) {
-                            onSetChannelMode('link_existing_channel');
-                        }
-                    }}
+                    onChange={() => onSetChannelMode('link_existing_channel')}
                 />
                 <FormattedMessage defaultMessage='Link to an existing channel'/>
-                {newChannelOnly && (
-                    <NewChannelOnlyHint id='new-channel-only-hint'>
-                        {formatMessage({id: 'playbooks.run_playbook_modal.new_channel_only_hint', defaultMessage: 'This playbook requires a new channel for each run'})}
-                    </NewChannelOnlyHint>
-                )}
             </ChannelBlock>
             {linkExistingChannel && (
                 <SelectorWrapper>
@@ -1003,13 +987,6 @@ const PropertyFieldLabel = styled.label`
     font-size: 12px;
     font-weight: 600;
     line-height: 16px;
-`;
-
-const NewChannelOnlyHint = styled.span`
-    margin-left: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    font-size: 12px;
-    font-style: italic;
 `;
 
 const MultiuserFieldContainer = styled.div`
