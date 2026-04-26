@@ -65,7 +65,7 @@ const makeChecklistItem = (overrides = {}) => ({
 
 describe('AssigneeDropdown', () => {
     beforeEach(() => {
-        (useSelector as jest.Mock).mockReturnValue({});
+        (useSelector as unknown as jest.Mock).mockReturnValue({});
     });
 
     it('shows Run Owner as a role option', () => {
