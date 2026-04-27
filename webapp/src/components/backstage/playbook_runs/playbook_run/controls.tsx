@@ -18,6 +18,7 @@ import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
@@ -304,8 +305,13 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
 export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
     const {formatMessage} = useIntl();
     const {create} = usePlaybooksRouting();
+    const currentTeamId = useSelector(getCurrentTeamId);
 
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
+
+    // For DM/GM-linked runs, team_id is empty; fall back to the user's current team
+    // so the server's team-scoped PlaybookCreate permission check passes.
+    const targetTeamId = props.playbookRun.team_id || currentTeamId;
 
     const handleSaveAsPlaybook = () => {
         // Sanitize checklists by removing IDs and using newChecklistItem helper
@@ -324,7 +330,7 @@ export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
         // Always create public playbooks (can convert public -> private later, but not vice versa)
         // Navigate to create new playbook with the run's checklists as a template
         create({
-            teamId: props.playbookRun.team_id,
+            teamId: targetTeamId,
             description: props.playbookRun.summary || formatMessage({defaultMessage: 'Created from "{runName}"'}, {runName: props.playbookRun.name}),
             public: true,
             name: props.playbookRun.name,
@@ -333,7 +339,7 @@ export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
         });
     };
 
-    if (!isChannelChecklist) {
+    if (!isChannelChecklist || !targetTeamId) {
         return null;
     }
 
