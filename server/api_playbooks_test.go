@@ -1952,6 +1952,42 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "System Admin Edit", updated.Title)
 	})
+
+	t.Run("playbook admin (non-sysadmin) can disable AdminOnlyEdit", func(t *testing.T) {
+		// Ensure the flag is on before the test (self-contained).
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		// RegularUser2 is a non-sysadmin playbook admin — disabling the flag should be allowed.
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.False(t, confirmed.AdminOnlyEdit)
+	})
+
+	t.Run("playbook admin (non-sysadmin) enabling AdminOnlyEdit returns 403", func(t *testing.T) {
+		// RegularUser2 is a playbook_admin but not a system admin — enabling the flag must be sysadmin-only.
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.False(t, confirmed.AdminOnlyEdit)
+	})
 }
 
 // TestAdminOnlyEdit_Create verifies that only system admins can create a playbook
@@ -1976,17 +2012,6 @@ func TestAdminOnlyEdit_Create(t *testing.T) {
 			TeamID:        e.BasicTeam.Id,
 			Public:        true,
 			AdminOnlyEdit: true,
-		})
-		require.NoError(t, err)
-		require.NotEmpty(t, id)
-	})
-
-	t.Run("regular user creating playbook with AdminOnlyEdit=false succeeds", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-			Title:         "Regular Playbook",
-			TeamID:        e.BasicTeam.Id,
-			Public:        true,
-			AdminOnlyEdit: false,
 		})
 		require.NoError(t, err)
 		require.NotEmpty(t, id)

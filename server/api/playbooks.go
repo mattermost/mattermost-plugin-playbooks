@@ -516,10 +516,9 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'page': it should be a positive number")
 	}
 
-	const defaultPerPage = 1000
 	perPageParam := params.Get("per_page")
 	if perPageParam == "" || perPageParam == "0" {
-		perPageParam = strconv.Itoa(defaultPerPage)
+		perPageParam = "1000"
 	}
 	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
@@ -905,14 +904,6 @@ func (h *PlaybookHandler) requireSysadminForAdminOnlyEdit(w http.ResponseWriter,
 	return false
 }
 
-func (h *PlaybookHandler) requirePlaybookAttributesLicense(w http.ResponseWriter, logger logrus.FieldLogger) bool {
-	if h.licenseChecker.PlaybookAttributesAllowed() {
-		return true
-	}
-	HandleErrorWithCode(logger, w, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
-	return false
-}
-
 func (h *PlaybookHandler) authorisePropertyFieldEdit(w http.ResponseWriter, logger logrus.FieldLogger, userID, playbookID string) bool {
 	if !model.IsValidId(playbookID) {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid playbook ID", nil)
@@ -938,7 +929,8 @@ func (h *PlaybookHandler) getPlaybookPropertyFields(c *Context, w http.ResponseW
 	playbookID := vars["id"]
 	logger := c.logger.WithField("playbook_id", playbookID)
 
-	if !h.requirePlaybookAttributesLicense(w, logger) {
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
 		return
 	}
 
@@ -974,7 +966,8 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 	playbookID := vars["id"]
 	logger := c.logger.WithField("playbook_id", playbookID)
 
-	if !h.requirePlaybookAttributesLicense(w, logger) {
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
 		return
 	}
 
@@ -1012,7 +1005,8 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 	fieldID := vars["fieldID"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
 
-	if !h.requirePlaybookAttributesLicense(w, logger) {
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
 		return
 	}
 
@@ -1049,6 +1043,14 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 
 	updatedField, err := h.playbookService.UpdatePropertyField(playbookID, *propertyField)
 	if err != nil {
+		if errors.Is(err, app.ErrPropertyOptionsInUse) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
+		if errors.Is(err, app.ErrPropertyFieldTypeChangeNotAllowed) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, logger, err)
 		return
 	}
@@ -1062,7 +1064,8 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	fieldID := vars["fieldID"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID, "field_id": fieldID})
 
-	if !h.requirePlaybookAttributesLicense(w, logger) {
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
 		return
 	}
 
@@ -1084,6 +1087,10 @@ func (h *PlaybookHandler) deletePlaybookPropertyField(c *Context, w http.Respons
 	}
 
 	if err := h.playbookService.DeletePropertyField(playbookID, fieldID); err != nil {
+		if errors.Is(err, app.ErrPropertyFieldInUse) {
+			h.HandleErrorWithCode(w, logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, logger, err)
 		return
 	}
@@ -1101,7 +1108,8 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 	playbookID := vars["id"]
 	logger := c.logger.WithFields(logrus.Fields{"playbook_id": playbookID})
 
-	if !h.requirePlaybookAttributesLicense(w, logger) {
+	if !h.licenseChecker.PlaybookAttributesAllowed() {
+		h.HandleErrorWithCode(w, logger, http.StatusForbidden, "playbook attributes feature is not covered by current server license", app.ErrLicensedFeature)
 		return
 	}
 
@@ -1119,11 +1127,6 @@ func (h *PlaybookHandler) reorderPlaybookPropertyFields(c *Context, w http.Respo
 
 	if request.FieldID == "" {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "field_id is required", errors.New("missing required field"))
-		return
-	}
-
-	if !model.IsValidId(request.FieldID) {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "invalid field ID", errors.New("invalid field ID"))
 		return
 	}
 
