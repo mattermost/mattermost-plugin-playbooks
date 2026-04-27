@@ -1638,7 +1638,7 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospectiveEnabled(id, userID string, e
 
 // GraphqlUpdate updates fields based on a setmap and returns the updated run.
 // Note: RetrospectiveEnabled updates should use UpdateRetrospectiveEnabled instead.
-func (s *PlaybookRunServiceImpl) GraphqlUpdate(id, userID string, setmap map[string]interface{}) (*PlaybookRun, error) {
+func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) (*PlaybookRun, error) {
 	if len(setmap) == 0 {
 		return s.GetPlaybookRun(id)
 	}

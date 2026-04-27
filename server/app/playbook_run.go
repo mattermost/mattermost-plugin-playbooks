@@ -1383,7 +1383,7 @@ type PlaybookRunService interface {
 	GetPlaybookRunIDsForUser(userID string) ([]string, error)
 
 	// GraphqlUpdate taking a setmap for graphql
-	GraphqlUpdate(id, userID string, setmap map[string]interface{}) (*PlaybookRun, error)
+	GraphqlUpdate(id string, setmap map[string]interface{}) (*PlaybookRun, error)
 
 	// UpdateRetrospectiveEnabled updates the retrospective_enabled flag for a run
 	UpdateRetrospectiveEnabled(id, userID string, enabled bool) (*PlaybookRun, error)
