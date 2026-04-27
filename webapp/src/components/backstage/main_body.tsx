@@ -14,13 +14,11 @@ import {
 
 import {useDispatch, useSelector} from 'react-redux';
 
-import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
-import {useEffectOnce, useLocalStorage, useUpdateEffect} from 'react-use';
+import {useEffectOnce, useUpdateEffect} from 'react-use';
 
 import {selectTeam} from 'mattermost-redux/actions/teams';
-
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 
@@ -30,18 +28,17 @@ import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl, pluginUrl} from 'src/browser_routing';
 import ErrorPage from 'src/components/error_page';
 import RunsPage from 'src/components/backstage/runs_page';
+import {usePreviousTeamId} from 'src/hooks';
 
 const useInitTeamRoutingLogic = () => {
     const dispatch = useDispatch();
     const location = useLocation();
     const {url} = useRouteMatch();
-    const teams = useSelector(getMyTeams);
     const currentTeamId = useSelector(getCurrentTeamId);
-    const currentUserId = useSelector(getCurrentUserId);
 
-    // ? consider moving to multi-product or plugin infrastructure
-    // see https://github.com/mattermost/mattermost-webapp/blob/25043262dbab1fc2f9ac6972b1f1b0b1f9c20ae0/stores/local_storage_store.jsx#L9
-    const [prevTeamId, setPrevTeamId] = useLocalStorage(`user_prev_team:${currentUserId}`, teams[0].id, {raw: true});
+    // Centralized in hooks/teams.ts — same `user_prev_team:{userId}` localStorage
+    // pattern Mattermost webapp uses, with first-team fallback.
+    const [prevTeamId, setPrevTeamId] = usePreviousTeamId();
 
     /**
      * * These routes will select the proper team they belong too.
