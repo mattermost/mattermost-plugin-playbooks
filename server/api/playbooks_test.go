@@ -185,6 +185,39 @@ func TestConvertRequestToPropertyField(t *testing.T) {
 	}
 }
 
+func TestUpdatePlaybookWithNewChannelOnly(t *testing.T) {
+	t.Run("updates playbook with new_channel_only=true", func(t *testing.T) {
+		pb := &app.Playbook{
+			ID:             "test-pb-1",
+			Title:          "Test Playbook",
+			NewChannelOnly: false,
+			ChannelMode:    app.PlaybookRunCreateNewChannel,
+		}
+
+		updatedPb := *pb
+		updatedPb.NewChannelOnly = true
+
+		err := app.ValidateNewChannelOnlyMode(updatedPb.NewChannelOnly, updatedPb.ChannelMode)
+		assert.NoError(t, err, "should allow new_channel_only with create_new_channel mode")
+	})
+
+	t.Run("rejects new_channel_only=true with link_existing_channel mode", func(t *testing.T) {
+		pb := &app.Playbook{
+			ID:             "test-pb-1",
+			Title:          "Test Playbook",
+			NewChannelOnly: false,
+			ChannelMode:    app.PlaybookRunLinkExistingChannel,
+		}
+
+		updatedPb := *pb
+		updatedPb.NewChannelOnly = true
+		updatedPb.ChannelMode = app.PlaybookRunLinkExistingChannel
+
+		err := app.ValidateNewChannelOnlyMode(updatedPb.NewChannelOnly, updatedPb.ChannelMode)
+		assert.Error(t, err, "should reject new_channel_only with link_existing_channel mode")
+	})
+}
+
 func stringPtr(s string) *string {
 	return &s
 }
