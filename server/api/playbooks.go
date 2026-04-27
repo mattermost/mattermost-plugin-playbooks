@@ -262,6 +262,11 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	// Preserve members if not provided in the update
+	if len(playbook.Members) == 0 {
+		playbook.Members = oldPlaybook.Members
+	}
+
 	if err = h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
