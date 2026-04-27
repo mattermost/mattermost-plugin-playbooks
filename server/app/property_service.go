@@ -4,7 +4,6 @@
 package app
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -90,9 +89,6 @@ func (s *propertyService) validatePropertyLimit(playbookID string) error {
 func (s *propertyService) GetPropertyField(propertyID string) (*PropertyField, error) {
 	mmPropertyField, err := s.api.Property.GetPropertyField(s.groupID, propertyID)
 	if err != nil {
-		if err == pluginapi.ErrNotFound || strings.Contains(err.Error(), sql.ErrNoRows.Error()) {
-			return nil, errors.Wrap(ErrNotFound, "property field not found")
-		}
 		return nil, errors.Wrap(err, "failed to get property field")
 	}
 

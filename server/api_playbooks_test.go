@@ -95,7 +95,7 @@ func TestPlaybooks(t *testing.T) {
 			TeamID:      e.BasicTeam.Id,
 			PlaybookID:  id,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 	})
 
 	t.Run("playbooks can be searched by title", func(t *testing.T) {
@@ -2067,71 +2067,4 @@ func TestAdminOnlyEdit_Import(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, newID)
 	})
-}
-
-// TestPropertyFieldValidation verifies input validation on property field endpoints.
-func TestPropertyFieldValidation(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	e := Setup(t)
-	e.CreateBasic()
-	e.SetEnterpriseLicence()
-
-	playbookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:  "Property Field Validation Playbook",
-		TeamID: e.BasicTeam.Id,
-		Public: true,
-	})
-	require.NoError(t, err)
-
-	t.Run("CreatePropertyField with empty name returns 400", func(t *testing.T) {
-		_, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
-			Name: "",
-			Type: "text",
-		})
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-	})
-
-	t.Run("CreatePropertyField with whitespace-only name returns 400", func(t *testing.T) {
-		_, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
-			Name: "   ",
-			Type: "text",
-		})
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-	})
-
-	t.Run("UpdatePropertyField with empty name returns 400", func(t *testing.T) {
-		// Create a valid field first.
-		field, err := e.PlaybooksClient.Playbooks.CreatePropertyField(context.Background(), playbookID, client.PropertyFieldRequest{
-			Name: "Valid Field",
-			Type: "text",
-		})
-		require.NoError(t, err)
-
-		_, err = e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, field.ID, client.PropertyFieldRequest{
-			Name: "",
-			Type: "text",
-		})
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-	})
-
-	t.Run("UpdatePropertyField with non-existent fieldID returns 404", func(t *testing.T) {
-		_, err := e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, model.NewId(), client.PropertyFieldRequest{
-			Name: "Valid Name",
-			Type: "text",
-		})
-		requireErrorWithStatusCode(t, err, http.StatusNotFound)
-	})
-
-	t.Run("UpdatePropertyField with malformed fieldID returns 404", func(t *testing.T) {
-		// The router regex [A-Za-z0-9]+ rejects IDs containing hyphens before reaching the handler.
-		_, err := e.PlaybooksClient.Playbooks.UpdatePropertyField(context.Background(), playbookID, "not-a-valid-id", client.PropertyFieldRequest{
-			Name: "Valid Name",
-			Type: "text",
-		})
-		requireErrorWithStatusCode(t, err, http.StatusNotFound)
-	})
-
 }

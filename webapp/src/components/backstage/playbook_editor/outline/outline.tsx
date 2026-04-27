@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import React, {
     Children,
     ReactNode,
-    useCallback,
     useMemo,
     useState,
 } from 'react';
@@ -55,17 +54,17 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     );
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
-    const onChecklistCollapsedStateChange = useCallback((checklistIndex: number, state: boolean) => {
+    const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
         setChecklistCollapseState((prev) => ({
             ...prev,
             [checklistIndex]: state,
         }));
-    }, []);
-    const onEveryChecklistCollapsedStateChange = useCallback((state: Record<number, boolean>) => {
+    };
+    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
         setChecklistCollapseState(state);
-    }, []);
+    };
 
-    const toggleStatusUpdate = useCallback(() => {
+    const toggleStatusUpdate = () => {
         if (archived || !canEdit) {
             return;
         }
@@ -74,18 +73,18 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
             webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
             broadcastEnabled: !playbook.status_update_enabled,
         });
-    }, [archived, canEdit, updatePlaybook, playbook.status_update_enabled]);
+    };
 
-    const toggleRetrospective = useCallback(() => {
+    const toggleRetrospective = () => {
         if (archived || !canEdit || !retrospectiveAccess) {
             return;
         }
         updatePlaybook({
             retrospectiveEnabled: !playbook.retrospective_enabled,
         });
-    }, [archived, canEdit, retrospectiveAccess, updatePlaybook, playbook.retrospective_enabled]);
+    };
 
-    const handleAdminOnlyEditChange = useCallback((updated: Partial<{admin_only_edit: boolean}>) => {
+    const handleAdminOnlyEditChange = (updated: Partial<{admin_only_edit: boolean}>) => {
         if (!archived && restPlaybook && updated.admin_only_edit !== undefined) {
             const prev = restPlaybook.admin_only_edit;
             setRestOverrides((o) => ({...o, admin_only_edit: updated.admin_only_edit}));
@@ -93,7 +92,7 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
                 setRestOverrides((o) => ({...o, admin_only_edit: prev}));
             });
         }
-    }, [archived, restPlaybook]);
+    };
 
     return (
         <Sections

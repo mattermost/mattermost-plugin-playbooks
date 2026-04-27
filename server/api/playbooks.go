@@ -983,11 +983,6 @@ func (h *PlaybookHandler) createPlaybookPropertyField(c *Context, w http.Respons
 		return
 	}
 
-	if strings.TrimSpace(request.Name) == "" {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field name must not be empty", nil)
-		return
-	}
-
 	propertyField := convertRequestToPropertyField(request)
 
 	createdField, err := h.playbookService.CreatePropertyField(playbookID, *propertyField)
@@ -1030,11 +1025,6 @@ func (h *PlaybookHandler) updatePlaybookPropertyField(c *Context, w http.Respons
 	var request PropertyFieldRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "unable to decode request body", err)
-		return
-	}
-
-	if strings.TrimSpace(request.Name) == "" {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "property field name must not be empty", nil)
 		return
 	}
 
