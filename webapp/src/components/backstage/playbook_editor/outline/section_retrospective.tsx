@@ -79,7 +79,7 @@ const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
                             retrospectiveReminderIntervalSeconds: seconds,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled || Boolean(disabled)}
+                    disabled={Boolean(disabled)}
                 />
             </SidebarBlock>
             <SidebarBlock id={'retrospective-metrics'}>
@@ -98,7 +98,7 @@ const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
                     }}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
-                    disabled={!playbook.retrospective_enabled || Boolean(disabled)}
+                    disabled={Boolean(disabled)}
                 />
             </SidebarBlock>
             <SidebarBlock>
@@ -117,7 +117,7 @@ const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
                             retrospectiveTemplate: value,
                         });
                     }}
-                    disabled={!playbook.retrospective_enabled || Boolean(disabled)}
+                    disabled={Boolean(disabled)}
                 />
             </SidebarBlock>
         </Card>

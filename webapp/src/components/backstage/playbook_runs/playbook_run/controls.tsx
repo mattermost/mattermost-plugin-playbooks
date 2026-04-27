@@ -21,7 +21,6 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {useAppSelector} from 'src/hooks/redux';
 
-import {isCurrentUserAdmin} from 'src/selectors';
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
@@ -308,12 +307,21 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
 export const ToggleRunRetrospectiveMenuItem = (props: {playbookRun: PlaybookRun}) => {
     const toggleRetrospective = useToggleRunRetrospective(props.playbookRun);
     const currentUserId = useAppSelector(getCurrentUserId);
-    const isAdmin = useAppSelector(isCurrentUserAdmin);
 
     const retrospectiveEnabled = props.playbookRun.retrospective_enabled;
-    const isOwner = props.playbookRun.owner_user_id === currentUserId;
 
-    if (!isOwner && !isAdmin) {
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, currentUserId);
+
+    if (!canModify) {
         return null;
     }
 

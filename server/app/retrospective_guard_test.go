@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TestRetrospectiveGuardLogic verifies the guard conditions in handleReminderToFillRetro
@@ -82,38 +81,4 @@ func TestRetrospectiveGuardLogic(t *testing.T) {
 			assert.Equal(t, tc.expectReminderEligible, reminderEligible, "reminder eligibility mismatch")
 		})
 	}
-}
-
-// TestRetrospectiveEnabled tests the retrospective guard logic. When a playbook
-// has RetrospectiveEnabled=false, retrospective processing must be skipped.
-// The backend fix adds a guard to handleReminderToFillRetro; these tests verify
-// the condition logic directly.
-func TestRetrospectiveEnabled(t *testing.T) {
-	t.Run("RetrospectiveEnabled false skips retrospective reminder", func(t *testing.T) {
-		retroEnabled := false
-
-		shouldSkip := !retroEnabled
-		require.True(t, shouldSkip, "retrospective reminder must be skipped when RetrospectiveEnabled=false")
-	})
-
-	t.Run("RetrospectiveEnabled true (default) does not skip retrospective", func(t *testing.T) {
-		retroEnabled := true
-
-		shouldSkip := !retroEnabled
-		assert.False(t, shouldSkip, "retrospective reminder must proceed when RetrospectiveEnabled=true")
-	})
-
-	t.Run("RetrospectiveEnabled false prevents FinishPlaybookRun from scheduling initial reminder", func(t *testing.T) {
-		retroEnabled := false
-
-		shouldSchedule := retroEnabled
-		assert.False(t, shouldSchedule)
-	})
-
-	t.Run("RetrospectiveEnabled true allows FinishPlaybookRun to schedule reminder", func(t *testing.T) {
-		retroEnabled := true
-
-		shouldSchedule := retroEnabled
-		assert.True(t, shouldSchedule)
-	})
 }

@@ -3,6 +3,15 @@
 
 package graphql
 
+type EnumPropertyFieldType string
+
+const EnumPropertyFieldTypetext EnumPropertyFieldType = "text"
+const EnumPropertyFieldTypeselect EnumPropertyFieldType = "select"
+const EnumPropertyFieldTypemultiselect EnumPropertyFieldType = "multiselect"
+const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
+const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
+const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
+
 type Enum__TypeKind string
 
 const Enum__TypeKindSCALAR Enum__TypeKind = "SCALAR"
@@ -50,15 +59,6 @@ type EnumRunStatus string
 
 const EnumRunStatusInProgress EnumRunStatus = "InProgress"
 const EnumRunStatusFinished EnumRunStatus = "Finished"
-
-type EnumPropertyFieldType string
-
-const EnumPropertyFieldTypetext EnumPropertyFieldType = "text"
-const EnumPropertyFieldTypeselect EnumPropertyFieldType = "select"
-const EnumPropertyFieldTypemultiselect EnumPropertyFieldType = "multiselect"
-const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
-const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
-const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`
@@ -373,6 +373,7 @@ type RunUpdates struct {
 	BroadcastChannelIDs                     []string `json:"broadcastChannelIDs"`
 	WebhookOnStatusUpdateURLs               []string `json:"webhookOnStatusUpdateURLs"`
 	ChannelID                               *string  `json:"channelID"`
+	RetrospectiveEnabled                    *bool    `json:"retrospectiveEnabled"`
 }
 
 type PropertyOptionInput struct {

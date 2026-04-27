@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -2592,7 +2593,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		assert.True(t, fetched.RetrospectiveEnabled, "RetrospectiveEnabled=true must persist after PATCH")
 	})
 
-	t.Run("disabling retrospective mid-run via PATCH prevents reminder on finish", func(t *testing.T) {
+	t.Run("disabling retrospective mid-run via PATCH persists after finish", func(t *testing.T) {
 		playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "Retro On Playbook For Mid-Run Test",
 			TeamID: e.BasicTeam.Id,
@@ -3138,8 +3139,11 @@ func setRetrospectiveEnabled(t *testing.T, e *TestEnvironment, playbookID string
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	resp.Body.Close()
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("setRetrospectiveEnabled failed: status=%d body=%s", resp.StatusCode, string(body))
+	}
 }
 
 // TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on
