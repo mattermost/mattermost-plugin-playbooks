@@ -120,6 +120,7 @@ const PlaybookRunDetails = () => {
 
     const currentTeamId = useSelector(getCurrentTeamId);
     const [prevTeamId] = usePreviousTeamId();
+    const hasRun = Boolean(playbookRun);
 
     useEffect(() => {
         // Team-based runs: select the run's own team.
@@ -135,11 +136,11 @@ const PlaybookRunDetails = () => {
         // recent activity, and timeline rendering all need a team context.
         // usePreviousTeamId() encapsulates the same default-team logic the
         // Mattermost host webapp uses (prev team localStorage → first team).
-        if (!playbookRun || currentTeamId || !prevTeamId) {
+        if (!hasRun || currentTeamId || !prevTeamId) {
             return;
         }
         dispatch(selectTeam(prevTeamId));
-    }, [dispatch, playbookRun, playbookRun?.team_id, currentTeamId, prevTeamId]);
+    }, [dispatch, hasRun, playbookRun?.team_id, currentTeamId, prevTeamId]);
 
     useDefaultRedirectOnTeamChange(playbookRun?.team_id);
 

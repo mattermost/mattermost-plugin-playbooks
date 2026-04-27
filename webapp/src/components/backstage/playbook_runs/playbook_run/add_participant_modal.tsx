@@ -22,7 +22,7 @@ import {isCurrentUserChannelMember} from 'src/selectors';
 
 import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
 
-import {useChannel} from 'src/hooks';
+import {useChannel, useIsDMGM} from 'src/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -42,8 +42,8 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
     const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
-    // Track if channel is DM/GM - participants are limited to channel members
-    const isDMGM = channel?.type === General.DM_CHANNEL || channel?.type === General.GM_CHANNEL;
+    // Participants are limited to channel members in DM/GM runs.
+    const isDMGM = useIsDMGM(playbookRun);
     const [channelMembers, setChannelMembers] = useState<UserProfile[]>([]);
 
     // For DM/GM channels, fetch channel members once

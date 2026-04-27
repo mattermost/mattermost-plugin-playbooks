@@ -11,3 +11,4 @@ export * from './conditions';
 export * from './useEntity';
 export * from './usePlaybookAttributes';
 export * from './teams';
+export * from './useIsDMGM';
