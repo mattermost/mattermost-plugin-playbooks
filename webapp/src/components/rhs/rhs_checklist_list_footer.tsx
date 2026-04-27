@@ -15,9 +15,11 @@ import {
     FlagOutlineIcon,
 } from '@mattermost/compass-icons/components';
 
+import {useAppDispatch} from 'src/hooks/redux';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {useOnFinishRun} from 'src/components/backstage/playbook_runs/playbook_run/finish_run';
+import {finishRun} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
 import {OVERLAY_DELAY} from 'src/constants';
@@ -50,7 +52,7 @@ const RHSFooter = ({
     onBackClick,
 }: RHSFooterProps) => {
     const {formatMessage} = useIntl();
-    const onFinishRun = useOnFinishRun(playbookRun, 'rhs');
+    const dispatch = useAppDispatch();
 
     // Only show footers in RHS
     if (parentContainer !== ChecklistParent.RHS || !playbookRun) {
@@ -87,14 +89,18 @@ const RHSFooter = ({
     // Priority 2: Show FinishPrompt if active and can modify
     if (active && canModify) {
         return (
-            <FinishPrompt data-testid='rhs-finish-section'>
+            <FinishPrompt>
                 <FinishContent>
                     <FinishIconWrapper>
                         <FlagOutlineIcon size={24}/>
                     </FinishIconWrapper>
                     <FinishText>{formatMessage({defaultMessage: 'Time to wrap up?'})}</FinishText>
                     <FinishRightWrapper>
-                        <FinishButton onClick={onFinishRun}>
+                        <FinishButton
+                            onClick={() => {
+                                dispatch(finishRun(playbookRun.team_id, playbookRun.id));
+                            }}
+                        >
                             <CheckIcon size={16}/>
                             {formatMessage({defaultMessage: 'Finish'})}
                         </FinishButton>

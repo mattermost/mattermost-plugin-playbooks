@@ -264,31 +264,27 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 
 	var updatedPlaybookRun *app.PlaybookRun
 
-	// RetrospectiveEnabled has special handling with its own method for scheduler/timeline side-effects
-	if updates.RetrospectiveEnabled != nil {
-		// Only the run owner or a system admin can toggle this.
-		if userID != oldPlaybookRun.OwnerUserID && !app.IsSystemAdmin(userID, h.pluginAPI) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the run owner or a system admin can change the retrospective setting", errors.New("unauthorized to change retrospective setting"))
+	// Authorize retrospective toggle if requested
+	if updates.RetrospectiveEnabled != nil &&
+		userID != oldPlaybookRun.OwnerUserID &&
+		!app.IsSystemAdmin(userID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the run owner or a system admin can change the retrospective setting", errors.New("unauthorized to change retrospective setting"))
+		return
+	}
+
+	// Apply generic field updates first
+	if len(fieldsToUpdate) > 0 {
+		_, err = h.playbookRunService.GraphqlUpdate(playbookRunID, userID, fieldsToUpdate)
+		if err != nil {
+			h.HandleError(w, c.logger, err)
 			return
 		}
+	}
 
-		// Handle retrospective toggle (may update other fields too if provided)
-		if len(fieldsToUpdate) > 0 {
-			// Apply other field updates first
-			_, err = h.playbookRunService.GraphqlUpdate(playbookRunID, userID, fieldsToUpdate)
-			if err != nil {
-				h.HandleError(w, c.logger, err)
-				return
-			}
-		}
-
-		// Then handle the retrospective toggle
+	// Apply retrospective toggle if provided, otherwise fetch current state
+	if updates.RetrospectiveEnabled != nil {
 		updatedPlaybookRun, err = h.playbookRunService.UpdateRetrospectiveEnabled(playbookRunID, userID, *updates.RetrospectiveEnabled)
-	} else if len(fieldsToUpdate) > 0 {
-		// Generic field updates only
-		updatedPlaybookRun, err = h.playbookRunService.GraphqlUpdate(playbookRunID, userID, fieldsToUpdate)
 	} else {
-		// No fields to update, return current state
 		updatedPlaybookRun, err = h.playbookRunService.GetPlaybookRun(playbookRunID)
 	}
 
