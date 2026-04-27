@@ -202,6 +202,48 @@ describe('playbooks > edit > auto archive', () => {
         });
     });
 
+    it('unarchives the run channel after the run is restored', () => {
+        let testRun;
+
+        // # Create a playbook with auto-archive enabled
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Auto Archive Restore (' + getRandomId() + ')',
+            memberIDs: [testUser.id],
+            autoArchiveChannel: true,
+        }).then((playbook) => {
+            createdPlaybookIds.push(playbook.id);
+
+            // # Start a run
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: playbook.id,
+                playbookRunName: 'Auto Archive Restore Run (' + getRandomId() + ')',
+                ownerUserId: testUser.id,
+            }).then((run) => {
+                testRun = run;
+
+                // # Finish the run via API
+                cy.apiFinishRun(testRun.id);
+
+                // * Wait for the channel to be archived
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                );
+
+                // # Restore the run via API
+                cy.apiRestoreRun(testRun.id);
+
+                // * Assert the channel is unarchived (delete_at === 0)
+                cy.waitUntil(
+                    () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at === 0),
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                );
+            });
+        });
+    });
+
     it('does NOT archive the run channel when auto-archive is disabled (default)', () => {
         let testRun;
 

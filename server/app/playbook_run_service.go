@@ -1511,9 +1511,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
 			if unarchived {
 				logger.WithField("channel_id", playbookRunToRestore.ChannelID).Warn("re-archiving channel to stay in sync")
-				if !s.archiveChannelByID(playbookRunToRestore.ChannelID, logger) {
+				if err := s.pluginAPI.Channel.Delete(playbookRunToRestore.ChannelID); err != nil {
 					logger.WithField("channel_id", playbookRunToRestore.ChannelID).
-						Warn("channel re-archive rollback failed; channel is unarchived but AutoArchivedChannel=true in the database")
+						WithError(err).Warn("channel re-archive rollback failed; channel is unarchived but AutoArchivedChannel=true in the database")
 				}
 			}
 		} else {
@@ -1622,15 +1622,6 @@ func (s *PlaybookRunServiceImpl) restoreChannelByID(channelID string, logger *lo
 	ch.DeleteAt = 0
 	if err := s.pluginAPI.Channel.Update(ch); err != nil {
 		logger.WithError(err).Warn("failed to un-archive channel")
-		return false
-	}
-	return true
-}
-
-// archiveChannelByID archives the channel (sets DeleteAt). Returns true on success.
-func (s *PlaybookRunServiceImpl) archiveChannelByID(channelID string, logger *logrus.Entry) bool {
-	if err := s.pluginAPI.Channel.Delete(channelID); err != nil {
-		logger.WithError(err).Warn("failed to archive channel")
 		return false
 	}
 	return true
