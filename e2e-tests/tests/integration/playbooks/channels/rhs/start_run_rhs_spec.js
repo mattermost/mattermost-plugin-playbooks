@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {FIVE_SEC} from '../../../../../tests/fixtures/timeouts';
+import {FIVE_SEC, TWO_SEC} from '../../../../../tests/fixtures/timeouts';
 
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
@@ -381,6 +381,117 @@ describe('channels rhs > start a run', {testIsolation: true}, () => {
                         });
 
                         // # Close the modal
+                        cy.get('body').type('{esc}');
+                    });
+                });
+            });
+        });
+    });
+
+    // -----------------------------------------------------------
+    // OBS-8 regression: opening the run modal from a DM/GM must NOT
+    // pre-select the current channel (it's filtered as DM/GM) and
+    // must NOT trigger a flood of getChannel(:id) requests.
+    // -----------------------------------------------------------
+    it('does not pre-select current DM and does not flood channel fetches', () => {
+        cy.apiCreateUser().then(({user: dmPartner}) => {
+            cy.apiAddUserToTeam(testTeam.id, dmPartner.id);
+
+            const playbook = createPlaybook({
+                title: 'OBS-8 DM Modal Playbook',
+                channelMode: 'create_new_channel',
+                channelNameTemplate: 'auto-' + Date.now(),
+            });
+
+            playbook.then(() => {
+                cy.apiCreateDirectChannel([testUser.id, dmPartner.id]).then(({channel: dmChannel}) => {
+                    // # Intercept channel fetches before opening the modal
+                    cy.intercept('GET', `/api/v4/channels/${dmChannel.id}*`).as('getDMChannel');
+
+                    // # Visit the DM and open the run modal via the RHS
+                    cy.visit(`/${testTeam.name}/messages/@${dmPartner.username}`);
+                    cy.get('#post_textbox').should('exist');
+                    cy.getPlaybooksAppBarIcon().should('exist').click();
+
+                    cy.get('[data-testid="rhs-runs-list"], [data-testid="no-active-runs"]').should('exist');
+
+                    // # Open the create dropdown and pick "Run a playbook"
+                    cy.get('[data-testid="create-blank-checklist"]').
+                        parent().
+                        find('.icon-chevron-down').
+                        should('be.visible').
+                        click();
+                    cy.get('[data-testid="create-from-playbook"]').click();
+
+                    // # Open the run-playbook modal — pick the playbook
+                    cy.get('#root-portal.modal-open').within(() => {
+                        cy.findByText('OBS-8 DM Modal Playbook').should('be.visible').click();
+
+                        // # Switch to "Link to existing channel"
+                        cy.findByTestId('link-existing-channel-radio').click();
+
+                        // * No phantom "Unknown Channel" pill rendered as a value
+                        cy.findByText('Unknown Channel').should('not.exist');
+                    });
+
+                    // * The DM channel was NOT fetched repeatedly (regression cap: <4 calls).
+                    //   The fetch storm (when the bug exists) originates from
+                    //   BroadcastChannelSelector mount and resolves within ~1s; TWO_SEC
+                    //   leaves slack without inflating CI cost.
+                    cy.wait(TWO_SEC); // eslint-disable-line cypress/no-unnecessary-waiting
+                    cy.get('@getDMChannel.all').should('have.length.lessThan', 4);
+
+                    // # Close
+                    cy.get('body').type('{esc}');
+                });
+            });
+        });
+    });
+
+    // -----------------------------------------------------------
+    // AC7 (GM variant): "Link to existing channel" excludes the
+    // current GM channel when opened from a GM context.
+    // -----------------------------------------------------------
+    it('does not offer GM channels when linking an existing channel', () => {
+        cy.apiCreateUser().then(({user: gmA}) => {
+            cy.apiCreateUser().then(({user: gmB}) => {
+                cy.apiAddUserToTeam(testTeam.id, gmA.id);
+                cy.apiAddUserToTeam(testTeam.id, gmB.id);
+
+                const playbook = createPlaybook({
+                    title: 'GM Modal Playbook',
+                    channelMode: 'create_new_channel',
+                    channelNameTemplate: 'gm-modal-' + Date.now(),
+                });
+
+                playbook.then(() => {
+                    cy.apiCreateGroupChannel([testUser.id, gmA.id, gmB.id]).then(({channel: gmChannel}) => {
+                        cy.visit(`/${testTeam.name}/messages/${gmChannel.name}`);
+                        cy.get('#post_textbox').should('exist');
+                        cy.getPlaybooksAppBarIcon().should('exist').click();
+
+                        cy.get('[data-testid="rhs-runs-list"], [data-testid="no-active-runs"]').should('exist');
+
+                        cy.get('[data-testid="create-blank-checklist"]').
+                            parent().
+                            find('.icon-chevron-down').
+                            should('be.visible').
+                            click();
+                        cy.get('[data-testid="create-from-playbook"]').click();
+
+                        cy.get('#root-portal.modal-open').within(() => {
+                            cy.findByText('GM Modal Playbook').should('be.visible').click();
+                            cy.findByTestId('link-existing-channel-radio').click();
+
+                            // # Search by GM channel name fragment
+                            cy.get('#link-existing-channel-selector').click().type(gmA.username);
+
+                            // * The GM channel does NOT appear (excludeDMGM filters)
+                            cy.get('.playbooks-rselect__menu').within(() => {
+                                cy.findByText(gmA.username).should('not.exist');
+                            });
+                        });
+
                         cy.get('body').type('{esc}');
                     });
                 });

@@ -256,4 +256,33 @@ describe('channels > rhs > DM checklist', {testIsolation: true}, () => {
             });
         });
     });
+
+    // -----------------------------------------------------------
+    // AC3: move DM checklist to a public channel — team_id populates
+    // -----------------------------------------------------------
+    it('moving a DM checklist to a public channel populates team_id', () => {
+        cy.apiCreateUser().then(({user: movePartner}) => {
+            cy.apiAddUserToTeam(testTeam.id, movePartner.id);
+            cy.apiCreateChannel(testTeam.id, 'dm-move-target', 'DM Move Target', 'O').then(({channel: targetChannel}) => {
+                cy.apiCreateDirectChannel([testUser.id, movePartner.id]).then(({channel: dmChannel}) => {
+                    cy.apiRunPlaybook({
+                        teamId: '',
+                        playbookId: '',
+                        playbookRunName: 'DM-move-' + Date.now(),
+                        ownerUserId: testUser.id,
+                        channelId: dmChannel.id,
+                    }).then((run) => {
+                        // # Move via API (UI flow is covered indirectly through dm_checklist_spec move test)
+                        cy.apiUpdateRun(run.id, {channelID: targetChannel.id});
+
+                        // * team_id is now the test team's id
+                        cy.apiGetPlaybookRun(run.id).then((response) => {
+                            expect(response.body.team_id).to.equal(testTeam.id);
+                            expect(response.body.channel_id).to.equal(targetChannel.id);
+                        });
+                    });
+                });
+            });
+        });
+    });
 });

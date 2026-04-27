@@ -213,4 +213,34 @@ describe('channels > rhs > GM checklist', {testIsolation: true}, () => {
             });
         });
     });
+
+    // -----------------------------------------------------------
+    // AC3: move GM checklist to a public channel — team_id populates
+    // -----------------------------------------------------------
+    it('moving a GM checklist to a public channel populates team_id', () => {
+        cy.apiCreateUser().then(({user: gmA}) => {
+            cy.apiCreateUser().then(({user: gmB}) => {
+                cy.apiAddUserToTeam(testTeam.id, gmA.id);
+                cy.apiAddUserToTeam(testTeam.id, gmB.id);
+                cy.apiCreateChannel(testTeam.id, 'gm-move-target', 'GM Move Target', 'O').then(({channel: targetChannel}) => {
+                    cy.apiCreateGroupChannel([testUser.id, gmA.id, gmB.id]).then(({channel: gmCh}) => {
+                        cy.apiRunPlaybook({
+                            teamId: '',
+                            playbookId: '',
+                            playbookRunName: 'GM-move-' + Date.now(),
+                            ownerUserId: testUser.id,
+                            channelId: gmCh.id,
+                        }).then((run) => {
+                            cy.apiUpdateRun(run.id, {channelID: targetChannel.id});
+
+                            cy.apiGetPlaybookRun(run.id).then((response) => {
+                                expect(response.body.team_id).to.equal(testTeam.id);
+                                expect(response.body.channel_id).to.equal(targetChannel.id);
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
 });
