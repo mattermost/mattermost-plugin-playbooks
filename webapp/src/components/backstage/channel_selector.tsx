@@ -1,7 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useDispatch, useSelector} from 'react-redux';
 import {createSelector} from 'mattermost-redux/selectors/create_selector';
@@ -127,8 +127,13 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         [allDmgmChannels],
     );
 
-    // Combine team channels and DM/GM channels for unified selection
-    const selectableChannels = props.excludeDMGM ? teamChannels : [...teamChannels, ...dmgmChannels];
+    // Combine team channels and DM/GM channels for unified selection.
+    // useMemo keeps array identity stable so the channel-fetch effect below
+    // doesn't re-fire (and re-dispatch getChannel) on every render.
+    const selectableChannels = useMemo(
+        () => (props.excludeDMGM ? teamChannels : [...teamChannels, ...dmgmChannels]),
+        [teamChannels, dmgmChannels, props.excludeDMGM],
+    );
     const allPublicChannels = useSelector(getAllPublicChannelsInTeam(effectiveTeamId));
 
     useEffect(() => {
@@ -142,13 +147,21 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         const channelsMap = new Map<string, Channel>();
         [...allPublicChannels, ...selectableChannels].forEach((channel: Channel) => channelsMap.set(channel.id, channel));
 
-        // For all channels not in the store initially, fetch them and add them to the store
+        // For all channels not in the store initially, fetch them and add them to the store.
+        // When excludeDMGM is set we skip channels that aren't in the map AND
+        // aren't visible in dmgmChannels — they're DM/GM ids that this selector
+        // is intentionally hiding, so fetching them just spins the wheel.
+        const dmgmIds = new Set(dmgmChannels.map((c) => c.id));
         props.channelIds.forEach((channelID) => {
-            if (!channelsMap.has(channelID)) {
-                dispatch(getChannel(channelID));
+            if (channelsMap.has(channelID)) {
+                return;
             }
+            if (props.excludeDMGM && dmgmIds.has(channelID)) {
+                return;
+            }
+            dispatch(getChannel(channelID));
         });
-    }, [allPublicChannels, selectableChannels, props.channelIds, dispatch]);
+    }, [allPublicChannels, selectableChannels, dmgmChannels, props.channelIds, props.excludeDMGM, dispatch]);
 
     const onChangeMulti = (channels: Channel[], {action}: {action: string}) => {
         props.onChannelsSelected?.(action === 'clear' ? [] : channels.map((c) => c.id));
@@ -199,7 +212,18 @@ const ChannelSelector = (props: Props & {className?: string}) => {
                channel.id.toLowerCase() === term.toLowerCase();
     };
 
-    const values = filterChannels(props.channelIds, [...allPublicChannels, ...selectableChannels]);
+    // When DMs/GMs are excluded as options, also strip them from the rendered
+    // values. Otherwise a stale/pre-selected DM/GM id renders as a phantom
+    // "Unknown Channel" pill (and triggers the fetch loop above).
+    const allChannelsForValues = [...allPublicChannels, ...selectableChannels];
+    const visibleChannelIds = props.excludeDMGM ? props.channelIds.filter((id) => {
+        const ch = allChannelsForValues.find((c) => c.id === id);
+
+        // Keep ids we don't know about yet — they could resolve to a non-DM/GM
+        // channel once fetched. Drop only ids we positively know are DM/GM.
+        return !ch || (ch.type !== General.DM_CHANNEL && ch.type !== General.GM_CHANNEL);
+    }) : props.channelIds;
+    const values = filterChannels(visibleChannelIds, allChannelsForValues);
 
     const components = props.selectComponents || defaultComponents;
 
