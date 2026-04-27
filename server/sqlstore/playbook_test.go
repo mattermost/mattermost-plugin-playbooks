@@ -2118,42 +2118,26 @@ func TestNewChannelOnlyRoundTrip(t *testing.T) {
 
 	teamID := model.NewId()
 
-	t.Run("NewChannelOnly persists through Create", func(t *testing.T) {
-		pb := NewPBBuilder().
-			WithTitle("nco-create").
-			WithTeamID(teamID).
-			ToPlaybook()
-		pb.NewChannelOnly = true
+	pb := NewPBBuilder().
+		WithTitle("nco-persist").
+		WithTeamID(teamID).
+		ToPlaybook()
+	pb.NewChannelOnly = true
 
-		id, err := playbookStore.Create(pb)
-		require.NoError(t, err)
+	id, err := playbookStore.Create(pb)
+	require.NoError(t, err)
 
-		got, err := playbookStore.Get(id)
-		require.NoError(t, err)
+	// Verify NewChannelOnly persists through Create
+	got, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.True(t, got.NewChannelOnly)
 
-		require.True(t, got.NewChannelOnly)
-	})
+	// Verify NewChannelOnly persists through Update
+	got.NewChannelOnly = false
+	err = playbookStore.Update(got)
+	require.NoError(t, err)
 
-	t.Run("NewChannelOnly persists through Update", func(t *testing.T) {
-		pb := NewPBBuilder().
-			WithTitle("nco-update").
-			WithTeamID(teamID).
-			ToPlaybook()
-		pb.NewChannelOnly = true
-
-		id, err := playbookStore.Create(pb)
-		require.NoError(t, err)
-
-		got, err := playbookStore.Get(id)
-		require.NoError(t, err)
-
-		got.NewChannelOnly = false
-		err = playbookStore.Update(got)
-		require.NoError(t, err)
-
-		updated, err := playbookStore.Get(id)
-		require.NoError(t, err)
-
-		require.False(t, updated.NewChannelOnly)
-	})
+	updated, err := playbookStore.Get(id)
+	require.NoError(t, err)
+	require.False(t, updated.NewChannelOnly)
 }
