@@ -8,7 +8,7 @@ import {DateTime} from 'luxon';
 import {useSelector} from 'react-redux';
 import {GlobalState} from '@mattermost/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Section, SectionHeader} from 'src/components/backstage/playbook_runs/playbook_run/rhs_info_styles';
 import {Role} from 'src/components/backstage/playbook_runs/shared';
@@ -32,7 +32,7 @@ const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const {formatMessage} = useIntl();
     const [filteredEvents] = useTimelineEvents(run, TimelineEventsFilterDefault);
     const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
-    const team = useSelector((state: GlobalState) => getTeam(state, run.team_id));
+    const team = useSelector((state: GlobalState) => getTeam(state, run.team_id) || getCurrentTeam(state));
 
     if (!team) {
         return null;
