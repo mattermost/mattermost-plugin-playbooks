@@ -50,10 +50,6 @@ func NewPropertyService(api *pluginapi.Client, conditionStore ConditionStore) (P
 	return service, nil
 }
 
-func (s *propertyService) GetGroupID() string {
-	return s.groupID
-}
-
 func (s *propertyService) CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error) {
 	if err := validateReservedFieldName(propertyField.Name); err != nil {
 		return nil, err
@@ -679,7 +675,7 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 	}
 
 	// Sanitize and validate the value based on field type
-	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value, true)
+	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(propertyField, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to sanitize and validate property value")
 	}
@@ -703,30 +699,7 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 	return (*PropertyValue)(upsertedValue), nil
 }
 
-// UpsertRunPropertyValueWithField upserts a property value using an already-loaded field,
-// avoiding the GetPropertyField DB round-trip that fails for run-scoped fields immediately
-// after creation (the MM property API only finds playbook-scoped fields by direct ID lookup).
-func (s *propertyService) UpsertRunPropertyValueWithField(runID string, field *PropertyField, value json.RawMessage) (*PropertyValue, error) {
-	mmField := field.ToMattermostPropertyField()
-	sanitizedValue, err := s.sanitizeAndValidatePropertyValue(mmField, value, true)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to sanitize and validate property value")
-	}
-	propertyValue := &model.PropertyValue{
-		GroupID:    s.groupID,
-		TargetType: PropertyTargetTypeRun,
-		TargetID:   runID,
-		FieldID:    field.ID,
-		Value:      sanitizedValue,
-	}
-	upsertedValue, err := s.api.Property.UpsertPropertyValue(propertyValue)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to upsert property value")
-	}
-	return (*PropertyValue)(upsertedValue), nil
-}
-
-func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage, validateOptions bool) (json.RawMessage, error) {
+func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.PropertyField, value json.RawMessage) (json.RawMessage, error) {
 	if len(value) == 0 || string(value) == "null" {
 		return value, nil
 	}
@@ -747,10 +720,7 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		if err := json.Unmarshal(value, &stringValue); err != nil {
 			return nil, errors.New("select field value must be a string")
 		}
-		if validateOptions {
-			return value, s.validateSelectValue(propertyField, stringValue)
-		}
-		return value, nil
+		return value, s.validateSelectValue(propertyField, stringValue)
 	case model.PropertyFieldTypeMultiselect:
 		var arrayValue []string
 		if err := json.Unmarshal(value, &arrayValue); err != nil {
@@ -759,10 +729,7 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 		if len(arrayValue) > MaxMultiselectValues {
 			return nil, errors.Errorf("multiselect field value must not contain more than %d values", MaxMultiselectValues)
 		}
-		if validateOptions {
-			return value, s.validateMultiselectValue(propertyField, arrayValue)
-		}
-		return value, nil
+		return value, s.validateMultiselectValue(propertyField, arrayValue)
 	case model.PropertyFieldTypeDate:
 		normalized, err := normalizeDateValue(value)
 		if err != nil {
@@ -795,16 +762,6 @@ func (s *propertyService) sanitizeAndValidatePropertyValue(propertyField *model.
 	default:
 		return nil, errors.Errorf("property field type '%s' is not supported", propertyField.Type)
 	}
-}
-
-// SanitizePropertyValue sanitizes a raw property value for the given field type.
-// Unlike sanitizeAndValidatePropertyValue, this does not validate option membership
-// for select/multiselect fields. It is intended for pre-sanitization of template
-// values before full validation occurs.
-func (s *propertyService) SanitizePropertyValue(fieldType model.PropertyFieldType, raw json.RawMessage) (json.RawMessage, error) {
-	// Build a minimal PropertyField with just the type for sanitization without option validation.
-	field := &model.PropertyField{Type: fieldType}
-	return s.sanitizeAndValidatePropertyValue(field, raw, false)
 }
 
 // normalizeDateValue accepts a JSON date value that is either an RFC3339 string,
@@ -1017,46 +974,4 @@ func (s *propertyService) getRunsPropertyValues(runIDs []string, pageSize int, u
 	}
 
 	return result, nil
-}
-
-// maxRunIDsForPropertyFilter is one more than the service-layer cap (maxPropertyValueFilterRunIDs)
-// so the caller can detect "too many results" without fetching the entire result set.
-const maxRunIDsForPropertyFilter = 1001
-
-// GetRunIDsByPropertyValue returns the IDs of all runs that have the given property field
-// set to the given option ID value. Used to filter the runs list by custom status.
-func (s *propertyService) GetRunIDsByPropertyValue(fieldID, optionID string) ([]string, error) {
-	value, err := json.Marshal(optionID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal option ID")
-	}
-
-	opts := model.PropertyValueSearchOpts{
-		GroupID:    s.groupID,
-		TargetType: PropertyTargetTypeRun,
-		FieldID:    fieldID,
-		Value:      value,
-		PerPage:    PropertyBulkSearchPerPage,
-	}
-
-	var runIDs []string
-	for {
-		values, err := s.api.Property.SearchPropertyValues(s.groupID, opts)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to search property values by field value")
-		}
-		for _, v := range values {
-			runIDs = append(runIDs, v.TargetID)
-			if len(runIDs) >= maxRunIDsForPropertyFilter {
-				return runIDs, nil
-			}
-		}
-		if len(values) < PropertyBulkSearchPerPage {
-			break
-		}
-		opts.Cursor.PropertyValueID = values[len(values)-1].ID
-		opts.Cursor.CreateAt = values[len(values)-1].CreateAt
-	}
-
-	return runIDs, nil
 }

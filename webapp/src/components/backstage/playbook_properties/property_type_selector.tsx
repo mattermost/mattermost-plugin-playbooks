@@ -7,9 +7,7 @@ import ReactSelect, {StylesConfig} from 'react-select';
 import {defineMessages, useIntl} from 'react-intl';
 
 import {
-    AccountMultipleOutlineIcon,
     AccountOutlineIcon,
-    CalendarOutlineIcon,
     CheckIcon,
     ChevronDownCircleOutlineIcon,
     FormatListBulletedIcon,
@@ -35,7 +33,7 @@ interface Props {
     target: React.ReactElement;
 }
 
-type PropertyType = 'text' | 'select' | 'multiselect' | 'url' | 'date' | 'user' | 'multiuser';
+type PropertyType = 'text' | 'select' | 'multiselect' | 'url' | 'user';
 
 type TypeOption = {
     value: PropertyType;
@@ -48,9 +46,7 @@ const propertyTypeMessages = defineMessages({
     url: {id: 'playbook.property_type.url', defaultMessage: 'URL'},
     select: {id: 'playbook.property_type.select', defaultMessage: 'Select'},
     multiselect: {id: 'playbook.property_type.multiselect', defaultMessage: 'Multi-select'},
-    date: {id: 'playbook.property_type.date', defaultMessage: 'Date'},
     user: {id: 'playbook.property_type.user', defaultMessage: 'User'},
-    multiuser: {id: 'playbook.property_type.multiuser', defaultMessage: 'Multi-user'},
     defaultOptionName: {id: 'playbook.property_type.default_option_name', defaultMessage: 'Option 1'},
 });
 
@@ -62,9 +58,7 @@ const PROPERTY_TYPE_DEFS: Array<{
     {type: 'url', icon: LinkVariantIcon},
     {type: 'select', icon: ChevronDownCircleOutlineIcon},
     {type: 'multiselect', icon: FormatListBulletedIcon},
-    {type: 'date', icon: CalendarOutlineIcon},
     {type: 'user', icon: AccountOutlineIcon},
-    {type: 'multiuser', icon: AccountMultipleOutlineIcon},
 ];
 
 const PropertyTypeSelector = ({
@@ -112,16 +106,8 @@ const PropertyTypeSelector = ({
             actualType = 'multiselect';
             valueType = '';
             break;
-        case 'date':
-            actualType = 'date';
-            valueType = '';
-            break;
         case 'user':
             actualType = 'user';
-            valueType = '';
-            break;
-        case 'multiuser':
-            actualType = 'multiuser';
             valueType = '';
             break;
         }

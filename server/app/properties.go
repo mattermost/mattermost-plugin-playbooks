@@ -5,7 +5,6 @@ package app
 
 import (
 	"encoding/json"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -24,7 +23,6 @@ const (
 	PropertyFieldVisibilityAlways  = "always"
 	PropertyFieldVisibilityDefault = PropertyFieldVisibilityWhenSet
 
-	PropertyFieldNameMaxLength   = 128
 	PropertyOptionNameMaxLength  = 128
 	PropertyOptionColorMaxLength = 128
 
@@ -82,34 +80,7 @@ func (p *PropertyField) SupportsOptions() bool {
 	}
 }
 
-// IsValidPropertyFieldType returns true if the given type is a recognized property field type.
-func IsValidPropertyFieldType(t model.PropertyFieldType) bool {
-	switch t {
-	case model.PropertyFieldTypeText,
-		model.PropertyFieldTypeSelect,
-		model.PropertyFieldTypeMultiselect,
-		model.PropertyFieldTypeDate,
-		model.PropertyFieldTypeUser,
-		model.PropertyFieldTypeMultiuser:
-		return true
-	default:
-		return false
-	}
-}
-
 func (p *PropertyField) SanitizeAndValidate() error {
-	p.Name = strings.TrimSpace(p.Name)
-	if p.Name == "" {
-		return errors.New("property field name must not be empty")
-	}
-	if utf8.RuneCountInString(p.Name) > PropertyFieldNameMaxLength {
-		return errors.Errorf("property field name must not exceed %d characters", PropertyFieldNameMaxLength)
-	}
-
-	if !IsValidPropertyFieldType(p.Type) {
-		return errors.Errorf("invalid property field type: %s", p.Type)
-	}
-
 	// first we clean unused attributes depending on the field type
 	if !p.SupportsOptions() {
 		p.Attrs.Options = nil
@@ -225,9 +196,6 @@ type PropertyServiceReader interface {
 }
 
 type PropertyService interface {
-	// GetGroupID returns the property group ID used by the playbooks plugin.
-	GetGroupID() string
-
 	CreatePropertyField(playbookID string, propertyField PropertyField) (*PropertyField, error)
 	GetPropertyField(propertyID string) (*PropertyField, error)
 	GetPropertyFields(playbookID string) ([]PropertyField, error)
@@ -244,20 +212,8 @@ type PropertyService interface {
 	CopyPlaybookPropertiesToRun(playbookID, runID string) (*PropertyCopyResult, error)
 	CopyPlaybookPropertiesToPlaybook(sourcePlaybookID, targetPlaybookID string) (*PropertyCopyResult, error)
 	UpsertRunPropertyValue(runID, propertyFieldID string, value json.RawMessage) (*PropertyValue, error)
-	// UpsertRunPropertyValueWithField upserts using an already-loaded field, avoiding a DB lookup.
-	// Use this when the field is already known (e.g. from CopyPlaybookPropertiesToRun) to avoid
-	// the GetPropertyField round-trip which fails for run-scoped fields immediately after creation.
-	UpsertRunPropertyValueWithField(runID string, field *PropertyField, value json.RawMessage) (*PropertyValue, error)
 
 	// Bulk methods for retrieving properties for multiple runs
 	GetRunsPropertyFields(runIDs []string) (map[string][]PropertyField, error)
 	GetRunsPropertyValues(runIDs []string) (map[string][]PropertyValue, error)
-
-	// GetRunIDsByPropertyValue returns the IDs of all runs that have the given property field
-	// set to the given option ID value. Used for filtering the runs list by custom status.
-	GetRunIDsByPropertyValue(fieldID, optionID string) ([]string, error)
-
-	// SanitizePropertyValue sanitizes a raw property value for the given field type.
-	// Returns the sanitized value or an error if the value is invalid.
-	SanitizePropertyValue(fieldType model.PropertyFieldType, raw json.RawMessage) (json.RawMessage, error)
 }

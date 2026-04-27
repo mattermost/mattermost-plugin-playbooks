@@ -4,7 +4,6 @@
 package client
 
 import (
-	"encoding/json"
 	"time"
 
 	"gopkg.in/guregu/null.v4"
@@ -131,16 +130,15 @@ type TimelineEvent struct {
 
 // PlaybookRunCreateOptions specifies the parameters for PlaybookRunService.Create method.
 type PlaybookRunCreateOptions struct {
-	Name            string                     `json:"name"`
-	OwnerUserID     string                     `json:"owner_user_id"`
-	TeamID          string                     `json:"team_id"`
-	ChannelID       string                     `json:"channel_id"`
-	Summary         string                     `json:"summary"`
-	PostID          string                     `json:"post_id"`
-	PlaybookID      string                     `json:"playbook_id"`
-	CreatePublicRun *bool                      `json:"create_public_run"`
-	Type            string                     `json:"type"`
-	PropertyValues  map[string]json.RawMessage `json:"property_values,omitempty"`
+	Name            string `json:"name"`
+	OwnerUserID     string `json:"owner_user_id"`
+	TeamID          string `json:"team_id"`
+	ChannelID       string `json:"channel_id"`
+	Summary         string `json:"summary"`
+	PostID          string `json:"post_id"`
+	PlaybookID      string `json:"playbook_id"`
+	CreatePublicRun *bool  `json:"create_public_run"`
+	Type            string `json:"type"`
 }
 
 // RunAction represents the run action settings. Frontend passes this struct to update settings.

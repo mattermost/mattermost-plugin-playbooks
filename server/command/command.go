@@ -1237,7 +1237,7 @@ And... yes, of course, we have emojis
 		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
 		Type:                app.RunTypePlaybook,
 	}
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &gotplaybook, r.args.UserId, true, nil)
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &gotplaybook, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())
 		return
@@ -1418,7 +1418,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		Checklists:     playbook.Checklists,
 		Type:           app.RunTypePlaybook,
 	}
-	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, nil)
+	playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true)
 
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create playbook run: %v", err)
@@ -1954,7 +1954,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 			StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
 			Type:                 app.RunTypePlaybook,
 		}
-		playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true, nil)
+		playbookRun, err := r.playbookRunService.CreatePlaybookRun(newRun, &playbook, r.args.UserId, true)
 
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating playbook run: %v", err)

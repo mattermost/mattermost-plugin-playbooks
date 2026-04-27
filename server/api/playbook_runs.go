@@ -16,7 +16,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -183,21 +182,10 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		return
 	}
 
-	if playbookRunCreateOptions.Name != "" {
-		trimmedName, err := app.ValidateRunNameUpdate(playbookRunCreateOptions.Name)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run name", err)
-			return
-		}
-		playbookRunCreateOptions.Name = trimmedName
-	}
-	if playbookRunCreateOptions.Summary != "" {
-		trimmedSummary, err := app.ValidateRunSummaryUpdate(playbookRunCreateOptions.Summary)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run summary", err)
-			return
-		}
-		playbookRunCreateOptions.Summary = trimmedSummary
+	// Validate summary length
+	if len(playbookRunCreateOptions.Summary) > 4096 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", errors.New("summary must not exceed 4096 characters"))
+		return
 	}
 
 	// Set the run type based on whether a playbook ID is provided
@@ -220,13 +208,16 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(c *Context, w http.Respon
 		userID,
 		playbookRunCreateOptions.CreatePublicRun,
 		app.RunSourcePost,
-		playbookRunCreateOptions.PropertyValues,
 	)
 	if errors.Is(err, app.ErrNoPermissions) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "unable to create playbook run", err)
 		return
 	}
 	if errors.Is(err, app.ErrMalformedPlaybookRun) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
+		return
+	}
+	if errors.Is(err, app.ErrPlaybookArchived) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
 		return
 	}
@@ -263,32 +254,24 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 	}
 
 	// Prevent updates on finished runs
-	if err := app.ValidateRunUpdateOnFinished(oldPlaybookRun.CurrentStatus, updates.Name != nil, updates.Summary != nil); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", err)
+	if oldPlaybookRun.CurrentStatus == app.StatusFinished && (updates.Name != nil || updates.Summary != nil) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "cannot update a finished run", app.ErrPlaybookRunNotActive)
 		return
 	}
 
 	// If name is being updated, validate and apply the change
 	if updates.Name != nil {
-		trimmed, err := app.ValidateRunNameUpdate(*updates.Name)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run name", err)
+		fieldsToUpdate["Name"] = strings.TrimSpace(*updates.Name)
+		if fieldsToUpdate["Name"] == "" {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "name must not be empty", errors.New("name field is empty"))
 			return
 		}
-		fieldsToUpdate["Name"] = trimmed
 	}
 
-	// If summary is being updated, validate and apply the change
+	// If summary is being updated, apply the change (empty is allowed)
 	if updates.Summary != nil {
-		trimmed, err := app.ValidateRunSummaryUpdate(*updates.Summary)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run summary", err)
-			return
-		}
-		// IR_Incident's column is named "Description" — only SELECT aliases it as Summary
-		// (server/sqlstore/playbook_run.go:184: `i.Description AS Summary`).
-		// GraphqlUpdate.SetMap writes the key as a literal column name, so it must be "Description".
-		fieldsToUpdate["Description"] = trimmed
+		trimmedSummary := strings.TrimSpace(*updates.Summary)
+		fieldsToUpdate["Description"] = trimmedSummary
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 
@@ -394,15 +377,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		name = rawName
 	}
 
-	if name != "" {
-		trimmed, err := app.ValidateRunNameUpdate(name)
-		if err != nil {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to create playbook run", err)
-			return
-		}
-		name = trimmed
-	}
-
 	channelID := ""
 	runType := app.RunTypeChannelChecklist
 
@@ -431,7 +405,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(c *Context, w http.Resp
 		request.UserId,
 		nil,
 		app.RunSourceDialog,
-		nil, // initialPropertyValues: not supported via dialog submission
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedPlaybookRun) {
@@ -609,22 +582,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(c *Context, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string, initialPropertyValues map[string]json.RawMessage) (*app.PlaybookRun, error) {
-	if len(initialPropertyValues) > app.MaxPropertiesPerPlaybook {
-		return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "too many initial property values (%d), maximum is %d", len(initialPropertyValues), app.MaxPropertiesPerPlaybook)
-	}
-	// Coarse first-pass guard: reject obviously oversized raw JSON payloads early.
-	// Use 4x the rune limit to account for multi-byte UTF-8 characters.
-	// The authoritative rune-based validation happens downstream in sanitizeAndValidatePropertyValue.
-	for key, val := range initialPropertyValues {
-		if !model.IsValidId(key) {
-			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "property value key %q is not a valid field ID", key)
-		}
-		if len(val) > 4*app.MaxPropertyValueLength {
-			return nil, errors.Wrapf(app.ErrMalformedPlaybookRun, "property value for %q exceeds maximum length", key)
-		}
-	}
-
+func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, userID string, createPublicRun *bool, source string) (*app.PlaybookRun, error) {
 	// Validate initial data
 	if playbookRun.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
@@ -772,7 +730,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
 	}
 
-	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public, initialPropertyValues)
+	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create playbook run")
 	}
@@ -1031,18 +989,11 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// options.Reminder arrives as integer seconds from the JSON body; convert to time.Duration.
-	options.Reminder = options.Reminder * time.Second
-
-	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options, c.logger); internalErr != nil {
+	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
 		if errors.Is(internalErr, app.ErrNoPermissions) {
 			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
-		} else if errors.Is(internalErr, app.ErrNotFound) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusNotFound, publicMsg, internalErr)
-		} else if errors.Is(internalErr, app.ErrMalformedPlaybookRun) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
 		} else {
-			h.HandleErrorWithCode(w, c.logger, http.StatusInternalServerError, publicMsg, internalErr)
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
 		}
 		return
 	}
@@ -1052,51 +1003,32 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 }
 
 // updateStatus returns a publicMessage and an internal error
-func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions, logger logrus.FieldLogger) (string, error) {
-	if options.FinishRun {
-		if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
-			return "You don't have permission to finish this run.", err
-		}
-	} else {
-		if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
-			return "Not authorized", err
-		}
+func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
+
+	// user must be a participant to be able to post an update
+	if err := h.permissions.RunManageProperties(userID, playbookRunID); err != nil {
+		return "Not authorized", err
 	}
 
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
-		return "message must not be empty", errors.Wrap(app.ErrMalformedPlaybookRun, "message field empty")
+		return "message must not be empty", errors.New("message field empty")
 	}
 
 	if options.Reminder <= 0 && !options.FinishRun {
-		return "the reminder must be set and not 0", errors.Wrap(app.ErrMalformedPlaybookRun, "reminder was 0")
+		return "the reminder must be set and not 0", errors.New("reminder was 0")
 	}
-
-	// Save the original reminder before normalization so we can restore it if FinishPlaybookRun fails.
-	originalReminder := options.Reminder
-
 	if options.Reminder < 0 || options.FinishRun {
 		options.Reminder = 0
 	}
+	options.Reminder = options.Reminder * time.Second
 
 	if err := h.playbookRunService.UpdateStatus(playbookRunID, userID, options); err != nil {
-		if errors.Is(err, app.ErrNotFound) {
-			return "The run was not found.", err
-		}
 		return "An internal error has occurred. Check app server logs for details.", err
 	}
 
-	// Finish after the status update so the status post is created while the run
-	// is still InProgress, avoiding duplicate channel announcements.
 	if options.FinishRun {
 		if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
-			// Restore the reminder since FinishPlaybookRun failed and the run stays InProgress.
-			// Use originalReminder because options.Reminder was normalized to 0 for FinishRun.
-			if originalReminder > 0 {
-				if restoreErr := h.playbookRunService.SetNewReminder(playbookRunID, originalReminder); restoreErr != nil {
-					logger.WithError(restoreErr).WithField("playbook_run_id", playbookRunID).Warn("failed to restore reminder after FinishPlaybookRun failure")
-				}
-			}
 			return "An internal error has occurred. Check app server logs for details.", err
 		}
 	}
@@ -1380,7 +1312,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 		}
 	}
 
-	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options, c.logger); internalErr != nil {
+	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
 		if errors.Is(internalErr, app.ErrNoPermissions) {
 			c.logger.WithError(internalErr).WithField("user_id", userID).Warn("updateStatusDialog: permission denied")
 		} else {
@@ -2156,6 +2088,10 @@ func (h *PlaybookRunHandler) renameChecklist(c *Context, w http.ResponseWriter, 
 	}
 
 	if err := h.playbookRunService.RenameChecklist(id, userID, checklistNum, modificationParams.NewTitle); err != nil {
+		if errors.Is(err, app.ErrPlaybookRunNotActive) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook run already ended", app.ErrPlaybookRunNotActive)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -2449,18 +2385,10 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	return &options, nil
 }
 
-func (h *PlaybookRunHandler) requirePlaybookAttributesLicense(w http.ResponseWriter, logger logrus.FieldLogger) bool {
-	return checkPlaybookAttributesLicense(h.licenseChecker, w, logger)
-}
-
 func (h *PlaybookRunHandler) getRunPropertyFields(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-
-	if !h.requirePlaybookAttributesLicense(w, c.logger) {
-		return
-	}
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
 		return
@@ -2490,10 +2418,6 @@ func (h *PlaybookRunHandler) getRunPropertyValues(c *Context, w http.ResponseWri
 	vars := mux.Vars(r)
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-
-	if !h.requirePlaybookAttributesLicense(w, c.logger) {
-		return
-	}
 
 	if !h.PermissionsCheck(w, c.logger, h.permissions.RunView(userID, playbookRunID)) {
 		return
@@ -2532,10 +2456,6 @@ func (h *PlaybookRunHandler) setRunPropertyValue(c *Context, w http.ResponseWrit
 
 	if !model.IsValidId(fieldID) {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid field ID", nil)
-		return
-	}
-
-	if !h.requirePlaybookAttributesLicense(w, c.logger) {
 		return
 	}
 

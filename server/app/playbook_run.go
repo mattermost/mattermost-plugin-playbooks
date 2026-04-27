@@ -1189,7 +1189,7 @@ type PlaybookRunService interface {
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
 	// CreatePlaybookRun persists a new playbook run. userID is the user who initiated the run.
-	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool, initialPropertyValues map[string]json.RawMessage) (*PlaybookRun, error)
+	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook) error
@@ -1381,9 +1381,6 @@ type PlaybookRunService interface {
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
 
-	// UnfollowMultiple lets multiple users unfollow a specific playbook run in one batch
-	UnfollowMultiple(playbookRunID string, userIDs []string) error
-
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
 
@@ -1486,12 +1483,6 @@ type PlaybookRunStore interface {
 
 	// UnFollow method lets user unfollow a specific playbook run
 	Unfollow(playbookRunID, userID string) error
-
-	// UnfollowMultiple lets multiple users unfollow a specific playbook run in one query
-	UnfollowMultiple(playbookRunID string, userIDs []string) error
-
-	// FollowBatch lets multiple users follow a specific playbook run in one query
-	FollowBatch(playbookRunID string, userIDs []string) error
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)

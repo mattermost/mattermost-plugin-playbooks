@@ -19,9 +19,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
 
-// pgUniqueViolation is the PostgreSQL error code for unique constraint violations.
-const pgUniqueViolation = "23505"
-
 // txDefaultTimeout is the context timeout applied to every short transactional query.
 const txDefaultTimeout = 10 * time.Second
 

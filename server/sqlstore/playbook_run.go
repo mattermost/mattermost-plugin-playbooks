@@ -14,7 +14,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 
@@ -506,13 +505,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		}))
 
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == pgUniqueViolation {
-			if pqErr.Constraint == "ir_incident_playbookid_runnumber_unique" {
-				return nil, errors.Wrap(app.ErrDuplicateEntry, "run number already exists for this playbook")
-			}
-			return nil, errors.Wrap(app.ErrDuplicateEntry, pqErr.Error())
-		}
 		return nil, errors.Wrapf(err, "failed to store new playbook run")
 	}
 
@@ -1452,92 +1444,6 @@ func deduplicateStrings(ss []string) []string {
 		}
 	}
 	return out
-}
-
-func (s *playbookRunStore) UnfollowMultiple(playbookRunID string, userIDs []string) error {
-	if playbookRunID == "" {
-		return errors.New("playbookRunID cannot be empty")
-	}
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	userIDs = deduplicateStrings(userIDs)
-
-	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
-	defer txCancel()
-	tx, err := s.store.db.BeginTxx(txCtx, nil)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction for UnfollowMultiple")
-	}
-	defer s.store.finalizeTransaction(tx)
-
-	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
-		end := i + followUnfollowBatchSize
-		if end > len(userIDs) {
-			end = len(userIDs)
-		}
-		chunk := userIDs[i:end]
-
-		insert := sq.Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsFollower")
-		for _, userID := range chunk {
-			insert = insert.Values(playbookRunID, userID, false)
-		}
-		insert = insert.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", false)
-
-		if _, err := s.store.execBuilder(tx, insert); err != nil {
-			return errors.Wrapf(err, "failed to batch unfollow users for run '%s'", playbookRunID)
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit UnfollowMultiple transaction")
-	}
-	return nil
-}
-
-func (s *playbookRunStore) FollowBatch(playbookRunID string, userIDs []string) error {
-	if playbookRunID == "" {
-		return errors.New("playbookRunID cannot be empty")
-	}
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	userIDs = deduplicateStrings(userIDs)
-
-	txCtx, txCancel := context.WithTimeout(context.Background(), txDefaultTimeout)
-	defer txCancel()
-	tx, err := s.store.db.BeginTxx(txCtx, nil)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction for FollowBatch")
-	}
-	defer s.store.finalizeTransaction(tx)
-
-	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
-		end := i + followUnfollowBatchSize
-		if end > len(userIDs) {
-			end = len(userIDs)
-		}
-		chunk := userIDs[i:end]
-
-		insert := sq.Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsFollower")
-		for _, userID := range chunk {
-			insert = insert.Values(playbookRunID, userID, true)
-		}
-		insert = insert.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", true)
-
-		if _, err := s.store.execBuilder(tx, insert); err != nil {
-			return errors.Wrapf(err, "failed to batch follow users for run '%s'", playbookRunID)
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not commit FollowBatch transaction")
-	}
-	return nil
 }
 
 func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
