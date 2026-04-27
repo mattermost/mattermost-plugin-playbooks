@@ -8,6 +8,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {selectTeam} from 'mattermost-redux/actions/teams';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import qs from 'qs';
 
@@ -15,6 +16,7 @@ import {
     useChannel,
     useEnsureProfiles,
     usePlaybook,
+    usePreviousTeamId,
     useRun,
     useRunFollowers,
     useRunMetadata,
@@ -116,13 +118,28 @@ const PlaybookRunDetails = () => {
         }
     }, [playbookRun, RHS.section, RHS.isOpen]);
 
+    const currentTeamId = useSelector(getCurrentTeamId);
+    const [prevTeamId] = usePreviousTeamId();
+
     useEffect(() => {
+        // Team-based runs: select the run's own team.
         const teamId = playbookRun?.team_id;
-        if (!teamId) {
+        if (teamId) {
+            dispatch(selectTeam(teamId));
             return;
         }
-        dispatch(selectTeam(teamId));
-    }, [dispatch, playbookRun?.team_id]);
+
+        // DM/GM checklists are teamless. MainBody.useInitTeamRoutingLogic
+        // suppresses prev-team restore on /runs/:id routes, so on a refresh
+        // of a DM/GM run there's no team selected at all — channel link,
+        // recent activity, and timeline rendering all need a team context.
+        // usePreviousTeamId() encapsulates the same default-team logic the
+        // Mattermost host webapp uses (prev team localStorage → first team).
+        if (!playbookRun || currentTeamId || !prevTeamId) {
+            return;
+        }
+        dispatch(selectTeam(prevTeamId));
+    }, [dispatch, playbookRun, playbookRun?.team_id, currentTeamId, prevTeamId]);
 
     useDefaultRedirectOnTeamChange(playbookRun?.team_id);
 
