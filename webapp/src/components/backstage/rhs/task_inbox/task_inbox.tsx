@@ -2,13 +2,15 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import Icon from '@mdi/react';
 import {mdiCircleSmall} from '@mdi/js';
 import InfiniteScroll from 'react-infinite-scroller';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
 
@@ -62,10 +64,10 @@ const ITEMS_PER_PAGE = 20;
 
 const TaskInbox = () => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [filters, setFilters] = useState<Filter[]>([Filter.FilterRunOwner]);
-    const currentUserId = useSelector(getCurrentUserId);
-    const myTasks = useSelector(selectMyTasks);
+    const currentUserId = useAppSelector(getCurrentUserId);
+    const myTasks = useAppSelector(selectMyTasks);
 
     useEffect(() => {
         const options = {

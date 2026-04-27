@@ -3,7 +3,7 @@
 
 import React, {useEffect, useMemo} from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {createSelector} from 'mattermost-redux/selectors/create_selector';
 import styled from 'styled-components';
 
@@ -27,6 +27,8 @@ import {Team} from '@mattermost/types/teams';
 import {fetchChannelsAndMembers, getChannel} from 'mattermost-redux/actions/channels';
 
 import {useIntl} from 'react-intl';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {StyledSelect} from './styles';
 
@@ -110,20 +112,21 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
 };
 
 const ChannelSelector = (props: Props & {className?: string}) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
 
-    // Get team channels - use run's team if available, otherwise current team
+    // DM/GM checklist runs are teamless — fall back to the user's current
+    // team so the team-channel query still has a valid id to scope by.
     const effectiveTeamId = props.teamId || currentTeamId;
-    const teamChannels = useSelector(getMyPublicAndPrivateChannelsInTeam(effectiveTeamId));
-    const allDmgmChannels = useSelector(getDirectAndGroupChannels);
+    const teamChannels = useAppSelector(getMyPublicAndPrivateChannelsInTeam(effectiveTeamId));
+    const allDmgmChannels = useAppSelector(getDirectAndGroupChannels);
 
     // mattermost-redux's getDirectAndGroupChannels does NOT filter manually
     // closed channels; we must drop them so closed DMs/GMs don't surface as
     // link targets in the selector.
     const dmgmChannels = useMemo(
-        () => allDmgmChannels.filter((c) => c.delete_at === 0),
+        () => allDmgmChannels.filter((c: Channel) => c.delete_at === 0),
         [allDmgmChannels],
     );
 
@@ -134,7 +137,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
         () => (props.excludeDMGM ? teamChannels : [...teamChannels, ...dmgmChannels]),
         [teamChannels, dmgmChannels, props.excludeDMGM],
     );
-    const allPublicChannels = useSelector(getAllPublicChannelsInTeam(effectiveTeamId));
+    const allPublicChannels = useAppSelector(getAllPublicChannelsInTeam(effectiveTeamId));
 
     useEffect(() => {
         if (effectiveTeamId && teamChannels.length === 0) {

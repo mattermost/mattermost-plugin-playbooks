@@ -141,6 +141,97 @@ func (s *conditionService) CopyPlaybookConditionsToPlaybook(sourcePlaybookID, ta
 	return conditionMapping, nil
 }
 
+// CreateConditionsFromExport creates conditions from exported data with property ID remapping.
+// This parallels CopyPlaybookConditionsToPlaybook but starts from deserialized export data
+// rather than from conditions already in the database.
+func (s *conditionService) CreateConditionsFromExport(playbookID string, exportConditions []ExportCondition, propertyMappings *PropertyCopyResult) (map[string]*Condition, error) {
+	conditionMapping := make(map[string]*Condition)
+	if len(exportConditions) == 0 {
+		return conditionMapping, nil
+	}
+
+	currentCount, err := s.store.GetPlaybookConditionCount(playbookID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current condition count during import")
+	}
+
+	newProperties, err := s.propertyService.GetPropertyFields(playbookID)
+	if err != nil {
+		logrus.WithError(err).WithField("playbook_id", playbookID).Warn("failed to fetch property fields for validation during import")
+		newProperties = []PropertyField{}
+	}
+
+	for _, exportCondition := range exportConditions {
+		if currentCount >= MaxConditionsPerPlaybook {
+			logrus.WithFields(logrus.Fields{
+				"playbook_id": playbookID,
+				"limit":       MaxConditionsPerPlaybook,
+				"created":     len(conditionMapping),
+				"skipped":     len(exportConditions) - len(conditionMapping),
+			}).Warn("reached maximum conditions per playbook during import, skipping remaining")
+			break
+		}
+
+		if exportCondition.ConditionExpr == nil {
+			logrus.WithFields(logrus.Fields{
+				"playbook_id":  playbookID,
+				"condition_id": exportCondition.ID,
+				"version":      exportCondition.Version,
+			}).Warn("condition expression is nil after deserialization during import, skipping")
+			continue
+		}
+
+		// Remap field and option IDs in-place
+		if err := exportCondition.ConditionExpr.SwapPropertyIDs(propertyMappings); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id":  playbookID,
+				"condition_id": exportCondition.ID,
+				"version":      exportCondition.Version,
+			}).Warn("failed to remap property IDs in condition during import, skipping")
+			continue
+		}
+
+		newCondition := Condition{
+			ConditionExpr: exportCondition.ConditionExpr,
+			Version:       exportCondition.Version,
+			PlaybookID:    playbookID,
+			CreateAt:      model.GetMillis(),
+			UpdateAt:      model.GetMillis(),
+		}
+
+		if err := newCondition.IsValid(true, newProperties); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id":  playbookID,
+				"condition_id": exportCondition.ID,
+				"version":      exportCondition.Version,
+			}).Warn("condition validation failed during import, skipping")
+			continue
+		}
+
+		newCondition.Sanitize()
+
+		createdCondition, err := s.store.CreateCondition(playbookID, newCondition)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"playbook_id":  playbookID,
+				"condition_id": exportCondition.ID,
+				"version":      exportCondition.Version,
+			}).Warn("failed to create condition during import, skipping")
+			continue
+		}
+
+		conditionMapping[exportCondition.ID] = createdCondition
+		currentCount++
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"playbook_id":        playbookID,
+		"conditions_created": len(conditionMapping),
+	}).Info("created conditions from export")
+
+	return conditionMapping, nil
+}
+
 // CreatePlaybookCondition creates a new stored condition for a playbook
 func (s *conditionService) CreatePlaybookCondition(userID string, condition Condition, teamID string) (*Condition, error) {
 	auditRec := s.auditor.MakeAuditRecord("createCondition", model.AuditStatusFail)

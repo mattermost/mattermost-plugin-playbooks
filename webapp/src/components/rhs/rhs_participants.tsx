@@ -3,11 +3,13 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 import {AccountMultiplePlusOutlineIcon, AccountPlusOutlineIcon, OpenInNewIcon} from '@mattermost/compass-icons/components';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import Tooltip from 'src/components/widgets/tooltip';
 import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
@@ -121,8 +123,8 @@ export const UserList = ({userIds, sizeInPx}: {userIds: string[], sizeInPx: numb
 };
 
 const useOpenMembersModalIfPresent = () => {
-    const dispatch = useDispatch();
-    const channel = useSelector(getCurrentChannel);
+    const dispatch = useAppDispatch();
+    const channel = useAppSelector(getCurrentChannel);
 
     // @ts-ignore
     if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CHANNEL_MEMBERS || !window.Components?.ChannelMembersModal) {

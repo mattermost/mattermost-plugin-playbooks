@@ -222,7 +222,7 @@ function generateRandomUser(prefix = 'user', createAt = 0) {
     return {
         email: `${prefix}${randomId}@sample.mattermost.com`,
         username: `${prefix}${randomId}`,
-        password: 'passwd12',
+        password: 'Passwd4Testing!',
         first_name: `First${randomId}`,
         last_name: `Last${randomId}`,
         nickname: `Nickname${randomId}`,

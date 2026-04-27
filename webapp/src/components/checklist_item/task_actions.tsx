@@ -3,9 +3,11 @@
 
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
 import styled, {css} from 'styled-components';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {haveAtleastOneEnabledAction} from 'src/components/checklist_item/task_actions_modal';
 import {TaskAction as TaskActionType} from 'src/types/playbook';
@@ -20,7 +22,7 @@ interface TaskActionsProps {
 }
 
 const TaskActions = (props: TaskActionsProps) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
     const lenTasks = props.taskActions ? props.taskActions.length : 0;
     const hasEnabledActions = haveAtleastOneEnabledAction(props.taskActions);

@@ -2,7 +2,7 @@
     "regulars": {
         "samluser-1": {
             "username": "samluser-1",
-            "password": "Password1",
+            "password": "Passwd4Testing!",
             "email": "samluser-1@test.com",
             "firstname": "saml1",
             "lastname": "user",
@@ -10,7 +10,7 @@
         },
         "samluser-2": {
             "username": "samluser-2",
-            "password": "Password1",
+            "password": "Passwd4Testing!",
             "email": "samluser-2@test.com",
             "firstname": "saml2",
             "lastname": "user",
@@ -20,7 +20,7 @@
     "admins": {
         "samladmin-1": {
             "username": "samladmin-1",
-            "password": "Password1",
+            "password": "Passwd4Testing!",
             "email": "samladmin-1@test.com",
             "firstname": "saml1",
             "lastname": "admin",
@@ -28,7 +28,7 @@
         },
         "samladmin-2": {
             "username": "samladmin-2",
-            "password": "Password1",
+            "password": "Passwd4Testing!",
             "email": "samladmin-2@test.com",
             "firstname": "saml2",
             "lastname": "admin",
@@ -39,7 +39,7 @@
     "guests": {
         "samlguest-1": {
             "username": "samlguest-1",
-            "password": "Password1",
+            "password": "Passwd4Testing!",
             "email": "samlguest-1@test.com",
             "firstname": "saml1",
             "lastname": "guest",
@@ -47,7 +47,7 @@
         },
         "samlguest-2": {
             "username": "samlguest-2",
-            "password": "Password1",
+            "password": "Passwd4Testing!",
             "email": "samlguest-2@test.com",
             "firstname": "saml2",
             "lastname": "guest",

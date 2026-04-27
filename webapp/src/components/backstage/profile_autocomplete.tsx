@@ -7,7 +7,7 @@ import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
 
 import styled from 'styled-components';
-import {ActionFuncAsync} from 'mattermost-redux/types/actions';
+import {type ActionResult} from 'mattermost-redux/types/actions';
 import {UserProfile} from '@mattermost/types/users';
 import {
     ControlProps,
@@ -17,10 +17,6 @@ import {
 } from 'react-select';
 
 import Profile, {ProfileImage, ProfileName} from 'src/components/profile/profile';
-
-// Type for profile fetching functions - can be either a Redux thunk or a Promise-based function
-// Both should resolve to {data: UserProfile[]}
-type ProfileFetchFunc<T extends unknown[] = []> = (...args: T) => ActionFuncAsync | PromiseLike<{data: UserProfile[]}>;
 
 export const StyledAsyncSelect = styled(AsyncSelect)`
     flex-grow: 1;
@@ -80,8 +76,8 @@ interface Props {
     userIds: string[];
     onAddUser?: (userid: string) => void; // for single select
     setValues?: (values: UserProfile[]) => void; // for multi select
-    searchProfiles: ProfileFetchFunc<[string]>;
-    getProfiles?: ProfileFetchFunc;
+    searchProfiles: (term: string) => Promise<ActionResult<UserProfile[]>>;
+    getProfiles?: () => Promise<ActionResult<UserProfile[]>>;
     isDisabled?: boolean;
     isMultiMode?: boolean;
     customSelectStyles?: StylesConfig<OptionTypeBase, boolean>;
@@ -140,7 +136,7 @@ const ProfileAutocomplete = (props: Props) => {
 
         //@ts-ignore
         profiles.then(({data}) => {
-            callback(data);
+            callback(data as UserProfile[]);
         }).catch(() => {
             // eslint-disable-next-line no-console
             console.error('Error searching user profiles in custom attribute settings dropdown.');

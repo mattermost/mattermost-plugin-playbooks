@@ -16,9 +16,11 @@ import {
 } from '@mattermost/compass-icons/components';
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {exportChannelUrl, getSiteUrl} from 'src/client';
 import {useAllowChannelExport, useExportLogAvailable, usePlaybooksRouting} from 'src/hooks';
@@ -73,7 +75,7 @@ export const CopyRunLinkMenuItem = (props: {playbookRunId: string}) => {
 };
 
 export const RenameRunItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -133,7 +135,7 @@ export const LeaveRunMenuItem = (props: {isFollowing: boolean, role: Role, showL
 };
 
 export const RunActionsMenuItem = (props: {onClick: () => void, playbookRun: PlaybookRun, role: Role}) => {
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -178,7 +180,7 @@ export const ExportLogsMenuItem = (props: {exportAvailable: boolean, onExportCli
 
 export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
     const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -233,7 +235,7 @@ export const ExportChannelLogsMenuItem = (props: {channelId: string, setShowModa
 export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, location?: string}) => {
     const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -267,7 +269,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
 
 export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, role: Role}) => {
     const toggleRunStatusUpdates = useToggleRunStatusUpdate(props.playbookRun);
-    const currentUserId = useSelector(getCurrentUserId);
+    const currentUserId = useAppSelector(getCurrentUserId);
 
     const statusUpdateEnabled = props.playbookRun.status_update_enabled;
 
@@ -305,7 +307,7 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
 export const SaveAsPlaybookMenuItem = (props: {playbookRun: PlaybookRun}) => {
     const {formatMessage} = useIntl();
     const {create} = usePlaybooksRouting();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
 
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
 

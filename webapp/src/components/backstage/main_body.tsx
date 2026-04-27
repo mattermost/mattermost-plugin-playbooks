@@ -12,13 +12,13 @@ import {
     useRouteMatch,
 } from 'react-router-dom';
 
-import {useDispatch, useSelector} from 'react-redux';
-
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {useEffectOnce, useUpdateEffect} from 'react-use';
 
 import {selectTeam} from 'mattermost-redux/actions/teams';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import PlaybookRun from 'src/components/backstage/playbook_runs/playbook_run/playbook_run';
 
@@ -31,10 +31,10 @@ import RunsPage from 'src/components/backstage/runs_page';
 import {usePreviousTeamId} from 'src/hooks';
 
 const useInitTeamRoutingLogic = () => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const location = useLocation();
     const {url} = useRouteMatch();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
 
     // Centralized in hooks/teams.ts — same `user_prev_team:{userId}` localStorage
     // pattern Mattermost webapp uses, with first-team fallback.
@@ -71,7 +71,7 @@ const useInitTeamRoutingLogic = () => {
  */
 export const useDefaultRedirectOnTeamChange = (teamScopedModelTeamId: string | undefined) => {
     const history = useHistory();
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
     useUpdateEffect(() => {
         if (
             currentTeamId &&

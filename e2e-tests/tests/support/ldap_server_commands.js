@@ -74,7 +74,7 @@ export function generateLDAPUser(prefix = 'ldap') {
 
     return {
         username,
-        password: 'Password1',
+        password: 'Passwd4Testing!',
         email: `${username}@mmtest.com`,
         firstname: `Firstname-${randomId}`,
         lastname: `Lastname-${randomId}`,
@@ -107,6 +107,6 @@ cn: ${user.firstname}
 sn: ${user.lastname}
 uid: ${user.username}
 mail: ${user.email}
-userPassword: Password1
+userPassword: Passwd4Testing!
 `;
 }

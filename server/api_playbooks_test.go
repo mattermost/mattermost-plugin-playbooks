@@ -1430,6 +1430,171 @@ func TestPlaybooksImportExport(t *testing.T) {
 		assert.Equal(t, e.BasicPlaybook.Title, newPlaybook.Title)
 		assert.NotEqual(t, e.BasicPlaybook.ID, newPlaybook.ID)
 	})
+
+	t.Run("Export and import with properties", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip()
+		}
+
+		e.SetEnterpriseLicence() // properties require license
+
+		// Create a fresh playbook to avoid state from prior subtests
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Fresh Playbook for Properties Test",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		require.NoError(t, err)
+
+		// Create a property field on the playbook via the API
+		createdField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Status",
+				Type: "select",
+				Attrs: &client.PropertyFieldAttrsInput{
+					Options: &[]client.PropertyOptionInput{
+						{Name: "Active"},
+						{Name: "Inactive"},
+					},
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Export
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), freshPlaybookID)
+		require.NoError(t, err)
+
+		// Verify properties key exists in export JSON
+		var exportData map[string]interface{}
+		err = json.Unmarshal(result, &exportData)
+		require.NoError(t, err)
+		props, ok := exportData["properties"].([]interface{})
+		require.True(t, ok, "export should contain properties")
+		require.Len(t, props, 1)
+
+		// Import into a new playbook
+		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		// Fetch new playbook's properties and verify
+		newFields, err := e.PlaybooksClient.Playbooks.GetPropertyFields(context.Background(), newPlaybookID)
+		require.NoError(t, err)
+		require.Len(t, newFields, 1)
+
+		assert.Equal(t, createdField.Name, newFields[0].Name)
+		assert.NotEqual(t, createdField.ID, newFields[0].ID, "imported property should have a new ID")
+
+		// Extract and verify options from Attrs
+		rawOptions, ok := newFields[0].Attrs["options"].([]interface{})
+		require.True(t, ok, "options should be present in attrs")
+		assert.Len(t, rawOptions, 2, "options should be preserved")
+	})
+
+	t.Run("Export and import with conditions", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip()
+		}
+
+		e.SetEnterpriseLicence() // properties and conditions require license
+
+		// Use a fresh playbook to avoid state from prior subtests
+		freshPlaybookID, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "Conditions Test Playbook",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+			Checklists: []client.Checklist{{
+				Title: "CL1",
+				Items: []client.ChecklistItem{{Title: "task1"}},
+			}},
+		})
+		require.NoError(t, err)
+
+		// Create a property field
+		createdField, err := e.PlaybooksClient.Playbooks.CreatePropertyField(
+			context.Background(),
+			freshPlaybookID,
+			client.PropertyFieldRequest{
+				Name: "Priority",
+				Type: "select",
+				Attrs: &client.PropertyFieldAttrsInput{
+					Options: &[]client.PropertyOptionInput{
+						{Name: "High"},
+						{Name: "Low"},
+					},
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Extract the first option ID from Attrs
+		rawOptions, ok := createdField.Attrs["options"].([]interface{})
+		require.True(t, ok)
+		firstOpt, ok := rawOptions[0].(map[string]interface{})
+		require.True(t, ok)
+		optionID, ok := firstOpt["id"].(string)
+		require.True(t, ok)
+
+		// Create a condition referencing the property field
+		createdCondition, err := e.PlaybooksClient.PlaybookConditions.Create(
+			context.Background(),
+			freshPlaybookID,
+			client.Condition{
+				Version: 1,
+				ConditionExpr: client.ConditionExprV1{
+					Is: &client.ComparisonCondition{
+						FieldID: createdField.ID,
+						Value:   json.RawMessage(`["` + optionID + `"]`),
+					},
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Export
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), freshPlaybookID)
+		require.NoError(t, err)
+
+		// Verify export has both properties and conditions
+		var exportData map[string]interface{}
+		err = json.Unmarshal(result, &exportData)
+		require.NoError(t, err)
+
+		props, ok := exportData["properties"].([]interface{})
+		require.True(t, ok, "export should contain properties")
+		require.Len(t, props, 1)
+
+		conds, ok := exportData["conditions"].([]interface{})
+		require.True(t, ok, "export should contain conditions")
+		require.Len(t, conds, 1)
+
+		// Import
+		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam.Id)
+		require.NoError(t, err)
+
+		// Verify new playbook has properties with new IDs
+		newFields, err := e.PlaybooksClient.Playbooks.GetPropertyFields(context.Background(), newPlaybookID)
+		require.NoError(t, err)
+		require.Len(t, newFields, 1)
+		assert.Equal(t, createdField.Name, newFields[0].Name)
+		assert.NotEqual(t, createdField.ID, newFields[0].ID, "imported property should have new ID")
+
+		// Verify conditions were imported on the new playbook with new IDs
+		importedConditions, err := e.PlaybooksClient.PlaybookConditions.List(
+			context.Background(), newPlaybookID, 0, 100, client.PlaybookConditionListOptions{},
+		)
+		require.NoError(t, err)
+		require.Equal(t, 1, importedConditions.TotalCount, "imported playbook should have one condition")
+		require.Len(t, importedConditions.Items, 1)
+		assert.NotEqual(t, createdCondition.ID, importedConditions.Items[0].ID, "imported condition should have a new ID")
+
+		// Verify the condition expression references the new property field ID (not the old one)
+		assert.NotNil(t, importedConditions.Items[0].ConditionExpr.Is)
+		assert.Equal(t, newFields[0].ID, importedConditions.Items[0].ConditionExpr.Is.FieldID,
+			"imported condition should reference the new property field ID")
+	})
 }
 
 func TestPlaybooksDuplicate(t *testing.T) {

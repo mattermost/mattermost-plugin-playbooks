@@ -2,11 +2,12 @@
 // See LICENSE.txt for license information.
 
 import {useEffect, useRef} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
 import type {Action} from 'redux';
 import type {ThunkAction} from 'redux-thunk';
 
 import {GlobalState} from '@mattermost/types/store';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 export type UseDataOptions<Entity, Identifier = string, State = GlobalState> = {
     name: string;
@@ -14,12 +15,12 @@ export type UseDataOptions<Entity, Identifier = string, State = GlobalState> = {
     selector: (state: State, identifier: Identifier) => Entity | undefined;
 }
 
-export function makeUseEntity<Entity, Identifier = string, State = GlobalState>(options: UseDataOptions<Entity, Identifier, State>) {
+export function makeUseEntity<Entity, Identifier = string, State extends GlobalState = GlobalState>(options: UseDataOptions<Entity, Identifier, State>) {
     function useEntity(identifier: Identifier, ...fetchArgs: unknown[]): Entity | undefined {
-        const dispatch = useDispatch();
+        const dispatch = useAppDispatch();
         const fetchArgsRef = useRef(fetchArgs);
 
-        const entity = useSelector((state: State) => {
+        const entity = useAppSelector<State, Entity | undefined>((state) => {
             return identifier ? options.selector(state, identifier) : undefined;
         });
 

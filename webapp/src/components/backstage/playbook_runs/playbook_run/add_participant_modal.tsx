@@ -5,12 +5,13 @@ import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {Modal} from 'react-bootstrap';
 import styled from 'styled-components';
-import {useDispatch, useSelector} from 'react-redux';
 import {getProfilesInChannel, searchProfiles} from 'mattermost-redux/actions/users';
 import {UserProfile} from '@mattermost/types/users';
 import {LightningBoltOutlineIcon} from '@mattermost/compass-icons/components';
 import {OptionTypeBase, StylesConfig} from 'react-select';
 import {General} from 'mattermost-redux/constants';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -34,12 +35,12 @@ interface Props {
 
 const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const {addToRun} = useManageRunMembership(playbookRun.id);
     const [forceAddToChannel, setForceAddToChannel] = useState(false);
     const [channel, meta] = useChannel(playbookRun.channel_id);
-    const isChannelMember = useSelector(isCurrentUserChannelMember(playbookRun.channel_id));
+    const isChannelMember = useAppSelector(isCurrentUserChannelMember(playbookRun.channel_id));
     const isPrivateChannelWithAccess = meta.error === null && channel?.type === General.PRIVATE_CHANNEL;
 
     // Participants are limited to channel members in DM/GM runs.

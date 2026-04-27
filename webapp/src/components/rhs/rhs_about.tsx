@@ -2,13 +2,15 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 import {ChevronDownIcon, ChevronUpIcon} from '@mattermost/compass-icons/components';
 
 import {UserProfile} from '@mattermost/types/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
@@ -40,13 +42,12 @@ interface Props {
 }
 
 const RHSAbout = (props: Props) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
-    const collapsedFromStore = useSelector(currentRHSAboutCollapsedState(props.playbookRun.id));
+    const collapsedFromStore = useAppSelector(currentRHSAboutCollapsedState(props.playbookRun.id));
     const profiles = useProfilesForRun(props.playbookRun.team_id, props.playbookRun.channel_id);
     const updateRun = useUpdateRun(props.playbookRun.id);
-    const myUserId = useSelector(getCurrentUserId);
-
+    const myUserId = useAppSelector(getCurrentUserId);
     const shouldShowParticipate = myUserId !== props.playbookRun.owner_user_id && props.playbookRun.participant_ids.find((id: string) => id === myUserId) === undefined;
 
     // Hooks for favorite and follow state

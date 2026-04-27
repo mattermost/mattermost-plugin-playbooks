@@ -2,16 +2,15 @@
 // See LICENSE.txt for license information.
 
 import {useEffect, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from '@mattermost/types/store';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {DispatchFunc} from 'mattermost-redux/types/actions';
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {
     TimelineEvent,
@@ -23,12 +22,12 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {CheckboxOption} from 'src/components/multi_checkbox';
 
 export const useTimelineEvents = (playbookRun: PlaybookRun, eventsFilter: TimelineEventsFilter) => {
-    const dispatch = useDispatch<DispatchFunc>();
-    const displayPreference = useSelector(getTeammateNameDisplaySetting) || 'username';
+    const dispatch = useAppDispatch();
+    const displayPreference = useAppSelector(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
     const getUserFn = (userId: string) => dispatch(getUserAction(userId));
-    const selectUser = useSelector((state: GlobalState) => (userId: string) => getUser(state, userId));
+    const selectUser = useAppSelector((state) => (userId: string) => getUser(state, userId));
 
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));

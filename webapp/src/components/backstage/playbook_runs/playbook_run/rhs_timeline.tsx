@@ -3,13 +3,15 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
+
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam, getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from '@mattermost/types/store';
 import {DateTime} from 'luxon';
 import {useIntl} from 'react-intl';
 import Scrollbars from 'react-custom-scrollbars';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {renderThumbVertical, renderTrackHorizontal, renderView} from 'src/components/rhs/rhs_shared';
 
@@ -31,8 +33,11 @@ interface Props {
 
 const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: Props) => {
     const {formatMessage} = useIntl();
-    const channelNamesMap = useSelector(getChannelsNameMapInCurrentTeam);
-    const team = useSelector((state: GlobalState) => getTeam(state, playbookRun.team_id) || getCurrentTeam(state));
+    const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
+
+    // DM/GM checklist runs are teamless — fall back to the user's current
+    // team so timeline routes resolve.
+    const team = useAppSelector((state: GlobalState) => getTeam(state, playbookRun.team_id) || getCurrentTeam(state));
 
     const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
 
