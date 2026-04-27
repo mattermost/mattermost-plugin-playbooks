@@ -303,7 +303,7 @@ describe('runs > run details page', {testIsolation: true}, () => {
 
             it('auto save', () => {
                 // # Intercept the REST endpoint used by updateRetrospective for metric autosave
-                cy.intercept('POST', '/plugins/playbooks/api/v0/runs/*/retrospective').as('UpdateRetro');
+                cy.intercept('POST', `/plugins/playbooks/api/v0/runs/${testRun.id}/retrospective`).as('UpdateRetro');
                 getRetro().within(() => {
                     // # Enter metric values
                     cy.get('input[type=text]').eq(0).click();

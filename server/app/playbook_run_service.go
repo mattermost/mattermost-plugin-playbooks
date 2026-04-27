@@ -1636,11 +1636,11 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospectiveEnabled(id, userID string, e
 	return currentRun, nil
 }
 
-// GraphqlUpdate updates fields based on a setmap and returns the updated run.
+// GraphqlUpdate updates fields based on a setmap.
 // Note: RetrospectiveEnabled updates should use UpdateRetrospectiveEnabled instead.
-func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) (*PlaybookRun, error) {
+func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if len(setmap) == 0 {
-		return s.GetPlaybookRun(id)
+		return nil
 	}
 
 	auditRec := plugin.MakeAuditRecord("graphqlUpdatePlaybookRun", model.AuditStatusFail)
@@ -1661,7 +1661,7 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		if err != nil {
 			err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s) before GraphQL update", id)
 			auditRec.AddErrorDesc(err.Error())
-			return nil, err
+			return err
 		}
 		originalRun = originalRun.Clone()
 	}
@@ -1677,23 +1677,15 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 	if err := s.store.GraphqlUpdate(id, setmap); err != nil {
 		err := errors.Wrapf(err, "failed to execute GraphQL update for playbook run (runID: %s) with fields [%s]", id, strings.Join(fieldNames, ","))
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
-	}
-
-	currentRun, err := s.GetPlaybookRun(id)
-	if err != nil {
-		err := errors.Wrapf(err, "failed to retrieve updated playbook run (runID: %s) after GraphQL update", id)
-		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return err
 	}
 
 	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, nil)
 
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "updateAt", now)
-	auditRec.AddEventResultState(*currentRun)
 
-	return currentRun, nil
+	return nil
 }
 
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {

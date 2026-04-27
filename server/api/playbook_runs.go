@@ -274,7 +274,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 
 	// Apply generic field updates first
 	if len(fieldsToUpdate) > 0 {
-		_, err = h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate)
+		err = h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate)
 		if err != nil {
 			h.HandleError(w, c.logger, err)
 			return
