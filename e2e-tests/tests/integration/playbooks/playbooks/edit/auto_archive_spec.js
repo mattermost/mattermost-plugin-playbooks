@@ -145,7 +145,7 @@ describe('playbooks > edit > auto archive', () => {
                 // # Finish the run via the RHS Finish button
                 cy.playbooksVisitRunChannel(testTeam.name, testRun);
                 cy.get('#channel-header').should('be.visible');
-                cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
+                cy.findByRole('button', {name: /finish/i}).click();
                 cy.playbooksConfirmFinishModal();
 
                 // * Assert the run's channel is now archived (poll for async archive)
@@ -267,7 +267,7 @@ describe('playbooks > edit > auto archive', () => {
                 // # Finish the run via the RHS Finish button
                 cy.playbooksVisitRunChannel(testTeam.name, testRun);
                 cy.get('#channel-header').should('be.visible');
-                cy.findByTestId('rhs-finish-section').findByRole('button', {name: /finish/i}).click();
+                cy.findByRole('button', {name: /finish/i}).click();
                 cy.playbooksConfirmFinishModal();
 
                 // * Wait for the server to commit the finish before reading back

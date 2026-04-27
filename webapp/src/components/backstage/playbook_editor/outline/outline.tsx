@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import React, {
     Children,
     ReactNode,
-    useCallback,
     useEffect,
     useState,
 } from 'react';
@@ -72,7 +71,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
         });
     };
 
-    const handleAutoArchiveChange = useCallback((updated: {auto_archive_channel: boolean}) => {
+    const handleAutoArchiveChange = (updated: {auto_archive_channel: boolean}) => {
         if (!archived && restPlaybook) {
             const prev = restPlaybook.auto_archive_channel ?? false;
             setAutoArchiveOverride(updated.auto_archive_channel);
@@ -85,7 +84,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 },
             );
         }
-    }, [archived, restPlaybook, refetch]);
+    };
 
     const toggleRetrospective = () => {
         if (archived || !retrospectiveAccess) {
