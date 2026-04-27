@@ -8,7 +8,10 @@ import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Channel} from '@mattermost/types/channels';
 import {GlobalState} from '@mattermost/types/store';
-import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, getUser} from 'mattermost-redux/selectors/entities/users';
+import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
+import {getUserIdFromChannelName} from 'mattermost-redux/utils/channel_utils';
+import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {General} from 'mattermost-redux/constants';
 
 import {
@@ -42,7 +45,7 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 import {CompassIcon} from 'src/types/compass';
 
 import {useLHSRefresh} from 'src/components/backstage/lhs_navigation';
-import {useTextOverflow} from 'src/hooks';
+import {useEnsureProfiles, useTextOverflow} from 'src/hooks';
 import Tooltip from 'src/components/widgets/tooltip';
 
 import {FollowState} from './rhs_info';
@@ -266,13 +269,22 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
     const channelNameRef = useRef<HTMLSpanElement>(null);
     const isChannelNameOverflowing = useTextOverflow(channelNameRef);
 
-    // For DM channels, get the teammate to build @username path
-    const teammate = useSelector((state: GlobalState) => {
-        if (channel?.teammate_id) {
-            return getUser(state, channel.teammate_id);
-        }
-        return null;
-    });
+    // DM channel display name comes from the teammate's profile, not from the
+    // channel itself — `Channel.name` for a DM is the user-id pair (e.g.
+    // "{userIdA}__{userIdB}") and `display_name` is blank in the store. Derive
+    // the teammate id from the channel name and look up the user directly.
+    const currentUserId = useSelector(getCurrentUserId);
+    const teammateNameDisplay = useSelector(getTeammateNameDisplaySetting);
+    const teammateId = (channel && channel.type === General.DM_CHANNEL) ? getUserIdFromChannelName(currentUserId, channel.name) : '';
+    const teammate = useSelector((state: GlobalState) => (
+        teammateId ? getUser(state, teammateId) : null
+    ));
+
+    // On a fresh page load (e.g. refresh on the backstage detail of a DM-linked
+    // checklist) the teammate user may not be in the redux store yet — without
+    // them we can't compute the DM display name. Pull the user into store so
+    // the next render has it.
+    useEnsureProfiles(teammateId ? [teammateId] : []);
 
     if (channelDeleted) {
         return (
@@ -286,14 +298,26 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
         // Use current team as fallback when run's team_name is empty (DM/GM runs)
         const teamName = runMetadata.team_name || currentTeam?.name || '';
 
-        const displayName = channel.display_name;
+        // For DMs, the visible label is the teammate's display name; the
+        // channel itself has no human-readable name. For GMs and regular
+        // channels, fall back to the channel's display_name (Mattermost
+        // populates this for GMs from member profiles when those load).
+        let displayName: string;
+        if (channel.type === General.DM_CHANNEL && teammate) {
+            displayName = displayUsername(teammate, teammateNameDisplay) || teammate.username;
+        } else {
+            displayName = channel.display_name;
+        }
 
-        // Build the full URL path. DM/GM channels are teamless.
+        // Build the full URL path. DM/GM channels are teamless on the model
+        // but the Mattermost frontend route grammar still requires a team
+        // prefix; fall back to currentTeam.name (already encoded in teamName)
+        // so the link actually navigates.
         let channelPath: string;
         if (channel.type === General.DM_CHANNEL && teammate) {
-            channelPath = `/messages/@${teammate.username}`;
+            channelPath = `/${teamName}/messages/@${teammate.username}`;
         } else if (channel.type === General.GM_CHANNEL) {
-            channelPath = `/messages/${channel.id}`;
+            channelPath = `/${teamName}/messages/${channel.name}`;
         } else {
             channelPath = `/${teamName}/channels/${channel.name}`;
         }
