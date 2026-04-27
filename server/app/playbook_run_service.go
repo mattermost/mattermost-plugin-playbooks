@@ -379,15 +379,15 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
-	if err := validateRunCreationParams(playbookRun, pb); err != nil {
-		return nil, err
-	}
-
-	// Add parameters and context
+	// Add parameters and context before validation so they're present on error
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
 	if pb != nil {
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
+	}
+
+	if err := validateRunCreationParams(playbookRun, pb); err != nil {
+		return nil, err
 	}
 
 	if playbookRun.DefaultOwnerID != "" {

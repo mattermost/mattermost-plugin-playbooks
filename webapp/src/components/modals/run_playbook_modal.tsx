@@ -148,7 +148,7 @@ export const RunPlaybookModal = ({
                     hasPlaybookChanged: playbookId !== selectedPlaybookId,
                     hasNameChanged: runName !== playbook.channel_name_template,
                     hasSummaryChanged: runSummary !== playbook.run_summary_template,
-                    hasChannelModeChanged: channelMode !== playbook.channel_mode,
+                    hasChannelModeChanged: channelMode !== effectiveChannelMode,
                     hasChannelIdChanged: channelId !== playbook.channel_id,
                     hasPublicChanged: !linkExistingChannel && createPublicRun !== playbook.create_public_playbook_run,
                 };

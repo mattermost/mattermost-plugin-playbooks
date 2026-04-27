@@ -3,6 +3,25 @@
 
 package graphql
 
+type EnumPlaybookRunType string
+
+const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
+const EnumPlaybookRunTypechannelChecklist EnumPlaybookRunType = "channelChecklist"
+
+type EnumRunStatus string
+
+const EnumRunStatusInProgress EnumRunStatus = "InProgress"
+const EnumRunStatusFinished EnumRunStatus = "Finished"
+
+type EnumPropertyFieldType string
+
+const EnumPropertyFieldTypetext EnumPropertyFieldType = "text"
+const EnumPropertyFieldTypeselect EnumPropertyFieldType = "select"
+const EnumPropertyFieldTypemultiselect EnumPropertyFieldType = "multiselect"
+const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
+const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
+const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
+
 type Enum__TypeKind string
 
 const Enum__TypeKindSCALAR Enum__TypeKind = "SCALAR"
@@ -40,25 +59,6 @@ type EnumMetricType string
 const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
 const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
 const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
-
-type EnumPlaybookRunType string
-
-const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
-const EnumPlaybookRunTypechannelChecklist EnumPlaybookRunType = "channelChecklist"
-
-type EnumRunStatus string
-
-const EnumRunStatusInProgress EnumRunStatus = "InProgress"
-const EnumRunStatusFinished EnumRunStatus = "Finished"
-
-type EnumPropertyFieldType string
-
-const EnumPropertyFieldTypetext EnumPropertyFieldType = "text"
-const EnumPropertyFieldTypeselect EnumPropertyFieldType = "select"
-const EnumPropertyFieldTypemultiselect EnumPropertyFieldType = "multiselect"
-const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
-const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
-const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`
@@ -239,6 +239,7 @@ type Playbook struct {
 	RemoveChannelMemberOnRemovedParticipant bool                   `json:"removeChannelMemberOnRemovedParticipant"`
 	ChannelID                               string                 `json:"channelID"`
 	ChannelMode                             string                 `json:"channelMode"`
+	NewChannelOnly                          bool                   `json:"newChannelOnly"`
 }
 
 type Checklist struct {

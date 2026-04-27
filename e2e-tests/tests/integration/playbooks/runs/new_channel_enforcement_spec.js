@@ -13,6 +13,18 @@ import {getRandomId} from '../../../utils';
 
 const CHANNEL_NAME_PREFIX = 'enforce-test-';
 
+const createNewChannelOnlyPlaybook = (title, memberIDs, teamId) => {
+    return cy.apiCreatePlaybook({
+        teamId,
+        title,
+        memberIDs,
+        makePublic: true,
+        createPublicPlaybookRun: true,
+    }).then((playbook) => {
+        return cy.apiPatchPlaybook(playbook.id, {new_channel_only: true}).then(() => playbook);
+    });
+};
+
 describe('runs > new channel enforcement', {testIsolation: true}, () => {
     let testTeam;
     let testUser;
@@ -41,35 +53,26 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
 
     it('UI run start succeeds when NewChannelOnly=true (modal always creates new channel)', () => {
         // # Create a playbook with new_channel_only=true
-        cy.apiCreatePlaybook({
-            teamId: testTeam.id,
-            title: 'NewChannelOnly Playbook ' + getRandomId(),
-            memberIDs: [testUser.id],
-            makePublic: true,
-            createPublicPlaybookRun: true,
-        }).then((playbook) => {
+        createNewChannelOnlyPlaybook('NewChannelOnly Playbook ' + getRandomId(), [testUser.id], testTeam.id).then((playbook) => {
             createdPlaybookIds.push(playbook.id);
 
-            // # Update the playbook to enable new_channel_only
-            cy.apiPatchPlaybook(playbook.id, {new_channel_only: true}).then(() => {
-                // # Start a run via UI from the playbook outline page (always creates new channel)
-                const runName = 'NewChannelOnly Run ' + getRandomId();
-                cy.playbooksStartRunViaModal(playbook.id, runName);
+            // # Start a run via UI from the playbook outline page (always creates new channel)
+            const runName = 'NewChannelOnly Run ' + getRandomId();
+            cy.playbooksStartRunViaModal(playbook.id, runName);
 
-                // * Verify the run was created and we landed on the run details page
-                cy.findByTestId('run-header-section').should('contain', runName);
+            // * Verify the run was created and we landed on the run details page
+            cy.findByTestId('run-header-section').should('contain', runName);
 
-                // * Verify a new channel was created for this run
-                cy.playbooksGetRunIdFromUrl().then((runId) => {
-                    cy.apiGetPlaybookRun(runId).then(({body: run}) => {
-                        expect(run.channel_id).to.not.be.empty;
-                    });
+            // * Verify a new channel was created for this run
+            cy.playbooksGetRunIdFromUrl().then((runId) => {
+                cy.apiGetPlaybookRun(runId).then(({body: run}) => {
+                    expect(run.channel_id).to.not.be.empty;
                 });
+            });
 
-                // * Assert backend: playbook still has new_channel_only=true
-                cy.apiGetPlaybook(playbook.id).then((pb) => {
-                    expect(pb.new_channel_only).to.equal(true);
-                });
+            // * Assert backend: playbook still has new_channel_only=true
+            cy.apiGetPlaybook(playbook.id).then((pb) => {
+                expect(pb.new_channel_only).to.equal(true);
             });
         });
     });
@@ -81,27 +84,18 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
         // # Create a channel as the logged-in user to ensure proper permissions
         cy.apiCreateChannel(testTeam.id, CHANNEL_NAME_PREFIX + getRandomId(), 'Enforce Test Channel').then(({channel}) => {
             // # Create a playbook with new_channel_only=true
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'NewChannelOnly Reject Playbook ' + getRandomId(),
-                memberIDs: [testUser.id],
-                makePublic: true,
-                createPublicPlaybookRun: true,
-            }).then((playbook) => {
+            createNewChannelOnlyPlaybook('NewChannelOnly Reject Playbook ' + getRandomId(), [testUser.id], testTeam.id).then((playbook) => {
                 createdPlaybookIds.push(playbook.id);
 
-                // # Update the playbook to enable new_channel_only
-                cy.apiPatchPlaybook(playbook.id, {new_channel_only: true}).then(() => {
-                    // # Attempt to create a run with channel_id set (should be rejected)
-                    // cy.apiRunPlaybook internally asserts the 400 status when expectedStatusCode is set
-                    cy.apiRunPlaybook({
-                        teamId: testTeam.id,
-                        playbookId: playbook.id,
-                        playbookRunName: 'Existing Channel Run ' + getRandomId(),
-                        ownerUserId: testUser.id,
-                        channelId: channel.id,
-                    }, {expectedStatusCode: 400});
-
+                // # Attempt to create a run with channel_id set (should be rejected)
+                // cy.apiRunPlaybook internally asserts the 400 status when expectedStatusCode is set
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: 'Existing Channel Run ' + getRandomId(),
+                    ownerUserId: testUser.id,
+                    channelId: channel.id,
+                }, {expectedStatusCode: 400}).then(() => {
                     // * Verify no run was created with the existing channel
                     cy.apiGetAllPlaybookRuns(testTeam.id).then(({body: {items}}) => {
                         const matchingRun = items.find((r) => r.channel_id === channel.id);

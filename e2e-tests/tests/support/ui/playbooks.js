@@ -297,8 +297,7 @@ Cypress.Commands.add('playbooksOpenRunModal', (playbookId) => {
 });
 
 Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {
-    cy.visit(`/playbooks/playbooks/${playbookId}/outline`);
-    cy.findByTestId('run-playbook').click();
+    cy.playbooksOpenRunModal(playbookId);
     cy.findByTestId('run-name-input').then(($input) => {
         if (!$input.attr('readonly')) {
             cy.wrap($input).clear().type(runName);
@@ -311,7 +310,8 @@ Cypress.Commands.add('playbooksStartRunViaModal', (playbookId, runName) => {
 Cypress.Commands.add('playbooksGetRunIdFromUrl', () => {
     cy.url().should('include', '/playbooks/runs/');
     return cy.url().then((url) => {
-        const runId = url.split('/playbooks/runs/')[1].split('?')[0];
+        const urlObj = new URL(url);
+        const runId = urlObj.pathname.split('/playbooks/runs/')[1];
         return cy.wrap(runId);
     });
 });
