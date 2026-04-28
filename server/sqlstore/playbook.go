@@ -485,18 +485,8 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		Where(teamLimitExpr)
 
 	if opts.SearchTerm != "" {
-		// Build LIKE expression using SQL-level string concatenation to avoid Go-level concatenation.
-		// PostgreSQL uses || operator, MySQL uses CONCAT function.
-		var likeExpr sq.Sqlizer
-		if p.store.db.DriverName() == model.DatabaseDriverPostgres {
-			// PostgreSQL: case-insensitive search using LOWER()
-			searchString := strings.ToLower(opts.SearchTerm)
-			likeExpr = sq.Expr("LOWER(p.Title) LIKE '%' || ? || '%'", searchString)
-		} else {
-			// MySQL: case-insensitive by default with utf8 collation
-			likeExpr = sq.Expr("p.Title LIKE CONCAT('%', ?, '%')", opts.SearchTerm)
-		}
-
+		searchString := strings.ToLower(opts.SearchTerm)
+		likeExpr := sq.Expr("LOWER(p.Title) LIKE '%' || ? || '%'", searchString)
 		queryForResults = queryForResults.Where(likeExpr)
 		queryForTotal = queryForTotal.Where(likeExpr)
 	}

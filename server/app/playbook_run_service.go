@@ -322,12 +322,8 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 		return
 	}
 
-	// For DM/GM runs, TeamID is empty - construct channel URL without team name
 	var channelURL string
-	if playbookRun.TeamID == "" {
-		// DM/GM channel - use channel ID-based URL
-		channelURL = fmt.Sprintf("%s/messages/%s", *siteURL, channel.Id)
-	} else {
+	if playbookRun.TeamID != "" {
 		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 		if err != nil {
 			logrus.WithError(err).Error("cannot send webhook on creation, not able to get playbookRun.TeamID")
@@ -1020,12 +1016,8 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 		return
 	}
 
-	// For DM/GM runs, TeamID is empty - construct channel URL without team name
 	var channelURL string
-	if playbookRun.TeamID == "" {
-		// DM/GM channel - use channel ID-based URL
-		channelURL = fmt.Sprintf("%s/messages/%s", *siteURL, channel.Id)
-	} else {
+	if playbookRun.TeamID != "" {
 		team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 		if err != nil {
 			logger.WithField("team_id", playbookRun.TeamID).Error("cannot send webhook on update, not able to get playbookRun.TeamID")

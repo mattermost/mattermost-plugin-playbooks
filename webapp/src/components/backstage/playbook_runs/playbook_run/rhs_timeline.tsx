@@ -35,9 +35,9 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
     const {formatMessage} = useIntl();
     const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
 
-    // DM/GM checklist runs are teamless — fall back to the user's current
-    // team so timeline routes resolve.
-    const team = useAppSelector((state: GlobalState) => getTeam(state, playbookRun.team_id) || getCurrentTeam(state));
+    const team = useAppSelector((state: GlobalState) =>
+        playbookRun.team_id ? getTeam(state, playbookRun.team_id) : getCurrentTeam(state),
+    );
 
     const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);
 

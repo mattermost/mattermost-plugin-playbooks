@@ -314,8 +314,10 @@ const ChannelRow = ({channel, runMetadata, channelDeleted, role, onClickRequestJ
         // prefix; fall back to currentTeam.name (already encoded in teamName)
         // so the link actually navigates.
         let channelPath: string;
-        if (channel.type === General.DM_CHANNEL && teammate) {
-            channelPath = `/${teamName}/messages/@${teammate.username}`;
+        if (channel.type === General.DM_CHANNEL) {
+            channelPath = teammate
+                ? `/${teamName}/messages/@${teammate.username}`
+                : `/${teamName}/messages/${channel.name}`;
         } else if (channel.type === General.GM_CHANNEL) {
             channelPath = `/${teamName}/messages/${channel.name}`;
         } else {

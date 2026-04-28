@@ -52,10 +52,9 @@ const AddParticipantsModal = ({playbookRun, id, title, show, hideModal}: Props) 
         if (isDMGM && playbookRun.channel_id) {
             dispatch(getProfilesInChannel(playbookRun.channel_id, 0, 100) as any)
                 .then((result: {data?: UserProfile[]}) => {
-                    if (result?.data) {
-                        setChannelMembers(result.data);
-                    }
-                });
+                    setChannelMembers(result?.data ?? []);
+                })
+                .catch(() => setChannelMembers([]));
         }
     }, [isDMGM, playbookRun.channel_id, dispatch]);
 

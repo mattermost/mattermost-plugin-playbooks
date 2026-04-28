@@ -34,10 +34,9 @@ const RHSInfoActivity = ({run, role, onViewTimeline}: Props) => {
     const [filteredEvents] = useTimelineEvents(run, TimelineEventsFilterDefault);
     const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
 
-    // DM/GM checklist runs are teamless — fall back to the user's current
-    // team so team-prefixed routes (channel link, mention rendering) have
-    // a valid name to use.
-    const team = useAppSelector((state: GlobalState) => getTeam(state, run.team_id) || getCurrentTeam(state));
+    const team = useAppSelector((state: GlobalState) =>
+        run.team_id ? getTeam(state, run.team_id) : getCurrentTeam(state),
+    );
 
     if (!team) {
         return null;

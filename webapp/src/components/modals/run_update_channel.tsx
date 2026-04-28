@@ -17,7 +17,7 @@ const ID = 'playbook_run_update';
 type Props = {
     playbookRunId: string;
     teamId: string;
-    runType?: PlaybookRunType;
+    runType: PlaybookRunType;
     onSubmit: (newChannelId: string, newChannelName: string) => void;
 } & Partial<ComponentProps<typeof GenericModal>>;
 
@@ -80,7 +80,7 @@ const UpdateRunModal = ({
                     shouldRenderValue={true}
                     teamId={teamId}
                     isMulti={false}
-                    excludeDMGM={runType === PlaybookRunType.Playbook}
+                    excludeDMGM={runType !== PlaybookRunType.ChannelChecklist}
                 />
             </Body>
         </StyledGenericModal>

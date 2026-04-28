@@ -41,33 +41,35 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         cy.apiCreateUser().then(({user: freshPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, freshPartner.id);
 
-            // # Create a DM checklist via the RHS
-            cy.visit(`/${testTeam.name}/messages/@${freshPartner.username}`);
-            cy.get('#post_textbox').should('exist');
-            cy.getPlaybooksAppBarIcon().should('exist').click();
-            cy.get('[data-testid="no-active-runs"]').should('be.visible');
-            cy.get('[data-testid="no-active-runs"]').find('[data-testid="create-blank-checklist"]').click();
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Untitled checklist').should('be.visible');
-            });
+            cy.apiCreateDirectChannel([testUser.id, freshPartner.id]).then(({channel: dmChannel}) => {
+                // # Create a DM checklist via the RHS
+                cy.visit(`/${testTeam.name}/messages/@${freshPartner.username}`);
+                cy.get('#post_textbox').should('exist');
+                cy.getPlaybooksAppBarIcon().should('exist').click();
+                cy.get('[data-testid="no-active-runs"]').should('be.visible');
+                cy.get('[data-testid="no-active-runs"]').find('[data-testid="create-blank-checklist"]').click();
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Untitled checklist').should('be.visible');
+                });
 
-            // # Fetch run ID via API
-            cy.apiGetAllPlaybookRuns('').then((response) => {
-                const runs = response.body.items || [];
-                const dmRun = runs.find((r) => r.owner_user_id === testUser.id && r.team_id === '');
-                expect(dmRun).to.exist;
+                // # Fetch run ID via API, filtered by channel to avoid matching earlier teamless runs
+                cy.apiGetAllPlaybookRuns('').then((response) => {
+                    const runs = response.body.items || [];
+                    const dmRun = runs.find((r) => r.channel_id === dmChannel.id);
+                    expect(dmRun).to.exist;
 
-                // # Navigate directly to the backstage detail page by run ID
-                cy.visit(`/playbooks/runs/${dmRun.id}`);
+                    // # Navigate directly to the backstage detail page by run ID
+                    cy.visit(`/playbooks/runs/${dmRun.id}`);
 
-                // * Verify the run header section is rendered
-                cy.findByTestId('run-header-section').should('be.visible');
+                    // * Verify the run header section is rendered
+                    cy.findByTestId('run-header-section').should('be.visible');
 
-                // * Verify the page contains the run name
-                cy.findByTestId('run-header-section').contains('Untitled checklist');
+                    // * Verify the page contains the run name
+                    cy.findByTestId('run-header-section').contains('Untitled checklist');
 
-                // * Verify the summary section renders
-                cy.findByTestId('run-summary-section').should('be.visible');
+                    // * Verify the summary section renders
+                    cy.findByTestId('run-summary-section').should('be.visible');
+                });
             });
         });
     });
@@ -79,31 +81,34 @@ describe('runs > backstage detail > DM/GM checklist', {testIsolation: true}, () 
         cy.apiCreateUser().then(({user: freshPartner}) => {
             cy.apiAddUserToTeam(testTeam.id, freshPartner.id);
 
-            cy.visit(`/${testTeam.name}/messages/@${freshPartner.username}`);
-            cy.get('#post_textbox').should('exist');
-            cy.getPlaybooksAppBarIcon().should('exist').click();
-            cy.get('[data-testid="no-active-runs"]').should('be.visible');
-            cy.get('[data-testid="no-active-runs"]').find('[data-testid="create-blank-checklist"]').click();
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Untitled checklist').should('be.visible');
-            });
+            cy.apiCreateDirectChannel([testUser.id, freshPartner.id]).then(({channel: dmChannel}) => {
+                cy.visit(`/${testTeam.name}/messages/@${freshPartner.username}`);
+                cy.get('#post_textbox').should('exist');
+                cy.getPlaybooksAppBarIcon().should('exist').click();
+                cy.get('[data-testid="no-active-runs"]').should('be.visible');
+                cy.get('[data-testid="no-active-runs"]').find('[data-testid="create-blank-checklist"]').click();
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Untitled checklist').should('be.visible');
+                });
 
-            cy.apiGetAllPlaybookRuns('').then((response) => {
-                const runs = response.body.items || [];
-                const dmRun = runs.find((r) => r.owner_user_id === testUser.id && r.team_id === '');
-                expect(dmRun).to.exist;
+                // # Fetch run ID via API, filtered by channel to avoid matching earlier teamless runs
+                cy.apiGetAllPlaybookRuns('').then((response) => {
+                    const runs = response.body.items || [];
+                    const dmRun = runs.find((r) => r.channel_id === dmChannel.id);
+                    expect(dmRun).to.exist;
 
-                // # Navigate directly to backstage detail
-                cy.visit(`/playbooks/runs/${dmRun.id}`);
+                    // # Navigate directly to backstage detail
+                    cy.visit(`/playbooks/runs/${dmRun.id}`);
 
-                // * Verify Owner entry shows testUser
-                cy.findByTestId('runinfo-owner').should('be.visible').contains(testUser.username);
+                    // * Verify Owner entry shows testUser
+                    cy.findByTestId('runinfo-owner').should('be.visible').contains(testUser.username);
 
-                // * Verify Participants entry is rendered
-                cy.findByTestId('runinfo-participants').should('be.visible');
+                    // * Verify Participants entry is rendered
+                    cy.findByTestId('runinfo-participants').should('be.visible');
 
-                // * Verify Followers/Following entry is rendered
-                cy.findByTestId('runinfo-following').should('be.visible');
+                    // * Verify Followers/Following entry is rendered
+                    cy.findByTestId('runinfo-following').should('be.visible');
+                });
             });
         });
     });

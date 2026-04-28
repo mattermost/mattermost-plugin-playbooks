@@ -553,11 +553,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel ID is required for checklists")
 		}
 
-		// For runs without a playbook (channel checklists), check run creation permissions on the team
-		// For DM/GM channels, skip team permission check since they have no team - channel permission is checked later
-		if playbookRun.TeamID != "" && !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, model.PermissionRunCreate) {
-			return nil, errors.Wrap(app.ErrNoPermissions, "You do not have permission to create runs on this team")
-		}
 	}
 
 	// Check the permissions on the channel: the user must be able to create it or,

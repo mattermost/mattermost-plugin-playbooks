@@ -71,8 +71,8 @@ const RunActionsModal = ({playbookRun, readOnly, show, onHide}: Props) => {
             broadcastChannelIDs: channelIds,
             statusUpdateBroadcastWebhooksEnabled: sendOutgoingWebhookEnabled,
             webhookOnStatusUpdateURLs: webhooks,
-            createChannelMemberOnNewParticipant: createChannelMemberEnabled,
-            removeChannelMemberOnRemovedParticipant: removeChannelMemberEnabled,
+            createChannelMemberOnNewParticipant: !isDMGM && createChannelMemberEnabled,
+            removeChannelMemberOnRemovedParticipant: !isDMGM && removeChannelMemberEnabled,
         });
     };
 
