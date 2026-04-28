@@ -127,7 +127,9 @@ const Row = (props: Props) => {
                     {DateTime.fromMillis(findLastUpdatedWithDefault(props.playbookRun)).toRelative()}
                 </SmallText>
             </div>
-            <div className='col-sm-2'>
+            <div
+                className='col-sm-2'
+            >
                 <NormalText>
                     <FormattedDuration
                         from={props.playbookRun.create_at}
