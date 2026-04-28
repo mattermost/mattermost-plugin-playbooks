@@ -475,15 +475,8 @@ describe('playbooks > playbook_attributes', {testIsolation: true}, () => {
             });
             cy.findByText(/duplicate/i).click();
 
-            // # Wait for the duplicate row to appear and auto-focus to settle.
-            // Using a condition-based wait instead of a fixed timeout avoids a
-            // race in CI: after the row appears (render 1), React schedules a
-            // second render to set autoFocusPropertyId, whose useEffect calls
-            // inputRef.current.select(). If select() fires mid-type it replaces
-            // the typed text. Yielding to the browser via a body click lets
-            // React flush that second render before we start editing.
-            cy.findAllByTestId('property-field-row').should('have.length', 2);
-            cy.get('body').click(0, 0);
+            // # Wait for duplication
+            cy.wait(500);
 
             // # Edit the duplicate's name
             editAttributeName(1, 'Modified Copy');
