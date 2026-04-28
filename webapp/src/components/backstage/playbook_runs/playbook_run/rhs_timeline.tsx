@@ -36,7 +36,7 @@ const RHSTimeline = ({playbookRun, role, options, selectOption, eventsFilter}: P
     const channelNamesMap = useAppSelector(getChannelsNameMapInCurrentTeam);
 
     const team = useAppSelector((state: GlobalState) =>
-        playbookRun.team_id ? getTeam(state, playbookRun.team_id) : getCurrentTeam(state),
+        (playbookRun.team_id ? getTeam(state, playbookRun.team_id) : getCurrentTeam(state)),
     );
 
     const [filteredEvents] = useTimelineEvents(playbookRun, eventsFilter);

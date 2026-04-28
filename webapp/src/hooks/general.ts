@@ -16,7 +16,7 @@ import {DateTime} from 'luxon';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {getProfilesInCurrentTeam, makeGetProfilesInChannel, getUser} from 'mattermost-redux/selectors/entities/users';
+import {getProfilesInCurrentTeam, getUser, makeGetProfilesInChannel} from 'mattermost-redux/selectors/entities/users';
 import {getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';

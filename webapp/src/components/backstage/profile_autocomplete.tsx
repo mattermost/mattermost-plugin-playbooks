@@ -127,9 +127,12 @@ const ProfileAutocomplete = (props: Props) => {
     };
 
     const debouncedSearchProfiles = useMemo(() => debounce((term: string, callback: (options: OptionsType<UserProfile>) => void) => {
-        const profiles = term.trim().length === 0
-            ? (props.getProfiles ? props.getProfiles() : Promise.resolve({data: [] as UserProfile[]}))
-            : props.searchProfiles(term);
+        let profiles;
+        if (term.trim().length === 0) {
+            profiles = props.getProfiles ? props.getProfiles() : Promise.resolve({data: [] as UserProfile[]});
+        } else {
+            profiles = props.searchProfiles(term);
+        }
 
         //@ts-ignore
         profiles.then(({data}) => {
