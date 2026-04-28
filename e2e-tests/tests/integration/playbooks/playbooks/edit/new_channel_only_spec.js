@@ -72,7 +72,8 @@ describe('playbooks > edit > new channel only', {testIsolation: true}, () => {
         const runName = 'New Channel Run ' + getRandomId();
 
         // # Enable new_channel_only on the playbook
-        cy.apiPatchPlaybook(testPlaybook.id, {new_channel_only: true}).then(() => {
+        testPlaybook.new_channel_only = true;
+        cy.apiUpdatePlaybook(testPlaybook).then(() => {
             // * Assert via API that new_channel_only is now true
             cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
                 expect(pb.new_channel_only).to.equal(true);

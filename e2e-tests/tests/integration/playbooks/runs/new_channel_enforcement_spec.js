@@ -21,7 +21,8 @@ const createNewChannelOnlyPlaybook = (title, memberIDs, teamId) => {
         makePublic: true,
         createPublicPlaybookRun: true,
     }).then((playbook) => {
-        return cy.apiPatchPlaybook(playbook.id, {new_channel_only: true}).then(() => playbook);
+        playbook.new_channel_only = true;
+        return cy.apiUpdatePlaybook(playbook).then(() => playbook);
     });
 };
 
@@ -189,7 +190,8 @@ describe('runs > new channel enforcement', {testIsolation: true}, () => {
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
                 createdPlaybookIds.push(playbook.id);
-                cy.apiPatchPlaybook(playbook.id, {new_channel_only: true}).then(() => {
+                playbook.new_channel_only = true;
+                cy.apiUpdatePlaybook(playbook).then(() => {
                     slashPlaybook = playbook;
                 });
             });

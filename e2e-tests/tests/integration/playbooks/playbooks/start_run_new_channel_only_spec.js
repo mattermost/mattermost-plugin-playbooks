@@ -48,7 +48,8 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
                 createdPlaybookIds.push(playbook.id);
 
                 // # Enable new_channel_only directly via API to avoid UI flakiness
-                cy.apiPatchPlaybook(playbook.id, {new_channel_only: true});
+                playbook.new_channel_only = true;
+                cy.apiUpdatePlaybook(playbook);
 
                 restrictedPlaybook = playbook;
             });
@@ -171,7 +172,8 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
 
         it('disables the flag without a confirmation dialog', () => {
             // Enable via API so we start with new_channel_only=true
-            cy.apiPatchPlaybook(togglePlaybook.id, {new_channel_only: true});
+            togglePlaybook.new_channel_only = true;
+            cy.apiUpdatePlaybook(togglePlaybook);
 
             cy.visit(`/playbooks/playbooks/${togglePlaybook.id}/outline`);
             cy.findByTestId('new-channel-only-toggle').find('label').click();
