@@ -90,8 +90,9 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.get('#playbook-name .editable-input').type(playbookName);
     cy.get('#playbook-name .editable-input').type('{enter}');
 
-    // # Save playbook — wait for button to re-enable after name autosave, then save
+    // # Save playbook
     cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
+    cy.wait(TIMEOUTS.TWO_SEC);
     cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
 });
 
@@ -100,7 +101,7 @@ Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     cy.findByTestId('playbookID').should('exist').within(() => {
         cy.get('input').click().type(playbookName.toLowerCase(), {force: true});
     });
-    cy.document().its('body').find('[id$=-listbox]').contains(playbookName).click({force: true});
+    cy.document().its('body').find('#react-select-2-listbox').contains(playbookName).click({force: true});
 });
 
 Cypress.Commands.add('createPost', (message) => {
@@ -117,7 +118,7 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (playbookRunName, summary
         cy.findByTestId('playbookID').should('exist').within(() => {
             cy.get('input').click().type(playbookRunName);
         });
-        cy.document().its('body').find('[id$=-listbox]').contains(playbookRunName).click({force: true});
+        cy.document().its('body').find('#react-select-2-listbox').contains(playbookRunName).click({force: true});
 
         // # Type playbook run name
         cy.findByTestId('summaryinput').clear().type(summary, {force: true});
@@ -145,6 +146,12 @@ Cypress.Commands.add('selectOwner', (userName) => {
     });
 });
 
+Cypress.Commands.add('selectChannel', (channelName) => {
+    cy.get('#playbook-automation-broadcast .playbooks-rselect__menu').within(() => {
+        cy.findByText(channelName).click({force: true});
+    });
+});
+
 Cypress.Commands.add('openReminderSelector', () => {
     cy.get('#reminder_timer_datetime input').click({force: true});
 });
@@ -164,15 +171,18 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
 
     // # Get the interactive dialog modal.
     cy.getStatusUpdateDialog().within(() => {
+        cy.wait(3 * TIMEOUTS.ONE_HUNDRED_MILLIS);
+
         // # remove what's there if applicable, and type the new update in the textbox.
-        cy.findByTestId('update_run_status_textbox').should('be.visible').clear().type(message);
+        cy.findByTestId('update_run_status_textbox').clear().focus().realType(message);
+
+        cy.wait(TIMEOUTS.ONE_HUNDRED_MILLIS);
 
         if (reminderQuery) {
-            cy.get('#reminder_timer_datetime input').click({force: true}).realType(reminderQuery);
-
-            // Wait for the debounced option loader to fire and render the dynamic option.
-            cy.wait(TIMEOUTS.ONE_SEC);
-            cy.get('#reminder_timer_datetime input').type('{enter}');
+            cy.get('#reminder_timer_datetime').within(() => {
+                cy.get('#react-select-2-input').focus().realType(reminderQuery).wait(TIMEOUTS.ONE_SEC);
+                cy.get('#react-select-2-input').focus().type('{enter}');
+            });
         }
 
         // # Submit the dialog.
