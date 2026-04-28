@@ -2716,7 +2716,8 @@ func TestRunGetMetadata(t *testing.T) {
 		metadata, err := e.PlaybooksClient.PlaybookRuns.GetMetadata(context.Background(), run.ID)
 		require.NoError(t, err)
 		assert.Empty(t, metadata.TeamName, "DM checklist should have no TeamName")
-		assert.NotEmpty(t, metadata.ChannelDisplayName, "DM checklist should expose channel display name to participant")
+		// DM channels store no display_name in the DB (it's computed client-side); the key assertion is TeamName == "".
+		assert.Empty(t, metadata.ChannelDisplayName)
 	})
 
 	t.Run("GM checklist - TeamName is empty", func(t *testing.T) {

@@ -254,7 +254,10 @@ export function useProfilesForRun(teamId?: string, channelId?: string) {
     if (teamId) {
         return profilesInTeam;
     }
-    return channelProfiles;
+    if (channelId) {
+        return channelProfiles;
+    }
+    return profilesInTeam;
 }
 
 /**

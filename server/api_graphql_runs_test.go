@@ -1538,10 +1538,12 @@ func TestUpdateRunChannelDMGM(t *testing.T) {
 	// Helper: create a public channel in the given team and add RegularUser to it.
 	makePublicChannel := func(teamID string) *model.Channel {
 		t.Helper()
+		name := "test-ch-" + model.NewId()[:8]
 		ch, _, err := e.ServerAdminClient.CreateChannel(context.Background(), &model.Channel{
-			TeamId: teamID,
-			Name:   "test-ch-" + model.NewId()[:8],
-			Type:   model.ChannelTypeOpen,
+			TeamId:      teamID,
+			Name:        name,
+			DisplayName: name,
+			Type:        model.ChannelTypeOpen,
 		})
 		require.NoError(t, err)
 		_, _, err = e.ServerAdminClient.AddChannelMember(context.Background(), ch.Id, e.RegularUser.Id)
