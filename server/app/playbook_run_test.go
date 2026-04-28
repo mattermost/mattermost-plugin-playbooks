@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
 )
 
 func TestPlaybookRun_MarshalJSON(t *testing.T) {
@@ -1471,5 +1473,61 @@ func TestPlaybookRun_MarshalJSON_ItemsOrder(t *testing.T) {
 		// Should NOT contain the stale values
 		require.NotContains(t, itemsOrder, "stale_id")
 		require.NotContains(t, itemsOrder, "wrong_id")
+	})
+}
+
+// TestSendWebhooksOnCreationDMGM verifies that sendWebhooksOnCreation skips the team
+// lookup (and thus produces an empty channelURL) for DM/GM runs, and performs it for
+// team-based runs. Uses mock call verification rather than HTTP interception.
+func TestSendWebhooksOnCreationDMGM(t *testing.T) {
+	siteURL := "http://mattermost.example.com"
+	config := &model.Config{}
+	config.SetDefaults()
+	config.ServiceSettings.SiteURL = &siteURL
+
+	t.Run("DM run skips team lookup", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		channelID := model.NewId()
+		api.On("GetConfig").Return(config).Once()
+		api.On("GetChannel", channelID).Return(&model.Channel{
+			Id:     channelID,
+			TeamId: "",
+		}, (*model.AppError)(nil)).Once()
+		// GetTeam intentionally NOT registered — AssertExpectations would catch an unexpected call
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		svc.sendWebhooksOnCreation(PlaybookRun{
+			ID:        model.NewId(),
+			TeamID:    "",
+			ChannelID: channelID,
+		})
+	})
+
+	t.Run("team run performs team lookup to build channel URL", func(t *testing.T) {
+		api := &plugintest.API{}
+		defer api.AssertExpectations(t)
+
+		teamID := model.NewId()
+		channelID := model.NewId()
+		api.On("GetConfig").Return(config).Once()
+		api.On("GetChannel", channelID).Return(&model.Channel{
+			Id:     channelID,
+			TeamId: teamID,
+			Name:   "incident-channel",
+		}, (*model.AppError)(nil)).Once()
+		api.On("GetTeam", teamID).Return(&model.Team{
+			Id:   teamID,
+			Name: "myteam",
+		}, (*model.AppError)(nil)).Once()
+
+		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
+		svc.sendWebhooksOnCreation(PlaybookRun{
+			ID:        model.NewId(),
+			TeamID:    teamID,
+			ChannelID: channelID,
+		})
+		// AssertExpectations confirms GetTeam was called exactly once
 	})
 }
