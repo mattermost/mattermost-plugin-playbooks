@@ -16,6 +16,8 @@ import (
 
 const RetrospectivePrefix = "retro_"
 
+var mdLinkText = strings.NewReplacer(`\`, `\\`, `[`, `\[`, `]`, `\]`).Replace
+
 // HandleReminder is the handler for all reminder events.
 func (s *PlaybookRunServiceImpl) HandleReminder(key string, _ any) {
 	if strings.HasPrefix(key, RetrospectivePrefix) {
@@ -96,7 +98,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	}
 
 	post := &model.Post{
-		Message:   fmt.Sprintf("@%s, please provide a status update for [%s](%s).", owner.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID)),
+		Message:   fmt.Sprintf("@%s, please provide a status update for [%s](%s).", owner.Username, mdLinkText(playbookRunToModify.Name), GetRunDetailsRelativeURL(playbookRunID)),
 		ChannelId: playbookRunToModify.ChannelID,
 		Type:      "custom_update_status",
 		Props: map[string]any{
@@ -141,14 +143,14 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 	if channel.TeamId == "" {
 		// DM/GM channel - use messages URL format
 		message = fmt.Sprintf("Status update is overdue for [%s](/messages/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
-			channel.DisplayName, channel.Id, playbookRun.ID, ownerUserName)
+			mdLinkText(channel.DisplayName), channel.Id, playbookRun.ID, ownerUserName)
 	} else {
 		team, err := s.pluginAPI.Team.Get(channel.TeamId)
 		if err != nil {
 			return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
 		}
 		message = fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
-			channel.DisplayName, team.Name, channel.Name, playbookRun.ID, ownerUserName)
+			mdLinkText(channel.DisplayName), team.Name, channel.Name, playbookRun.ID, ownerUserName)
 	}
 
 	return message, nil
