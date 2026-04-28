@@ -208,11 +208,13 @@ type SectionItem = {id: string, title: string};
 
 type SectionsProps = {
     children: ReactNode;
+    'data-testid'?: string;
 }
 
 const SectionsImpl = ({
     children,
     className,
+    'data-testid': dataTestId,
 }: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
@@ -232,7 +234,10 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div className={className}>
+            <div
+                className={className}
+                data-testid={dataTestId}
+            >
                 {children}
             </div>
         </>
