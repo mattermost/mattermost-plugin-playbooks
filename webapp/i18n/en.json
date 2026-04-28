@@ -577,7 +577,6 @@
   "playbooks.template_preview.owner_fallback": "Owner's name",
   "playbooks.update_run_status_modal.date_in_future": "Date must be in the future.",
   "playbooks.update_run_status_modal.error": "Failed to post status update. Please try again.",
-  "playbooks.update_run_status_modal.message_preview": "Preview: {preview}",
   "playbooks.update_run_status_modal.specify_future_date": "Please specify a future date/time for the update reminder.",
   "prs4kX": "When a message with specific keywords is posted",
   "pzTOmv": "Followers",

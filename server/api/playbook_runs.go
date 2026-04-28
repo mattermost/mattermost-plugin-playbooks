@@ -599,15 +599,11 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	// during ResolveRunCreationParams. CreatePlaybookRun will set it again (same value).
 	playbookRun.ReporterUserID = userID
 	// Pre-set OwnerUserID so the {OWNER} template token resolves during ResolveRunCreationParams.
-	// Priority: explicit caller value > DefaultOwnerID > creator (userID).
+	// Priority: explicit caller value > DefaultOwnerID.
 	// Team membership is validated inside ResolveRunCreationParams; if the owner is not a team
 	// member, OwnerUserID is cleared and re-validated before creation proceeds.
-	if playbookRun.OwnerUserID == "" {
-		if playbookRun.DefaultOwnerID != "" {
-			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
-		} else {
-			playbookRun.OwnerUserID = userID
-		}
+	if playbookRun.OwnerUserID == "" && playbookRun.DefaultOwnerID != "" {
+		playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
 	}
 	if playbookRun.OwnerUserID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
