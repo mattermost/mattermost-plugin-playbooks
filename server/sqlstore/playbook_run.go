@@ -183,12 +183,12 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, sqlStore *SQLStore) app.Play
 		Select("i.ID", "i.Name AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.UpdateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
-			"COALESCE(i.ReminderMessageTemplate, '') ReminderMessageTemplate", "i.ReminderTimerDefaultSeconds", "i.StatusUpdateEnabled",
-			"i.ConcatenatedInvitedUserIDs", "i.ConcatenatedInvitedGroupIDs", "i.DefaultCommanderID AS DefaultOwnerID",
-			"i.ConcatenatedBroadcastChannelIDs", "i.ConcatenatedWebhookOnCreationURLs", "i.Retrospective", "i.RetrospectiveEnabled", "i.MessageOnJoin", "i.RetrospectivePublishedAt", "i.RetrospectiveReminderIntervalSeconds",
-			"i.RetrospectiveWasCanceled", "i.ConcatenatedWebhookOnStatusUpdateURLs", "i.StatusUpdateBroadcastChannelsEnabled", "i.StatusUpdateBroadcastWebhooksEnabled",
-			"i.CreateChannelMemberOnNewParticipant", "i.RemoveChannelMemberOnRemovedParticipant",
-			"COALESCE(i.CategoryName, '') CategoryName", "i.SummaryModifiedAt", "i.RunType AS Type").
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "StatusUpdateEnabled",
+			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
+			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "RetrospectiveEnabled", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
+			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "StatusUpdateBroadcastChannelsEnabled", "StatusUpdateBroadcastWebhooksEnabled",
+			"CreateChannelMemberOnNewParticipant", "RemoveChannelMemberOnRemovedParticipant",
+			"COALESCE(CategoryName, '') CategoryName", "SummaryModifiedAt", "i.RunType AS Type").
 		Column(participantsCol).
 		From("IR_Incident AS i")
 
@@ -332,11 +332,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.EndAt": 0})
 	}
 
-	if len(options.RunIDs) > 0 {
-		queryForResults = queryForResults.Where(sq.Eq{"i.ID": options.RunIDs})
-		queryForTotal = queryForTotal.Where(sq.Eq{"i.ID": options.RunIDs})
-	}
-
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		// PostgreSQL performs a case-sensitive search, so we need to lowercase
@@ -452,6 +447,10 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 	rawPlaybookRun, err := toSQLPlaybookRun(*playbookRun)
 	if err != nil {
 		return nil, err
+	}
+
+	if rawPlaybookRun.Type != app.RunTypeChannelChecklist && rawPlaybookRun.Type != app.RunTypePlaybook {
+		rawPlaybookRun.Type = app.RunTypePlaybook
 	}
 
 	// When adding a PlaybookRun column #2: add to the SetMap
@@ -1429,23 +1428,6 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 	return s.updateFollowing(playbookRunID, userID, false)
 }
 
-// followUnfollowBatchSize is the maximum number of rows per INSERT to avoid
-// PostgreSQL's limit on bind parameters and keep individual statements bounded.
-const followUnfollowBatchSize = 500
-
-// deduplicateStrings returns a new slice with duplicate strings removed, preserving order.
-func deduplicateStrings(ss []string) []string {
-	seen := make(map[string]struct{}, len(ss))
-	out := make([]string, 0, len(ss))
-	for _, s := range ss {
-		if _, ok := seen[s]; !ok {
-			seen[s] = struct{}{}
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
 func (s *playbookRunStore) updateFollowing(playbookRunID, userID string, isFollowing bool) error {
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Run_Participants").
@@ -1659,34 +1641,24 @@ func (s *playbookRunStore) updateParticipating(playbookRunID string, userIDs []s
 		return nil
 	}
 
-	userIDs = deduplicateStrings(userIDs)
+	query := sq.
+		Insert("IR_Run_Participants").
+		Columns("IncidentID", "UserID", "IsParticipant")
 
-	for i := 0; i < len(userIDs); i += followUnfollowBatchSize {
-		end := i + followUnfollowBatchSize
-		if end > len(userIDs) {
-			end = len(userIDs)
-		}
-		chunk := userIDs[i:end]
-
-		query := sq.
-			Insert("IR_Run_Participants").
-			Columns("IncidentID", "UserID", "IsParticipant")
-
-		for _, userID := range chunk {
-			query = query.Values(playbookRunID, userID, isParticipating)
-		}
-
-		_, err := s.store.execBuilder(
-			s.store.db,
-			query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
-		)
-
-		if err != nil {
-			return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", chunk, playbookRunID)
-		}
+	for _, userID := range userIDs {
+		query = query.Values(playbookRunID, userID, isParticipating)
 	}
 
-	if err := s.touchPlaybookRun(playbookRunID); err != nil {
+	_, err := s.store.execBuilder(
+		s.store.db,
+		query.Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsParticipant = ?", isParticipating),
+	)
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert participants '%+v' for run '%s'", userIDs, playbookRunID)
+	}
+
+	if err = s.touchPlaybookRun(playbookRunID); err != nil {
 		return errors.Wrapf(err, "failed to touch playbook run '%s'", playbookRunID)
 	}
 

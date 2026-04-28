@@ -27,9 +27,8 @@ const (
 )
 
 const (
-	RunSourcePost    = "post"
-	RunSourceDialog  = "dialog"
-	RunSourceCommand = "command"
+	RunSourcePost   = "post"
+	RunSourceDialog = "dialog"
 )
 
 const (
@@ -1062,14 +1061,6 @@ type TimelineEvent struct {
 	CreatorUserID string `json:"creator_user_id"`
 }
 
-// PlaybookTimelineEvent represents a timeline event flattened with its parent run information.
-type PlaybookTimelineEvent struct {
-	TimelineEvent
-
-	// PlaybookRunName is the display name of the run the event belongs to.
-	PlaybookRunName string `json:"playbook_run_name"`
-}
-
 // GetPlaybookRunsResults collects the results of the GetPlaybookRuns call: the list of PlaybookRuns matching
 // the HeaderFilterOptions, and the TotalCount of the matching playbook runs before paging was applied.
 type GetPlaybookRunsResults struct {
@@ -1622,27 +1613,6 @@ type PlaybookRunFilterOptions struct {
 	// OmitEnded determines whether to omit runs that have ended (EndAt > 0).
 	// If true, only active runs (EndAt = 0) are returned.
 	OmitEnded bool `url:"omit_ended,omitempty"`
-
-	// PropertyFieldID filters runs to those that have the given property field set to PropertyValueFilter.
-	// When set, PropertyValueFilter must also be set.
-	PropertyFieldID string `url:"property_field_id,omitempty"`
-
-	// PropertyValueFilter is the option ID to match against the property field given by PropertyFieldID.
-	PropertyValueFilter string `url:"property_value_filter,omitempty"`
-
-	// EventTypes filters timeline event queries to the selected event kinds.
-	EventTypes []string
-
-	// UserIDs filters timeline event queries to events where the user is actor or target.
-	UserIDs []string
-
-	// Usernames is an internal helper used to match timeline events whose details
-	// only contain usernames for targets (for example multi-user participant changes).
-	Usernames []string
-
-	// RunIDs, when non-empty, restricts results to only the given run IDs.
-	// This is an internal filter used by the service layer (not exposed via URL).
-	RunIDs []string
 }
 
 // Clone duplicates the given options.
@@ -1653,18 +1623,6 @@ func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	}
 	if len(o.Types) > 0 {
 		newPlaybookRunFilterOptions.Types = append([]string{}, o.Types...)
-	}
-	if len(o.RunIDs) > 0 {
-		newPlaybookRunFilterOptions.RunIDs = append([]string{}, o.RunIDs...)
-	}
-	if len(o.EventTypes) > 0 {
-		newPlaybookRunFilterOptions.EventTypes = append([]string{}, o.EventTypes...)
-	}
-	if len(o.UserIDs) > 0 {
-		newPlaybookRunFilterOptions.UserIDs = append([]string{}, o.UserIDs...)
-	}
-	if len(o.Usernames) > 0 {
-		newPlaybookRunFilterOptions.Usernames = append([]string{}, o.Usernames...)
 	}
 
 	return newPlaybookRunFilterOptions
@@ -1744,18 +1702,6 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 
 	if options.ChannelID != "" && !model.IsValidId(options.ChannelID) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'channel_id': must be 26 characters or blank")
-	}
-
-	if options.PropertyFieldID != "" && !model.IsValidId(options.PropertyFieldID) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_field_id': must be 26 characters or blank")
-	}
-
-	if options.PropertyValueFilter != "" && !model.IsValidId(options.PropertyValueFilter) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'property_value_filter': must be 26 characters or blank")
-	}
-
-	if (options.PropertyFieldID == "") != (options.PropertyValueFilter == "") {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameters 'property_field_id' and 'property_value_filter': both must be set together")
 	}
 
 	for _, s := range options.Statuses {

@@ -41,16 +41,5 @@ var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 // ErrPropertyFieldNotOnRun occurs when a property field does not belong to the specified run.
 var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run")
 
-// ErrPlaybookArchived occurs when trying to modify an archived (deleted) playbook.
-var ErrPlaybookArchived = errors.New("playbook is archived")
-
-// ErrFilterTooWide occurs when a property value filter matches more runs than the allowed maximum.
-var ErrFilterTooWide = errors.New("filter matches too many results")
-
 // ErrPropertyLimitExceeded occurs when trying to create a property field that would exceed the maximum allowed count.
 var ErrPropertyLimitExceeded = errors.New("property limit exceeded")
-
-// ErrInternalPrecondition indicates a programming contract violation — a caller
-// skipped a mandatory step (e.g. calling ResolveRunCreationParams before CreatePlaybookRun).
-// This maps to HTTP 500, not 400, because it is never caused by bad user input.
-var ErrInternalPrecondition = errors.New("internal precondition violated")

@@ -258,12 +258,6 @@ type PlaybookRunListOptions struct {
 	// This is sent as the "since" URL parameter.
 	ActivitySince int64 `url:"since,omitempty"`
 
-	// PropertyFieldID, when set together with PropertyValueFilter, restricts results to runs
-	// where the given property field is set to the given option ID.
-	PropertyFieldID string `url:"property_field_id,omitempty"`
-
-	// PropertyValueFilter is the option ID to match for the field given by PropertyFieldID.
-	PropertyValueFilter string `url:"property_value_filter,omitempty"`
 }
 
 // PlaybookRunList contains the paginated result.
@@ -298,15 +292,8 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name                                    *string   `json:"name,omitempty"`
-	Summary                                 *string   `json:"summary,omitempty"`
-	ChannelID                               *string   `json:"channel_id,omitempty"`
-	CreateChannelMemberOnNewParticipant     *bool     `json:"create_channel_member_on_new_participant,omitempty"`
-	RemoveChannelMemberOnRemovedParticipant *bool     `json:"remove_channel_member_on_removed_participant,omitempty"`
-	StatusUpdateBroadcastChannelsEnabled    *bool     `json:"status_update_broadcast_channels_enabled,omitempty"`
-	StatusUpdateBroadcastWebhooksEnabled    *bool     `json:"status_update_broadcast_webhooks_enabled,omitempty"`
-	BroadcastChannelIDs                     *[]string `json:"broadcast_channel_ids,omitempty"`
-	WebhookOnStatusUpdateURLs               *[]string `json:"webhook_on_status_update_urls,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Summary *string `json:"summary,omitempty"`
 }
 
 type RunMetricData struct {

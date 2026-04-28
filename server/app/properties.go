@@ -5,7 +5,6 @@ package app
 
 import (
 	"encoding/json"
-	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pkg/errors"
@@ -17,6 +16,7 @@ const (
 	PropertyAttrsVisibility = "visibility"
 	PropertyAttrsParentID   = "parent_id"
 	PropertyAttrsValueType  = "value_type"
+
 	// Visibility
 	PropertyFieldVisibilityHidden  = "hidden"
 	PropertyFieldVisibilityWhenSet = "when_set"
@@ -99,11 +99,11 @@ func (p *PropertyField) SanitizeAndValidate() error {
 
 		// Validate option names and colors
 		for _, option := range options {
-			if utf8.RuneCountInString(option.GetName()) > PropertyOptionNameMaxLength {
+			if len(option.GetName()) > PropertyOptionNameMaxLength {
 				return errors.New("option name exceeds maximum length")
 			}
 			if colorValue := option.GetValue("color"); colorValue != "" {
-				if utf8.RuneCountInString(colorValue) > PropertyOptionColorMaxLength {
+				if len(colorValue) > PropertyOptionColorMaxLength {
 					return errors.New("option color exceeds maximum length")
 				}
 			}
@@ -147,19 +147,15 @@ func (p *PropertyField) ToMattermostPropertyField() *model.PropertyField {
 }
 
 func NewPropertyFieldFromMattermostPropertyField(mmpf *model.PropertyField) (*PropertyField, error) {
-	if mmpf == nil {
-		return nil, errors.New("property field cannot be nil")
-	}
-
 	attrsJSON, err := json.Marshal(mmpf.Attrs)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal property field attrs")
+		return nil, err
 	}
 
 	var attrs Attrs
 	err = json.Unmarshal(attrsJSON, &attrs)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal property field attrs")
+		return nil, err
 	}
 
 	return &PropertyField{
