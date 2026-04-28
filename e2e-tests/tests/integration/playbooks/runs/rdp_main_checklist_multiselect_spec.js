@@ -90,6 +90,13 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
 
     const getActionBar = () => cy.get('[data-testid="multi-select-action-bar"]');
 
+    /**
+     * Duration presets for bulk due date in playbook outline (no run): react-select v4 renders
+     * option rows as div.playbook-react-select__option — not role=option (see react-select Option.js).
+     */
+    const getBulkDueDatePresetOptions = () =>
+        cy.get('.playbook-react-select__menu .playbook-react-select__option', {timeout: 20000});
+
     // ──────────────────────────────────────────────────────────────────
     // Bulk edit mode toggle
     // ──────────────────────────────────────────────────────────────────
@@ -282,9 +289,10 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
             getActionBar().findByText('Due date').click({force: true});
 
             // * In playbook outline there is no run, so the due-date menu uses relative durations
-            //   (see DueDateSelector in webapp) — not absolute presets like "Today" on a run.
-            // * react-select renders choices with role="option"
-            cy.findByRole('option', {name: /1 day/}).should('be.visible');
+            //   (4h, 1d, 7d; see multi_select_action_bar DueDateSelector) — not "Today" on a run.
+            // * Use menu-scoped class selectors: react-select v4 does not set role=option on rows.
+            getBulkDueDatePresetOptions().should('have.length', 3);
+            getBulkDueDatePresetOptions().eq(1).should('be.visible'); // 1 day is the middle preset
         });
 
         it('sets a due date on selected tasks via the date picker', () => {
@@ -292,11 +300,12 @@ describe('playbook editor > outline > checklist bulk edit', {testIsolation: true
             selectTask(0);
             getActionBar().findByText('Due date').click({force: true});
 
-            // # Pick a duration preset (1 day) — same menu as the test above
-            cy.findByRole('option', {name: /1 day/}).click();
+            // # Pick the 1 day preset (second of three duration options; see test above)
+            getBulkDueDatePresetOptions().should('have.length', 3);
+            getBulkDueDatePresetOptions().eq(1).click();
 
             // * The date picker closes; the action bar remains (selection is preserved)
-            cy.findByRole('option', {name: /1 day/}).should('not.exist');
+            cy.get('.playbook-react-select__menu').should('not.exist');
             cy.findByText('1 task selected').should('be.visible');
         });
     });

@@ -1,7 +1,12 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {UserProfile} from '@mattermost/types/users';
@@ -365,12 +370,14 @@ const DueDateSelector = ({isPlaybookRun, hasAnyDueDate, onBulkDueDate}: {isPlayb
     const makeOption = useMakeOption(Mode.DurationValue);
     const [toggleKey, setToggleKey] = useState(false);
 
+    const durationPresetOptions = useMemo((): DateTimeOption[] => [
+        makeOption({hours: 4}) as DateTimeOption,
+        makeOption({days: 1}) as DateTimeOption,
+        makeOption({days: 7}) as DateTimeOption,
+    ], [makeOption]);
+
     const suggestedOptions: DateTimeOption[] = mode === Mode.DurationValue ?
-        [
-            makeOption({hours: 4}) as DateTimeOption,
-            makeOption({days: 1}) as DateTimeOption,
-            makeOption({days: 7}) as DateTimeOption,
-        ] :
+        durationPresetOptions :
         (() => {
             let dt = DateTime.now().endOf('day');
             const list: DateTimeOption[] = [];
