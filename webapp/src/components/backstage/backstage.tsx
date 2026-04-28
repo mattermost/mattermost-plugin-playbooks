@@ -3,10 +3,11 @@
 
 import React, {useEffect} from 'react';
 import {matchPath, useLocation, useRouteMatch} from 'react-router-dom';
-import {useSelector} from 'react-redux';
+
 import styled, {css} from 'styled-components';
-import {GlobalState} from '@mattermost/types/store';
-import {Theme, getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {useForceDocumentTitle} from 'src/hooks';
 import {applyTheme} from 'src/components/backstage/css_utils';
@@ -31,7 +32,7 @@ const Backstage = () => {
         path: [`${url}/runs/:playbookRunId`, `${url}/playbooks`],
     });
 
-    const currentTheme = useSelector<GlobalState, Theme>(getTheme);
+    const currentTheme = useAppSelector(getTheme);
     useEffect(() => {
         // Note: previously this effect also toggled the `app__body` class on `document.body` and appended
         // `channel-view` to `#root`. Both of those are now owned by the host webapp (`WithUserTheme` owns

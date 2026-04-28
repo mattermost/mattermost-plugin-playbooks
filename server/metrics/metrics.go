@@ -4,10 +4,13 @@
 package metrics
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -251,4 +254,19 @@ func (m *Metrics) ObserveParticipantsActiveTotal(count int64) {
 	if m != nil {
 		m.participantsActiveTotal.Set(float64(count))
 	}
+}
+
+type errorLoggerWrapper struct{}
+
+func (el *errorLoggerWrapper) Println(v ...interface{}) {
+	logrus.Warn("metric server error", v)
+}
+
+func (m *Metrics) Handler() http.Handler {
+	if m == nil {
+		return http.NotFoundHandler()
+	}
+	return promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{
+		ErrorLog: &errorLoggerWrapper{},
+	})
 }

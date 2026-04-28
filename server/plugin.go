@@ -36,8 +36,6 @@ import (
 
 const (
 	updateMetricsTaskFrequency = 15 * time.Minute
-
-	metricsExposePort = ":9093"
 )
 
 // Plugin implements the interface expected by the Mattermost server to communicate between the
@@ -78,6 +76,11 @@ func (r *StatusRecorder) WriteHeader(status int) {
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	p.handler.ServeHTTP(w, r)
+}
+
+// ServeMetrics exposes Prometheus metrics via the Mattermost server's metrics endpoint.
+func (p *Plugin) ServeMetrics(_ *plugin.Context, w http.ResponseWriter, r *http.Request) {
+	p.metricsService.Handler().ServeHTTP(w, r)
 }
 
 // OnActivate Called when this plugin is activated.
@@ -271,15 +274,8 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
-	enableMetrics := p.API.GetConfig().MetricsSettings.Enable
-	if enableMetrics != nil && *enableMetrics {
-		// run metrics server to expose data
-		p.runMetricsServer()
-		// run metrics updater recurring task
-		p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
-		// set error counter middleware handler
-		p.handler.APIRouter.Use(p.getErrorCounterHandler())
-	}
+	p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
+	p.handler.APIRouter.Use(p.getErrorCounterHandler())
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -332,19 +328,6 @@ func (p *Plugin) newMetricsInstance() *metrics.Metrics {
 		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
 	}
 	return metrics.NewMetrics(instanceInfo)
-}
-
-func (p *Plugin) runMetricsServer() {
-	logrus.WithField("port", metricsExposePort).Info("Starting Playbooks metrics server")
-
-	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService)
-	// Run server to expose metrics
-	go func() {
-		err := metricServer.Run()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logrus.WithError(err).Error("Metrics server could not be started")
-		}
-	}()
 }
 
 func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore, updateMetricsTaskFrequency time.Duration) {

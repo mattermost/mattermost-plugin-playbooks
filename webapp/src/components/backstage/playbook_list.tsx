@@ -4,10 +4,12 @@
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import React, {PropsWithChildren, useEffect, useRef} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {useDispatch, useSelector} from 'react-redux';
+
 import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {Mark, Measure, measureAndReport} from 'src/performance_telemetry';
 import {displayPlaybookCreateModal} from 'src/actions';
@@ -133,7 +135,7 @@ const PlaybooksListFilters = styled.div`
 
 const PlaybookList = (props: { firstTimeUserExperience?: boolean }) => {
     const {formatMessage} = useIntl();
-    const teamId = useSelector(getCurrentTeamId);
+    const teamId = useAppSelector(getCurrentTeamId);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId);
     const content = useRef<JSX.Element | null>(null);
     const selectorRef = useRef<HTMLDivElement>(null);
@@ -424,7 +426,7 @@ const ImportLinkButton = (props: PropsWithChildren<ImportButtonProps>) => {
 
 const PlaybookModalButton = () => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     return (
         <CreatePlaybookButton

@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {useIntl} from 'react-intl';
-import {useDispatch} from 'react-redux';
+
+import {useAppDispatch} from 'src/hooks/redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {toggleRunStatusUpdates} from 'src/client';
@@ -10,7 +11,7 @@ import {modals} from 'src/webapp_globals';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 
 export const useToggleRunStatusUpdate = (playbookRun: PlaybookRun) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const {formatMessage} = useIntl();
 
     return (status: boolean) => {

@@ -1,14 +1,14 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Store} from 'redux';
-import {GlobalState} from '@mattermost/types/store';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ApolloClient, NormalizedCacheObject, gql} from '@apollo/client';
 
 import {matchPath} from 'react-router-dom';
+
+import {Store} from 'src/types/store';
 
 import {currentPlaybookRun, inPlaybookRunChannel, isPlaybookRunRHSOpen} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
@@ -37,7 +37,7 @@ const RunsOnTeamQuery = gql`
     }
 `;
 
-export function makeRHSOpener(store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): () => Promise<void> {
+export function makeRHSOpener(store: Store, graphqlClient: ApolloClient<NormalizedCacheObject>): () => Promise<void> {
     let currentTeamId = '';
     let currentChannelId = '';
     let currentChannelIsPlaybookRun = false;

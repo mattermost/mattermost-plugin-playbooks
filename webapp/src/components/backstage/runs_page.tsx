@@ -7,9 +7,9 @@ import styled from 'styled-components';
 
 import {Redirect} from 'react-router-dom';
 
-import {useSelector} from 'react-redux';
-
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+
+import {useAppSelector} from 'src/hooks/redux';
 
 import {clientHasPlaybooks, fetchPlaybookRuns} from 'src/client';
 
@@ -57,7 +57,7 @@ const RunsPage = () => {
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
     const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState<boolean | null>(null);
     const [noPlaybooks, setNoPlaybooks] = useState<boolean | null>(null);
-    const currentTeamId = useSelector(getCurrentTeamId);
+    const currentTeamId = useAppSelector(getCurrentTeamId);
 
     // When the component is first mounted, determine if there are any
     // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"

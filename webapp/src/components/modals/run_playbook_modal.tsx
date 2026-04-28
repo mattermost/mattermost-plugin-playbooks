@@ -5,12 +5,14 @@ import React, {ComponentProps, useEffect, useState} from 'react';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
-import {useDispatch, useSelector} from 'react-redux';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {ArrowLeftIcon} from '@mattermost/compass-icons/components';
 import {ApolloProvider} from '@apollo/client';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+
+import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {getPlaybooksGraphQLClient} from 'src/graphql_client';
 import {usePlaybook} from 'src/graphql/hooks';
@@ -54,7 +56,7 @@ const RunPlaybookModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const [step, setStep] = useState(playbookId === undefined ? 'select-playbook' : 'run-details');
     const [selectedPlaybookId, setSelectedPlaybookId] = useState(playbookId);
@@ -68,8 +70,8 @@ const RunPlaybookModal = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooksInTeam(teamId || '');
 
-    const currentChannelId = useSelector(getCurrentChannelId);
-    let userId = useSelector(getCurrentUserId);
+    const currentChannelId = useAppSelector(getCurrentChannelId);
+    let userId = useAppSelector(getCurrentUserId);
     if (playbook?.default_owner_enabled && playbook.default_owner_id) {
         userId = playbook.default_owner_id;
     }
