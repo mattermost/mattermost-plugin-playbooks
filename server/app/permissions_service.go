@@ -86,11 +86,6 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 	return []string{}
 }
 
-func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
-	roles := p.getPlaybookRole(userID, playbook)
-	return slices.Contains(roles, PlaybookRoleAdmin)
-}
-
 func (p *PermissionsService) hasPermissionsToPlaybook(userID string, playbook Playbook, permission *model.Permission) bool {
 	// Check at playbook level
 	if p.pluginAPI.User.RolesGrantPermission(p.getPlaybookRole(userID, playbook), permission.Id) {

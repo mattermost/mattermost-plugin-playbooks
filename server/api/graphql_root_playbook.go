@@ -302,12 +302,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 	addToSetmap(setmap, "NewChannelOnly", args.Updates.NewChannelOnly)
 
-	if args.Updates.NewChannelOnly != nil {
-		if !c.permissions.IsPlaybookAdmin(userID, currentPlaybook) {
-			return "", errors.Wrap(app.ErrNoPermissions, "user must be a playbook admin to change NewChannelOnly setting")
-		}
-	}
-
 	if args.Updates.NewChannelOnly != nil || args.Updates.ChannelMode != nil {
 		effectiveNewChannelOnly := currentPlaybook.NewChannelOnly
 		if args.Updates.NewChannelOnly != nil {
