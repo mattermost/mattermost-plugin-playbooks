@@ -262,16 +262,16 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
+	if err = h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
+		return
+	}
+
 	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
 		return
 	}
 
 	if playbook.AdminOnlyEdit && !oldPlaybook.AdminOnlyEdit && !h.requireSysadminForAdminOnlyEdit(w, c.logger, userID, "enable admin-only edit") {
-		return
-	}
-
-	if err = h.validateMetrics(playbook); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
 

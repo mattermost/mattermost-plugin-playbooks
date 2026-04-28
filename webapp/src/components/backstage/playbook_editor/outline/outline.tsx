@@ -55,10 +55,10 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
-        setChecklistCollapseState((prev) => ({
-            ...prev,
+        setChecklistCollapseState({
+            ...checklistCollapseState,
             [checklistIndex]: state,
-        }));
+        });
     };
     const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
         setChecklistCollapseState(state);
@@ -213,8 +213,7 @@ type SectionsProps = {
 const SectionsImpl = ({
     children,
     className,
-    ...rest
-}: SectionsProps & StyledAttrs & React.HTMLAttributes<HTMLDivElement>) => {
+}: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -233,10 +232,7 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div
-                className={className}
-                {...rest}
-            >
+            <div className={className}>
                 {children}
             </div>
         </>
