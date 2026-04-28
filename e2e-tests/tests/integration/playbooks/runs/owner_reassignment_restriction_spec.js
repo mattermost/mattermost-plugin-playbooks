@@ -76,6 +76,22 @@ describe('runs > owner reassignment restriction', {testIsolation: true}, () => {
         });
     });
 
+    afterEach(() => {
+        // Use sysadmin for cleanup: ownership may have been transferred during
+        // the test, which would cause a 403 if we tried to finish as testOwner.
+        cy.apiAdminLogin();
+        if (testPlaybookRun) {
+            cy.apiFinishRun(testPlaybookRun.id);
+        }
+    });
+
+    after(() => {
+        cy.apiAdminLogin();
+        if (testPlaybook) {
+            cy.apiArchivePlaybook(testPlaybook.id);
+        }
+    });
+
     it('owner can reassign ownership to another participant', () => {
         // # Login as the current run owner
         cy.apiLogin(testOwner);

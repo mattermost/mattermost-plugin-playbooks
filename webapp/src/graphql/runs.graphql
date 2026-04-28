@@ -14,10 +14,6 @@ mutation RemoveRunParticipants($runID: String!, $userIDs: [String!]!) {
 	removeRunParticipants(runID: $runID, userIDs: $userIDs)
 }
 
-mutation ChangeRunOwner($runID: String!, $ownerID: String!) {
-	changeRunOwner(runID: $runID, ownerID: $ownerID)
-}
-
 mutation UpdateRunTaskActions($runID: String!, $checklistNum: Float!, $itemNum: Float!, $taskActions: [TaskActionUpdates!]!) {
 	updateRunTaskActions(runID: $runID, checklistNum: $checklistNum, itemNum: $itemNum, taskActions: $taskActions)
 }

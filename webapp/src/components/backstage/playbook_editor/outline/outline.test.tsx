@@ -57,6 +57,11 @@ jest.mock('src/components/backstage/playbook_edit/styles', () => ({
     SectionTitle: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
 }));
 
+jest.mock('src/components/backstage/toast_banner', () => ({
+    useToaster: () => ({add: jest.fn()}),
+    ToastStyle: {Failure: 'failure'},
+}));
+
 jest.mock('./section_status_updates', () => () => null);
 jest.mock('./section_retrospective', () => () => null);
 jest.mock('./section_actions', () => () => null);

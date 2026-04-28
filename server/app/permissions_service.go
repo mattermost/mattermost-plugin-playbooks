@@ -287,6 +287,15 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 		}
 	}
 
+	// Toggling OwnerGroupOnlyActions changes who can finish/restore/reassign in-flight runs,
+	// so it must be restricted to playbook admins (matching the UI gate). PlaybookManageProperties
+	// alone is too permissive: any playbook member with that permission could lock or unlock the flag.
+	if oldPlaybook.OwnerGroupOnlyActions != playbook.OwnerGroupOnlyActions {
+		if !IsPlaybookAdminMember(userID, oldPlaybook) && !IsSystemAdmin(userID, p.pluginAPI) {
+			return errors.Wrapf(ErrNoPermissions, "only a playbook admin can change OwnerGroupOnlyActions")
+		}
+	}
+
 	if !p.licenseChecker.PlaybookAllowed(p.PlaybookIsPublic(*playbook)) {
 		return errors.Wrapf(ErrLicensedFeature, "the playbook is not valid with the current license")
 	}
@@ -741,10 +750,24 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 	if run.OwnerUserID == "" && run.ReporterUserID == userID {
 		return run, playbook, nil
 	}
+	if run.OwnerUserID == userID {
+		return run, playbook, nil
+	}
 	// IsSystemAdmin is intentionally fail-closed: HasPermissionTo returns false (not an
 	// error) when the user record is temporarily unavailable. Denying access during an
 	// outage is preferable to bypassing owner-only enforcement for lifecycle transitions.
-	if run.OwnerUserID == userID || IsSystemAdmin(userID, p.pluginAPI) {
+	if IsSystemAdmin(userID, p.pluginAPI) {
+		// Structured event for sysadmin lifecycle bypass on OwnerGroupOnlyActions runs.
+		// Mirrors playbook_admin_owner_only_bypass for compliance/forensics parity, since
+		// sysadmins also bypass the owner-only gate and the higher privilege level
+		// makes audit visibility more important, not less.
+		logrus.WithFields(logrus.Fields{
+			"event":       "system_admin_owner_only_bypass",
+			"user_id":     userID,
+			"run_id":      run.ID,
+			"playbook_id": playbook.ID,
+			"action":      actionName,
+		}).Warn("system admin performing owner-only action on run they do not own")
 		return run, playbook, nil
 	}
 	return run, playbook, errors.Wrapf(ErrNoPermissions, "only the run owner or admin can %s run %s", actionName, runID)
@@ -797,9 +820,13 @@ func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
 			if !p.canViewTeam(userID, run.TeamID) {
 				return errors.Wrapf(ErrNoPermissions, "no team access for run %s", runID)
 			}
+			// Structured event so downstream audit pipelines can detect playbook-admin
+			// ownership takeover that bypasses OwnerGroupOnlyActions on a run they don't own.
 			logrus.WithFields(logrus.Fields{
-				"user_id": userID,
-				"run_id":  runID,
+				"event":       "playbook_admin_owner_only_bypass",
+				"user_id":     userID,
+				"run_id":      runID,
+				"playbook_id": playbook.ID,
 			}).Warn("playbook admin taking ownership of OwnerGroupOnlyActions run")
 			return nil
 		}

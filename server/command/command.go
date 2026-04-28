@@ -626,7 +626,8 @@ func (r *Runner) actionChangeOwner(args []string, playbookRuns []app.PlaybookRun
 	}
 
 	if err := r.permissions.RunChangeOwner(r.args.UserId, currentPlaybookRun.ID); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
+		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
+		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You do not have permission to change the owner of this run.")
 			return
 		}
@@ -770,7 +771,8 @@ func (r *Runner) actionFinishByID(args []string) {
 	}
 
 	if err := r.permissions.RunFinish(r.args.UserId, args[0]); err != nil {
-		if errors.Is(err, app.ErrNoPermissions) {
+		// Fold ErrNotFound into the same user-facing message to avoid leaking run existence.
+		if errors.Is(err, app.ErrNoPermissions) || errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You do not have permission to finish this run.")
 		} else {
 			r.warnUserAndLogErrorf("Error checking finish permissions: %v", err)

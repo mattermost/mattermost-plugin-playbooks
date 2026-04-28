@@ -8,7 +8,6 @@ import {QueryResult, useMutation, useQuery} from '@apollo/client';
 import {
     AddPlaybookMemberDocument,
     AddRunParticipantsDocument,
-    ChangeRunOwnerDocument,
     PlaybookDocument,
     PlaybookLhsDocument,
     PlaybookPropertyDocument,
@@ -31,7 +30,7 @@ import {
     UpdateRunTaskActionsDocument,
 } from 'src/graphql/generated/graphql';
 
-import {autoFollowPlaybook} from 'src/client';
+import {autoFollowPlaybook, setOwner} from 'src/client';
 
 export type FullPlaybook = PlaybookQuery['playbook']
 
@@ -161,11 +160,6 @@ export const useManageRunMembership = (runID?: string) => {
         ],
     });
 
-    const [changeOwner] = useMutation(ChangeRunOwnerDocument, {
-        refetchQueries: [
-        ],
-    });
-
     const addToRun = useCallback(async (userIDs?: string[], forceAddToChannel?: boolean) => {
         if (!runID || !userIDs || userIDs?.length === 0) {
             return;
@@ -184,8 +178,8 @@ export const useManageRunMembership = (runID?: string) => {
         if (!runID || !ownerID) {
             return;
         }
-        await changeOwner({variables: {runID: runID || '', ownerID: ownerID || ''}});
-    }, [runID, changeOwner]);
+        await setOwner(runID, ownerID);
+    }, [runID]);
 
     return {addToRun, removeFromRun, changeRunOwner};
 };

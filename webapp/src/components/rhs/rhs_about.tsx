@@ -14,6 +14,7 @@ import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
+import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {
@@ -31,7 +32,9 @@ import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import PropertiesList from 'src/components/rhs/properties_list';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {setRHSAboutCollapsedState} from 'src/actions';
-import {useManageRunMembership, useUpdateRun} from 'src/graphql/hooks';
+import {useUpdateRun} from 'src/graphql/hooks';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -48,7 +51,7 @@ const RHSAbout = (props: Props) => {
     const collapsedFromStore = useAppSelector(currentRHSAboutCollapsedState(props.playbookRun.id));
     const profilesInTeam = useProfilesInTeam();
     const updateRun = useUpdateRun(props.playbookRun.id);
-    const {changeRunOwner} = useManageRunMembership(props.playbookRun.id);
+    const toaster = useToaster();
 
     const myUserId = useAppSelector(getCurrentUserId);
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
@@ -82,12 +85,39 @@ const RHSAbout = (props: Props) => {
         return profilesInTeam;
     };
 
+    const setOwnerUtil = async (userId?: string) => {
+        if (!userId) {
+            return;
+        }
+        const response = await setOwner(props.playbookRun.id, userId);
+        if (response.error) {
+            // eslint-disable-next-line no-warning-comments
+            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
+        }
+    };
+
     const onSelectedProfileChange = (user?: UserProfile) => {
         if (!user) {
             return;
         }
-        changeRunOwner(user.id);
+        setOwnerUtil(user?.id);
     };
+
+    // When the owner picker is disabled because OwnerGroupOnlyActions blocks this user,
+    // show a toast explaining why — matches the disabled-with-tooltip pattern used by the
+    // FinishRun/RestoreRun menu items for the same restriction.
+    let onOwnerEditDisabledClick: (() => void) | undefined;
+    if (canChangeOwner) {
+        onOwnerEditDisabledClick = props.readOnly ? props.onReadOnlyInteract : undefined;
+    } else {
+        onOwnerEditDisabledClick = () => {
+            toaster.add({
+                content: formatMessage({defaultMessage: 'Only the run owner can reassign ownership of this run.'}),
+                toastStyle: ToastStyle.Failure,
+            });
+        };
+    }
 
     const onTitleEdit = (value: string) => {
         updateRun({name: value});
@@ -136,7 +166,7 @@ const RHSAbout = (props: Props) => {
                                     placeholderButtonClass={'NoAssignee-button'}
                                     profileButtonClass={'Assigned-button'}
                                     enableEdit={canEditOwner}
-                                    onEditDisabledClick={props.readOnly ? props.onReadOnlyInteract : undefined}
+                                    onEditDisabledClick={onOwnerEditDisabledClick}
                                     getAllUsers={fetchUsersInTeam}
                                     onSelectedChange={onSelectedProfileChange}
                                     selfIsFirstOption={true}

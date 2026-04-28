@@ -1107,8 +1107,13 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	}
 
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
+		// Dialog handlers must return SubmitDialogResponse (HTTP 200) so the dialog
+		// framework can surface the error message to the user. Returning a 4xx is
+		// treated as a generic transport error and shows nothing.
 		if errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, publicMsg, internalErr)
+			ReturnJSON(w, &model.SubmitDialogResponse{
+				Error: publicMsg,
+			}, http.StatusOK)
 		} else {
 			h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, publicMsg, internalErr)
 		}

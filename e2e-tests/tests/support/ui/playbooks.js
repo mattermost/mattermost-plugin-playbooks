@@ -330,10 +330,10 @@ Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
 });
 
 Cypress.Commands.add('playbooksChangeRunOwnerViaRHS', (newOwnerUsername) => {
-    cy.playbooksInterceptGraphQLMutation('ChangeRunOwner');
+    cy.intercept('POST', '**/plugins/playbooks/api/v0/runs/*/owner').as('changeRunOwner');
     cy.findByTestId('owner-profile-selector').click();
     cy.contains('.playbook-react-select__option', newOwnerUsername, {timeout: TIMEOUTS.HALF_MIN}).click();
-    cy.wait('@ChangeRunOwner');
+    cy.wait('@changeRunOwner');
 });
 
 Cypress.Commands.add('playbooksToggleWithConfirmation', (toggleTestId) => {

@@ -22,6 +22,8 @@ import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import PlaybookActionsModal from 'src/components/playbook_actions_modal';
 import {FullPlaybook, Loaded, useUpdatePlaybook} from 'src/graphql/hooks';
 import {savePlaybook} from 'src/client';
+import {useToaster} from 'src/components/backstage/toast_banner';
+import {ToastStyle} from 'src/components/backstage/toast';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRole} from 'src/types/permissions';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -48,6 +50,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
+    const toaster = useToaster();
     const archived = playbook.delete_at !== 0;
     const currentUserId = useAppSelector(getCurrentUserId);
     const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
@@ -57,17 +60,17 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const effectiveRestPlaybook = restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
 
-    const onChecklistCollapsedStateChange = useCallback((checklistIndex: number, state: boolean) => {
-        setChecklistCollapseState((prev) => ({
-            ...prev,
+    const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
+        setChecklistCollapseState({
+            ...checklistCollapseState,
             [checklistIndex]: state,
-        }));
-    }, []);
-    const onEveryChecklistCollapsedStateChange = useCallback((state: Record<number, boolean>) => {
+        });
+    };
+    const onEveryChecklistCollapsedStateChange = (state: Record<number, boolean>) => {
         setChecklistCollapseState(state);
-    }, []);
+    };
 
-    const toggleStatusUpdate = useCallback(() => {
+    const toggleStatusUpdate = () => {
         if (archived) {
             return;
         }
@@ -76,16 +79,16 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             webhookOnStatusUpdateEnabled: !playbook.status_update_enabled,
             broadcastEnabled: !playbook.status_update_enabled,
         });
-    }, [archived, updatePlaybook, playbook.status_update_enabled]);
+    };
 
-    const toggleRetrospective = useCallback(() => {
+    const toggleRetrospective = () => {
         if (archived || !retrospectiveAccess) {
             return;
         }
         updatePlaybook({
             retrospectiveEnabled: !playbook.retrospective_enabled,
         });
-    }, [archived, retrospectiveAccess, updatePlaybook, playbook.retrospective_enabled]);
+    };
 
     const handleOwnerGroupOnlyActionsChange = useCallback(async (updated: {owner_group_only_actions: boolean}) => {
         if (archived || !restPlaybook || isSavingOwnerGroupOnlyActions) {
@@ -98,10 +101,14 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             await savePlaybook({...restPlaybook, owner_group_only_actions: updated.owner_group_only_actions});
         } catch {
             setRestOverrides((o) => ({...o, owner_group_only_actions: prev}));
+            toaster.add({
+                content: formatMessage({defaultMessage: 'Failed to save setting. Please try again.'}),
+                toastStyle: ToastStyle.Failure,
+            });
         } finally {
             setIsSavingOwnerGroupOnlyActions(false);
         }
-    }, [archived, restPlaybook, isSavingOwnerGroupOnlyActions]);
+    }, [archived, restPlaybook, isSavingOwnerGroupOnlyActions, effectiveRestPlaybook, toaster, formatMessage]);
 
     return (
         <Sections
@@ -224,8 +231,7 @@ type SectionsProps = {
 const SectionsImpl = ({
     children,
     className,
-    ...rest
-}: SectionsProps & StyledAttrs & React.HTMLAttributes<HTMLDivElement>) => {
+}: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
             React.isValidElement(node) &&
@@ -244,10 +250,7 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div
-                className={className}
-                {...rest}
-            >
+            <div className={className}>
                 {children}
             </div>
         </>

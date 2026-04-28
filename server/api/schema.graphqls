@@ -47,7 +47,6 @@ type Mutation {
 	updateRun(id: String!, updates: RunUpdates!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	addRunParticipants(runID: String!, userIDs: [String!]!, forceAddToChannel: Boolean = false): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	removeRunParticipants(runID: String!, userIDs: [String!]!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
-	changeRunOwner(runID: String!, ownerID: String!): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 	updateRunTaskActions(runID: String!, checklistNum: Float!, itemNum: Float!, taskActions: [TaskActionUpdates!]): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")
 
 	setRunPropertyValue(runID: String!, propertyFieldID: String!, value: JSON): String! @deprecated(reason: "GraphQL API is being deprecated. Use REST API endpoints instead.")

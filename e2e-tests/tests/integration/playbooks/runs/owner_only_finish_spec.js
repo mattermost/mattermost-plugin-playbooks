@@ -114,6 +114,79 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             });
         });
 
+        // --- Direct REST API ---
+
+        it('direct REST PUT /runs/:id/finish returns 403 to non-owner participant', () => {
+            // Catches server-side enforcement regressions independent of the UI.
+            cy.apiLogin(testParticipant);
+
+            cy.request({
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                url: `/plugins/playbooks/api/v0/runs/${testPlaybookRun.id}/finish`,
+                method: 'PUT',
+                failOnStatusCode: false,
+            }).then((response) => {
+                expect(response.status).to.equal(403);
+            });
+
+            // * Run remains active
+            cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                expect(run.current_status).to.not.equal('Finished');
+            });
+        });
+
+        // --- Two-step playbook-admin bypass (intentional policy) ---
+
+        it('playbook admin can reassign ownership to themselves and finish the run end-to-end', () => {
+            // Verifies the documented two-step workaround: playbook admin → reassign-to-self
+            // → finish. Each step exercises the server-side permission gate
+            // (RunChangeOwner allows playbook admin; RunFinish allows the new owner).
+            cy.apiCreateAndAddUserToTeam(testTeam.id).then((playbookAdminUser) => {
+                // # Add as playbook admin
+                cy.apiLogin(testOwner);
+                cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                    const updatedMembers = [
+                        ...playbook.members,
+                        {user_id: playbookAdminUser.id, roles: ['playbook_member', 'playbook_admin']},
+                    ];
+                    cy.apiUpdatePlaybook({...playbook, members: updatedMembers});
+                });
+
+                // # Add to the run
+                cy.apiAddUsersToRun(testPlaybookRun.id, [playbookAdminUser.id]);
+
+                // # Login as the playbook admin and visit the run channel
+                cy.apiLogin(playbookAdminUser);
+                cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
+
+                // * Step 1: playbook admin should NOT see the finish section before reassign
+                assertCannotFinish();
+
+                // # Step 1: reassign ownership to themselves via the RHS owner selector
+                cy.playbooksChangeRunOwnerViaRHS(playbookAdminUser.username);
+
+                // * Confirm ownership was transferred on the server
+                cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                    expect(run.owner_user_id).to.equal(playbookAdminUser.id);
+                });
+
+                // # Reload the channel as the new owner
+                cy.playbooksVisitRunChannel(testTeam.name, testPlaybookRun);
+
+                // * Step 2: now-owner playbook admin should see the finish section
+                assertCanFinish();
+
+                // # Step 2: click finish and confirm the modal
+                cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
+                cy.playbooksConfirmFinishModal();
+
+                // * Run is finished
+                cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                    expect(run.current_status).to.equal('Finished');
+                });
+            });
+        });
+
         it('old owner cannot finish the run after ownership is reassigned to another user', () => {
             // # Verify original owner can see the finish section before reassignment
             cy.apiLogin(testOwner);
@@ -170,7 +243,7 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
             });
         });
 
-        it('system admin can finish the run even when not the owner', () => {
+        it('system admin can finish the run end-to-end even when not the owner', () => {
             // * Assert backend: run is still active before admin clicks finish
             cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
                 expect(run.current_status).to.not.equal('Finished');
@@ -184,6 +257,19 @@ describe('runs > owner only finish', {testIsolation: true}, () => {
 
             // * Sysadmin should see the finish section (admin bypass)
             assertCanFinish();
+
+            // # Finish the run via the RHS finish button as sysadmin
+            cy.findByTestId('rhs-finish-section').findByRole('button', {name: /Finish/i}).click();
+
+            // # Confirm the finish modal
+            cy.playbooksConfirmFinishModal();
+
+            // * Verify via API that the run is actually finished — exercises the
+            // server-side admin bypass through RunFinish, not just the UI render.
+            cy.apiGetPlaybookRun(testPlaybookRun.id).then(({body: run}) => {
+                expect(run.current_status).to.equal('Finished');
+                expect(run.end_at).to.be.greaterThan(0);
+            });
         });
 
         it('playbook admin (non-owner) cannot see the finish section', () => {

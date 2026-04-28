@@ -116,7 +116,7 @@ const PlaybookRunDetails = () => {
         } else if (RHSUpdatesOpened && emptyUpdates) {
             RHS.open(RHSContent.RunInfo, RHSRunInfoTitle, playbookRun?.name);
         }
-    }, [playbookRun, RHS.section, RHS.isOpen, RHS.open, queryParams]);
+    }, [playbookRun, RHS.section, RHS.isOpen]);
 
     useEffect(() => {
         const teamId = playbookRun?.team_id;
@@ -325,4 +325,3 @@ const Header = styled.header`
     min-height: 56px;
     background-color: var(--center-channel-bg);
 `;
-
