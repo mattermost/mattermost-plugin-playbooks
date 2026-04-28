@@ -1272,12 +1272,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	// We are resolving the playbook run. Send the reminder to fill out the retrospective
 	// Also start the recurring reminder if enabled.
 	if s.licenseChecker.RetrospectiveAllowed() {
-		logger.Info("Retrospective check: licensed",
-			"runID", playbookRunID,
-			"retrospectiveEnabled", playbookRunToModify.RetrospectiveEnabled,
-			"retrospectivePublishedAt", playbookRunToModify.RetrospectivePublishedAt)
 		if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 {
-			logger.Info("Posting retrospective reminder", "runID", playbookRunID)
 			if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
 				return errors.Wrap(err, "couldn't post retrospective reminder")
 			}
@@ -1287,14 +1282,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 					return errors.Wrap(err, "failed to set the retrospective reminder for playbook run")
 				}
 			}
-		} else {
-			logger.Info("Skipping retrospective reminder",
-				"runID", playbookRunID,
-				"retrospectiveEnabled", playbookRunToModify.RetrospectiveEnabled,
-				"retrospectivePublishedAt", playbookRunToModify.RetrospectivePublishedAt)
 		}
-	} else {
-		logger.Info("Retrospective not allowed by license", "runID", playbookRunID)
 	}
 
 	event := &TimelineEvent{
