@@ -219,6 +219,20 @@ export function useProfilesInTeam() {
     return profilesInTeam;
 }
 
+// useUserDisplayNameMap builds a userId→displayName map for all profiles in the current team.
+// Shared by components that need to resolve user IDs to display names for template previews.
+export function useUserDisplayNameMap(): Record<string, string> {
+    const profilesInTeam = useProfilesInTeam();
+    const teammateNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
+    return useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const profile of profilesInTeam) {
+            map[profile.id] = displayUsername(profile, teammateNameDisplaySetting);
+        }
+        return map;
+    }, [profilesInTeam, teammateNameDisplaySetting]);
+}
+
 /**
  * Use thing from API and/or Store
  *
@@ -244,42 +258,30 @@ export function useThing<T extends NonNullable<any>>(
     const [isFetching, setIsFetching] = useState<boolean>(true);
 
     useEffect(() => {
-        let cancelled = false;
         if (!id) {
             setIsFetching(false);
             setThing(null);
             setError(null);
-            return undefined;
+            return;
         }
 
         if (thingFromState) {
             setThing(thingFromState);
-            setError(null);
             setIsFetching(false);
-            return undefined;
+            return;
         }
 
-        setIsFetching(true);
         fetchFunc(id)
             .then((res) => {
-                if (!cancelled) {
-                    setThing(res);
-                    setError(null);
-                    setIsFetching(false);
-                }
+                setThing(res);
             })
             .catch((err) => {
-                if (!cancelled) {
-                    if (err instanceof ClientError) {
-                        setError(err);
-                    }
-                    setThing(null);
-                    setIsFetching(false);
+                if (err instanceof ClientError) {
+                    setError(err);
                 }
+                setThing(null);
             });
-        return () => {
-            cancelled = true;
-        };
+        setIsFetching(false);
     }, [thingFromState, id, ...deps]);
 
     const metadata = {
@@ -667,18 +669,4 @@ export function useTextOverflow(ref: MutableRefObject<HTMLElement | null>) {
     }, [ref]);
 
     return isOverflowing;
-}
-
-// useUserDisplayNameMap builds a userId→displayName map for all profiles in the current team.
-// Shared by components that need to resolve user IDs to display names for template previews.
-export function useUserDisplayNameMap(): Record<string, string> {
-    const profilesInTeam = useProfilesInTeam();
-    const teammateNameDisplaySetting = useAppSelector(getTeammateNameDisplaySetting) || '';
-    return useMemo(() => {
-        const map: Record<string, string> = {};
-        for (const profile of profilesInTeam) {
-            map[profile.id] = displayUsername(profile, teammateNameDisplaySetting);
-        }
-        return map;
-    }, [profilesInTeam, teammateNameDisplaySetting]);
 }

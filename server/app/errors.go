@@ -38,10 +38,5 @@ var ErrPropertyFieldTypeChangeNotAllowed = errors.New("property field type chang
 // ErrReservedPropertyFieldName occurs when trying to create or update a property field with a reserved name.
 var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 
-// ErrInternalPrecondition indicates a programming contract violation — a caller
-// skipped a mandatory step (e.g. calling ResolveRunCreationParams before CreatePlaybookRun).
-// This maps to HTTP 500, not 400, because it is never caused by bad user input.
+// ErrInternalPrecondition occurs when a caller skipped a mandatory setup step; maps to HTTP 500.
 var ErrInternalPrecondition = errors.New("internal precondition violated")
-
-// ErrRunNumberPrefixImmutable occurs when trying to change RunNumberPrefix on a playbook that already has runs.
-var ErrRunNumberPrefixImmutable = errors.New("run_number_prefix cannot be changed once runs exist")

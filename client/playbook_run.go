@@ -133,15 +133,15 @@ type TimelineEvent struct {
 
 // PlaybookRunCreateOptions specifies the parameters for PlaybookRunService.Create method.
 type PlaybookRunCreateOptions struct {
-	Name            string                     `json:"name"`
-	OwnerUserID     string                     `json:"owner_user_id"`
-	TeamID          string                     `json:"team_id"`
-	ChannelID       string                     `json:"channel_id"`
-	Summary         string                     `json:"summary"`
-	PostID          string                     `json:"post_id"`
-	PlaybookID      string                     `json:"playbook_id"`
-	CreatePublicRun *bool                      `json:"create_public_run"`
-	Type            string                     `json:"type"`
+	Name            string `json:"name"`
+	OwnerUserID     string `json:"owner_user_id"`
+	TeamID          string `json:"team_id"`
+	ChannelID       string `json:"channel_id"`
+	Summary         string `json:"summary"`
+	PostID          string `json:"post_id"`
+	PlaybookID      string `json:"playbook_id"`
+	CreatePublicRun *bool  `json:"create_public_run"`
+	Type            string `json:"type"`
 	PropertyValues  map[string]json.RawMessage `json:"property_values,omitempty"`
 }
 
@@ -261,7 +261,6 @@ type PlaybookRunListOptions struct {
 	// A value of 0 (or negative, normalized to 0) means this filter is not applied.
 	// This is sent as the "since" URL parameter.
 	ActivitySince int64 `url:"since,omitempty"`
-
 }
 
 // PlaybookRunList contains the paginated result.
@@ -296,8 +295,8 @@ type StatusUpdateOptions struct {
 
 // PlaybookRunUpdateOptions are the fields that can be updated for a playbook run
 type PlaybookRunUpdateOptions struct {
-	Name    *string `json:"name,omitempty"`
-	Summary *string `json:"summary,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Summary     *string `json:"summary,omitempty"`
 }
 
 type RunMetricData struct {

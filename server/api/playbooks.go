@@ -225,6 +225,10 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
+		if errors.Is(err, app.ErrDuplicateEntry) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -415,6 +419,10 @@ func (h *PlaybookHandler) restorePlaybook(c *Context, w http.ResponseWriter, r *
 
 	err = h.playbookService.Restore(playbookToRestore, userID)
 	if err != nil {
+		if errors.Is(err, app.ErrDuplicateEntry) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
@@ -798,6 +806,10 @@ func (h *PlaybookHandler) importPlaybook(c *Context, w http.ResponseWriter, r *h
 		Conditions: importBlock.Conditions,
 	}, userID)
 	if err != nil {
+		if errors.Is(err, app.ErrDuplicateEntry) {
+			h.HandleErrorWithCode(w, c.logger, http.StatusConflict, err.Error(), err)
+			return
+		}
 		h.HandleError(w, c.logger, err)
 		return
 	}

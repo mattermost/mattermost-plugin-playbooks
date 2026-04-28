@@ -650,7 +650,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public, source, resolvedChannelName, initialPropertyValues)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create playbook run")
+		return nil, err
 	}
 
 	// force database retrieval to ensure all data is processed correctly (i.e participantIds)

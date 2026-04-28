@@ -574,9 +574,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 				playbookRun.PropertyValues = append(playbookRun.PropertyValues, upsertedValues...)
 			}
 
-			// Interpolate {FieldName} placeholders in checklist item titles at creation time.
-			s.interpolateTaskTitlesFromRun(playbookRun)
-
 			// Copy conditions from playbook to run using the field mappings if license allows
 			if s.licenseChecker.ConditionalPlaybooksAllowed() {
 				conditionMapping, err := s.conditionService.CopyPlaybookConditionsToRun(pb.ID, playbookRun.ID, propertyCopyResult)
@@ -608,8 +605,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 					}
 				}
 			} else {
-				if _, err := s.store.UpdatePlaybookRun(playbookRun); err != nil {
+				if updatedRun, err := s.store.UpdatePlaybookRun(playbookRun); err != nil {
 					logger.WithError(err).Warn("failed to update run at creation")
+				} else {
+					playbookRun = updatedRun
 				}
 			}
 		}
@@ -5062,9 +5061,10 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		return nil, errors.New("upsert property value returned nil without error")
 	}
 
-	// Capture pre-update property values for WS incremental diff before in-place modification.
-	prevPropertyValues := make([]PropertyValue, len(run.PropertyValues))
-	copy(prevPropertyValues, run.PropertyValues)
+	// Snapshot the pre-mutation run for the WS incremental diff. Clone() deep-copies
+	// PropertyValues and TimelineEvents so subsequent in-place mutations on `run` do
+	// not also mutate `prevRun` (which would silently drop the diff).
+	prevRun := run.Clone()
 
 	// replace it in the run object we have at hand
 	var found bool
@@ -5108,9 +5108,7 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 
 	// Send WS notification when the value changed.
 	if valueChanged {
-		prevRun := *run
-		prevRun.PropertyValues = prevPropertyValues
-		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, &prevRun, run)
+		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, prevRun, run)
 	}
 
 	auditRec.Success()
@@ -5297,7 +5295,7 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 	// not persist an invalid owner.
 	if playbookRun.OwnerUserID != "" && playbookRun.TeamID != "" &&
 		!IsMemberOfTeam(playbookRun.OwnerUserID, playbookRun.TeamID, s.pluginAPI) {
-		logrus.WithFields(logrus.Fields{
+		logger.WithFields(logrus.Fields{
 			"user_id":     playbookRun.OwnerUserID,
 			"team_id":     playbookRun.TeamID,
 			"run_id":      playbookRun.ID,
@@ -5307,7 +5305,7 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 		// of the default-owner validation in the API handler (an invalid default owner also falls
 		// back to the creator).
 		if playbookRun.ReporterUserID == "" {
-			logrus.WithFields(logrus.Fields{
+			logger.WithFields(logrus.Fields{
 				"run_id":      playbookRun.ID,
 				"playbook_id": playbookRun.PlaybookID,
 			}).Warn("resolved owner is not a team member and ReporterUserID is empty; OwnerUserID will remain unset")
@@ -5355,15 +5353,21 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 				// Atomic compare-and-swap using SELECT FOR UPDATE + UPDATE in a single
 				// transaction. The transformFn runs while holding the row lock, so a
 				// concurrent admin edit cannot be silently overwritten.
+				// transformFn must stay free of I/O (logging, DB calls) so we don't
+				// extend lock-hold time; record the conflict via a flag and emit the
+				// log statement after the transaction returns.
 				snapshotTemplate := channelNameTemplate
+				var concurrentEdit bool
 				if err := s.playbookService.UpdateChannelNameTemplateAtomically(pb.ID, func(current string) string {
 					if current != snapshotTemplate {
-						logger.Warn("channel name template changed concurrently; skipping self-heal write to avoid overwriting admin edit")
+						concurrentEdit = true
 						return current
 					}
 					return cleaned
 				}); err != nil {
 					logger.WithError(err).Warn("failed to persist cleaned channel name template; proceeding with stale template stripped in-memory")
+				} else if concurrentEdit {
+					logger.Warn("channel name template changed concurrently; skipping self-heal write to avoid overwriting admin edit")
 				}
 				channelNameTemplate = cleaned
 			}
@@ -5382,8 +5386,6 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 	// This is done early so we can validate that all template fields have values
 	// BEFORE consuming a sequential run number.
 	var sanitizedValues map[string]json.RawMessage
-	// Single FormatFunc instance reused for both pre-validation and final resolution,
-	// so user display name lookups are cached across both passes.
 	formatFunc := s.makeRunNameFormatFunc()
 	if channelNameTemplate != "" {
 		sanitizedValues = make(map[string]json.RawMessage, len(initialValues))
@@ -5403,9 +5405,12 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 
 		// Pre-validate that all non-system template fields have values to avoid
 		// consuming a sequential run number and then failing on unresolved fields.
-		// Use a dummy seqID — system tokens are always resolved, so we only need
-		// to catch missing property values here.
-		dryRunTokens := map[string]string{"SEQ": "0", "OWNER": "x", "CREATOR": "x"}
+		// Use representative system-token values (matching real format width) so
+		// any future length pre-check is length-accurate. The current dry run only
+		// inspects unresolved fields; length truncation is handled post-allocation
+		// at the maxChannelDisplayNameRunes guard below.
+		dryRunSeq := FormatSequentialID(pb.RunNumberPrefix, 99999)
+		dryRunTokens := map[string]string{"SEQ": dryRunSeq, "OWNER": "x", "CREATOR": "x"}
 		_, unresolvedPre := ResolveTemplate(channelNameTemplate, ResolveOptions{
 			Fields:       fields,
 			Values:       sanitizedValues,
@@ -5441,15 +5446,7 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 	var resolvedRunName string
 	var resolvedChannelName string
 	if channelNameTemplate != "" {
-		// Build system tokens for template resolution
-		systemTokens := s.buildSystemTokens(playbookRun, seqID)
-
-		resolved, unresolved := ResolveTemplate(channelNameTemplate, ResolveOptions{
-			Fields:       fields,
-			Values:       sanitizedValues,
-			SystemTokens: systemTokens,
-			FormatFunc:   formatFunc,
-		})
+		resolved, unresolved := s.resolveRunTemplate(channelNameTemplate, playbookRun, seqID, fields, sanitizedValues)
 		if len(unresolved) > 0 {
 			// Provide a specific error when {SEQ} is unresolved (e.g. run number was not allocated
 			// because the playbook migration is incomplete or RunNumber == 0).
@@ -5494,6 +5491,20 @@ func (s *PlaybookRunServiceImpl) ResolveRunCreationParams(playbookRun *PlaybookR
 	return resolvedChannelName, nil
 }
 
+// resolveRunTemplate runs ResolveTemplate with the standard run-context options
+// (system tokens built from the run, user-aware FormatFunc). Use this whenever
+// a template is resolved against a real run; the dry-run pre-validation in
+// ResolveRunCreationParams uses ResolveTemplate directly because it must inject
+// representative SEQ/OWNER/CREATOR placeholders before the run number is allocated.
+func (s *PlaybookRunServiceImpl) resolveRunTemplate(template string, run *PlaybookRun, seqID string, fields []PropertyField, values map[string]json.RawMessage) (string, []string) {
+	return ResolveTemplate(template, ResolveOptions{
+		Fields:       fields,
+		Values:       values,
+		SystemTokens: s.buildSystemTokens(run, seqID),
+		FormatFunc:   s.makeRunNameFormatFunc(),
+	})
+}
+
 // buildSystemTokens creates the system token map for template resolution.
 // Tokens: SEQ (pre-formatted), OWNER (display name), CREATOR (display name).
 // Empty userID produces an empty token. User lookup failures fall back to the raw user ID.
@@ -5536,7 +5547,7 @@ func (s *PlaybookRunServiceImpl) makeRunNameFormatFunc() FormatFunc {
 			return "", true
 		}
 		switch field.Type {
-		case "user":
+		case model.PropertyFieldTypeUser:
 			var userID string
 			if err := json.Unmarshal(raw, &userID); err != nil || userID == "" {
 				return DefaultFormatPropertyValue(field, raw)
@@ -5548,7 +5559,7 @@ func (s *PlaybookRunServiceImpl) makeRunNameFormatFunc() FormatFunc {
 			userCache[userID] = name
 			return name, false
 
-		case "multiuser":
+		case model.PropertyFieldTypeMultiuser:
 			var userIDs []string
 			if err := json.Unmarshal(raw, &userIDs); err != nil || len(userIDs) == 0 {
 				return DefaultFormatPropertyValue(field, raw)
@@ -5577,36 +5588,6 @@ func applyAssigneeUpdate(item *ChecklistItem, assigneeID string) (noChangeNeeded
 	noChangeNeeded = assigneeID == item.AssigneeID
 	item.AssigneeID = assigneeID
 	return noChangeNeeded
-}
-
-// interpolateTaskTitlesFromRun resolves {FieldName} placeholders in checklist item
-// titles using the run's in-memory PropertyFields and PropertyValues.
-// Interpolation is one-shot at creation time; unknown tokens are left as-is.
-func (s *PlaybookRunServiceImpl) interpolateTaskTitlesFromRun(run *PlaybookRun) {
-	if run == nil || len(run.PropertyFields) == 0 {
-		return
-	}
-	valuesMap := make(map[string]json.RawMessage, len(run.PropertyValues))
-	for _, pv := range run.PropertyValues {
-		valuesMap[pv.FieldID] = pv.Value
-	}
-	systemTokens := s.buildSystemTokens(run, run.SequentialID)
-	formatFunc := s.makeRunNameFormatFunc()
-	for ci := range run.Checklists {
-		for ii := range run.Checklists[ci].Items {
-			item := &run.Checklists[ci].Items[ii]
-			if item.Title == "" {
-				continue
-			}
-			resolved, _ := ResolveTemplate(item.Title, ResolveOptions{
-				Fields:       run.PropertyFields,
-				Values:       valuesMap,
-				SystemTokens: systemTokens,
-				FormatFunc:   formatFunc,
-			})
-			item.Title = resolved
-		}
-	}
 }
 
 // formatPropertyValueForDisplay formats a property value for display in bot messages
@@ -5680,7 +5661,6 @@ func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *P
 		return msg
 	}
 
-	fields := run.PropertyFields
 	values := run.PropertyValues
 
 	valuesMap := make(map[string]json.RawMessage, len(values))
@@ -5688,14 +5668,7 @@ func (s *PlaybookRunServiceImpl) resolveAttributePlaceholders(msg string, run *P
 		valuesMap[v.FieldID] = v.Value
 	}
 
-	systemTokens := s.buildSystemTokens(run, run.SequentialID)
-
-	resolved, _ := ResolveTemplate(msg, ResolveOptions{
-		Fields:       fields,
-		Values:       valuesMap,
-		SystemTokens: systemTokens,
-		FormatFunc:   s.makeRunNameFormatFunc(),
-	})
+	resolved, _ := s.resolveRunTemplate(msg, run, run.SequentialID, run.PropertyFields, valuesMap)
 	// For legacy runs without a sequential ID, strip any {SEQ} placeholders
 	// that could not be resolved, rather than leaving them verbatim.
 	if run.SequentialID == "" {

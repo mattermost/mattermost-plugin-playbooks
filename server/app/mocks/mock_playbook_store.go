@@ -341,6 +341,21 @@ func (mr *MockPlaybookStoreMockRecorder) GraphqlUpdate(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GraphqlUpdate", reflect.TypeOf((*MockPlaybookStore)(nil).GraphqlUpdate), arg0, arg1)
 }
 
+// IncrementRunNumber mocks base method.
+func (m *MockPlaybookStore) IncrementRunNumber(arg0 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementRunNumber", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IncrementRunNumber indicates an expected call of IncrementRunNumber.
+func (mr *MockPlaybookStoreMockRecorder) IncrementRunNumber(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementRunNumber", reflect.TypeOf((*MockPlaybookStore)(nil).IncrementRunNumber), arg0)
+}
+
 // RemovePlaybookMember mocks base method.
 func (m *MockPlaybookStore) RemovePlaybookMember(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -383,35 +398,6 @@ func (mr *MockPlaybookStoreMockRecorder) Update(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPlaybookStore)(nil).Update), arg0)
 }
 
-// UpdateMetric mocks base method.
-func (m *MockPlaybookStore) UpdateMetric(arg0 string, arg1 map[string]interface{}) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateMetric", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateMetric indicates an expected call of UpdateMetric.
-func (mr *MockPlaybookStoreMockRecorder) UpdateMetric(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetric", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateMetric), arg0, arg1)
-}
-
-// IncrementRunNumber mocks base method.
-func (m *MockPlaybookStore) IncrementRunNumber(arg0 string) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrementRunNumber", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IncrementRunNumber indicates an expected call of IncrementRunNumber.
-func (mr *MockPlaybookStoreMockRecorder) IncrementRunNumber(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementRunNumber", reflect.TypeOf((*MockPlaybookStore)(nil).IncrementRunNumber), arg0)
-}
-
 // UpdateChannelNameTemplateAtomically mocks base method.
 func (m *MockPlaybookStore) UpdateChannelNameTemplateAtomically(arg0 string, arg1 func(string) string) error {
 	m.ctrl.T.Helper()
@@ -424,4 +410,18 @@ func (m *MockPlaybookStore) UpdateChannelNameTemplateAtomically(arg0 string, arg
 func (mr *MockPlaybookStoreMockRecorder) UpdateChannelNameTemplateAtomically(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelNameTemplateAtomically", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateChannelNameTemplateAtomically), arg0, arg1)
+}
+
+// UpdateMetric mocks base method.
+func (m *MockPlaybookStore) UpdateMetric(arg0 string, arg1 map[string]interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMetric", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMetric indicates an expected call of UpdateMetric.
+func (mr *MockPlaybookStoreMockRecorder) UpdateMetric(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetric", reflect.TypeOf((*MockPlaybookStore)(nil).UpdateMetric), arg0, arg1)
 }

@@ -168,13 +168,16 @@ export const RunPlaybookModal = ({
         }) as unknown as TemplatePropertyField[];
     }, [playbookAttributes, templateFieldNames]);
 
+    // Block submission while attributes are loading for a template that references fields:
+    // we cannot validate required-field coverage until the attribute list arrives.
+    const attributesLoading = playbookAttributes === undefined && templateFieldNames.size > 0;
+
     // Track template field names that don't match any loaded attribute
     const unmatchedTemplateNames = useMemo(() => {
         if (!playbook?.channel_name_template || templateFieldNames.size === 0) {
             return [];
         }
         if (!playbookAttributes) {
-            // Still loading — don't block submission
             return [];
         }
         const loadedNames = new Set((playbookAttributes).map((f) => f.name.toLowerCase()));
@@ -210,7 +213,9 @@ export const RunPlaybookModal = ({
     // Name is required unless the playbook has a name template.
     // In template mode the resolved preview must also fit within the limit so the backend
     // accepts it; the raw template string itself is not validated against the limit.
-    const nameValid = hasTemplate ? (namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH) : (runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH);
+    const templateNameValid = namePreview === '' || [...namePreview].length <= RUN_NAME_MAX_LENGTH;
+    const freeNameValid = runName !== '' && [...runName].length <= RUN_NAME_MAX_LENGTH;
+    const nameValid = hasTemplate ? templateNameValid : freeNameValid;
 
     const namePreviewTooLong = hasTemplate && [...namePreview].length > RUN_NAME_MAX_LENGTH;
 
@@ -226,7 +231,7 @@ export const RunPlaybookModal = ({
         return true;
     });
 
-    const isFormValid = nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
+    const isFormValid = !attributesLoading && nameValid && requiredFieldsFilled && unmatchedTemplateNames.length === 0 && (createNewChannel || channelId !== '');
 
     const handleSetChannelMode = useCallback((mode: 'link_existing_channel' | 'create_new_channel') => {
         setChannelMode(mode);
@@ -246,6 +251,23 @@ export const RunPlaybookModal = ({
         setSelectedPlaybookId(id);
         setStep('run-details');
     }, []);
+    const buildStatsData = (isNewChannel: boolean, isLinkedChannel: boolean): Parameters<typeof onRunCreated>[2] => ({
+        playbookId: selectedPlaybookId,
+        channelMode,
+        public: isNewChannel ? createPublicRun : undefined,
+        hasPlaybookChanged: playbookId !== selectedPlaybookId,
+        hasNameChanged: playbook!.channel_name_template ? false : runName !== '',
+        hasSummaryChanged: runSummary !== (playbook!.run_summary_template_enabled ? playbook!.run_summary_template : ''),
+        hasChannelModeChanged: channelMode !== playbook!.channel_mode,
+        hasChannelIdChanged: channelId !== playbook!.channel_id,
+        hasPublicChanged: !isLinkedChannel && createPublicRun !== playbook!.create_public_playbook_run,
+    });
+
+    const resetSubmitting = useCallback(() => {
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+    }, []);
+
     const onSubmit = useCallback(() => {
         if (!playbook || !selectedPlaybookId || playbook.id !== selectedPlaybookId || isSubmittingRef.current) {
             return;
@@ -284,40 +306,29 @@ export const RunPlaybookModal = ({
                 pvToSend,
             );
         } catch {
-            isSubmittingRef.current = false;
-            setIsSubmitting(false);
+            resetSubmitting();
             setSubmitError(formatMessage({id: 'playbooks.run_playbook_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
             return;
         }
         runPromise
             .then((newPlaybookRun) => {
-                isSubmittingRef.current = false;
                 if (!isMountedRef.current) {
+                    resetSubmitting();
                     return;
                 }
-                setIsSubmitting(false);
-                const statsData = {
-                    playbookId: selectedPlaybookId,
-                    channelMode,
-                    public: isNewChannel ? createPublicRun : undefined,
-                    hasPlaybookChanged: playbookId !== selectedPlaybookId,
-                    hasNameChanged: playbook.channel_name_template ? false : runName !== '',
-                    hasSummaryChanged: runSummary !== (playbook.run_summary_template_enabled ? playbook.run_summary_template : ''),
-                    hasChannelModeChanged: channelMode !== playbook.channel_mode,
-                    hasChannelIdChanged: channelId !== playbook.channel_id,
-                    hasPublicChanged: !isLinkedChannel && createPublicRun !== playbook.create_public_playbook_run,
-                };
+                resetSubmitting();
+                const statsData = buildStatsData(isNewChannel, isLinkedChannel);
                 onRunCreated(newPlaybookRun.id, newPlaybookRun.channel_id, statsData);
                 onHide?.();
             }).catch(() => {
-                isSubmittingRef.current = false;
                 if (!isMountedRef.current) {
+                    resetSubmitting();
                     return;
                 }
+                resetSubmitting();
                 setSubmitError(formatMessage({id: 'playbooks.run_playbook_modal.submit_error', defaultMessage: 'An error occurred while creating the run.'}));
-                setIsSubmitting(false);
             });
-    }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, onHide, onRunCreated, formatMessage]);
+    }, [playbook, selectedPlaybookId, isFormValid, propertyValues, userId, runName, runSummary, channelId, createPublicRun, channelMode, playbookId, onHide, onRunCreated, formatMessage, resetSubmitting, buildStatsData]);
 
     // Start a run tab
     if (step === 'run-details') {
@@ -473,13 +484,13 @@ export const RunPlaybookModal = ({
     );
 };
 
-type runNameProps = {
+type RunNameProps = {
     runName: string;
     onSetRunName: (name: string) => void;
     readOnly?: boolean;
 };
 
-const RunNameSection = ({runName, onSetRunName, readOnly}: runNameProps) => {
+const RunNameSection = ({runName, onSetRunName, readOnly}: RunNameProps) => {
     const {formatMessage} = useIntl();
     const [error, setError] = useState('');
 
@@ -525,7 +536,7 @@ const RunNameSection = ({runName, onSetRunName, readOnly}: runNameProps) => {
     </>);
 };
 
-type channelProps = {
+type ChannelProps = {
     teamId: string;
     channelMode: string;
     channelId: string;
@@ -535,7 +546,7 @@ type channelProps = {
     onSetChannelId: (channelId: string) => void;
 };
 
-const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: channelProps) => {
+const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, onSetCreatePublicRun, onSetChannelMode, onSetChannelId}: ChannelProps) => {
     const {formatMessage} = useIntl();
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';

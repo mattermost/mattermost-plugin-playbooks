@@ -659,7 +659,7 @@ func (s *playbookRunStore) UpdatePlaybookRunOwner(playbookRunID, ownerUserID str
 	// We also read the current ChecklistsJSON here — inside the lock — so the
 	// transform sees the latest state and concurrent checklist mutations are not lost.
 	lockQuery := s.store.builder.
-		Select("checklistsjson").
+		Select("ChecklistsJSON").
 		From("IR_Incident").
 		Where(sq.Eq{"ID": playbookRunID}).
 		Where(sq.Eq{"DeleteAt": 0}).
@@ -734,7 +734,7 @@ func (s *playbookRunStore) UpdatePlaybookRunChecklistsAtomic(playbookRunID strin
 	// We read the current ChecklistsJSON here — inside the lock — so the
 	// transform sees the latest state and concurrent checklist mutations are not lost.
 	lockQuery := s.store.builder.
-		Select("checklistsjson").
+		Select("ChecklistsJSON").
 		From("IR_Incident").
 		Where(sq.Eq{"ID": playbookRunID}).
 		Where(sq.Eq{"DeleteAt": 0}).

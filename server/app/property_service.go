@@ -832,9 +832,8 @@ func normalizeDateValue(value json.RawMessage) (json.RawMessage, error) {
 		return value, nil
 	}
 
-	if _, err := time.Parse("2006-01-02", stringValue); err == nil {
+	if t, err := time.Parse("2006-01-02", stringValue); err == nil {
 		// Bare YYYY-MM-DD — treat as UTC midnight and store as RFC3339
-		t, _ := time.Parse("2006-01-02", stringValue)
 		return json.Marshal(t.UTC().Format(time.RFC3339))
 	}
 
@@ -906,21 +905,12 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 	return registeredGroup.ID, nil
 }
 
-var reservedFieldNames = []struct {
-	token string
-	desc  string
-}{
-	{"SEQ", "the built-in sequential ID placeholder"},
-	{"OWNER", "the built-in run owner placeholder"},
-	{"CREATOR", "the built-in run creator placeholder"},
-}
-
 // validateReservedFieldName rejects field names that would conflict with built-in
-// template placeholders or system fields. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
+// template placeholders. Reserved names: SEQ, OWNER, CREATOR (case-insensitive).
 func validateReservedFieldName(name string) error {
-	for _, r := range reservedFieldNames {
-		if strings.EqualFold(name, r.token) {
-			return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+r.token+"' is reserved for "+r.desc)
+	for _, tok := range systemTokens {
+		if strings.EqualFold(name, tok.Name) {
+			return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+tok.Name+"' is reserved for "+tok.Description)
 		}
 	}
 	return nil

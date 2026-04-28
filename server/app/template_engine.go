@@ -1,6 +1,14 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// Template engine for resolving channel/run name placeholders.
+//
+// KEEP IN SYNC with webapp/src/utils/template_utils.ts. The webapp computes a
+// client-side preview using the same {Token} placeholder syntax, the same set
+// of system tokens (SEQ, OWNER, CREATOR), and the same per-type formatting
+// rules. Diverging the two implementations causes the preview shown in the
+// run-creation modal to drift from the resolved name the server actually stores.
+
 package app
 
 import (
@@ -19,6 +27,11 @@ var placeholderRegex = regexp.MustCompile(`\{([^}]+)\}`)
 // seqTokenRegex matches {SEQ} case-insensitively with optional surrounding whitespace,
 // consistent with the whitespace-trimming behaviour of ResolveTemplate.
 var seqTokenRegex = regexp.MustCompile(`(?i)\{\s*SEQ\s*\}`)
+
+// epochMsMin is the minimum value (Sep 2001) treated as an epoch-millisecond timestamp;
+// values below this are not formatted as dates. KEEP IN SYNC with EPOCH_MS_MIN in
+// webapp/src/utils/template_utils.ts.
+const epochMsMin = 1_000_000_000_000
 
 var (
 	collapseOrphanedSeparatorsRe = regexp.MustCompile(`\s*-\s*-\s*`)
@@ -49,14 +62,22 @@ type ResolveOptions struct {
 	FormatFunc   FormatFunc        // Nil uses DefaultFormatPropertyValue.
 }
 
-// systemTokenNames are built-in token names recognized by ValidateTemplate.
+// systemTokens are the built-in token names recognized by ValidateTemplate.
 // These are always valid in templates, even when no fields are provided.
-var systemTokenNames = []string{"SEQ", "OWNER", "CREATOR"}
+// Reserved as property field names — see validateReservedFieldName.
+var systemTokens = []struct {
+	Name        string
+	Description string
+}{
+	{"SEQ", "the built-in sequential ID placeholder"},
+	{"OWNER", "the built-in run owner placeholder"},
+	{"CREATOR", "the built-in run creator placeholder"},
+}
 
 // isSystemToken checks if a name matches a built-in system token (case-insensitive).
 func isSystemToken(name string) bool {
-	for _, tok := range systemTokenNames {
-		if strings.EqualFold(name, tok) {
+	for _, tok := range systemTokens {
+		if strings.EqualFold(name, tok.Name) {
 			return true
 		}
 	}
@@ -267,7 +288,7 @@ func DefaultFormatPropertyValue(field *PropertyField, raw json.RawMessage) (stri
 	case model.PropertyFieldTypeDate:
 		// First try unmarshaling as a number (JSON numeric date stored as millis)
 		var numValue float64
-		if json.Unmarshal(raw, &numValue) == nil && numValue > 0 {
+		if json.Unmarshal(raw, &numValue) == nil && numValue > epochMsMin {
 			return time.UnixMilli(int64(numValue)).UTC().Format("2006-01-02"), false
 		}
 		var stringValue string

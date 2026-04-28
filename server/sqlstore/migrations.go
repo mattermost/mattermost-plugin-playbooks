@@ -1786,20 +1786,6 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating unique index IR_Incident_PlaybookID_RunNumber_Unique")
 			}
 
-			// Backfill: playbooks with status updates enabled and a zero-or-negative reminder
-			// interval. The column default is 0 (added before validation was enforced), so
-			// existing rows may have 0 which ValidateStatusUpdateConfig auto-coerces to
-			// defaultReminderTimerSeconds (900) at runtime; this migration aligns the stored
-			// DB value with that runtime behaviour.
-			if _, err := sqlStore.execBuilder(e, sq.
-				Update("IR_Playbook").
-				Set("ReminderTimerDefaultSeconds", 900).
-				Where(sq.Eq{"StatusUpdateEnabled": true}).
-				Where(sq.LtOrEq{"ReminderTimerDefaultSeconds": 0}),
-			); err != nil {
-				return errors.Wrapf(err, "failed to backfill ReminderTimerDefaultSeconds for status-update-enabled playbooks")
-			}
-
 			return nil
 		},
 	},

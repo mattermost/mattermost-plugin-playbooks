@@ -95,7 +95,7 @@ func (mr *MockPropertyServiceMockRecorder) DeletePropertyField(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePropertyField", reflect.TypeOf((*MockPropertyService)(nil).DeletePropertyField), arg0, arg1)
 }
 
-// GetPropertyField mocks base method.
+// GetGroupID mocks base method.
 func (m *MockPropertyService) GetGroupID() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGroupID")
@@ -109,6 +109,7 @@ func (mr *MockPropertyServiceMockRecorder) GetGroupID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroupID", reflect.TypeOf((*MockPropertyService)(nil).GetGroupID))
 }
 
+// GetPropertyField mocks base method.
 func (m *MockPropertyService) GetPropertyField(arg0 string) (*app.PropertyField, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPropertyField", arg0)
