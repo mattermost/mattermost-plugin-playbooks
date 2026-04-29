@@ -1,12 +1,7 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
+import React, {useState} from 'react';
 import {useUpdateEffect} from 'react-use';
 import {DateTime} from 'luxon';
 import styled from 'styled-components';
@@ -232,14 +227,7 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
     const [metadata] = useRunMetadata(id);
     const [followers, setFollowers] = useState(metadata?.followers || []);
     const [isFollowing, setIsFollowing] = useState(followers.includes(currentUser.id));
-    const [isToggling, setIsToggling] = useState(false);
     const addToast = useToaster().add;
-    const isMountedRef = useRef(true);
-    useEffect(() => {
-        return () => {
-            isMountedRef.current = false;
-        };
-    }, []);
 
     useUpdateEffect(() => {
         const newFollowers = metadata?.followers || [];
@@ -247,34 +235,22 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
         setIsFollowing(newFollowers.includes(currentUser.id));
     }, [currentUser.id, JSON.stringify(metadata?.followers)]);
 
-    const toggleFollow = useCallback(() => {
-        if (isToggling) {
-            return;
-        }
-        setIsToggling(true);
+    const toggleFollow = () => {
         const action = isFollowing ? unfollowPlaybookRun : followPlaybookRun;
         action(id)
             .then(() => {
-                if (!isMountedRef.current) {
-                    return;
-                }
                 const newFollowers = isFollowing ? followers.filter((userId) => userId !== currentUser.id) : [...followers, currentUser.id];
                 setIsFollowing(!isFollowing);
                 setFollowers(newFollowers);
-                setIsToggling(false);
             })
             .catch(() => {
-                if (!isMountedRef.current) {
-                    return;
-                }
                 setIsFollowing(isFollowing);
-                setIsToggling(false);
                 addToast({
                     content: formatMessage({defaultMessage: 'It was not possible to {isFollowing, select, true {unfollow} other {follow}} the run'}, {isFollowing}),
                     toastStyle: ToastStyle.Failure,
                 });
             });
-    }, [isToggling, isFollowing, id, followers, currentUser.id, addToast, formatMessage]);
+    };
 
     if (isFollowing) {
         return (
