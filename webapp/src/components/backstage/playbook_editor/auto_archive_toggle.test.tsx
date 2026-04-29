@@ -6,8 +6,6 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
 
-import {makeBasePlaybook} from 'src/utils/test_helpers';
-
 import AutoArchiveToggle from './auto_archive_toggle';
 
 jest.mock('src/components/backstage/playbook_edit/automation/toggle', () => ({
@@ -44,8 +42,10 @@ jest.mock('src/components/widgets/tooltip', () => ({
     ),
 }));
 
-const makePlaybook = (autoArchiveChannel: boolean, channelMode = 'create_new_channel') =>
-    makeBasePlaybook({auto_archive_channel: autoArchiveChannel, channel_mode: channelMode});
+const makePlaybook = (autoArchiveChannel: boolean, channelMode = 'create_new_channel') => ({
+    auto_archive_channel: autoArchiveChannel,
+    channel_mode: channelMode,
+});
 
 describe('AutoArchiveToggle', () => {
     it('renders toggle with auto_archive_channel=false', () => {

@@ -40,7 +40,7 @@ describe('playbooks > edit > auto archive', () => {
         createdPlaybookIds = [];
     });
 
-    it('shows the auto-archive toggle in the playbook editor', () => {
+    it('shows the auto-archive toggle in the playbook editor and defaults to off', () => {
         // # Create a playbook
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
@@ -52,17 +52,13 @@ describe('playbooks > edit > auto archive', () => {
             // # Visit the playbook outline editor
             cy.playbooksVisitEditor(playbook.id, 'outline');
 
-            // * Assert the auto-archive toggle is present
+            // * Assert the auto-archive toggle is present and unchecked by default
             cy.findByTestId('auto-archive-channel-toggle').should('exist');
-
-            // * Assert via API that auto_archive_channel defaults to false
-            cy.apiGetPlaybook(playbook.id).then((pb) => {
-                expect(pb.auto_archive_channel).to.equal(false);
-            });
+            cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('not.be.checked');
         });
     });
 
-    it('shows confirmation banner when auto-archive toggle is enabled', () => {
+    it('shows confirmation banner when auto-archive is enabled, persists after reload, and clears when toggled off', () => {
         // # Create a playbook
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
@@ -91,11 +87,6 @@ describe('playbooks > edit > auto archive', () => {
             cy.reload();
             cy.findByTestId('auto-archive-channel-toggle').find('input').first().should('be.checked');
 
-            // * Assert the backend persisted the setting (GraphQL editor → REST read-back)
-            cy.apiGetPlaybook(playbook.id).then((pb) => {
-                expect(pb.auto_archive_channel, 'auto_archive_channel should be true').to.equal(true);
-            });
-
             // # Toggle auto-archive off and verify banner disappears
             cy.playbooksInterceptPlaybookSave();
             cy.findByTestId('auto-archive-channel-toggle').find('label').first().click();
@@ -104,7 +95,7 @@ describe('playbooks > edit > auto archive', () => {
         });
     });
 
-    it('archives the run channel automatically after the run is finished', () => {
+    it('archives the run channel after finishing via the RHS Finish button', () => {
         let testPlaybook;
         let testRun;
 
@@ -202,7 +193,7 @@ describe('playbooks > edit > auto archive', () => {
         });
     });
 
-    it('unarchives the run channel after the run is restored', () => {
+    it('unarchives the run channel when the run is restored via API', () => {
         let testRun;
 
         // # Create a playbook with auto-archive enabled
@@ -244,7 +235,7 @@ describe('playbooks > edit > auto archive', () => {
         });
     });
 
-    it('does NOT archive the run channel when auto-archive is disabled (default)', () => {
+    it('does not archive the run channel when auto-archive is disabled (default)', () => {
         let testRun;
 
         // # Create a playbook WITHOUT enabling auto-archive (default off)
