@@ -595,13 +595,8 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	// Set ReporterUserID early so BuildSystemTokens can resolve the {CREATOR} template token
-	// during ResolveRunCreationParams. CreatePlaybookRun will set it again (same value).
-	playbookRun.ReporterUserID = userID
-	// Pre-set OwnerUserID so the {OWNER} template token resolves during ResolveRunCreationParams.
-	// Priority: explicit caller value > DefaultOwnerID.
-	// Team membership is validated inside ResolveRunCreationParams; if the owner is not a team
-	// member, OwnerUserID is cleared and re-validated before creation proceeds.
+	// Apply DefaultOwnerID fallback. Team membership is validated inside ResolveRunCreationParams;
+	// if the owner is not a team member, OwnerUserID is cleared and re-validated before creation proceeds.
 	if playbookRun.OwnerUserID == "" && playbookRun.DefaultOwnerID != "" {
 		playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
 	}
@@ -612,35 +607,14 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	// Resolve template placeholders and allocate sequential run numbers.
 	// Creation rules evaluated inside ResolveRunCreationParams may inject a new ChannelID;
 	// re-check channel access afterwards if it changed.
-	channelIDBeforeResolve := playbookRun.ChannelID
 	var resolvedChannelName string
 	if playbook != nil {
+		// Pre-set ReporterUserID so {CREATOR} resolves during template resolution.
+		// CreatePlaybookRun will set it again (same value).
+		playbookRun.ReporterUserID = userID
 		resolvedChannelName, err = h.playbookRunService.ResolveRunCreationParams(&playbookRun, playbook, initialPropertyValues, source)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to resolve run creation params")
-		}
-	}
-
-	// Re-validate channel access if a creation rule injected a new channel.
-	if playbookRun.ChannelID != "" && playbookRun.ChannelID != channelIDBeforeResolve {
-		injectedChannel, chErr := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
-		if chErr != nil {
-			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "creation rule specified an invalid channel")
-		}
-		if injectedChannel.IsGroupOrDirect() {
-			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "creation rule: cannot inject a direct or group message channel")
-		}
-		injectedPerm := model.PermissionManagePublicChannelProperties
-		injectedMsg := "You do not have permission to manage this channel"
-		if injectedChannel.Type == model.ChannelTypePrivate {
-			injectedPerm = model.PermissionManagePrivateChannelProperties
-		}
-		if !h.pluginAPI.User.HasPermissionToChannel(userID, injectedChannel.Id, injectedPerm) {
-			return nil, errors.Wrap(app.ErrNoPermissions, injectedMsg)
-		}
-		// Prevent cross-team channel injection: the injected channel must belong to the run's team.
-		if injectedChannel.TeamId != playbookRun.TeamID {
-			return nil, errors.Wrap(app.ErrNoPermissions, "creation rule: channel does not belong to the run's team")
 		}
 	}
 
