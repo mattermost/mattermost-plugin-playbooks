@@ -51,12 +51,12 @@
     },
     {
         "id": "app.user.run.confirm_finish.submit_label",
-        "translation": "実行を終了する"
+        "translation": "終了する"
     },
     {
         "id": "app.user.run.confirm_finish.num_outstanding",
         "translation": {
-            "other": "**{{.Count}} 個の未処理のタスク**があります。 すべての参加者の実行 *{{.RunName}}* を終了してもよろしいですか?"
+            "other": "**{{.Count}} 個の未処理のタスク**があります。 すべての参加者の *{{.RunName}}* を終了してもよろしいですか?"
         }
     },
     {
