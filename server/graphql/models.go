@@ -3,6 +3,17 @@
 
 package graphql
 
+type Enum__TypeKind string
+
+const Enum__TypeKindSCALAR Enum__TypeKind = "SCALAR"
+const Enum__TypeKindOBJECT Enum__TypeKind = "OBJECT"
+const Enum__TypeKindINTERFACE Enum__TypeKind = "INTERFACE"
+const Enum__TypeKindUNION Enum__TypeKind = "UNION"
+const Enum__TypeKindENUM Enum__TypeKind = "ENUM"
+const Enum__TypeKindINPUT_OBJECT Enum__TypeKind = "INPUT_OBJECT"
+const Enum__TypeKindLIST Enum__TypeKind = "LIST"
+const Enum__TypeKindNON_NULL Enum__TypeKind = "NON_NULL"
+
 type Enum__DirectiveLocation string
 
 const Enum__DirectiveLocationQUERY Enum__DirectiveLocation = "QUERY"
@@ -48,17 +59,6 @@ const EnumPropertyFieldTypemultiselect EnumPropertyFieldType = "multiselect"
 const EnumPropertyFieldTypedate EnumPropertyFieldType = "date"
 const EnumPropertyFieldTypeuser EnumPropertyFieldType = "user"
 const EnumPropertyFieldTypemultiuser EnumPropertyFieldType = "multiuser"
-
-type Enum__TypeKind string
-
-const Enum__TypeKindSCALAR Enum__TypeKind = "SCALAR"
-const Enum__TypeKindOBJECT Enum__TypeKind = "OBJECT"
-const Enum__TypeKindINTERFACE Enum__TypeKind = "INTERFACE"
-const Enum__TypeKindUNION Enum__TypeKind = "UNION"
-const Enum__TypeKindENUM Enum__TypeKind = "ENUM"
-const Enum__TypeKindINPUT_OBJECT Enum__TypeKind = "INPUT_OBJECT"
-const Enum__TypeKindLIST Enum__TypeKind = "LIST"
-const Enum__TypeKindNON_NULL Enum__TypeKind = "NON_NULL"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`
