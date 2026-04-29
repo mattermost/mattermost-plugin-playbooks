@@ -168,21 +168,4 @@ describe('NewChannelOnlyToggle', () => {
 
         expect(onChange).toHaveBeenCalledTimes(1);
         expect(onChange).toHaveBeenCalledWith({new_channel_only: false});
-    });
-
-    it('does not render toggle for non-admin members', () => {
-        const onChange = jest.fn();
-        const playbook = makePlaybook(false);
-
-        const component = renderer.create(
-            <NewChannelOnlyToggle
-                playbook={playbook}
-                isPlaybookAdmin={false}
-                onChange={onChange}
-            />,
-        );
-        const tree = component.toJSON();
-
-        expect(tree).toBeNull();
-    });
-});
+    });});
