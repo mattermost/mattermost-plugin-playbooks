@@ -1301,27 +1301,40 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	s.metricsService.IncrementRunsFinishedCount(1)
 
-	if s.tryAutoArchiveChannel(playbookRunToModify, logger) {
+	if s.shouldAutoArchiveChannel(playbookRunToModify, logger) {
+		// Persist the flag first so that if the archive call fails and we reset the flag,
+		// the worst-case double-failure leaves AutoArchivedChannel=true in the DB (safe: the
+		// next restore will call restoreChannelByID which no-ops on an already-active channel
+		// and clears the flag). The old "archive first, persist second" order could leave the
+		// channel permanently archived with AutoArchivedChannel=false.
 		playbookRunToModify.AutoArchivedChannel = true
 		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-			// Persist failed: roll back the channel archive so the channel and the run marker stay in
-			// sync. Without rollback, restore would never know to unarchive the channel.
-			logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; rolling back channel archive")
-			if !s.restoreChannelByID(playbookRunToModify.ChannelID, logger) {
-				logger.WithField("channel_id", playbookRunToModify.ChannelID).
-					Error("channel archive rollback failed; channel is archived but AutoArchivedChannel=false — manual channel restore required")
-			}
+			logger.WithError(err).Warn("failed to persist AutoArchivedChannel flag; skipping channel archive")
 		} else {
 			playbookRunToModify = updatedRun
-			archiveEvent := &TimelineEvent{
-				PlaybookRunID: playbookRunID,
-				CreateAt:      endAt + 1,
-				EventAt:       endAt + 1,
-				EventType:     ChannelArchived,
-				SubjectUserID: userID,
-			}
-			if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
-				logger.WithError(err).Warn("failed to create channel_archived timeline event")
+			if err := s.pluginAPI.Channel.Delete(playbookRunToModify.ChannelID); err != nil {
+				logger.WithError(err).Warn("failed to auto-archive channel on run finish; resetting AutoArchivedChannel flag")
+				playbookRunToModify.AutoArchivedChannel = false
+				if resetRun, resetErr := s.store.UpdatePlaybookRun(playbookRunToModify); resetErr != nil {
+					// Flag is true but channel is not archived. The next restore will call
+					// restoreChannelByID, which returns alreadyActive=true for an active
+					// channel and clears the flag as a no-op — safe recovery path.
+					logger.WithField("channel_id", playbookRunToModify.ChannelID).
+						WithError(resetErr).Error("failed to reset AutoArchivedChannel after archive failure — flag is true but channel not archived; next restore will clear it")
+				} else {
+					playbookRunToModify = resetRun
+				}
+			} else {
+				archiveEvent := &TimelineEvent{
+					PlaybookRunID: playbookRunID,
+					CreateAt:      endAt + 1,
+					EventAt:       endAt + 1,
+					EventType:     ChannelArchived,
+					SubjectUserID: userID,
+				}
+				if _, err := s.store.CreateTimelineEvent(archiveEvent); err != nil {
+					logger.WithError(err).Warn("failed to create channel_archived timeline event")
+				}
 			}
 		}
 	}
@@ -1581,11 +1594,9 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 	return nil
 }
 
-// tryAutoArchiveChannel archives the run's channel if the playbook has AutoArchiveChannel=true
-// and the channel was created by the run. Executes as the plugin bot (no user permission check
-// needed — the channel was created by this plugin and the playbook admin opted in). Returns true
-// if the channel was archived. Best-effort: errors are logged and ignored.
-func (s *PlaybookRunServiceImpl) tryAutoArchiveChannel(run *PlaybookRun, logger *logrus.Entry) bool {
+// shouldAutoArchiveChannel returns true if the run's channel should be auto-archived on finish:
+// the playbook has AutoArchiveChannel=true and the channel was created by this run (not linked).
+func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun, logger *logrus.Entry) bool {
 	if !run.ChannelCreatedByRun || run.ChannelID == "" || run.PlaybookID == "" {
 		return false
 	}
@@ -1594,14 +1605,7 @@ func (s *PlaybookRunServiceImpl) tryAutoArchiveChannel(run *PlaybookRun, logger 
 		logger.WithError(err).Warn("failed to load playbook for auto-archive check; channel will not be archived")
 		return false
 	}
-	if !pb.AutoArchiveChannel {
-		return false
-	}
-	if err := s.pluginAPI.Channel.Delete(run.ChannelID); err != nil {
-		logger.WithError(err).Warn("failed to auto-archive channel on run finish")
-		return false
-	}
-	return true
+	return pb.AutoArchiveChannel
 }
 
 // restoreChannelByID clears DeleteAt on the given channel (un-archives it).
