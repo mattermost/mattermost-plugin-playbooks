@@ -2,11 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {
-    Children,
-    ReactNode,
-    useState,
-} from 'react';
+import React, {Children, ReactNode, useState} from 'react';
 
 import {useIntl} from 'react-intl';
 

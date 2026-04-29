@@ -189,8 +189,8 @@ describe('Outline — auto-archive optimistic state', () => {
         expect(capturedAutoArchiveChannel).toBe(false);
     });
 
-    it('clears the optimistic override once the server state catches up to it', () => {
-        // savePlaybook never resolves — we control the restPlaybook prop instead
+    it('effective value stays correct when restPlaybook updates while an override is active', () => {
+        // savePlaybook never resolves — we control restPlaybook directly
         savePlaybook.mockReturnValue(new Promise(() => undefined));
 
         let component!: renderer.ReactTestRenderer;
@@ -205,13 +205,12 @@ describe('Outline — auto-archive optimistic state', () => {
             );
         });
 
-        // Apply optimistic override: true
         act(() => {
             capturedOnAutoArchiveChange!({auto_archive_channel: true});
         });
         expect(capturedAutoArchiveChannel).toBe(true);
 
-        // Simulate the server catching up: re-render with updated restPlaybook
+        // Simulate restPlaybook updating (e.g. a background refetch) while override is active
         act(() => {
             component.update(
                 <Outline
@@ -222,7 +221,6 @@ describe('Outline — auto-archive optimistic state', () => {
             );
         });
 
-        // Override is cleared; effectiveAutoArchive is now driven by restPlaybook
         expect(capturedAutoArchiveChannel).toBe(true);
     });
 });
