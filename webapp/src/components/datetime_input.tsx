@@ -48,13 +48,15 @@ export type Option = {
 }
 
 export const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durations, mode) => {
-    if (!query) {
+    // Treat blank / whitespace as "no query" so DateTimeSelector can keep showing suggestedOptions
+    // (a truthy all-spaces string would otherwise yield [] and replace presets with an empty list).
+    if (query == null || !String(query).trim()) {
         return null;
     }
 
     let options: Option[] = [];
 
-    if (datetimes.length && mode === Mode.DateTimeValue) {
+    if (datetimes?.length && mode === Mode.DateTimeValue) {
         options = options.concat(datetimes.map((datetime) => ({value: datetime})));
     }
 
@@ -67,7 +69,9 @@ export const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durat
         }
     }
 
-    return options;
+    // Empty [] is not the same as null: callers use null to mean "keep parent suggestions".
+    // A non-matching query would otherwise return [] and replace suggestedOptions with an empty list.
+    return options.length > 0 ? options : null;
 };
 
 type Props = {
@@ -98,9 +102,11 @@ const DateTimeInput = ({
     const {locale, formatMessage} = useIntl();
 
     const updateOptions = useMemo(() => debounce((query: string) => {
-        const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = parse(locale, query, Mode.DurationValue);
-        setOptions(makeOptions(query, datetimes, duration ? [duration] : [], mode) || null);
+        const q = (query || '').trim();
+        const dateParse = parseDateTimes(locale, q) ?? [];
+        const datetimes = dateParse.map(({start}) => DateTime.fromJSDate(start.date()));
+        const duration = parse(locale, q, Mode.DurationValue);
+        setOptions(makeOptions(q, datetimes, duration ? [duration] : [], mode) || null);
     }, 150), [locale, setOptions, makeOptions, mode]);
 
     return (
