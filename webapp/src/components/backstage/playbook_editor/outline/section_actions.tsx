@@ -188,6 +188,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                             <NewChannelOnlyToggle
                                 playbook={playbook}
                                 isPlaybookAdmin={isPlaybookAdmin}
+                                isSystemAdmin={isSystemAdmin}
                                 disabled={archived}
                                 onChange={({new_channel_only}) => {
                                     updatePlaybook({

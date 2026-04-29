@@ -13,11 +13,12 @@ interface PlaybookLike {
 interface Props {
     playbook: PlaybookLike;
     isPlaybookAdmin: boolean;
+    isSystemAdmin?: boolean;
     onChange: (updated: {new_channel_only: boolean}) => void;
     disabled?: boolean;
 }
 
-const NewChannelOnlyToggle = ({playbook, isPlaybookAdmin, onChange, disabled}: Props) => {
+const NewChannelOnlyToggle = ({playbook, onChange, disabled}: Props) => {
     const {formatMessage} = useIntl();
 
     const handleChange = useCallback((value: boolean) => {
@@ -29,10 +30,6 @@ const NewChannelOnlyToggle = ({playbook, isPlaybookAdmin, onChange, disabled}: P
         message: formatMessage({id: 'playbooks.new_channel_only_toggle.confirm_message', defaultMessage: 'Enabling this will prevent runs from linking to existing channels. All future runs will create a new channel. Continue?'}),
         confirmButtonText: formatMessage({id: 'playbooks.new_channel_only_toggle.confirm_button', defaultMessage: 'Confirm'}),
     }), [formatMessage]);
-
-    if (!isPlaybookAdmin) {
-        return null;
-    }
 
     return (
         <BooleanToggle

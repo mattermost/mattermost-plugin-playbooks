@@ -354,7 +354,9 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
-// normalizeAndValidateRunCreationParams normalizes run parameters and validates pre-creation constraints.
+// normalizeAndValidateRunCreationParams applies playbook constraints to a run before creation.
+// Normalizes PlaybookID from the playbook if not already set.
+// Validates playbook-level constraints: NewChannelOnly forbids explicit ChannelID, and PlaybookID must match if both are provided.
 func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
 	if playbookRun == nil {
 		return errors.New("playbookRun cannot be nil")
@@ -369,7 +371,7 @@ func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playboo
 		playbookRun.PlaybookID = pb.ID
 	}
 	if pb.NewChannelOnly && playbookRun.ChannelID != "" {
-		return errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires runs to use a new channel")
+		return errors.Wrap(ErrMalformedPlaybookRun, "this playbook requires runs to create a new channel, but a channel_id was provided")
 	}
 	return nil
 }

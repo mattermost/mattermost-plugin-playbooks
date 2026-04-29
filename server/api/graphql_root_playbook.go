@@ -299,9 +299,8 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "RunSummaryTemplate", args.Updates.RunSummaryTemplate)
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
-	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
-	addToSetmap(setmap, "NewChannelOnly", args.Updates.NewChannelOnly)
 
+	// Validate ChannelMode and NewChannelOnly before adding to setmap
 	if args.Updates.NewChannelOnly != nil || args.Updates.ChannelMode != nil {
 		effectiveNewChannelOnly := currentPlaybook.NewChannelOnly
 		if args.Updates.NewChannelOnly != nil {
@@ -317,6 +316,10 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 			return "", err
 		}
 	}
+
+	// Add validated values to setmap
+	addToSetmap(setmap, "NewChannelOnly", args.Updates.NewChannelOnly)
+	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 
 	// Not optimal graphql. Stopgap measure. Should be updated separately.
 	if args.Updates.Checklists != nil {

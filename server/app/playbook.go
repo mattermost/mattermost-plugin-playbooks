@@ -625,7 +625,7 @@ func ValidateWebhookURLs(urls []string) error {
 // is set to link an existing channel.
 func ValidateNewChannelOnlyMode(newChannelOnly bool, channelMode ChannelPlaybookMode) error {
 	if newChannelOnly && channelMode == PlaybookRunLinkExistingChannel {
-		return errors.New("this playbook requires runs to create a new channel and cannot be set to link an existing channel")
+		return errors.New("this playbook requires runs to create a new channel, but the channel mode is set to link an existing channel")
 	}
 	return nil
 }
