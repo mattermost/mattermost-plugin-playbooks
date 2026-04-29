@@ -1971,17 +1971,35 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 		assert.False(t, confirmed.AdminOnlyEdit)
 	})
 
-	t.Run("playbook admin (non-sysadmin) enabling AdminOnlyEdit returns 403", func(t *testing.T) {
-		// RegularUser2 is a playbook_admin but not a system admin — enabling the flag must be sysadmin-only.
+	t.Run("playbook admin (non-sysadmin) can enable AdminOnlyEdit", func(t *testing.T) {
+		// Ensure the flag is off before the test (self-contained).
 		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
 		require.NoError(t, err)
+		pb.AdminOnlyEdit = false
+		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
 
+		// RegularUser2 is a non-sysadmin playbook admin — enabling the flag should be allowed (symmetric with disable).
+		pb.AdminOnlyEdit = true
+		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+		require.NoError(t, err)
+
+		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
+		assert.True(t, confirmed.AdminOnlyEdit)
+	})
+
+	t.Run("non-admin member cannot enable AdminOnlyEdit", func(t *testing.T) {
+		// Reset to off as sysadmin; RegularUser is a plain member, so flipping the flag
+		// must be denied regardless of direction.
+		pb, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
+		require.NoError(t, err)
 		pb.AdminOnlyEdit = false
 		err = e.PlaybooksAdminClient.Playbooks.Update(context.Background(), *pb)
 		require.NoError(t, err)
 
 		pb.AdminOnlyEdit = true
-		err = e.PlaybooksClient2.Playbooks.Update(context.Background(), *pb)
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *pb)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 
 		confirmed, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), playbookID)
@@ -1990,20 +2008,22 @@ func TestAdminOnlyEdit_APIEnforcement(t *testing.T) {
 	})
 }
 
-// TestAdminOnlyEdit_Create verifies that only system admins can create a playbook
-// with AdminOnlyEdit pre-enabled.
+// TestAdminOnlyEdit_Create verifies that any user with playbook-create permission
+// can create a playbook with AdminOnlyEdit pre-enabled, since the creator becomes
+// the implicit admin of the new playbook.
 func TestAdminOnlyEdit_Create(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	t.Run("regular user creating playbook with AdminOnlyEdit=true returns 403", func(t *testing.T) {
-		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	t.Run("regular user creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:         "Non-Admin AdminOnlyEdit Playbook",
 			TeamID:        e.BasicTeam.Id,
 			Public:        true,
 			AdminOnlyEdit: true,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		require.NoError(t, err)
+		require.NotEmpty(t, id)
 	})
 
 	t.Run("system admin creating playbook with AdminOnlyEdit=true succeeds", func(t *testing.T) {
@@ -2018,24 +2038,39 @@ func TestAdminOnlyEdit_Create(t *testing.T) {
 	})
 }
 
-// TestAdminOnlyEdit_Duplicate verifies that non-sysadmins cannot duplicate a playbook
-// that has AdminOnlyEdit enabled.
+// TestAdminOnlyEdit_Duplicate verifies the duplicate-time gate: when the source
+// playbook has AdminOnlyEdit=true, only playbook admins of the source or system
+// admins may duplicate it. Non-admin members must not be able to spawn editable
+// copies of an admin-locked configuration.
 func TestAdminOnlyEdit_Duplicate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 	e.SetEnterpriseLicence()
 
+	// Source is locked. RegularUser is a plain member; RegularUser2 is a playbook admin.
 	playbookID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:         "AdminOnlyEdit Duplicate Source",
-		TeamID:        e.BasicTeam.Id,
-		Public:        true,
+		Title:  "AdminOnlyEdit Duplicate Source",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.RegularUser2.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
 		AdminOnlyEdit: true,
 	})
 	require.NoError(t, err)
 
-	t.Run("regular user duplicating AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
+	t.Run("non-admin member duplicating AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
 		_, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), playbookID)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("playbook admin (non-sysadmin) of source can duplicate", func(t *testing.T) {
+		newID, err := e.PlaybooksClient2.Playbooks.Duplicate(context.Background(), playbookID)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
+		require.NotEqual(t, playbookID, newID)
 	})
 
 	t.Run("system admin duplicating AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
@@ -2046,10 +2081,11 @@ func TestAdminOnlyEdit_Duplicate(t *testing.T) {
 	})
 }
 
-// TestAdminOnlyEdit_Import verifies that non-sysadmins cannot import a playbook
-// that has AdminOnlyEdit enabled.
+// TestAdminOnlyEdit_Import verifies that any user with create permission can import
+// a playbook that has AdminOnlyEdit enabled. The importer becomes the sole admin of
+// the imported playbook.
 // Note: AdminOnlyEdit is excluded from exports (export:"-"), so we craft a raw
-// JSON payload with admin_only_edit: true to exercise the import guard directly.
+// JSON payload with admin_only_edit: true to exercise the import path directly.
 func TestAdminOnlyEdit_Import(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
@@ -2057,9 +2093,10 @@ func TestAdminOnlyEdit_Import(t *testing.T) {
 	// version must match app.CurrentPlaybookExportVersion.
 	payload := []byte(`{"title":"AdminOnlyEdit Import","admin_only_edit":true,"version":1}`)
 
-	t.Run("regular user importing AdminOnlyEdit=true playbook returns 403", func(t *testing.T) {
-		_, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	t.Run("regular user importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {
+		newID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), payload, e.BasicTeam.Id)
+		require.NoError(t, err)
+		require.NotEmpty(t, newID)
 	})
 
 	t.Run("system admin importing AdminOnlyEdit=true playbook succeeds", func(t *testing.T) {

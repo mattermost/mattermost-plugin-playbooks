@@ -82,9 +82,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.findByTestId('admin-only-edit-toggle').should('not.exist');
     });
 
-    it('enables admin_only_edit via UI toggle and persists after reload', () => {
-        // # Only system admins can enable admin_only_edit — visit as sysadmin
-        cy.apiAdminLogin();
+    it('playbook admin enables admin_only_edit via UI toggle and persists after reload', () => {
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
         // # Click the toggle label to enable
@@ -103,15 +101,12 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('be.checked');
     });
 
-    it('disables admin_only_edit via UI toggle', () => {
-        // # Enable via API as sysadmin (only sysadmins can enable admin_only_edit)
-        cy.apiAdminLogin();
+    it('playbook admin disables admin_only_edit via UI toggle', () => {
+        // # Enable via API as the playbook admin
         cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
             cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
         });
 
-        // # Visit as playbook admin who can disable it
-        cy.apiLogin(testAdminUser);
         cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
 
         // * Toggle should be checked
@@ -129,29 +124,8 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         });
     });
 
-    it('UI: toggle reverts when playbook admin tries to enable admin_only_edit', () => {
-        // # testAdminUser is playbook admin but not sysadmin — the server will reject enabling
-        cy.apiLogin(testAdminUser);
-        cy.visit(`/playbooks/playbooks/${testPlaybook.id}/outline`);
-
-        // * Toggle starts unchecked
-        cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('not.be.checked');
-
-        // # Click to attempt enabling
-        cy.findByTestId('admin-only-edit-toggle').find('label').click();
-
-        // * Toggle should revert to unchecked after the server rejects the change
-        cy.findByTestId('admin-only-edit-toggle').find('input[type="checkbox"]').should('not.be.checked');
-
-        // * API confirms admin_only_edit is still false
-        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
-            expect(pb.admin_only_edit).to.equal(false);
-        });
-    });
-
     it('UI: editor fields are disabled for non-admin member when admin_only_edit is enabled', () => {
-        // # Enable admin_only_edit as sysadmin
-        cy.apiAdminLogin();
+        // # Enable admin_only_edit as playbook admin
         cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
             cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
         });
@@ -169,5 +143,57 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         // * Add-checklist button is not rendered (checklist is read-only)
         cy.get('#checklists').should('be.visible');
         cy.findByTestId('add-a-checklist-button').should('not.exist');
+    });
+
+    it('non-admin member cannot duplicate an admin-locked playbook', () => {
+        // # Lock the playbook as the playbook admin
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
+        });
+
+        // # Attempt duplication as a plain member — must be denied
+        cy.apiLogin(testMemberUser);
+        cy.request({
+            url: `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`,
+            method: 'POST',
+            failOnStatusCode: false,
+        }).its('status').should('eq', 403);
+    });
+
+    it('playbook admin can duplicate an admin-locked playbook', () => {
+        // # Lock the playbook
+        cy.apiGetPlaybook(testPlaybook.id).then((pb) => {
+            cy.apiUpdatePlaybook({...pb, admin_only_edit: true});
+        });
+
+        // # Playbook admin duplicates — succeeds, new copy is editable by the duplicator
+        cy.request({
+            url: `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`,
+            method: 'POST',
+        }).then((resp) => {
+            expect(resp.status).to.equal(201);
+            expect(resp.body.id).to.be.a('string');
+            expect(resp.body.id).to.not.equal(testPlaybook.id);
+        });
+    });
+
+    it('any user with create permission can import an admin_only_edit playbook', () => {
+        // # Importer becomes admin of the new playbook, so no special gate is needed.
+        // Version must match app.CurrentPlaybookExportVersion.
+        const payload = {
+            title: 'Imported Locked Playbook',
+            admin_only_edit: true,
+            version: 1,
+        };
+
+        cy.apiLogin(testMemberUser);
+        cy.request({
+            url: `/plugins/playbooks/api/v0/playbooks/import?team_id=${testTeam.id}`,
+            method: 'POST',
+            body: payload,
+        }).then((resp) => {
+            expect(resp.status).to.equal(201);
+            expect(resp.body.id).to.be.a('string');
+        });
     });
 });

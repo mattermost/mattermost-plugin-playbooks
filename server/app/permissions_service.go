@@ -179,14 +179,35 @@ func (p *PermissionsService) PlaybookEdit(userID string, playbook Playbook) erro
 	if !p.canViewTeam(userID, playbook.TeamID) {
 		return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s: no team access", userID, playbook.ID)
 	}
+	if p.IsPlaybookAdmin(userID, playbook) {
+		return nil
+	}
+	return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s (admin-only)", userID, playbook.ID)
+}
+
+// IsPlaybookAdmin reports whether the user holds the playbook's admin role.
+// Uses DefaultPlaybookAdminRole when set, falling back to PlaybookRoleAdmin.
+// Returns false if the user lacks team view access, so callers can treat this
+// as "admin actor we trust right now" rather than a stale membership check.
+func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
 	adminRole := playbook.DefaultPlaybookAdminRole
 	if adminRole == "" {
 		adminRole = PlaybookRoleAdmin
 	}
-	if slices.Contains(p.getPlaybookRole(userID, playbook), adminRole) {
+	return slices.Contains(p.getPlaybookRole(userID, playbook), adminRole)
+}
+
+// canChangeAdminOnlyEdit returns nil if the user can flip the AdminOnlyEdit flag
+// on the given playbook. Allowed actors are system admins and playbook admins;
+// the rule is symmetric (same gate enables and disables the flag).
+func (p *PermissionsService) canChangeAdminOnlyEdit(userID string, playbook Playbook) error {
+	if IsSystemAdmin(userID, p.pluginAPI) {
 		return nil
 	}
-	return errors.Wrapf(ErrNoPermissions, "user %s cannot edit playbook %s (admin-only)", userID, playbook.ID)
+	if p.IsPlaybookAdmin(userID, playbook) {
+		return nil
+	}
+	return errors.Wrapf(ErrNoPermissions, "only a playbook admin can change admin_only_edit on playbook %s", playbook.ID)
 }
 
 // PlaybookManageConditions returns an error if the user cannot manage conditions for the playbook
@@ -224,6 +245,16 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	// This means that you need the manage properties permission to manage members for now.
 	if err := p.PlaybookEdit(userID, oldPlaybook); err != nil {
 		return err
+	}
+
+	// Toggling AdminOnlyEdit changes who can edit the playbook, so the flip itself must be
+	// restricted to playbook admins (or system admins) regardless of direction. Without this,
+	// a user with PlaybookManageProperties could enable the lock when oldPlaybook.AdminOnlyEdit=false,
+	// because PlaybookEdit only enforces the admin-only path against the old state.
+	if oldPlaybook.AdminOnlyEdit != playbook.AdminOnlyEdit {
+		if err := p.canChangeAdminOnlyEdit(userID, oldPlaybook); err != nil {
+			return err
+		}
 	}
 
 	if err := p.NoAddedBroadcastChannelsWithoutPermission(userID, playbook.BroadcastChannelIDs, oldPlaybook.BroadcastChannelIDs); err != nil {
