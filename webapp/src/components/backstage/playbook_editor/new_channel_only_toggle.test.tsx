@@ -163,4 +163,5 @@ describe('NewChannelOnlyToggle', () => {
 
         expect(onChange).toHaveBeenCalledTimes(1);
         expect(onChange).toHaveBeenCalledWith({new_channel_only: false});
-    });});
+    });
+});
