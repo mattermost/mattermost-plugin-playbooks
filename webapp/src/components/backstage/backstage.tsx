@@ -34,17 +34,12 @@ const Backstage = () => {
 
     const currentTheme = useAppSelector(getTheme);
     useEffect(() => {
-        // This class, critical for all the styling to work, is added by ChannelController,
-        // which is not loaded when rendering this root component.
-        document.body.classList.add('app__body');
-        const root = document.getElementById('root');
-        root?.classList.add('channel-view');
-
+        // Note: previously this effect also toggled the `app__body` class on `document.body` and appended
+        // `channel-view` to `#root`. Both of those are now owned by the host webapp (`WithUserTheme` owns
+        // `app__body`; `LoggedIn` adds `channel-view` to `#root`). Duplicating them here caused a momentary
+        // white flash on Playbooks → Channels navigation because Playbooks' cleanup removed `app__body`
+        // before the deeply-nested ChannelController had a chance to re-add it (MM-67913).
         applyTheme(currentTheme);
-        return function cleanUp() {
-            document.body.classList.remove('app__body');
-            root?.classList.remove('channel-view');
-        };
     }, [currentTheme]);
 
     useForceDocumentTitle('Playbooks');
