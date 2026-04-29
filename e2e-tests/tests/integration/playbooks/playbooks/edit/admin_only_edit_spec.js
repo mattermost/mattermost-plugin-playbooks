@@ -154,6 +154,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
         // # Attempt duplication as a plain member — must be denied
         cy.apiLogin(testMemberUser);
         cy.request({
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
             url: `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`,
             method: 'POST',
             failOnStatusCode: false,
@@ -168,6 +169,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
         // # Playbook admin duplicates — succeeds, new copy is editable by the duplicator
         cy.request({
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
             url: `/plugins/playbooks/api/v0/playbooks/${testPlaybook.id}/duplicate`,
             method: 'POST',
         }).then((resp) => {
@@ -188,6 +190,7 @@ describe('playbooks > edit > admin only edit', {testIsolation: true}, () => {
 
         cy.apiLogin(testMemberUser);
         cy.request({
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
             url: `/plugins/playbooks/api/v0/playbooks/import?team_id=${testTeam.id}`,
             method: 'POST',
             body: payload,
