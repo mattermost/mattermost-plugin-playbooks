@@ -295,8 +295,8 @@ const FollowPlaybookRun = ({id}: {id: string}) => {
 };
 
 const FollowButton = styled(SecondaryButton)`
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    color: rgba(var(--center-channel-color-rgb), 0.64);
+    border: 1px solid var(--center-channel-color-08);
+    color: var(--center-channel-color-64);
 `;
 
 const FollowingButton = styled(TertiaryButton)`

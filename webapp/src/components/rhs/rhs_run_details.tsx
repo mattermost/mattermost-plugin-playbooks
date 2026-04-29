@@ -18,7 +18,6 @@ import {throttle} from 'lodash';
 import {useAppDispatch, useAppSelector} from 'src/hooks/redux';
 
 import {PlaybookRunType} from 'src/graphql/generated/graphql';
-import {useParticipateInRun} from 'src/hooks';
 
 import {
     RHSContainer,
@@ -43,6 +42,7 @@ import {useTutorialStepper} from 'src/components/tutorial/tutorial_tour_tip/mana
 import {browserHistory} from 'src/webapp_globals';
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {ToastStyle} from 'src/components/backstage/toast';
+import {useParticipateInRun} from 'src/hooks';
 import {RHSTitleRemoteRender} from 'src/rhs_title_remote_render';
 
 import RHSRunDetailsTitle from './rhs_run_details_title';

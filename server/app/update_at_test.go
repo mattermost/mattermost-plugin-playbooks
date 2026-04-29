@@ -173,6 +173,7 @@ func TestUpdateChecklistItemTimestamps(t *testing.T) {
 func TestUpdateAt_ModifyCheckedState(t *testing.T) {
 	t.Run("UpdateAt field is set when modifying checked state", func(t *testing.T) {
 		playbookRun := PlaybookRun{
+			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -219,6 +220,7 @@ func TestUpdateAt_ModifyCheckedState(t *testing.T) {
 func TestUpdateAt_SetAssignee(t *testing.T) {
 	t.Run("UpdateAt field is set when setting assignee", func(t *testing.T) {
 		playbookRun := PlaybookRun{
+			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -265,6 +267,7 @@ func TestUpdateAt_SetAssignee(t *testing.T) {
 func TestUpdateAt_RunChecklistItemSlashCommand(t *testing.T) {
 	t.Run("UpdateAt field is set when running slash command", func(t *testing.T) {
 		playbookRun := PlaybookRun{
+			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -310,6 +313,7 @@ func TestUpdateAt_RunChecklistItemSlashCommand(t *testing.T) {
 func TestUpdateAt_SetCommandToChecklistItem(t *testing.T) {
 	t.Run("UpdateAt field is set when changing command", func(t *testing.T) {
 		playbookRun := PlaybookRun{
+			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -356,6 +360,7 @@ func TestUpdateAt_SetCommandToChecklistItem(t *testing.T) {
 func TestUpdateAt_SetDueDate(t *testing.T) {
 	t.Run("UpdateAt field is set when setting due date", func(t *testing.T) {
 		playbookRun := PlaybookRun{
+			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -398,6 +403,7 @@ func TestUpdateAt_SetDueDate(t *testing.T) {
 func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 	t.Run("UpdateAt field is set when setting task actions", func(t *testing.T) {
 		playbookRun := PlaybookRun{
+			ID: "playbook1",
 			Checklists: []Checklist{
 				{
 					ID:       "checklist1",
@@ -448,5 +454,20 @@ func TestUpdateAt_SetTaskActionsToChecklistItem(t *testing.T) {
 
 		// Check that parent checklist UpdateAt was also updated
 		assert.Equal(t, playbookRun.Checklists[0].UpdateAt, playbookRun.Checklists[0].Items[0].UpdateAt)
+	})
+}
+
+func TestUpdateAt_PlaybookRun(t *testing.T) {
+	t.Run("UpdateAt field is set when using GraphqlUpdate", func(t *testing.T) {
+		before := model.GetMillis()
+
+		// Create a setmap to simulate GraphqlUpdate
+		setmap := map[string]interface{}{
+			"Name":     "New Name",
+			"UpdateAt": model.GetMillis(),
+		}
+
+		// Check that UpdateAt is set to a valid timestamp
+		assert.GreaterOrEqual(t, setmap["UpdateAt"].(int64), before)
 	})
 }

@@ -4,7 +4,6 @@
 import React, {
     ComponentProps,
     ReactNode,
-    useEffect,
     useMemo,
     useState,
 } from 'react';
@@ -63,8 +62,7 @@ type Props = {
     hasPermission: boolean;
     message?: string,
     reminderInSeconds?: number,
-    finishRunChecked?: boolean;
-    initialError?: string;
+    finishRunChecked?: boolean,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makeModalDefinition = (props: Props) => ({
@@ -100,7 +98,6 @@ const UpdateRunStatusModal = ({
     message: providedMessage,
     reminderInSeconds: providedReminder,
     finishRunChecked: providedFinishRunChecked,
-    initialError: providedInitialError,
     ...modalProps
 }: Props) => {
     const dispatch = useAppDispatch();
@@ -116,11 +113,9 @@ const UpdateRunStatusModal = ({
 
     const [message, setMessage] = useState(providedMessage);
     const defaultMessage = useDefaultMessage(getFragmentData(DefaultMessage, run));
-    useEffect(() => {
-        if (defaultMessage) {
-            setMessage((prev) => (prev == null ? defaultMessage : prev));
-        }
-    }, [defaultMessage]);
+    if (message == null && defaultMessage) {
+        setMessage(defaultMessage);
+    }
 
     const confirmationMessage = useFinishRunConfirmationMessage(run);
 
@@ -131,9 +126,9 @@ const UpdateRunStatusModal = ({
 
     const {input: reminderInput, reminder} = useReminderTimerOption(getFragmentData(ReminderTimer, run), finishRun, providedReminder);
     const isReminderValid = finishRun || (reminder && reminder > 0);
-    let warningMessage = formatMessage({id: 'playbooks.update_run_status_modal.date_in_future', defaultMessage: 'Date must be in the future.'});
+    let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
-        warningMessage = formatMessage({id: 'playbooks.update_run_status_modal.specify_future_date', defaultMessage: 'Please specify a future date/time for the update reminder.'});
+        warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
 
     // Extract channel and follower names
@@ -178,33 +173,14 @@ const UpdateRunStatusModal = ({
         }, 300);
     };
 
-    const [submitError, setSubmitError] = useState(providedInitialError ?? '');
-    const [submitting, setSubmitting] = useState(false);
-
-    const onConfirm = async () => {
-        if (submitting || !(hasPermission && message?.trim() && currentUserId && channelId && run?.teamID && isReminderValid)) {
-            return;
-        }
-        setSubmitting(true);
-        setSubmitError('');
-        try {
-            await postStatusUpdate(
+    const onConfirm = () => {
+        if (hasPermission && message?.trim() && currentUserId && channelId && run?.teamID) {
+            postStatusUpdate(
                 playbookRunId,
                 {message, reminder, finishRun},
                 {user_id: currentUserId, channel_id: channelId, team_id: run?.teamID}
             );
-            setSubmitting(false);
             onActualHide();
-        } catch {
-            const errorMsg = formatMessage({id: 'playbooks.update_run_status_modal.error', defaultMessage: 'Failed to post status update. Please try again.'});
-            if (finishRun) {
-                // Modal was hidden for the confirmation dialog; re-open it so the user sees the error
-                onActualHide();
-                dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, finishRun, errorMsg));
-            } else {
-                setSubmitError(errorMsg);
-            }
-            setSubmitting(false);
         }
     };
 
@@ -302,11 +278,6 @@ const UpdateRunStatusModal = ({
                 </WarningLine>
             }
             <VerticalSpacer $size={8}/>
-            {submitError &&
-                <WarningLine>
-                    <WarningIcon/> {submitError}
-                </WarningLine>
-            }
         </FormContainer>
     );
 
@@ -347,7 +318,7 @@ const UpdateRunStatusModal = ({
                 onExited={() => null}
                 handleConfirm={hasPermission ? onSubmit : null}
                 autoCloseOnConfirmButton={false}
-                isConfirmDisabled={submitting || !(hasPermission && message?.trim() && currentUserId && channelId && run?.teamID && isReminderValid)}
+                isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.teamID && isReminderValid)}
                 id={ID}
                 footer={footer}
                 components={{FooterContainer}}

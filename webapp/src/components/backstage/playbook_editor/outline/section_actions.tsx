@@ -38,6 +38,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
     const {formatMessage} = useIntl();
     const dispatch = useAppDispatch();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
+    const archived = playbook.delete_at !== 0;
 
     // Use restPlaybook for CreateAChannel since it needs run_number_prefix/next_run_number (REST-only fields)
     const channelPlaybookSource = restPlaybook ?? playbook;
@@ -58,13 +59,13 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
         return getDistinctAssignees(playbook.checklists);
     }, [playbook.checklists]);
 
-    const searchUsers = useCallback((term: string) => {
+    const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: playbook.team_id}));
-    }, [dispatch, playbook.team_id]);
+    };
 
-    const getUsers = useCallback(() => {
+    const getUsers = () => {
         return dispatch(getProfilesInTeam(playbook.team_id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
-    }, [dispatch, playbook.team_id]);
+    };
 
     const handleAddUserInvited = (userId: string) => {
         if (!playbook.invited_user_ids.includes(userId)) {
@@ -117,7 +118,6 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 stateModified: ci.state_modified || 0,
                 assigneeID: '',
                 assigneeModified: ci.assignee_modified || 0,
-                restrictCompletionToAssignee: false,
                 command: ci.command,
                 commandLastRun: ci.command_last_run,
                 dueDate: ci.due_date,
@@ -180,7 +180,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
-                        disabled={disabled}
+                        disabled={archived}
                         enabled={playbook.invite_users_enabled}
                         onToggle={handleToggleInviteUsers}
                         searchProfiles={searchUsers}
@@ -195,7 +195,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'assign-owner'}>
                     <AutoAssignOwner
-                        disabled={disabled}
+                        disabled={archived}
                         enabled={playbook.default_owner_enabled}
                         onToggle={handleToggleDefaultOwner}
                         searchProfiles={searchUsers}
@@ -206,7 +206,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <WebhookSetting
-                        disabled={disabled}
+                        disabled={archived}
                         enabled={playbook.webhook_on_creation_enabled}
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
@@ -232,7 +232,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 <Setting id={'participant-joins-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={disabled}
+                            disabled={archived}
                             isChecked={playbook.create_channel_member_on_new_participant}
                             onChange={() => {
                                 updatePlaybook({
@@ -254,7 +254,7 @@ const LegacyActionsEdit = ({playbook, disabled, fieldNames = [], restPlaybook}: 
                 <Setting id={'participant-leaves-run'}>
                     <AutomationTitle>
                         <Toggle
-                            disabled={disabled}
+                            disabled={archived}
                             isChecked={playbook.remove_channel_member_on_removed_participant}
                             onChange={() => {
                                 updatePlaybook({
