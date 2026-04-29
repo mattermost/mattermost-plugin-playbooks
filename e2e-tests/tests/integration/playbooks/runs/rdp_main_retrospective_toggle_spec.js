@@ -99,8 +99,8 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
 
-            // # Intercept the PATCH request so we can wait for it to complete
-            cy.intercept('PATCH', `/plugins/playbooks/api/v0/runs/${run.id}`).as('PatchRun');
+            // # Intercept the toggle request so we can wait for it to complete
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
 
             // # Open the context menu and click "Disable retrospective"
             openContextMenu();
@@ -109,8 +109,8 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             // # Confirm in the modal
             confirmModal();
 
-            // # Wait for the PATCH to complete
-            cy.wait('@PatchRun');
+            // # Wait for the request to complete
+            cy.wait('@ToggleRetrospective');
 
             // # Reopen the context menu
             openContextMenu();
@@ -141,8 +141,8 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             cy.visit(`/playbooks/runs/${run.id}`);
             cy.assertRunDetailsPageRenderComplete(testUser.username);
 
-            // # Intercept the PATCH request so we can wait for it to complete
-            cy.intercept('PATCH', `/plugins/playbooks/api/v0/runs/${run.id}`).as('PatchRun');
+            // # Intercept the toggle request so we can wait for it to complete
+            cy.intercept('PUT', `/plugins/playbooks/api/v0/runs/${run.id}/retrospective-enabled`).as('ToggleRetrospective');
 
             // # Open the context menu and click "Enable retrospective"
             openContextMenu();
@@ -151,8 +151,8 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
             // # Confirm in the modal
             confirmModal();
 
-            // # Wait for the PATCH to complete
-            cy.wait('@PatchRun');
+            // # Wait for the request to complete
+            cy.wait('@ToggleRetrospective');
 
             // # Reopen the context menu
             openContextMenu();
