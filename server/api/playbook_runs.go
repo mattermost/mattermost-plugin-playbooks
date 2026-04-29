@@ -2273,9 +2273,9 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		ActiveLT:                activeLT,
 		StartedGTE:              startedGTE,
 		StartedLT:               startedLT,
-		Types:         types,
-		ActivitySince: activitySince,
-		OmitEnded:     omitEnded,
+		Types:                   types,
+		ActivitySince:           activitySince,
+		OmitEnded:               omitEnded,
 	}
 
 	options, err = options.Validate()
