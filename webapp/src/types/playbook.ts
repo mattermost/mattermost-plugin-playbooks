@@ -1,6 +1,13 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+export const CHANNEL_MODE = {
+    CREATE_NEW_CHANNEL: 'create_new_channel',
+    LINK_EXISTING_CHANNEL: 'link_existing_channel',
+} as const;
+
+export type ChannelMode = typeof CHANNEL_MODE[keyof typeof CHANNEL_MODE];
+
 export interface Playbook {
     id: string;
     title: string;

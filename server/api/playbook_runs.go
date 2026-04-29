@@ -548,18 +548,14 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	// Check the permissions on the channel: the user must be able to create it or,
 	// if one's already provided, they need to be able to manage it.
 	if channel == nil {
-		// If run is from a playbook, user already has RunCreate permission on the playbook,
-		// so they're authorized to create a new channel for this run.
-		if playbookRun.PlaybookID == "" {
-			permission := model.PermissionCreatePrivateChannel
-			permissionMessage := "You are not able to create a private channel"
-			if public {
-				permission = model.PermissionCreatePublicChannel
-				permissionMessage = "You are not able to create a public channel"
-			}
-			if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
-				return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
-			}
+		permission := model.PermissionCreatePrivateChannel
+		permissionMessage := "You are not able to create a private channel"
+		if public {
+			permission = model.PermissionCreatePublicChannel
+			permissionMessage = "You are not able to create a public channel"
+		}
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
+			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
 		}
 	} else {
 		permission := model.PermissionManagePublicChannelProperties

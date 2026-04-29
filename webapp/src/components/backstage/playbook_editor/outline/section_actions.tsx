@@ -8,6 +8,8 @@ import {useSelector} from 'react-redux';
 
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import General from 'mattermost-redux/constants/general';
 
 import styled from 'styled-components';
 import {AccountMinusOutlineIcon, AccountPlusOutlineIcon, PlayIcon} from '@mattermost/compass-icons/components';
@@ -42,8 +44,10 @@ const LegacyActionsEdit = ({playbook}: Props) => {
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const archived = playbook.delete_at !== 0;
     const currentUserId = useSelector(getCurrentUserId);
+    const currentUser = useSelector(getCurrentUser);
     const currentMember = playbook.members.find((m) => m.user_id === currentUserId);
     const isPlaybookAdmin = currentMember?.roles?.includes(PlaybookRole.Admin) ?? false;
+    const isSystemAdmin = currentUser?.roles?.includes(General.SYSTEM_ADMIN_ROLE) ?? false;
 
     const [
         playbookForCreateChannel,
@@ -178,7 +182,7 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         setPlaybook={setPlaybookForCreateChannel}
                     />
                 </Setting>
-                {isPlaybookAdmin && (
+                {(isPlaybookAdmin || isSystemAdmin) && (
                     <Setting id={'new-channel-only'}>
                         <div data-testid='new-channel-only-toggle'>
                             <NewChannelOnlyToggle
