@@ -1385,8 +1385,8 @@ type PlaybookRunService interface {
 	// GraphqlUpdate taking a setmap for graphql
 	GraphqlUpdate(id string, setmap map[string]interface{}) error
 
-	// UpdateRetrospectiveEnabled updates the retrospective_enabled flag for a run
-	UpdateRetrospectiveEnabled(id, userID string, enabled bool) (*PlaybookRun, error)
+	// ToggleRetrospectiveEnabled enables or disables the retrospective for the run.
+	ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error
 
 	// MessageHasBeenPosted checks posted messages for triggers that may trigger task actions
 	MessageHasBeenPosted(post *model.Post)

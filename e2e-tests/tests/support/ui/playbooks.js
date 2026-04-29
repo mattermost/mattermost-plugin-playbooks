@@ -287,13 +287,6 @@ Cypress.Commands.add('playbooksVisitRunChannel', (teamName, run) => {
     });
 });
 
-Cypress.Commands.add('playbooksConfirmFinishModal', () => {
-    cy.get('#confirmModal').should('be.visible');
-    cy.get('#confirmModal').find('h1').should('contain', 'Confirm finish');
-    cy.get('#confirmModal').find('#confirmModalButton').click();
-    cy.get('#confirmModal').should('not.exist');
-});
-
 Cypress.Commands.add('playbooksInterceptGraphQLMutation', (operationName) => {
     cy.intercept('POST', '/plugins/playbooks/api/v0/query', (req) => {
         if (req.body && req.body.operationName === operationName) {

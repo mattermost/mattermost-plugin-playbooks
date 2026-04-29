@@ -16,11 +16,11 @@ describe('runs > run details page > retrospective toggle (context menu)', {testI
     let testUser;
 
     before(() => {
+        cy.apiRequireLicense();
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
         });
-        cy.apiRequireLicense();
     });
 
     beforeEach(() => {

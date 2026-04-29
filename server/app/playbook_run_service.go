@@ -1553,91 +1553,86 @@ func updateChecklistAndItemTimestamp(checklist *Checklist, item *ChecklistItem, 
 	checklist.UpdateAt = timestamp
 }
 
-// UpdateRetrospectiveEnabled updates the retrospective enabled flag and handles associated side-effects:
-// scheduler cancellation/restart, timeline event creation, and reminders.
-func (s *PlaybookRunServiceImpl) UpdateRetrospectiveEnabled(id, userID string, enabled bool) (*PlaybookRun, error) {
-	auditRec := plugin.MakeAuditRecord("updatePlaybookRunRetrospectiveEnabled", model.AuditStatusFail)
+func (s *PlaybookRunServiceImpl) ToggleRetrospectiveEnabled(playbookRunID, userID string, enabled bool) error {
+	auditRec := plugin.MakeAuditRecord("togglePlaybookRunRetrospective", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
-	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", id)
+	model.AddEventParameterToAuditRec(auditRec, "playbookRunID", playbookRunID)
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
 	model.AddEventParameterToAuditRec(auditRec, "retrospectiveEnabled", enabled)
 
-	originalRun, err := s.GetPlaybookRun(id)
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s)", id)
+		err := errors.Wrapf(err, "failed to retrieve playbook run (runID: %s)", playbookRunID)
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return err
 	}
 
-	// No change needed
-	if enabled == originalRun.RetrospectiveEnabled {
+	model.AddEventParameterToAuditRec(auditRec, "currentlyEnabled", playbookRunToModify.RetrospectiveEnabled)
+
+	if enabled == playbookRunToModify.RetrospectiveEnabled {
 		auditRec.Success()
-		auditRec.AddEventResultState(*originalRun)
-		return originalRun, nil
+		auditRec.AddEventResultState(*playbookRunToModify)
+		return nil
 	}
 
-	now := model.GetMillis()
-
-	// Update the field
-	if err := s.store.GraphqlUpdate(id, map[string]interface{}{
-		"RetrospectiveEnabled": enabled,
-		"UpdateAt":             now,
-	}); err != nil {
-		err := errors.Wrapf(err, "failed to update RetrospectiveEnabled for playbook run (runID: %s)", id)
-		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+	var originalRun *PlaybookRun
+	if s.configService.IsIncrementalUpdatesEnabled() {
+		originalRun = playbookRunToModify.Clone()
 	}
 
-	currentRun, err := s.GetPlaybookRun(id)
+	updateAt := model.GetMillis()
+	playbookRunToModify.RetrospectiveEnabled = enabled
+
+	playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to retrieve updated playbook run (runID: %s)", id)
+		err := errors.Wrapf(err, "failed to update RetrospectiveEnabled for playbook run (runID: %s)", playbookRunID)
 		auditRec.AddErrorDesc(err.Error())
-		return nil, err
+		return err
 	}
 
-	// Scheduler side-effects
+	// Scheduler side-effects: disabling cancels any pending reminder; re-enabling on a finished,
+	// unpublished run restarts it so the owner still gets prompted.
 	if !enabled {
-		s.scheduler.Cancel(RetrospectivePrefix + id)
+		s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
 	} else if s.licenseChecker.RetrospectiveAllowed() &&
-		currentRun.CurrentStatus == StatusFinished &&
-		currentRun.RetrospectivePublishedAt == 0 {
-		if remErr := s.postRetrospectiveReminder(currentRun, false); remErr != nil {
-			s.pluginAPI.Log.Error("failed to post retrospective reminder after re-enable", "runID", id, "error", remErr.Error())
+		playbookRunToModify.CurrentStatus == StatusFinished &&
+		playbookRunToModify.RetrospectivePublishedAt == 0 {
+		if remErr := s.postRetrospectiveReminder(playbookRunToModify, false); remErr != nil {
+			s.pluginAPI.Log.Error("failed to post retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
 		}
-		if currentRun.RetrospectiveReminderIntervalSeconds != 0 {
-			if remErr := s.SetReminder(RetrospectivePrefix+id, time.Duration(currentRun.RetrospectiveReminderIntervalSeconds)*time.Second); remErr != nil {
-				s.pluginAPI.Log.Error("failed to restart retrospective reminder after re-enable", "runID", id, "error", remErr.Error())
+		if playbookRunToModify.RetrospectiveReminderIntervalSeconds != 0 {
+			if remErr := s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToModify.RetrospectiveReminderIntervalSeconds)*time.Second); remErr != nil {
+				s.pluginAPI.Log.Error("failed to restart retrospective reminder after re-enable", "runID", playbookRunID, "error", remErr.Error())
 			}
 		}
 	}
 
-	// Timeline event
 	eventType := RetrospectiveEnabled
 	if !enabled {
 		eventType = RetrospectiveDisabled
 	}
-	if _, evErr := s.store.CreateTimelineEvent(&TimelineEvent{
-		PlaybookRunID: id,
-		CreateAt:      now,
-		EventAt:       now,
+	if _, err = s.store.CreateTimelineEvent(&TimelineEvent{
+		PlaybookRunID: playbookRunID,
+		CreateAt:      updateAt,
+		EventAt:       updateAt,
 		EventType:     eventType,
 		SubjectUserID: userID,
-	}); evErr != nil {
-		s.pluginAPI.Log.Warn("failed to create timeline event for retrospective toggle", "runID", id, "error", evErr.Error())
+	}); err != nil {
+		auditRec.AddErrorDesc(err.Error())
+		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, nil)
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	auditRec.Success()
-	model.AddEventParameterToAuditRec(auditRec, "updateAt", now)
-	auditRec.AddEventResultState(*currentRun)
+	model.AddEventParameterToAuditRec(auditRec, "updateAt", updateAt)
+	auditRec.AddEventResultState(*playbookRunToModify)
 
-	return currentRun, nil
+	return nil
 }
 
 // GraphqlUpdate updates fields based on a setmap.
-// Note: RetrospectiveEnabled updates should use UpdateRetrospectiveEnabled instead.
 func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]interface{}) error {
 	if len(setmap) == 0 {
 		return nil

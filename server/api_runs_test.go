@@ -3152,6 +3152,34 @@ func TestToggleRunRetrospective(t *testing.T) {
 		assert.Equal(t, app.StatusFinished, fetched.CurrentStatus)
 		assert.False(t, fetched.RetrospectiveEnabled)
 	})
+
+	t.Run("toggling off creates a RetrospectiveDisabled timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Timeline Disable", e.RegularUser.Id)
+
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveDisabled, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
+
+	t.Run("toggling on creates a RetrospectiveEnabled timeline event", func(t *testing.T) {
+		run := createRunOwnedBy(t, "Timeline Enable", e.RegularUser.Id)
+
+		// Disable first so we can test re-enable
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, false))
+		require.Equal(t, http.StatusOK, toggleRunRetrospective(t, e, run.ID, e.RegularUser.Id, e.ServerClient.AuthToken, true))
+
+		fetched, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, fetched.TimelineEvents)
+		lastEvent := fetched.TimelineEvents[len(fetched.TimelineEvents)-1]
+		assert.Equal(t, client.RetrospectiveEnabled, lastEvent.EventType)
+		assert.Equal(t, e.RegularUser.Id, lastEvent.SubjectUserID)
+	})
 }
 
 // TestRetrospectiveDisabled_RunCreation verifies that the RetrospectiveEnabled flag on

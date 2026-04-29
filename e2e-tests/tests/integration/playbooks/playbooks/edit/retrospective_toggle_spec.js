@@ -19,11 +19,11 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
     let createdPlaybookIds = [];
 
     before(() => {
+        cy.apiRequireLicense();
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
         });
-        cy.apiRequireLicense();
     });
 
     beforeEach(() => {
@@ -150,6 +150,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
         }).then((playbookRun) => {
             // # Visit the run details page
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
 
             // * Wait for the run page to load by checking for the checklists section
             cy.findByTestId('run-checklist-section').should('exist');
@@ -186,6 +187,7 @@ describe('playbooks > edit > retrospective toggle', {testIsolation: true}, () =>
         }).then((playbookRun) => {
             // # Visit the run details page
             cy.visit(`/playbooks/runs/${playbookRun.id}`);
+            cy.assertRunDetailsPageRenderComplete(testUser.username);
 
             // * Assert the retrospective section IS visible in run details
             cy.findByTestId('run-retrospective-section').should('exist').and('be.visible');

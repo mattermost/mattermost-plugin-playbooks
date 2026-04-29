@@ -1029,22 +1029,15 @@ func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWrit
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		h.HandleError(w, c.logger, err)
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, c.logger, err)
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunToggleRetrospective(userID, playbookRunID)) {
 		return
 	}
 
-	if userID != playbookRun.OwnerUserID && !app.IsSystemAdmin(userID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the run owner or a system admin can change the retrospective setting", errors.New("unauthorized to change retrospective setting"))
-		return
-	}
-
-	if _, err := h.playbookRunService.UpdateRetrospectiveEnabled(playbookRunID, userID, payload.RetrospectiveEnabled); err != nil {
+	if err := h.playbookRunService.ToggleRetrospectiveEnabled(playbookRunID, userID, payload.RetrospectiveEnabled); err != nil {
 		h.HandleError(w, c.logger, err)
 		return
 	}

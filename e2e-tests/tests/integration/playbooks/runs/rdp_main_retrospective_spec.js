@@ -302,8 +302,6 @@ describe('runs > run details page', {testIsolation: true}, () => {
             });
 
             it('auto save', () => {
-                // # Intercept the REST endpoint used by updateRetrospective for metric autosave
-                cy.intercept('POST', `/plugins/playbooks/api/v0/runs/${testRun.id}/retrospective`).as('UpdateRetro');
                 getRetro().within(() => {
                     // # Enter metric values
                     cy.get('input[type=text]').eq(0).click();
@@ -311,11 +309,11 @@ describe('runs > run details page', {testIsolation: true}, () => {
                         tab().type('56').
                         tab().type('123');
 
-                    // # Click outside to trigger autosave
+                    // # Click outside
                     cy.findByText('Retrospective').click({force: true});
-                    cy.wait('@UpdateRetro');
+                    cy.wait(2000);
 
-                    // * Validate if values persist in DOM
+                    // * Validate if values persist
                     cy.get('input[type=text]').eq(0).should('have.value', '12:11:10');
                     cy.get('input[type=text]').eq(1).should('have.value', '56');
                     cy.get('input[type=text]').eq(2).should('have.value', '123');
@@ -325,12 +323,10 @@ describe('runs > run details page', {testIsolation: true}, () => {
                     cy.get('input[type=text]').eq(0).clear().type('12:00:10').
                         tab().clear().type('20').
                         tab().clear().type('21');
-
-                    // # Click outside to trigger autosave for the new values
-                    cy.findByText('Retrospective').click({force: true});
                 });
 
-                cy.wait('@UpdateRetro');
+                // # Wait 2 sec to auto save
+                cy.wait(2000);
 
                 // # Reload page
                 cy.visit(`/playbooks/runs/${testRun.id}`);

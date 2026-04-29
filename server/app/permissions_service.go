@@ -654,6 +654,19 @@ func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo
 	}, nil
 }
 
+// RunToggleRetrospective checks whether userID can enable or disable the retrospective for runID.
+// Only the run owner or a system admin may change this setting.
+func (p *PermissionsService) RunToggleRetrospective(userID, runID string) error {
+	run, err := p.runService.GetPlaybookRun(runID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get run %s for permission check", runID)
+	}
+	if run.OwnerUserID == userID || IsSystemAdmin(userID, p.pluginAPI) {
+		return nil
+	}
+	return errors.Wrapf(ErrNoPermissions, "only the run owner or a system admin can toggle retrospective for run %s", runID)
+}
+
 // isChannelChecklist returns true if the run is a channelChecklist (not created from a playbook)
 func (p *PermissionsService) isChannelChecklist(run *PlaybookRun) bool {
 	return run.Type == RunTypeChannelChecklist
