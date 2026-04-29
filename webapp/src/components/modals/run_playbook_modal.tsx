@@ -88,7 +88,7 @@ export const RunPlaybookModal = ({
 
     useEffect(() => {
         if (effectiveChannelMode === 'create_new_channel') {
-            setRunName(playbook?.channel_name_template);
+            setRunName(playbook?.channel_name_template ?? '');
         }
     }, [effectiveChannelMode, playbook?.channel_name_template]);
 
