@@ -36,7 +36,7 @@ const AutoArchiveToggle = ({playbook, onChange, disabled}: Props) => {
             isChecked={autoArchive}
             onChange={handleChange}
         >
-            {formatMessage({id: 'playbooks.auto_archive_toggle.label', defaultMessage: 'Auto-archive channel'})}
+            {formatMessage({defaultMessage: 'Auto-archive channel'})}
         </Toggle>
     );
 
@@ -45,7 +45,7 @@ const AutoArchiveToggle = ({playbook, onChange, disabled}: Props) => {
             {isLinkedChannel ? (
                 <Tooltip
                     id='auto-archive-channel-toggle-tooltip'
-                    content={formatMessage({id: 'playbooks.auto_archive_toggle.disabled_tooltip', defaultMessage: 'The channel cannot be auto-archived when linking to an existing channel.'})}
+                    content={formatMessage({defaultMessage: 'The channel cannot be auto-archived when linking to an existing channel.'})}
                     placement='top'
                 >
                     <span>{toggle}</span>
@@ -53,7 +53,7 @@ const AutoArchiveToggle = ({playbook, onChange, disabled}: Props) => {
             ) : toggle}
             {autoArchive && (
                 <ToggleBanner data-testid='auto-archive-confirmation-banner'>
-                    {formatMessage({id: 'playbooks.auto_archive_toggle.banner_text', defaultMessage: 'The channel will be auto-archived when the run is finished.'})}
+                    {formatMessage({defaultMessage: 'The channel will be auto-archived when the run is finished.'})}
                 </ToggleBanner>
             )}
         </>

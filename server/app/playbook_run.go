@@ -219,6 +219,11 @@ type PlaybookRun struct {
 	// AutoArchivedChannel records whether this run actually auto-archived its channel on finish.
 	// Used by restore to decide whether to un-archive, independent of the current playbook flag.
 	AutoArchivedChannel bool `json:"-"`
+
+	// AutoArchiveChannel is snapshotted from the playbook at run creation.
+	// Using the snapshot avoids a playbook DB lookup on every finish and ensures
+	// the archive behaviour reflects the setting at the time the run was started.
+	AutoArchiveChannel bool `json:"-"`
 }
 
 func (r PlaybookRun) GetItemsOrder() []string {

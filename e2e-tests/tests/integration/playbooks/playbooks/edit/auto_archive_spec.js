@@ -142,7 +142,7 @@ describe('playbooks > edit > auto archive', () => {
                 // * Assert the run's channel is now archived (poll for async archive)
                 cy.waitUntil(
                     () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
-                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not archived after run finish'},
                 );
             });
         });
@@ -220,7 +220,7 @@ describe('playbooks > edit > auto archive', () => {
                 // * Wait for the channel to be archived
                 cy.waitUntil(
                     () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at > 0),
-                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not archived after run finish'},
                 );
 
                 // # Restore the run via API
@@ -229,7 +229,7 @@ describe('playbooks > edit > auto archive', () => {
                 // * Assert the channel is unarchived (delete_at === 0)
                 cy.waitUntil(
                     () => cy.apiGetChannel(testRun.channel_id).then(({channel}) => channel.delete_at === 0),
-                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Channel was not unarchived after run restore'},
                 );
             });
         });
@@ -264,7 +264,7 @@ describe('playbooks > edit > auto archive', () => {
                 // * Wait for the server to commit the finish before reading back
                 cy.waitUntil(
                     () => cy.apiGetPlaybookRun(testRun.id).then(({body: fetchedRun}) => fetchedRun.current_status === 'Finished'),
-                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC},
+                    {timeout: TIMEOUTS.TEN_SEC, interval: TIMEOUTS.HALF_SEC, errorMsg: 'Run did not reach Finished status within timeout'},
                 );
 
                 // * Assert the run channel is NOT archived (delete_at === 0)

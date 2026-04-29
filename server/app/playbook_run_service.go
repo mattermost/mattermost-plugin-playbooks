@@ -405,6 +405,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 		playbookRun.ChannelID = channel.Id
 		playbookRun.ChannelCreatedByRun = true
+		playbookRun.AutoArchiveChannel = pb.AutoArchiveChannel
 		createdChannel = true
 	} else {
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -1522,13 +1523,6 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		playbookRunToRestore.AutoArchivedChannel = false
 		if updatedRun, err := s.store.UpdatePlaybookRun(playbookRunToRestore); err != nil {
 			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
-			if unarchived {
-				logger.WithField("channel_id", playbookRunToRestore.ChannelID).Warn("re-archiving channel to stay in sync")
-				if err := s.pluginAPI.Channel.Delete(playbookRunToRestore.ChannelID); err != nil {
-					logger.WithField("channel_id", playbookRunToRestore.ChannelID).
-						WithError(err).Warn("channel re-archive rollback failed; channel is unarchived but AutoArchivedChannel=true in the database")
-				}
-			}
 		} else {
 			playbookRunToRestore = updatedRun
 			if unarchived {
@@ -1595,17 +1589,10 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 }
 
 // shouldAutoArchiveChannel returns true if the run's channel should be auto-archived on finish:
-// the playbook has AutoArchiveChannel=true and the channel was created by this run (not linked).
-func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun, logger *logrus.Entry) bool {
-	if !run.ChannelCreatedByRun || run.ChannelID == "" || run.PlaybookID == "" {
-		return false
-	}
-	pb, err := s.playbookService.Get(run.PlaybookID)
-	if err != nil {
-		logger.WithError(err).Warn("failed to load playbook for auto-archive check; channel will not be archived")
-		return false
-	}
-	return pb.AutoArchiveChannel
+// AutoArchiveChannel was snapshotted from the playbook at run creation and the channel was
+// created by this run (not linked).
+func (s *PlaybookRunServiceImpl) shouldAutoArchiveChannel(run *PlaybookRun, _ *logrus.Entry) bool {
+	return run.AutoArchiveChannel && run.ChannelCreatedByRun && run.ChannelID != ""
 }
 
 // restoreChannelByID clears DeleteAt on the given channel (un-archives it).

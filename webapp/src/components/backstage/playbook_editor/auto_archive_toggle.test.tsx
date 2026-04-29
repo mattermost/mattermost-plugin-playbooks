@@ -80,10 +80,8 @@ describe('AutoArchiveToggle', () => {
         const tree = component.toJSON();
 
         expect(tree).toBeTruthy();
-        if (tree && !Array.isArray(tree) && tree.children) {
-            const label = tree.children[0] as any;
-            expect(label.props['data-checked']).toBe(true);
-        }
+        const label = Array.isArray(tree) ? (tree as any[])[0] : tree;
+        expect((label as any)?.props?.['data-checked']).toBe(true);
     });
 
     it('toggling on calls onChange with auto_archive_channel: true', () => {
