@@ -78,7 +78,7 @@ describe('NewChannelOnlyToggle', () => {
         jest.clearAllMocks();
     });
 
-    it('renders toggle for playbook admins', () => {
+    it('renders toggle', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(false);
 
