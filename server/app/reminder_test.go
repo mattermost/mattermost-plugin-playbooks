@@ -32,11 +32,12 @@ func TestMdLinkText(t *testing.T) {
 }
 
 func TestBuildOverdueStatusUpdateMessage(t *testing.T) {
-	t.Run("DM channel produces /messages/ URL", func(t *testing.T) {
+	t.Run("DM channel produces /<team>/messages/<channelId> URL using owner's team", func(t *testing.T) {
 		api := &plugintest.API{}
 		defer api.AssertExpectations(t)
 		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
 
+		ownerID := model.NewId()
 		channelID := model.NewId()
 		api.On("GetChannel", channelID).Return(&model.Channel{
 			Id:          channelID,
@@ -44,11 +45,14 @@ func TestBuildOverdueStatusUpdateMessage(t *testing.T) {
 			TeamId:      "",
 			DisplayName: "alice, bob",
 		}, (*model.AppError)(nil))
+		api.On("GetTeamsForUser", ownerID).Return([]*model.Team{
+			{Id: model.NewId(), Name: "myteam"},
+		}, (*model.AppError)(nil))
 
-		run := &PlaybookRun{ID: model.NewId(), ChannelID: channelID}
+		run := &PlaybookRun{ID: model.NewId(), ChannelID: channelID, OwnerUserID: ownerID}
 		msg, err := svc.buildOverdueStatusUpdateMessage(run, "alice")
 		require.NoError(t, err)
-		require.Contains(t, msg, "/messages/"+channelID)
+		require.Contains(t, msg, "/myteam/messages/"+channelID)
 		require.NotContains(t, msg, "/channels/")
 	})
 
@@ -82,6 +86,7 @@ func TestBuildOverdueStatusUpdateMessage(t *testing.T) {
 		defer api.AssertExpectations(t)
 		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
 
+		ownerID := model.NewId()
 		channelID := model.NewId()
 		api.On("GetChannel", channelID).Return(&model.Channel{
 			Id:          channelID,
@@ -89,8 +94,11 @@ func TestBuildOverdueStatusUpdateMessage(t *testing.T) {
 			TeamId:      "",
 			DisplayName: "[alice], [bob]",
 		}, (*model.AppError)(nil))
+		api.On("GetTeamsForUser", ownerID).Return([]*model.Team{
+			{Id: model.NewId(), Name: "myteam"},
+		}, (*model.AppError)(nil))
 
-		run := &PlaybookRun{ID: model.NewId(), ChannelID: channelID}
+		run := &PlaybookRun{ID: model.NewId(), ChannelID: channelID, OwnerUserID: ownerID}
 		msg, err := svc.buildOverdueStatusUpdateMessage(run, "alice")
 		require.NoError(t, err)
 		require.Contains(t, msg, `\[alice\]`)

@@ -1476,33 +1476,39 @@ func TestPlaybookRun_MarshalJSON_ItemsOrder(t *testing.T) {
 	})
 }
 
-// TestSendWebhooksOnCreationDMGM verifies that sendWebhooksOnCreation skips the team
-// lookup (and thus produces an empty channelURL) for DM/GM runs, and performs it for
-// team-based runs. Uses mock call verification rather than HTTP interception.
+// TestSendWebhooksOnCreationDMGM verifies channel URL construction for team-based vs
+// DM/GM runs. sendWebhooksOnUpdateStatus uses the same ownerFirstTeamName + getDMGMChannelURL
+// path; its URL construction is covered by TestGetDMGMChannelURL in urls_test.go.
 func TestSendWebhooksOnCreationDMGM(t *testing.T) {
 	siteURL := "http://mattermost.example.com"
 	config := &model.Config{}
 	config.SetDefaults()
 	config.ServiceSettings.SiteURL = &siteURL
 
-	t.Run("DM run skips team lookup", func(t *testing.T) {
+	t.Run("DM run looks up owner team and uses channel ID for channel URL", func(t *testing.T) {
 		api := &plugintest.API{}
 		defer api.AssertExpectations(t)
 
+		ownerID := model.NewId()
 		channelID := model.NewId()
 		api.On("GetConfig").Return(config).Once()
 		api.On("GetChannel", channelID).Return(&model.Channel{
 			Id:     channelID,
 			TeamId: "",
 		}, (*model.AppError)(nil)).Once()
-		// GetTeam intentionally NOT registered — AssertExpectations would catch an unexpected call
+		api.On("GetTeamsForUser", ownerID).Return([]*model.Team{
+			{Id: model.NewId(), Name: "myteam"},
+		}, (*model.AppError)(nil)).Once()
+		// GetTeam (by team ID) intentionally NOT registered — only GetTeamsForUser is called for DM runs
 
 		svc := &PlaybookRunServiceImpl{pluginAPI: pluginapi.NewClient(api, &plugintest.Driver{})}
 		svc.sendWebhooksOnCreation(PlaybookRun{
-			ID:        model.NewId(),
-			TeamID:    "",
-			ChannelID: channelID,
+			ID:          model.NewId(),
+			TeamID:      "",
+			ChannelID:   channelID,
+			OwnerUserID: ownerID,
 		})
+		// AssertExpectations confirms GetTeamsForUser was called exactly once
 	})
 
 	t.Run("team run performs team lookup to build channel URL", func(t *testing.T) {

@@ -329,7 +329,9 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 			logrus.WithError(err).Error("cannot send webhook on creation, not able to get playbookRun.TeamID")
 			return
 		}
-		channelURL = getChannelURL(*siteURL, team.Name, channel.Name)
+		channelURL = getURLForChannel(*siteURL, team.Name, channel)
+	} else if teamName := s.ownerFirstTeamName(playbookRun.OwnerUserID); teamName != "" {
+		channelURL = getURLForChannel(*siteURL, teamName, channel)
 	}
 
 	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
@@ -1023,7 +1025,9 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 			logger.WithField("team_id", playbookRun.TeamID).Error("cannot send webhook on update, not able to get playbookRun.TeamID")
 			return
 		}
-		channelURL = getChannelURL(*siteURL, team.Name, channel.Name)
+		channelURL = getURLForChannel(*siteURL, team.Name, channel)
+	} else if teamName := s.ownerFirstTeamName(playbookRun.OwnerUserID); teamName != "" {
+		channelURL = getURLForChannel(*siteURL, teamName, channel)
 	}
 
 	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
@@ -4415,6 +4419,16 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// ownerFirstTeamName returns the name of the first active team the owner belongs to.
+// Used to construct URLs for DM/GM channels which have no TeamID on the run.
+func (s *PlaybookRunServiceImpl) ownerFirstTeamName(ownerUserID string) string {
+	teams, err := s.pluginAPI.Team.List(pluginapi.FilterTeamsByUser(ownerUserID))
+	if err != nil || len(teams) == 0 {
+		return ""
+	}
+	return teams[0].Name
 }
 
 // Helper function to Trigger webhooks
