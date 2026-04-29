@@ -180,7 +180,6 @@ type Playbook {
 	removeChannelMemberOnRemovedParticipant: Boolean!
 	channelID: String!
 	channelMode: String!
-	ownerGroupOnlyActions: Boolean!
 }
 
 type Checklist {

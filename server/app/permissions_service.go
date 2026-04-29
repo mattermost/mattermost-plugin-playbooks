@@ -149,9 +149,16 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
-// IsPlaybookAdminMember returns true if the user has the admin role on the given playbook.
-// It uses DefaultPlaybookAdminRole when set, falling back to PlaybookRoleAdmin.
-func IsPlaybookAdminMember(userID string, playbook Playbook) bool {
+// IsPlaybookAdmin reports whether the user holds the playbook's admin role AND
+// currently has team-view access. Baking in the team-view check ensures callers
+// can treat a true result as "admin actor we trust right now" rather than a
+// stale membership snapshot — a former team member who still has the admin role
+// recorded on the playbook returns false.
+// Uses DefaultPlaybookAdminRole when set, falling back to PlaybookRoleAdmin.
+func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
+	if !p.canViewTeam(userID, playbook.TeamID) {
+		return false
+	}
 	adminRole := playbook.DefaultPlaybookAdminRole
 	if adminRole == "" {
 		adminRole = PlaybookRoleAdmin
@@ -291,7 +298,7 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	// so it must be restricted to playbook admins (matching the UI gate). PlaybookManageProperties
 	// alone is too permissive: any playbook member with that permission could lock or unlock the flag.
 	if oldPlaybook.OwnerGroupOnlyActions != playbook.OwnerGroupOnlyActions {
-		if !IsPlaybookAdminMember(userID, oldPlaybook) && !IsSystemAdmin(userID, p.pluginAPI) {
+		if !p.IsPlaybookAdmin(userID, oldPlaybook) && !IsSystemAdmin(userID, p.pluginAPI) {
 			return errors.Wrapf(ErrNoPermissions, "only a playbook admin can change OwnerGroupOnlyActions")
 		}
 	}
@@ -815,11 +822,8 @@ func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
 	}
 	if playbook != nil && playbook.OwnerGroupOnlyActions {
 		// runRequiresOwnerOrAdmin (above) already allows system admins via the owner/admin path,
-		// so here we only need playbook admins.
-		if IsPlaybookAdminMember(userID, *playbook) {
-			if !p.canViewTeam(userID, run.TeamID) {
-				return errors.Wrapf(ErrNoPermissions, "no team access for run %s", runID)
-			}
+		// so here we only need playbook admins. IsPlaybookAdmin bakes in the team-view check.
+		if p.IsPlaybookAdmin(userID, *playbook) {
 			// Structured event so downstream audit pipelines can detect playbook-admin
 			// ownership takeover that bypasses OwnerGroupOnlyActions on a run they don't own.
 			logrus.WithFields(logrus.Fields{

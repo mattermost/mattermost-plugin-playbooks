@@ -261,7 +261,6 @@ export type Playbook = {
   messageOnJoinEnabled: Scalars['Boolean'];
   metrics: Array<PlaybookMetricConfig>;
   numRuns: Scalars['Int'];
-  ownerGroupOnlyActions: Scalars['Boolean'];
   propertyFields: Array<PropertyField>;
   public: Scalars['Boolean'];
   reminderMessageTemplate: Scalars['String'];

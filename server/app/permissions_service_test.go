@@ -541,6 +541,7 @@ func TestRunFinish(t *testing.T) {
 	makePlaybook := func(ownerOnly bool) Playbook {
 		return Playbook{
 			ID:                    pbID,
+			TeamID:                "team-1",
 			OwnerGroupOnlyActions: ownerOnly,
 			Members: []PlaybookMember{
 				{UserID: pbAdminID, SchemeRoles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
@@ -695,6 +696,7 @@ func TestRunChangeOwner(t *testing.T) {
 	makePlaybook := func(ownerOnly bool) Playbook {
 		return Playbook{
 			ID:                    pbID,
+			TeamID:                "team-1",
 			OwnerGroupOnlyActions: ownerOnly,
 			Members: []PlaybookMember{
 				{UserID: pbAdminID, SchemeRoles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
@@ -816,18 +818,21 @@ func TestRunChangeOwner(t *testing.T) {
 	})
 }
 
-// TestIsPlaybookAdminMember tests the IsPlaybookAdminMember package-level helper
-// that supports the AdminOnlyEdit permission check and the
-// assertCanModifyTaskState lockdown bypass.
+// TestIsPlaybookAdmin tests the (*PermissionsService).IsPlaybookAdmin method
+// that supports the OwnerGroupOnlyActions permission check and the playbook-admin
+// owner reassignment bypass.
 //
-// It returns true when the user's SchemeRoles contains PlaybookRoleAdmin.
-func TestIsPlaybookAdminMember(t *testing.T) {
+// It returns true only when the user has team-view access AND the user's
+// SchemeRoles contains PlaybookRoleAdmin (or DefaultPlaybookAdminRole).
+func TestIsPlaybookAdmin(t *testing.T) {
 	adminID := "user-admin"
 	memberID := "user-member"
 	outsiderID := "user-outsider"
+	teamID := "team-1"
 
 	playbook := Playbook{
-		ID: "pb-1",
+		ID:     "pb-1",
+		TeamID: teamID,
 		Members: []PlaybookMember{
 			{UserID: adminID, SchemeRoles: []string{PlaybookRoleAdmin}},
 			{UserID: memberID, SchemeRoles: []string{PlaybookRoleMember}},
@@ -835,45 +840,57 @@ func TestIsPlaybookAdminMember(t *testing.T) {
 	}
 
 	t.Run("admin member returns true", func(t *testing.T) {
-		result := IsPlaybookAdminMember(adminID, playbook)
-		require.True(t, result)
+		svc := newPermissionsServiceForTest(nil, nil, newPluginAPIAllowingAdmins(t))
+		require.True(t, svc.IsPlaybookAdmin(adminID, playbook))
 	})
 
 	t.Run("regular member returns false", func(t *testing.T) {
-		result := IsPlaybookAdminMember(memberID, playbook)
-		require.False(t, result)
+		svc := newPermissionsServiceForTest(nil, nil, newPluginAPIAllowingAdmins(t))
+		require.False(t, svc.IsPlaybookAdmin(memberID, playbook))
 	})
 
 	t.Run("non-member returns false", func(t *testing.T) {
-		result := IsPlaybookAdminMember(outsiderID, playbook)
-		require.False(t, result)
+		svc := newPermissionsServiceForTest(nil, nil, newPluginAPIAllowingAdmins(t))
+		require.False(t, svc.IsPlaybookAdmin(outsiderID, playbook))
 	})
 
 	t.Run("empty members list returns false", func(t *testing.T) {
-		pb := Playbook{ID: "pb-2", Members: []PlaybookMember{}}
-		result := IsPlaybookAdminMember(adminID, pb)
-		require.False(t, result)
+		pb := Playbook{ID: "pb-2", TeamID: teamID, Members: []PlaybookMember{}}
+		svc := newPermissionsServiceForTest(nil, nil, newPluginAPIAllowingAdmins(t))
+		require.False(t, svc.IsPlaybookAdmin(adminID, pb))
 	})
 
 	t.Run("user with both member and admin scheme roles returns true", func(t *testing.T) {
 		pb := Playbook{
-			ID: "pb-3",
+			ID:     "pb-3",
+			TeamID: teamID,
 			Members: []PlaybookMember{
 				{UserID: adminID, SchemeRoles: []string{PlaybookRoleMember, PlaybookRoleAdmin}},
 			},
 		}
-		result := IsPlaybookAdminMember(adminID, pb)
-		require.True(t, result)
+		svc := newPermissionsServiceForTest(nil, nil, newPluginAPIAllowingAdmins(t))
+		require.True(t, svc.IsPlaybookAdmin(adminID, pb))
 	})
 
 	t.Run("user with nil scheme roles returns false", func(t *testing.T) {
 		pb := Playbook{
-			ID: "pb-4",
+			ID:     "pb-4",
+			TeamID: teamID,
 			Members: []PlaybookMember{
 				{UserID: adminID, SchemeRoles: nil},
 			},
 		}
-		result := IsPlaybookAdminMember(adminID, pb)
-		require.False(t, result)
+		svc := newPermissionsServiceForTest(nil, nil, newPluginAPIAllowingAdmins(t))
+		require.False(t, svc.IsPlaybookAdmin(adminID, pb))
+	})
+
+	t.Run("admin without team-view returns false", func(t *testing.T) {
+		mockAPI := &plugintest.API{}
+		mockAPI.On("HasPermissionToTeam", adminID, teamID, model.PermissionViewTeam).
+			Return(false).
+			Maybe()
+		t.Cleanup(func() { mockAPI.AssertExpectations(t) })
+		svc := newPermissionsServiceForTest(nil, nil, pluginapi.NewClient(mockAPI, nil))
+		require.False(t, svc.IsPlaybookAdmin(adminID, playbook))
 	})
 }
