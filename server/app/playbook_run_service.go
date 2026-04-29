@@ -1680,10 +1680,20 @@ func (s *PlaybookRunServiceImpl) GraphqlUpdate(id string, setmap map[string]inte
 		return err
 	}
 
-	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, nil)
+	// Get the updated playbook run state after changes
+	currentRun, err := s.GetPlaybookRun(id)
+	if err != nil {
+		err := errors.Wrapf(err, "failed to retrieve updated playbook run (runID: %s) after GraphQL update", id)
+		auditRec.AddErrorDesc(err.Error())
+		return err
+	}
 
+	s.sendPlaybookRunObjectUpdatedWS(id, originalRun, currentRun)
+
+	// Mark success and add result state for audit
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "updateAt", now)
+	auditRec.AddEventResultState(*currentRun)
 
 	return nil
 }
