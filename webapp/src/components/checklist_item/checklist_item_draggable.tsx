@@ -42,6 +42,9 @@ interface Props {
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
     isChannelChecklist?: boolean;
+    bulkEditMode?: boolean;
+    isSelected?: boolean;
+    onItemSelect?: () => void;
 }
 
 const DraggableChecklistItem = (props: Props) => {
@@ -91,6 +94,9 @@ const DraggableChecklistItem = (props: Props) => {
                     conditionHeader={props.conditionHeader}
                     onSaveAndAddNew={props.onSaveAndAddNew}
                     isChannelChecklist={props.isChannelChecklist}
+                    bulkEditMode={props.bulkEditMode}
+                    isSelected={props.isSelected}
+                    onItemSelect={props.onItemSelect}
                 />
             )}
         </Draggable>

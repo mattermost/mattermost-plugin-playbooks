@@ -59,6 +59,13 @@ type DropdownProps = {
     focusManager?: boolean | Omit<ComponentProps<typeof FloatingFocusManager>, 'context' | 'children'>;
     portal?: boolean;
     containerStyles?: ReturnType<typeof css>;
+
+    /**
+     * When false, Floating UI's useRole is disabled on the floating node.
+     * Use for content that already exposes ARIA listbox/combobox (e.g. react-select) so
+     * the default "dialog" role does not break nested listbox/option in the a11y tree.
+     */
+    useFloatingRole?: boolean;
 } & ({
     isOpen: boolean;
     onOpenChange: undefined | UseFloatingOptions<HTMLElement>['onOpenChange'];
@@ -87,7 +94,7 @@ const Dropdown = (props: DropdownProps) => {
 
     const {getReferenceProps, getFloatingProps} = useInteractions([
         useClick(context, {enabled: props.isOpen === undefined}),
-        useRole(context),
+        useRole(context, {enabled: props.useFloatingRole !== false}),
         useDismiss(context),
     ]);
 

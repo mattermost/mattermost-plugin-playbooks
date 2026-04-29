@@ -48,6 +48,9 @@ interface Props {
     isChannelChecklist?: boolean;
     allChecklists?: Checklist[];
     onMoveItemToCondition?: (itemIndex: number, conditionId: string) => void;
+    selectedItemKeys?: Set<string>;
+    bulkEditMode?: boolean;
+    onItemSelect?: (key: string, checklistIndex: number, itemIndex: number, item: ChecklistItem) => void;
 }
 
 const GenericChecklist = (props: Props) => {
@@ -252,6 +255,7 @@ const GenericChecklist = (props: Props) => {
         const hasCondition = Boolean(checklistItem.condition_id);
         const conditionId = checklistItem.condition_id;
         const showConditionHeader = shouldShowConditionHeader(checklistItem, index) && conditionId;
+        const itemKey = checklistItem.id || `${props.checklistIndex}-${index}`;
 
         return (
             <DraggableChecklistItem
@@ -273,6 +277,9 @@ const GenericChecklist = (props: Props) => {
                 onUpdateChecklistItem={(newItem: ChecklistItem) => onUpdateChecklistItem(index, newItem)}
                 onDuplicateChecklistItem={() => onDuplicateChecklistItem(index)}
                 onDeleteChecklistItem={() => onDeleteChecklistItem(index)}
+                bulkEditMode={props.bulkEditMode}
+                isSelected={props.selectedItemKeys?.has(itemKey)}
+                onItemSelect={props.onItemSelect ? () => props.onItemSelect!(itemKey, props.checklistIndex, index, checklistItem) : undefined}
                 itemButtonsFormat={props.itemButtonsFormat}
                 onReadOnlyInteract={props.onReadOnlyInteract}
                 onAddConditional={canAddConditional ? () => onOpenConditionEditor(index) : undefined}
