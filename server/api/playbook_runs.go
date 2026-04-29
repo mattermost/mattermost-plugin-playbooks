@@ -96,6 +96,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", withContext(handler.removeTimelineEvent)).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/status-update-enabled", withContext(handler.toggleStatusUpdates)).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/retrospective-enabled", withContext(handler.toggleRetrospective)).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel/{channel_id:[A-Za-z0-9]+}").Subrouter()
 	channelRouter.HandleFunc("", withContext(handler.getPlaybookRunByChannel)).Methods(http.MethodGet)
@@ -262,32 +263,14 @@ func (h *PlaybookRunHandler) updatePlaybookRun(c *Context, w http.ResponseWriter
 		fieldsToUpdate["SummaryModifiedAt"] = model.GetMillis()
 	}
 
-	var updatedPlaybookRun *app.PlaybookRun
-
-	// Authorize retrospective toggle if requested
-	if updates.RetrospectiveEnabled != nil &&
-		userID != oldPlaybookRun.OwnerUserID &&
-		!app.IsSystemAdmin(userID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the run owner or a system admin can change the retrospective setting", errors.New("unauthorized to change retrospective setting"))
+	// Update using GraphqlUpdate
+	if err := h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate); err != nil {
+		h.HandleError(w, c.logger, err)
 		return
 	}
 
-	// Apply generic field updates first
-	if len(fieldsToUpdate) > 0 {
-		err = h.playbookRunService.GraphqlUpdate(playbookRunID, fieldsToUpdate)
-		if err != nil {
-			h.HandleError(w, c.logger, err)
-			return
-		}
-	}
-
-	// Apply retrospective toggle if provided, otherwise fetch current state
-	if updates.RetrospectiveEnabled != nil {
-		updatedPlaybookRun, err = h.playbookRunService.UpdateRetrospectiveEnabled(playbookRunID, userID, *updates.RetrospectiveEnabled)
-	} else {
-		updatedPlaybookRun, err = h.playbookRunService.GetPlaybookRun(playbookRunID)
-	}
-
+	// Retrieve the updated playbook run
+	updatedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		h.HandleError(w, c.logger, err)
 		return
@@ -1035,6 +1018,38 @@ func (h *PlaybookRunHandler) toggleStatusUpdates(c *Context, w http.ResponseWrit
 
 	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
 
+}
+
+func (h *PlaybookRunHandler) toggleRetrospective(c *Context, w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payload struct {
+		RetrospectiveEnabled bool `json:"retrospective_enabled"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	if userID != playbookRun.OwnerUserID && !app.IsSystemAdmin(userID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "only the run owner or a system admin can change the retrospective setting", errors.New("unauthorized to change retrospective setting"))
+		return
+	}
+
+	if _, err := h.playbookRunService.UpdateRetrospectiveEnabled(playbookRunID, userID, payload.RetrospectiveEnabled); err != nil {
+		h.HandleError(w, c.logger, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{"success": true}, http.StatusOK)
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a

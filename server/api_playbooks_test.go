@@ -4,7 +4,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -335,57 +334,6 @@ func TestCreateInvalidPlaybook(t *testing.T) {
 		assert.Empty(t, id)
 	})
 
-	t.Run("fails when retrospective_enabled=true and reminder_timer_default_seconds=0", func(t *testing.T) {
-		siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
-		endpoint := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks", siteURL)
-
-		body := map[string]interface{}{
-			"title":                          "retro-enabled-zero-timer",
-			"team_id":                        e.BasicTeam.Id,
-			"public":                         true,
-			"retrospective_enabled":          true,
-			"reminder_timer_default_seconds": 0,
-		}
-		bodyBytes, err := json.Marshal(body)
-		require.NoError(t, err)
-
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, bytes.NewReader(bodyBytes))
-		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Mattermost-User-ID", e.AdminUser.Id)
-		req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
-
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-		resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	})
-
-	t.Run("succeeds when retrospective_enabled=false and reminder_timer_default_seconds=0", func(t *testing.T) {
-		siteURL := fmt.Sprintf("http://localhost:%v", e.A.Srv().ListenAddr.Port)
-		endpoint := fmt.Sprintf("%s/plugins/playbooks/api/v0/playbooks", siteURL)
-
-		body := map[string]interface{}{
-			"title":                          "retro-disabled-zero-timer",
-			"team_id":                        e.BasicTeam.Id,
-			"public":                         true,
-			"retrospective_enabled":          false,
-			"reminder_timer_default_seconds": 0,
-		}
-		bodyBytes, err := json.Marshal(body)
-		require.NoError(t, err)
-
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, bytes.NewReader(bodyBytes))
-		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Mattermost-User-ID", e.AdminUser.Id)
-		req.Header.Set("Authorization", "Bearer "+e.ServerAdminClient.AuthToken)
-
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-		resp.Body.Close()
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
-	})
 }
 
 func TestPlaybooksRetrieval(t *testing.T) {

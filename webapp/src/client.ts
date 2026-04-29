@@ -298,13 +298,9 @@ export async function toggleRunStatusUpdates(playbookRunId: string, status_enabl
     }
 }
 
-export async function patchRun(playbookRunId: string, patch: {retrospective_enabled?: boolean}) {
+export async function toggleRunRetrospective(playbookRunId: string, retrospective_enabled: boolean) {
     try {
-        const {data} = await doFetchWithResponse<PlaybookRun>(`${apiUrl}/runs/${playbookRunId}`, {
-            method: 'PATCH',
-            body: JSON.stringify(patch),
-        });
-        return data;
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/retrospective-enabled`, JSON.stringify({retrospective_enabled}));
     } catch (error) {
         return {error};
     }

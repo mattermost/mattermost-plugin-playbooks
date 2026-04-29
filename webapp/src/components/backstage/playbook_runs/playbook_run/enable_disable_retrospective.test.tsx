@@ -9,9 +9,10 @@ import {PlaybookRunType, RunStatus} from 'src/graphql/generated/graphql';
 import {useToggleRunRetrospective} from './enable_disable_retrospective';
 
 const mockDispatch = jest.fn();
-const mockPatchRun = jest.fn().mockResolvedValue({id: 'run-1'});
+const mockToggleRunRetrospective = jest.fn().mockResolvedValue({});
 const mockOpenModal: jest.Mock = jest.fn(() => ({type: 'OPEN_MODAL'}));
 const mockMakeConfirmModal = jest.fn((args) => args);
+const mockAddToast = jest.fn();
 
 jest.mock('react-redux', () => ({
     useDispatch: Object.assign(() => mockDispatch, {withTypes: () => () => mockDispatch}),
@@ -27,11 +28,7 @@ jest.mock('react-intl', () => {
 });
 
 jest.mock('src/client', () => ({
-    patchRun: (...args: any[]) => mockPatchRun(...args),
-}));
-
-jest.mock('src/actions', () => ({
-    playbookRunUpdated: jest.fn((run) => ({type: 'PLAYBOOK_RUN_UPDATED', playbookRun: run})),
+    toggleRunRetrospective: (...args: any[]) => mockToggleRunRetrospective(...args),
 }));
 
 jest.mock('src/webapp_globals', () => ({
@@ -43,7 +40,7 @@ jest.mock('src/components/widgets/confirmation_modal', () => ({
 }));
 
 jest.mock('src/components/backstage/toast_banner', () => ({
-    useToaster: () => ({add: jest.fn()}),
+    useToaster: () => ({add: mockAddToast}),
 }));
 
 const makeRun = (overrides: Partial<PlaybookRun> = {}): PlaybookRun => ({
@@ -91,9 +88,10 @@ const makeRun = (overrides: Partial<PlaybookRun> = {}): PlaybookRun => ({
 describe('useToggleRunRetrospective', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockToggleRunRetrospective.mockResolvedValue({});
     });
 
-    it('dispatches openModal when called', () => {
+    it('opens a confirmation modal when called', () => {
         const run = makeRun();
         const {result} = renderHook(() => useToggleRunRetrospective(run));
 
@@ -105,7 +103,7 @@ describe('useToggleRunRetrospective', () => {
         expect(mockOpenModal).toHaveBeenCalledTimes(1);
     });
 
-    it('calls patchRun with retrospective_enabled: false on confirm when disabling', async () => {
+    it('calls toggleRunRetrospective with false on confirm when disabling', async () => {
         const run = makeRun({retrospective_enabled: true});
         const {result} = renderHook(() => useToggleRunRetrospective(run));
 
@@ -113,19 +111,16 @@ describe('useToggleRunRetrospective', () => {
             result.current(false);
         });
 
-        // Extract the onConfirm callback from the modal definition
         const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
         await act(async () => {
             modalArgs.onConfirm();
-
-            // Flush the promise chain from patchRun().then(...)
             await Promise.resolve();
         });
 
-        expect(mockPatchRun).toHaveBeenCalledWith('run-1', {retrospective_enabled: false});
+        expect(mockToggleRunRetrospective).toHaveBeenCalledWith('run-1', false);
     });
 
-    it('calls patchRun with retrospective_enabled: true on confirm when enabling', async () => {
+    it('calls toggleRunRetrospective with true on confirm when enabling', async () => {
         const run = makeRun({retrospective_enabled: false});
         const {result} = renderHook(() => useToggleRunRetrospective(run));
 
@@ -139,7 +134,7 @@ describe('useToggleRunRetrospective', () => {
             await Promise.resolve();
         });
 
-        expect(mockPatchRun).toHaveBeenCalledWith('run-1', {retrospective_enabled: true});
+        expect(mockToggleRunRetrospective).toHaveBeenCalledWith('run-1', true);
     });
 
     it('uses a "disable" confirm title when disabling', () => {
@@ -166,9 +161,8 @@ describe('useToggleRunRetrospective', () => {
         expect(modalArgs.title).toMatch(/enable/i);
     });
 
-    it('dispatches playbookRunUpdated with the server response after disabling', async () => {
-        const updatedRun = makeRun({retrospective_enabled: false});
-        mockPatchRun.mockResolvedValueOnce(updatedRun);
+    it('shows a toast when toggleRunRetrospective returns an error', async () => {
+        mockToggleRunRetrospective.mockResolvedValueOnce({error: new Error('server error')});
 
         const run = makeRun({retrospective_enabled: true});
         const {result} = renderHook(() => useToggleRunRetrospective(run));
@@ -183,36 +177,10 @@ describe('useToggleRunRetrospective', () => {
             await Promise.resolve();
         });
 
-        expect(mockDispatch).toHaveBeenCalledWith(
-            expect.objectContaining({type: 'PLAYBOOK_RUN_UPDATED', playbookRun: updatedRun}),
-        );
+        expect(mockAddToast).toHaveBeenCalledTimes(1);
     });
 
-    it('dispatches playbookRunUpdated with the server response after enabling', async () => {
-        const updatedRun = makeRun({retrospective_enabled: true});
-        mockPatchRun.mockResolvedValueOnce(updatedRun);
-
-        const run = makeRun({retrospective_enabled: false});
-        const {result} = renderHook(() => useToggleRunRetrospective(run));
-
-        act(() => {
-            result.current(true);
-        });
-
-        const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
-        await act(async () => {
-            modalArgs.onConfirm();
-            await Promise.resolve();
-        });
-
-        expect(mockDispatch).toHaveBeenCalledWith(
-            expect.objectContaining({type: 'PLAYBOOK_RUN_UPDATED', playbookRun: updatedRun}),
-        );
-    });
-
-    it('does not dispatch playbookRunUpdated when patchRun returns an error', async () => {
-        mockPatchRun.mockResolvedValueOnce({error: new Error('server error')});
-
+    it('does not show a toast when toggleRunRetrospective succeeds', async () => {
         const run = makeRun({retrospective_enabled: true});
         const {result} = renderHook(() => useToggleRunRetrospective(run));
 
@@ -226,7 +194,6 @@ describe('useToggleRunRetrospective', () => {
             await Promise.resolve();
         });
 
-        const dispatchedTypes = mockDispatch.mock.calls.map((c) => c[0]?.type);
-        expect(dispatchedTypes).not.toContain('PLAYBOOK_RUN_UPDATED');
+        expect(mockAddToast).not.toHaveBeenCalled();
     });
 });

@@ -160,7 +160,6 @@ type RunUpdates struct {
 	StatusUpdateBroadcastWebhooksEnabled    *bool
 	BroadcastChannelIDs                     *[]string
 	WebhookOnStatusUpdateURLs               *[]string
-	RetrospectiveEnabled                    *bool
 }
 
 func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
@@ -197,13 +196,6 @@ func (r *RunRootResolver) UpdateRun(ctx context.Context, args struct {
 	addToSetmap(setmap, "RemoveChannelMemberOnRemovedParticipant", args.Updates.RemoveChannelMemberOnRemovedParticipant)
 	addToSetmap(setmap, "StatusUpdateBroadcastChannelsEnabled", args.Updates.StatusUpdateBroadcastChannelsEnabled)
 	addToSetmap(setmap, "StatusUpdateBroadcastWebhooksEnabled", args.Updates.StatusUpdateBroadcastWebhooksEnabled)
-
-	if args.Updates.RetrospectiveEnabled != nil {
-		if userID != playbookRun.OwnerUserID && !app.IsSystemAdmin(userID, c.pluginAPI) {
-			return "", newGraphQLError(errors.Wrap(app.ErrNoPermissions, "only the run owner or a system admin can change the retrospective setting"))
-		}
-		addToSetmap(setmap, "RetrospectiveEnabled", args.Updates.RetrospectiveEnabled)
-	}
 
 	if args.Updates.ChannelID != nil {
 		channel, err := c.pluginAPI.Channel.Get(*args.Updates.ChannelID)
