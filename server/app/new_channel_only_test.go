@@ -11,22 +11,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestValidateRunCreationParams tests the validateRunCreationParams helper that
-// CreatePlaybookRun delegates to for pre-creation validation.
-func TestValidateRunCreationParams(t *testing.T) {
+// TestNormalizeAndValidateRunCreationParams tests the normalizeAndValidateRunCreationParams helper that
+// CreatePlaybookRun delegates to for parameter normalization and validation.
+func TestNormalizeAndValidateRunCreationParams(t *testing.T) {
 	t.Run("nil playbookRun is rejected", func(t *testing.T) {
-		err := validateRunCreationParams(nil, &Playbook{ID: "pb-A"})
+		err := normalizeAndValidateRunCreationParams(nil, &Playbook{ID: "pb-A"})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot be nil")
 	})
 
 	t.Run("nil playbook is allowed", func(t *testing.T) {
-		err := validateRunCreationParams(&PlaybookRun{}, nil)
+		err := normalizeAndValidateRunCreationParams(&PlaybookRun{}, nil)
 		require.NoError(t, err)
 	})
 
 	t.Run("PlaybookID mismatch between run and supplied playbook is rejected", func(t *testing.T) {
-		err := validateRunCreationParams(
+		err := normalizeAndValidateRunCreationParams(
 			&PlaybookRun{PlaybookID: "pb-A"},
 			&Playbook{ID: "pb-B"},
 		)
@@ -37,7 +37,7 @@ func TestValidateRunCreationParams(t *testing.T) {
 	})
 
 	t.Run("matching PlaybookID is not rejected", func(t *testing.T) {
-		err := validateRunCreationParams(
+		err := normalizeAndValidateRunCreationParams(
 			&PlaybookRun{PlaybookID: "pb-A"},
 			&Playbook{ID: "pb-A"},
 		)
@@ -46,20 +46,20 @@ func TestValidateRunCreationParams(t *testing.T) {
 
 	t.Run("empty PlaybookID is filled from pb.ID", func(t *testing.T) {
 		run := &PlaybookRun{PlaybookID: ""}
-		err := validateRunCreationParams(run, &Playbook{ID: "pb-A"})
+		err := normalizeAndValidateRunCreationParams(run, &Playbook{ID: "pb-A"})
 		require.NoError(t, err)
 		assert.Equal(t, "pb-A", run.PlaybookID, "PlaybookID must be set from pb.ID when empty")
 	})
 
 	t.Run("non-empty PlaybookID is not overwritten", func(t *testing.T) {
 		run := &PlaybookRun{PlaybookID: "pb-A"}
-		err := validateRunCreationParams(run, &Playbook{ID: "pb-A"})
+		err := normalizeAndValidateRunCreationParams(run, &Playbook{ID: "pb-A"})
 		require.NoError(t, err)
 		assert.Equal(t, "pb-A", run.PlaybookID)
 	})
 
 	t.Run("NewChannelOnly true with existing ChannelID is rejected", func(t *testing.T) {
-		err := validateRunCreationParams(
+		err := normalizeAndValidateRunCreationParams(
 			&PlaybookRun{ChannelID: "existing-channel"},
 			&Playbook{ID: "pb-A", NewChannelOnly: true},
 		)
@@ -69,7 +69,7 @@ func TestValidateRunCreationParams(t *testing.T) {
 	})
 
 	t.Run("NewChannelOnly true with empty ChannelID is allowed", func(t *testing.T) {
-		err := validateRunCreationParams(
+		err := normalizeAndValidateRunCreationParams(
 			&PlaybookRun{ChannelID: ""},
 			&Playbook{ID: "pb-A", NewChannelOnly: true},
 		)
@@ -77,7 +77,7 @@ func TestValidateRunCreationParams(t *testing.T) {
 	})
 
 	t.Run("NewChannelOnly false with existing ChannelID is allowed", func(t *testing.T) {
-		err := validateRunCreationParams(
+		err := normalizeAndValidateRunCreationParams(
 			&PlaybookRun{ChannelID: "existing-channel"},
 			&Playbook{ID: "pb-A", NewChannelOnly: false},
 		)

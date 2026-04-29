@@ -354,8 +354,8 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
-// validateRunCreationParams checks pre-creation constraints and resolves the PlaybookID.
-func validateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
+// normalizeAndValidateRunCreationParams normalizes run parameters and validates pre-creation constraints.
+func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
 	if playbookRun == nil {
 		return errors.New("playbookRun cannot be nil")
 	}
@@ -386,7 +386,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
 	}
 
-	if err := validateRunCreationParams(playbookRun, pb); err != nil {
+	if err := normalizeAndValidateRunCreationParams(playbookRun, pb); err != nil {
 		return nil, err
 	}
 
