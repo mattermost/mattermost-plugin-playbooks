@@ -57,6 +57,8 @@ const SectionRetrospective = ({playbook, refetch, disabled}: Props) => {
         return null;
     }
 
+    // When retrospectives are disabled, short-circuit to the placeholder text.
+    // This guards every input below — they don't need to re-check retrospective_enabled.
     if (!playbook.retrospective_enabled) {
         return (<RetrospectiveTextContainer>
             <FormattedMessage defaultMessage='A retrospective is not expected.'/>
