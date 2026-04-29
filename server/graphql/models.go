@@ -3,6 +3,11 @@
 
 package graphql
 
+type EnumPlaybookRunType string
+
+const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
+const EnumPlaybookRunTypechannelChecklist EnumPlaybookRunType = "channelChecklist"
+
 type EnumRunStatus string
 
 const EnumRunStatusInProgress EnumRunStatus = "InProgress"
@@ -54,11 +59,6 @@ type EnumMetricType string
 const EnumMetricTypemetric_duration EnumMetricType = "metric_duration"
 const EnumMetricTypemetric_currency EnumMetricType = "metric_currency"
 const EnumMetricTypemetric_integer EnumMetricType = "metric_integer"
-
-type EnumPlaybookRunType string
-
-const EnumPlaybookRunTypeplaybook EnumPlaybookRunType = "playbook"
-const EnumPlaybookRunTypechannelChecklist EnumPlaybookRunType = "channelChecklist"
 
 type __Schema struct {
 	Types            []__Type      `json:"types"`

@@ -403,10 +403,6 @@ Cypress.Commands.add('apiUpdatePlaybook', (playbook, expectedHttpCode = StatusOK
     });
 });
 
-Cypress.Commands.add('apiPatchPlaybook', (playbookId, updates, expectedHttpCode = StatusOK) => {
-    return cy.apiUpdatePlaybook({id: playbookId, ...updates}, expectedHttpCode);
-});
-
 // Archive a playbook
 Cypress.Commands.add('apiArchivePlaybook', (playbookId) => {
     return cy.request({

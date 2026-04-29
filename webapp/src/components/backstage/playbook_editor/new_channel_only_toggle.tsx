@@ -23,19 +23,21 @@ const NewChannelOnlyToggle = ({playbook, onChange, disabled}: Props) => {
         onChange({new_channel_only: value});
     }, [onChange]);
 
+    const label = formatMessage({defaultMessage: 'Require new channel for all runs'});
     const confirmationRequired = useMemo(() => ({
-        title: formatMessage({id: 'playbooks.new_channel_only_toggle.confirm_title', defaultMessage: 'Require new channel for all runs'}),
-        message: formatMessage({id: 'playbooks.new_channel_only_toggle.confirm_message', defaultMessage: 'Enabling this will prevent runs from linking to existing channels. All future runs will create a new channel. Continue?'}),
-        confirmButtonText: formatMessage({id: 'playbooks.new_channel_only_toggle.confirm_button', defaultMessage: 'Confirm'}),
-    }), [formatMessage]);
+        title: label,
+        message: formatMessage({defaultMessage: 'Enabling this will prevent runs from linking to existing channels. All future runs will create a new channel. Continue?'}),
+        confirmButtonText: formatMessage({defaultMessage: 'Confirm'}),
+    }), [label, formatMessage]);
 
     return (
         <BooleanToggle
-            label={formatMessage({id: 'playbooks.new_channel_only_toggle.label', defaultMessage: 'Require new channel for all runs'})}
+            label={label}
             value={playbook.new_channel_only ?? false}
             onChange={handleChange}
             disabled={disabled}
             confirmationRequired={confirmationRequired}
+            testId='new-channel-only-toggle'
         />
     );
 };

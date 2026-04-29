@@ -300,7 +300,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 	addToSetmap(setmap, "ChannelNameTemplate", args.Updates.ChannelNameTemplate)
 	addToSetmap(setmap, "ChannelID", args.Updates.ChannelID)
 
-	// Validate ChannelMode and NewChannelOnly before adding to setmap
 	if args.Updates.NewChannelOnly != nil || args.Updates.ChannelMode != nil {
 		effectiveNewChannelOnly := currentPlaybook.NewChannelOnly
 		if args.Updates.NewChannelOnly != nil {
@@ -317,7 +316,6 @@ func (r *PlaybookRootResolver) UpdatePlaybook(ctx context.Context, args struct {
 		}
 	}
 
-	// Add validated values to setmap
 	addToSetmap(setmap, "NewChannelOnly", args.Updates.NewChannelOnly)
 	addToSetmap(setmap, "ChannelMode", args.Updates.ChannelMode)
 

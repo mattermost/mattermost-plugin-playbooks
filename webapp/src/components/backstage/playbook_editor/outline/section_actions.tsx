@@ -172,18 +172,16 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                     />
                 </Setting>
                 <Setting id={'new-channel-only'}>
-                    <div data-testid='new-channel-only-toggle'>
-                        <NewChannelOnlyToggle
-                            playbook={playbook}
-                            disabled={archived}
-                            onChange={({new_channel_only}) => {
-                                updatePlaybook({
-                                    newChannelOnly: new_channel_only,
-                                    ...(new_channel_only && {channelMode: 'create_new_channel'}),
-                                });
-                            }}
-                        />
-                    </div>
+                    <NewChannelOnlyToggle
+                        playbook={playbook}
+                        disabled={archived}
+                        onChange={({new_channel_only}) => {
+                            updatePlaybook({
+                                newChannelOnly: new_channel_only,
+                                ...(new_channel_only && {channelMode: 'create_new_channel'}),
+                            });
+                        }}
+                    />
                 </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers

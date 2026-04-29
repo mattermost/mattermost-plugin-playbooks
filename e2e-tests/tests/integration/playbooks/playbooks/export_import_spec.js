@@ -253,6 +253,40 @@ describe('playbooks > export and import with attributes and conditions', {testIs
             });
         });
 
+        it('exports new_channel_only=true in the export payload', () => {
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'NewChannelOnly Export',
+                userId: testUser.id,
+            }).then((playbook) => {
+                playbook.new_channel_only = true;
+                cy.apiUpdatePlaybook(playbook).then(() => {
+                    cy.apiExportPlaybook(playbook.id).then((exportData) => {
+                        expect(exportData.new_channel_only).to.equal(true);
+                    });
+                });
+            });
+        });
+
+        it('round-trip: export then import preserves new_channel_only=true', () => {
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'NewChannelOnly Round Trip',
+                userId: testUser.id,
+            }).then((playbook) => {
+                playbook.new_channel_only = true;
+                cy.apiUpdatePlaybook(playbook).then(() => {
+                    cy.apiExportPlaybook(playbook.id).then((exportData) => {
+                        cy.apiImportPlaybook(exportData, testTeam.id).then((importResult) => {
+                            cy.apiGetPlaybook(importResult.id).then((imported) => {
+                                expect(imported.new_channel_only).to.equal(true);
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
         it('rejects import with unsupported version', () => {
             const badExport = {
                 title: 'Bad Version Playbook',

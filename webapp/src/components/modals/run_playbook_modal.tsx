@@ -211,7 +211,7 @@ export const RunPlaybookModal = ({
                         channelId={channelId}
                         channelMode={channelMode}
                         createPublicRun={createPublicRun}
-                        newChannelOnly={playbook?.new_channel_only ?? false}
+                        newChannelOnly={playbook?.new_channel_only}
                         onSetCreatePublicRun={setCreatePublicRun}
                         onSetChannelMode={handleSetChannelMode}
                         onSetChannelId={setChannelId}
@@ -329,7 +329,7 @@ const ConfigChannelSection = ({teamId, channelMode, channelId, createPublicRun, 
             </ChannelBlock>
             {newChannelOnly && (
                 <HelpText id='new-channel-only-hint'>
-                    {formatMessage({id: 'playbooks.run_playbook_modal.new_channel_only_hint', defaultMessage: 'This playbook requires a new channel for each run'})}
+                    {formatMessage({defaultMessage: 'This playbook requires a new channel for each run'})}
                 </HelpText>
             )}
             {linkExistingChannel && (

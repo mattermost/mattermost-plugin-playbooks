@@ -355,8 +355,6 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 }
 
 // normalizeAndValidateRunCreationParams applies playbook constraints to a run before creation.
-// Normalizes PlaybookID from the playbook if not already set.
-// Validates playbook-level constraints: NewChannelOnly forbids explicit ChannelID, and PlaybookID must match if both are provided.
 func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playbook) error {
 	if playbookRun == nil {
 		return errors.New("playbookRun cannot be nil")
@@ -378,16 +376,14 @@ func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playboo
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
-	if playbookRun == nil {
-		return nil, errors.Wrap(ErrMalformedPlaybookRun, "playbookRun cannot be nil")
-	}
-
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 
-	// Add parameters and context before validation so they're present on error
+	// Add parameters and context
 	model.AddEventParameterToAuditRec(auditRec, "userID", userID)
-	model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	if playbookRun != nil {
+		model.AddEventParameterAuditableToAuditRec(auditRec, "playbookRun", *playbookRun)
+	}
 	if pb != nil {
 		model.AddEventParameterAuditableToAuditRec(auditRec, "playbook", *pb)
 	}

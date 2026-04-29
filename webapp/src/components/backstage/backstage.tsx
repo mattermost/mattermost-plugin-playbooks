@@ -38,13 +38,12 @@ const Backstage = () => {
         // which is not loaded when rendering this root component.
         document.body.classList.add('app__body');
         const root = document.getElementById('root');
-        if (root) {
-            root.className += ' channel-view';
-        }
+        root?.classList.add('channel-view');
 
         applyTheme(currentTheme);
         return function cleanUp() {
             document.body.classList.remove('app__body');
+            root?.classList.remove('channel-view');
         };
     }, [currentTheme]);
 

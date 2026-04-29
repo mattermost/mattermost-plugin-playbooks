@@ -10,11 +10,7 @@ import NewChannelOnlyToggle from './new_channel_only_toggle';
 
 jest.mock('src/components/backstage/playbook_edit/automation/toggle', () => ({
     Toggle: ({isChecked, onChange, disabled, children}: {isChecked: boolean; onChange: () => void; disabled?: boolean; children?: React.ReactNode}) => (
-        <label
-            data-testid='new-channel-only-toggle'
-            data-checked={isChecked}
-            data-disabled={disabled}
-        >
+        <label>
             <input
                 type='checkbox'
                 checked={isChecked}
@@ -35,19 +31,9 @@ jest.mock('react-intl', () => {
     };
 });
 
-const mockDispatch = jest.fn();
-jest.mock('react-redux', () => ({
-    useDispatch: Object.assign(() => mockDispatch, {withTypes: () => () => mockDispatch}),
-    useSelector: Object.assign(jest.fn(), {withTypes: () => jest.fn()}),
-}));
-
 const mockOpenModal = jest.fn();
-jest.mock('src/webapp_globals', () => ({
-    modals: {openModal: (...args: any[]) => mockOpenModal(...args)},
-}));
-
 jest.mock('src/components/widgets/confirmation_modal', () => ({
-    makeUncontrolledConfirmModalDefinition: (props: any) => ({type: 'CONFIRM_MODAL', props}),
+    useConfirmModal: () => mockOpenModal,
 }));
 
 const makePlaybook = (newChannelOnly: boolean) => ({
@@ -104,8 +90,8 @@ describe('NewChannelOnlyToggle', () => {
             />,
         );
 
-        const label = component.root.findByProps({'data-testid': 'new-channel-only-toggle'});
-        expect(label.props['data-checked']).toBe(true);
+        const input = component.root.findByProps({'data-testid': 'new-channel-only-toggle'}).findByType('input');
+        expect(input.props.checked).toBe(true);
     });
 
     it('toggle is unchecked when new_channel_only is false', () => {
@@ -119,11 +105,11 @@ describe('NewChannelOnlyToggle', () => {
             />,
         );
 
-        const label = component.root.findByProps({'data-testid': 'new-channel-only-toggle'});
-        expect(label.props['data-checked']).toBe(false);
+        const input = component.root.findByProps({'data-testid': 'new-channel-only-toggle'}).findByType('input');
+        expect(input.props.checked).toBe(false);
     });
 
-    it('dispatches confirmation modal when enabling (new_channel_only=false)', () => {
+    it('opens confirmation modal when enabling (new_channel_only=false)', () => {
         const onChange = jest.fn();
         const playbook = makePlaybook(false);
 
@@ -138,12 +124,11 @@ describe('NewChannelOnlyToggle', () => {
 
         // Enabling opens a confirmation modal — onChange is NOT called yet
         expect(onChange).not.toHaveBeenCalled();
-        expect(mockDispatch).toHaveBeenCalledTimes(1);
         expect(mockOpenModal).toHaveBeenCalledTimes(1);
 
         // Simulate confirming the modal
         const modalArg = mockOpenModal.mock.calls[0][0];
-        modalArg.props.onConfirm();
+        modalArg.onConfirm();
         expect(onChange).toHaveBeenCalledTimes(1);
         expect(onChange).toHaveBeenCalledWith({new_channel_only: true});
     });

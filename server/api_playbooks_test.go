@@ -333,6 +333,18 @@ func TestCreateInvalidPlaybook(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 		assert.Empty(t, id)
 	})
+
+	t.Run("fails if new_channel_only=true combined with link_existing_channel mode", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:          "conflict-nco",
+			TeamID:         e.BasicTeam.Id,
+			Public:         true,
+			NewChannelOnly: true,
+			ChannelMode:    client.PlaybookRunLinkExistingChannel,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		assert.Empty(t, id)
+	})
 }
 
 func TestPlaybooksRetrieval(t *testing.T) {
@@ -480,6 +492,13 @@ func TestPlaybookUpdate(t *testing.T) {
 		}
 		e.BasicPlaybook.WebhookOnCreationEnabled = true
 		e.BasicPlaybook.WebhookOnCreationURLs = urls
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("fails if new_channel_only=true combined with link_existing_channel mode", func(t *testing.T) {
+		e.BasicPlaybook.NewChannelOnly = true
+		e.BasicPlaybook.ChannelMode = client.PlaybookRunLinkExistingChannel
 		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})

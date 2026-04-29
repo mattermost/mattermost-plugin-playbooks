@@ -1,13 +1,10 @@
 // Copyright (c) 2020-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback, useRef} from 'react';
-import {useDispatch} from 'react-redux';
+import React, {useCallback} from 'react';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {modals} from 'src/webapp_globals';
-import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {HelpText} from 'src/components/backstage/playbook_runs/shared';
+import {useConfirmModal} from 'src/components/widgets/confirmation_modal';
 
 export interface ConfirmationConfig {
     title: string;
@@ -17,45 +14,31 @@ export interface ConfirmationConfig {
 
 interface Props {
     label: string;
-    hint?: string;
     value: boolean;
     onChange: (value: boolean) => void;
     disabled?: boolean;
     confirmationRequired?: ConfirmationConfig;
+    testId?: string;
 }
 
-const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequired}: Props) => {
-    const dispatch = useDispatch();
-    const pendingRef = useRef(false);
+const BooleanToggle = ({label, value, onChange, disabled, confirmationRequired, testId}: Props) => {
+    const openConfirmModal = useConfirmModal();
 
     const handleChange = useCallback(() => {
-        if (pendingRef.current) {
-            return;
-        }
-        pendingRef.current = true;
-
         if (!value && confirmationRequired) {
-            dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
-                show: true,
+            openConfirmModal({
                 title: confirmationRequired.title,
                 message: confirmationRequired.message,
                 confirmButtonText: confirmationRequired.confirmButtonText,
-                onConfirm: () => {
-                    onChange(true);
-                    pendingRef.current = false;
-                },
-                onCancel: () => {
-                    pendingRef.current = false;
-                },
-            })));
+                onConfirm: () => onChange(true),
+            });
             return;
         }
         onChange(!value);
-        pendingRef.current = false;
-    }, [value, confirmationRequired, dispatch, onChange]);
+    }, [value, confirmationRequired, openConfirmModal, onChange]);
 
     return (
-        <div>
+        <div data-testid={testId}>
             <Toggle
                 disabled={disabled}
                 isChecked={value}
@@ -63,7 +46,6 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
             >
                 {label}
             </Toggle>
-            {hint && <HelpText>{hint}</HelpText>}
         </div>
     );
 };
