@@ -91,7 +91,8 @@ export const DateTimeSelector = ({
         props.onSelectedChange(value);
     };
 
-    const [options, setOptionsDateTime] = useState<DateTimeOption[]>([]);
+    // Seed from suggestedOptions so the menu never renders empty on first paint (useEffect alone runs too late).
+    const [options, setOptionsDateTime] = useState<DateTimeOption[]>(suggestedOptions);
 
     useEffect(() => {
         setOptionsDateTime(suggestedOptions);
@@ -117,10 +118,15 @@ export const DateTimeSelector = ({
     );
 
     const updateOptions = useMemo(() => debounce((query: string) => {
-        const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = parse(locale, query, Mode.DurationValue);
+        const q = (query || '').trim();
+        const datetimes = (parseDateTimes(locale, q) ?? []).map(({start}) => DateTime.fromJSDate(start.date()));
+        const duration = parse(locale, q, Mode.DurationValue);
+        const made = makeOptions?.(q, datetimes, duration ? [duration] : [], mode);
 
-        setOptionsDateTime(makeOptions?.(query, datetimes, duration ? [duration] : [], mode) ?? suggestedOptions);
+        // null or [] both mean "no query-derived options" -- fall back to suggestedOptions
+        // so the menu never renders empty while the user is typing or after a clear.
+        const next = made && made.length > 0 ? made : suggestedOptions;
+        setOptionsDateTime(next);
     }, 150), [locale, makeOptions, suggestedOptions, mode]);
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
@@ -135,6 +141,11 @@ export const DateTimeSelector = ({
             onOpenChange={setOpen}
             target={targetWrapped}
             placement={props.placement}
+
+            // react-select is already a combobox/listbox; FloatingFocusManager can hide the
+            // menu from the a11y tree in tests (and screen readers) while the menu is open.
+            focusManager={false}
+            useFloatingRole={false}
         >
             <ReactSelect
                 isMulti={false}
