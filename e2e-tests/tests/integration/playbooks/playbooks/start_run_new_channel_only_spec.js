@@ -49,9 +49,9 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
 
                 // # Enable new_channel_only directly via API to avoid UI flakiness
                 playbook.new_channel_only = true;
-                cy.apiUpdatePlaybook(playbook);
-
-                restrictedPlaybook = playbook;
+                cy.apiUpdatePlaybook(playbook).then(() => {
+                    restrictedPlaybook = playbook;
+                });
             });
         });
 

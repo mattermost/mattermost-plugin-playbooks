@@ -187,8 +187,6 @@ const LegacyActionsEdit = ({playbook}: Props) => {
                         <div data-testid='new-channel-only-toggle'>
                             <NewChannelOnlyToggle
                                 playbook={playbook}
-                                isPlaybookAdmin={isPlaybookAdmin}
-                                isSystemAdmin={isSystemAdmin}
                                 disabled={archived}
                                 onChange={({new_channel_only}) => {
                                     updatePlaybook({

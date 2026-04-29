@@ -1746,7 +1746,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.67.0"),
 		toVersion:   semver.MustParse("0.68.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if err := addColumnToPGTable(e, "IR_Playbook", "NewChannelOnly", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+			if err := addColumnToPGTable(e, "IR_Playbook", "NewChannelOnly", "BOOLEAN DEFAULT FALSE"); err != nil {
 				return errors.Wrapf(err, "failed adding NewChannelOnly column to IR_Playbook")
 			}
 			return nil

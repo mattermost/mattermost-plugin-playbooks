@@ -378,6 +378,10 @@ func normalizeAndValidateRunCreationParams(playbookRun *PlaybookRun, pb *Playboo
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
+	if playbookRun == nil {
+		return nil, errors.Wrap(ErrMalformedPlaybookRun, "playbookRun cannot be nil")
+	}
+
 	auditRec := plugin.MakeAuditRecord("createPlaybookRun", model.AuditStatusFail)
 	defer s.api.LogAuditRec(auditRec)
 

@@ -12,8 +12,6 @@ interface PlaybookLike {
 
 interface Props {
     playbook: PlaybookLike;
-    isPlaybookAdmin: boolean;
-    isSystemAdmin?: boolean;
     onChange: (updated: {new_channel_only: boolean}) => void;
     disabled?: boolean;
 }

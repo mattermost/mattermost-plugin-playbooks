@@ -85,7 +85,6 @@ describe('NewChannelOnlyToggle', () => {
         const component = renderer.create(
             <NewChannelOnlyToggle
                 playbook={playbook}
-                isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
@@ -101,7 +100,6 @@ describe('NewChannelOnlyToggle', () => {
         const component = renderer.create(
             <NewChannelOnlyToggle
                 playbook={playbook}
-                isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
@@ -117,7 +115,6 @@ describe('NewChannelOnlyToggle', () => {
         const component = renderer.create(
             <NewChannelOnlyToggle
                 playbook={playbook}
-                isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
@@ -133,7 +130,6 @@ describe('NewChannelOnlyToggle', () => {
         const component = renderer.create(
             <NewChannelOnlyToggle
                 playbook={playbook}
-                isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
@@ -159,7 +155,6 @@ describe('NewChannelOnlyToggle', () => {
         const component = renderer.create(
             <NewChannelOnlyToggle
                 playbook={playbook}
-                isPlaybookAdmin={true}
                 onChange={onChange}
             />,
         );
