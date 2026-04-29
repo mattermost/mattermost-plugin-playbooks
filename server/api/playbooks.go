@@ -158,18 +158,6 @@ func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, logger logrus.Fie
 	return true
 }
 
-func (h *PlaybookHandler) validReminderTimer(w http.ResponseWriter, logger logrus.FieldLogger, playbook app.Playbook) bool {
-	if playbook.ReminderTimerDefaultSeconds < 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be >= 0", nil)
-		return false
-	}
-	if playbook.RetrospectiveEnabled && playbook.ReminderTimerDefaultSeconds == 0 {
-		h.HandleErrorWithCode(w, logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
-		return false
-	}
-	return true
-}
-
 func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	var playbook app.Playbook
@@ -183,7 +171,8 @@ func (h *PlaybookHandler) createPlaybook(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if !h.validReminderTimer(w, c.logger, playbook) {
+	if playbook.ReminderTimerDefaultSeconds <= 0 {
+		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
 		return
 	}
 
@@ -270,10 +259,6 @@ func (h *PlaybookHandler) updatePlaybook(c *Context, w http.ResponseWriter, r *h
 
 	if err = h.validateMetrics(playbook); err != nil {
 		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid metrics configs", err)
-		return
-	}
-
-	if !h.validReminderTimer(w, c.logger, playbook) {
 		return
 	}
 
