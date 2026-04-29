@@ -27,6 +27,10 @@ describe('playbooks > edit > auto archive', () => {
     });
 
     beforeEach(() => {
+        if (!testUser) {
+            return;
+        }
+
         // # Login as testUser
         cy.apiLogin(testUser);
 
@@ -35,6 +39,10 @@ describe('playbooks > edit > auto archive', () => {
     });
 
     afterEach(() => {
+        if (!testUser) {
+            return;
+        }
+
         cy.apiLogin(testUser);
         createdPlaybookIds.forEach((id) => cy.apiArchivePlaybook(id));
         createdPlaybookIds = [];

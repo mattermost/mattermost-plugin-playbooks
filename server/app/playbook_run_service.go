@@ -405,7 +405,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 		playbookRun.ChannelID = channel.Id
 		playbookRun.ChannelCreatedByRun = true
-		playbookRun.AutoArchiveChannel = pb.AutoArchiveChannel
+		if pb != nil {
+			playbookRun.AutoArchiveChannel = pb.AutoArchiveChannel
+		}
 		createdChannel = true
 	} else {
 		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -1525,17 +1527,17 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 			logger.WithError(err).Warn("failed to reset AutoArchivedChannel flag on run restore")
 		} else {
 			playbookRunToRestore = updatedRun
-			if unarchived {
-				unarchiveEvent := &TimelineEvent{
-					PlaybookRunID: playbookRunID,
-					CreateAt:      restoreAt + 1,
-					EventAt:       restoreAt + 1,
-					EventType:     ChannelUnarchived,
-					SubjectUserID: userID,
-				}
-				if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
-					logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
-				}
+		}
+		if unarchived {
+			unarchiveEvent := &TimelineEvent{
+				PlaybookRunID: playbookRunID,
+				CreateAt:      restoreAt + 1,
+				EventAt:       restoreAt + 1,
+				EventType:     ChannelUnarchived,
+				SubjectUserID: userID,
+			}
+			if _, err := s.store.CreateTimelineEvent(unarchiveEvent); err != nil {
+				logger.WithError(err).Warn("failed to create channel_unarchived timeline event")
 			}
 		}
 	}

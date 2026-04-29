@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import React, {
     Children,
     ReactNode,
-    useEffect,
     useState,
 } from 'react';
 
@@ -42,13 +41,6 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [autoArchiveOverride, setAutoArchiveOverride] = useState<boolean | undefined>(undefined);
     const effectiveAutoArchive = autoArchiveOverride ?? restPlaybook?.auto_archive_channel ?? false;
-
-    // Clear the optimistic override once the server state has caught up to it.
-    useEffect(() => {
-        if (autoArchiveOverride !== undefined && restPlaybook?.auto_archive_channel === autoArchiveOverride) {
-            setAutoArchiveOverride(undefined);
-        }
-    }, [restPlaybook?.auto_archive_channel, autoArchiveOverride]);
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
     const onChecklistCollapsedStateChange = (checklistIndex: number, state: boolean) => {
