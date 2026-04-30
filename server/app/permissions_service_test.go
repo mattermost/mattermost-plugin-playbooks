@@ -24,13 +24,13 @@ type permissionsTestFixture struct {
 // allowAllLicenseChecker is a LicenseChecker stub that permits all features.
 type allowAllLicenseChecker struct{}
 
-func (allowAllLicenseChecker) PlaybookAllowed(_ bool) bool         { return true }
-func (allowAllLicenseChecker) RetrospectiveAllowed() bool          { return true }
-func (allowAllLicenseChecker) TimelineAllowed() bool               { return true }
-func (allowAllLicenseChecker) StatsAllowed() bool                  { return true }
-func (allowAllLicenseChecker) ChecklistItemDueDateAllowed() bool   { return true }
-func (allowAllLicenseChecker) PlaybookAttributesAllowed() bool     { return true }
-func (allowAllLicenseChecker) ConditionalPlaybooksAllowed() bool   { return true }
+func (allowAllLicenseChecker) PlaybookAllowed(_ bool) bool       { return true }
+func (allowAllLicenseChecker) RetrospectiveAllowed() bool        { return true }
+func (allowAllLicenseChecker) TimelineAllowed() bool             { return true }
+func (allowAllLicenseChecker) StatsAllowed() bool                { return true }
+func (allowAllLicenseChecker) ChecklistItemDueDateAllowed() bool { return true }
+func (allowAllLicenseChecker) PlaybookAttributesAllowed() bool   { return true }
+func (allowAllLicenseChecker) ConditionalPlaybooksAllowed() bool { return true }
 
 func newPermissionsFixture(t *testing.T) *permissionsTestFixture {
 	t.Helper()

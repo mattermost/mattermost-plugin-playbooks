@@ -132,7 +132,9 @@ describe('Outline > handleAdminOnlyEditChange', () => {
     it('reverts to the optimistic state, not the stale prop, when two toggles race', async () => {
         let rejectFirst: (err: Error) => void;
         mockSavePlaybook
-            .mockReturnValueOnce(new Promise<any>((_, r) => { rejectFirst = r; }))
+            .mockReturnValueOnce(new Promise<any>((_, r) => {
+                rejectFirst = r;
+            }))
             .mockResolvedValueOnce(undefined as any);
 
         renderOutline(false);

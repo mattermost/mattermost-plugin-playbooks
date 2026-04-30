@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {
     NavLink,
     Redirect,
@@ -85,9 +90,9 @@ const PlaybookEditor = () => {
     const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
     const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
 
-    const canEdit = restPlaybook == null
-        ? false
-        : !effectiveAdminOnlyEdit || isPlaybookAdmin || isSystemAdmin;
+    const canEdit = restPlaybook == null ?
+        false :
+        !effectiveAdminOnlyEdit || isPlaybookAdmin || isSystemAdmin;
 
     if (error) {
         // not found
