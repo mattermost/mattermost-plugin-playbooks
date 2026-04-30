@@ -7,7 +7,6 @@ import React, {act, useState} from 'react';
 import renderer from 'react-test-renderer';
 
 import {savePlaybook} from 'src/client';
-import {makeBasePlaybook} from 'src/utils/test_helpers';
 
 import Outline from './outline';
 
@@ -89,8 +88,27 @@ const makeGraphQLPlaybook = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 });
 
-const makeRestPlaybook = (ownerGroupOnlyActions: boolean) =>
-    makeBasePlaybook({owner_group_only_actions: ownerGroupOnlyActions}) as any;
+const makeRestPlaybook = (ownerGroupOnlyActions: boolean) => ({
+    id: 'playbook-1',
+    title: 'Test Playbook',
+    description: '',
+    team_id: 'team-1',
+    public: true,
+    create_public_playbook_run: false,
+    delete_at: 0,
+    num_stages: 0,
+    num_steps: 0,
+    num_runs: 0,
+    num_actions: 0,
+    last_run_at: 0,
+    members: [],
+    default_playbook_member_role: '',
+    active_runs: 0,
+    default_owner_id: '',
+    default_owner_enabled: false,
+    run_summary_template_enabled: false,
+    owner_group_only_actions: ownerGroupOnlyActions,
+} as any);
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
