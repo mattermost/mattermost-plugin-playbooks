@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled, {css} from 'styled-components';
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
     NavLink,
     Redirect,
@@ -80,10 +80,14 @@ const PlaybookEditor = () => {
 
     useDefaultRedirectOnTeamChange(playbook?.team_id);
     const currentUserMember = useMemo(() => playbook?.members.find(({user_id}) => user_id === currentUserId), [playbook?.members, currentUserId]);
-    const isPlaybookAdmin = currentUserMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
+    const isPlaybookAdmin = currentUserMember?.roles?.includes(PlaybookRole.Admin) ?? false;
 
-    // Default to read-only until restPlaybook loads, so non-admins never briefly see editable UI on an admin-locked playbook.
-    const canEdit = restPlaybook != null && (!restPlaybook.admin_only_edit || isPlaybookAdmin || isSystemAdmin);
+    const [adminOnlyEditOverride, setAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
+    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
+
+    const canEdit = restPlaybook == null
+        ? false
+        : !effectiveAdminOnlyEdit || isPlaybookAdmin || isSystemAdmin;
 
     if (error) {
         // not found
@@ -299,6 +303,8 @@ const PlaybookEditor = () => {
                         canEdit={canEdit}
                         restPlaybook={restPlaybook ?? undefined}
                         showAdminSettings={isSystemAdmin || isPlaybookAdmin}
+                        adminOnlyEditOverride={adminOnlyEditOverride}
+                        setAdminOnlyEditOverride={setAdminOnlyEditOverride}
                     />
                 </Route>
                 <Route

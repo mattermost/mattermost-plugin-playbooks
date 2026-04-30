@@ -6,8 +6,6 @@
 import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 
-import {makeBasePlaybook} from 'src/utils/test_helpers';
-
 import AdminOnlyEditToggle from './admin_only_edit_toggle';
 
 jest.mock('src/components/backstage/playbook_edit/automation/toggle', () => ({
@@ -35,23 +33,21 @@ jest.mock('react-intl', () => {
     };
 });
 
-const makePlaybook = (adminOnlyEdit: boolean) => makeBasePlaybook({admin_only_edit: adminOnlyEdit});
-
 describe('AdminOnlyEditToggle', () => {
     it('renders toggle', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
-                playbook={makePlaybook(false)}
+                isChecked={false}
                 onChange={jest.fn()}
             />,
         );
         expect(component.toJSON()).toBeTruthy();
     });
 
-    it('toggle is checked when admin_only_edit is true', () => {
+    it('toggle is checked when isChecked is true', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
-                playbook={makePlaybook(true)}
+                isChecked={true}
                 onChange={jest.fn()}
             />,
         );
@@ -59,10 +55,10 @@ describe('AdminOnlyEditToggle', () => {
         expect(tree[0].props['data-checked']).toBe(true);
     });
 
-    it('toggle is unchecked when admin_only_edit is false', () => {
+    it('toggle is unchecked when isChecked is false', () => {
         const component = renderer.create(
             <AdminOnlyEditToggle
-                playbook={makePlaybook(false)}
+                isChecked={false}
                 onChange={jest.fn()}
             />,
         );
@@ -70,11 +66,11 @@ describe('AdminOnlyEditToggle', () => {
         expect(tree[0].props['data-checked']).toBe(false);
     });
 
-    it('calls onChange with admin_only_edit: true when toggling on', () => {
+    it('calls onChange with true when toggling on', () => {
         const onChange = jest.fn();
         const component = renderer.create(
             <AdminOnlyEditToggle
-                playbook={makePlaybook(false)}
+                isChecked={false}
                 onChange={onChange}
             />,
         );
@@ -82,14 +78,14 @@ describe('AdminOnlyEditToggle', () => {
         act(() => {
             tree[0].children[0].props.onChange();
         });
-        expect(onChange).toHaveBeenCalledWith({admin_only_edit: true});
+        expect(onChange).toHaveBeenCalledWith(true);
     });
 
-    it('calls onChange with admin_only_edit: false when toggling off', () => {
+    it('calls onChange with false when toggling off', () => {
         const onChange = jest.fn();
         const component = renderer.create(
             <AdminOnlyEditToggle
-                playbook={makePlaybook(true)}
+                isChecked={true}
                 onChange={onChange}
             />,
         );
@@ -97,6 +93,6 @@ describe('AdminOnlyEditToggle', () => {
         act(() => {
             tree[0].children[0].props.onChange();
         });
-        expect(onChange).toHaveBeenCalledWith({admin_only_edit: false});
+        expect(onChange).toHaveBeenCalledWith(false);
     });
 });

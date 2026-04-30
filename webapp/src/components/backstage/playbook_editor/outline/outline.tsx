@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import React, {
     Children,
     ReactNode,
-    useMemo,
     useState,
 } from 'react';
 
@@ -33,22 +32,21 @@ interface Props {
     canEdit: boolean;
     restPlaybook?: PlaybookWithChecklist;
     showAdminSettings?: boolean;
+    adminOnlyEditOverride?: boolean;
+    setAdminOnlyEditOverride?: (value: boolean | undefined) => void;
 }
 
 type StyledAttrs = {className?: string};
 
-type RestOnlyOverrides = Pick<PlaybookWithChecklist, 'admin_only_edit'>;
-
-const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = false}: Props) => {
+const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = false, adminOnlyEditOverride: adminOnlyEditOverrideProp, setAdminOnlyEditOverride: setAdminOnlyEditOverrideProp}: Props) => {
     const {formatMessage} = useIntl();
     const updatePlaybook = useUpdatePlaybook(playbook.id);
     const retrospectiveAccess = useAllowRetrospectiveAccess();
     const archived = playbook.delete_at !== 0;
-    const [restOverrides, setRestOverrides] = useState<Partial<RestOnlyOverrides>>({});
-    const effectiveRestPlaybook = useMemo(
-        () => (restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook),
-        [restPlaybook, restOverrides],
-    );
+    const [localAdminOnlyEditOverride, setLocalAdminOnlyEditOverride] = useState<boolean | undefined>(undefined);
+    const adminOnlyEditOverride = adminOnlyEditOverrideProp ?? localAdminOnlyEditOverride;
+    const setAdminOnlyEditOverride = setAdminOnlyEditOverrideProp ?? setLocalAdminOnlyEditOverride;
+    const effectiveAdminOnlyEdit = adminOnlyEditOverride ?? restPlaybook?.admin_only_edit ?? false;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
 
@@ -82,12 +80,12 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
         });
     };
 
-    const handleAdminOnlyEditChange = (updated: Partial<{admin_only_edit: boolean}>) => {
-        if (!archived && restPlaybook && updated.admin_only_edit !== undefined) {
-            const prev = restPlaybook.admin_only_edit;
-            setRestOverrides((o) => ({...o, admin_only_edit: updated.admin_only_edit}));
-            savePlaybook({...restPlaybook, admin_only_edit: updated.admin_only_edit}).catch(() => {
-                setRestOverrides((o) => ({...o, admin_only_edit: prev}));
+    const handleAdminOnlyEditChange = (value: boolean) => {
+        if (!archived && restPlaybook) {
+            const prev = adminOnlyEditOverride ?? restPlaybook.admin_only_edit;
+            setAdminOnlyEditOverride(value);
+            savePlaybook({...restPlaybook, admin_only_edit: value}).catch(() => {
+                setAdminOnlyEditOverride(prev);
             });
         }
     };
@@ -187,14 +185,14 @@ const Outline = ({playbook, refetch, canEdit, restPlaybook, showAdminSettings = 
                     playbook={playbook}
                 />
             </Section>
-            {showAdminSettings && effectiveRestPlaybook && (
+            {showAdminSettings && restPlaybook && (
                 <Section
                     id={'settings'}
                     title={formatMessage({defaultMessage: 'Settings'})}
                 >
                     <div data-testid='admin-only-edit-toggle'>
                         <AdminOnlyEditToggle
-                            playbook={effectiveRestPlaybook}
+                            isChecked={effectiveAdminOnlyEdit}
                             onChange={handleAdminOnlyEditChange}
                         />
                     </div>
@@ -214,11 +212,13 @@ type SectionItem = {id: string, title: string};
 
 type SectionsProps = {
     children: ReactNode;
+    'data-testid'?: string;
 }
 
 const SectionsImpl = ({
     children,
     className,
+    'data-testid': dataTestId,
 }: SectionsProps & StyledAttrs) => {
     const items = Children.toArray(children).reduce<Array<SectionItem>>((result, node) => {
         if (
@@ -238,7 +238,10 @@ const SectionsImpl = ({
             <ScrollNav
                 items={items}
             />
-            <div className={className}>
+            <div
+                className={className}
+                data-testid={dataTestId}
+            >
                 {children}
             </div>
         </>

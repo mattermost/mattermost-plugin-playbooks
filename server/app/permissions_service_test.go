@@ -15,17 +15,29 @@ import (
 
 // permissionsTestFixture wires up a PermissionsService with a configurable
 // plugintest.API so tests can assert behavior of PlaybookEdit, IsPlaybookAdmin,
-// and canChangeAdminOnlyEdit without standing up the full app stack.
+// and PlaybookModifyWithFixes without standing up the full app stack.
 type permissionsTestFixture struct {
 	api *plugintest.API
 	svc *PermissionsService
 }
 
+// allowAllLicenseChecker is a LicenseChecker stub that permits all features.
+type allowAllLicenseChecker struct{}
+
+func (allowAllLicenseChecker) PlaybookAllowed(_ bool) bool         { return true }
+func (allowAllLicenseChecker) RetrospectiveAllowed() bool          { return true }
+func (allowAllLicenseChecker) TimelineAllowed() bool               { return true }
+func (allowAllLicenseChecker) StatsAllowed() bool                  { return true }
+func (allowAllLicenseChecker) ChecklistItemDueDateAllowed() bool   { return true }
+func (allowAllLicenseChecker) PlaybookAttributesAllowed() bool     { return true }
+func (allowAllLicenseChecker) ConditionalPlaybooksAllowed() bool   { return true }
+
 func newPermissionsFixture(t *testing.T) *permissionsTestFixture {
 	t.Helper()
 	api := &plugintest.API{}
 	svc := &PermissionsService{
-		pluginAPI: pluginapi.NewClient(api, nil),
+		pluginAPI:      pluginapi.NewClient(api, nil),
+		licenseChecker: allowAllLicenseChecker{},
 	}
 	t.Cleanup(func() { api.AssertExpectations(t) })
 	return &permissionsTestFixture{api: api, svc: svc}
@@ -284,7 +296,7 @@ func TestIsPlaybookAdmin(t *testing.T) {
 	})
 }
 
-func TestCanChangeAdminOnlyEdit(t *testing.T) {
+func TestPlaybookModifyWithFixes_AdminOnlyEditFlip(t *testing.T) {
 	const (
 		teamID     = "team-1"
 		playbookID = "pb-1"
@@ -293,73 +305,79 @@ func TestCanChangeAdminOnlyEdit(t *testing.T) {
 		memberID   = "u-pb-member"
 	)
 
-	t.Run("system admin allowed", func(t *testing.T) {
+	makePlaybook := func(adminOnly bool, members []PlaybookMember) Playbook {
+		return Playbook{
+			ID:                       playbookID,
+			TeamID:                   teamID,
+			Public:                   true,
+			AdminOnlyEdit:            adminOnly,
+			DefaultPlaybookAdminRole: PlaybookRoleAdmin,
+			Members:                  members,
+		}
+	}
+
+	t.Run("system admin can flip the flag", func(t *testing.T) {
 		f := newPermissionsFixture(t)
 		f.allowSysadmin(sysadminID)
 
-		pb := Playbook{ID: playbookID, TeamID: teamID, AdminOnlyEdit: true}
-		assert.NoError(t, f.svc.canChangeAdminOnlyEdit(sysadminID, pb))
+		old := makePlaybook(true, nil)
+		updated := makePlaybook(false, nil)
+		assert.NoError(t, f.svc.PlaybookModifyWithFixes(sysadminID, &updated, old))
 	})
 
-	t.Run("playbook admin allowed (symmetric — independent of current flag value)", func(t *testing.T) {
+	t.Run("playbook admin can enable (OFF→ON)", func(t *testing.T) {
+		f := newPermissionsFixture(t)
+		f.denySysadmin(adminID)
+		f.allowTeamView(adminID, teamID)
+		// PlaybookEdit → PlaybookManageProperties → hasPermissionsToPlaybook → RolesGrantPermission.
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(true).Maybe()
+
+		old := makePlaybook(false, []PlaybookMember{
+			{UserID: adminID, SchemeRoles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+		})
+		updated := makePlaybook(true, old.Members)
+		assert.NoError(t, f.svc.PlaybookModifyWithFixes(adminID, &updated, old))
+	})
+
+	t.Run("playbook admin can disable (ON→OFF)", func(t *testing.T) {
 		f := newPermissionsFixture(t)
 		f.denySysadmin(adminID)
 		f.allowTeamView(adminID, teamID)
 
-		pb := Playbook{
-			ID:     playbookID,
-			TeamID: teamID,
-			Public: true,
-			Members: []PlaybookMember{
-				{UserID: adminID, SchemeRoles: []string{PlaybookRoleAdmin}},
-			},
-		}
-
-		// Flag currently OFF → admin can enable.
-		pb.AdminOnlyEdit = false
-		assert.NoError(t, f.svc.canChangeAdminOnlyEdit(adminID, pb))
-
-		// Flag currently ON → admin can disable. Same gate, same actor.
-		pb.AdminOnlyEdit = true
-		assert.NoError(t, f.svc.canChangeAdminOnlyEdit(adminID, pb))
+		old := makePlaybook(true, []PlaybookMember{
+			{UserID: adminID, SchemeRoles: []string{PlaybookRoleAdmin, PlaybookRoleMember}},
+		})
+		updated := makePlaybook(false, old.Members)
+		assert.NoError(t, f.svc.PlaybookModifyWithFixes(adminID, &updated, old))
 	})
 
 	t.Run("admin-role member who has lost team access is denied", func(t *testing.T) {
-		// Compliance-style scenario: a user was a playbook admin, then was removed
-		// from the team. Their Members entry still carries the admin role, but the
-		// flip gate must fail-closed because team access is gone.
+		// Compliance-style scenario: user was a playbook admin, later removed from the team.
+		// Their Members entry still carries the admin role, but PlaybookEdit fails-closed.
 		f := newPermissionsFixture(t)
 		f.denySysadmin(adminID)
 		f.denyTeamView(adminID, teamID)
 
-		pb := Playbook{
-			ID:     playbookID,
-			TeamID: teamID,
-			Public: true,
-			Members: []PlaybookMember{
-				{UserID: adminID, SchemeRoles: []string{PlaybookRoleAdmin}},
-			},
-		}
-
-		err := f.svc.canChangeAdminOnlyEdit(adminID, pb)
+		old := makePlaybook(true, []PlaybookMember{
+			{UserID: adminID, SchemeRoles: []string{PlaybookRoleAdmin}},
+		})
+		updated := makePlaybook(false, old.Members)
+		err := f.svc.PlaybookModifyWithFixes(adminID, &updated, old)
 		assert.ErrorIs(t, err, ErrNoPermissions)
 	})
 
-	t.Run("plain member denied even with PlaybookManageProperties cascade", func(t *testing.T) {
+	t.Run("plain member cannot flip the flag even when they can otherwise edit", func(t *testing.T) {
+		// Member has PlaybookManageProperties (AdminOnlyEdit=false path) but not the flip gate.
 		f := newPermissionsFixture(t)
 		f.denySysadmin(memberID)
 		f.allowTeamView(memberID, teamID)
+		f.api.On("RolesGrantPermission", mock.AnythingOfType("[]string"), mock.AnythingOfType("string")).Return(true).Maybe()
 
-		pb := Playbook{
-			ID:     playbookID,
-			TeamID: teamID,
-			Public: true,
-			Members: []PlaybookMember{
-				{UserID: memberID, SchemeRoles: []string{PlaybookRoleMember}},
-			},
-		}
-
-		err := f.svc.canChangeAdminOnlyEdit(memberID, pb)
+		old := makePlaybook(false, []PlaybookMember{
+			{UserID: memberID, SchemeRoles: []string{PlaybookRoleMember}},
+		})
+		updated := makePlaybook(true, old.Members)
+		err := f.svc.PlaybookModifyWithFixes(memberID, &updated, old)
 		assert.ErrorIs(t, err, ErrNoPermissions)
 		assert.Contains(t, err.Error(), "admin_only_edit")
 	})

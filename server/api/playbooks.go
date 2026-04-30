@@ -651,12 +651,8 @@ func (h *PlaybookHandler) duplicatePlaybook(c *Context, w http.ResponseWriter, r
 		return
 	}
 
-	// When the source playbook is admin-locked, the duplicator must be authorized to edit it.
-	// Otherwise non-admin members could spawn editable copies of curated configurations.
-	if playbook.AdminOnlyEdit {
-		if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookEdit(userID, playbook)) {
-			return
-		}
+	if !h.PermissionsCheck(w, c.logger, h.permissions.PlaybookEdit(userID, playbook)) {
+		return
 	}
 
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)

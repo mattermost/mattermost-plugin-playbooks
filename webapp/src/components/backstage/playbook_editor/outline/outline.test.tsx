@@ -27,8 +27,8 @@ jest.mock('./section_retrospective', () => () => null);
 jest.mock('./section_actions', () => () => null);
 jest.mock('./scroll_nav', () => () => null);
 
-// Capture the onChange/playbook props passed to AdminOnlyEditToggle so tests can drive and inspect state.
-type ToggleProps = {playbook: {admin_only_edit: boolean}; onChange: (u: {admin_only_edit: boolean}) => void};
+// Capture the props passed to AdminOnlyEditToggle so tests can drive and inspect state.
+type ToggleProps = {isChecked: boolean; onChange: (value: boolean) => void};
 let toggleProps: ToggleProps | null = null;
 jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () => ({
     __esModule: true,
@@ -37,7 +37,7 @@ jest.mock('src/components/backstage/playbook_editor/admin_only_edit_toggle', () 
         return (
             <span
                 data-testid='mock-toggle'
-                data-value={String(props.playbook.admin_only_edit)}
+                data-value={String(props.isChecked)}
             />
         );
     },
@@ -86,7 +86,7 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         renderOutline(false);
 
         act(() => {
-            toggleProps!.onChange({admin_only_edit: true});
+            toggleProps!.onChange(true);
         });
 
         expect(mockSavePlaybook).toHaveBeenCalledTimes(1);
@@ -104,11 +104,11 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         const component = renderOutline(false);
 
         act(() => {
-            toggleProps!.onChange({admin_only_edit: true});
+            toggleProps!.onChange(true);
         });
 
         // Toggle should reflect the new value before the network request completes.
-        expect(toggleProps!.playbook.admin_only_edit).toBe(true);
+        expect(toggleProps!.isChecked).toBe(true);
 
         await act(async () => {
             resolve!();
@@ -122,11 +122,42 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         renderOutline(false);
 
         await act(async () => {
-            toggleProps!.onChange({admin_only_edit: true});
+            toggleProps!.onChange(true);
         });
 
         // After rejection, toggle should revert to the original value.
-        expect(toggleProps!.playbook.admin_only_edit).toBe(false);
+        expect(toggleProps!.isChecked).toBe(false);
+    });
+
+    it('reverts to the optimistic state, not the stale prop, when two toggles race', async () => {
+        let rejectFirst: (err: Error) => void;
+        mockSavePlaybook
+            .mockReturnValueOnce(new Promise<any>((_, r) => { rejectFirst = r; }))
+            .mockResolvedValueOnce(undefined as any);
+
+        renderOutline(false);
+
+        // First toggle: false → true
+        act(() => {
+            toggleProps!.onChange(true);
+        });
+        expect(toggleProps!.isChecked).toBe(true);
+
+        // Second toggle while first is in-flight: true → false
+        act(() => {
+            toggleProps!.onChange(false);
+        });
+        expect(toggleProps!.isChecked).toBe(false);
+
+        // First request now fails — rollback should restore true (the pre-first-toggle optimistic state),
+        // not false (the stale prop value), since the second toggle already moved to false.
+        await act(async () => {
+            rejectFirst!(new Error('network error'));
+        });
+
+        // The second toggle landed on false and succeeded; first rollback used prev=true.
+        // Net state should be false (second toggle won).
+        expect(toggleProps!.isChecked).toBe(false);
     });
 
     it('does nothing when the playbook is archived', () => {
@@ -134,7 +165,7 @@ describe('Outline > handleAdminOnlyEditChange', () => {
         renderOutline(false, true /* archived */);
 
         act(() => {
-            toggleProps!.onChange({admin_only_edit: true});
+            toggleProps!.onChange(true);
         });
 
         expect(mockSavePlaybook).not.toHaveBeenCalled();

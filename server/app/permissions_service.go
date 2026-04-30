@@ -197,26 +197,13 @@ func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) b
 	return slices.Contains(p.getPlaybookRole(userID, playbook), adminRole)
 }
 
-// canChangeAdminOnlyEdit returns nil if the user can flip the AdminOnlyEdit flag
-// on the given playbook. Allowed actors are system admins and playbook admins;
-// the rule is symmetric (same gate enables and disables the flag).
-func (p *PermissionsService) canChangeAdminOnlyEdit(userID string, playbook Playbook) error {
-	if IsSystemAdmin(userID, p.pluginAPI) {
-		return nil
-	}
-	if p.IsPlaybookAdmin(userID, playbook) {
-		return nil
-	}
-	return errors.Wrapf(ErrNoPermissions, "only a playbook admin can change admin_only_edit on playbook %s", playbook.ID)
-}
-
 // PlaybookManageConditions returns an error if the user cannot manage conditions for the playbook
 func (p *PermissionsService) PlaybookManageConditions(userID string, playbook Playbook) error {
 	if !p.licenseChecker.ConditionalPlaybooksAllowed() {
 		return errors.Wrapf(ErrLicensedFeature, "conditional playbooks feature is not covered by current server license")
 	}
 
-	return p.PlaybookManageProperties(userID, playbook)
+	return p.PlaybookEdit(userID, playbook)
 }
 
 // PlaybookViewConditions returns an error if the user cannot view conditions for the playbook
@@ -250,8 +237,8 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 	// a user with PlaybookManageProperties could enable the lock when oldPlaybook.AdminOnlyEdit=false,
 	// because PlaybookEdit only enforces the admin-only path against the old state.
 	if oldPlaybook.AdminOnlyEdit != playbook.AdminOnlyEdit {
-		if err := p.canChangeAdminOnlyEdit(userID, oldPlaybook); err != nil {
-			return err
+		if !IsSystemAdmin(userID, p.pluginAPI) && !p.IsPlaybookAdmin(userID, oldPlaybook) {
+			return errors.Wrapf(ErrNoPermissions, "only a playbook admin can change admin_only_edit on playbook %s", oldPlaybook.ID)
 		}
 	}
 

@@ -6,21 +6,20 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {Playbook} from 'src/types/playbook';
 
 type Props = {
-    playbook: Playbook;
-    onChange: (update: Partial<Playbook>) => void;
+    isChecked: boolean;
+    onChange: (value: boolean) => void;
 };
 
-const AdminOnlyEditToggle = ({playbook, onChange}: Props) => {
+const AdminOnlyEditToggle = ({isChecked, onChange}: Props) => {
     const intl = useIntl();
 
     return (
         <>
             <Toggle
-                isChecked={playbook.admin_only_edit}
-                onChange={() => onChange({admin_only_edit: !playbook.admin_only_edit})}
+                isChecked={isChecked}
+                onChange={() => onChange(!isChecked)}
             >
                 {intl.formatMessage({defaultMessage: 'Only admins can edit this playbook'})}
             </Toggle>
