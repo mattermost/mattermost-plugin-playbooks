@@ -214,7 +214,7 @@ const selectStyles: StylesConfig<TypeOption, false> = {
     control: (provided) => ({...provided, minWidth: 140, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
-        const hoverColor = 'rgba(var(--button-bg-rgb), 0.08)';
+        const hoverColor = 'rgba(20, 93, 191, 0.08)';
         const bgHover = state.isFocused ? hoverColor : 'transparent';
         return {
             ...provided,

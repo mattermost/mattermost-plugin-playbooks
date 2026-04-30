@@ -708,7 +708,7 @@ func (s *PlaybookRunServiceImpl) failedInvitedUserActions(usersFailedToInvite []
 	}
 
 	if _, err := s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
-		logrus.WithError(err).WithField("channel_id", channel.Id).Error("failedInvitedUserActions: failed to post to channel")
+		logrus.WithError(err).Error("failedInvitedUserActions: failed to post to channel")
 	}
 }
 
@@ -749,7 +749,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, userID, t
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	message := ""
@@ -823,7 +823,7 @@ func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo Requester
 func (s *PlaybookRunServiceImpl) OpenAddChecklistItemDialog(triggerID, userID, playbookRunID string, checklist int) error {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	T := i18n.GetUserTranslations(user.Locale)
@@ -1159,7 +1159,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, user
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	numOutstanding := 0
@@ -1363,14 +1363,14 @@ func (s *PlaybookRunServiceImpl) ToggleStatusUpdates(playbookRunID, userID strin
 	playbookRunToModify.StatusUpdateEnabled = enable
 
 	if playbookRunToModify, err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrap(err, "failed to update playbook run when toggling status updates")
+		return err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
-	}
 	T := i18n.GetUserTranslations(user.Locale)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
 
 	statusUpdate := "enabled"
 	eventType := StatusUpdatesEnabled
@@ -3436,7 +3436,6 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunInitialMemberships(playbookRun *P
 		_, userRoleID, adminRoleID := s.GetSchemeRolesForChannel(channel)
 		if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", userRoleID, adminRoleID)); err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
-				"run_id":        playbookRun.ID,
 				"channel_id":    channel.Id,
 				"owner_user_id": playbookRun.OwnerUserID,
 			}).Warn("failed to promote owner to admin")
@@ -3552,7 +3551,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, requesterID, postI
 				Type:        "text",
 				Default:     nameDefault,
 				MinLength:   nameMinLength,
-				MaxLength:   1024,
+				MaxLength:   64,
 				Optional:    nameOptional,
 			},
 		},
@@ -4243,10 +4242,7 @@ func (s *PlaybookRunServiceImpl) leaveActions(playbookRun *PlaybookRun, userID s
 
 	// To be added to the UI as an optional action
 	if err := s.api.DeleteChannelMember(playbookRun.ChannelID, userID); err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"run_id":  playbookRun.ID,
-			"user_id": userID,
-		}).Error("failed to remove user from linked channel")
+		logrus.WithError(err).WithField("user_id", userID).Error("failed to remove user from linked channel")
 	}
 }
 
@@ -4439,10 +4435,7 @@ func (s *PlaybookRunServiceImpl) participateActions(playbookRun *PlaybookRun, us
 
 	// Add user to the channel
 	if _, err := s.api.AddChannelMember(playbookRun.ChannelID, user.Id); err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"run_id":  playbookRun.ID,
-			"user_id": user.Id,
-		}).Error("participateActions: failed to add user to linked channel")
+		logrus.WithError(err).WithField("user_id", user.Id).Error("participateActions: failed to add user to linked channel")
 	}
 }
 

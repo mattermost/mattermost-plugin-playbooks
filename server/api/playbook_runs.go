@@ -605,7 +605,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 	}
 	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create playbook run")
+		return nil, err
 	}
 
 	// force database retrieval to ensure all data is processed correctly (i.e participantIds)
@@ -804,10 +804,6 @@ func (h *PlaybookRunHandler) getChannels(c *Context, w http.ResponseWriter, r *h
 // changeOwner handles the /runs/{id}/change-owner api endpoint.
 func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	if !model.IsValidId(vars["id"]) {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid run ID", errors.New("invalid run ID"))
-		return
-	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
@@ -818,24 +814,10 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 		return
 	}
 
-	if err := app.ValidateOwnerID(params.OwnerID); err != nil {
-		h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, "invalid owner ID", err)
-		return
-	}
-
 	if err := h.playbookRunService.ChangeOwner(vars["id"], userID, params.OwnerID); err != nil {
-		if errors.Is(err, app.ErrNotFound) {
-			// Return 403 (not 404) to stay consistent with the permission check above
-			// and avoid leaking run existence in a race where the run is deleted
-			// between the permission check and the service call.
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to change the owner of this run.", err)
-			return
-		}
 		h.HandleError(w, c.logger, err)
 		return
 	}
-
-	c.logger.WithField("run_id", vars["id"]).WithField("user_id", userID).WithField("new_owner_id", params.OwnerID).Info("playbook run owner changed")
 
 	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
