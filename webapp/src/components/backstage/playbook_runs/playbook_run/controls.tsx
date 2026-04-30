@@ -31,7 +31,6 @@ import {StyledDropdownMenuItem, StyledDropdownMenuItemRed} from 'src/components/
 import {useToaster} from 'src/components/backstage/toast_banner';
 import {Role, Separator} from 'src/components/backstage/playbook_runs/shared';
 import {RunPermissionFields, useCanModifyRun, useCanRestoreRun} from 'src/hooks/run_permissions';
-import {isCurrentUserAdmin} from 'src/selectors';
 import {ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {useToggleRunStatusUpdate} from './enable_disable_run_status_update';
@@ -308,13 +307,21 @@ export const ToggleRunStatusUpdateMenuItem = (props: {playbookRun: PlaybookRun, 
 export const ToggleRunRetrospectiveMenuItem = (props: {playbookRun: PlaybookRun}) => {
     const toggleRetrospective = useToggleRunRetrospective(props.playbookRun);
     const currentUserId = useAppSelector(getCurrentUserId);
-    const isAdmin = useAppSelector(isCurrentUserAdmin);
+
+    const runForPermissions: RunPermissionFields = {
+        type: props.playbookRun.type,
+        channel_id: props.playbookRun.channel_id,
+        team_id: props.playbookRun.team_id,
+        owner_user_id: props.playbookRun.owner_user_id,
+        participant_ids: props.playbookRun.participant_ids,
+        current_status: props.playbookRun.current_status,
+    };
+
+    const canModify = useCanModifyRun(runForPermissions, currentUserId);
 
     const retrospectiveEnabled = props.playbookRun.retrospective_enabled;
 
-    const canToggle = props.playbookRun.owner_user_id === currentUserId || isAdmin;
-
-    if (!canToggle) {
+    if (!canModify) {
         return null;
     }
 
