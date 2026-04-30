@@ -1844,12 +1844,6 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 		return errors.Wrap(err, "failed to add owner as a participant")
 	}
 
-	// Re-read the run after AddParticipants to get the latest checklists.
-	playbookRunToModify, err = s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to re-read playbook run after AddParticipants")
-	}
-
 	// Snapshot AFTER AddParticipants so the WS diff only includes the owner change.
 	var originalRun *PlaybookRun
 	if s.configService.IsIncrementalUpdatesEnabled() {
@@ -5350,7 +5344,7 @@ func resolveOwnerRoleAssignments(checklists []Checklist, ownerID string) {
 			if item.AssigneeType == AssigneeTypeOwner && item.AssigneeID != ownerID {
 				item.AssigneeID = ownerID
 				item.AssigneeModified = now
-				checklists[ci].UpdateAt = now
+				updateChecklistAndItemTimestamp(&checklists[ci], item, now)
 			}
 		}
 	}
@@ -5428,6 +5422,7 @@ func resolvePropertyUserAssignmentsForField(checklists []Checklist, fieldID, use
 				noChangeNeeded := applyPropertyUserAssigneeUpdate(item, fieldID, userID)
 				if !noChangeNeeded {
 					item.AssigneeModified = now
+					updateChecklistAndItemTimestamp(&checklists[ci], item, now)
 					anyChanged = true
 				}
 			}

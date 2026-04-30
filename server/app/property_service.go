@@ -757,6 +757,7 @@ var reservedFieldNames = []string{"OWNER", "CREATOR", "PROPERTY_USER"}
 // validateReservedFieldName rejects field names that would conflict with built-in
 // template placeholders or system fields. Reserved names: OWNER, CREATOR, PROPERTY_USER (case-insensitive).
 func validateReservedFieldName(name string) error {
+	name = strings.TrimSpace(name)
 	for _, r := range reservedFieldNames {
 		if strings.EqualFold(name, r) {
 			return errors.Wrapf(ErrReservedPropertyFieldName, "field name %q is reserved", r)

@@ -26,6 +26,7 @@ export interface RoleOption {
 
 interface AssignedToProps {
     assignee_id: string;
+    assignee_type?: string;
     participantUserIds: string[];
     editable: boolean;
     inHoverMenu?: boolean;
@@ -90,7 +91,7 @@ const AssignTo = (props: AssignedToProps) => {
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
                 customControlProps={{
-                    showCustomReset: Boolean(props.assignee_id),
+                    showCustomReset: Boolean(props.assignee_id) || Boolean(props.assignee_type),
                     onCustomReset: resetAssignee,
                 }}
                 controlledOpenToggle={profileSelectorToggle}

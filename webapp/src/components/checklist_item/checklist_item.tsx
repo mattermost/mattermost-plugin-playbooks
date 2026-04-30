@@ -614,6 +614,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         showDescription={showDescription}
                         toggleDescription={toggleDescription}
                         assignee_id={assigneeID || ''}
+                        assignee_type={assigneeType}
                         onAssigneeChange={onAssigneeChange}
                         onExtraOptionSelected={onExtraOptionSelected}
                         roleOptions={roleOptions}

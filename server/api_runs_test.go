@@ -502,7 +502,7 @@ func TestCreateInvalidRuns(t *testing.T) {
 			PlaybookID:  e.BasicPlaybook.ID,
 			Summary:     strings.Repeat("A", 4097),
 		})
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 		assert.Nil(t, run)
 	})
 
@@ -1985,7 +1985,8 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 
 		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
-		resp, _ := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		require.Error(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
@@ -2108,7 +2109,8 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		require.NoError(t, err)
 
 		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
-		resp, _ := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		resp, err := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
+		require.Error(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})

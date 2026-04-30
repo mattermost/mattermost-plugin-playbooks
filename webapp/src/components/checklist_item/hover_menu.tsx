@@ -43,6 +43,7 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
+    assignee_type?: string;
     onAssigneeChange: (user?: UserProfile) => void;
     onExtraOptionSelected?: (value: string) => void;
     roleOptions?: RoleOption[];
@@ -80,6 +81,7 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 <AssignTo
                     participantUserIds={props.participantUserIds}
                     assignee_id={props.assignee_id}
+                    assignee_type={props.assignee_type}
                     editable={props.isEditing}
                     inHoverMenu={true}
                     onSelectedChange={props.onAssigneeChange}
