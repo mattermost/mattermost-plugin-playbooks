@@ -258,11 +258,8 @@
   "Nh91Us": "{from, number}–{to, number} of {total, number} total",
   "NiAH1z": "Target value",
   "NrHdCC": "Are you sure you want to restart {name}?",
-<<<<<<< HEAD
   "O08xtN": "Failed to save setting. Please try again.",
-=======
   "OG34OC": "Exit bulk edit",
->>>>>>> master
   "OQplDX": "A status update is expected every <duration></duration>. New updates will be posted to <channels>{channelCount, plural, =0 {no channels} one {# channel} other {# channels}}</channels> and <webhooks>{webhookCount, plural, =0 {no outgoing webhooks} one {# outgoing webhook} other {# outgoing webhooks}}</webhooks>.",
   "Ob5cSv": "Changes that you made will not be saved if you leave this page. Are you sure you want to discard changes and leave?",
   "ObmjTB": "Slash Command",
