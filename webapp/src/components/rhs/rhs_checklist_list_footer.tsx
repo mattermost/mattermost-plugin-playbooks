@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
+
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import styled from 'styled-components';
 import {DateTime} from 'luxon';
@@ -63,8 +64,7 @@ const RHSFooter = ({
         return null;
     }
 
-    // Priority 1: Show ParticipatePrompt if active and not a participant
-    // System admins bypass this — they should see action controls directly.
+    // System admins bypass the participate gate — they should see action controls directly.
     if (active && !isParticipant && !isSystemAdmin) {
         return (
             <ParticipatePrompt>
@@ -91,8 +91,6 @@ const RHSFooter = ({
         );
     }
 
-    // Priority 2: Show finish prompt to users who can modify the run and are not blocked by owner-only restrictions.
-    // System admins can always finish a run (admin bypass).
     if (active && (canModify || isSystemAdmin) && !blockedByOwnerOnly) {
         return (
             <FinishPrompt data-testid='rhs-finish-section'>
@@ -112,7 +110,6 @@ const RHSFooter = ({
         );
     }
 
-    // Priority 4: Show FinishedFooter if finished
     let resumeTooltipMsg: string;
     if (blockedByOwnerOnly) {
         resumeTooltipMsg = formatMessage({defaultMessage: 'Only the run owner can restore this run'});

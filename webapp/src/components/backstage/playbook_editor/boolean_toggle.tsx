@@ -48,12 +48,7 @@ const BooleanToggle = ({label, hint, value, onChange, disabled, confirmationRequ
                     onChange(true);
                     pendingRef.current = false;
                 },
-                onCancel: () => {
-                    pendingRef.current = false;
-                },
                 onExited: () => {
-                    // Safety valve: reset pending state when the modal fully unmounts,
-                    // covering any dismiss path (ESC, backdrop, etc.) that bypasses onCancel.
                     pendingRef.current = false;
                 },
             })));

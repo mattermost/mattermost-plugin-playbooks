@@ -182,7 +182,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
     const {formatMessage} = useIntl();
     const onFinishRun = useOnFinishRun(props.playbookRun, props.location || 'backstage');
     const currentUserId = useAppSelector(getCurrentUserId);
-    const isBlockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -196,14 +196,12 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
 
     const canModify = useCanModifyRun(runForPermissions, currentUserId);
 
-    const blockedByOwnerOnly = canModify && isBlockedByOwnerOnly;
-
     if (canModify) {
         return (
             <>
                 <Separator/>
                 <StyledDropdownMenuItem
-                    onClick={onFinishRun}
+                    onClick={blockedByOwnerOnly ? () => undefined : onFinishRun}
                     disabled={blockedByOwnerOnly}
                     disabledAltText={blockedByOwnerOnly ? formatMessage({id: 'playbooks.finish_run.owner_only_tooltip', defaultMessage: 'Only the run owner can finish this run'}) : undefined}
                 >
@@ -243,7 +241,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
     const onRestoreRun = useOnRestoreRun(props.playbookRun, props.location || 'backstage');
     const isChannelChecklist = props.playbookRun.type === PlaybookRunType.ChannelChecklist;
     const currentUserId = useAppSelector(getCurrentUserId);
-    const isBlockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
+    const blockedByOwnerOnly = useIsBlockedByOwnerOnlyForFinishRestore(props.ownerGroupOnlyActions, props.isOwner);
 
     // Create a minimal run object with only the fields needed for permission checking
     const runForPermissions: RunPermissionFields = {
@@ -258,12 +256,11 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
     const canRestore = useCanRestoreRun(runForPermissions, currentUserId);
 
     if (!playbookRunIsActive(props.playbookRun) && canRestore) {
-        const blockedByOwnerOnly = isBlockedByOwnerOnly;
         return (
             <>
                 <Separator/>
                 <StyledDropdownMenuItem
-                    onClick={blockedByOwnerOnly ? () => undefined : onRestoreRun}
+                    onClick={onRestoreRun}
                     className='restartRun'
                     disabled={blockedByOwnerOnly}
                     disabledAltText={blockedByOwnerOnly ? formatMessage({id: 'playbooks.restore_run.owner_only_tooltip', defaultMessage: 'Only the run owner can restart this run'}) : undefined}

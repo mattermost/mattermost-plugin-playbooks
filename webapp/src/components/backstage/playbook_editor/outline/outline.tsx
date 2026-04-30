@@ -6,6 +6,7 @@ import React, {
     Children,
     ReactNode,
     useCallback,
+    useRef,
     useState,
 } from 'react';
 
@@ -57,6 +58,7 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     const isPlaybookAdmin = currentMember?.scheme_roles?.includes(PlaybookRole.Admin) ?? false;
     const [restOverrides, setRestOverrides] = useState<Partial<RestOnlyOverrides>>({});
     const [isSavingOwnerGroupOnlyActions, setIsSavingOwnerGroupOnlyActions] = useState(false);
+    const isSavingRef = useRef(false);
     const effectiveRestPlaybook = restPlaybook ? {...restPlaybook, ...restOverrides} : restPlaybook;
     const [checklistCollapseState, setChecklistCollapseState] = useState<Record<number, boolean>>({});
     const [bulkEditMode, setBulkEditMode] = useState(false);
@@ -92,10 +94,11 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
     };
 
     const handleOwnerGroupOnlyActionsChange = useCallback(async (updated: {owner_group_only_actions: boolean}) => {
-        if (archived || !restPlaybook || isSavingOwnerGroupOnlyActions) {
+        if (archived || !restPlaybook || isSavingRef.current) {
             return;
         }
-        const prev = effectiveRestPlaybook!.owner_group_only_actions;
+        const prev = restPlaybook.owner_group_only_actions;
+        isSavingRef.current = true;
         setIsSavingOwnerGroupOnlyActions(true);
         setRestOverrides((o) => ({...o, owner_group_only_actions: updated.owner_group_only_actions}));
         try {
@@ -107,9 +110,10 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
                 toastStyle: ToastStyle.Failure,
             });
         } finally {
+            isSavingRef.current = false;
             setIsSavingOwnerGroupOnlyActions(false);
         }
-    }, [archived, restPlaybook, isSavingOwnerGroupOnlyActions, effectiveRestPlaybook, toaster, formatMessage]);
+    }, [archived, restPlaybook, toaster, formatMessage]);
 
     return (
         <Sections

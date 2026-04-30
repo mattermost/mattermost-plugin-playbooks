@@ -82,11 +82,8 @@ func NewPlaybookRunHandler(
 	playbookRunRouter.HandleFunc("/request-update", withContext(handler.requestUpdate)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/request-join-channel", withContext(handler.requestJoinChannel)).Methods(http.MethodPost)
 
-	// These routes are intentionally outside playbookRunRouterAuthorized: each handler
-	// performs its own permission check (RunChangeOwner, RunFinish, RunRestore) which may
-	// be stricter than the middleware's RunManageProperties when OwnerGroupOnlyActions is set.
-	// Dialog handlers must also return SubmitDialogResponse (HTTP 200) on all paths,
-	// which the middleware's error-format would break.
+	// These routes perform their own per-handler permission check; dialog handlers must also
+	// return SubmitDialogResponse (HTTP 200) on all paths, which the middleware's error format breaks.
 	playbookRunRouter.HandleFunc("/owner", withContext(handler.changeOwner)).Methods(http.MethodPost)
 	playbookRunRouter.HandleFunc("/finish", withContext(handler.finish)).Methods(http.MethodPut)
 	playbookRunRouter.HandleFunc("/restore", withContext(handler.restore)).Methods(http.MethodPut)
@@ -801,12 +798,7 @@ func (h *PlaybookRunHandler) changeOwner(c *Context, w http.ResponseWriter, r *h
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunChangeOwner(userID, vars["id"]); err != nil {
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to change the owner of this run.", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunChangeOwner(userID, vars["id"])) {
 		return
 	}
 
@@ -853,10 +845,6 @@ func (h *PlaybookRunHandler) status(c *Context, w http.ResponseWriter, r *http.R
 // updateStatus returns a publicMessage and an internal error
 func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
 
-	// When the status update also finishes the run, enforce the owner-only
-	// restriction so non-owner participants cannot bypass it by finishing via
-	// the status endpoint or update-status dialog. RunFinish already includes
-	// the base participant check, so skip the redundant RunManageProperties call.
 	if options.FinishRun {
 		if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
 			return "Not authorized to finish this run", err
@@ -896,12 +884,7 @@ func (h *PlaybookRunHandler) finish(c *Context, w http.ResponseWriter, r *http.R
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to finish this run.", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunFinish(userID, playbookRunID)) {
 		return
 	}
 
@@ -964,12 +947,7 @@ func (h *PlaybookRunHandler) restore(c *Context, w http.ResponseWriter, r *http.
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.permissions.RunRestore(userID, playbookRunID); err != nil {
-		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
-			h.HandleErrorWithCode(w, c.logger, http.StatusForbidden, "You don't have permission to restore this run.", err)
-		} else {
-			h.HandleError(w, c.logger, err)
-		}
+	if !h.PermissionsCheck(w, c.logger, h.permissions.RunRestore(userID, playbookRunID)) {
 		return
 	}
 
@@ -1022,7 +1000,6 @@ func (h *PlaybookRunHandler) finishDialog(c *Context, w http.ResponseWriter, r *
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.permissions.RunFinish(userID, playbookRunID); err != nil {
-		// RunFinish already includes the base participant check plus OwnerOnlyFinish.
 		if errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrNoPermissions) {
 			ReturnJSON(w, &model.SubmitDialogResponse{
 				Error: "You don't have permission to finish this run.",
@@ -1107,9 +1084,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(c *Context, w http.ResponseWrite
 	}
 
 	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
-		// Dialog handlers must return SubmitDialogResponse (HTTP 200) so the dialog
-		// framework can surface the error message to the user. Returning a 4xx is
-		// treated as a generic transport error and shows nothing.
+		// Dialog handlers must return HTTP 200 with SubmitDialogResponse so the dialog can show errors.
 		if errors.Is(internalErr, app.ErrNoPermissions) || errors.Is(internalErr, app.ErrNotFound) {
 			ReturnJSON(w, &model.SubmitDialogResponse{
 				Error: publicMsg,

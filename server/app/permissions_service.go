@@ -149,12 +149,8 @@ func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) er
 	return errors.Wrapf(ErrNoPermissions, "user `%s` does not have permission to create playbook", userID)
 }
 
-// IsPlaybookAdmin reports whether the user holds the playbook's admin role AND
-// currently has team-view access. Baking in the team-view check ensures callers
-// can treat a true result as "admin actor we trust right now" rather than a
-// stale membership snapshot — a former team member who still has the admin role
-// recorded on the playbook returns false.
-// Uses DefaultPlaybookAdminRole when set, falling back to PlaybookRoleAdmin.
+// IsPlaybookAdmin returns true if the user has the admin role on the playbook AND
+// currently has team-view access (stale memberships return false).
 func (p *PermissionsService) IsPlaybookAdmin(userID string, playbook Playbook) bool {
 	if !p.canViewTeam(userID, playbook.TeamID) {
 		return false
@@ -726,18 +722,11 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 		if run == nil {
 			return nil, nil, err
 		}
-		// pkg/errors implements Unwrap(), so errors.Is traverses the chain correctly
 		if errors.Is(err, ErrNotFound) {
-			// Team-access gate: a former team member who still owns the run must
-			// not be able to act on it after losing team access. Matches the
-			// canViewTeam check enforced by runManagePropertiesWithPlaybookRun
-			// on the non-deleted path.
+			// Playbook deleted — require team access plus owner or system admin.
 			if !p.canViewTeam(userID, run.TeamID) {
 				return run, nil, errors.Wrapf(ErrNoPermissions, "no run access; no team view permission for team `%s`", run.TeamID)
 			}
-			// Playbook deleted: fail-closed to run owner or system admin only.
-			// Team admins are intentionally excluded: deleting a playbook must not
-			// elevate privileges for users who had no lifecycle rights on the run.
 			if run.OwnerUserID == userID || IsSystemAdmin(userID, p.pluginAPI) {
 				return run, nil, nil
 			}
@@ -760,14 +749,7 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 	if run.OwnerUserID == userID {
 		return run, playbook, nil
 	}
-	// IsSystemAdmin is intentionally fail-closed: HasPermissionTo returns false (not an
-	// error) when the user record is temporarily unavailable. Denying access during an
-	// outage is preferable to bypassing owner-only enforcement for lifecycle transitions.
 	if IsSystemAdmin(userID, p.pluginAPI) {
-		// Structured event for sysadmin lifecycle bypass on OwnerGroupOnlyActions runs.
-		// Mirrors playbook_admin_owner_only_bypass for compliance/forensics parity, since
-		// sysadmins also bypass the owner-only gate and the higher privilege level
-		// makes audit visibility more important, not less.
 		logrus.WithFields(logrus.Fields{
 			"event":       "system_admin_owner_only_bypass",
 			"user_id":     userID,
@@ -780,10 +762,8 @@ func (p *PermissionsService) runRequiresOwnerOrAdmin(userID, runID, actionName s
 	return run, playbook, errors.Wrapf(ErrNoPermissions, "only the run owner or admin can %s run %s", actionName, runID)
 }
 
-// RunFinish checks whether userID can finish or restore runID.
-// When OwnerGroupOnlyActions is set on the playbook, only the run owner or a system
-// admin can finish OR restore the run. The same gate applies to both lifecycle
-// transitions intentionally — see PlaybookRun.OwnerGroupOnlyActions for rationale.
+// RunFinish checks whether userID can finish runID.
+// When Playbook.OwnerGroupOnlyActions is set, only the run owner or a system admin can finish the run.
 func (p *PermissionsService) RunFinish(userID, runID string) error {
 	_, _, err := p.runRequiresOwnerOrAdmin(userID, runID, "finish")
 	return err
@@ -806,26 +786,17 @@ func (p *PermissionsService) RunRestore(userID, runID string) error {
 // effectively bypassing OwnerGroupOnlyActions in two steps. This is an intentional policy
 // decision to enable legitimate ownership handoffs when the original owner is unavailable.
 func (p *PermissionsService) RunChangeOwner(userID, runID string) error {
-	// Base check: same as RunFinish (owner or system admin when OwnerGroupOnlyActions is set).
-	// Reuse the loaded run and playbook to avoid a second DB round-trip on base-check failure.
 	run, playbook, baseErr := p.runRequiresOwnerOrAdmin(userID, runID, "reassign ownership of")
 	if baseErr == nil {
 		return nil
 	}
 
-	// Additional: playbook admins can also reassign ownership when OwnerGroupOnlyActions is set,
-	// to enable legitimate handoffs when the original owner is unavailable.
-	// They must at minimum be a team member to prevent external access.
 	if run == nil {
-		// loadRunAndPlaybook itself failed; no admin fallback possible.
 		return baseErr
 	}
+	// Playbook admins can also reassign ownership when OwnerGroupOnlyActions is set.
 	if playbook != nil && playbook.OwnerGroupOnlyActions {
-		// runRequiresOwnerOrAdmin (above) already allows system admins via the owner/admin path,
-		// so here we only need playbook admins. IsPlaybookAdmin bakes in the team-view check.
 		if p.IsPlaybookAdmin(userID, *playbook) {
-			// Structured event so downstream audit pipelines can detect playbook-admin
-			// ownership takeover that bypasses OwnerGroupOnlyActions on a run they don't own.
 			logrus.WithFields(logrus.Fields{
 				"event":       "playbook_admin_owner_only_bypass",
 				"user_id":     userID,

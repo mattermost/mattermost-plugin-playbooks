@@ -91,9 +91,9 @@ export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string
 
         dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
             show: true,
-            title: formatMessage({id: 'playbooks.finish_run.confirm_title', defaultMessage: 'Confirm finish'}),
+            title: formatMessage({defaultMessage: 'Confirm finish'}),
             message: confirmationMessage,
-            confirmButtonText: formatMessage({id: 'playbooks.finish_run.confirm_button', defaultMessage: 'Finish'}),
+            confirmButtonText: formatMessage({defaultMessage: 'Finish'}),
             onConfirm,
             // eslint-disable-next-line no-empty-function
             onCancel: () => {},
@@ -123,10 +123,10 @@ const FinishRun = ({playbookRun, ownerGroupOnlyActions, isOwner}: Props) => {
                 <IconWrapper>
                     <FlagOutlineIcon size={24}/>
                 </IconWrapper>
-                <Text>{formatMessage({id: 'playbooks.finish_run.prompt', defaultMessage: 'Time to wrap up?'})}</Text>
+                <Text>{formatMessage({defaultMessage: 'Time to wrap up?'})}</Text>
                 <RightWrapper>
                     <FinishRunButton onClick={onFinishRun}>
-                        {formatMessage({id: 'playbooks.finish_run.button', defaultMessage: 'Finish'})}
+                        {formatMessage({defaultMessage: 'Finish'})}
                     </FinishRunButton>
                 </RightWrapper>
             </Content>
