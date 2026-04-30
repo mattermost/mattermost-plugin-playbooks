@@ -90,25 +90,25 @@ export const RunPlaybookModal = ({
         if (effectiveChannelMode === 'create_new_channel') {
             setRunName(playbook?.channel_name_template ?? '');
         }
-    }, [effectiveChannelMode, playbook?.channel_name_template]);
+    }, [effectiveChannelMode, playbook?.id, playbook?.channel_name_template]);
 
     useEffect(() => {
         if (playbook?.run_summary_template_enabled) {
             setRunSummary(playbook.run_summary_template);
         }
-    }, [playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
+    }, [playbook?.id, playbook?.run_summary_template_enabled, playbook?.run_summary_template]);
 
     useEffect(() => {
         if (playbook?.channel_id) {
             setChannelId(playbook.channel_id);
         }
-    }, [playbook?.channel_id]);
+    }, [playbook?.id, playbook?.channel_id]);
 
     useEffect(() => {
         if (playbook) {
             setCreatePublicRun(playbook.create_public_playbook_run);
         }
-    }, [playbook?.create_public_playbook_run]);
+    }, [playbook?.id, playbook?.create_public_playbook_run]);
 
     const createNewChannel = channelMode === 'create_new_channel';
     const linkExistingChannel = channelMode === 'link_existing_channel';

@@ -165,7 +165,7 @@ describe('playbooks > start a run > new_channel_only modal enforcement', {testIs
             cy.get('#confirmModal').within(() => {
                 cy.get('#confirmModalLabel').should('contain', 'Require new channel for all runs');
                 cy.get('#confirmModalBody').should('contain', 'Enabling this will prevent runs from linking to existing channels');
-                cy.get('#confirmModalButton').should('exist');
+                cy.get('#confirmModalButton').should('contain', 'Confirm');
             });
             cy.get('#cancelModalButton').click();
         });
