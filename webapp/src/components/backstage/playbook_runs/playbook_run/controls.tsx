@@ -201,7 +201,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
             <>
                 <Separator/>
                 <StyledDropdownMenuItem
-                    onClick={blockedByOwnerOnly ? () => undefined : onFinishRun}
+                    onClick={onFinishRun}
                     disabled={blockedByOwnerOnly}
                     disabledAltText={blockedByOwnerOnly ? formatMessage({defaultMessage: 'Only the run owner can finish this run'}) : undefined}
                 >
