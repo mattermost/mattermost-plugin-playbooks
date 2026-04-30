@@ -16,12 +16,7 @@ import {DateTime} from 'luxon';
 
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from '@mattermost/types/store';
-import {
-    getProfilesInCurrentTeam,
-    getUser,
-    makeGetProfilesInChannel,
-    getProfilesInTeam as selectProfilesInTeam,
-} from 'mattermost-redux/selectors/entities/users';
+import {getUser, makeGetProfilesInChannel, getProfilesInTeam as selectProfilesInTeam} from 'mattermost-redux/selectors/entities/users';
 import {getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -188,6 +183,7 @@ export function clearLocks() {
 }
 
 // useProfilesInTeam ensures at least the first page of team members has been loaded into Redux.
+// When teamId is omitted it falls back to the current UI team.
 //
 // This pattern relieves components from having to issue their own directives to populate the
 // Redux cache when rendering in contexts where the webapp doesn't already do this itself.
@@ -198,30 +194,31 @@ export function clearLocks() {
 //
 // A global lockProfilesInTeamFetch cache avoids the thundering herd problem of many components
 // wanting the same metadata.
-export function useProfilesInTeam() {
+export function useProfilesInTeam(teamId?: string) {
     const dispatch = useAppDispatch();
-    const profilesInTeam = useAppSelector(getProfilesInCurrentTeam);
     const currentTeamId = useAppSelector(getCurrentTeamId);
+    const effectiveTeamId = teamId || currentTeamId;
+    const profiles = useAppSelector((state) => selectProfilesInTeam(state, effectiveTeamId));
 
     useEffect(() => {
-        if (profilesInTeam.length > 0) {
+        if (profiles.length > 0) {
             // As soon as we successfully fetch a team's profiles, clear the bit that prevents
             // concurrent fetches. We won't try again since we shouldn't forget these profiles,
             // but we also don't want to unexpectedly block this forever.
-            lockProfilesInTeamFetch.delete(currentTeamId);
+            lockProfilesInTeamFetch.delete(effectiveTeamId);
             return;
         }
 
         // Avoid issuing multiple concurrent fetches for this team.
-        if (lockProfilesInTeamFetch.has(currentTeamId)) {
+        if (lockProfilesInTeamFetch.has(effectiveTeamId)) {
             return;
         }
-        lockProfilesInTeamFetch.add(currentTeamId);
+        lockProfilesInTeamFetch.add(effectiveTeamId);
 
-        dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
-    }, [currentTeamId, profilesInTeam]);
+        dispatch(getProfilesInTeam(effectiveTeamId, 0, PROFILE_CHUNK_SIZE));
+    }, [effectiveTeamId, profiles, dispatch]);
 
-    return profilesInTeam;
+    return profiles;
 }
 
 // useProfilesForRun returns profiles appropriate for a playbook run context.
@@ -230,30 +227,9 @@ export function useProfilesInTeam() {
 // Falls back to the current team when neither teamId nor channelId is provided (editor context).
 export function useProfilesForRun(teamId?: string, channelId?: string) {
     const dispatch = useAppDispatch();
-
-    // Read from the run's specific team, not the current UI team.
-    const profilesInRunTeam = useAppSelector(
-        (state) => (teamId ? selectProfilesInTeam(state, teamId) : []),
-    );
-    const profilesInCurrentTeam = useAppSelector(getProfilesInCurrentTeam);
+    const profilesInRunTeam = useProfilesInTeam(teamId);
     const selectChannelProfiles = useMemo(() => makeGetProfilesInChannel(), []);
     const channelProfiles = useAppSelector((state) => selectChannelProfiles(state, channelId ?? ''));
-
-    useEffect(() => {
-        if (teamId) {
-            if (profilesInRunTeam.length > 0) {
-                lockProfilesInTeamFetch.delete(teamId);
-                return;
-            }
-
-            if (lockProfilesInTeamFetch.has(teamId)) {
-                return;
-            }
-            lockProfilesInTeamFetch.add(teamId);
-
-            dispatch(getProfilesInTeam(teamId, 0, PROFILE_CHUNK_SIZE));
-        }
-    }, [teamId, profilesInRunTeam, dispatch]);
 
     useEffect(() => {
         if (!teamId && channelId && channelProfiles.length === 0 && !lockProfilesInChannelFetch.has(channelId)) {
@@ -262,13 +238,10 @@ export function useProfilesForRun(teamId?: string, channelId?: string) {
         }
     }, [teamId, channelId, channelProfiles.length, dispatch]);
 
-    if (teamId) {
-        return profilesInRunTeam;
-    }
-    if (channelId) {
+    if (channelId && !teamId) {
         return channelProfiles;
     }
-    return profilesInCurrentTeam;
+    return profilesInRunTeam;
 }
 
 /**
