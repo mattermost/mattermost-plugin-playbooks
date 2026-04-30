@@ -22,8 +22,12 @@ export const useToggleRunRetrospective = (playbookRun: PlaybookRun) => {
         const confirmationMessage = enabled ? formatMessage({defaultMessage: 'Are you sure you want to enable the retrospective for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable the retrospective for this run? No retrospective reminder will be sent.'});
 
         const onConfirm = async () => {
-            const result = await toggleRunRetrospective(playbookRun.id, enabled);
-            if (result && 'error' in result) {
+            try {
+                const result = await toggleRunRetrospective(playbookRun.id, enabled);
+                if (result && 'error' in result) {
+                    addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'})});
+                }
+            } catch {
                 addToast({content: formatMessage({defaultMessage: 'Failed to update retrospective setting'})});
             }
         };

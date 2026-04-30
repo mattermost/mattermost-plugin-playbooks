@@ -21,8 +21,12 @@ export const useToggleRunStatusUpdate = (playbookRun: PlaybookRun) => {
         const confirmationMessage = status ? formatMessage({defaultMessage: 'Are you sure you want to enable status updates for this run?'}) : formatMessage({defaultMessage: 'Are you sure you want to disable status updates for this run?'});
 
         const onConfirm = async () => {
-            const result = await toggleRunStatusUpdates(playbookRun.id, status);
-            if (result && 'error' in result) {
+            try {
+                const result = await toggleRunStatusUpdates(playbookRun.id, status);
+                if (result && 'error' in result) {
+                    addToast({content: formatMessage({defaultMessage: 'Failed to update status updates setting'})});
+                }
+            } catch {
                 addToast({content: formatMessage({defaultMessage: 'Failed to update status updates setting'})});
             }
         };

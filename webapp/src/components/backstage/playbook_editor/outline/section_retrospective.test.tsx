@@ -26,7 +26,7 @@ jest.mock('src/client', () => ({
 
 jest.mock('src/components/backstage/playbook_edit/metrics/metrics', () => ({
     __esModule: true,
-    default: () => <div data-testid='metrics'/>,
+    default: () => <div data-testid='retrospective-metrics'/>,
 }));
 
 jest.mock('src/components/markdown_edit', () => ({

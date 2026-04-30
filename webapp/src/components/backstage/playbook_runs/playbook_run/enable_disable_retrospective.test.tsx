@@ -113,8 +113,7 @@ describe('useToggleRunRetrospective', () => {
 
         const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
         await act(async () => {
-            modalArgs.onConfirm();
-            await Promise.resolve();
+            await modalArgs.onConfirm();
         });
 
         expect(mockToggleRunRetrospective).toHaveBeenCalledWith('run-1', false);
@@ -130,8 +129,7 @@ describe('useToggleRunRetrospective', () => {
 
         const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
         await act(async () => {
-            modalArgs.onConfirm();
-            await Promise.resolve();
+            await modalArgs.onConfirm();
         });
 
         expect(mockToggleRunRetrospective).toHaveBeenCalledWith('run-1', true);
@@ -173,8 +171,7 @@ describe('useToggleRunRetrospective', () => {
 
         const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
         await act(async () => {
-            modalArgs.onConfirm();
-            await Promise.resolve();
+            await modalArgs.onConfirm();
         });
 
         expect(mockAddToast).toHaveBeenCalledTimes(1);
@@ -190,8 +187,7 @@ describe('useToggleRunRetrospective', () => {
 
         const modalArgs = mockMakeConfirmModal.mock.calls[0][0];
         await act(async () => {
-            modalArgs.onConfirm();
-            await Promise.resolve();
+            await modalArgs.onConfirm();
         });
 
         expect(mockAddToast).not.toHaveBeenCalled();
