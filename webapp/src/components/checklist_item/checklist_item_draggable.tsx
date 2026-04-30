@@ -34,7 +34,6 @@ interface Props {
     conditions?: Condition[];
     propertyFields?: PropertyField[];
     propertyValues?: PropertyValue[];
-    currentUserId?: string;
     runOwnerId?: string;
     runCreatorId?: string;
     onEditingChange?: (isEditing: boolean) => void;
@@ -86,7 +85,6 @@ const DraggableChecklistItem = (props: Props) => {
                     conditions={props.conditions}
                     propertyFields={props.propertyFields}
                     propertyValues={props.propertyValues}
-                    currentUserId={props.currentUserId}
                     runOwnerId={props.runOwnerId}
                     runCreatorId={props.runCreatorId}
                     onEditingChange={props.onEditingChange}

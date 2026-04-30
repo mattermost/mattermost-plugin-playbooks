@@ -1961,7 +1961,7 @@ func TestChecklisItem_SetAssignee(t *testing.T) {
 		url := e.ServerClient.URL + "/plugins/" + manifest.Id + "/api/v0/runs/" + run.ID + "/checklists/0/item/0/assignee"
 		resp, _ := e.ServerClient.DoAPIRequestWithHeaders(context.Background(), http.MethodPut, url, string(body), nil)
 		require.NotNil(t, resp)
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("property field of non-user type rejected", func(t *testing.T) {

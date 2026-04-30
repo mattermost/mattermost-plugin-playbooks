@@ -2068,10 +2068,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return err
 	}
 
-	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
-	}
-
 	itemToCheck := &playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	// Add current context to audit
@@ -2181,7 +2177,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	return nil
 }
 
-// SetCommandToChecklistItem sets command to checklist item
 // SetPropertyUserAssignee sets a checklist item's assignee to whoever the given User-type
 // property field resolves to on this run.
 func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID string, checklistNumber, itemNumber int, propertyFieldID string) error {
@@ -2205,12 +2200,14 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 	// Find the run-level field that matches either by its own ID (run-level) or its parent ID
 	// (playbook-level). Callers may pass either form.
 	var runFieldID string
+	var runFieldName string
 	for _, pf := range playbookRun.PropertyFields {
 		if pf.ID == propertyFieldID || pf.Attrs.ParentID == propertyFieldID {
 			if pf.Type != model.PropertyFieldTypeUser {
 				return errors.Wrap(ErrMalformedPlaybookRun, "property field is not of user type")
 			}
 			runFieldID = pf.ID
+			runFieldName = pf.Name
 			break
 		}
 	}
@@ -2246,7 +2243,7 @@ func (s *PlaybookRunServiceImpl) SetPropertyUserAssignee(playbookRunID, userID s
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
-	modifyMessage := fmt.Sprintf("set assignee of checklist item **%s** to property field %s", stripmd.Strip(itemToCheck.Title), runFieldID)
+	modifyMessage := fmt.Sprintf("set assignee of checklist item **%s** to property field %s", stripmd.Strip(itemToCheck.Title), runFieldName)
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      timestamp,
@@ -5092,8 +5089,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 		}
 	}
 
-	prevOwnerUserID := run.OwnerUserID
-
 	// Create timeline event for the property change and append it to the run so the
 	// WS diff includes the new event and the frontend is notified without a page reload.
 	if valueChanged {
@@ -5108,7 +5103,6 @@ func (s *PlaybookRunServiceImpl) SetRunPropertyValue(userID, playbookRunID, prop
 	if valueChanged || assigneeOnlyUpdate {
 		prevRun := *run
 		prevRun.PropertyValues = prevPropertyValues
-		prevRun.OwnerUserID = prevOwnerUserID
 		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, &prevRun, run)
 	}
 

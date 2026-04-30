@@ -115,6 +115,11 @@ export enum ChecklistItemState {
     Skip = 'skipped',
 }
 
+export const AssigneeTypeSpecificUser = '';
+export const AssigneeTypeOwner = 'owner';
+export const AssigneeTypeCreator = 'creator';
+export const AssigneeTypePropertyUser = 'property_user';
+
 export interface ChecklistItem {
     id?: string;
     title: string;

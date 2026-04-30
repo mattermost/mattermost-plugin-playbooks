@@ -481,10 +481,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
-	if len(playbookRun.Summary) > 4096 {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "summary must be at most 4096 characters")
-	}
-
 	// Retrieve channel if needed and validate it
 	// If a channel is specified, ensure it's from the given team (if one provided), or
 	// just grab the team for that channel.
@@ -534,11 +530,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		if createPublicRun == nil {
 			public = pb.CreatePublicPlaybookRun
-		}
-
-		// Second name guard: reject empty names for non-template playbooks
-		if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && pb.ChannelNameTemplate == "" {
-			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 		}
 
 		playbookRun.SetChecklistFromPlaybook(*playbook)
@@ -611,10 +602,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.OwnerUserID = userID
 		}
 	}
-	if playbookRun.OwnerUserID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
-	}
-
 	playbookRunReturned, err := h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create playbook run")
@@ -1439,12 +1426,20 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	switch {
 	case params.AssigneePropertyFieldID != "":
 		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
-			h.HandleError(w, c.logger, err)
+			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
 			return
 		}
 	case params.AssigneeType != "":
 		if err := h.playbookRunService.SetRoleAssignee(id, userID, params.AssigneeType, checklistNum, itemNum); err != nil {
-			h.HandleError(w, c.logger, err)
+			if errors.Is(err, app.ErrMalformedPlaybookRun) {
+				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
+			} else {
+				h.HandleError(w, c.logger, err)
+			}
 			return
 		}
 	default:

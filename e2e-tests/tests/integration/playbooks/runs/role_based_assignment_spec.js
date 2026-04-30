@@ -20,6 +20,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
 
     const ROLE_OWNER = 'owner';
     const ROLE_CREATOR = 'creator';
+    const ROLE_PROPERTY_USER = 'property_user';
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -534,7 +535,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                         title: 'Stage 1',
                         items: [{
                             title: 'Manager Task',
-                            assignee_type: 'property_user',
+                            assignee_type: ROLE_PROPERTY_USER,
                             assignee_property_field_id: managerField.id,
                         }],
                     }],
@@ -543,7 +544,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                 // * Verify the server persisted the property_user assignee_type
                 cy.apiGetPlaybook(playbook.id).then((resp) => {
                     const item = resp.checklists[0].items[0];
-                    expect(item.assignee_type).to.equal('property_user');
+                    expect(item.assignee_type).to.equal(ROLE_PROPERTY_USER);
                     expect(item.assignee_property_field_id).to.equal(managerField.id);
                 });
 
@@ -573,7 +574,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     // * Verify via API that assignee_id is the resolved user and assignee_type is preserved
                     cy.apiGetPlaybookRun(run.id).then(({body: runData}) => {
                         const task = runData.checklists[0].items[0];
-                        expect(task.assignee_type).to.equal('property_user');
+                        expect(task.assignee_type).to.equal(ROLE_PROPERTY_USER);
                         expect(task.assignee_property_field_id).to.equal(managerField.id);
                         expect(task.assignee_id).to.equal(testNewOwner.id);
                     });
@@ -619,7 +620,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                         title: 'Stage 1',
                         items: [
                             {title: 'Owner Task', assignee_type: ROLE_OWNER},
-                            {title: 'Manager Task', assignee_type: 'property_user', assignee_property_field_id: managerField.id},
+                            {title: 'Manager Task', assignee_type: ROLE_PROPERTY_USER, assignee_property_field_id: managerField.id},
                         ],
                     }],
                 });
@@ -669,7 +670,7 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
 
                     // * Verify via API that the property_user task still carries assignee_type=property_user after owner change
                     cy.apiGetPlaybookRun(run.id).then(({body: propUserRun}) => {
-                        expect(propUserRun.checklists[0].items[1].assignee_type).to.equal('property_user');
+                        expect(propUserRun.checklists[0].items[1].assignee_type).to.equal(ROLE_PROPERTY_USER);
                     });
                 });
             });

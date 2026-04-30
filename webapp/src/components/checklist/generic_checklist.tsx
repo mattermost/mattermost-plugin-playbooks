@@ -268,7 +268,6 @@ const GenericChecklist = (props: Props) => {
                 item={checklistItem}
                 itemIndex={index}
                 newItem={false}
-                currentUserId={myUser.id}
                 runOwnerId={props.playbookRun?.owner_user_id}
                 runCreatorId={props.playbookRun?.reporter_user_id}
                 cancelAddingItem={() => {

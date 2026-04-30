@@ -7,7 +7,7 @@ import {useIntl} from 'react-intl';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInTeam} from 'src/hooks';
-import {ChecklistItem} from 'src/types/playbook';
+import {ChecklistItem, AssigneeTypeOwner, AssigneeTypeCreator, AssigneeTypePropertyUser} from 'src/types/playbook';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 
 interface Props {
@@ -29,14 +29,14 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     const assigneeType = checklistItem.assignee_type || '';
 
-    const selectedRole = (assigneeType === 'owner' || assigneeType === 'creator' || assigneeType === 'property_user') ? assigneeType : 'none';
+    const selectedRole = (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator || assigneeType === AssigneeTypePropertyUser) ? assigneeType : 'none';
 
     // When the property_user radio is clicked but no field has been selected yet,
     // show it as selected in the UI without firing a mutation.
-    const displayRole = pendingPropertyUser ? 'property_user' : selectedRole;
+    const displayRole = pendingPropertyUser ? AssigneeTypePropertyUser : selectedRole;
 
     const handleRoleRadioChange = useCallback((value: string) => {
-        if (value === 'property_user') {
+        if (value === AssigneeTypePropertyUser) {
             // Defer the mutation until a field is actually selected in the sub-dropdown.
             setPendingPropertyUser(true);
             return;
@@ -54,7 +54,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         setPendingPropertyUser(false);
         onChanged({
             ...checklistItem,
-            assignee_type: fieldId ? 'property_user' : '',
+            assignee_type: fieldId ? AssigneeTypePropertyUser : '',
             assignee_id: '',
             assignee_property_field_id: fieldId,
         });
@@ -75,12 +75,12 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
     const userPropertyFields = propertyFields?.filter((f) => f.type === PropertyFieldType.User) ?? [];
 
     // In run or template view with a role-based assignment, show the role badge (run view also shows the resolved user)
-    if (!editable && (assigneeType === 'owner' || assigneeType === 'creator')) {
+    if (!editable && (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator)) {
         let resolvedUserId: string | undefined;
         if (mode === 'run') {
-            resolvedUserId = assigneeType === 'owner' ? runOwnerUserId : runCreatorUserId;
+            resolvedUserId = assigneeType === AssigneeTypeOwner ? runOwnerUserId : runCreatorUserId;
         }
-        const roleLabel = assigneeType === 'owner' ? formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) : formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
+        const roleLabel = assigneeType === AssigneeTypeOwner ? formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) : formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
 
         return (
             <Container>
@@ -101,7 +101,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
     }
 
     // In template or run mode with a property_user assignment, show the appropriate badge (read-only only)
-    if (!editable && assigneeType === 'property_user') {
+    if (!editable && assigneeType === AssigneeTypePropertyUser) {
         const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
         const badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
         let resolvedUserId: string | undefined;
@@ -131,10 +131,10 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     const roleOptions = [
         {value: 'none', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.role_none', defaultMessage: 'None'})},
-        {value: 'owner', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.owner_hint', defaultMessage: 'Resolves to run owner at creation'})},
-        {value: 'creator', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.creator_hint', defaultMessage: 'Resolves to run creator at creation'})},
+        {value: AssigneeTypeOwner, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.owner_hint', defaultMessage: 'Resolves to run owner at creation'})},
+        {value: AssigneeTypeCreator, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.creator_hint', defaultMessage: 'Resolves to run creator at creation'})},
         ...(userPropertyFields.length > 0 ? [{
-            value: 'property_user',
+            value: AssigneeTypePropertyUser,
             displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'}) + ' \u2014 ' + formatMessage({id: 'playbooks.assignee_dropdown.property_user_hint', defaultMessage: 'Resolves to a user-type attribute at creation'}),
         }] : []),
     ];
@@ -177,7 +177,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                     ))}
                 </AssigneeSelect>
             </SelectWrapper>
-            {displayRole === 'property_user' && (
+            {displayRole === AssigneeTypePropertyUser && (
                 <SelectWrapper>
                     <AssigneeSelect
                         data-testid='property-user-field-options'

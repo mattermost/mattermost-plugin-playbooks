@@ -26,7 +26,7 @@ import {
     setPropertyUserAssignee,
     setRoleAssignee,
 } from 'src/client';
-import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType} from 'src/types/playbook';
+import {ChecklistItemState, ChecklistItem as ChecklistItemType, TaskAction as TaskActionType, AssigneeTypeOwner, AssigneeTypeCreator, AssigneeTypePropertyUser} from 'src/types/playbook';
 import {useUpdateRunItemTaskActions} from 'src/graphql/hooks';
 import {Condition} from 'src/types/conditions';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
@@ -102,7 +102,6 @@ interface ChecklistItemProps {
     conditionHeader?: React.ReactNode;
     onSaveAndAddNew?: () => void;
     isChannelChecklist?: boolean;
-    currentUserId?: string;
     runOwnerId?: string;
     runCreatorId?: string;
     bulkEditMode?: boolean;
@@ -286,7 +285,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (props.newItem) {
             return;
         }
-        if (updatedItem.assignee_type === 'owner' || updatedItem.assignee_type === 'creator') {
+        if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
             if (props.playbookRunId) {
                 const response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
                 if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
@@ -299,7 +298,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             } else {
                 props.onUpdateChecklistItem?.(updatedItem);
             }
-        } else if (updatedItem.assignee_type === 'property_user' && updatedItem.assignee_property_field_id) {
+        } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
             if (props.playbookRunId) {
                 const response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
                 if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
@@ -334,7 +333,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             updatedItem.assignee_type = value.slice(EXTRA_OPTION_PREFIX_ROLE.length);
             updatedItem.assignee_property_field_id = '';
         } else if (value.startsWith(EXTRA_OPTION_PREFIX_PROPERTY_USER)) {
-            updatedItem.assignee_type = 'property_user';
+            updatedItem.assignee_type = AssigneeTypePropertyUser;
             updatedItem.assignee_property_field_id = value.slice(EXTRA_OPTION_PREFIX_PROPERTY_USER.length);
         }
 
@@ -393,8 +392,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
-    const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
-    const isPropertyUserAssignee = assigneeType === 'property_user';
+    const isRoleAssignee = assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator;
+    const isPropertyUserAssignee = assigneeType === AssigneeTypePropertyUser;
 
     // Renders the assignee editor above the toolbar — only when actively editing.
     // Kept separate from renderAssignTo so the toolbar Row remains unaffected.
@@ -417,8 +416,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderAssignTo = (): null | React.ReactNode => {
         if (isEditing) {
-            // In edit mode the AssigneeDropdown in renderAssigneeEditor already
-            // shows the assignee, so skip the read-only display here.
             return null;
         }
 
