@@ -79,7 +79,7 @@ export const useOnFinishRun = (playbookRun: PlaybookRun | null, location: string
             const result = await finishRun(run.id);
             if (result?.error) {
                 toaster.add({
-                    content: formatMessage({id: 'playbooks.finish_run.error', defaultMessage: 'It wasn\'t possible to finish the run.'}),
+                    content: formatMessage({defaultMessage: 'It wasn\'t possible to finish the run.'}),
                     toastStyle: ToastStyle.Failure,
                 });
                 return;

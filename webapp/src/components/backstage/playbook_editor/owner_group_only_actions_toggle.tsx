@@ -25,9 +25,9 @@ const OwnerGroupOnlyActionsToggle = ({playbook, isPlaybookAdmin, onChange, disab
     }, [onChange]);
 
     const confirmationRequired = useMemo(() => ({
-        title: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm_title', defaultMessage: 'Restrict run management to owner only'}),
-        message: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm', defaultMessage: 'Enabling this will immediately restrict finishing, restoring, and reassigning ownership of runs to the run owner only. This applies to all active runs of this playbook. Playbook admins and system admins retain access. Continue?'}),
-        confirmButtonText: formatMessage({id: 'playbooks.owner_group_only_actions_toggle.confirm_button', defaultMessage: 'Confirm'}),
+        title: formatMessage({defaultMessage: 'Restrict run management to owner only'}),
+        message: formatMessage({defaultMessage: 'Enabling this will immediately restrict finishing, restoring, and reassigning ownership of runs to the run owner only. This applies to all active runs of this playbook. Playbook admins and system admins retain access. Continue?'}),
+        confirmButtonText: formatMessage({defaultMessage: 'Confirm'}),
     }), [formatMessage]);
 
     if (!isPlaybookAdmin) {
@@ -36,8 +36,8 @@ const OwnerGroupOnlyActionsToggle = ({playbook, isPlaybookAdmin, onChange, disab
 
     return (
         <BooleanToggle
-            label={formatMessage({id: 'playbooks.owner_group_only_actions_toggle.label', defaultMessage: 'Only the run owner can finish, restore, or reassign runs'})}
-            hint={formatMessage({id: 'playbooks.owner_group_only_actions_toggle.hint', defaultMessage: 'Applies immediately to all active runs of this playbook. Playbook admins and system admins retain access.'})}
+            label={formatMessage({defaultMessage: 'Only the run owner can finish, restore, or reassign runs'})}
+            hint={formatMessage({defaultMessage: 'Applies immediately to all active runs of this playbook. Playbook admins and system admins retain access.'})}
             value={playbook.owner_group_only_actions ?? false}
             onChange={handleChange}
             disabled={disabled}

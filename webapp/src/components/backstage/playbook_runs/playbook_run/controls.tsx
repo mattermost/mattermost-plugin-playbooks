@@ -203,7 +203,7 @@ export const FinishRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role, 
                 <StyledDropdownMenuItem
                     onClick={blockedByOwnerOnly ? () => undefined : onFinishRun}
                     disabled={blockedByOwnerOnly}
-                    disabledAltText={blockedByOwnerOnly ? formatMessage({id: 'playbooks.finish_run.owner_only_tooltip', defaultMessage: 'Only the run owner can finish this run'}) : undefined}
+                    disabledAltText={blockedByOwnerOnly ? formatMessage({defaultMessage: 'Only the run owner can finish this run'}) : undefined}
                 >
                     <FlagOutlineIcon size={18}/>
                     <FormattedMessage defaultMessage='Finish'/>
@@ -263,7 +263,7 @@ export const RestoreRunMenuItem = (props: {playbookRun: PlaybookRun, role: Role,
                     onClick={onRestoreRun}
                     className='restartRun'
                     disabled={blockedByOwnerOnly}
-                    disabledAltText={blockedByOwnerOnly ? formatMessage({id: 'playbooks.restore_run.owner_only_tooltip', defaultMessage: 'Only the run owner can restart this run'}) : undefined}
+                    disabledAltText={blockedByOwnerOnly ? formatMessage({defaultMessage: 'Only the run owner can restart this run'}) : undefined}
                 >
                     <FlagOutlineIcon size={18}/>
                     {isChannelChecklist ? <FormattedMessage defaultMessage='Resume'/> : <FormattedMessage defaultMessage='Restart'/>}

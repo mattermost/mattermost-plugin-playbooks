@@ -13,7 +13,6 @@ import React, {
 import {useIntl} from 'react-intl';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
-import {SettingsOutlineIcon} from '@mattermost/compass-icons/components';
 
 import {useAppSelector} from 'src/hooks/redux';
 
@@ -29,7 +28,6 @@ import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRole} from 'src/types/permissions';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import OwnerGroupOnlyActionsToggle from 'src/components/backstage/playbook_editor/owner_group_only_actions_toggle';
-import {Section as BaseSection, SectionTitle} from 'src/components/backstage/playbook_edit/styles';
 
 import StatusUpdates from './section_status_updates';
 import Retrospective from './section_retrospective';
@@ -213,22 +211,16 @@ const Outline = ({playbook, refetch, restPlaybook}: Props) => {
             {isPlaybookAdmin && effectiveRestPlaybook && (
                 <Section
                     id={'settings'}
-                    title={''}
+                    title={formatMessage({defaultMessage: 'Settings'})}
                 >
-                    <StyledSettingsSection>
-                        <StyledSettingsSectionTitle>
-                            <SettingsOutlineIcon size={22}/>
-                            {formatMessage({defaultMessage: 'Settings'})}
-                        </StyledSettingsSectionTitle>
-                        <SettingsRow data-testid='owner-group-only-actions-toggle'>
-                            <OwnerGroupOnlyActionsToggle
-                                playbook={effectiveRestPlaybook}
-                                isPlaybookAdmin={isPlaybookAdmin}
-                                disabled={archived || isSavingOwnerGroupOnlyActions}
-                                onChange={handleOwnerGroupOnlyActionsChange}
-                            />
-                        </SettingsRow>
-                    </StyledSettingsSection>
+                    <div data-testid='owner-group-only-actions-toggle'>
+                        <OwnerGroupOnlyActionsToggle
+                            playbook={effectiveRestPlaybook}
+                            isPlaybookAdmin={isPlaybookAdmin}
+                            disabled={archived || isSavingOwnerGroupOnlyActions}
+                            onChange={handleOwnerGroupOnlyActionsChange}
+                        />
+                    </div>
                 </Section>
             )}
             <PlaybookActionsModal
@@ -286,31 +278,6 @@ export const Sections = styled(SectionsImpl)`
     margin-bottom: 40px;
     background: var(--center-channel-bg);
     box-shadow: 0 4px 6px rgba(0 0 0 / 0.12);
-`;
-
-const StyledSettingsSection = styled(BaseSection)`
-    padding: 2rem;
-    padding-bottom: 0;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 8px;
-    margin: 0;
-`;
-
-const StyledSettingsSectionTitle = styled(SectionTitle)`
-    display: flex;
-    align-items: center;
-    margin: 0 0 24px;
-    font-size: 16px;
-    font-weight: 600;
-    gap: 8px;
-
-    svg {
-        color: rgba(var(--center-channel-color-rgb), 0.48);
-    }
-`;
-
-const SettingsRow = styled.div`
-    padding: 8px 0;
 `;
 
 const HoverMenuContainer = styled.div`
