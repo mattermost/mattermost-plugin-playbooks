@@ -302,7 +302,7 @@ type ChecklistItem struct {
 	// assignee was modified. 0 if it was never modified.
 	AssigneeModified int64 `json:"assignee_modified" export:"-"`
 	// AssigneeType determines how the assignee is resolved. Empty string means a specific user (AssigneeID).
-	AssigneeType string `json:"assignee_type" export:"assignee_type"`
+	AssigneeType string `json:"assignee_type" export:"-"`
 	// AssigneePropertyFieldID is the property field whose value is used when AssigneeType == AssigneeTypePropertyUser.
 	AssigneePropertyFieldID string `json:"assignee_property_field_id" export:"-"`
 

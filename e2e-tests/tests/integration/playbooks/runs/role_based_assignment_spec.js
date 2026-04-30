@@ -364,9 +364,6 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
             // assignee_type='' on Owner Task.
             cy.visit('/playbooks/playbooks/' + playbook.id + '/outline');
 
-            // # Alias the UpdatePlaybook mutation so we can wait for the debounced save
-            cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
-
             cy.get('#checklists').within(() => {
                 cy.contains('[data-testid="checkbox-item-container"]', 'Unassigned Task').within(($item) => {
                     cy.wrap($item).trigger('mouseover');
@@ -374,11 +371,14 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
                     cy.findByDisplayValue('Unassigned Task').clear().type('Renamed Task');
                 });
 
+                // # Alias after typing so we capture the save mutation, not a debounce-during-typing mutation
+                cy.playbooksInterceptGraphQLMutation('UpdatePlaybook');
+
                 // Re-query the save button after typing (the $item ref above goes stale on re-render)
                 cy.findByTestId('checklist-item-save-button').click();
             });
 
-            // # Wait for the debounced UpdatePlaybook mutation to complete
+            // # Wait for the UpdatePlaybook mutation triggered by the save button click
             cy.wait('@UpdatePlaybook');
 
             // * Owner Task must still carry assignee_type=owner after the sibling edit
@@ -512,6 +512,8 @@ describe('runs > role-based task assignment', {testIsolation: true}, () => {
     });
 
     it('assigning a task to a user-type property field shows the resolved user in the checklist', () => {
+        cy.apiLogin(testOwner);
+
         // # Create a playbook with a user-type property field and a plain task
         cy.apiCreatePlaybookWithProperties(
             {

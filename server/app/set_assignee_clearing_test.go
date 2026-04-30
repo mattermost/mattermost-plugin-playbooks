@@ -96,6 +96,24 @@ func TestApplyAssigneeUpdate(t *testing.T) {
 		assert.Equal(t, AssigneeTypeSpecificUser, item.AssigneeType, "AssigneeType must be cleared")
 	})
 
+	t.Run("property_user field ID cleared — store write required even when user ID matches", func(t *testing.T) {
+		// Item previously had AssigneeType=property_user with a field ID.
+		// SetAssignee is called with the same concrete user ID that was resolved from the field.
+		// noChangeNeeded must be false because AssigneePropertyFieldID is non-empty and must be cleared.
+		item := &ChecklistItem{
+			AssigneeType:            AssigneeTypeSpecificUser,
+			AssigneeID:              "user-1",
+			AssigneePropertyFieldID: "field-1",
+		}
+
+		noChangeNeeded := applyAssigneeUpdate(item, "user-1")
+
+		assert.False(t, noChangeNeeded, "store write must happen to clear AssigneePropertyFieldID")
+		assert.Equal(t, AssigneeTypeSpecificUser, item.AssigneeType)
+		assert.Equal(t, "user-1", item.AssigneeID)
+		assert.Equal(t, "", item.AssigneePropertyFieldID, "AssigneePropertyFieldID must be cleared")
+	})
+
 	t.Run("AssigneeType always cleared regardless of ID match", func(t *testing.T) {
 		// Verify the invariant: applyAssigneeUpdate always sets AssigneeType to
 		// AssigneeTypeSpecificUser (empty string) on every call, even when the returned

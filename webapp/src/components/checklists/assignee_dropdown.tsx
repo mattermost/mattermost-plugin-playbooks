@@ -13,6 +13,8 @@ import {
     AssigneeTypePropertyUser,
     ChecklistItem,
 } from 'src/types/playbook';
+
+const ROLE_NONE = 'none';
 import {PropertyField, PropertyFieldType, PropertyValue} from 'src/types/properties';
 
 interface Props {
@@ -34,7 +36,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
 
     const assigneeType = checklistItem.assignee_type || '';
 
-    const selectedRole = (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator || assigneeType === AssigneeTypePropertyUser) ? assigneeType : 'none';
+    const selectedRole = (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator || assigneeType === AssigneeTypePropertyUser) ? assigneeType : ROLE_NONE;
 
     // When the property_user radio is clicked but no field has been selected yet,
     // show it as selected in the UI without firing a mutation.
@@ -49,7 +51,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         setPendingPropertyUser(false);
         onChanged({
             ...checklistItem,
-            assignee_type: value === 'none' ? '' : value,
+            assignee_type: value === ROLE_NONE ? '' : value,
             assignee_id: '',
             assignee_property_field_id: '',
         });
@@ -82,43 +84,30 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
         [propertyFields],
     );
 
-    // In run or template view with a role-based assignment, show the role badge (run view also shows the resolved user)
-    if (!editable && (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator)) {
+    // Read-only view: show a role badge and the resolved user avatar (if in run mode).
+    if (!editable && (assigneeType === AssigneeTypeOwner || assigneeType === AssigneeTypeCreator || assigneeType === AssigneeTypePropertyUser)) {
         let resolvedUserId: string | undefined;
-        if (mode === 'run') {
-            resolvedUserId = assigneeType === AssigneeTypeOwner ? runOwnerUserId : runCreatorUserId;
-        }
-        const roleLabel = assigneeType === AssigneeTypeOwner ? formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) : formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
+        let badgeLabel: string;
+        let badgeTestId: string;
 
-        return (
-            <Container>
-                {resolvedUserId && (
-                    <CompactProfileSelector
-                        selectedUserId={resolvedUserId}
-                        placeholder={formatMessage({id: 'playbooks.assignee_dropdown.assignee_placeholder', defaultMessage: 'Assignee...'})}
-                        enableEdit={false}
-                        getAllUsers={getAllUsersInTeam}
-                        selfIsFirstOption={false}
-                    />
-                )}
-                <RoleBadge data-testid='role-indicator-badge'>
-                    {roleLabel}
-                </RoleBadge>
-            </Container>
-        );
-    }
-
-    // In template or run mode with a property_user assignment, show the appropriate badge (read-only only)
-    if (!editable && assigneeType === AssigneeTypePropertyUser) {
-        const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
-        const badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
-        let resolvedUserId: string | undefined;
-        if (mode === 'run') {
-            const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);
-            if (pv?.value && typeof pv.value === 'string') {
-                resolvedUserId = pv.value;
+        if (assigneeType === AssigneeTypePropertyUser) {
+            const field = propertyFields?.find((f) => f.id === checklistItem.assignee_property_field_id);
+            badgeLabel = field ? formatMessage({id: 'playbooks.assignee_dropdown.run_field_name', defaultMessage: 'Run {name}'}, {name: field.name}) : formatMessage({id: 'playbooks.assignee_dropdown.run_user', defaultMessage: 'Run User'});
+            badgeTestId = 'property-user-indicator-badge';
+            if (mode === 'run') {
+                const pv = propertyValues?.find((v) => v.field_id === checklistItem.assignee_property_field_id);
+                if (pv?.value && typeof pv.value === 'string') {
+                    resolvedUserId = pv.value;
+                }
+            }
+        } else {
+            badgeLabel = assigneeType === AssigneeTypeOwner ? formatMessage({id: 'playbooks.assignee_dropdown.run_owner', defaultMessage: 'Run Owner'}) : formatMessage({id: 'playbooks.assignee_dropdown.run_creator', defaultMessage: 'Run Creator'});
+            badgeTestId = 'role-indicator-badge';
+            if (mode === 'run') {
+                resolvedUserId = assigneeType === AssigneeTypeOwner ? runOwnerUserId : runCreatorUserId;
             }
         }
+
         return (
             <Container>
                 {resolvedUserId && (
@@ -130,7 +119,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
                         selfIsFirstOption={false}
                     />
                 )}
-                <RoleBadge data-testid='property-user-indicator-badge'>
+                <RoleBadge data-testid={badgeTestId}>
                     {badgeLabel}
                 </RoleBadge>
             </Container>
@@ -138,7 +127,7 @@ const AssigneeDropdown = ({checklistItem, editable, onChanged, participantUserId
     }
 
     const roleOptions = [
-        {value: 'none', displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.role_none', defaultMessage: 'None'})},
+        {value: ROLE_NONE, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.role_none', defaultMessage: 'None'})},
         {value: AssigneeTypeOwner, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_owner_with_hint', defaultMessage: 'Run Owner \u2014 Resolves to run owner at creation'})},
         {value: AssigneeTypeCreator, displayLabel: formatMessage({id: 'playbooks.assignee_dropdown.run_creator_with_hint', defaultMessage: 'Run Creator \u2014 Resolves to run creator at creation'})},
         ...(userPropertyFields.length > 0 ? [{
@@ -247,7 +236,6 @@ const AssigneeSelect = styled.select`
     color: var(--center-channel-color);
     font-size: 13px;
     cursor: pointer;
-    appearance: none;
 
     &:focus {
         box-shadow: inset 0 0 0 2px var(--button-bg);

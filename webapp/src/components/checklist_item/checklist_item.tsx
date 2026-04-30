@@ -276,7 +276,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const handleAssigneeDropdownChange = useCallback(async (updatedItem: ChecklistItemType) => {
         const seq = ++assigneeCallSeqRef.current;
-        const prevAssigneeID = updatedItem.assignee_id === undefined ? '' : assigneeID;
+        const prevAssigneeID = assigneeID;
         const prevAssigneeType = assigneeType;
         const prevAssigneePropertyFieldID = assigneePropertyFieldID;
         const rollback = () => {
@@ -284,6 +284,15 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                 setAssigneeID(prevAssigneeID);
                 setAssigneeType(prevAssigneeType);
                 setAssigneePropertyFieldID(prevAssigneePropertyFieldID);
+            }
+        };
+        const handleError = (hasError: boolean) => {
+            if (hasError && isMounted.current && assigneeCallSeqRef.current === seq) {
+                rollback();
+                toaster.add({
+                    content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
+                    toastStyle: ToastStyle.Failure,
+                });
             }
         };
         setAssigneeID(updatedItem.assignee_id || '');
@@ -295,38 +304,20 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         if (updatedItem.assignee_type === AssigneeTypeOwner || updatedItem.assignee_type === AssigneeTypeCreator) {
             if (props.playbookRunId) {
                 const response = await setRoleAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_type);
-                if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
-                    rollback();
-                    toaster.add({
-                        content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
-                        toastStyle: ToastStyle.Failure,
-                    });
-                }
+                handleError(Boolean(response.error));
             } else {
                 props.onUpdateChecklistItem?.(updatedItem);
             }
         } else if (updatedItem.assignee_type === AssigneeTypePropertyUser && updatedItem.assignee_property_field_id) {
             if (props.playbookRunId) {
                 const response = await setPropertyUserAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_property_field_id);
-                if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
-                    rollback();
-                    toaster.add({
-                        content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
-                        toastStyle: ToastStyle.Failure,
-                    });
-                }
+                handleError(Boolean(response.error));
             } else {
                 props.onUpdateChecklistItem?.(updatedItem);
             }
         } else if (props.playbookRunId) {
             const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, updatedItem.assignee_id || '');
-            if (response.error && isMounted.current && assigneeCallSeqRef.current === seq) {
-                rollback();
-                toaster.add({
-                    content: formatMessage({id: 'playbooks.checklist_item.assignee_error', defaultMessage: 'Failed to update assignee.'}),
-                    toastStyle: ToastStyle.Failure,
-                });
-            }
+            handleError(Boolean(response.error));
         } else {
             props.onUpdateChecklistItem?.(updatedItem);
         }

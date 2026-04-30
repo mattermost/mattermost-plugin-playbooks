@@ -536,6 +536,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			public = pb.CreatePublicPlaybookRun
 		}
 
+		if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" && pb.ChannelNameTemplate == "" {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
+		}
+
 		playbookRun.SetChecklistFromPlaybook(*playbook)
 		playbookRun.SetConfigurationFromPlaybook(*playbook, source)
 	} else {
@@ -592,13 +596,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 	}
 
-	// Set ReporterUserID early so BuildSystemTokens can resolve the {CREATOR} template token
-	// during ResolveRunCreationParams. CreatePlaybookRun will set it again (same value).
+	// Set ReporterUserID before CreatePlaybookRun so the creator is known from the start.
 	playbookRun.ReporterUserID = userID
-	// Pre-set OwnerUserID so the {OWNER} template token resolves during ResolveRunCreationParams.
-	// Priority: explicit caller value > DefaultOwnerID > creator (userID).
-	// Team membership is validated inside ResolveRunCreationParams; if the owner is not a team
-	// member, OwnerUserID is cleared and re-validated before creation proceeds.
+	// Pre-set OwnerUserID with priority: explicit caller value > DefaultOwnerID > creator (userID).
+	// CreatePlaybookRun validates team membership and may override this value.
 	if playbookRun.OwnerUserID == "" {
 		if playbookRun.DefaultOwnerID != "" {
 			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID
@@ -1400,6 +1401,10 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 		return
 	}
 
+	params.AssigneeID = strings.TrimSpace(params.AssigneeID)
+	params.AssigneeType = strings.TrimSpace(params.AssigneeType)
+	params.AssigneePropertyFieldID = strings.TrimSpace(params.AssigneePropertyFieldID)
+
 	// At most one of the three assignment modes may be set in a single request.
 	modes := 0
 	if params.AssigneeID != "" {
@@ -1419,7 +1424,7 @@ func (h *PlaybookRunHandler) itemSetAssignee(c *Context, w http.ResponseWriter, 
 	switch {
 	case params.AssigneePropertyFieldID != "":
 		if err := h.playbookRunService.SetPropertyUserAssignee(id, userID, checklistNum, itemNum, params.AssigneePropertyFieldID); err != nil {
-			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrNotFound) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
+			if errors.Is(err, app.ErrMalformedPlaybookRun) || errors.Is(err, app.ErrPropertyFieldNotOnRun) {
 				h.HandleErrorWithCode(w, c.logger, http.StatusBadRequest, err.Error(), err)
 			} else {
 				h.HandleError(w, c.logger, err)

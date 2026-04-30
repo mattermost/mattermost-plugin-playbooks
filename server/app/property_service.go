@@ -611,7 +611,7 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 	if getErr != nil {
 		runFields, rfErr := s.GetRunPropertyFields(runID)
 		if rfErr != nil {
-			return nil, errors.Wrap(getErr, "failed to get property field")
+			return nil, errors.Wrapf(getErr, "failed to get property field %s (run-field lookup also failed: %v)", propertyFieldID, rfErr)
 		}
 		for _, rf := range runFields {
 			if rf.ID == propertyFieldID {
@@ -620,7 +620,7 @@ func (s *propertyService) UpsertRunPropertyValue(runID, propertyFieldID string, 
 			}
 		}
 		if propertyField == nil {
-			return nil, errors.Wrap(getErr, "failed to get property field")
+			return nil, errors.Wrapf(getErr, "property field %s not found on run %s", propertyFieldID, runID)
 		}
 	} else if mmPropertyField == nil {
 		return nil, ErrNotFound
@@ -751,21 +751,15 @@ func (s *propertyService) ensurePropertyGroup() (string, error) {
 	return registeredGroup.ID, nil
 }
 
-var reservedFieldNames = []struct {
-	token string
-	desc  string
-}{
-	{"OWNER", "the built-in run owner placeholder"},
-	{"CREATOR", "the built-in run creator placeholder"},
-	{"PROPERTY_USER", "the built-in property-user assignee type"},
-}
+// reservedFieldNames lists field names that conflict with built-in assignee types (case-insensitive).
+var reservedFieldNames = []string{"OWNER", "CREATOR", "PROPERTY_USER"}
 
 // validateReservedFieldName rejects field names that would conflict with built-in
 // template placeholders or system fields. Reserved names: OWNER, CREATOR (case-insensitive).
 func validateReservedFieldName(name string) error {
 	for _, r := range reservedFieldNames {
-		if strings.EqualFold(name, r.token) {
-			return errors.Wrap(ErrReservedPropertyFieldName, "field name '"+r.token+"' is reserved for "+r.desc)
+		if strings.EqualFold(name, r) {
+			return errors.Wrapf(ErrReservedPropertyFieldName, "field name %q is reserved", r)
 		}
 	}
 	return nil
