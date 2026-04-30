@@ -84,7 +84,7 @@ func (s *propertyService) validatePropertyLimit(playbookID string) error {
 	}
 
 	if currentCount >= MaxPropertiesPerPlaybook {
-		return errors.Wrapf(ErrPropertyLimitExceeded, "cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
+		return errors.Errorf("cannot create property field: playbook already has the maximum allowed number of properties (%d)", MaxPropertiesPerPlaybook)
 	}
 
 	return nil
@@ -551,15 +551,7 @@ func (s *propertyService) copyPropertyFieldForRun(playbookProperty *model.Proper
 
 	if propertyField.SupportsOptions() {
 		for i := range propertyField.Attrs.Options {
-			// Store the playbook-level option ID as parent_id before clearing,
-			// so we can map between playbook-level and run-level option IDs
-			// (e.g. for runs list filtering by select attribute value).
-			opt := propertyField.Attrs.Options[i]
-			if opt == nil {
-				continue
-			}
-			opt.SetValue("parent_id", opt.GetID())
-			opt.SetID("")
+			propertyField.Attrs.Options[i].SetID("")
 		}
 	}
 

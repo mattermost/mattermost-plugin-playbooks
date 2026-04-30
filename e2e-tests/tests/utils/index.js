@@ -27,20 +27,6 @@ export function getRandomLetter(length) {
     return Array.from({length}, () => String.fromCharCode(97 + Math.floor(Math.random() * 26))).join('');
 }
 
-/**
- * Returns the display name that Mattermost would show for a user profile.
- * Prefers nickname > full name > username, matching server-side rendering.
- * @param {{nickname?: string, first_name?: string, last_name?: string, username: string}} user
- * @returns {string}
- */
-export function resolvedDisplayName(user) {
-    if (user.nickname) {
-        return user.nickname;
-    }
-    const full = [user.first_name, user.last_name].filter(Boolean).join(' ');
-    return full || user.username;
-}
-
 export function getMessageMenusPayload({dataSource, options, prefix = Date.now()} = {}) {
     let data;
     if (dataSource) {

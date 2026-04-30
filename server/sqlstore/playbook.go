@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
@@ -18,9 +17,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 )
-
-// txDefaultTimeout is the context timeout applied to every short transactional query.
-const txDefaultTimeout = 10 * time.Second
 
 type sqlPlaybook struct {
 	app.Playbook

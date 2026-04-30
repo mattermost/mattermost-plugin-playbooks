@@ -393,6 +393,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
         }
     };
 
+    const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
+    const isPropertyUserAssignee = assigneeType === 'property_user';
+
     // Renders the assignee editor above the toolbar — only when actively editing.
     // Kept separate from renderAssignTo so the toolbar Row remains unaffected.
     const renderAssigneeEditor = (): React.ReactNode => {
@@ -419,8 +422,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             return null;
         }
 
-        const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
-        const isPropertyUserAssignee = assigneeType === 'property_user';
         if (!assigneeID && !isRoleAssignee && !isPropertyUserAssignee) {
             // hide when nothing is set
             return null;
@@ -561,8 +562,6 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const renderRow = (): null | React.ReactNode => {
         const haveTaskActions = taskActions?.length > 0;
-        const isRoleAssignee = assigneeType === 'owner' || assigneeType === 'creator';
-        const isPropertyUserAssignee = assigneeType === 'property_user';
         if (
             !isEditing &&
             !assigneeID &&

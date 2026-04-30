@@ -1248,12 +1248,12 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	endAt := model.GetMillis()
 	if err = s.store.FinishPlaybookRun(playbookRunID, endAt); err != nil {
-		return errors.Wrap(err, "failed to finish playbook run in store")
+		return err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	message := fmt.Sprintf("@%s marked [%s](%s) as finished.", user.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunID))
@@ -1270,10 +1270,9 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
-	// DM notifications to followers are best-effort: a delivery failure must not abort the finish.
 	err = s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
 	if err != nil {
-		logger.WithError(err).Warn("failed to dm post to run followers on finish")
+		logger.WithError(err).Error("failed to dm post to run followers")
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -1309,14 +1308,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	s.metricsService.IncrementRunsFinishedCount(1)
-	updatedRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		// Re-read failed; skip the WS notification to avoid broadcasting a partial snapshot.
-		// Clients will see the correct Finished status on their next load or page refresh.
-		logger.WithError(err).Warn("failed to re-read run after finish; skipping WS notification to avoid partial state broadcast")
-	} else {
-		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, updatedRun)
-	}
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	if playbookRunToModify.StatusUpdateBroadcastWebhooksEnabled {
 
@@ -1333,11 +1325,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "endAt", endAt)
 	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusFinished)
-	if updatedRun != nil {
-		auditRec.AddEventResultState(*updatedRun)
-	} else {
-		auditRec.AddEventResultState(*playbookRunToModify)
-	}
+	auditRec.AddEventResultState(*playbookRunToModify)
 
 	return nil
 }
@@ -1487,30 +1475,25 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 
 	restoreAt := model.GetMillis()
 	if err = s.store.RestorePlaybookRun(playbookRunID, restoreAt); err != nil {
-		return errors.Wrap(err, "failed to restore playbook run in store")
+		return err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve user %s", userID)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	message := fmt.Sprintf("@%s changed the status of [%s](%s) from Finished to In Progress.", user.Username, playbookRunToRestore.Name, GetRunDetailsRelativeURL(playbookRunID))
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
-		logger.WithError(err).WithField("channel_id", playbookRunToRestore.ChannelID).Error("failed to post the status update to channel")
+		logger.WithField("channel_id", playbookRunToRestore.ChannelID).Error("failed to post the status update to channel")
 	} else {
 		postID = post.Id
 	}
 
 	if playbookRunToRestore.StatusUpdateBroadcastChannelsEnabled {
 		s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore, logger)
-	}
-
-	// DM notifications to followers are best-effort: a delivery failure must not abort the restore.
-	if err := s.dmPostToRunFollowers(&model.Post{Message: message}, restoreMessage, playbookRunID, userID); err != nil {
-		logger.WithError(err).Warn("failed to dm post to run followers on restore")
 	}
 
 	event := &TimelineEvent{
@@ -1526,14 +1509,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	updatedRun, err := s.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		// Re-read failed; skip the WS notification to avoid broadcasting a partial snapshot.
-		// Clients will see the correct InProgress status on their next load or page refresh.
-		logger.WithError(err).Warn("failed to re-read run after restore; skipping WS notification to avoid partial state broadcast")
-	} else {
-		s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, updatedRun)
-	}
+	s.sendPlaybookRunObjectUpdatedWS(playbookRunID, originalRun, nil)
 
 	if playbookRunToRestore.StatusUpdateBroadcastWebhooksEnabled {
 
@@ -1546,26 +1522,11 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		s.sendWebhooksOnUpdateStatus(playbookRunID, &webhookEvent)
 	}
 
-	// Cancel any pending retrospective reminder — the run is back in progress so the
-	// reminder scheduled at finish time is no longer appropriate.
-	s.scheduler.Cancel(RetrospectivePrefix + playbookRunID)
-
-	// Re-schedule status update reminder if it was active before the run was finished.
-	if playbookRunToRestore.StatusUpdateEnabled && playbookRunToRestore.PreviousReminder > 0 {
-		if reminderErr := s.SetNewReminder(playbookRunID, playbookRunToRestore.PreviousReminder); reminderErr != nil {
-			logger.WithError(reminderErr).Warn("failed to re-schedule status update reminder on run restore")
-		}
-	}
-
 	// Mark success and add result state for audit
 	auditRec.Success()
 	model.AddEventParameterToAuditRec(auditRec, "restoreAt", restoreAt)
 	model.AddEventParameterToAuditRec(auditRec, "finalStatus", StatusInProgress)
-	if updatedRun != nil {
-		auditRec.AddEventResultState(*updatedRun)
-	} else {
-		auditRec.AddEventResultState(*playbookRunToRestore)
-	}
+	auditRec.AddEventResultState(*playbookRunToRestore)
 
 	return nil
 }

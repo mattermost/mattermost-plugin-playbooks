@@ -40,6 +40,3 @@ var ErrReservedPropertyFieldName = errors.New("reserved property field name")
 
 // ErrPropertyFieldNotOnRun occurs when a property field does not belong to the specified run.
 var ErrPropertyFieldNotOnRun = errors.New("property field does not belong to run")
-
-// ErrPropertyLimitExceeded occurs when trying to create a property field that would exceed the maximum allowed count.
-var ErrPropertyLimitExceeded = errors.New("property limit exceeded")

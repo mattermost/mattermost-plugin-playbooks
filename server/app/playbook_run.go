@@ -1179,7 +1179,7 @@ type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 	GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error)
 
-	// CreatePlaybookRun persists a new playbook run. userID is the user who initiated the run.
+	// CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
